@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Forms;
 
+use App\Eloquents\Option;
 use DB;
 use App\Eloquents\Form;
 use App\Eloquents\Question;
@@ -62,6 +63,7 @@ class QuestionsService
      */
     public function updateQuestion(int $question_id, array $question)
     {
+        /* @var $eloquent Question */
         $eloquent = Question::findOrFail($question_id);
         if (empty($question['is_required'])) {
             $question['is_required'] = false;
@@ -81,6 +83,18 @@ class QuestionsService
 
         $eloquent->fill($question);
         $eloquent->save();
+
+        Option::where('question_id', $eloquent->id)->delete();
+        if (!empty($question['options'])) {
+            // この時点で、$question['options'] は重複が取り除かれ,各要素が改行で区切られた選択肢になっている.
+            $array_options_without_duplication = explode("\n", $question['options']);
+            foreach ($array_options_without_duplication as $string_option) {
+                Option::create([
+                    'question_id' => $eloquent->id,
+                    'name' => $string_option
+                ]);
+            }
+        }
     }
 
     /**

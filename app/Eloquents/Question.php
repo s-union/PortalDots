@@ -5,6 +5,7 @@ namespace App\Eloquents;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
@@ -20,6 +21,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property string $allowed_types
  * @property array $allowed_types_array
  * @property int $priority
+ * @property string $options
+ * @property-read Option[] $eloquentOptions
  * @property-read Carbon $created_at
  * @property-read Carbon $updated_at
  */
@@ -90,6 +93,11 @@ class Question extends Model
         return $this->belongsTo(Form::class);
     }
 
+    public function eloquentOptions(): HasMany
+    {
+        return $this->hasMany(Option::class);
+    }
+
     public function getAllowedTypesArrayAttribute()
     {
         return explode('|', $this->allowed_types);
@@ -102,10 +110,12 @@ class Question extends Model
 
     public function getOptionsArrayAttribute()
     {
-        $options = explode("\n", $this->options);
-        $options = array_map('trim', $options);
-        $options = array_filter($options, 'strlen');
-        $options = array_values($options);
-        return $options;
+        if (!empty($this->options)) {
+            $options = explode("\n", $this->options);
+            $options = array_map('trim', $options);
+            $options = array_filter($options, 'strlen');
+            return array_values($options);
+        }
+        return null;
     }
 }
