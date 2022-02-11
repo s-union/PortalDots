@@ -98,6 +98,7 @@ Route::middleware(['auth', 'verified', 'can:staff', 'staffAuthed'])
                     ->group(function () {
                         Route::get('/', 'Staff\Forms\Editor\IndexAction')->name('editor');
                         // ↓「editor.api」のroute定義は resources/views/staff/forms/editor.blade.php で利用しているので、消さないこと
+                        // TODO apiのディレクトリを Editor\Api\... に変更したい
                         Route::get('/api', 'Staff\Forms\Editor\APIAction')->name('editor.api');
                         Route::get('/api/get_form', 'Staff\Forms\Editor\GetFormAction');
                         Route::post('/api/update_form', 'Staff\Forms\Editor\UpdateFormAction');

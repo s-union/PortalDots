@@ -5,6 +5,9 @@ namespace App\Eloquents;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
+/**
+ * @property string type
+ */
 class CustomForm extends Model
 {
     protected $fillable = [

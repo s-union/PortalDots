@@ -34,7 +34,7 @@ class UpdateQuestionRequest extends FormRequest
             'question.number_min' => ['nullable', 'integer'],
             'question.options' => ['nullable', 'string'],
             'question.priority' => ['required', 'integer'],
-            'question.type' => ['required', Rule::in(Question::QUESTION_TYPES)],
+            'question.type' => ['required', Rule::in(Question::$question_types)],
         ];
     }
 

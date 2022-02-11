@@ -5,6 +5,7 @@ namespace App\Eloquents;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
@@ -20,6 +21,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property string $allowed_types
  * @property array $allowed_types_array
  * @property int $priority
+ * @property string $options
+ * @property-read Option[] $eloquentOptions
  * @property-read Carbon $created_at
  * @property-read Carbon $updated_at
  */
@@ -46,16 +49,33 @@ class Question extends Model
 
     protected static $logOnlyDirty = true;
 
-    public const QUESTION_TYPES = [
+    /**
+     * 選択肢`Option`を保存すべき質問タイプ`Question->type`
+     * @var string[]
+     */
+    public static $should_save_options_question_types = [
+        'radio',
+        'select',
+        'checkbox'
+    ];
+
+    /**
+     * 選択肢`Option`を保存すべきでない質問タイプ`Question->type`
+     * @var string[]
+     */
+    public static $should_not_save_options_question_types = [
         'heading',
         'text',
         'number',
         'textarea',
-        'radio',
-        'checkbox',
-        'select',
-        'upload',
+        'upload'
     ];
+
+    /**
+     * 質問タイプ`Question->type`
+     * @var string[]
+     */
+    public static $question_types = [];
 
     protected $fillable = [
         'name',
@@ -80,6 +100,11 @@ class Question extends Model
     {
         parent::boot();
 
+        static::$question_types = array_merge(
+            static::$should_save_options_question_types,
+            static::$should_not_save_options_question_types
+        );
+
         static::addGlobalScope('priority', function (Builder $builder) {
             $builder->orderBy('priority', 'asc');
         });
@@ -88,6 +113,11 @@ class Question extends Model
     public function form()
     {
         return $this->belongsTo(Form::class);
+    }
+
+    public function eloquentOptions(): HasMany
+    {
+        return $this->hasMany(Option::class);
     }
 
     public function getAllowedTypesArrayAttribute()
@@ -102,10 +132,12 @@ class Question extends Model
 
     public function getOptionsArrayAttribute()
     {
-        $options = explode("\n", $this->options);
-        $options = array_map('trim', $options);
-        $options = array_filter($options, 'strlen');
-        $options = array_values($options);
-        return $options;
+        if (!empty($this->options)) {
+            $options = explode("\n", $this->options);
+            $options = array_map('trim', $options);
+            $options = array_filter($options, 'strlen');
+            return array_values($options);
+        }
+        return null;
     }
 }
