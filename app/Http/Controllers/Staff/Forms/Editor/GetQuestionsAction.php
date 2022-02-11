@@ -32,6 +32,7 @@ class GetQuestionsAction extends Controller
         })->toArray();
 
         $permanent_questions = [];
+        /** @var CustomForm $custom_form */
         $custom_form = $form->customForm()->first();
         $type = isset($custom_form) ? $custom_form->type : null;
         if (isset($type)) {

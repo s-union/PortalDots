@@ -7,12 +7,14 @@ use App\Eloquents\Option;
 use App\Eloquents\Question;
 use App\Services\Forms\QuestionsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
 class QuestionsServiceTest extends TestCase
 {
     use RefreshDatabase;
+    use WithFaker;
 
     /* @var $questions_service QuestionsService */
     private $questions_service;
@@ -33,6 +35,7 @@ class QuestionsServiceTest extends TestCase
     private function createQuestionAndOptions(): array
     {
         $question = factory(Question::class)->create([
+            'type' => $this->faker->randomElement(Question::$should_save_options_question_types),
             'options' => "テスト1\nテスト2\nテスト3",
             'form_id' => $this->form->id
         ]);
@@ -144,5 +147,48 @@ class QuestionsServiceTest extends TestCase
             'question_id' => $question->id,
             'name' => 'テスト置き換え2'
         ]);
+    }
+
+    /** @test */
+    public function updateQuestion_選択肢を保存すべきでない問題タイプであった場合は選択肢は保存されない()
+    {
+        $question = factory(Question::class)->create([
+            'type' => $this->faker->randomElement(
+                Question::$should_not_save_options_question_types
+            ),
+            'options' => null,
+            'form_id' => $this->form->id
+        ]);
+        $this->questions_service->updateQuestion(
+            $question->id,
+            [
+                'is_required' => $question->is_required,
+                'options' => "テスト1\nテスト2\nテスト3"
+            ]
+        );
+
+        $question_fields = $question->only(['id', 'options']);
+        $this->assertDatabaseHas('questions', $question_fields);
+
+        $this->assertEquals(0, Option::all()->count());
+    }
+
+    /** @test */
+    public function deleteQuestion_正常に質問を削除できる()
+    {
+        $array = $this->createQuestionAndOptions();
+        /* @var $question Question */
+        $question = $array['question'];
+        $options = $array['options'];
+
+        $this->questions_service->deleteQuestion($question->id);
+
+        // 質問は消えているはず
+        $this->assertDeleted($question);
+        // 選択肢も消えているはず
+        $this->assertDeleted($options['option_1']);
+        $this->assertDeleted($options['option_2']);
+        $this->assertDeleted($options['option_3']);
+        // TODO: AnswerDetailsのテストも書く
     }
 }

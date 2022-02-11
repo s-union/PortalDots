@@ -49,16 +49,33 @@ class Question extends Model
 
     protected static $logOnlyDirty = true;
 
-    public const QUESTION_TYPES = [
+    /**
+     * 選択肢`Option`を保存すべき質問タイプ`Question->type`
+     * @var string[]
+     */
+    public static $should_save_options_question_types = [
+        'radio',
+        'select',
+        'checkbox'
+    ];
+
+    /**
+     * 選択肢`Option`を保存すべきでない質問タイプ`Question->type`
+     * @var string[]
+     */
+    public static $should_not_save_options_question_types = [
         'heading',
         'text',
         'number',
         'textarea',
-        'radio',
-        'checkbox',
-        'select',
-        'upload',
+        'upload'
     ];
+
+    /**
+     * 質問タイプ`Question->type`
+     * @var string[]
+     */
+    public static $question_types = [];
 
     protected $fillable = [
         'name',
@@ -82,6 +99,11 @@ class Question extends Model
     protected static function boot()
     {
         parent::boot();
+
+        static::$question_types = array_merge(
+            static::$should_save_options_question_types,
+            static::$should_not_save_options_question_types
+        );
 
         static::addGlobalScope('priority', function (Builder $builder) {
             $builder->orderBy('priority', 'asc');

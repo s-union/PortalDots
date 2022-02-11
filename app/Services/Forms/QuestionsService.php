@@ -28,7 +28,7 @@ class QuestionsService
      */
     public function addQuestion(Form $form, string $type): Question
     {
-        if (! in_array($type, Question::QUESTION_TYPES, true)) {
+        if (!in_array($type, Question::$question_types, true)) {
             throw new \Exception('無効な設問タイプです');
         }
         // 適切なpriorityを設定するために、最もpriorityの値が大きい設問を取得する
@@ -69,7 +69,13 @@ class QuestionsService
             $question['is_required'] = false;
         }
 
-        if (!empty($question['options'])) {
+        // TODO: Remove this
+        if (
+            !empty($question['options'])
+            &&
+            // 選択肢を保存すべき問題タイプであった場合
+            in_array($eloquent->type, Question::$should_save_options_question_types, true)
+        ) {
             $options = array_unique(
                 array_map(
                     'trim',
@@ -84,16 +90,26 @@ class QuestionsService
         $eloquent->fill($question);
         $eloquent->save();
 
-        Option::where('question_id', $eloquent->id)->delete();
-        if (!empty($question['options'])) {
+        $eloquent->eloquentOptions()->delete();
+        if (
+            !empty($question['options'])
+            &&
+            // 選択肢を保存すべき問題タイプであった場合
+            in_array($eloquent->type, Question::$should_save_options_question_types, true)
+        ) {
             // この時点で、$question['options'] は重複が取り除かれ,各要素が改行で区切られた選択肢になっている.
             $array_options_without_duplication = explode("\n", $question['options']);
-            foreach ($array_options_without_duplication as $string_option) {
-                Option::create([
-                    'question_id' => $eloquent->id,
-                    'name' => $string_option
-                ]);
-            }
+
+            // TODO: 切り出す？
+            $eloquent->eloquentOptions()->createMany(
+                array_map(function ($_, $value) {
+                    return [
+                        'name' => $value
+                    ];
+                },
+                    array_keys($array_options_without_duplication),
+                    array_values($array_options_without_duplication))
+            );
         }
     }
 
@@ -105,8 +121,10 @@ class QuestionsService
     public function deleteQuestion(int $question_id)
     {
         DB::transaction(function () use ($question_id) {
+            /* @var $eloquent Question */
             $eloquent = Question::findOrFail($question_id);
             $eloquent->delete();
+            $eloquent->eloquentOptions()->delete();
             $this->answerDetailsService->deleteAnswerDetailsByQuestionId($question_id);
         });
     }
