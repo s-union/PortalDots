@@ -55,7 +55,7 @@ class CircleRequest extends FormRequest
             'group_name' => '企画を出店する団体の名称',
             'group_name_yomi' => '企画を出店する団体の名称(よみ)',
             'leader' => '団体責任者',
-            'members' => '学園祭係(副責任者)',
+            'members' => '新歓係(副責任者)',
             'status' => '参加登録受理',
         ];
     }

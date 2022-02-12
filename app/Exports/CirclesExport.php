@@ -109,7 +109,7 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
                 '更新日時',
                 'スタッフ用メモ',
                 '団体責任者',
-                '学園祭係',
+                '新歓係',
             ],
             isset($this->customForm)
             ? $this->customForm->questions->where('type', '!==', 'heading')->pluck('name')->toArray()

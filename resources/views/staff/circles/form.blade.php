@@ -133,9 +133,9 @@
                     @endif
                 </list-view-form-group>
                 <list-view-form-group label-for="members">
-                    <template v-slot:label>学園祭係(副責任者)の学籍番号</template>
+                    <template v-slot:label>新歓係(副責任者)の学籍番号</template>
                     <template
-                        v-slot:description>学籍番号を改行して入力することで複数の学園祭係を追加できます。{{ config('portal.users_number_to_submit_circle') - 1 }}人を下回っていても構いません。</template>
+                        v-slot:description>学籍番号を改行して入力することで複数の新歓係を追加できます。{{ config('portal.users_number_to_submit_circle') - 1 }}人を下回っていても構いません。</template>
                     <textarea id="members" class="form-control @error('members') is-invalid @enderror" name="members"
                         rows="3">{{ old('members', empty($members) ? '' : $members) }}</textarea>
                     @if ($errors->has('members'))

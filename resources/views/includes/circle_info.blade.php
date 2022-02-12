@@ -26,7 +26,7 @@
                     @if ($user->pivot->is_leader)
                         <app-badge primary>団体責任者</app-badge>
                     @else
-                        <app-badge muted>学園祭係(副責任者)</app-badge>
+                        <app-badge muted>新歓係(副責任者)</app-badge>
                     @endif
                 </li>
             @endforeach

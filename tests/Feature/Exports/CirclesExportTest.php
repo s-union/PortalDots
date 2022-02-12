@@ -199,7 +199,7 @@ class CirclesExportTest extends TestCase
                 '更新日時',
                 'スタッフ用メモ',
                 '団体責任者',
-                '学園祭係',
+                '新歓係',
                 'どんなことをしますか',
             ],
             $this->circlesExport->headings()

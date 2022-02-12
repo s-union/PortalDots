@@ -29,7 +29,7 @@
                 <list-view-form-group label-for="users_number_to_submit_circle">
                     <template v-slot:label>企画参加登録を提出するために必要な企画担当者の最低人数</template>
                     <template v-slot:description>
-                        団体責任者と学園祭係(副責任者)の合計人数です。団体責任者に加え、学園祭係(副責任者)の登録を最低2人必要とする場合、<code>3</code>と入力してください
+                        団体責任者と新歓係(副責任者)の合計人数です。団体責任者に加え、新歓係(副責任者)の登録を最低2人必要とする場合、<code>3</code>と入力してください
                     </template>
                     <input id="users_number_to_submit_circle" type="number"
                         class="form-control @error('users_number_to_submit_circle') is-invalid @enderror"
