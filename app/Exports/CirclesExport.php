@@ -108,7 +108,7 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
                 '作成日時',
                 '更新日時',
                 'スタッフ用メモ',
-                '責任者',
+                '団体責任者',
                 '学園祭係',
             ],
             isset($this->customForm)

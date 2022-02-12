@@ -121,7 +121,7 @@
             <list-view>
                 <template v-slot:title>企画のメンバー</template>
                 <list-view-form-group label-for="leader">
-                    <template v-slot:label>責任者の学籍番号</template>
+                    <template v-slot:label>団体責任者の学籍番号</template>
                     <input type="text" class="form-control @error('leader') is-invalid @enderror" id="leader" name="leader"
                         value="{{ old('leader', empty($leader) ? '' : $leader->student_id) }}">
                     @if ($errors->has('leader'))

@@ -11,7 +11,7 @@
 - メンバー
 @foreach ($circle->users as $user)
 @if($user->pivot->is_leader === true)
-  - {{ $user->name }}({{ $user->student_id }}) (責任者)
+  - {{ $user->name }}({{ $user->student_id }}) (団体責任者)
 @else
   - {{ $user->name }}({{ $user->student_id }})
 @endif
