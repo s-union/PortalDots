@@ -47,6 +47,6 @@ class StoreAction extends Controller
 
         return redirect()
                 ->route('circles.show', ['circle' => $circle])
-                ->with('topAlert.title', "「{$circle->name}」の学園祭係(副責任者)になりました");
+                ->with('topAlert.title', "「{$circle->name}」の新歓係(副責任者)になりました");
     }
 }

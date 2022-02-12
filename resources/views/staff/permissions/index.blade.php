@@ -12,9 +12,9 @@
             name: '名前',
             student_id: '学籍番号',
             name_family: '姓',
-            name_family_yomi: '姓(よみ)',
+            name_family_yomi: '姓(ふりがな)',
             name_given: '名',
-            name_given_yomi: '名(よみ)',
+            name_given_yomi: '名(ふりがな)',
             is_admin: '管理者',
             permissions: '割り当てられた権限',
         }"

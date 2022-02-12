@@ -9,7 +9,7 @@
         <list-view>
             <template v-slot:title>メンバーを招待</template>
             <template v-slot:description>
-                あなたの企画「{{ $circle->name }}」の学園祭係(副責任者)に、以下のURLを共有してください。これは、学園祭係(副責任者)の招待URLです。
+                あなたの企画「{{ $circle->name }}」の新歓係(副責任者)に、以下のURLを共有してください。これは、新歓係(副責任者)の招待URLです。
             </template>
             <list-view-form-group label-for="invitation_url">
                 <template v-slot:label>
@@ -50,9 +50,9 @@
                         {{ $user->name }}
                         ({{ $user->student_id }})
                         @if ($user->pivot->is_leader)
-                            <app-badge primary>責任者</app-badge>
+                            <app-badge primary>団体責任者</app-badge>
                         @else
-                            <app-badge muted>学園祭係(副責任者)</app-badge>
+                            <app-badge muted>新歓係(副責任者)</app-badge>
                         @endif
                     </template>
                     @unless($user->pivot->is_leader)

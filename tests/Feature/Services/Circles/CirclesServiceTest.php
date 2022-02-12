@@ -35,22 +35,16 @@ class CirclesServiceTest extends TestCase
         $leader = factory(User::class)->create();
         $name = 'サンプル模擬店';
         $name_yomi = 'サンプルもぎてん';
-        $group_name = 'サンプル研究会';
-        $group_name_yomi = 'サンプルけんきゅうかい';
 
         return [
             $this->circlesService->create(
                 $leader,
                 $name,
                 $name_yomi,
-                $group_name,
-                $group_name_yomi
             ),
             $leader,
             $name,
             $name_yomi,
-            $group_name,
-            $group_name_yomi,
         ];
     }
 
@@ -64,15 +58,11 @@ class CirclesServiceTest extends TestCase
             $leader,
             $name,
             $name_yomi,
-            $group_name,
-            $group_name_yomi
         ] = $this->createCircle();
 
         $this->assertDatabaseHas('circles', [
             'name' => $name,
             'name_yomi' => 'さんぷるもぎてん',  // カタカナはひらがなに変換される
-            'group_name' => $group_name,
-            'group_name_yomi' => 'さんぷるけんきゅうかい',  // カタカナはひらがなに変換される
         ]);
 
         $this->assertDatabaseHas('circle_user', [
@@ -94,16 +84,12 @@ class CirclesServiceTest extends TestCase
             $leader,
             $name,
             $name_yomi,
-            $group_name,
-            $group_name_yomi
         ] = $this->createCircle();
 
         $this->circlesService->update(
             $circle,
             $name,
             'あたらしいキカクめいしょう',
-            $group_name,
-            $group_name_yomi
         );
 
         $this->assertDatabaseHas('circles', [

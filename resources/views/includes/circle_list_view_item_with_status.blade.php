@@ -7,7 +7,7 @@
             </span>
         </template>
         <template v-slot:meta>
-            学園祭係(副責任者)の招待が完了しました。ここをクリックして登録内容に不備がないかどうかを確認し、参加登録を提出しましょう。
+            新歓係(副責任者)の招待が完了しました。ここをクリックして登録内容に不備がないかどうかを確認し、参加登録を提出しましょう。
         </template>
     </list-view-item>
 @elseif ($circle->isPending())
@@ -25,11 +25,11 @@
         <template v-slot:title>
             <span class="text-primary">
                 📩
-                ここをクリックして「{{ $circle->name }}」の学園祭係(副責任者)を招待しましょう！
+                ここをクリックして「{{ $circle->name }}」の新歓係(副責任者)を招待しましょう！
             </span>
         </template>
         <template v-slot:meta>
-            参加登録を提出するには、ここをクリックして学園祭係(副責任者)を招待しましょう。
+            参加登録を提出するには、ここをクリックして新歓係(副責任者)を招待しましょう。
         </template>
     </list-view-item>
 @elseif ($circle->hasApproved())

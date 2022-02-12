@@ -72,8 +72,6 @@ class UpdateAction extends Controller
         $circle->update([
             'name'  => $request->name,
             'name_yomi'  => $request->name_yomi,
-            'group_name'  => $request->group_name,
-            'group_name_yomi'  => $request->group_name_yomi,
             'status' => $status,
             'status_reason' => $request->status_reason,
             'status_set_at' => $status_set_at,

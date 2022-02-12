@@ -28,7 +28,7 @@
         <app-container>
             <list-view>
                 <list-view-item>
-                    <template v-slot:title>申請企画名</template>
+                    <template v-slot:title>申請団体名</template>
                     {{ $circle->name }}
                     —
                     {{-- TODO: あとでもうちょっといい感じのコードに書き直す --}}

@@ -1,17 +1,15 @@
 @component('mail::message')
 # 企画参加登録を提出しました
-{{ $circle->group_name }} 様
+{{ $circle->name }} 様
 
 以下の内容で企画参加登録を提出しました
 @component('mail::panel')
-- 企画名 : {{ $circle->name }}
-- 企画名(よみ) : {{ $circle->name_yomi }}
-- 出店を企画する団体の名称 : {{ $circle->group_name }}
-- 出店を企画する団体の名称(よみ) : {{ $circle->group_name_yomi}}
+- 団体名 : {{ $circle->name }}
+- 団体名(ふりがな) : {{ $circle->name_yomi }}
 - メンバー
 @foreach ($circle->users as $user)
 @if($user->pivot->is_leader === true)
-  - {{ $user->name }}({{ $user->student_id }}) (責任者)
+  - {{ $user->name }}({{ $user->student_id }}) (団体責任者)
 @else
   - {{ $user->name }}({{ $user->student_id }})
 @endif

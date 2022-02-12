@@ -31,8 +31,6 @@ class CircleRequest extends FormRequest implements AnswerRequestInterface
         $rules = [
             'name' => Circle::NAME_RULES,
             'name_yomi' => Circle::NAME_YOMI_RULES,
-            'group_name' => Circle::GROUP_NAME_RULES,
-            'group_name_yomi' => Circle::GROUP_NAME_YOMI_RULES,
         ];
 
         $custom_form_rules = $validationRulesService->getRulesFromForm(
@@ -51,10 +49,8 @@ class CircleRequest extends FormRequest implements AnswerRequestInterface
     public function attributes()
     {
         $attributes = [
-            'name' => '企画名',
-            'name_yomi' => '企画名(よみ)',
-            'group_name' => '企画を出店する団体の名称',
-            'group_name_yomi' => '企画を出店する団体の名称(よみ)',
+            'name' => '団体名',
+            'name_yomi' => '団体名(ふりがな)',
         ];
 
         $validationRulesService = App::make(ValidationRulesService::class);
@@ -74,7 +70,6 @@ class CircleRequest extends FormRequest implements AnswerRequestInterface
     {
         return [
             'name_yomi.regex' => 'ひらがなで入力してください',
-            'group_name_yomi.regex' => 'ひらがなで入力してください',
             // ひらがなもカタカナも入力可能だが，説明が面倒なので，エラー上ではひらがなでの入力を促す
         ];
     }

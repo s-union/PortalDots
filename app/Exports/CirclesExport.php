@@ -67,8 +67,6 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
                 $circle->id,
                 $circle->name,
                 $circle->name_yomi,
-                $circle->group_name,
-                $circle->group_name_yomi,
                 $circle->places->implode('name', ','),
                 $circle->tags->implode('name', ','),
                 $circle->submitted_at,
@@ -95,10 +93,8 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
         return array_merge(
             [
                 '企画ID',
-                '企画名',
-                '企画名（よみ）',
-                '企画を出店する団体の名称',
-                '企画を出店する団体の名称（よみ）',
+                '団体名',
+                '団体名（ふりがな）',
                 '使用場所',
                 'タグ',
                 '参加登録提出日時',
@@ -108,8 +104,8 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
                 '作成日時',
                 '更新日時',
                 'スタッフ用メモ',
-                '責任者',
-                '学園祭係',
+                '団体責任者',
+                '新歓係',
             ],
             isset($this->customForm)
             ? $this->customForm->questions->where('type', '!==', 'heading')->pluck('name')->toArray()

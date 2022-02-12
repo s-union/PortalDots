@@ -43,9 +43,7 @@ class UpdateAction extends Controller
             $this->circlesService->update(
                 $circle,
                 $request->name,
-                $request->name_yomi,
-                $request->group_name,
-                $request->group_name_yomi
+                $request->name_yomi
             );
 
             $custom_form_answer = $circle->getCustomFormAnswer();

@@ -50,7 +50,7 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping
             'ユーザーID',
             '学籍番号',
             '氏名',
-            '氏名（よみ）',
+            '氏名（ふりがな）',
             '連絡先メールアドレス',
             '電話番号',
             'スタッフ',

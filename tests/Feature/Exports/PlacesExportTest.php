@@ -47,14 +47,10 @@ class PlacesExportTest extends TestCase
         $this->circle = factory(Circle::class)->create([
             'name' => '備品貸出隊',
             'name_yomi' => 'びひんかしだしたい',
-            'group_name' => 'ガレージセール愛好会',
-            'group_name_yomi' => 'がれーじせーるあいこうかい',
         ]);
         $this->anotherCircle = factory(Circle::class)->create([
             'name' => '備品取り返し隊',
             'name_yomi' => 'びひんとりかえしたい',
-            'group_name' => '備品ほしい団体',
-            'group_name_yomi' => 'びひんほしいだんたい',
         ]);
 
         $this->place->circles()->attach($this->circle->id);
@@ -76,8 +72,6 @@ class PlacesExportTest extends TestCase
                     $this->circle->id,
                     '備品貸出隊',
                     'びひんかしだしたい',
-                    'ガレージセール愛好会',
-                    'がれーじせーるあいこうかい',
                 ],
                 [
                     null,
@@ -87,8 +81,6 @@ class PlacesExportTest extends TestCase
                     $this->anotherCircle->id,
                     '備品取り返し隊',
                     'びひんとりかえしたい',
-                    '備品ほしい団体',
-                    'びひんほしいだんたい',
                 ]
             ],
             $this->placesExport->map($this->place->load('circles'))

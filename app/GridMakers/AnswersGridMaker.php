@@ -95,8 +95,6 @@ class AnswersGridMaker implements GridMakable
             'id' => FilterableKey::number(),
             'name' => FilterableKey::string(),
             'name_yomi' => FilterableKey::string(),
-            'group_name' => FilterableKey::string(),
-            'group_name_yomi' => FilterableKey::string(),
             'submitted_at' => FilterableKey::datetime(),
             'status_set_at' => FilterableKey::datetime(),
             'notes' => FilterableKey::string(),
@@ -162,7 +160,7 @@ class AnswersGridMaker implements GridMakable
         foreach ($keys_except_forms as $key) {
             switch ($key) {
                 case 'circle_id':
-                    $item[$key] = $record->circle->only(['id', 'name', 'name_yomi', 'group_name', 'group_name_yomi']);
+                    $item[$key] = $record->circle->only(['id', 'name', 'name_yomi']);
                     break;
                 case 'created_at':
                     $item[$key] = !empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
