@@ -56,8 +56,8 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
             [
                 '回答ID',
                 '企画ID',
-                '企画名',
-                '企画名（よみ）',
+                '団体名',
+                '団体名（よみ）',
                 '企画を出店する団体の名称',
                 '企画を出店する団体の名称（よみ）',
             ],

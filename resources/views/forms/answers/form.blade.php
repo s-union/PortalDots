@@ -52,7 +52,7 @@
         <app-container>
             <list-view>
                 <list-view-form-group>
-                    <template v-slot:label>申請企画名</template>
+                    <template v-slot:label>申請団体名</template>
                     <input type="text" readonly value="{{ $circle->name }}({{ $circle->group_name }})" class="form-control">
                     @if (empty($answer) && Auth::user()->circles()->approved()->count() > 1)
                         <template v-slot:append>

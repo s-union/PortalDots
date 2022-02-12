@@ -20,7 +20,7 @@
         <app-container>
             <list-view>
                 <list-view-form-group label-for="circle">
-                    <template v-slot:label>企画名</template>
+                    <template v-slot:label>団体名</template>
                     <input type="text" id="circle" readonly value="{{ $circle->name }}" class="form-control is-plaintext">
                 </list-view-form-group>
 

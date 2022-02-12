@@ -181,7 +181,7 @@ class Circle extends Model
     }
 
     /**
-     * 企画名(よみ)をひらがなにして保存する
+     * 団体名(よみ)をひらがなにして保存する
      *
      * @param string $value
      */

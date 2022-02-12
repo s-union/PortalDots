@@ -51,8 +51,8 @@ class CircleRequest extends FormRequest implements AnswerRequestInterface
     public function attributes()
     {
         $attributes = [
-            'name' => '企画名',
-            'name_yomi' => '企画名(よみ)',
+            'name' => '団体名',
+            'name_yomi' => '団体名(よみ)',
             'group_name' => '企画を出店する団体の名称',
             'group_name_yomi' => '企画を出店する団体の名称(よみ)',
         ];
