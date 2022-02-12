@@ -56,8 +56,6 @@
             'circle_id.id': '企画ID',
             'circle_id.name': '団体名',
             'circle_id.name_yomi': '団体名(ふりがな)',
-            'circle_id.group_name': '企画を出店する団体の名称',
-            'circle_id.group_name_yomi': '企画を出店する団体の名称(ふりがな)',
             'circle_id.submitted_at': '参加登録提出日時',
             'circle_id.status_set_at': '登録受理状況設定日時',
             'circle_id.created_at': '作成日時',
@@ -106,8 +104,7 @@
         <template v-slot:td="{ row, keyName }">
             <template v-if="keyName === 'circle_id'">
                 {{-- 企画 --}}
-                <b><ruby>@{{ row[keyName].name }}<rt>@{{ row[keyName].name_yomi }}</rt></ruby></b> —
-                <ruby class="text-muted">@{{ row[keyName].group_name }}<rt>@{{ row[keyName].group_name_yomi }}</rt></ruby> (企画ID : @{{ row[keyName].id }})
+                <b><ruby>@{{ row[keyName].name }}<rt>@{{ row[keyName].name_yomi }}</rt></ruby></b> (企画ID : @{{ row[keyName].id }})
             </template>
             <template v-else-if="keyName.includes('{{ App\GridMakers\AnswersGridMaker::FORM_QUESTIONS_KEY_PREFIX }}')">
                 {{-- フォームへの回答 --}}

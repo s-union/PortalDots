@@ -1,15 +1,13 @@
 @component('mail::message')
-# 参加登録が受理されませんでした
-{{ $circle->group_name }} 様
+# 企画参加登録が受理されませんでした
+{{ $circle->name }} 様
 
-「{{ $circle->name }}」の参加登録は受理されませんでした。
+企画参加登録は受理されませんでした。
 
 ## 企画の内容
 @component('mail::panel')
 - 団体名 : {{ $circle->name }}
 - 団体名(ふりがな) : {{ $circle->name_yomi }}
-- 出店を企画する団体の名称 : {{ $circle->group_name }}
-- 出店を企画する団体の名称(ふりがな) : {{ $circle->group_name_yomi}}
 - メンバー
 @foreach ($circle->users as $user)
 @if($user->pivot->is_leader === true)

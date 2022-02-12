@@ -9,7 +9,6 @@
 @component('mail::panel')
 - 回答ID : {{ $answer->id }}
 - 団体名 : {{ $circle->name }}
-- 企画を出店する団体の名称 : {{ $circle->group_name }}
 - 回答者 : {{ $isEditedByStaff ? 'スタッフ' : $applicant->name }}
 - 日時 : @datetime($answer->updated_at)
 @endcomponent

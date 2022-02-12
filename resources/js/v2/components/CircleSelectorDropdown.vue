@@ -11,9 +11,6 @@
           <button class="selector-button" @click="toggle" v-bind="props">
             <div class="selector-button__content">
               <div class="selector-button__name">{{ selectedCircleName }}</div>
-              <div class="selector-button__group-name">
-                {{ selectedCircleGroupName }}
-              </div>
             </div>
             <i class="fas fa-caret-down"></i>
           </button>
@@ -26,7 +23,6 @@
           >
             <div class="selector-item__body">
               <div class="selector-item__name">{{ item.name }}</div>
-              <div class="selector-item__group-name">{{ item.group_name }}</div>
             </div>
             <i
               class="fas fa-check selector-item__icon"
@@ -65,10 +61,6 @@ export default {
       required: true
     },
     selectedCircleName: {
-      type: String,
-      required: true
-    },
-    selectedCircleGroupName: {
       type: String,
       required: true
     }

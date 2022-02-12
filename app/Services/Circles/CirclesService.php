@@ -191,7 +191,7 @@ class CirclesService
                 $circle,
             ))
                 ->replyTo(config('portal.contact_email'), config('portal.admin_name'))
-                ->subject("【参加登録】「{$circle->name}」の参加登録を提出しました")
+                ->subject("【参加登録】新歓参加登録を提出しました")
         );
     }
 
@@ -203,7 +203,7 @@ class CirclesService
                 $circle,
             ))
                 ->replyTo(config('portal.contact_email'), config('portal.admin_name'))
-                ->subject("【受理】「{$circle->name}」の参加登録が受理されました")
+                ->subject("【受理】新歓参加登録が受理されました")
         );
     }
 
@@ -215,7 +215,7 @@ class CirclesService
                 $circle,
             ))
                 ->replyTo(config('portal.contact_email'), config('portal.admin_name'))
-                ->subject("【不受理】「{$circle->name}」の参加登録は受理されませんでした")
+                ->subject("【不受理】新歓参加登録は受理されませんでした")
         );
     }
 }

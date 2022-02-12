@@ -29,8 +29,6 @@
             id: '企画ID',
             name: '団体名',
             name_yomi: '団体名(ふりがな)',
-            group_name: '企画を出店する団体の名称',
-            group_name_yomi: '企画を出店する団体の名称(ふりがな)',
             places: '使用場所',
             tags: 'タグ',
             @if (isset($custom_form))

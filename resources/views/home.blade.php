@@ -183,8 +183,6 @@
                     <dl>
                         <dt>団体名</dt>
                         <dd>{{ $circle->name }}（{{ $circle->name_yomi }}）</dd>
-                        <dt>企画を出店する団体の名称</dt>
-                        <dd>{{ $circle->group_name }}（{{ $circle->group_name_yomi }}）</dd>
                         @unless($circle->places->isEmpty())
                             <dt>使用場所</dt>
                             <dd>
