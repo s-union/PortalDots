@@ -3,12 +3,14 @@
 namespace Tests\Feature\Http\Controllers\Circles;
 
 use App\Eloquents\User;
+use App\Http\Controllers\Circles\CreateAction;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
+/** @see CreateAction */
 class CreateActionTest extends BaseTestCase
 {
     use RefreshDatabase;

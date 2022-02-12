@@ -58,30 +58,6 @@
                         <template v-slot:invalid>{{ $message }}</template>
                     @enderror
                 </list-view-form-group>
-                <list-view-form-group label-for="group_name">
-                    <template v-slot:label>
-                        企画を出店する団体の名称
-                        <app-badge danger>必須</app-badge>
-                    </template>
-                    <input id="group_name" type="text" class="form-control @error('group_name') is-invalid @enderror"
-                        name="group_name" value="{{ old('group_name', isset($circle) ? $circle->group_name : '') }}"
-                        required>
-                    @error('group_name')
-                        <template v-slot:invalid>{{ $message }}</template>
-                    @enderror
-                </list-view-form-group>
-                <list-view-form-group label-for="group_name_yomi">
-                    <template v-slot:label>
-                        企画を出店する団体の名称(ふりがな)
-                        <app-badge danger>必須</app-badge>
-                    </template>
-                    <input id="group_name_yomi" type="text"
-                        class="form-control @error('group_name_yomi') is-invalid @enderror" name="group_name_yomi"
-                        value="{{ old('group_name_yomi', isset($circle) ? $circle->group_name_yomi : '') }}" required>
-                    @error('group_name_yomi')
-                        <template v-slot:invalid>{{ $message }}</template>
-                    @enderror
-                </list-view-form-group>
                 @foreach ($questions as $question)
                     @include('includes.question')
                 @endforeach

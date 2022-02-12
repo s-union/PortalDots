@@ -35,8 +35,6 @@ class PlacesExport implements FromCollection, WithHeadings, WithMapping
                 $circle->id,
                 $circle->name,
                 $circle->name_yomi,
-                $circle->group_name,
-                $circle->group_name_yomi,
             ];
         }
 
@@ -58,8 +56,6 @@ class PlacesExport implements FromCollection, WithHeadings, WithMapping
                     $firstCircle->id ?? null,
                     $firstCircle->name ?? null,
                     $firstCircle->name_yomi ?? null,
-                    $firstCircle->group_name ?? null,
-                    $firstCircle->group_name_yomi ?? null,
                 ],
             ],
             $circles,
@@ -79,8 +75,6 @@ class PlacesExport implements FromCollection, WithHeadings, WithMapping
             '企画ID',
             '団体名',
             '団体名（ふりがな）',
-            '企画を出店する団体の名称',
-            '企画を出店する団体の名称（ふりがな）',
         ];
     }
 }

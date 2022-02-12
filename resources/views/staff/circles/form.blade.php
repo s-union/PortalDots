@@ -30,8 +30,6 @@
                 @foreach ([
                     'name' => '団体名',
                     'name_yomi' => '団体名(ふりがな)',
-                    'group_name' => '企画を出店する団体の名称',
-                    'group_name_yomi' => '企画を出店する団体の名称(ふりがな)'
                     ] as $field_name => $display_name)
                     <list-view-form-group label-for="{{ $field_name }}">
                         <template v-slot:label>{{ $display_name }}</template>

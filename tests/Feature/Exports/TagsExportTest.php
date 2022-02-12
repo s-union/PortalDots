@@ -42,14 +42,10 @@ class TagsExportTest extends TestCase
         $this->circle = factory(Circle::class)->create([
             'name' => 'タグがついた企画',
             'name_yomi' => 'たぐがついたきかく',
-            'group_name' => '商品タグ愛好会',
-            'group_name_yomi' => 'しょうひんたぐあいこうかい',
         ]);
         $this->anotherCircle = factory(Circle::class)->create([
             'name' => 'タグをつけられた企画',
             'name_yomi' => 'たぐをつけられたきかく',
-            'group_name' => '企画タグつけてほしい団体',
-            'group_name_yomi' => 'きかくたぐつけてほしいだんたい',
         ]);
         $this->tag = factory(Tag::class)->create([
             'name' => 'ぼくタグです',
@@ -76,8 +72,6 @@ class TagsExportTest extends TestCase
                     $this->circle->id,
                     'タグがついた企画',
                     'たぐがついたきかく',
-                    '商品タグ愛好会',
-                    'しょうひんたぐあいこうかい',
                 ],
                 [
                     null,
@@ -87,8 +81,6 @@ class TagsExportTest extends TestCase
                     $this->anotherCircle->id,
                     'タグをつけられた企画',
                     'たぐをつけられたきかく',
-                    '企画タグつけてほしい団体',
-                    'きかくたぐつけてほしいだんたい',
                 ]
             ],
             $this->tagsExport->map($this->tag->load('circles'))

@@ -2,8 +2,6 @@
     @foreach ([
         'name' => '団体名',
         'name_yomi' => '団体名(ふりがな)',
-        'group_name' => '企画を出店する団体の名称',
-        'group_name_yomi' => '企画を出店する団体の名称(ふりがな)',
         ] as $field_name => $display_name)
         <dt>{{ $display_name }}
             @if (Auth::user()->isLeaderInCircle($circle) && Gate::allows('circle.update', $circle))
