@@ -52,9 +52,9 @@ class CircleRequest extends FormRequest implements AnswerRequestInterface
     {
         $attributes = [
             'name' => '団体名',
-            'name_yomi' => '団体名(よみ)',
+            'name_yomi' => '団体名(ふりがな)',
             'group_name' => '企画を出店する団体の名称',
-            'group_name_yomi' => '企画を出店する団体の名称(よみ)',
+            'group_name_yomi' => '企画を出店する団体の名称(ふりがな)',
         ];
 
         $validationRulesService = App::make(ValidationRulesService::class);

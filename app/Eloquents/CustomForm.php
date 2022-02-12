@@ -53,7 +53,7 @@ class CustomForm extends Model
                 ],
                 [
                     'id' => 'circle.name_yomi',
-                    'name' => '団体名(よみ)',
+                    'name' => '団体名(ふりがな)',
                     'type' => 'text',
                     'is_required' => true,
                 ],
@@ -65,7 +65,7 @@ class CustomForm extends Model
                 ],
                 [
                     'id' => 'circle.group_name_yomi',
-                    'name' => '企画を出店する団体の名称(よみ)',
+                    'name' => '企画を出店する団体の名称(ふりがな)',
                     'type' => 'text',
                     'is_required' => true,
                 ],

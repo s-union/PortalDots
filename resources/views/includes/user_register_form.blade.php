@@ -21,7 +21,7 @@
     @enderror
 </list-view-form-group>
 <list-view-form-group label-for="name_yomi">
-    <template v-slot:label>名前(よみ)</template>
+    <template v-slot:label>名前(ふりがな)</template>
     <template v-slot:description>
         姓と名の間にはスペースを入れてください
     </template>

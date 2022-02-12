@@ -7,9 +7,9 @@
 ## 企画の内容
 @component('mail::panel')
 - 団体名 : {{ $circle->name }}
-- 団体名(よみ) : {{ $circle->name_yomi }}
+- 団体名(ふりがな) : {{ $circle->name_yomi }}
 - 出店を企画する団体の名称 : {{ $circle->group_name }}
-- 出店を企画する団体の名称(よみ) : {{ $circle->group_name_yomi}}
+- 出店を企画する団体の名称(ふりがな) : {{ $circle->group_name_yomi}}
 - メンバー
 @foreach ($circle->users as $user)
 @if($user->pivot->is_leader === true)

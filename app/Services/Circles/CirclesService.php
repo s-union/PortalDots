@@ -34,9 +34,9 @@ class CirclesService
      *
      * @param User $leader 団体責任者
      * @param string $name 団体名
-     * @param string $name_yomi 団体名(よみ)
+     * @param string $name_yomi 団体名(ふりがな)
      * @param string $group_name 企画を出店する団体の名称
-     * @param string $group_name_yomi 企画を出店する団体の名称(よみ)
+     * @param string $group_name_yomi 企画を出店する団体の名称(ふりがな)
      * @return Circle
      */
     public function create(User $leader, string $name, string $name_yomi, string $group_name, string $group_name_yomi)

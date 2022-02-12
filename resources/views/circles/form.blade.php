@@ -48,7 +48,7 @@
                 </list-view-form-group>
                 <list-view-form-group label-for="name_yomi">
                     <template v-slot:label>
-                        団体名(よみ)
+                        団体名(ふりがな)
                         <app-badge danger>必須</app-badge>
                     </template>
                     <input id="name_yomi" type="text" class="form-control @error('name_yomi') is-invalid @enderror"
@@ -72,7 +72,7 @@
                 </list-view-form-group>
                 <list-view-form-group label-for="group_name_yomi">
                     <template v-slot:label>
-                        企画を出店する団体の名称(よみ)
+                        企画を出店する団体の名称(ふりがな)
                         <app-badge danger>必須</app-badge>
                     </template>
                     <input id="group_name_yomi" type="text"

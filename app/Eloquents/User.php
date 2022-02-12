@@ -210,7 +210,7 @@ class User extends Authenticatable
     }
 
     /**
-     * 名前(よみ)を性と名に分割する
+     * 名前(ふりがな)を性と名に分割する
      *
      * @param string $value
      */
@@ -218,9 +218,9 @@ class User extends Authenticatable
     {
         // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
         $value = mb_convert_kana($value, 'HVc');
-        // 姓と名(よみ)を分割する
+        // 姓と名(ふりがな)を分割する
         $name_array = preg_split('/[\s　]+/u', $value);
-        // 姓と名(よみ)を別カラムへセットする
+        // 姓と名(ふりがな)を別カラムへセットする
         $this->attributes['name_family_yomi'] = $name_array[0];
         $this->attributes['name_given_yomi'] = $name_array[1];
     }
@@ -236,7 +236,7 @@ class User extends Authenticatable
     }
 
     /**
-     * フルネーム(よみ)を取得する
+     * フルネーム(ふりがな)を取得する
      *
      * @return string
      */

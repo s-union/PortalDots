@@ -96,9 +96,9 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
             [
                 '企画ID',
                 '団体名',
-                '団体名（よみ）',
+                '団体名（ふりがな）',
                 '企画を出店する団体の名称',
-                '企画を出店する団体の名称（よみ）',
+                '企画を出店する団体の名称（ふりがな）',
                 '使用場所',
                 'タグ',
                 '参加登録提出日時',
