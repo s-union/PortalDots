@@ -32,7 +32,7 @@ class CirclesService
     /**
      * 企画を作成する
      *
-     * @param User $leader 企画責任者
+     * @param User $leader 団体責任者
      * @param string $name 企画名
      * @param string $name_yomi 企画名(よみ)
      * @param string $group_name 企画を出店する団体の名称

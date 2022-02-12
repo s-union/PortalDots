@@ -37,7 +37,7 @@
         <list-view>
             <list-view-card>
                 @if (!$circle->hasSubmitted())
-                    <strong>企画情報の修正や、企画参加登録を提出することができるのは、企画責任者のみです。</strong>
+                    <strong>企画情報の修正や、企画参加登録を提出することができるのは、団体責任者のみです。</strong>
                     <hr>
                 @endif
                 @include('includes.circle_info')
