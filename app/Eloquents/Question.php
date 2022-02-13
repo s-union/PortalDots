@@ -53,7 +53,7 @@ class Question extends Model
      * 選択肢`Option`を保存すべき質問タイプ`Question->type`
      * @var string[]
      */
-    public static $should_save_options_question_types = [
+    public const SHOULD_SAVE_OPTIONS_QUESTION_TYPES = [
         'radio',
         'select',
         'checkbox'
@@ -63,7 +63,7 @@ class Question extends Model
      * 選択肢`Option`を保存すべきでない質問タイプ`Question->type`
      * @var string[]
      */
-    public static $should_not_save_options_question_types = [
+    public const SHOULD_NOT_SAVE_OPTIONS_QUESTION_TYPES = [
         'heading',
         'text',
         'number',
@@ -75,7 +75,17 @@ class Question extends Model
      * 質問タイプ`Question->type`
      * @var string[]
      */
-    public static $question_types = [];
+    // 定数は式で初期化できないため,このような書き方をしている.
+    public const QUESTION_TYPES = [
+        'heading',
+        'text',
+        'number',
+        'textarea',
+        'upload',
+        'radio',
+        'select',
+        'checkbox'
+    ];
 
     protected $fillable = [
         'name',
@@ -99,11 +109,6 @@ class Question extends Model
     protected static function boot()
     {
         parent::boot();
-
-        static::$question_types = array_merge(
-            static::$should_save_options_question_types,
-            static::$should_not_save_options_question_types
-        );
 
         static::addGlobalScope('priority', function (Builder $builder) {
             $builder->orderBy('priority', 'asc');
