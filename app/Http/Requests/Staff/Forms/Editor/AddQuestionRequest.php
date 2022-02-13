@@ -26,7 +26,7 @@ class AddQuestionRequest extends FormRequest
     public function rules()
     {
         return [
-            'type' => ['required', Rule::in(Question::$question_types)],
+            'type' => ['required', Rule::in(Question::QUESTION_TYPES)],
         ];
     }
 

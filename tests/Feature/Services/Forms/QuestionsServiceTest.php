@@ -35,7 +35,7 @@ class QuestionsServiceTest extends TestCase
     private function createQuestionAndOptions(): array
     {
         $question = factory(Question::class)->create([
-            'type' => $this->faker->randomElement(Question::$should_save_options_question_types),
+            'type' => $this->faker->randomElement(Question::SHOULD_SAVE_OPTIONS_QUESTION_TYPES),
             'options' => "テスト1\nテスト2\nテスト3",
             'form_id' => $this->form->id
         ]);
@@ -154,7 +154,7 @@ class QuestionsServiceTest extends TestCase
     {
         $question = factory(Question::class)->create([
             'type' => $this->faker->randomElement(
-                Question::$should_not_save_options_question_types
+                Question::SHOULD_NOT_SAVE_OPTIONS_QUESTION_TYPES
             ),
             'options' => null,
             'form_id' => $this->form->id
