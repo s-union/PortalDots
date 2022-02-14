@@ -40,7 +40,7 @@ class CheckSelectedCircle
             $this->selectorService->reset();
         }
 
-        $circles_count = Auth::user()->circles()->approved()->count();
+        $circles_count = Auth::user()->circles()->pendingOrApproved()->count();
 
         if (empty($this->selectorService->getCircle())) {
             if ($circles_count >= 2) {
@@ -48,7 +48,7 @@ class CheckSelectedCircle
                     ->route('circles.selector.show', ['redirect_to' => Request::path()]);
             }
 
-            $this->selectorService->setCircle(Auth::user()->circles()->approved()->first());
+            $this->selectorService->setCircle(Auth::user()->circles()->pendingOrApproved()->first());
         }
 
         return $next($request);

@@ -33,7 +33,7 @@ class EditAction extends Controller
             return;
         }
 
-        $circle = $answer->circle()->approved()->firstOrFail();
+        $circle = $answer->circle()->pendingOrApproved()->firstOrFail();
         return view('forms.answers.form')
             ->with('circle', $circle)
             ->with('form', $form)

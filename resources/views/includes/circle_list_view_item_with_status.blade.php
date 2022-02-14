@@ -14,10 +14,10 @@
     <list-view-item href="{{ route('circles.show', ['circle' => $circle]) }}">
         <template v-slot:title>
             💭
-            「{{ $circle->name }}」の参加登録の内容を確認中です
+            「{{ $circle->name }}」の企画参加登録費のお支払いをお願いします
         </template>
         <template v-slot:meta>
-            ただいま参加登録の内容を確認しています。{{ config('portal.admin_name') }}より指示がある場合は従ってください。また、内容確認のためご連絡を差し上げる場合がございます。
+            ただいま企画参加登録費のお支払いをお待ちしております。配布資料をご確認の上、お支払いをお願いします。
         </template>
     </list-view-item>
 @elseif (!$circle->hasSubmitted() && !$circle->canSubmit() && Auth::user()->isLeaderInCircle($circle))
