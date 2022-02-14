@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Contracts\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
 
+/**
+ * @property int id
+ */
 class Circle extends Model
 {
     use LogsActivity;
@@ -178,6 +181,19 @@ class Circle extends Model
     public function hasRejected()
     {
         return isset($this->submitted_at) && $this->status === 'rejected';
+    }
+
+    /**
+     * 申請機能を利用できる企画だけに限定するクエリスコープ
+     * すなわち,スタッフによるチェックが`Approved`または`null`の場合に限定される
+     */
+    public function scopePendingOrApproved($query)
+    {
+        return $query->where(function ($query) {
+            $query->pending();
+        })->orWhere(function ($query) {
+            $query->approved();
+        });
     }
 
     /**

@@ -1,0 +1,50 @@
+on:
+  push:
+    branches:
+      - 2023_shinkan_production
+
+jobs:
+  upload:
+    name: Upload Release Asset to Sakura-Server
+    runs-on: ubuntu-18.04
+    env:
+      directory: '~/shinkan_2023'
+      database_name: 'ridaisai_shinkan_2023'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup PHP
+        run: sudo update-alternatives --set php /usr/bin/php7.3
+      - name: Prepare compile
+        run: |
+          rsync -av --update --delete --stats ./ ./dist/ --exclude='dist/' --exclude='docker_dev/' --exclude='.git/' --exclude='.github/' --exclude='/vendor/' --exclude='node_modules/' --exclude='.circleci/' --exclude='tests/' --exclude='.husky/' --exclude='phpunit.xml' --exclude='phpcs.xml' --exclude='.editorconfig' --exclude='.env.testing' --exclude='.eslintrc.js' --exclude='.gitattributes' --exclude='.gitignore' --exclude='.prettierrc' --exclude='.stylelintrc.js' >& /dev/null
+      - name: Install PHP dependencies
+        run: composer install --optimize-autoloader --no-dev
+        working-directory: dist
+      - name: Install JS dependencies
+        run: yarn install --ignore-scripts && yarn patch-package
+        working-directory: dist
+      - name: Compile assets
+        run: yarn run production
+        working-directory: dist
+      #      - name: SSH key generate
+      #        run: echo "$SSH_SECRET_KEY" > key && chmod 600 key
+      #        env:
+      #          SSH_SECRET_KEY: ${{ secrets.SSH_SECRET_KEY }}
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_SECRET_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      - name: Set maintainance mode
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan down;'
+      - name: Upload project to Sakura-Server
+        run: |
+          rsync --checksum -acvz --progress --delete ./* ridaisai@ridaisai.sakura.ne.jp:${{ env.directory }}/ --exclude='*' --include='artisan/*' --include='app/*' --include='bootstrap/*' --include='config/*' --include='database/*' --include='resources/*' --include='routes/*' --include='vendor/*' --include='public/css/*' --include='public/fonts/*' --include='public/images/*' --include='public/js/*' --include='public/index.php' --include='public/mix-manifest.json'
+        working-directory: dist
+      - name: Database backup
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'mysqldump --defaults-extra-file='~/etc/.sql.cnf' --default-character-set=utf8 --no-tablespaces --single-transaction --quote-names ${{ env.database_name }} > ~/backup/mysql/`date +%Y-%m-%d-%H-%M-%S`_${{ env.database_name }}.sql'
+      - name: Database migration and cache generation
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan migrate --force; php artisan optimize'
+      - name: Recover from maintainance mode
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan up;'
