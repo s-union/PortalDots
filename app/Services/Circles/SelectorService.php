@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Collection;
 
 /**
  * ログイン先の企画を変更・取得するためのサービス
+ * ログイン可能な企画は,ユーザーが属している「すべての」企画とする
  */
 class SelectorService
 {
-    private const SESSION_KEY_CIRCLE_ID = 'selector_service__circle_id';
+    public const SESSION_KEY_CIRCLE_ID = 'selector_service__circle_id';
 
     /**
      * @var array|null
@@ -26,6 +27,25 @@ class SelectorService
     private $circle = null;
 
     /**
+     * ユーザーが選択可能な企画の一覧のうち,スタッフによるチェックがApprovedである企画が存在するかどうかを返します
+     *
+     * @param ?User $user
+     * @return bool
+     */
+    public function approvedSelectableCircleExistsIn(?User $user): bool
+    {
+        if (empty($user)) {
+            return false;
+        }
+        foreach (self::getSelectableCirclesList($user) as $circle) {
+            if ($circle->hasApproved()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * ログイン先の企画を選択する画面において、ユーザーが選択可能な企画の一覧を取得
      *
      * @param User $user
@@ -34,7 +54,7 @@ class SelectorService
     public function getSelectableCirclesList(User $user): Collection
     {
         if (empty($this->selectableCircles[$user->id])) {
-            $this->selectableCircles[$user->id] = $user->circles()->approved()->get();
+            $this->selectableCircles[$user->id] = $user->circles()->pendingOrApproved()->get();
         }
         return $this->selectableCircles[$user->id];
     }
@@ -85,18 +105,10 @@ class SelectorService
             }
         }
 
-        if (!$this->circle->hasApproved()) {
-            // 企画にログイン後、スタッフによってステータスが「受理」以外に
-            // 変更されることも想定される。そのため、ログイン中の企画の
-            // ステータスが「受理」になっているかを確認し、
-            // 「受理」以外であれば企画へのログイン状態を解除する。
-            $this->reset();
-            $this->circle = null;
-        }
-
         return $this->circle;
     }
 
+    // TODO: Rename this
     public function reset()
     {
         session([self::SESSION_KEY_CIRCLE_ID => null]);

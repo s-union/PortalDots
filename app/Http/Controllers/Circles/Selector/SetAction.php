@@ -32,7 +32,7 @@ class SetAction extends Controller
         $redirect_to = $request->redirect_to;
         if (isset($redirect_to)) {
             $url = $this->getSanitizedUrl($redirect_to);
-            $circle = Circle::approved()->findOrFail($request->circle);
+            $circle = Circle::pendingOrApproved()->findOrFail($request->circle);
 
             if (Gate::allows('circle.belongsTo', $circle)) {
                 $this->selectorService->setCircle($circle);

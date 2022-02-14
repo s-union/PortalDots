@@ -178,7 +178,10 @@
 
         @if (Auth::check() && isset($circle))
             <list-view>
-                <template v-slot:title>企画情報</template>
+                <template v-slot:title>
+                    企画情報
+                    @include('includes.circle_status_app_badge', ['circle' => $circle])
+                </template>
                 <list-view-card>
                     <dl>
                         <dt>団体名</dt>
@@ -297,7 +300,7 @@
 
         @if (!$forms->isEmpty() &&
         Auth::check() &&
-        Auth::user()->circles()->approved()->count() > 0)
+        Auth::user()->circles()->pendingOrApproved()->count() > 0)
             <list-view>
                 <template v-slot:title>受付中の申請</template>
                 @foreach ($forms as $form)

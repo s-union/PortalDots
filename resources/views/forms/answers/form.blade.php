@@ -17,6 +17,18 @@
 @endsection
 
 @section('content')
+    @unless($circle->hasApproved())
+        <top-alert type="danger" keep-visible>
+            <template v-slot:title>
+                <i class="fa fa-exclamation-triangle fa-fw" aria-hidden="true"></i>
+                企画参加登録費のお支払いが終了しておりません
+            </template>
+
+            新歓参加にあたっては、企画参加登録費のお支払いが必要です。
+            お支払いがまだの場合でも申請を行うことは可能ですが、 期間内にお支払いをされない場合「不受理」とし、新歓に参加できなくなります。
+            詳しくは、配布資料をご覧ください。
+        </top-alert>
+    @endunless
     <form method="post"
         action="{{ empty($answer) ? route('forms.answers.store', [$form]) : route('forms.answers.update', [$form, $answer]) }}"
         enctype="multipart/form-data">
@@ -54,7 +66,7 @@
                 <list-view-form-group>
                     <template v-slot:label>申請団体名</template>
                     <input type="text" readonly value="{{ $circle->name }}" class="form-control">
-                    @if (empty($answer) && Auth::user()->circles()->approved()->count() > 1)
+                    @if (empty($answer) && Auth::user()->circles()->pendingOrApproved()->count() > 1)
                         <template v-slot:append>
                             <a href="{{ route('circles.selector.show', ['redirect_to' => Request::path()]) }}">変更</a>
                         </template>
