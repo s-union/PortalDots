@@ -7,6 +7,9 @@ jobs:
   upload:
     name: Upload Release Asset to Sakura-Server
     runs-on: ubuntu-18.04
+    env:
+      directory: '~/portal_dev'
+      database_name: 'ridaisai_portal_dev'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -24,14 +27,20 @@ jobs:
       - name: Compile assets
         run: yarn run production
         working-directory: dist
-      - name: SSH key generate
-        run: echo "$SSH_SECRET_KEY" > key && chmod 600 key
-        env:
-          SSH_SECRET_KEY: ${{ secrets.SSH_SECRET_KEY }}
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_SECRET_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      - name: Set maintainance mode
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan down;'
       - name: Upload project to Sakura-Server
         run: |
-          rsync --checksum -acvz --progress -e "ssh -i ../key -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking no'" --delete ./* ridaisai@ridaisai.sakura.ne.jp:~/portal_dev/ --exclude='*' --include='artisan/*' --include='app/*' --include='bootstrap/*' --include='config/*' --include='database/*' --include='resources/*' --include='routes/*' --include='vendor/*' --include='public/css/*' --include='public/fonts/*' --include='public/images/*' --include='public/js/*' --include='public/index.php' --include='public/mix-manifest.json'
+          rsync -acrvz --progress --include='artisan' --include='app' --include='app/**' --include='bootstrap' --include='bootstrap/**' --include='config' --include='config/***' --include='database' --include='database/**' --include='resources' --include='resources/**' --include='routes' --include='routes/**' --include='vendor' --include='vendor/**' --include='public' --include='public/css' --include='public/css/**' --include='public/fonts' --include='public/fonts/**' --include='public/images' --include='public/images/**'  --include='public/js' --include='public/js/**' --include='public/index.php' --include='public/mix-manifest.json' --exclude='*' ./ ridaisai@ridaisai.sakura.ne.jp:${{ env.directory }}/
         working-directory: dist
+      - name: Database backup
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'mysqldump --defaults-extra-file='~/etc/.sql.cnf' --default-character-set=utf8 --no-tablespaces --single-transaction --quote-names ${{ env.database_name }} > ~/backup/mysql/`date +%Y-%m-%d-%H-%M-%S`_${{ env.database_name }}.sql'
       - name: Database migration and cache generation
-        run: ssh -i key ridaisai@ridaisai.sakura.ne.jp -o 'UserKnownHostsFile=/dev/null' -o 'StrictHostKeyChecking no' 'cd ~/portal_dev; php artisan migrate --force; php artisan optimize'
-
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan migrate --force; php artisan optimize'
+      - name: Recover from maintainance mode
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan up;'

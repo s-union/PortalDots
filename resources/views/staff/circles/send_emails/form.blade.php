@@ -20,7 +20,7 @@
         <app-container>
             <list-view>
                 <list-view-form-group label-for="circle">
-                    <template v-slot:label>企画名</template>
+                    <template v-slot:label>団体名</template>
                     <input type="text" id="circle" readonly value="{{ $circle->name }}" class="form-control is-plaintext">
                 </list-view-form-group>
 
@@ -37,13 +37,13 @@
                                 <input type="radio" id="recipient_all" name="recipient" value="all"
                                     class="form-radio__input @error('recipient') is-invalid @enderror"
                                     {{ old('recipient', 'all') === 'all' ? 'checked' : '' }}>
-                                企画責任者・副責任者
+                                団体責任者・新歓係(副責任者)
                             </label>
                             <label for="recipient_leader" class="form-radio__label">
                                 <input type="radio" id="recipient_leader" name="recipient" value="leader"
                                     class="form-radio__input @error('recipient') is-invalid @enderror"
                                     {{ old('recipient') === 'leader' ? 'checked' : '' }}>
-                                企画責任者のみ
+                                団体責任者のみ
                             </label>
                         </div>
                         @error('recipient')

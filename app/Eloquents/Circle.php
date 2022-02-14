@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Contracts\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
 
+/**
+ * @property int id
+ */
 class Circle extends Model
 {
     use LogsActivity;
@@ -16,8 +19,6 @@ class Circle extends Model
         'id',
         'name',
         'name_yomi',
-        'group_name',
-        'group_name_yomi',
         'submitted_at',
         'status',
         'status_reason',
@@ -48,8 +49,6 @@ class Circle extends Model
      */
     public const NAME_RULES = ['required', 'string', 'max:255'];
     public const NAME_YOMI_RULES = ['required', 'string', 'max:255', 'regex:/^([ぁ-んァ-ヶー]+)$/u'];
-    public const GROUP_NAME_RULES = ['required', 'string', 'max:255'];
-    public const GROUP_NAME_YOMI_RULES = ['required', 'string', 'max:255', 'regex:/^([ぁ-んァ-ヶー]+)$/u'];
     public const STATUS_RULES = ['required', 'in:pending,approved,rejected'];
 
     /**
@@ -65,8 +64,6 @@ class Circle extends Model
     protected $fillable = [
         'name',
         'name_yomi',
-        'group_name',
-        'group_name_yomi',
         'invitation_token',
         'submitted_at',
         'status',
@@ -181,7 +178,20 @@ class Circle extends Model
     }
 
     /**
-     * 企画名(よみ)をひらがなにして保存する
+     * 申請機能を利用できる企画だけに限定するクエリスコープ
+     * すなわち,スタッフによるチェックが`Approved`または`null`の場合に限定される
+     */
+    public function scopePendingOrApproved($query)
+    {
+        return $query->where(function ($query) {
+            $query->pending();
+        })->orWhere(function ($query) {
+            $query->approved();
+        });
+    }
+
+    /**
+     * 団体名(ふりがな)をひらがなにして保存する
      *
      * @param string $value
      */
@@ -189,17 +199,6 @@ class Circle extends Model
     {
         // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
         $this->attributes['name_yomi'] = mb_convert_kana($value, 'HVc');
-    }
-
-    /**
-     * 企画を出店する団体の名称(よみ)をひらがなにして保存する
-     *
-     * @param string $value
-     */
-    public function setGroupNameYomiAttribute($value)
-    {
-        // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
-        $this->attributes['group_name_yomi'] = mb_convert_kana($value, 'HVc');
     }
 
     public function getCustomFormAnswer()

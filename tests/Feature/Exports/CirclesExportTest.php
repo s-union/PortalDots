@@ -90,8 +90,6 @@ class CirclesExportTest extends TestCase
         $this->circle = factory(Circle::class)->create([
             'name' => '運河遊覧船',
             'name_yomi' => 'うんがゆうらんせん',
-            'group_name' => '造船同好会',
-            'group_name_yomi' => 'ぞうせんどうこうかい',
             'notes' => '川の案内をするらしい',
             'status_set_by' => $this->staff->id,
         ]);
@@ -158,8 +156,6 @@ class CirclesExportTest extends TestCase
                 $this->circle->id,
                 '運河遊覧船',
                 'うんがゆうらんせん',
-                '造船同好会',
-                'ぞうせんどうこうかい',
                 '近くの川',
                 '特殊な企画',
                 $this->circle->submitted_at,
@@ -185,10 +181,8 @@ class CirclesExportTest extends TestCase
         $this->assertEquals(
             [
                 '企画ID',
-                '企画名',
-                '企画名（よみ）',
-                '企画を出店する団体の名称',
-                '企画を出店する団体の名称（よみ）',
+                '団体名',
+                '団体名（ふりがな）',
                 '使用場所',
                 'タグ',
                 '参加登録提出日時',
@@ -198,8 +192,8 @@ class CirclesExportTest extends TestCase
                 '作成日時',
                 '更新日時',
                 'スタッフ用メモ',
-                '責任者',
-                '学園祭係',
+                '団体責任者',
+                '新歓係',
                 'どんなことをしますか',
             ],
             $this->circlesExport->headings()

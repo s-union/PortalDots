@@ -19,8 +19,8 @@
                 </template>
                 @if (isset($circle))
                     <list-view-form-group>
-                        <template v-slot:label>企画名</template>
-                        <input type="text" readonly value="{{ $circle->name }}({{ $circle->group_name }})"
+                        <template v-slot:label>団体名</template>
+                        <input type="text" readonly value="{{ $circle->name }}"
                             class="form-control">
                         @if (Auth::user()->circles()->approved()->count() > 1)
                             <template v-slot:append>

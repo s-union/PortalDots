@@ -33,8 +33,6 @@ class CircleRequest extends FormRequest
         return [
             'name' => Circle::NAME_RULES,
             'name_yomi' => Circle::NAME_YOMI_RULES,
-            'group_name' => Circle::GROUP_NAME_RULES,
-            'group_name_yomi' => Circle::GROUP_NAME_YOMI_RULES,
             'status' => Circle::STATUS_RULES,
             'tags'    => ['nullable', 'array'],
             'leader'    => ['nullable', 'exists:users,student_id'],
@@ -50,12 +48,10 @@ class CircleRequest extends FormRequest
     public function attributes()
     {
         return [
-            'name' => '企画名',
-            'name_yomi' => '企画名(よみ)',
-            'group_name' => '企画を出店する団体の名称',
-            'group_name_yomi' => '企画を出店する団体の名称(よみ)',
-            'leader' => '企画責任者',
-            'members' => '学園祭係(副責任者)',
+            'name' => '団体名',
+            'name_yomi' => '団体名(ふりがな)',
+            'leader' => '団体責任者',
+            'members' => '新歓係(副責任者)',
             'status' => '参加登録受理',
         ];
     }
@@ -64,7 +60,6 @@ class CircleRequest extends FormRequest
     {
         return [
             'name_yomi.regex' => 'ひらがなで入力してください',
-            'group_name_yomi.regex' => 'ひらがなで入力してください',
             // ひらがなもカタカナも入力可能だが，説明が面倒なので，エラー上ではひらがなでの入力を促す
             'leader.exists' => 'この学籍番号は登録されていません',
         ];

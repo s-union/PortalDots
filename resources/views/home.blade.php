@@ -178,13 +178,14 @@
 
         @if (Auth::check() && isset($circle))
             <list-view>
-                <template v-slot:title>企画情報</template>
+                <template v-slot:title>
+                    企画情報
+                    @include('includes.circle_status_app_badge', ['circle' => $circle])
+                </template>
                 <list-view-card>
                     <dl>
-                        <dt>企画名</dt>
+                        <dt>団体名</dt>
                         <dd>{{ $circle->name }}（{{ $circle->name_yomi }}）</dd>
-                        <dt>企画を出店する団体の名称</dt>
-                        <dd>{{ $circle->group_name }}（{{ $circle->group_name_yomi }}）</dd>
                         @unless($circle->places->isEmpty())
                             <dt>使用場所</dt>
                             <dd>
@@ -299,7 +300,7 @@
 
         @if (!$forms->isEmpty() &&
         Auth::check() &&
-        Auth::user()->circles()->approved()->count() > 0)
+        Auth::user()->circles()->pendingOrApproved()->count() > 0)
             <list-view>
                 <template v-slot:title>受付中の申請</template>
                 @foreach ($forms as $form)

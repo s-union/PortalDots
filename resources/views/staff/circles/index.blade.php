@@ -27,10 +27,8 @@
         api-url="{{ route('staff.circles.api') }}"
         v-bind:key-translations="{
             id: '企画ID',
-            name: '企画名',
-            name_yomi: '企画名(よみ)',
-            group_name: '企画を出店する団体の名称',
-            group_name_yomi: '企画を出店する団体の名称(よみ)',
+            name: '団体名',
+            name_yomi: '団体名(ふりがな)',
             places: '使用場所',
             tags: 'タグ',
             @if (isset($custom_form))
@@ -48,9 +46,9 @@
             'status_set_by.id': 'ユーザーID',
             'status_set_by.student_id': '学籍番号',
             'status_set_by.name_family': '姓',
-            'status_set_by.name_family_yomi': '姓(よみ)',
+            'status_set_by.name_family_yomi': '姓(ふりがな)',
             'status_set_by.name_given': '名',
-            'status_set_by.name_given_yomi': '名(よみ)',
+            'status_set_by.name_given_yomi': '名(ふりがな)',
             'status_set_by.email': '連絡先メールアドレス',
             'status_set_by.tel': '電話番号',
             'status_set_by.is_staff': 'スタッフ',

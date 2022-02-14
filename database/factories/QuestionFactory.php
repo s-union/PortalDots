@@ -39,7 +39,7 @@ $factory->define(Question::class, function (Faker $faker) use ($options) {
         'number_min' => mt_rand(0, 40),
         'number_max' => mt_rand(50, 100),
         'allowed_types' => ($type === 'upload' ? 'png|jpg|jpeg|gif' : null),
-        'options' => (in_array($type, ['radio', 'select', 'checkbox'], true) ? $options : null),
+        'options' => (in_array($type, Question::SHOULD_SAVE_OPTIONS_QUESTION_TYPES, true) ? $options : null),
         'priority' => ++$priority,
     ];
 });

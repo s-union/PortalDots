@@ -39,8 +39,6 @@ class StoreAction extends Controller
                 Auth::user(),
                 $request->name,
                 $request->name_yomi,
-                $request->group_name,
-                $request->group_name_yomi
             );
 
             $this->answersService->createAnswer(

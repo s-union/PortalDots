@@ -53,8 +53,6 @@ class UpdateActionTest extends BaseTestCase
         $data = [
             'name' => '新しい名前の企画',
             'name_yomi' => 'あたらしいなまえのきかく',
-            'group_name' => '新しい団体の名前',
-            'group_name_yomi' => 'あたらしいだんたいのなまえ',
         ];
 
         $response = $this
@@ -83,8 +81,6 @@ class UpdateActionTest extends BaseTestCase
         $data = [
             'name' => '変更されない名前の企画',
             'name_yomi' => 'へんこうされないなまえのきかく',
-            'group_name' => '変更されない団体の名前',
-            'group_name_yomi' => 'へんこうされないだんたいのなまえ',
         ];
 
         $response = $this
@@ -111,8 +107,6 @@ class UpdateActionTest extends BaseTestCase
         $data = [
             'name' => '新しい名前の企画',
             'name_yomi' => 'あたらしいなまえのきかく',
-            'group_name' => '新しい団体の名前',
-            'group_name_yomi' => 'あたらしいだんたいのなまえ',
         ];
 
         $response = $this
@@ -140,8 +134,6 @@ class UpdateActionTest extends BaseTestCase
         $data = [
             'name' => '新しい名前の企画',
             'name_yomi' => 'あたらしいなまえのきかく',
-            'group_name' => '新しい団体の名前',
-            'group_name_yomi' => 'あたらしいだんたいのなまえ',
         ];
 
         $response = $this

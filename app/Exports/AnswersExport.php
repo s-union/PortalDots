@@ -40,8 +40,6 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
                 $answer->circle->id,
                 $answer->circle->name,
                 $answer->circle->name_yomi,
-                $answer->circle->group_name,
-                $answer->circle->group_name_yomi,
             ],
             $this->getDetails($answer)
         );
@@ -56,10 +54,8 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
             [
                 '回答ID',
                 '企画ID',
-                '企画名',
-                '企画名（よみ）',
-                '企画を出店する団体の名称',
-                '企画を出店する団体の名称（よみ）',
+                '団体名',
+                '団体名（ふりがな）',
             ],
             $this->form->questions->where('type', '!==', 'heading')->pluck('name')->toArray()
         );
@@ -73,6 +69,7 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
      */
     public function getDetails(Answer $answer): array
     {
+        $details = [];
         foreach ($this->form->questions->where('type', '!==', 'heading') as $question) {
             if (empty($answer)) {
                 break;

@@ -45,7 +45,7 @@ class UserRequest extends FormRequest
         return [
             'student_id' => '学籍番号',
             'name' => '名前',
-            'name_yomi' => '名前(よみ)',
+            'name_yomi' => '名前(ふりがな)',
             'email' => '連絡先メールアドレス',
             'tel' => '連絡先電話番号',
             'user_type' => 'ユーザー種別',

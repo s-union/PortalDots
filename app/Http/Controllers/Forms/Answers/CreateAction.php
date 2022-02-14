@@ -39,7 +39,7 @@ class CreateAction extends Controller
 
         $this->authorize('view', [$form, $this->selectorService->getCircle()]);
 
-        $circles = Auth::user()->circles()->approved()->get();
+        $circles = Auth::user()->circles()->pendingOrApproved()->get();
         if (count($circles) < 1) {
             // TODO: もうちょっとまともなエラー表示にする
             return redirect()

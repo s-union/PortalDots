@@ -11,15 +11,7 @@
         </template>
         <span class="text-muted">
             {{ $circle->name }}
-            @if (!$circle->hasSubmitted())
-                <app-badge muted outline>未提出</app-badge>
-            @elseif ($circle->isPending())
-                <app-badge success outline>提出済</app-badge>
-            @elseif ($circle->hasApproved())
-                <app-badge success>受理</app-badge>
-            @elseif ($circle->hasRejected())
-                <app-badge danger>不受理</app-badge>
-            @endif
+            @include('includes.circle_status_app_badge', ['circle' => $circle])
         </span>
         @if (!Auth::user()->isLeaderInCircle($circle) && Gate::allows('circle.update', $circle))
             <form-with-confirm
@@ -37,7 +29,7 @@
         <list-view>
             <list-view-card>
                 @if (!$circle->hasSubmitted())
-                    <strong>企画情報の修正や、企画参加登録を提出することができるのは、企画責任者のみです。</strong>
+                    <strong>企画情報の修正や、企画参加登録を提出することができるのは、団体責任者のみです。</strong>
                     <hr>
                 @endif
                 @include('includes.circle_info')

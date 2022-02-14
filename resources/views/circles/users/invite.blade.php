@@ -13,7 +13,7 @@
         <list-view>
             <template v-slot:title>招待の確認</template>
             <list-view-card>
-                あなたは「{{ $circle->name }}」の学園祭係(副責任者)として招待されました。この招待を受け入れますか？
+                あなたは「{{ $circle->name }}」の新歓係(副責任者)として招待されました。この招待を受け入れますか？
             </list-view-card>
         </list-view>
 

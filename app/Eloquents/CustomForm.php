@@ -5,6 +5,9 @@ namespace App\Eloquents;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
+/**
+ * @property string type
+ */
 class CustomForm extends Model
 {
     protected $fillable = [
@@ -44,25 +47,13 @@ class CustomForm extends Model
             'circle' => [
                 [
                     'id' => 'circle.name',
-                    'name' => '企画名',
+                    'name' => '団体名',
                     'type' => 'text',
                     'is_required' => true,
                 ],
                 [
                     'id' => 'circle.name_yomi',
-                    'name' => '企画名(よみ)',
-                    'type' => 'text',
-                    'is_required' => true,
-                ],
-                [
-                    'id' => 'circle.group_name',
-                    'name' => '企画を出店する団体の名称',
-                    'type' => 'text',
-                    'is_required' => true,
-                ],
-                [
-                    'id' => 'circle.group_name_yomi',
-                    'name' => '企画を出店する団体の名称(よみ)',
+                    'name' => '団体名(ふりがな)',
                     'type' => 'text',
                     'is_required' => true,
                 ],
