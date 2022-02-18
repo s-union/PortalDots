@@ -134,6 +134,10 @@ class PagesService
             $is_public,
             $is_pinned
         ) {
+            if ($page->is_pinned && !$is_pinned) {
+                $page->timestamps = false;
+            }
+
             $page->update([
                 'title' => $title,
                 'body' => $body,
