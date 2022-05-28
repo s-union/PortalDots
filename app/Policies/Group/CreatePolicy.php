@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Policies\Circle;
+namespace App\Policies\Group;
 
-use App\Eloquents\User;
 use App\Eloquents\CustomForm;
+use App\Eloquents\User;
 use App\Services\Utils\DotenvService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -35,15 +35,8 @@ class CreatePolicy
             ) === 'true';
         $custom_from = CustomForm::getFormByType('circle');
         $can_register_circle = isset($custom_from) && $custom_from->is_public && $custom_from->isOpen();
+        $can_register_group = count($user->groups) == 0;
 
-        if ($register_group_before_submitting_circle) {
-            if (!$user) {
-                return false;
-            }
-            $has_registered_group = count($user->groups) > 0 && $user->groups->first()->hasSubmitted();
-            return $has_registered_group && $can_register_circle;
-        } else {
-            return $can_register_circle;
-        }
+        return $can_register_circle && $register_group_before_submitting_circle && $can_register_group;
     }
 }

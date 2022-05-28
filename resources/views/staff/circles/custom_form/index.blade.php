@@ -26,6 +26,28 @@
             @method('patch')
             <list-view>
                 <template v-slot:title>企画参加登録の設定</template>
+                <list-view-form-group label-for="group_register_before_submitting_circle">
+                    <template v-slot:label>団体登録の有効化</template>
+                    <template v-slot:description>
+                        企画参加登録を行う前に、団体登録を必要とするかどうかを選択します。
+                        この設定がオンの場合、ユーザーは企画参加登録を行う前に団体登録を行う必要があります。
+                    </template>
+                    <div class="form-checkbox">
+                        <label class="form-checkbox__label">
+                            <input id="group_register_before_submitting_circle" type="checkbox"
+                                   class="form-checkbox__input @error('group_register_before_submitting_circle') is-invalid @enderror"
+                                   name="group_register_before_submitting_circle"
+                                   value="1"
+                                {{ old('group_register_before_submitting_circle',
+                                    $group_register_before_submitting_circle) === 'true' ? 'checked' : '' }}>
+                            有効にする
+                        </label>
+                    </div>
+
+                    @error('group_register_before_submitting_circle')
+                        <template v-slot:invalid>{{ $message }}</template>
+                    @enderror
+                </list-view-form-group>
                 <list-view-form-group label-for="users_number_to_submit_circle">
                     <template v-slot:label>企画参加登録を提出するために必要な企画担当者の最低人数</template>
                     <template v-slot:description>

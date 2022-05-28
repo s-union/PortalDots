@@ -5,10 +5,22 @@ namespace App\Http\Controllers\Staff\Circles\CustomForm;
 use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
 use App\Eloquents\CustomForm;
+use App\Services\Utils\DotenvService;
 use Illuminate\Support\Facades\DB;
 
 class StoreAction extends Controller
 {
+    /**
+     * @var DotenvService
+     */
+    private $dotenvService;
+
+    public function __construct(
+        DotenvService $dotenvService
+    ) {
+        $this->dotenvService = $dotenvService;
+    }
+
     public function __invoke()
     {
         return DB::transaction(function () {
@@ -29,6 +41,17 @@ class StoreAction extends Controller
             CustomForm::create([
                 'type' => 'circle',
                 'form_id' => $form->id,
+            ]);
+
+            $this->dotenvService->saveKeys([
+                'PORTAL_USERS_NUMBER_TO_SUBMIT_CIRCLE' => isset(
+                    $request->users_number_to_submit_circle
+                )
+                    ? (string) $request->users_number_to_submit_circle
+                    : 1,
+                'PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE' => isset(
+                    $request->group_register_before_submitting_circle
+                ) && $request->group_register_before_submitting_circle === '1' ? 'true' : 'false'
             ]);
 
             return redirect()
