@@ -145,6 +145,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // 参加登録の削除
             Route::get('/{group}/delete', 'Groups\DeleteAction')->name('delete');
             Route::delete('/{group}', 'Groups\DestroyAction')->name('destroy');
+
+            // 企画参加登録の確認
+            Route::get('/{group}/circles', 'Groups\Circles\ShowAction')->name('circles.show');
+            // 企画参加登録の訂正
+            Route::get('/{group}/circles/edit', 'Groups\Circles\EditAction')->name('circles.edit');
+            // 企画参加登録の提出
+            Route::get('/{group}/circles/confirm', 'Groups\Circles\ConfirmAction')->name('circles.confirm');
+            Route::post('/{group}/circles/submit', 'Groups\Circles\SubmitAction')->name('circles.submit');
         });
 
     // 申請

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Circles;
 
+use App\Services\Groups\GroupsService;
+use App\Services\Utils\DotenvService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
@@ -24,10 +26,27 @@ class UpdateAction extends Controller
      */
     private $circlesService;
 
-    public function __construct(User $user, CirclesService $circlesService)
+    /**
+     * @var GroupsService
+     */
+    private $groupsService;
+
+    /**
+     * @var DotenvService
+     */
+    private $dotenvService;
+
+    public function __construct(
+        User $user,
+        CirclesService $circlesService,
+        GroupsService $groupsService,
+        DotenvService $dotenvService
+    )
     {
         $this->user = $user;
         $this->circlesService = $circlesService;
+        $this->groupsService = $groupsService;
+        $this->dotenvService = $dotenvService;
     }
 
     public function __invoke(Circle $circle, CircleRequest $request)
@@ -109,15 +128,28 @@ class UpdateAction extends Controller
                 ->withErrors(['tags' => $e->getMessage()]);
         }
 
+        $should_register_group_before_submitting_circle =
+            $this->dotenvService->getValue(
+                'PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE',
+                'false'
+            ) === 'true';
+
         if ($status_changed === true) {
             $circle->load('users');
             if ($circle->status === Circle::STATUS_APPROVED) {
                 foreach ($circle->users as $user) {
-                    $this->circlesService->sendApprovedEmail($user, $circle);
+                    if ($should_register_group_before_submitting_circle) {
+                        $this->groupsService->sendCircleApprovedEmail($user, $user->groups()->first());
+                    } else {
+                        $this->circlesService->sendApprovedEmail($user, $circle);
+                    }
                 }
             } elseif ($circle->status === Circle::STATUS_REJECTED) {
                 foreach ($circle->users as $user) {
-                    $this->circlesService->sendRejectedEmail($user, $circle);
+                    // TODO: change this later...
+                    if (!$should_register_group_before_submitting_circle) {
+                        $this->circlesService->sendRejectedEmail($user, $circle);
+                    }
                 }
             }
         }

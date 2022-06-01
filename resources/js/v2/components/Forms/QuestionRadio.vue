@@ -12,6 +12,7 @@
         :required="required"
         :checked="option === value"
         :value="option"
+        @input="$emit('input', option)"
         :disabled="disabled"
       />
       {{ option }}

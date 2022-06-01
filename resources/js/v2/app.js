@@ -45,6 +45,8 @@ import SearchInput from './components/SearchInput.vue'
 import PermissionsSelector from './components/PermissionsSelector.vue'
 import UiPrimaryColorPicker from './components/UiPrimaryColorPicker.vue'
 
+import CircleQuestion from './components/CircleQuestion.vue'
+
 // Form Questions
 import QuestionItem from './components/Forms/QuestionItem.vue'
 import QuestionHeading from './components/Forms/QuestionHeading.vue'
@@ -121,7 +123,8 @@ export function mountV2App() {
         MarkdownEditor,
         SearchInput,
         PermissionsSelector,
-        UiPrimaryColorPicker
+        UiPrimaryColorPicker,
+        CircleQuestion
       },
       data() {
         return {

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Staff\Circles\CustomForm;
 
-use App\Http\Controllers\Controller;
-use App\Eloquents\Form;
 use App\Eloquents\CustomForm;
+use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
+use App\Services\CircleWithGroups\CustomFormsService;
 use App\Services\Utils\DotenvService;
 use Illuminate\Support\Facades\DB;
 
@@ -15,10 +16,17 @@ class StoreAction extends Controller
      */
     private $dotenvService;
 
+    /**
+     * @var CustomFormsService
+     */
+    private $customFormsService;
+
     public function __construct(
-        DotenvService $dotenvService
+        DotenvService $dotenvService,
+        CustomFormsService $customFormsService
     ) {
         $this->dotenvService = $dotenvService;
+        $this->customFormsService = $customFormsService;
     }
 
     public function __invoke()
@@ -48,11 +56,16 @@ class StoreAction extends Controller
                     $request->users_number_to_submit_circle
                 )
                     ? (string) $request->users_number_to_submit_circle
-                    : 1,
+                    : '1',
                 'PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE' => isset(
                     $request->group_register_before_submitting_circle
                 ) && $request->group_register_before_submitting_circle === '1' ? 'true' : 'false'
             ]);
+
+            if (isset($request->group_register_before_submitting_circle)
+                && $request->group_register_before_submitting_circle === '1') {
+                $this->customFormsService->createFormWithCustomForm();
+            }
 
             return redirect()
                     ->route('staff.circles.custom_form.index')

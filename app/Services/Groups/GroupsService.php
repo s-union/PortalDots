@@ -4,6 +4,8 @@ namespace App\Services\Groups;
 
 use App\Eloquents\Group;
 use App\Eloquents\User;
+use App\Mail\Groups\Circles\ApprovedWithGroupMailable;
+use App\Mail\Groups\Circles\SubmittedWithGroupMailable;
 use App\Mail\Groups\SubmittedMailable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -65,5 +67,23 @@ class GroupsService
     private function generateInvitationToken()
     {
         return bin2hex(random_bytes(16));
+    }
+
+    public function sendCircleSubmittedEmail(User $user, Group $group) {
+        Mail::to($user)
+            ->send(
+                (new SubmittedWithGroupMailable($group))
+                    ->replyTo(config('portal.contact_email'), config('portal.admin_name'))
+                    ->subject("【企画参加登録】「{$group->group_name}」の企画参加登録を提出しました")
+            );
+    }
+
+    public function sendCircleApprovedEmail(User $user, Group $group) {
+        Mail::to($user)
+            ->send(
+                (new ApprovedWithGroupMailable($group))
+                    ->replyTo(config('portal.contact_email'), config('portal.admin_name'))
+                    ->subject("【受理】「{$group->group_name}」の企画参加登録が受理されました")
+            );
     }
 }

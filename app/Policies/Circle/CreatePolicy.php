@@ -37,11 +37,12 @@ class CreatePolicy
         $can_register_circle = isset($custom_from) && $custom_from->is_public && $custom_from->isOpen();
 
         if ($register_group_before_submitting_circle) {
-            if (!$user) {
+            if (!$user || count($user->groups) == 0) {
                 return false;
             }
-            $has_registered_group = count($user->groups) > 0 && $user->groups->first()->hasSubmitted();
-            return $has_registered_group && $can_register_circle;
+            $has_registered_group = $user->groups->first()->hasSubmitted();
+            $is_leader_in_group = $user->isLeaderInGroup($user->groups()->first());
+            return $has_registered_group && $can_register_circle && $is_leader_in_group;
         } else {
             return $can_register_circle;
         }

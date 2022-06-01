@@ -12,6 +12,15 @@
 
         <app-container medium>
             <list-view>
+                <template v-slot:title>参加団体規約の確認</template>
+                <template v-slot:description>参加団体規約を確認してください。</template>
+                <list-view-card>
+                    理大祭参加登録を行うには、参加団体規約をご確認の上、同意していただく必要がございます。<br>
+                    参加団体規約は、『配布資料 Vol1.0』をご確認ください。
+                </list-view-card>
+            </list-view>
+
+            <list-view>
                 <template v-slot:title>団体情報を入力</template>
                 <template v-slot:description>理大祭に参加する団体の情報を入力してください。</template>
                 <list-view-card>

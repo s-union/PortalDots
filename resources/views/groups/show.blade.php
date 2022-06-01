@@ -17,6 +17,13 @@
                 <app-badge success outline>提出済</app-badge>
             @endif
         </span>
+        @if ($group->circle())
+            @if ($group->circle()->isPending())
+                <app-badge danger outline>企画参加登録費支払い待ち</app-badge>
+            @elseif ($group->circle()->hasApproved())
+                <app-badge success>企画参加登録受理</app-badge>
+            @endif
+        @endif
         @if(!Auth::user()->isLeaderInGroup($group) && Gate::allows('group.update', $group))
             <form-with-confirm
                 action="{{ route('groups.users.destroy', ['group' => $group, 'user' => Auth::user()]) }}"
@@ -42,6 +49,11 @@
             <list-view-card>
                 @include('includes.group_info')
             </list-view-card>
+                @if ($group->circle())
+                    <list-view-card>
+                        @include('includes.circle_with_group_info', ['group' => $group])
+                    </list-view-card>
+                @endif
         </list-view>
     </app-container>
 @endsection

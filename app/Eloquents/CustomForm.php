@@ -28,6 +28,7 @@ class CustomForm extends Model
         return [
             'circle' => '企画参加登録',
             'user' => 'ユーザー登録',
+            'circle_with_group' => '企画参加登録(団体情報との紐付け)'
         ];
     }
 
@@ -66,7 +67,8 @@ class CustomForm extends Model
                     'type' => 'text',
                     'is_required' => true,
                 ],
-            ]
+            ],
+            // TODO: change this?
         ];
 
         return array_map(function ($questions) {
