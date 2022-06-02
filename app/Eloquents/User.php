@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Collection;
+use PHPUnit\TextUI\XmlConfiguration\Groups;
 use Spatie\Permission\Traits\HasRoles;
 use App\Eloquents\Circle;
 use App\Eloquents\CircleUser;
@@ -161,6 +162,12 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Circle::class)
             ->using(CircleUser::class)
+            ->withPivot('is_leader');
+    }
+
+    public function groups() {
+        return $this->belongsToMany(Group::class)
+            ->using(GroupUser::class)
             ->withPivot('is_leader');
     }
 
@@ -380,6 +387,11 @@ class User extends Authenticatable
     public function isLeaderInCircle(Circle $circle)
     {
         return $circle->leader->first()->id === $this->id;
+    }
+
+    public function isLeaderInGroup(Group $group)
+    {
+        return $group->leader->first()->id === $this->id;
     }
 
     /**

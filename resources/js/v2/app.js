@@ -49,6 +49,8 @@ import UiPrimaryColorPicker from './components/UiPrimaryColorPicker.vue'
 import QuestionItem from './components/Forms/QuestionItem.vue'
 import QuestionHeading from './components/Forms/QuestionHeading.vue'
 
+import CircleQuestion from './components/CircleQuestion.vue'
+
 export function mountV2App() {
   // iOS で CSS の hover を有効にするハック
   document.body.addEventListener('touchstart', () => {}, { passive: true })
@@ -121,7 +123,8 @@ export function mountV2App() {
         MarkdownEditor,
         SearchInput,
         PermissionsSelector,
-        UiPrimaryColorPicker
+        UiPrimaryColorPicker,
+        CircleQuestion
       },
       data() {
         return {

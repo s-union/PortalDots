@@ -40,6 +40,8 @@ class SubmitedMailable extends Mailable
      */
     public $answer_details;
 
+    public $should_register_group;
+
     /**
      * Create a new message instance.
      *
@@ -55,13 +57,15 @@ class SubmitedMailable extends Mailable
         Form $customForm = null,
         Collection $questions = null,
         Answer $answer = null,
-        array $answerDetails = null
+        array $answerDetails = null,
+        bool $should_register_group = false
     ) {
         $this->circle = $circle;
         $this->custom_form = $customForm;
         $this->questions = $questions;
         $this->answer = $answer;
         $this->answer_details = $answerDetails;
+        $this->should_register_group = $should_register_group;
     }
 
     /**

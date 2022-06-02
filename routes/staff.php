@@ -131,6 +131,21 @@ Route::middleware(['auth', 'verified', 'can:staff', 'staffAuthed'])
                 Route::patch('/{user}/verify', 'Staff\Users\VerifiedAction')->name('verified')->middleware(['can:staff.users.edit']);
             });
 
+        Route::prefix('/groups')
+            ->name('groups.')
+            ->group(function () {
+                Route::get('/', 'Staff\Groups\IndexAction')->name('index')->middleware(['can:staff.groups.read']);
+                Route::get('/api', 'Staff\Groups\ApiAction')->name('api')->middleware(['can:staff.groups.read']);
+
+                // 団体情報編集
+                Route::get('/create', 'Staff\Groups\CreateAction')->name('create')->middleware(['can:staff.groups.edit']);
+                Route::post('/', 'Staff\Groups\StoreAction')->name('store')->middleware(['can:staff.groups.edit']);
+                Route::get('/{group}/edit', 'Staff\Groups\EditAction')->name('edit')->middleware(['can:staff.groups.edit']);
+                Route::patch('/{group}', 'Staff\Groups\UpdateAction')->name('update')->middleware(['can:staff.groups.edit']);
+
+                Route::delete('/{group}', 'Staff\Groups\DestroyAction')->name('destroy')->middleware(['can:staff.groups.delete']);
+            });
+
         Route::prefix('/circles')
             ->name('circles.')
             ->group(function () {

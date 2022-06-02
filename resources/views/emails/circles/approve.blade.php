@@ -18,5 +18,8 @@
   - {{ $user->name }}({{ $user->student_id }})
 @endif
 @endforeach
+@if ($should_register_group)
+- この企画の参加形態 : {{ $circle->attendance_type }}
+@endif
 @endcomponent
 @endcomponent
