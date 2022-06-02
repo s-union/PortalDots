@@ -48,7 +48,7 @@ class StoreAction extends Controller
                     $request->users_number_to_submit_circle
                 )
                     ? (string) $request->users_number_to_submit_circle
-                    : 1,
+                    : '1',
                 'PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE' => isset(
                     $request->group_register_before_submitting_circle
                 ) && $request->group_register_before_submitting_circle === '1' ? 'true' : 'false'
