@@ -43,6 +43,10 @@ class Group extends Model
         return $this->users()->wherePivot('is_leader', true);
     }
 
+    public function members() {
+        return $this->users()->wherePivot('is_leader', false);
+    }
+
     public function scopeSubmitted($query) {
         return $query->whereNotNull('submitted_at');
     }

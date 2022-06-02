@@ -15,14 +15,17 @@ class ApprovedMailable extends Mailable
 
     public $circle;
 
+    public $should_register_group;
+
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct(Circle $circle)
+    public function __construct(Circle $circle, bool $should_register_group = false)
     {
         $this->circle = $circle;
+        $this->should_register_group = $should_register_group;
     }
 
     /**

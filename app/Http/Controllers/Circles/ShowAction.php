@@ -6,6 +6,7 @@ use App\Eloquents\Circle;
 use App\Eloquents\CustomForm;
 use App\Http\Controllers\Controller;
 use App\Services\Forms\AnswerDetailsService;
+use App\Services\Utils\DotenvService;
 use Carbon\CarbonImmutable;
 
 class ShowAction extends Controller
@@ -15,10 +16,17 @@ class ShowAction extends Controller
      */
     private $answerDetailsService;
 
+    /**
+     * @var DotenvService
+     */
+    private $dotenvService;
+
     public function __construct(
-        AnswerDetailsService $answerDetailsService
+        AnswerDetailsService $answerDetailsService,
+        DotenvService $dotenvService
     ) {
         $this->answerDetailsService = $answerDetailsService;
+        $this->dotenvService = $dotenvService;
     }
 
     public function __invoke(Circle $circle)
@@ -42,7 +50,8 @@ class ShowAction extends Controller
                 ->with('questions', !empty($form) ? $form->questions()->get() : null)
                 ->with('answer', $answer)
                 ->with('answer_details', !empty($answer)
-                    ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : []);
+                    ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : [])
+                ->with('should_register_group', $this->dotenvService->shouldRegisterGroup());
         }
         return redirect()
             ->route('circles.auth', ['circle' => $circle]);
