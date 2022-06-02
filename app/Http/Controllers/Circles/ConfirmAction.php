@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Circles;
 
+use App\Services\Utils\DotenvService;
 use Auth;
 use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
@@ -15,9 +16,15 @@ class ConfirmAction extends Controller
      */
     private $answerDetailsService;
 
-    public function __construct(AnswerDetailsService $answerDetailsService)
+    /**
+     * @var DotenvService
+     */
+    private $dotenvService;
+
+    public function __construct(AnswerDetailsService $answerDetailsService, DotenvService $dotenvService)
     {
         $this->answerDetailsService = $answerDetailsService;
+        $this->dotenvService = $dotenvService;
     }
 
     public function __invoke(Circle $circle)
@@ -46,6 +53,7 @@ class ConfirmAction extends Controller
             ->with('questions', !empty($form) ? $form->questions()->get() : null)
             ->with('answer', $answer)
             ->with('answer_details', !empty($answer)
-                ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : []);
+                ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : [])
+            ->with('should_register_group', $this->dotenvService->shouldRegisterGroup());
     }
 }

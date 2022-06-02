@@ -41,6 +41,9 @@ class UpdateAction extends Controller
             )
                 ? (string) $request->users_number_to_submit_circle
                 : 1,
+            'PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE' => isset(
+                $request->group_register_before_submitting_circle
+            ) && $request->group_register_before_submitting_circle === '1' ? 'true' : 'false'
         ]);
 
         $this->formEditorService->updateForm($form->id, [

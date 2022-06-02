@@ -49,6 +49,30 @@ class Permission extends SpatiePermission
                     'ユーザー(閲覧)',
                     'ユーザーの閲覧が可能'
                 ),
+                'staff.groups' => new PermissionInfo(
+                    'staff.groups',
+                    'スタッフモード › 団体情報管理 › 全機能',
+                    '団体(全機能)',
+                    '団体情報管理の全機能を利用可能。セキュリティのため、この権限を割り当てるユーザーは最小限にしてください。'
+                ),
+                'staff.groups.read,edit,delete' => new PermissionInfo(
+                    'staff.groups.read,edit,delete',
+                    'スタッフモード › 団体情報管理 › 閲覧と編集、削除',
+                    '団体(削除)',
+                    '団体の閲覧と編集、作成、削除が可能'
+                ),
+                'staff.groups.read,edit' => new PermissionInfo(
+                    'staff.groups.read,edit',
+                    'スタッフモード › 団体情報管理 > 閲覧と編集',
+                    '団体(編集)',
+                    '団体の閲覧と編集、作成が可能'
+                ),
+                'staff.groups.read' => new PermissionInfo(
+                    'staff.groups.read',
+                    'スタッフモード › 団体情報管理 › 閲覧',
+                    '団体(閲覧)',
+                    '団体の閲覧が可能'
+                ),
                 'staff.circles' => new PermissionInfo(
                     'staff.circles',
                     'スタッフモード › 企画情報管理 › 全機能',

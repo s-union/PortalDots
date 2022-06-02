@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\Utils\DotenvService;
 use Illuminate\Support\Facades\Auth;
 use App\Eloquents\Page;
 use App\Eloquents\Document;
@@ -23,9 +24,15 @@ class HomeAction extends Controller
      */
     private $selectorService;
 
-    public function __construct(SelectorService $selectorService)
+    /**
+     * @var DotenvService
+     */
+    private $dotenvService;
+
+    public function __construct(SelectorService $selectorService, DotenvService $dotenvService)
     {
         $this->selectorService = $selectorService;
+        $this->dotenvService = $dotenvService;
     }
 
     public function __invoke()
@@ -36,8 +43,12 @@ class HomeAction extends Controller
             $circle->load('places');
         }
 
+        $custom_form = CustomForm::getFormByType('circle');
+        $can_register = isset($custom_form) && $custom_form->is_public && $custom_form->isOpen();
+        $group = Auth::check() ? Auth::user()->groups()->first() : null;
+
         return view('home')
-            ->with('circle_custom_form', CustomForm::getFormByType('circle'))
+            ->with('circle_custom_form', $custom_form)
             ->with(
                 'my_circles',
                 Auth::check()
@@ -87,6 +98,18 @@ class HomeAction extends Controller
                     ->withoutCustomForms()
                     ->closeOrder()
                     ->get()
-            );
+            )
+            ->with(
+                'register_group_before_submitting_circle',
+                $this->dotenvService->getValue(
+                    'PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE',
+                    'false'
+                ) === 'true'
+            )
+            ->with(
+                'my_group',
+                $group
+            )
+            ->with('can_register', $can_register);
     }
 }

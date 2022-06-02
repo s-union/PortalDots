@@ -40,6 +40,13 @@
                     'description' => config('app.name') . 'に登録しているユーザーの情報を管理します',
                 ],
                 [
+                    'can' => Auth::user()->can('staff.groups.read'),
+                    'href' => route('staff.groups.index'),
+                    'icon_class' => 'fas fa-people-group fa-fw',
+                    'title' => '団体情報管理',
+                    'description' => config('app.name') . 'に登録している団体の情報を管理します'
+                ],
+                [
                     'can' => Auth::user()->can('staff.circles.read'),
                     'href' => route('staff.circles.index'),
                     'icon_class' => 'fas fa-star fa-fw',

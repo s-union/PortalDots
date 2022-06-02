@@ -32,6 +32,10 @@ class IndexAction extends Controller
                 'users_number_to_submit_circle',
                 $this->dovenvService->getValue('PORTAL_USERS_NUMBER_TO_SUBMIT_CIRCLE', 1)
             )
+            ->with(
+                'group_register_before_submitting_circle',
+                $this->dovenvService->getValue('PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE', false)
+            )
             ->with('form', $form);
     }
 }
