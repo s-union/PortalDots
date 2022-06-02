@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\RedirectIfGroupSystemDisable;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -70,6 +71,7 @@ class Kernel extends HttpKernel
         'checkEnv' => \App\Http\Middleware\CheckEnv::class,
         'install' => \App\Http\Middleware\DenyIfInstalled::class,
         'circleSelected' => \App\Http\Middleware\CheckSelectedCircle::class,
+        'groupEnable' => RedirectIfGroupSystemDisable::class,
     ];
 
     /**

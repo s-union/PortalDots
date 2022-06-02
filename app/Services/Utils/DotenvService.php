@@ -49,4 +49,9 @@ class DotenvService
         }
         $this->editor->save();
     }
+
+    public function shouldRegisterGroup(): bool
+    {
+        return $this->getValue('PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE', 'false') === 'true';
+    }
 }

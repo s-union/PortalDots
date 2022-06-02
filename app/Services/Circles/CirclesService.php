@@ -15,6 +15,7 @@ use App\Mail\Circles\RejectedMailable;
 use App\Mail\Circles\SubmitedMailable;
 use App\Services\Circles\Exceptions\DenyCreateTagsException;
 use App\Services\Utils\ActivityLogService;
+use App\Services\Utils\DotenvService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -26,9 +27,15 @@ class CirclesService
      */
     private $activityLogService;
 
-    public function __construct(ActivityLogService $activityLogService)
+    /**
+     * @var DotenvService
+     */
+    private $dotenvService;
+
+    public function __construct(ActivityLogService $activityLogService, DotenvService $dotenvService)
     {
         $this->activityLogService = $activityLogService;
+        $this->dotenvService = $dotenvService;
     }
 
     /**
@@ -206,7 +213,8 @@ class CirclesService
                 $customForm,
                 $questions,
                 $answer,
-                $answerDetails
+                $answerDetails,
+                $this->dotenvService->shouldRegisterGroup()
             ))
                 ->replyTo(config('portal.contact_email'), config('portal.admin_name'))
                 ->subject("【参加登録】「{$circle->name}」の参加登録を提出しました")
@@ -219,6 +227,7 @@ class CirclesService
         ->send(
             (new ApprovedMailable(
                 $circle,
+                $this->dotenvService->shouldRegisterGroup()
             ))
                 ->replyTo(config('portal.contact_email'), config('portal.admin_name'))
                 ->subject("【受理】「{$circle->name}」の参加登録が受理されました")

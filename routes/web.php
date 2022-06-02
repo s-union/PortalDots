@@ -120,6 +120,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/{circle}/delete', 'Circles\DeleteAction')->name('delete');
             Route::delete('/{circle}', 'Circles\DestroyAction')->name('destroy');
         });
+    // 理大祭参加登録
+    Route::prefix('/groups')
+        ->middleware('groupEnable')
+        ->name('groups.')
+        ->group(function () {
+            Route::get('/create', 'Groups\CreateAction')->name('create');
+            Route::post('/', 'Groups\StoreAction')->name('store');
+            Route::get('/{group}', 'Groups\ShowAction')->name('show');
+            Route::get('/{group}/edit', 'Groups\EditAction')->name('edit');
+            Route::patch('/{group}', 'Groups\UpdateAction')->name('update');
+
+            // 団体メンバー登録関係
+            Route::get('/{group}/users', 'Groups\Users\IndexAction')->name('users.index');
+            Route::get('/{group}/users/invite/{token}', 'Groups\Users\InviteAction')->name('users.invite');
+            Route::post('/{group}/users', 'Groups\Users\StoreAction')->name('users.store');
+            Route::delete('/{group}/users/{user}', 'Groups\Users\DestroyAction')->name('users.destroy');
+            Route::post('/{group}/users/regenerate', 'Groups\Users\RegenerateTokenAction')->name('users.regenerate');
+
+            // 参加登録の提出
+            Route::get('/{group}/confirm', 'Groups\ConfirmAction')->name('confirm');
+            Route::post('/{group}/submit', 'Groups\SubmitAction')->name('submit');
+
+            // 参加登録の削除
+            Route::get('/{group}/delete', 'Groups\DeleteAction')->name('delete');
+            Route::delete('/{group}', 'Groups\DestroyAction')->name('destroy');
+        });
 
     // 申請
     Route::prefix('/forms')
