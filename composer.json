@@ -32,9 +32,10 @@
         "vlucas/phpdotenv": "^5.4.1"
     },
     "require-dev": {
-        "facade/ignition": "^2.3.6",
         "barryvdh/laravel-debugbar": "^3.2",
+        "barryvdh/laravel-ide-helper": "^2.12",
         "beyondcode/laravel-dump-server": "^1.0",
+        "facade/ignition": "^2.3.6",
         "fzaninotto/faker": "^1.9.1",
         "mockery/mockery": "^1.0",
         "nunomaduro/collision": "^5.0",
