@@ -30,7 +30,8 @@
         "stylelint-check": "stylelint ./resources/**/*.{vue,scss}",
         "phpunit": "cd docker_dev && docker-compose run web ./vendor/bin/phpunit",
         "prepare": "husky install",
-        "postinstall": "patch-package"
+        "postinstall": "patch-package",
+        "ide-helper:generate": "cd docker_dev && docker-compose run web bash -c 'php artisan ide-helper:generate && php artisan ide-helper:model --nowrite --dir='app/Eloquents' && php artisan ide-helper:meta'"
     },
     "lint-staged": {
         "*.js": [
