@@ -39,23 +39,28 @@ class Group extends Model
         return $this->belongsToMany(User::class)->using(GroupUser::class)->withPivot('is_leader');
     }
 
-    public function leader() {
+    public function leader()
+    {
         return $this->users()->wherePivot('is_leader', true);
     }
 
-    public function members() {
+    public function members()
+    {
         return $this->users()->wherePivot('is_leader', false);
     }
 
-    public function scopeSubmitted($query) {
+    public function scopeSubmitted($query)
+    {
         return $query->whereNotNull('submitted_at');
     }
 
-    public function hasSubmitted() {
+    public function hasSubmitted()
+    {
         return isset($this->submitted_at);
     }
 
-    public function canSubmit() {
+    public function canSubmit()
+    {
         // TODO: とりあえずは仮で企画参加登録の人数を採用することにする.
         return count($this->users) >= config('portal.users_number_to_submit_circle');
     }

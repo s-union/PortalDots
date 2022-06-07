@@ -3,6 +3,7 @@
 namespace Tests\Feature\Http\Controllers\Staff\Circles\CustomForm;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery\MockInterface;
 use Tests\TestCase;
 use App\Services\Utils\DotenvService;
 use App\Eloquents\User;
@@ -51,10 +52,11 @@ class UpdateActionTest extends TestCase
         Permission::create(['name' => 'staff.circles.custom_form']);
         $this->staff->syncPermissions(['staff.circles.custom_form']);
 
-        $this->mock(DotenvService::class, function ($mock) {
+        $this->mock(DotenvService::class, function (MockInterface $mock) {
             // boolean の true ではなく、文字列の 'true' である点に注意
             $mock->shouldReceive('getValue')->once()->with('APP_NOT_INSTALLED', 'false')->andReturn('false');
             $mock->shouldReceive('saveKeys')->once()->with(['PORTAL_USERS_NUMBER_TO_SUBMIT_CIRCLE' => '6']);
+            $mock->shouldReceive('saveKeys')->once()->with(['PORTAL_GROUP_REGISTER_BEFORE_SUBMITTING_CIRCLE' => true]);
         });
 
         $response = $this->actingAs($this->staff)
@@ -64,6 +66,7 @@ class UpdateActionTest extends TestCase
                 'open_at' => '2000-12-31T12:12',
                 'close_at' => '2040-12-31T11:15',
                 'users_number_to_submit_circle' => '6',
+                'group_register_before_submitting_circle' => '1',
                 'is_public' => '1',
                 'description' => '参加登録前に読んでほしいもの',
             ]);

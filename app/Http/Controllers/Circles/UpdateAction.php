@@ -30,8 +30,11 @@ class UpdateAction extends Controller
      */
     private $dotenvService;
 
-    public function __construct(CirclesService $circlesService, AnswersService $answersService, DotenvService $dotenvService)
-    {
+    public function __construct(
+        CirclesService $circlesService,
+        AnswersService $answersService,
+        DotenvService $dotenvService
+    ) {
         $this->circlesService = $circlesService;
         $this->answersService = $answersService;
         $this->dotenvService = $dotenvService;

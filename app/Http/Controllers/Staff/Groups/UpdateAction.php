@@ -43,6 +43,5 @@ class UpdateAction extends Controller
         return redirect()
             ->back()
             ->with('topAlert.title', '団体情報を更新しました');
-
     }
 }

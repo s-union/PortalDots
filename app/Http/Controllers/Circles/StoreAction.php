@@ -33,8 +33,8 @@ class StoreAction extends Controller
     public function __construct(
         CirclesService $circlesService,
         AnswersService $answersService,
-        DotenvService  $dotenvService)
-    {
+        DotenvService $dotenvService
+    ) {
         $this->circlesService = $circlesService;
         $this->answersService = $answersService;
         $this->dotenvService = $dotenvService;

@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Mail;
 
 class GroupsService
 {
-    public function create(User $leader, string $group_name, string $group_name_yomi) {
+    public function create(User $leader, string $group_name, string $group_name_yomi)
+    {
         return DB::transaction(function () use ($leader, $group_name, $group_name_yomi) {
             $group = Group::create([
                 'group_name' => $group_name,
@@ -41,7 +42,8 @@ class GroupsService
         $group->users()->detach($user->id);
     }
 
-    public function submit(Group $group) {
+    public function submit(Group $group)
+    {
         $group->submitted_at = now();
         $group->save();
     }
@@ -53,7 +55,8 @@ class GroupsService
         ]);
     }
 
-    public function sendSubmittedEmail(User $user, Group $group) {
+    public function sendSubmittedEmail(User $user, Group $group)
+    {
         Mail::to($user)
             ->send(
                 (new SubmittedMailable($group))
