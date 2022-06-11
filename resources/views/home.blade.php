@@ -279,6 +279,14 @@
                         <dl>
                             <dt>団体名</dt>
                             <dd>{{ $my_group->group_name }}（{{ $my_group->group_name_yomi }}）</dd>
+                            @isset($attendance_fee)
+                                <dt>企画参加登録費の合計</dt>
+                                <dd>{{ number_format($attendance_fee) }} 円</dd>
+                            @endif
+                            @isset($attendance_type_description)
+                                <dt>参加形態</dt>
+                                <dd>{{ $attendance_type_description }}</dd>
+                            @endif
                         </dl>
                     </list-view-card>
                     <list-view-action-btn href="{{ route('groups.show', ['group' => $my_group]) }}">

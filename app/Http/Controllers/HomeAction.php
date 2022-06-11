@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\Circles\CirclesService;
+use App\Services\Groups\GroupsService;
 use App\Services\Utils\DotenvService;
 use Illuminate\Support\Facades\Auth;
 use App\Eloquents\Page;
@@ -29,10 +31,19 @@ class HomeAction extends Controller
      */
     private $dotenvService;
 
-    public function __construct(SelectorService $selectorService, DotenvService $dotenvService)
-    {
+    /**
+     * @var GroupsService
+     */
+    private $groupsService;
+
+    public function __construct(
+        SelectorService $selectorService,
+        DotenvService $dotenvService,
+        GroupsService $groupsService
+    ) {
         $this->selectorService = $selectorService;
         $this->dotenvService = $dotenvService;
+        $this->groupsService = $groupsService;
     }
 
     public function __invoke()
@@ -110,6 +121,14 @@ class HomeAction extends Controller
                 'my_group',
                 $group
             )
-            ->with('can_register', $can_register);
+            ->with('can_register', $can_register)
+            ->with(
+                'attendance_fee',
+                Auth::check() ? $this->groupsService->attendanceFee(Auth::user()) : null
+            )
+            ->with(
+                'attendance_type_description',
+                Auth::check() ? $this->groupsService->attendanceTypeDescription(Auth::user()) : null
+            );
     }
 }
