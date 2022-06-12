@@ -29,6 +29,7 @@ class CustomFormRequest extends FormRequest
             'close_at' => ['required', 'date', 'after:open_at'],
             'is_public' => ['boolean'],
             'description' => ['nullable', 'string'],
+            'group_register_before_submitting_circle' => ['boolean']
         ];
     }
 
@@ -45,6 +46,7 @@ class CustomFormRequest extends FormRequest
             'close_at' => '受付終了日時',
             'is_public' => '参加登録画面の公開設定',
             'description' => '参加登録前に表示する内容',
+            'group_register_before_submitting_circle' => '団体登録の有効化'
         ];
     }
 }

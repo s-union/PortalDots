@@ -33,6 +33,9 @@
     <exclude-pattern>/server.php</exclude-pattern>
     <exclude-pattern>/app/Console/Kernel.php</exclude-pattern>
     <exclude-pattern>/tests/CreatesApplication.php</exclude-pattern>
+    <exclude-pattern>/_ide_helper.php</exclude-pattern>
+    <exclude-pattern>/_ide_helper_models.php</exclude-pattern>
+    <exclude-pattern>/.phpstorm.meta.php</exclude-pattern>
 
     <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
         <exclude-pattern>/tests/</exclude-pattern>

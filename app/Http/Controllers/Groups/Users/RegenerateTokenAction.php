@@ -19,7 +19,6 @@ class RegenerateTokenAction extends Controller
         $this->groupsService = $groupsService;
     }
 
-
     public function __invoke(Group $group)
     {
         $this->authorize('group.update', $group);

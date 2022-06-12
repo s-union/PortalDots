@@ -91,7 +91,7 @@
                     @include('includes.question')
                 @endforeach
                 <circle-question
-                    attendance-type="{{ old('answer_attendance_type', isset($circle) ? $circle->tags->first()->name : '') }}"
+                    attendance-type="{{ old('answer_attendance_type', isset($circle) ? $circle->attendance_type : '') }}"
                     :attendance-types="{{ json_encode($attendance_types) }}"
                 />
             </list-view>

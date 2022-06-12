@@ -44,7 +44,8 @@ class GroupRequest extends FormRequest
     /**
      * バリデーション通過後に以下のバリデーションが検証される
      */
-    public function withValidator($validator) {
+    public function withValidator($validator)
+    {
         $unverified_student_ids = [];
 
         $non_registered_member_ids = str_replace(["\r\n", "\r", "\n"], "\n", $this->members);
