@@ -7,6 +7,7 @@ use App\Eloquents\Circle;
 use App\Eloquents\CustomForm;
 use App\Services\Circles\CirclesService;
 use App\Services\Forms\AnswerDetailsService;
+use App\Services\Utils\DotenvService;
 use Illuminate\Support\Facades\Auth;
 
 class SubmitAction extends Controller
@@ -21,10 +22,19 @@ class SubmitAction extends Controller
      */
     private $answerDetailsService;
 
-    public function __construct(CirclesService $circlesService, AnswerDetailsService $answerDetailsService)
-    {
+    /**
+     * @var DotenvService
+     */
+    private $dotenvService;
+
+    public function __construct(
+        CirclesService $circlesService,
+        AnswerDetailsService $answerDetailsService,
+        DotenvService $dotenvService
+    ) {
         $this->circlesService = $circlesService;
         $this->answerDetailsService = $answerDetailsService;
+        $this->dotenvService = $dotenvService;
     }
 
     public function __invoke(Circle $circle)
@@ -35,7 +45,8 @@ class SubmitAction extends Controller
             abort(403);
         }
 
-        if (!$circle->canSubmit()) {
+        $should_register_group = $this->dotenvService->shouldRegisterGroup();
+        if (!$should_register_group && !$circle->canSubmit()) {
             return redirect()
                 ->route('circles.users.index', ['circle' => $circle])
                 ->with('topAlert.type', 'danger')
