@@ -35,7 +35,8 @@ class ConfirmAction extends Controller
             abort(403);
         }
 
-        if (!$circle->canSubmit()) {
+        $should_register_group = $this->dotenvService->shouldRegisterGroup();
+        if (!$should_register_group && !$circle->canSubmit()) {
             return redirect()
                 ->route('circles.users.index', ['circle' => $circle])
                 ->with('topAlert.type', 'danger')
@@ -54,6 +55,6 @@ class ConfirmAction extends Controller
             ->with('answer', $answer)
             ->with('answer_details', !empty($answer)
                 ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : [])
-            ->with('should_register_group', $this->dotenvService->shouldRegisterGroup());
+            ->with('should_register_group', $should_register_group);
     }
 }
