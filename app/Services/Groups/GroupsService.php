@@ -78,12 +78,20 @@ class GroupsService
      * User の所属する Circle の企画参加登録費を取得します.
      * この企画参加登録費は第1次の参加形態のみを対象とします.
      *
-     * @param User $user
-     * @return int
+     * @param User|null $user
+     * @return int|null Userがnullの場合,またはUserがどの企画にも所属していない場合はnull
      */
-    public function attendanceFee(User $user): int
+    public function attendanceFee(?User $user): ?int
     {
+        if (!$user) {
+            return null;
+        }
+
         $circles = $user->circles;
+        if (count($circles) === 0) {
+            return null;
+        }
+
         $attendance_fee = 0;
         foreach ($circles as $circle) {
             $attendance_fee += CircleConsts::ATTENDANCE_FEE_V1[$circle->attendance_type];
@@ -91,9 +99,17 @@ class GroupsService
         return $attendance_fee;
     }
 
-    public function attendanceTypeDescription(User $user): string
+    public function attendanceTypeDescription(?User $user): ?string
     {
+        if (!$user) {
+            return null;
+        }
+
         $circles = $user->circles;
+        if (count($circles) === 0) {
+            return null;
+        }
+
         $attendance_types = [];
         foreach ($circles as $circle) {
             $attendance_types[] = $circle->attendance_type;
