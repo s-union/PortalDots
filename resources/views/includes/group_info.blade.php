@@ -34,8 +34,7 @@
         <dt>企画参加登録費の合計</dt>
         <dd>{{ number_format($attendance_fee) }} 円</dd>
     @endif
-
-    @isset($circles)
+    @if(count($circles) > 0)
         <dt>企画一覧</dt>
         <dd>
             <ul>
