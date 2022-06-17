@@ -30,4 +30,29 @@
             @endforeach
         </ul>
     </dd>
+    @isset($attendance_fee)
+        <dt>企画参加登録費の合計</dt>
+        <dd>{{ number_format($attendance_fee) }} 円</dd>
+    @endif
+
+    @isset($circles)
+        <dt>企画一覧</dt>
+        <dd>
+            <ul>
+                @foreach($circles as $circle)
+                    <li>
+                        {{ $circle->name }}
+                        @if ($circle->isPending())
+                            <app-badge muted>確認中</app-badge>
+                        @elseif ($circle->hasApproved())
+                            <app-badge success>受理済</app-badge>
+                        @endif
+                    </li>
+                    <ul>
+                        <li>参加形態 : {{ $circle->attendance_type }}</li>
+                    </ul>
+                @endforeach
+            </ul>
+        </dd>
+    @endif
 </dl>
