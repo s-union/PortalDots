@@ -75,7 +75,7 @@ class GroupsService
     // TODO: 適切な位置に移動させる
 
     /**
-     * User の所属する Circle の企画参加登録費を取得します.
+     * User の所属する Circle (未提出のものは除く) の企画参加登録費を取得します.
      * この企画参加登録費は第1次の参加形態のみを対象とします.
      *
      * @param User|null $user
@@ -87,7 +87,11 @@ class GroupsService
             return null;
         }
 
-        $circles = $user->circles;
+        $circles = $user->circles->filter(
+            function ($circle) {
+                return $circle->isPending();
+            }
+        );
         if (count($circles) === 0) {
             return null;
         }
@@ -105,7 +109,11 @@ class GroupsService
             return null;
         }
 
-        $circles = $user->circles;
+        $circles = $user->circles->filter(
+            function ($circle) {
+                return $circle->isPending();
+            }
+        );
         if (count($circles) === 0) {
             return null;
         }
