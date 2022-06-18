@@ -73,6 +73,7 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
      */
     public function getDetails(Answer $answer): array
     {
+        $details = [];
         foreach ($this->form->questions->where('type', '!==', 'heading') as $question) {
             if (empty($answer)) {
                 break;
