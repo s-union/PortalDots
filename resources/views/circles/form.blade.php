@@ -29,8 +29,6 @@
                             企画情報の入力は、企画責任者の方が行ってください。企画責任者以外の方は、企画情報の入力は不要です。企画責任者の方の指示に従ってください。
                         </app-info-box>
                     </list-view-card>
-                @endunless
-                @unless($should_register_group)
                     <list-view-form-group label-for="leader">
                         <template v-slot:label>企画責任者</template>
                         <input type="text" id="leader" readonly
@@ -38,10 +36,20 @@
                             class="form-control is-plaintext">
                     </list-view-form-group>
                 @endunless
+                <list-view-card>
+                    <app-info-box primary>
+                        「実行委員会企画」に参加される団体・グループ・個人の方は、理大祭ウェブポータル上での「企画参加登録」では登録できません。<br>
+                        <a href="">こちらのリンク先</a>にて、参加申請を行ってください。
+                    </app-info-box>
+                </list-view-card>
                 <list-view-form-group label-for="name">
                     <template v-slot:label>
                         企画名
                         <app-badge danger>必須</app-badge>
+                    </template>
+                    <template v-slot:description>
+                        企画名は現時点のもので構いません。<br>
+                        理大祭ウェブサイトやパンフレットに掲載する企画名は別途申請いただきます。
                     </template>
                     <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name"
                         value="{{ old('name', isset($circle) ? $circle->name : '') }}" required>
@@ -90,7 +98,7 @@
                 @foreach ($questions as $question)
                     @include('includes.question')
                 @endforeach
-                <circle-question
+                <circle-question-v1
                     attendance-type="{{ old('answer_attendance_type', isset($circle) ? $circle->attendance_type : '') }}"
                     :attendance-types="{{ json_encode($attendance_types) }}"
                 />

@@ -30,6 +30,6 @@ class CreateAction extends Controller
             ->with('form', $form)
             ->with('questions', $form->questions()->get())
             ->with('should_register_group', $should_register_group)
-            ->with('attendance_types', CircleConsts::CIRCLE_ATTENDANCE_TYPES_V1);
+            ->with('attendance_types', CircleConsts::CIRCLE_ATTENDANCE_TYPES_V2);
     }
 }

@@ -51,7 +51,7 @@ class CircleRequest extends FormRequest implements AnswerRequestInterface
             $rules = [
                 'name' => Circle::NAME_RULES,
                 'name_yomi' => Circle::NAME_YOMI_RULES,
-                'answer_attendance_type' => ['required', Rule::in(CircleConsts::CIRCLE_ATTENDANCE_TYPES_V1)]
+                'answer_attendance_type' => ['required', Rule::in(CircleConsts::CIRCLE_ATTENDANCE_TYPES_V2)]
             ];
         } else {
             $rules = [
