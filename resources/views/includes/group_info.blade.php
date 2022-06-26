@@ -31,7 +31,7 @@
         </ul>
     </dd>
     @isset($attendance_fee)
-        <dt>企画参加登録費の合計</dt>
+        <dt>未払いの企画参加登録費の合計（「実行委員会企画」の参加費を除く）</dt>
         <dd>{{ number_format($attendance_fee) }} 円</dd>
     @endif
     @if(count($circles) > 0)
