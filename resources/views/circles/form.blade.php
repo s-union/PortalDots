@@ -39,7 +39,7 @@
                 <list-view-card>
                     <app-info-box primary>
                         「実行委員会企画」に参加される団体・グループ（バンド等）・個人の方は、この「企画参加登録」からは登録できません。<br>
-                        <a href="">こちらのリンク先</a>にて、参加申請を行ってください。
+                        詳しくは「配布資料Vol2.0」をご覧の上、参加申請を行ってください。
                     </app-info-box>
                 </list-view-card>
                 <list-view-form-group label-for="name">
