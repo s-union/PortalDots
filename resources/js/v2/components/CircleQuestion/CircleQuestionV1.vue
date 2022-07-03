@@ -25,9 +25,9 @@
 </template>
 
 <script>
-import ListViewFormGroup from './ListViewFormGroup.vue'
-import AppBadge from './AppBadge.vue'
-import QuestionSelect from './Forms/QuestionSelect.vue'
+import ListViewFormGroup from '../ListViewFormGroup.vue'
+import AppBadge from '../AppBadge.vue'
+import QuestionSelect from '../Forms/QuestionSelect.vue'
 
 export default {
   name: 'CircleQuestion',

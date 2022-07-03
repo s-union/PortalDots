@@ -44,6 +44,6 @@ class EditAction extends Controller
             ->with('answer', $answer)
             ->with('answer_details', $this->answerDetailsService->getAnswerDetailsByAnswer($answer))
             ->with('should_register_group', $this->dotenvService->shouldRegisterGroup())
-            ->with('attendance_types', CircleConsts::CIRCLE_ATTENDANCE_TYPES_V1);
+            ->with('attendance_types', CircleConsts::CIRCLE_ATTENDANCE_TYPES_V2);
     }
 }

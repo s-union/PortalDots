@@ -144,85 +144,6 @@
             </list-view>
         @endforeach
 
-        @if ($can_register)
-            <list-view>
-                <template v-slot:title>理大祭参加登録</template>
-                <template v-slot:description>
-                    受付期間 : @datetime($circle_custom_form->open_at)〜@datetime($circle_custom_form->close_at)
-                </template>
-                @if(!Auth::check())
-                    <list-view-card>
-                        <list-view-empty text="理大祭参加登録するには、まずログインしてください">
-                            <p>
-                                {{ config('app.name') }}の利用がはじめての場合は<a
-                                    href="{{ route('register') }}">ユーザー登録</a>を行ってください。<br>
-                                <a href="{{ route('login') }}">ログインはこちら</a>
-                            </p>
-                        </list-view-empty>
-                    </list-view-card>
-                @elseif (!Auth::user()->areBothEmailsVerified())
-                    <list-view-card>
-                        <list-view-empty icon-class="far fa-envelope" text="メール認証が未完了です">
-                            <p>
-                                理大祭参加登録を行うには、まずメール認証を完了させてください。
-                            </p>
-                            <a href="{{ route('verification.notice') }}" class="btn is-primary is-wide">
-                                <strong>もっと詳しく</strong>
-                            </a>
-                        </list-view-empty>
-                    </list-view-card>
-                @elseif (!isset($my_group))
-                    <list-view-card>
-                        <list-view-empty icon-class="fa fa-users" text="理大祭参加登録をしましょう！">
-                            <p>
-                                まだ理大祭参加登録がお済みでないようですね。<br>
-                                まずは理大祭参加登録からはじめましょう！
-                            </p>
-                            <a href="{{ route('groups.create') }}" class="btn is-primary is-wide">
-                                <strong>理大祭参加登録をはじめる</strong>
-                            </a>
-                        </list-view-empty>
-                    </list-view-card>
-                @else
-                    @if(!$my_group->hasSubmitted() && $my_group->canSubmit() && Auth::user()->isLeaderInGroup($my_group))
-                        <list-view-item href="{{ route('groups.confirm', ['group' => $my_group]) }}">
-                            <template v-slot:title>
-                                    <span class="text-primary">
-                                        ここをクリックして「{{ $my_group->group_name }}」の理大祭参加登録を提出しましょう！
-                                    </span>
-                            </template>
-                        </list-view-item>
-                    @elseif (!$my_group->hasSubmitted() && !$my_group->canSubmit() && Auth::user()->isLeaderInGroup($my_group))
-                        <list-view-item href="{{ route('groups.users.index', ['group' => $my_group]) }}">
-                            <template v-slot:title>
-                                    <span class="text-primary">
-                                        ここをクリックして「{{ $my_group->group_name }}」の理大祭係(副責任者)を招待しましょう！
-                                    </span>
-                            </template>
-                            <template v-slot:meta>
-                                理大祭参加登録を行うには、ここをクリックして理大祭係(副責任者)を招待してください。
-                            </template>
-                        </list-view-item>
-                    @elseif (!Auth::user()->isLeaderInGroup($my_group))
-                        <list-view-item href="{{ route('groups.show', ['group' => $my_group]) }}">
-                            <template v-slot:title>
-                                    <span class="text-primary">
-                                        ここをクリックすると「{{ $my_group->group_name }}」の理大祭参加登録の内容を確認できます
-                                    </span>
-                            </template>
-                        </list-view-item>
-                    @else
-                        <list-view-empty icon-class="fa fa-check" text="理大祭参加登録を提出しました！">
-                            <p>
-                                理大祭参加登録を提出しました。<br>
-                                続いて、企画参加登録を行ってください。
-                            </p>
-                        </list-view-empty>
-                    @endif
-                @endif
-            </list-view>
-        @endif
-
         @if (Gate::allows('circle.create'))
             <list-view>
                 <template v-slot:title>企画参加登録</template>
@@ -280,7 +201,7 @@
                             <dt>団体名</dt>
                             <dd>{{ $my_group->group_name }}（{{ $my_group->group_name_yomi }}）</dd>
                             @isset($attendance_fee)
-                                <dt>企画参加登録費の合計</dt>
+                                <dt>未払いの企画参加登録費の合計（「実行委員会企画」の参加費を除く）</dt>
                                 <dd>{{ number_format($attendance_fee) }} 円</dd>
                             @endif
                             @isset($attendance_type_description)

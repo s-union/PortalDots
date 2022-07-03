@@ -49,7 +49,7 @@ import UiPrimaryColorPicker from './components/UiPrimaryColorPicker.vue'
 import QuestionItem from './components/Forms/QuestionItem.vue'
 import QuestionHeading from './components/Forms/QuestionHeading.vue'
 
-import CircleQuestion from './components/CircleQuestion.vue'
+import CircleQuestionV1 from './components/CircleQuestion/CircleQuestionV1.vue'
 
 export function mountV2App() {
   // iOS で CSS の hover を有効にするハック
@@ -124,7 +124,7 @@ export function mountV2App() {
         SearchInput,
         PermissionsSelector,
         UiPrimaryColorPicker,
-        CircleQuestion
+        CircleQuestionV1
       },
       data() {
         return {
