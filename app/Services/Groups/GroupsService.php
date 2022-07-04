@@ -76,7 +76,7 @@ class GroupsService
 
     /**
      * User の所属する Circle (未提出・受理済みのものは除く) の企画参加登録費を取得します.
-     * この企画参加登録費は第1次の参加形態のみを対象とします.
+     * この企画参加登録費は第2次の参加形態のみを対象とします.
      *
      * @param User|null $user
      * @return int|null Userがnullの場合,またはUserがどの企画にも所属していない場合はnull
@@ -92,15 +92,22 @@ class GroupsService
                 return $circle->isPending();
             }
         );
-        if (count($circles) === 0) {
-            return null;
-        }
+
+        // Pending以外も含めて全ての企画に対して探索する.
+        $attend_with_other_types = $user->circles->filter(
+            function ($circle) {
+                return $circle->attendance_type !== '公式YouTubeへの掲載';
+            }
+        )->count() > 0;
 
         $attendance_fee = 0;
         foreach ($circles as $circle) {
-            $attendance_fee += CircleConsts::ATTENDANCE_FEE_V1[$circle->attendance_type];
+            $attendance_fee += array_merge(
+                CircleConsts::ATTENDANCE_FEE_V1,
+                CircleConsts::attendanceFeeV2($attend_with_other_types)
+            )[$circle->attendance_type];
         }
-        return $attendance_fee;
+        return $attendance_fee === 0 ? null : $attendance_fee;
     }
 
     public function attendanceTypeDescription(?User $user): ?string
@@ -125,7 +132,12 @@ class GroupsService
         $attendance_type_to_num = array_count_values($attendance_types);
 
         // CircleConstsで定義した順番にソートする.
-        $attendance_types_with_sort_id = array_values(CircleConsts::CIRCLE_ATTENDANCE_TYPES_V1);
+        $attendance_types_with_sort_id = array_values(
+            array_merge(
+                CircleConsts::CIRCLE_ATTENDANCE_TYPES_V1,
+                CircleConsts::CIRCLE_ATTENDANCE_TYPES_V2
+            )
+        );
         uksort($attendance_type_to_num, function ($a, $b) use ($attendance_types_with_sort_id) {
             return array_search($a, $attendance_types_with_sort_id) > array_search($b, $attendance_types_with_sort_id);
         });
