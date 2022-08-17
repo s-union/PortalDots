@@ -54,6 +54,7 @@ class SelectorService
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'group_name' => $circle->group_name,
+                'attendance_type' => $circle->attendance_type,
                 'href' => route('circles.selector.set', ['redirect_to' => $redirect_to, 'circle' => $circle]),
             ];
         })->toJson();
