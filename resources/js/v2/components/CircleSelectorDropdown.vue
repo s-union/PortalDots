@@ -10,7 +10,12 @@
         <template #button="{ toggle, props }">
           <button class="selector-button" @click="toggle" v-bind="props">
             <div class="selector-button__content">
-              <div class="selector-button__name">{{ selectedCircleName }}</div>
+              <div class="selector-button__name">
+                {{ selectedCircleName }} -
+                <span class="text-muted">
+                  {{ selectedCircleAttendanceType }}
+                </span>
+              </div>
               <div class="selector-button__group-name">
                 {{ selectedCircleGroupName }}
               </div>
@@ -25,7 +30,12 @@
             :href="item.href"
           >
             <div class="selector-item__body">
-              <div class="selector-item__name">{{ item.name }}</div>
+              <div class="selector-item__name">
+                {{ item.name }} -
+                <span class="text-muted">
+                  {{ item.attendance_type }}
+                </span>
+              </div>
               <div class="selector-item__group-name">{{ item.group_name }}</div>
             </div>
             <i
@@ -65,6 +75,10 @@ export default {
       required: true
     },
     selectedCircleName: {
+      type: String,
+      required: true
+    },
+    selectedCircleAttendanceType: {
       type: String,
       required: true
     },
