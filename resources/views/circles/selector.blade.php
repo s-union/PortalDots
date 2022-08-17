@@ -9,12 +9,12 @@
         <list-view>
             <template v-slot:title>企画を選択</template>
             <template v-slot:description>ログインする企画を選択してください。</template>
-            @foreach ($circles as $circle)
+            @foreach ($circles as $circle /** @type \App\Eloquents\Circle $circle */)
                 <list-view-item
                     href="{{ route('circles.selector.set', ['redirect_to' => $redirect_to, 'circle' => $circle]) }}">
                     <template v-slot:title>
                         <i class="fa fa-users mr-2" area-hidden="true"></i>
-                        {{ $circle->name }}
+                        {{ $circle->name }} - <span class="text-muted">{{ $circle->attendance_type }}</span>
                     </template>
                 </list-view-item>
             @endforeach
