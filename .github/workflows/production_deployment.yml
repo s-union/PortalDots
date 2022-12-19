@@ -40,7 +40,7 @@ jobs:
         run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan down;'
       - name: Upload project to Sakura-Server
         run: |
-          rsync --checksum -acvz --progress --delete ./* ridaisai@ridaisai.sakura.ne.jp:${{ env.directory }}/ --exclude='*' --include='artisan/*' --include='app/*' --include='bootstrap/*' --include='config/*' --include='database/*' --include='resources/*' --include='routes/*' --include='vendor/*' --include='public/css/*' --include='public/fonts/*' --include='public/images/*' --include='public/js/*' --include='public/index.php' --include='public/mix-manifest.json'
+          rsync -acrvz --progress --include='artisan' --include='app' --include='app/**' --include='bootstrap' --include='bootstrap/**' --include='config' --include='config/***' --include='database' --include='database/**' --include='resources' --include='resources/**' --include='routes' --include='routes/**' --include='vendor' --include='vendor/**' --include='public' --include='public/css' --include='public/css/**' --include='public/fonts' --include='public/fonts/**' --include='public/images' --include='public/images/**'  --include='public/js' --include='public/js/**' --include='public/index.php' --include='public/mix-manifest.json' --exclude='*' ./ ridaisai@ridaisai.sakura.ne.jp:${{ env.directory }}/
         working-directory: dist
       - name: Database backup
         run: ssh ridaisai@ridaisai.sakura.ne.jp 'mysqldump --defaults-extra-file='~/etc/.sql.cnf' --default-character-set=utf8 --no-tablespaces --single-transaction --quote-names ${{ env.database_name }} > ~/backup/mysql/`date +%Y-%m-%d-%H-%M-%S`_${{ env.database_name }}.sql'
