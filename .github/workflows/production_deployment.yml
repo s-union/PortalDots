@@ -45,6 +45,6 @@ jobs:
       - name: Database backup
         run: ssh ridaisai@ridaisai.sakura.ne.jp 'mysqldump --defaults-extra-file='~/etc/.sql.cnf' --default-character-set=utf8 --no-tablespaces --single-transaction --quote-names ${{ env.database_name }} > ~/backup/mysql/`date +%Y-%m-%d-%H-%M-%S`_${{ env.database_name }}.sql'
       - name: Database migration and cache generation
-        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan migrate --force; php artisan optimize'
+        run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan migrate --force;'
       - name: Recover from maintainance mode
         run: ssh ridaisai@ridaisai.sakura.ne.jp 'cd ${{ env.directory }}; php artisan up;'
