@@ -7,7 +7,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends zlib1g-dev libpq-dev libzip-dev libpng-dev default-mysql-client unzip wget \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* \
-    && pecl install xdebug \
+    && pecl install xdebug-3.1.6 \
     && docker-php-ext-install zip pdo_mysql mysqli gd \
     && docker-php-ext-enable mysqli xdebug
 
