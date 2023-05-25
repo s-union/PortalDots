@@ -72,6 +72,7 @@ class Circle extends Model
         'name_yomi',
         'group_name',
         'group_name_yomi',
+        'can_change_group_name',
         'invitation_token',
         'submitted_at',
         'status',

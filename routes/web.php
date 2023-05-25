@@ -107,12 +107,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/{circle}', 'Circles\UpdateAction')->name('update');
             Route::get('/{circle}/auth', 'Circles\Auth\ShowAction')->name('auth');
             Route::post('/{circle}/auth', 'Circles\Auth\PostAction');
-            // 企画メンバー登録関連
-            Route::get('/{circle}/users', 'Circles\Users\IndexAction')->name('users.index');
-            Route::get('/{circle}/users/invite/{token}', 'Circles\Users\InviteAction')->name('users.invite');
-            Route::post('/{circle}/users', 'Circles\Users\StoreAction')->name('users.store');
-            Route::delete('/{circle}/users/{user}', 'Circles\Users\DestroyAction')->name('users.destroy');
-            Route::post('/{circle}/users/regenerate', 'Circles\Users\RegenerateTokenAction')->name('users.regenerate');
+            Route::middleware(['can:circle.updateGroupName,circle'])->group(function () {
+                // 企画メンバー登録関連
+                Route::get('/{circle}/users', 'Circles\Users\IndexAction')->name('users.index');
+                Route::get('/{circle}/users/invite/{token}', 'Circles\Users\InviteAction')->name('users.invite');
+                Route::post('/{circle}/users', 'Circles\Users\StoreAction')->name('users.store');
+                Route::delete('/{circle}/users/{user}', 'Circles\Users\DestroyAction')->name('users.destroy');
+                Route::post('/{circle}/users/regenerate', 'Circles\Users\RegenerateTokenAction')->name('users.regenerate');
+            });
+
             // 参加登録の提出
             Route::get('/{circle}/confirm', 'Circles\ConfirmAction')->name('confirm');
             Route::post('/{circle}/submit', 'Circles\SubmitAction')->name('submit');

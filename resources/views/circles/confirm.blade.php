@@ -36,10 +36,12 @@
 
             <div class="text-center pt-spacing-sm pb-spacing">
                 @if ($circle->participationType->users_count_max > 1)
-                    <a class="btn is-secondary" href="{{ route('circles.users.index', ['circle' => $circle]) }}">
-                        <i class="fas fa-chevron-left"></i>
-                        「メンバーを招待」へもどる
-                    </a>
+                    @if ($circle->can_change_group_name)
+                        <a class="btn is-secondary" href="{{ route('circles.users.index', ['circle' => $circle]) }}">
+                            <i class="fas fa-chevron-left"></i>
+                            「メンバーを招待」へもどる
+                        </a>
+                    @endif
                 @else
                     <a class="btn is-secondary" href="{{ route('circles.edit', ['circle' => $circle]) }}">
                         <i class="fas fa-chevron-left"></i>

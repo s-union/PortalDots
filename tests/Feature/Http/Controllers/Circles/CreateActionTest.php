@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Http\Controllers\Circles;
 
+use App\Eloquents\Circle;
 use App\Eloquents\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
+/** @group hoge */
 class CreateActionTest extends BaseTestCase
 {
     use RefreshDatabase;
@@ -58,5 +60,60 @@ class CreateActionTest extends BaseTestCase
 
         $responce->assertOk();
         $responce->assertDontSee('必ずお読みください');
+    }
+
+    /** @test */
+    public function 最初の提出の際には団体名を入力できる()
+    {
+        $response = $this
+            ->actingAs($this->user)
+            ->get(
+                route('circles.create', ['participation_type' => $this->participationType])
+            );
+
+        $response->assertDontSee('理大祭実行委員会');
+    }
+
+    /** @test */
+    public function 最初の提出では確認画面に遷移する表示とはならない()
+    {
+        $response = $this
+            ->actingAs($this->user)
+            ->get(
+                route('circles.create', ['participation_type' => $this->participationType])
+            );
+
+        $response->assertDontSee('確認画面へ');
+    }
+
+    /** @test */
+    public function ２回目以降の提出の際には先に提出した企画の団体名が入力されている()
+    {
+        $circle = factory(Circle::class)->create();
+        $circle->leader()->attach($this->user->id);
+
+        $response = $this
+            ->actingAs($this->user)
+            ->get(
+                route('circles.create', ['participation_type' => $this->participationType])
+            );
+
+        $response->assertSee($circle->group_name);
+        $response->assertSee($circle->group_name_yomi);
+    }
+
+    /** @test */
+    public function ２回目以降の提出では確認画面に遷移する表示となる()
+    {
+        $circle = factory(Circle::class)->create();
+        $circle->leader()->attach($this->user->id);
+
+        $response = $this
+            ->actingAs($this->user)
+            ->get(
+                route('circles.create', ['participation_type' => $this->participationType])
+            );
+
+        $response->assertSee('確認画面へ');
     }
 }

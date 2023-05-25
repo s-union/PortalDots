@@ -68,7 +68,12 @@ class UpdateAction extends Controller
 
         activity()->enableLogging();
 
-        return redirect()
-            ->route('circles.users.index', ['circle' => $circle]);
+        if ($circle->can_change_group_name) {
+            return redirect()
+                ->route('circles.users.index', ['circle' => $circle]);
+        } else {
+            return redirect()
+                ->route('circles.confirm', ['circle' => $circle]);
+        }
     }
 }
