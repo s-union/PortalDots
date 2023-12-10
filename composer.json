@@ -9,7 +9,7 @@
         "ext-mbstring": "*",
         "cebe/markdown": "*",
         "doctrine/dbal": "^3.3",
-        "ezyang/htmlpurifier": "^4.9",
+        "ezyang/htmlpurifier": "^4.17",
         "fideloper/proxy": "^4.0",
         "guzzlehttp/guzzle": "^7.2",
         "jackiedo/dotenv-editor": "^2.0",
