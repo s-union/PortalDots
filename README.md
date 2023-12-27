@@ -138,6 +138,10 @@ Git、PHP(8.0 以上)、Node.js、Yarn、Docker がセットアップ済みで�
 $ git clone git@github.com:portaldots/PortalDots.git
 $ cd PortalDots/
 
+# 必要な PHP(Laravel) のパッケージをインストール
+# このとき composer update が必要な場合有り
+$ composer install
+
 # 必要な Node.js パッケージをインストール
 # ※ エラーが表示される場合は、後述の *1 を参照してください
 $ yarn install
