@@ -147,6 +147,7 @@ class User extends Authenticatable
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
+        'password' => 'hashed',
         'is_staff' => 'bool',
         'is_admin' => 'bool',
         'is_verified_by_staff' => 'bool',
