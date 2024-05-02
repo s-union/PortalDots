@@ -29,8 +29,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->registerPolicies();
-
         // 管理者で、メール認証やスタッフ認証が済んでいる場合、
         // auth()->user->can() や @can() などで true を返すようにする
         Gate::after(function (User $user) {
