@@ -1,16 +1,21 @@
 <template>
-  <input
-    type="number"
+  <select
     :id="inputId"
     :name="inputName"
     class="form-control"
-    :value="value"
     :required="required"
-    step="1"
-    :min="numberMin"
-    :max="numberMax"
-    :readonly="disabled"
-  />
+    :disabled="disabled"
+  >
+    <option value="" disabled selected hidden>選択してください</option>
+    <option
+      v-for="n in numberOptions"
+      :key="n"
+      :value="n"
+      :selected="String(n) === value"
+    >
+      {{ n }}
+    </option>
+  </select>
 </template>
 
 <script>
@@ -47,6 +52,18 @@ export default {
     disabled: {
       type: Boolean,
       default: false,
+    },
+  },
+  computed: {
+    numberOptions() {
+      if (this.numberMin == null || this.numberMax == null || this.numberMin > this.numberMax) {
+        return [];
+      }
+      const options = [];
+      for (let i = this.numberMin; i <= this.numberMax; i++) {
+        options.push(i);
+      }
+      return options;
     },
   },
 };
