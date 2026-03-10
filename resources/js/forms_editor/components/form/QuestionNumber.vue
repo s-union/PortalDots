@@ -11,16 +11,19 @@
         </p>
         <template v-if="numberOptions.length > 0">
           <select class="custom-select" tabindex="-1">
-            <option>整数入力</option>
+            <option>整数を選択</option>
             <option v-for="n in numberOptions" :key="n" :value="n">
               {{ n }}
             </option>
           </select>
         </template>
         <template v-else>
-          <select class="custom-select" tabindex="-1" disabled>
-            <option>最低数・最大数を設定してください</option>
-          </select>
+          <input
+            type="number"
+            class="form-control"
+            tabindex="-1"
+            placeholder="整数入力（最低数・最大数が未設定）"
+          />
         </template>
       </div>
     </template>

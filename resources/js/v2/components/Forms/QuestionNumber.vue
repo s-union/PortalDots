@@ -1,21 +1,35 @@
 <template>
   <select
+    v-if="numberOptions.length > 0"
     :id="inputId"
     :name="inputName"
     class="form-control"
     :required="required"
     :disabled="disabled"
+    :value="value || ''"
   >
-    <option value="" disabled selected hidden>選択してください</option>
+    <option value="" disabled hidden>選択してください</option>
     <option
       v-for="n in numberOptions"
       :key="n"
       :value="n"
-      :selected="String(n) === value"
     >
       {{ n }}
     </option>
   </select>
+  <input
+    v-else
+    type="number"
+    :id="inputId"
+    :name="inputName"
+    class="form-control"
+    :value="value"
+    :required="required"
+    step="1"
+    :min="numberMin"
+    :max="numberMax"
+    :readonly="disabled"
+  />
 </template>
 
 <script>
