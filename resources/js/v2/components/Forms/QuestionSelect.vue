@@ -5,12 +5,12 @@
     class="form-control"
     :required="required"
     :disabled="disabled"
+    :value="value || ''"
   >
-    <option></option>
+    <option value="" disabled hidden>選択してください</option>
     <option
       v-for="(option, index) in options"
       :key="`${option}_${index}`"
-      :selected="option === value"
       :value="option"
     >
       {{ option }}
