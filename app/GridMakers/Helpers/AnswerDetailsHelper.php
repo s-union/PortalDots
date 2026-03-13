@@ -8,7 +8,7 @@ use App\Eloquents\AnswerDetail;
 use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\GridMakers\Filter\FilterableKey;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\JoinClause;
 
