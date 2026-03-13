@@ -9,10 +9,13 @@ use App\Services\Auth\EmailService;
 use App\Services\Auth\VerifyService;
 use Illuminate\Support\Facades\Auth;
 use App\Eloquents\User;
-use Swift_RfcComplianceException;
+use Symfony\Component\Mime\Exception\RfcComplianceException;
 
 class UpdateInfoAction extends Controller
 {
+    private EmailService $emailService;
+    private VerifyService $verifyService;
+
     public function __construct(EmailService $emailService, VerifyService $verifyService)
     {
         $this->emailService = $emailService;
@@ -64,7 +67,7 @@ class UpdateInfoAction extends Controller
             if ($changed_univemail) {
                 $this->emailService->sendToUnivemail($user);
             }
-        } catch (Swift_RfcComplianceException $e) {
+        } catch (RfcComplianceException $e) {
             return redirect()
                 ->route('user.edit')
                 ->withInput()

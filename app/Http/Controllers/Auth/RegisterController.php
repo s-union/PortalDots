@@ -15,7 +15,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\DB;
-use Swift_RfcComplianceException;
+use Symfony\Component\Mime\Exception\RfcComplianceException;
 
 class RegisterController extends Controller
 {
@@ -107,7 +107,7 @@ class RegisterController extends Controller
                 $this->verifyService->markEmailAsVerified($user, $user->email);
             }
             $this->emailService->sendAll($user);
-        } catch (Swift_RfcComplianceException $e) {
+        } catch (RfcComplianceException $e) {
             DB::rollBack();
             return redirect()
                 ->route('register')

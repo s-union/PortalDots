@@ -43,7 +43,7 @@ class UsersGridMakerTest extends TestCase
         $this->assertSame('2020/02/02 02:02:02', $result['updated_at']);
     }
 
-    public function formatLastAccessedAt_provider()
+    public static function formatLastAccessedAt_provider()
     {
         return [
             [new CarbonImmutable('2020-02-07 23:23:23'), '1時間以内'],

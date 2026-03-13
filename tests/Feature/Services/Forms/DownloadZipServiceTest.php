@@ -23,6 +23,7 @@ class DownloadZipServiceTest extends TestCase
     use RefreshDatabase;
 
     private $form;
+    private $questions;
     private $answer;
     private $answer_details = [];
     private $another_answer;

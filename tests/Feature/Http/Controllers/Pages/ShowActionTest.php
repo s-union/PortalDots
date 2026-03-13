@@ -11,7 +11,7 @@ class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function 非公開と固定表示のお知らせは表示できない_provider()
+    public static function 非公開と固定表示のお知らせは表示できない_provider()
     {
         return [
             '公開・非固定' => [true, false, true],

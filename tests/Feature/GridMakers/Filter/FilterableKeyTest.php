@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class FilterableKeyTest extends TestCase
 {
-    public function typesWithNoOptionsProvider()
+    public static function typesWithNoOptionsProvider()
     {
         return [
             ['string'],
