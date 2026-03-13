@@ -123,7 +123,7 @@ export default {
       border-left: 0;
     }
   }
-  .form-control {
+  > .form-control {
     flex: 1 1 0%;
     &:not(:is([type="file"], [type="color"])):not(:first-child) {
       border-bottom-left-radius: 0;
@@ -142,8 +142,35 @@ export default {
       }
     }
   }
-  .form-control ~ .form-control:not(:focus) {
+  > .form-control ~ .form-control:not(:focus) {
     border-left: 0;
+  }
+}
+
+.form-split-inputs {
+  display: grid;
+  gap: $spacing-sm;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+
+  &__item {
+    min-width: 0;
+  }
+
+  &__label {
+    color: $color-muted;
+    display: block;
+    font-size: 0.85rem;
+    font-weight: $font-bold;
+    margin: 0 0 $spacing-xs;
+  }
+
+  .form-control {
+    width: 100%;
+  }
+
+  @media screen and (max-width: 767px) {
+    grid-template-columns: 1fr;
   }
 }
 </style>

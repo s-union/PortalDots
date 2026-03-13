@@ -53,26 +53,60 @@
                 <list-view-form-group label-for="name">
                     <template v-slot:label>名前</template>
                     <template v-slot:description>
-                        {{ !$circles->isEmpty() ? '企画に所属しているため修正できません' : '姓と名の間にはスペースを入れてください' }}
+                        {{ !$circles->isEmpty() ? '企画に所属しているため修正できません' : '姓と名を分けて入力してください' }}
                     </template>
-                    <input id="name" type="text" class="form-control @error('name') is-invalid @enderror"
-                        name="name" value="{{ old('name', $user->name) }}" {{ !$circles->isEmpty() ? 'readonly' : '' }}
-                        required autocomplete="name">
-                    @error('name')
-                        <template v-slot:invalid>{{ $message }}</template>
-                    @enderror
+                    <div class="form-split-inputs">
+                        <div class="form-split-inputs__item">
+                            <label class="form-split-inputs__label" for="name">姓</label>
+                            <input id="name" type="text"
+                                class="form-control {{ $errors->has('name_family') ? 'is-invalid' : '' }}" name="name_family"
+                                value="{{ old('name_family', $user->name_family) }}"
+                                {{ !$circles->isEmpty() ? 'readonly' : '' }} required autocomplete="family-name" placeholder="姓">
+                        </div>
+                        <div class="form-split-inputs__item">
+                            <label class="form-split-inputs__label" for="name_given">名</label>
+                            <input id="name_given" type="text"
+                                class="form-control {{ $errors->has('name_given') ? 'is-invalid' : '' }}" name="name_given"
+                                value="{{ old('name_given', $user->name_given) }}"
+                                {{ !$circles->isEmpty() ? 'readonly' : '' }} required autocomplete="given-name" placeholder="名">
+                        </div>
+                    </div>
+                    @if ($errors->has('name_family') || $errors->has('name_given'))
+                        <template v-slot:invalid>
+                            @foreach (array_merge($errors->get('name_family'), $errors->get('name_given')) as $message)
+                                <div>{{ $message }}</div>
+                            @endforeach
+                        </template>
+                    @endif
                 </list-view-form-group>
                 <list-view-form-group label-for="name_yomi">
                     <template v-slot:label>名前(よみ)</template>
                     <template v-slot:description>
-                        {{ !$circles->isEmpty() ? '企画に所属しているため修正できません' : '姓と名の間にはスペースを入れてください' }}
+                        {{ !$circles->isEmpty() ? '企画に所属しているため修正できません' : '姓と名のよみを分けて入力してください' }}
                     </template>
-                    <input id="name_yomi" type="text" class="form-control @error('name_yomi') is-invalid @enderror"
-                        name="name_yomi" value="{{ old('name_yomi', $user->name_yomi) }}"
-                        {{ !$circles->isEmpty() ? 'readonly' : '' }} required>
-                    @error('name_yomi')
-                        <template v-slot:invalid>{{ $message }}</template>
-                    @enderror
+                    <div class="form-split-inputs">
+                        <div class="form-split-inputs__item">
+                            <label class="form-split-inputs__label" for="name_yomi">姓(よみ)</label>
+                            <input id="name_yomi" type="text"
+                                class="form-control {{ $errors->has('name_family_yomi') ? 'is-invalid' : '' }}"
+                                name="name_family_yomi" value="{{ old('name_family_yomi', $user->name_family_yomi) }}"
+                                {{ !$circles->isEmpty() ? 'readonly' : '' }} required placeholder="せい">
+                        </div>
+                        <div class="form-split-inputs__item">
+                            <label class="form-split-inputs__label" for="name_given_yomi">名(よみ)</label>
+                            <input id="name_given_yomi" type="text"
+                                class="form-control {{ $errors->has('name_given_yomi') ? 'is-invalid' : '' }}"
+                                name="name_given_yomi" value="{{ old('name_given_yomi', $user->name_given_yomi) }}"
+                                {{ !$circles->isEmpty() ? 'readonly' : '' }} required placeholder="めい">
+                        </div>
+                    </div>
+                    @if ($errors->has('name_family_yomi') || $errors->has('name_given_yomi'))
+                        <template v-slot:invalid>
+                            @foreach (array_merge($errors->get('name_family_yomi'), $errors->get('name_given_yomi')) as $message)
+                                <div>{{ $message }}</div>
+                            @endforeach
+                        </template>
+                    @endif
                 </list-view-form-group>
                 <list-view-form-group label-for="email">
                     <template v-slot:label>連絡先メールアドレス</template>
