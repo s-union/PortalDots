@@ -37,7 +37,7 @@ class ValidationRulesService
             }
 
             // 型チェック
-            if (in_array($question->type, ['text', 'textarea'], true)) {
+            if (in_array($question->type, ['text', 'textarea', 'markdown'], true)) {
                 $rule[] = 'string';
             } elseif ($question->type === 'checkbox') {
                 $rule[] = 'array';
@@ -49,7 +49,7 @@ class ValidationRulesService
 
             // 文字数・整数値・ファイルサイズ範囲制限
             if (
-                in_array($question->type, ['text', 'textarea', 'number', 'checkbox'], true) &&
+                in_array($question->type, ['text', 'textarea', 'markdown', 'number', 'checkbox'], true) &&
                 isset($question->number_min) && $isStrict
             ) {
                 // upload に対しては、最小ファイルサイズを検証しない
@@ -57,10 +57,15 @@ class ValidationRulesService
             }
 
             if (
-                in_array($question->type, ['text', 'textarea', 'number', 'checkbox', 'upload'], true) &&
+                in_array($question->type, ['text', 'textarea', 'markdown', 'number', 'checkbox', 'upload'], true) &&
                 isset($question->number_max) && $isStrict
             ) {
                 $rule[] = 'max:' . $question->number_max;
+            }
+
+            // markdownタイプで最大文字数が設定されていない場合のデフォルト（余裕を持たせて1000文字程度かデータベースの最大値などにする。今回は安全のため1000とした）
+            if ($question->type === 'markdown' && !isset($question->number_max)) {
+                $rule[] = 'max:1000'; // マークダウンは記号などで文字数を消費しやすいため余裕を持たせる
             }
 
             // ファイルの種類チェック

@@ -54,6 +54,11 @@ export default {
           label: "複数行入力",
         },
         {
+          value: "markdown",
+          icon: "fab fa-markdown",
+          label: "Markdown入力",
+        },
+        {
           value: "radio",
           icon: "far fa-dot-circle",
           label: "単一選択(ラジオボタン)",

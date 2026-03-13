@@ -11,6 +11,7 @@
       :theme="colorScheme"
       no-iconfont
       ref="editorRef"
+      @onUploadImg="() => {}"
     >
       <template #defToolbars>
         <NormalToolbar title="プレビュー" @onClick="togglePreview">
