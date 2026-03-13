@@ -23,11 +23,11 @@ class StoreActionTest extends BaseTestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->states('notSubmitted')->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id
         ]);
-        $this->answer = factory(Answer::class)->create([
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
@@ -44,7 +44,7 @@ class StoreActionTest extends BaseTestCase
      */
     public function 正しいトークンであれば招待を受け入れることができる()
     {
-        $invitedUser = factory(User::class)->create();
+        $invitedUser = User::factory()->create();
 
         $this->assertDatabaseMissing('circle_user', [
             'circle_id' => $this->circle->id,
@@ -77,7 +77,7 @@ class StoreActionTest extends BaseTestCase
      */
     public function 間違ったトークンでは企画のメンバーになれない()
     {
-        $invitedUser = factory(User::class)->create();
+        $invitedUser = User::factory()->create();
 
         $response = $this
             ->actingAs($invitedUser)
@@ -106,7 +106,7 @@ class StoreActionTest extends BaseTestCase
         $this->circle->submitted_at = now();
         $this->circle->save();
 
-        $invitedUser = factory(User::class)->create();
+        $invitedUser = User::factory()->create();
 
         $response = $this
             ->actingAs($invitedUser)

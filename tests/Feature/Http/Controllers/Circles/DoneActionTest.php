@@ -21,8 +21,8 @@ class DoneActionTest extends BaseTestCase
         $this->participationForm->confirmation_message = "これが確認メッセージです。";
         $this->participationForm->save();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create([
             'participation_type_id' => $this->participationType->id
         ]);
 

@@ -30,7 +30,7 @@ class UsersGridMakerTest extends TestCase
      */
     public function map()
     {
-        $user = factory(User::class)->make([
+        $user = User::factory()->make([
             'last_accessed_at' => '2020-02-02 02:02:02',
             'created_at' => '2020-02-02 02:02:02',
             'updated_at' => '2020-02-02 02:02:02',
@@ -59,7 +59,7 @@ class UsersGridMakerTest extends TestCase
      */
     public function formatLastAccessedAt(CarbonImmutable $last_accessed_at, string $expected)
     {
-        $user = factory(User::class)->make([
+        $user = User::factory()->make([
             'last_accessed_at' => $last_accessed_at,
         ]);
         $this->assertSame($expected, $user->formatLastAccessedAt());

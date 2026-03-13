@@ -28,17 +28,17 @@ class ExportActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
 
-        $this->staff = factory(User::class)->state('staff')->create();
+        $this->staff = User::factory()->staff()->create();
 
-        $this->form = factory(Form::class)->create([
+        $this->form = Form::factory()->create([
             'name' => '場所登録申請',
         ]);
 
-        $this->anotherForm = factory(Form::class)->create([
+        $this->anotherForm = Form::factory()->create([
             'name' => 'パンフレット掲載内容',
         ]);
 
-        $this->participationForm = factory(Form::class)->create();
+        $this->participationForm = Form::factory()->create();
 
         ParticipationType::factory()->create([
             'form_id' => $this->participationForm->id

@@ -26,7 +26,7 @@ class DocumentsGridMakerTest extends TestCase
      */
     public function map()
     {
-        $document = factory(Document::class)->make([
+        $document = Document::factory()->make([
             'extension' => 'pdf',
             'created_at' => '2020-02-02 02:02:02',
             'updated_at' => '2020-02-02 02:02:02',

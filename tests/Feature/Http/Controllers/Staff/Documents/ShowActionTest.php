@@ -28,14 +28,14 @@ class ShowActionTest extends TestCase
 
         // 配布資料
         $file = UploadedFile::fake()->create('ファイル.pdf', 1);
-        $this->document = factory(Document::class)->create([
+        $this->document = Document::factory()->create([
             'path' => $file->store('documents'),
             'size' => $file->getSize(),
             'extension' => $file->getClientOriginalExtension(),
         ]);
 
         // スタッフ
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
@@ -60,7 +60,7 @@ class ShowActionTest extends TestCase
      */
     public function 権限がない場合はダウンロードできない()
     {
-        $response = $this->actingAs(factory(User::class)->create())
+        $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.documents.show', [
                 'document' => $this->document
             ]));
@@ -73,7 +73,7 @@ class ShowActionTest extends TestCase
      */
     public function スタッフ以外はダウンロードできない()
     {
-        $response = $this->actingAs(factory(User::class)->create())
+        $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.documents.show', [
                 'document' => $this->document
             ]));

@@ -2,10 +2,14 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class Booth extends Pivot
 {
+    use HasFactory;
+
     public $incrementing = true;
     public $timestamps = false;
 

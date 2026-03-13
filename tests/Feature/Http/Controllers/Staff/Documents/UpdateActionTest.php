@@ -22,7 +22,7 @@ class UpdateActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
@@ -33,7 +33,7 @@ class UpdateActionTest extends TestCase
         Permission::create(['name' => 'staff.documents.edit']);
         $this->staff->syncPermissions(['staff.documents.edit']);
 
-        $document = factory(Document::class)->create();
+        $document = Document::factory()->create();
 
         $this->mock(DocumentsService::class, function ($mock) use ($document) {
             $mock->shouldReceive('updateDocument')->once()->with(
@@ -70,7 +70,7 @@ class UpdateActionTest extends TestCase
      */
     public function 権限がない場合は配布資料を更新できない()
     {
-        $document = factory(Document::class)->create();
+        $document = Document::factory()->create();
 
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

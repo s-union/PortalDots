@@ -26,9 +26,9 @@ class CopyActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->form = factory(Form::class)->create();
-        $this->form_copy = factory(Form::class)->create();
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->form = Form::factory()->create();
+        $this->form_copy = Form::factory()->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**

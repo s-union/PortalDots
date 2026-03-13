@@ -18,12 +18,12 @@ class FormsServiceTest extends TestCase
     {
         parent::setUp();
         $this->formsService = App::make(FormsService::class);
-        $this->user = factory(User::class)->create();
-        $this->form = factory(Form::class)->create([
+        $this->user = User::factory()->create();
+        $this->form = Form::factory()->create([
             'name' => 'テスト申請',
             'is_public' => true,
         ]);
-        $this->questions = factory(Question::class, 10)->create([
+        $this->questions = Question::factory(10)->create([
             'form_id' => $this->form->id,
         ]);
     }

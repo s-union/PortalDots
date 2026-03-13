@@ -34,11 +34,11 @@ class ExportActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2019-08-21 14:52:38'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2019-08-21 14:52:38'));
 
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create();
-        $this->circle_not_submitted = factory(Circle::class)->states('notSubmitted')->create();
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create();
+        $this->circle_not_submitted = Circle::factory()->notSubmitted()->create();
 
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
     }

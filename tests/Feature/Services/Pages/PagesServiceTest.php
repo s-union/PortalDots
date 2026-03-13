@@ -40,7 +40,7 @@ class PagesServiceTest extends TestCase
 
         $this->pagesService = App::make(PagesService::class);
 
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
@@ -165,7 +165,7 @@ class PagesServiceTest extends TestCase
         $this->assertSame(0, Page::count());
 
         // 送信先用にたくさんユーザーを作成する
-        factory(User::class, 40)->create();
+        User::factory(40)->create();
 
         $page = $this->pagesService->createPage(
             $this->content['title'],
@@ -191,12 +191,12 @@ class PagesServiceTest extends TestCase
     public function createPage_お知らせを保存する際にアクセス可能な企画タグを指定する()
     {
         $tags_count = 4;
-        $tags = factory(Tag::class, $tags_count)->create();
+        $tags = Tag::factory($tags_count)->create();
 
         // 送信先用にたくさんユーザーを作成する
-        $users = factory(User::class, 40)->create();
-        $circles = factory(Circle::class, 40)->create();
-        $tags = factory(Tag::class, 10)->create();
+        $users = User::factory(40)->create();
+        $circles = Circle::factory(40)->create();
+        $tags = Tag::factory(10)->create();
 
         for ($i = 0; $i < count($circles); ++$i) {
             $circles[$i]->tags()->attach($tags[$i % 10]);
@@ -234,7 +234,7 @@ class PagesServiceTest extends TestCase
      */
     public function createPage_未作成のタグを指定した場合は無視される()
     {
-        $tag = factory(Tag::class)->create();
+        $tag = Tag::factory()->create();
 
         $this->assertSame(0, DB::table('page_viewable_tags')->count());
 

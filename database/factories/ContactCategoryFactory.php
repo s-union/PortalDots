@@ -4,17 +4,17 @@ namespace Database\Factories;
 
 /** @var \Illuminate\Database\Eloquent\Factory $factory */
 
-use App\Eloquents\Place;
+use App\Eloquents\ContactCategory;
 use Faker\Generator as Faker;
 
-class PlaceFactory extends \Illuminate\Database\Eloquent\Factories\Factory
+class ContactCategoryFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
-    protected $model = Place::class;
+    protected $model = ContactCategory::class;
     public function definition()
     {
         return [
             'name' => $this->faker->name,
-            'type' => $this->faker->numberBetween(1, 3),
+            'email' => $this->faker->email
         ];
     }
 }

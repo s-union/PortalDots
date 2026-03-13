@@ -26,7 +26,7 @@ class PagesGridMakerTest extends TestCase
      */
     public function map()
     {
-        $page = factory(Page::class)->make([
+        $page = Page::factory()->make([
             'created_at' => '2020-02-02 02:02:02',
             'updated_at' => '2020-02-02 02:02:02',
         ]);

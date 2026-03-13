@@ -20,8 +20,8 @@ class UpdateActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->staff = factory(User::class)->states('staff')->create();
-        $this->admin = factory(User::class)->states('admin')->create();
+        $this->staff = User::factory()->staff()->create();
+        $this->admin = User::factory()->admin()->create();
     }
 
     /**
@@ -33,7 +33,7 @@ class UpdateActionTest extends TestCase
         $this->staff->syncPermissions(['staff.users.edit']);
 
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $this->assertFalse($target_user->is_staff);
         $this->assertFalse($target_user->is_admin);
@@ -82,7 +82,7 @@ class UpdateActionTest extends TestCase
     public function 権限がない場合はユーザー情報を更新できない()
     {
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $this->assertFalse($target_user->is_staff);
         $this->assertFalse($target_user->is_admin);
@@ -195,7 +195,7 @@ class UpdateActionTest extends TestCase
         $this->admin->syncPermissions(['staff.users.edit']);
 
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $this->assertFalse($target_user->is_admin);
 
@@ -237,7 +237,7 @@ class UpdateActionTest extends TestCase
         $this->staff->syncPermissions(['staff.users.edit']);
 
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $this->assertFalse($target_user->is_admin);
 
@@ -313,10 +313,10 @@ class UpdateActionTest extends TestCase
     public function 一般ユーザーはユーザー情報の更新はできない()
     {
         /** @var User */
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $data = [
             'student_id' => '123updated',

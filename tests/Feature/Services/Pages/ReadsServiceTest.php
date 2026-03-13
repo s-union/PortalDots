@@ -31,10 +31,10 @@ class ReadsServiceTest extends TestCase
     public function markAsRead()
     {
         /** @var Page */
-        $page = factory(Page::class)->create();
+        $page = Page::factory()->create();
 
         /** @var User */
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->assertDatabaseMissing('reads', [
             'page_id' => $page->id,
@@ -55,10 +55,10 @@ class ReadsServiceTest extends TestCase
     public function deleteAllReadsByPage()
     {
         /** @var Illuminate\Database\Eloquent\Collection */
-        $pages = factory(Page::class, 5)->create();
+        $pages = Page::factory(5)->create();
 
         /** @var Illuminate\Database\Eloquent\Collection */
-        $users = factory(User::class, 3)->create();
+        $users = User::factory(3)->create();
 
         $this->assertSame(0, Read::count());
 

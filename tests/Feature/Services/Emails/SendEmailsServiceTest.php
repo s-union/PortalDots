@@ -43,7 +43,7 @@ class SendEmailsServiceTest extends TestCase
     public function isServiceOperational_配信予約されたメールが配信されているときはtrueを返す()
     {
         // 送信済みメール
-        factory(Email::class)->create([
+        Email::factory()->create([
             'subject' => '送信済のメール',
             'sent_at' => now(),
             'created_at' => now()->subHours(25),
@@ -58,14 +58,14 @@ class SendEmailsServiceTest extends TestCase
     public function isServiceOperational_配信予約から24時間以上経過してもメールが送信されていないときにfalseを返す()
     {
         // 送信済みメール
-        factory(Email::class)->create([
+        Email::factory()->create([
             'subject' => '送信済のメール',
             'sent_at' => now(),
             'created_at' => now()->subHours(25),
         ]);
 
         // CRON未設定などで未送信のメール
-        factory(Email::class)->create([
+        Email::factory()->create([
             'subject' => 'CRONの不具合で未送信のメール',
             'created_at' => now()->subHours(25),
         ]);

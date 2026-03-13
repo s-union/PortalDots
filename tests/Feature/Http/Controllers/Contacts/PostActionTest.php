@@ -34,12 +34,12 @@ class PostActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->circle = factory(Circle::class)->create();
-        $this->user = factory(User::class)->create();
+        $this->circle = Circle::factory()->create();
+        $this->user = User::factory()->create();
 
         $this->circle->users()->attach($this->user->id, ['is_leader' => true]);
 
-        $this->ContactCategory = factory(ContactCategory::class)->create();
+        $this->ContactCategory = ContactCategory::factory()->create();
     }
 
     /**

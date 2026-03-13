@@ -17,7 +17,7 @@ class UpdateActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
@@ -29,7 +29,7 @@ class UpdateActionTest extends TestCase
         $this->staff->syncPermissions(['staff.permissions.edit']);
 
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $this->assertEquals(0, $target_user->permissions()->count());
 
@@ -104,10 +104,10 @@ class UpdateActionTest extends TestCase
     public function 管理者の権限は更新できない()
     {
         /** @var User */
-        $admin = factory(User::class)->states('admin')->create();
+        $admin = User::factory()->admin()->create();
 
         /** @var User */
-        $target_user = factory(User::class)->states('admin')->create();
+        $target_user = User::factory()->admin()->create();
 
         $this->assertEquals(0, $target_user->permissions()->count());
 
@@ -143,7 +143,7 @@ class UpdateActionTest extends TestCase
         $this->staff->syncPermissions(['staff.permissions.edit']);
 
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $this->assertEquals(0, $target_user->permissions()->count());
 
@@ -176,7 +176,7 @@ class UpdateActionTest extends TestCase
     public function 権限がない場合は権限設定を更新できない()
     {
         /** @var User */
-        $target_user = factory(User::class)->create();
+        $target_user = User::factory()->create();
 
         $this->assertEquals(0, $target_user->permissions()->count());
 

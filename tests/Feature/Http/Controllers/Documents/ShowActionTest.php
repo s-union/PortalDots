@@ -25,14 +25,14 @@ class ShowActionTest extends TestCase
 
         // 配布資料
         $file = UploadedFile::fake()->create('ファイル.pdf', 1);
-        $this->document = factory(Document::class)->create([
+        $this->document = Document::factory()->create([
             'path' => $file->store('documents'),
             'size' => $file->getSize(),
             'extension' => $file->getClientOriginalExtension(),
         ]);
 
         // ユーザー
-        $this->user = factory(User::class)->create();
+        $this->user = User::factory()->create();
     }
 
     /**

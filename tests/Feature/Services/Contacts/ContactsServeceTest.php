@@ -46,16 +46,16 @@ class ContactsServeceTest extends TestCase
     {
         parent::setUp();
         $this->contactsService = App::make(ContactsService::class);
-        $this->circle = factory(Circle::class)->create();
-        $this->leader = factory(User::class)->create();
-        $this->member = factory(User::class)->create();
+        $this->circle = Circle::factory()->create();
+        $this->leader = User::factory()->create();
+        $this->member = User::factory()->create();
 
         $this->circle->users()->attach([
             $this->leader->id => ['is_leader' => true],
             $this->member->id,
         ]);
 
-        $this->contactCategory = factory(ContactCategory::class)->create();
+        $this->contactCategory = ContactCategory::factory()->create();
     }
 
     private function create()

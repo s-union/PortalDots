@@ -16,7 +16,7 @@ class CreateActionTest extends BaseTestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->user = factory(User::class)->create();
+        $this->user = User::factory()->create();
 
         // 受付期間内
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));

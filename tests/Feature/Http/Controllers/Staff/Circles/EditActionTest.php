@@ -25,10 +25,10 @@ class EditActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create();
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create();
 
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
     }
@@ -41,7 +41,7 @@ class EditActionTest extends TestCase
         Permission::create(['name' => 'staff.circles.edit']);
         $this->staff->syncPermissions(['staff.circles.edit']);
 
-        $notSubmitted = factory(Circle::class)->states('notSubmitted')->create();
+        $notSubmitted = Circle::factory()->notSubmitted()->create();
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
 
         $response = $this->actingAs($this->staff)

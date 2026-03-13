@@ -40,14 +40,14 @@ class FormsExportTest extends TestCase
 
         $this->formsExport = App::make(FormsExport::class);
 
-        $this->user = factory(User::class)->create();
+        $this->user = User::factory()->create();
 
-        $this->form = factory(Form::class)->create([
+        $this->form = Form::factory()->create([
             'name' => '場所登録申請',
             'max_answers' => 2,
         ]);
 
-        $this->tag = factory(Tag::class)->create([
+        $this->tag = Tag::factory()->create([
             'name' => '屋内',
         ]);
         $this->form->answerableTags()->attach($this->tag->id);

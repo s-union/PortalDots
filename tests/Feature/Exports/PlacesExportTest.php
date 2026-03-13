@@ -40,17 +40,17 @@ class PlacesExportTest extends TestCase
 
         $this->placesExport = App::make(PlacesExport::class);
 
-        $this->place = factory(Place::class)->create([
+        $this->place = Place::factory()->create([
             'name' => 'いっそー',
             'type' => 3,
         ]);
-        $this->circle = factory(Circle::class)->create([
+        $this->circle = Circle::factory()->create([
             'name' => '備品貸出隊',
             'name_yomi' => 'びひんかしだしたい',
             'group_name' => 'ガレージセール愛好会',
             'group_name_yomi' => 'がれーじせーるあいこうかい',
         ]);
-        $this->anotherCircle = factory(Circle::class)->create([
+        $this->anotherCircle = Circle::factory()->create([
             'name' => '備品取り返し隊',
             'name_yomi' => 'びひんとりかえしたい',
             'group_name' => '備品ほしい団体',

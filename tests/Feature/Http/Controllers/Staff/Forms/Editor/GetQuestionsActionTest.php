@@ -22,14 +22,14 @@ class GetQuestionsActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->form = factory(Form::class)->create();
+        $this->form = Form::factory()->create();
         $this->questions = [
-            factory(Question::class)->create(['priority' => 2, 'form_id' => $this->form->id]),
-            factory(Question::class)->create(['priority' => 1, 'form_id' => $this->form->id]),
-            factory(Question::class)->create(['priority' => 4, 'form_id' => $this->form->id]),
-            factory(Question::class)->create(['priority' => 3, 'form_id' => $this->form->id]),
+            Question::factory()->create(['priority' => 2, 'form_id' => $this->form->id]),
+            Question::factory()->create(['priority' => 1, 'form_id' => $this->form->id]),
+            Question::factory()->create(['priority' => 4, 'form_id' => $this->form->id]),
+            Question::factory()->create(['priority' => 3, 'form_id' => $this->form->id]),
         ];
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**

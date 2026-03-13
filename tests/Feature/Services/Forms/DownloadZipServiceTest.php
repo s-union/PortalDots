@@ -34,8 +34,8 @@ class DownloadZipServiceTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->form = factory(Form::class)->create();
-        $this->questions = factory(Question::class, self::UPLOADS_NUMBER)->create([
+        $this->form = Form::factory()->create();
+        $this->questions = Question::factory(self::UPLOADS_NUMBER)->create([
             'form_id' => $this->form->id,
             'type' => 'upload',
             'number_max' => 1000000000,
@@ -44,12 +44,12 @@ class DownloadZipServiceTest extends TestCase
         ]);
 
         // アップロードタイプ以外の設問もある程度用意
-        factory(Question::class, 7)->create([
+        Question::factory(7)->create([
             'form_id' => $this->form->id,
         ]);
 
         // 回答
-        $this->answer = factory(Answer::class)->create([
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->form->id,
         ]);
 
@@ -58,7 +58,7 @@ class DownloadZipServiceTest extends TestCase
         $count = 0;
         foreach ($this->questions as $question) {
             $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
-            $this->answer_details[] = factory(AnswerDetail::class)->create([
+            $this->answer_details[] = AnswerDetail::factory()->create([
                 'answer_id' => $this->answer->id,
                 'question_id' => $question->id,
                 'answer' => 'answer_details/' . $filename,
@@ -71,13 +71,13 @@ class DownloadZipServiceTest extends TestCase
             }
         }
 
-        $this->another_answer = factory(Answer::class)->create([
+        $this->another_answer = Answer::factory()->create([
             'form_id' => $this->form->id,
         ]);
 
         foreach ($this->questions as $question) {
             $filename = 'testfile_' . sha1($this->another_answer->id . '_' . $question->id) . '.png';
-            $this->another_answer_details[] = factory(AnswerDetail::class)->create([
+            $this->another_answer_details[] = AnswerDetail::factory()->create([
                 'answer_id' => $this->another_answer->id,
                 'question_id' => $question->id,
                 'answer' => 'answer_details/' . $filename,

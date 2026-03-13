@@ -25,28 +25,28 @@ class DestroyActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->form = factory(Form::class)->create();
-        $this->questions = factory(Question::class, 2)->create([
+        $this->form = Form::factory()->create();
+        $this->questions = Question::factory(2)->create([
             'form_id' => $this->form->id,
             'is_required' => false,
             'type' => 'text'
         ]);
-        $this->answers = factory(Answer::class, 2)->create([
+        $this->answers = Answer::factory(2)->create([
             'form_id' => $this->form->id,
         ]);
         foreach ($this->answers as $answer) {
-            $this->answerDetails[] = factory(AnswerDetail::class)->create([
+            $this->answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
                 'question_id' => $this->questions[0]->id,
                 'answer' => '回答 １'
             ]);
-            $this->answerDetails[] = factory(AnswerDetail::class)->create([
+            $this->answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
                 'question_id' => $this->questions[1]->id,
                 'answer' => '回答 ２'
             ]);
         }
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**

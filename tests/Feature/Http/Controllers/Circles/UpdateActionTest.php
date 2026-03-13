@@ -22,11 +22,11 @@ class UpdateActionTest extends BaseTestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->states('notSubmitted')->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id
         ]);
-        $this->answer = factory(Answer::class)->create([
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
@@ -78,7 +78,7 @@ class UpdateActionTest extends BaseTestCase
      */
     public function 副責任者は企画の情報を更新できない()
     {
-        $member = factory(User::class)->create();
+        $member = User::factory()->create();
         $member->circles()->attach($this->circle->id, ['is_leader' => false]);
 
         $data = [
@@ -110,7 +110,7 @@ class UpdateActionTest extends BaseTestCase
      */
     public function 部外者は企画の情報を更新できない()
     {
-        $anotherUser = factory(User::class)->create();
+        $anotherUser = User::factory()->create();
 
         $data = [
             'name' => '新しい名前の企画',

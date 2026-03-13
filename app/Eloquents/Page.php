@@ -2,6 +2,8 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\Eloquents\Concerns\IsNewTrait;
@@ -11,6 +13,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Page extends Model
 {
+    use HasFactory;
+
     use IsNewTrait;
     use LogsActivity;
 

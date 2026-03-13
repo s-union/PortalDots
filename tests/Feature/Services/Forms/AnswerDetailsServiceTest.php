@@ -35,8 +35,8 @@ class AnswerDetailsServiceTest extends TestCase
 
         $this->answerDetailsService = App::make(AnswerDetailsService::class);
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create();
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create();
 
         $this->circle->users()->save($this->user);
     }
@@ -46,14 +46,14 @@ class AnswerDetailsServiceTest extends TestCase
      */
     public function updateAnswerDetails_ファイルの更新した時に古いファイルが削除される()
     {
-        $form = factory(Form::class)->create();
+        $form = Form::factory()->create();
 
-        $file_upload = factory(Question::class)->create([
+        $file_upload = Question::factory()->create([
             'form_id' => $form->id,
             'type' => 'upload'
         ]);
 
-        $answer = factory(Answer::class)->create([
+        $answer = Answer::factory()->create([
             'form_id' => $form->id,
             'circle_id' => $this->circle->id
         ]);
@@ -80,14 +80,14 @@ class AnswerDetailsServiceTest extends TestCase
      */
     public function updateAnswerDetails_ファイルの削除した時に古いファイルが削除される()
     {
-        $form = factory(Form::class)->create();
+        $form = Form::factory()->create();
 
-        $file_upload = factory(Question::class)->create([
+        $file_upload = Question::factory()->create([
             'form_id' => $form->id,
             'type' => 'upload'
         ]);
 
-        $answer = factory(Answer::class)->create([
+        $answer = Answer::factory()->create([
             'form_id' => $form->id,
             'circle_id' => $this->circle->id
         ]);
@@ -111,14 +111,14 @@ class AnswerDetailsServiceTest extends TestCase
      */
     public function updateAnswerDetails_ファイルの更新をしていない時はアップロードされたファイルを削除しない()
     {
-        $form = factory(Form::class)->create();
+        $form = Form::factory()->create();
 
-        $file_upload = factory(Question::class)->create([
+        $file_upload = Question::factory()->create([
             'form_id' => $form->id,
             'type' => 'upload'
         ]);
 
-        $answer = factory(Answer::class)->create([
+        $answer = Answer::factory()->create([
             'form_id' => $form->id,
             'circle_id' => $this->circle->id
         ]);

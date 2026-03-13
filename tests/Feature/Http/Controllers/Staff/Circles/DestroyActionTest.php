@@ -41,20 +41,20 @@ class DestroyActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create();
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create();
 
-        $this->place = factory(Place::class)->create();
+        $this->place = Place::factory()->create();
 
-        $this->form = factory(Form::class)->create();
-        $this->answer = factory(Answer::class)->create([
+        $this->form = Form::factory()->create();
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->form->id,
             'circle_id' => $this->circle->id,
         ]);
 
-        $this->tag = factory(Tag::class)->create();
+        $this->tag = Tag::factory()->create();
 
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
         $this->circle->places()->attach($this->place->id);

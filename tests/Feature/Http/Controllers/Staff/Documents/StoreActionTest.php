@@ -24,7 +24,7 @@ class StoreActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
@@ -40,7 +40,7 @@ class StoreActionTest extends TestCase
         $filesize = 1;  // 単位 : KiB
         $file = UploadedFile::fake()->create('配布資料.pdf', $filesize, 'application/pdf');
 
-        $document = factory(Document::class)->create([
+        $document = Document::factory()->create([
             'path' => "documents/{$file->hashName()}.pdf",
             'size' => $filesize * 1024, // 単位 : バイト
             'extension' => 'pdf',

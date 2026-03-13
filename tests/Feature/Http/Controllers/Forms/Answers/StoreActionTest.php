@@ -31,9 +31,9 @@ class StoreActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create();
-        $this->form = factory(Form::class)->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create();
+        $this->form = Form::factory()->create([
             'open_at' => new CarbonImmutable('2020-01-26 11:42:51'),
             'close_at' => new CarbonImmutable('2020-03-26 15:23:31'),
         ]);
@@ -102,7 +102,7 @@ class StoreActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
-        $participationForm = factory(Form::class)->create([
+        $participationForm = Form::factory()->create([
             'type' => 'circle',
         ]);
 
@@ -137,7 +137,7 @@ class StoreActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
-        $privateForm = factory(Form::class)->states('private')->create();
+        $privateForm = Form::factory()->private()->create();
 
         $response = $this
             ->actingAs($this->user)
@@ -166,7 +166,7 @@ class StoreActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
-        $anotherCircle = factory(Circle::class)->create();
+        $anotherCircle = Circle::factory()->create();
 
         $response = $this
             ->actingAs($this->user)
@@ -195,7 +195,7 @@ class StoreActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
-        $rejectedCircle = factory(Circle::class)->states('rejected')->create();
+        $rejectedCircle = Circle::factory()->rejected()->create();
         $this->user->circles()->attach($rejectedCircle->id, ['is_leader' => true]);
 
         $response = $this
@@ -225,12 +225,12 @@ class StoreActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
-        $tag = factory(Tag::class)->create();
+        $tag = Tag::factory()->create();
 
-        $tagged_circle = factory(Circle::class)->create();
+        $tagged_circle = Circle::factory()->create();
         $tagged_circle->tags()->attach($tag->id);
 
-        $tagged_form = factory(Form::class)->create();
+        $tagged_form = Form::factory()->create();
         $tagged_form->answerableTags()->attach($tag->id);
 
         $this->user->circles()->attach($tagged_circle->id, ['is_leader' => true]);
@@ -267,14 +267,14 @@ class StoreActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
-        $tag = factory(Tag::class)->create();
+        $tag = Tag::factory()->create();
 
-        $tagged_circle = factory(Circle::class)->create();
+        $tagged_circle = Circle::factory()->create();
 
         // フォームとは別にタグを企画に紐付ける
-        $tagged_circle->tags()->attach(factory(Tag::class)->create());
+        $tagged_circle->tags()->attach(Tag::factory()->create());
 
-        $tagged_form = factory(Form::class)->create();
+        $tagged_form = Form::factory()->create();
         $tagged_form->answerableTags()->attach($tag->id);
 
         $this->user->circles()->attach($tagged_circle->id, ['is_leader' => true]);

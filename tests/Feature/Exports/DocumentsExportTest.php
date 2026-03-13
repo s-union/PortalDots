@@ -34,9 +34,9 @@ class DocumentsExportTest extends TestCase
 
         $this->documentsExport = App::make(DocumentsExport::class);
 
-        $this->user = factory(User::class)->create();
+        $this->user = User::factory()->create();
 
-        $this->document = factory(Document::class)->create([
+        $this->document = Document::factory()->create([
             'name' => '見たくなる資料',
             'description' => '第5回井戸端会議で配布した資料です。',
             'path' => 'documents/idobata.pdf',

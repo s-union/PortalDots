@@ -45,7 +45,7 @@ class HomeActionTest extends TestCase
      */
     public function メール認証が未完了の時アラートが表示される()
     {
-        $user = factory(User::class)->states('not_verified')->create();
+        $user = User::factory()->not_verified()->create();
 
         $response = $this->actingAs($user)->get(route('home'));
 
@@ -60,7 +60,7 @@ class HomeActionTest extends TestCase
      */
     public function メール認証完了済の場合はアラートを表示しない()
     {
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('documents.index'));
 
@@ -81,21 +81,21 @@ class HomeActionTest extends TestCase
         $privatePageTitle = 'this is a private page';
         $publicPageTitle = 'this is a public form';
 
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $pinnedPrivatePageTitle,
             'is_pinned' => true,
             'is_public' => false,
         ]);
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $pinnedPublicPageTitle,
             'is_pinned' => true,
             'is_public' => true,
         ]);
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $privatePageTitle,
             'is_public' => false,
         ]);
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $publicPageTitle,
             'is_public' => true,
         ]);
@@ -117,7 +117,7 @@ class HomeActionTest extends TestCase
         $normalFormName = 'this is a normal form';
 
         // 参加登録フォームを作成
-        $participationForm = factory(Form::class)->create([
+        $participationForm = Form::factory()->create([
             'name' => $participationFormName
         ]);
         ParticipationType::factory()->create([
@@ -125,12 +125,12 @@ class HomeActionTest extends TestCase
         ]);
 
         // カスタムフォームではない通常のフォームも作成
-        factory(Form::class)->create([
+        Form::factory()->create([
             'name' => $normalFormName
         ]);
 
-        $circle = factory(Circle::class)->create();
-        $user = factory(User::class)->create();
+        $circle = Circle::factory()->create();
+        $user = User::factory()->create();
         $user->circles()->attach($circle, ['is_leader' => true]);
         $response = $this->actingAs($user)->get(route('home'));
 

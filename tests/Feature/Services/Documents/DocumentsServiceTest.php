@@ -28,7 +28,7 @@ class DocumentsServiceTest extends TestCase
     {
         parent::setUp();
         $this->documentsService = App::make(DocumentsService::class);
-        $this->staff = factory(User::class)->state('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
