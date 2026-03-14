@@ -15,7 +15,8 @@ class AuthenticateTest extends TestCase
         $request = Request::create('/test', 'GET');
         $request->headers->set('Accept', 'application/json');
 
-        // It should throw \Illuminate\Auth\AuthenticationException, but we test the redirectTo behavior directly via reflection
+        // 通常は \Illuminate\Auth\AuthenticationException がスローされますが、
+        // ここではリフレクションを使用して redirectTo の挙動自体を直接テストしています。
         $method = new \ReflectionMethod(Authenticate::class, 'redirectTo');
         $method->setAccessible(true);
         $result = $method->invoke($middleware, $request);
