@@ -15,7 +15,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.0'
+          php-version: '8.2'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-node@v4
@@ -50,12 +50,12 @@ jobs:
           key: ${{ secrets.INTERNAL_SERVER_SSH_PRIVATE_KEY }}
           known_hosts: ${{ secrets.INTERNAL_SERVER_SSH_KNOWN_HOSTS }}
       - name: Set maintainance mode
-        run: ssh ${{ secrets.INTERNAL_SERVER_SSH_HOST }} 'cd ${{ secrets.INTERNAL_SERVER_PATH_NIGHTLY }}; /usr/local/php80/bin/php artisan down;'
+        run: ssh ${{ secrets.INTERNAL_SERVER_SSH_HOST }} 'cd ${{ secrets.INTERNAL_SERVER_PATH_NIGHTLY }}; /usr/local/php82/bin/php artisan down;'
       - name: Upload
         run: |
           rsync -acrvz --progress --include='artisan' --include='app' --include='app/**' --include='bootstrap' --include='bootstrap/**' --include='config' --include='config/**' --include='database' --include='database/**' --include='resources' --include='resources/**' --include='routes' --include='routes/**' --include='vendor' --include='vendor/**' --include='public' --include='public/index.php' --include='public/build' --include='public/build/**' --exclude='*' ./ ${{ secrets.INTERNAL_SERVER_SSH_HOST }}:${{ secrets.INTERNAL_SERVER_PATH_NIGHTLY }}
         working-directory: dist
       - name: Migration
-        run: ssh ${{ secrets.INTERNAL_SERVER_SSH_HOST }} 'cd ${{ secrets.INTERNAL_SERVER_PATH_NIGHTLY }}; /usr/local/php80/bin/php artisan migrate --force'
+        run: ssh ${{ secrets.INTERNAL_SERVER_SSH_HOST }} 'cd ${{ secrets.INTERNAL_SERVER_PATH_NIGHTLY }}; /usr/local/php82/bin/php artisan migrate --force'
       - name: Recover from maintainance mode
-        run: ssh ${{ secrets.INTERNAL_SERVER_SSH_HOST }} 'cd ${{ secrets.INTERNAL_SERVER_PATH_NIGHTLY }}; /usr/local/php80/bin/php artisan up;'
+        run: ssh ${{ secrets.INTERNAL_SERVER_SSH_HOST }} 'cd ${{ secrets.INTERNAL_SERVER_PATH_NIGHTLY }}; /usr/local/php82/bin/php artisan up;'
