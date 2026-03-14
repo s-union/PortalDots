@@ -43,6 +43,7 @@
 
 <script>
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import FormItem from "./FormItem.vue";
 import { ITEM_HEADER, UPDATE_FORM, SAVE_FORM } from "../../store/editor";
 
@@ -90,7 +91,7 @@ export default {
     },
     description_html() {
       const { description } = this;
-      return marked(description || "");
+      return DOMPurify.sanitize(marked(description || ""));
     },
   },
 };

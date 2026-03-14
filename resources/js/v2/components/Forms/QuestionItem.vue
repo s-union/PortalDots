@@ -39,6 +39,7 @@ import AppBadge from "../AppBadge.vue";
 
 import QuestionText from "./QuestionText.vue";
 import QuestionTextarea from "./QuestionTextarea.vue";
+import QuestionMarkdown from "./QuestionMarkdown.vue";
 import QuestionUpload from "./QuestionUpload.vue";
 import QuestionNumber from "./QuestionNumber.vue";
 import QuestionSelect from "./QuestionSelect.vue";
@@ -51,6 +52,7 @@ export default {
     AppBadge,
     QuestionText,
     QuestionTextarea,
+    QuestionMarkdown,
     QuestionUpload,
     QuestionNumber,
     QuestionSelect,
@@ -138,7 +140,8 @@ export default {
       let text = "";
       switch (this.type) {
         case "text":
-        case "textarea": {
+        case "textarea":
+        case "markdown": {
           if (this.numberMin !== null || this.numberMax !== null) {
             if (this.numberMin !== null) {
               text += `${this.numberMin}文字以上`;

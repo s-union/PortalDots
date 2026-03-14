@@ -12,6 +12,14 @@
         <template v-slot:description>{{ $question->description }}</template>
         <pre style="white-space: pre-wrap;">{{ $answer_details[$question->id] ?? '' }}</pre>
     </list-view-form-group>
+@elseif ($question->type === 'markdown' && !empty($is_disabled) && $is_disabled)
+    <list-view-form-group>
+        <template v-slot:label>{{ $question->name }}</template>
+        <template v-slot:description>{{ $question->description }}</template>
+        <div data-turbolinks="false" class="markdown border p-3" style="border-radius: 4px; background: #f8f9fa;">
+            @markdown($answer_details[$question->id] ?? '')
+        </div>
+    </list-view-form-group>
 @else
     {{-- 【v-bind:question-id の値について】 --}}
     {{-- Vue に String ではなく Number 型であると認識させるため --}}
