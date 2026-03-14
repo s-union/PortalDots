@@ -8,7 +8,7 @@ use App\Eloquents\AnswerDetail;
 use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\GridMakers\Filter\FilterableKey;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\JoinClause;
 
@@ -46,6 +46,7 @@ class AnswerDetailsHelper
                         return "MAX(CAST(CASE WHEN question_id = {$idInt} THEN answer ELSE NULL END AS DECIMAL(10, 0))) AS '{$columnAlias}'";
                     case 'text':
                     case 'textarea':
+                    case 'markdown':
                     case 'radio':
                     case 'select':
                     case 'upload':
@@ -104,6 +105,7 @@ class AnswerDetailsHelper
                     break;
                 case 'text':
                 case 'textarea':
+                case 'markdown':
                 case 'radio':
                 case 'checkbox':
                 case 'select':

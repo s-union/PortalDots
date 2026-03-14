@@ -46,7 +46,8 @@ class CirclesService
         string $name,
         string $name_yomi,
         string $group_name,
-        string $group_name_yomi
+        string $group_name_yomi,
+        $can_change_group_name = true
     ) {
         return DB::transaction(function () use (
             $participationType,
@@ -54,7 +55,8 @@ class CirclesService
             $name,
             $name_yomi,
             $group_name,
-            $group_name_yomi
+            $group_name_yomi,
+            $can_change_group_name
         ) {
             $circle = Circle::create([
                 'participation_type_id' => $participationType->id,
@@ -62,6 +64,7 @@ class CirclesService
                 'name_yomi' => $name_yomi,
                 'group_name' => $group_name,
                 'group_name_yomi' => $group_name_yomi,
+                'can_change_group_name' => $can_change_group_name,
                 'invitation_token' => $this->generateInvitationToken(),
             ]);
 

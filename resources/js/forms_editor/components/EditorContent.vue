@@ -68,6 +68,7 @@ import FormHeader from "./form/FormHeader.vue";
 import QuestionText from "./form/QuestionText.vue";
 import QuestionHeading from "./form/QuestionHeading.vue";
 import QuestionTextarea from "./form/QuestionTextarea.vue";
+import QuestionMarkdown from "./form/QuestionMarkdown.vue";
 import QuestionNumber from "./form/QuestionNumber.vue";
 import QuestionUpload from "./form/QuestionUpload.vue";
 import QuestionRadio from "./form/QuestionRadio.vue";
@@ -83,6 +84,7 @@ export default {
     QuestionText,
     QuestionHeading,
     QuestionTextarea,
+    QuestionMarkdown,
     QuestionNumber,
     QuestionUpload,
     QuestionRadio,

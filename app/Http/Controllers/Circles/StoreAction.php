@@ -43,7 +43,8 @@ class StoreAction extends Controller
                 name: $request->name,
                 name_yomi: $request->name_yomi,
                 group_name: $request->group_name,
-                group_name_yomi: $request->group_name_yomi
+                group_name_yomi: $request->group_name_yomi,
+                can_change_group_name: Auth::user()->circles->count() == 0
             );
 
             $this->answersService->createAnswer(
@@ -51,6 +52,19 @@ class StoreAction extends Controller
                 $circle,
                 $request
             );
+
+            if (Auth::user()->circles()->count() > 1) {
+                $prev_circle = Auth::user()
+                    ->circles()
+                    ->first();
+                foreach ($prev_circle->users as $user) {
+                    if (!$user->pivot->is_leader) {
+                        $circle->users()->save($user, ['is_leader' => false]);
+                    }
+                }
+                return redirect()
+                    ->route('circles.confirm', ['circle' => $circle]);
+            }
 
             return redirect()
                 ->route('circles.users.index', ['circle' => $circle]);

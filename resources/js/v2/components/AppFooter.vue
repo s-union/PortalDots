@@ -13,6 +13,8 @@
     </div>
     <div class="footer-line">
       <a href="/support" class="footer__link">推奨動作環境</a>
+      <span> • </span>
+      <a href="/privacy_policy" class="footer__link">プライバシーポリシー</a>
     </div>
   </div>
 </template>

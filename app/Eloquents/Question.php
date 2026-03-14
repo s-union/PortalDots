@@ -37,6 +37,7 @@ class Question extends Model
         'text',
         'number',
         'textarea',
+        'markdown',
         'radio',
         'checkbox',
         'select',

@@ -37,7 +37,7 @@ class ValidationRulesService
             }
 
             // 型チェック
-            if (in_array($question->type, ['text', 'textarea'], true)) {
+            if (in_array($question->type, ['text', 'textarea', 'markdown'], true)) {
                 $rule[] = 'string';
             } elseif ($question->type === 'checkbox') {
                 $rule[] = 'array';
@@ -49,7 +49,7 @@ class ValidationRulesService
 
             // 文字数・整数値・ファイルサイズ範囲制限
             if (
-                in_array($question->type, ['text', 'textarea', 'number', 'checkbox'], true) &&
+                in_array($question->type, ['text', 'textarea', 'markdown', 'number', 'checkbox'], true) &&
                 isset($question->number_min) && $isStrict
             ) {
                 // upload に対しては、最小ファイルサイズを検証しない
@@ -57,7 +57,7 @@ class ValidationRulesService
             }
 
             if (
-                in_array($question->type, ['text', 'textarea', 'number', 'checkbox', 'upload'], true) &&
+                in_array($question->type, ['text', 'textarea', 'markdown', 'number', 'checkbox', 'upload'], true) &&
                 isset($question->number_max) && $isStrict
             ) {
                 $rule[] = 'max:' . $question->number_max;

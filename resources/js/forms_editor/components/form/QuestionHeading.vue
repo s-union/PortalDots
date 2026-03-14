@@ -24,6 +24,7 @@
 
 <script>
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import FormItem from "./FormItem.vue";
 import EditPanel from "./EditPanel.vue";
 import { GET_QUESTION_BY_ID } from "../../store/editor";
@@ -50,7 +51,7 @@ export default {
     },
     description_html() {
       const { description } = this.question;
-      return marked(description || "");
+      return DOMPurify.sanitize(marked(description || ""));
     },
   },
 };

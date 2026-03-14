@@ -26,11 +26,18 @@
                 <template v-slot:title>企画情報を入力</template>
                 <template v-slot:description>参加登録する企画の情報を入力してください。</template>
                 @if ($participation_type->users_count_max > 1)
-                    <list-view-card>
+                    <list-view-card @if(isset($default_group)) no-border @endif>
                         <app-info-box primary>
                             企画情報の入力は、企画責任者の方が行ってください。企画責任者以外の方は、企画情報の入力は不要です。企画責任者の方の指示に従ってください。
                         </app-info-box>
                     </list-view-card>
+                    @if(isset($default_group))
+                        <list-view-card>
+                            <app-info-box danger class="mt-2">
+                                すでに団体責任者として他の企画参加登録を提出しているため、「企画を出展する団体の名称」ならびに「企画を出展する団体の名称(よみ)」は自動入力されており、変更できません。
+                            </app-info-box>
+                        </list-view-card>
+                    @endif
                 @endif
                 <list-view-form-group label-for="leader">
                     <template v-slot:label>企画責任者</template>
@@ -63,11 +70,21 @@
                 <list-view-form-group label-for="group_name">
                     <template v-slot:label>
                         企画を出店する団体の名称
-                        <app-badge danger>必須</app-badge>
+                        @if(isset($default_group['group_name']))
+                            <app-badge primary>変更不可</app-badge>
+                        @else
+                            <app-badge danger>必須</app-badge>
+                        @endif
                     </template>
-                    <input id="group_name" type="text" class="form-control @error('group_name') is-invalid @enderror"
-                        name="group_name" value="{{ old('group_name', isset($circle) ? $circle->group_name : '') }}"
-                        required>
+                    @if (isset($default_group['group_name']))
+                        <input id="group_name" type="text" class="form-control @error('group_name') is-invalid @enderror" readonly
+                               name="group_name" value="{{ $default_group['group_name'] }}"
+                               required>
+                    @else
+                        <input id="group_name" type="text" class="form-control @error('group_name') is-invalid @enderror"
+                               name="group_name" value="{{ old('group_name', isset($circle) ? $circle->group_name : '') }}"
+                               required>
+                    @endif
                     @error('group_name')
                         <template v-slot:invalid>{{ $message }}</template>
                     @enderror
@@ -75,11 +92,21 @@
                 <list-view-form-group label-for="group_name_yomi">
                     <template v-slot:label>
                         企画を出店する団体の名称(よみ)
-                        <app-badge danger>必須</app-badge>
+                        @if(isset($default_group['group_name_yomi']))
+                            <app-badge primary>変更不可</app-badge>
+                        @else
+                            <app-badge danger>必須</app-badge>
+                        @endif
                     </template>
-                    <input id="group_name_yomi" type="text"
-                        class="form-control @error('group_name_yomi') is-invalid @enderror" name="group_name_yomi"
-                        value="{{ old('group_name_yomi', isset($circle) ? $circle->group_name_yomi : '') }}" required>
+                    @if (isset($default_group['group_name_yomi']))
+                        <input id="group_name_yomi" type="text" readonly
+                               class="form-control @error('group_name_yomi') is-invalid @enderror" name="group_name_yomi"
+                               value="{{ $default_group['group_name_yomi'] }}" required>
+                    @else
+                        <input id="group_name_yomi" type="text"
+                            class="form-control @error('group_name_yomi') is-invalid @enderror" name="group_name_yomi"
+                            value="{{ old('group_name_yomi', isset($circle) ? $circle->group_name_yomi : '') }}" required>
+                    @endif
                     @error('group_name_yomi')
                         <template v-slot:invalid>{{ $message }}</template>
                     @enderror
@@ -91,7 +118,11 @@
 
             <div class="text-center pt-spacing-md pb-spacing">
                 <button type="submit" class="btn is-primary is-wide">
-                    保存して次へ
+                    @if(isset($default_group))
+                        確認画面へ
+                    @else
+                        保存して次へ
+                    @endif
                     <i class="fas fa-chevron-right"></i>
                 </button>
                 @if (config('app.debug'))

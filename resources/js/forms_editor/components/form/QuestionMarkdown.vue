@@ -1,5 +1,5 @@
 <template>
-  <form-item :item_id="question_id" type_label="整数入力">
+  <form-item :item_id="question_id" type_label="Markdown入力">
     <template v-slot:content>
       <div class="form-group mb-0">
         <label class="mb-1">
@@ -9,30 +9,14 @@
         <p class="form-text text-muted mb-2">
           {{ description }}
         </p>
-        <template v-if="numberOptions.length > 0">
-          <select class="custom-select" tabindex="-1">
-            <option>整数を選択</option>
-            <option v-for="n in numberOptions" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
-        </template>
-        <template v-else>
-          <input
-            type="number"
-            class="form-control"
-            tabindex="-1"
-            placeholder="整数入力（最低数・最大数が未設定）"
-          />
-        </template>
+        <div class="border p-3 text-muted" style="border-radius: 4px; background: #f8f9fa;">
+          <i class="fab fa-markdown"></i>
+          Markdownエディタがここに表示されます。
+        </div>
       </div>
     </template>
     <template v-slot:edit-panel>
-      <edit-panel
-        :question="question"
-        label_number_min="最低数"
-        label_number_max="最大数"
-      />
+      <edit-panel :question="question" />
     </template>
   </form-item>
 </template>
@@ -67,18 +51,6 @@ export default {
     },
     is_required() {
       return this.question.is_required;
-    },
-    numberOptions() {
-      const min = this.question.number_min;
-      const max = this.question.number_max;
-      if (min == null || max == null || min > max) {
-        return [];
-      }
-      const options = [];
-      for (let i = min; i <= max; i++) {
-        options.push(i);
-      }
-      return options;
     },
   },
 };
