@@ -99,7 +99,7 @@ class Question extends Model
 
     public function getAllowedTypesArrayAttribute()
     {
-        return explode('|', $this->allowed_types);
+        return explode('|', (string) $this->allowed_types);
     }
 
     public function setAllowedTypesArrayAttribute(array $value)
@@ -109,7 +109,7 @@ class Question extends Model
 
     public function getOptionsArrayAttribute()
     {
-        $options = explode("\n", $this->options);
+        $options = explode("\n", (string) $this->options);
         $options = array_map('trim', $options);
         $options = array_filter($options, 'strlen');
         $options = array_values($options);

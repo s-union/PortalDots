@@ -49,9 +49,9 @@ class FilterQueries implements IteratorAggregate
     }
 
     /**
-     * @return ArrayIterator|FilterQueryItem[]
+     * @return ArrayIterator<int, FilterQueryItem>
      */
-    public function getIterator()
+    public function getIterator(): \Traversable
     {
         return new ArrayIterator($this->queries);
     }
