@@ -89,7 +89,7 @@ class CreateActionTest extends BaseTestCase
     /** @test */
     public function ２回目以降の提出の際には先に提出した企画の団体名が入力されている()
     {
-        $circle = factory(Circle::class)->create();
+        $circle = Circle::factory()->create();
         $circle->leader()->attach($this->user->id);
 
         $response = $this
@@ -105,7 +105,7 @@ class CreateActionTest extends BaseTestCase
     /** @test */
     public function ２回目以降の提出では確認画面に遷移する表示となる()
     {
-        $circle = factory(Circle::class)->create();
+        $circle = Circle::factory()->create();
         $circle->leader()->attach($this->user->id);
 
         $response = $this
