@@ -9,12 +9,22 @@
         <p class="form-text text-muted mb-2">
           {{ description }}
         </p>
-        <input
-          type="number"
-          class="form-control"
-          tabindex="-1"
-          placeholder="整数入力"
-        />
+        <template v-if="numberOptions.length > 0">
+          <select class="custom-select" tabindex="-1">
+            <option>整数を選択</option>
+            <option v-for="n in numberOptions" :key="n" :value="n">
+              {{ n }}
+            </option>
+          </select>
+        </template>
+        <template v-else>
+          <input
+            type="number"
+            class="form-control"
+            tabindex="-1"
+            placeholder="整数入力（最低数・最大数が未設定）"
+          />
+        </template>
       </div>
     </template>
     <template v-slot:edit-panel>
@@ -57,6 +67,18 @@ export default {
     },
     is_required() {
       return this.question.is_required;
+    },
+    numberOptions() {
+      const min = this.question.number_min;
+      const max = this.question.number_max;
+      if (min == null || max == null || min > max) {
+        return [];
+      }
+      const options = [];
+      for (let i = min; i <= max; i++) {
+        options.push(i);
+      }
+      return options;
     },
   },
 };

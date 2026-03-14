@@ -161,7 +161,7 @@ export default {
             if (this.numberMax !== null) {
               text += `${this.numberMax}以下`;
             }
-            text += "の値を入力してください";
+            text += "の値を選択してください";
           }
           break;
         }
