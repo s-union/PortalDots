@@ -42,15 +42,9 @@
         "popper.js": "^1.12",
         "postcss": "^8.4",
         "postcss-html": "^1.5.0",
-        "purify-css": "^1.2.5",
-        "purifycss-webpack": "^0.7.0",
-        "resolve-url-loader": "^5.0.0",
         "sass": "^1.70.0",
-        "sass-loader": "^13.3.2",
-        "sass-resources-loader": "^2.2.5",
         "shx": "^0.3.4",
-        "vite": "^4.5.2",
-        "vue-loader": "^17.4.2"
+        "vite": "^4.5.2"
     },
     "dependencies": {
         "@fortawesome/fontawesome-free": "^6.5.1",
