@@ -19,6 +19,12 @@ coverage.xml
 # From Laravel
 #-------------------------
 /node_modules
+/frontend/node_modules
+/frontend/dist
+/packages/*/node_modules
+/packages/*/dist
+/playwright-report
+/test-results
 /public/build
 /public/hot
 /public/storage
@@ -37,3 +43,4 @@ Homestead.yaml
 auth.json
 npm-debug.log
 yarn-error.log
+pnpm-debug.log

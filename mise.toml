@@ -1,0 +1,48 @@
+[tools]
+node = "22"
+go = "1.26"
+sqlc = "1.30.0"
+
+[tasks.frontend-install]
+description = "Install dependencies for the new frontend workspace"
+dir = "frontend"
+run = "ni"
+
+[tasks.frontend-dev]
+description = "Start the new Vue frontend"
+dir = "frontend"
+run = "nr dev"
+
+[tasks.frontend-check]
+description = "Run all static checks for the new Vue frontend"
+dir = "frontend"
+run = "nr ci:check"
+
+[tasks.backend-dev]
+description = "Start the new Go API"
+dir = "backend"
+run = "go run ./cmd/api"
+
+[tasks.backend-migrate]
+description = "Apply backend SQL migrations against PORTALDOTS_DATABASE_URL"
+dir = "backend"
+run = "go run ./cmd/migrate"
+
+[tasks.backend-test]
+description = "Run Go tests for the new backend"
+dir = "backend"
+run = "GOCACHE=/tmp/portaldots-go-cache go test ./..."
+
+[tasks.backend-sqlc-generate]
+description = "Generate Go code from backend sqlc queries"
+dir = "backend"
+run = "sqlc generate"
+
+[tasks.backend-sqlc-smoke]
+description = "Run the sqlc smoke command against PORTALDOTS_DATABASE_URL"
+dir = "backend"
+run = "go run ./cmd/sqlc-smoke"
+
+[tasks.compat-docs]
+description = "Show compatibility matrix files"
+run = "rg --files compat"

@@ -1,0 +1,415 @@
+import { z } from "zod";
+
+export const formQuestionTypeSchema = z.enum([
+  "heading",
+  "text",
+  "textarea",
+  "number",
+  "radio",
+  "select",
+  "checkbox",
+  "upload",
+]);
+
+export function parseWithSchema<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) {
+    throw new Error(`Invalid ${label} response`);
+  }
+
+  return parsed.data;
+}
+
+export const stringArraySchema = z.array(z.string());
+
+export const paginatedResultSchema = <TItem extends z.ZodType>(itemSchema: TItem) =>
+  z.object({
+    items: z.array(itemSchema),
+    page: z.number(),
+    pageSize: z.number(),
+    total: z.number(),
+  });
+
+export const pageSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  publishedAt: z.string(),
+});
+
+export const pageDocumentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  isImportant: z.boolean(),
+  extension: z.string(),
+  sizeBytes: z.number(),
+  updatedAt: z.string(),
+  downloadUrl: z.string(),
+});
+
+export const pageDetailSchema = pageSummarySchema.extend({
+  body: z.string(),
+  documents: z.array(pageDocumentSchema),
+});
+
+export const selectableCircleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  groupName: z.string(),
+  participationTypeName: z.string(),
+});
+
+export const sessionCircleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const sessionUserSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+});
+
+export const sessionBootstrapSchema = z.object({
+  csrfToken: z.string(),
+  featureFlags: stringArraySchema,
+  roles: stringArraySchema,
+  permissions: stringArraySchema.optional(),
+  currentCircle: sessionCircleSchema.nullable(),
+  user: sessionUserSchema.nullable(),
+});
+
+export const documentSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  isImportant: z.boolean(),
+  isNew: z.boolean(),
+  extension: z.string(),
+  sizeBytes: z.number(),
+  updatedAt: z.string(),
+  downloadUrl: z.string(),
+});
+
+export const contactCategorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const contactSubmissionSchema = z.object({
+  id: z.string(),
+  categoryId: z.string(),
+  categoryName: z.string(),
+  subject: z.string(),
+  status: z.string(),
+  createdAt: z.string(),
+});
+
+export const staffStatusSchema = z.object({
+  allowed: z.boolean(),
+  authorized: z.boolean(),
+});
+
+export const staffVerifyRequestResultSchema = z.object({
+  deliveryMode: z.literal("mock"),
+  message: z.string(),
+  verifyCode: z.string(),
+});
+
+export const staffActivityLogSchema = z.object({
+  id: z.string(),
+  actorUserId: z.string(),
+  action: z.string(),
+  targetType: z.string(),
+  targetId: z.string(),
+  circleId: z.string(),
+  summary: z.string(),
+  createdAt: z.string(),
+});
+
+export const staffTagSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const staffPlaceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.number(),
+  notes: z.string(),
+});
+
+export const staffContactCategorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+});
+
+export const staffMailSchema = z.object({
+  id: z.string(),
+  subject: z.string(),
+  body: z.string(),
+  recipients: stringArraySchema,
+  status: z.enum(["queued", "sent"]),
+  createdAt: z.string(),
+  deliveredAt: z.string(),
+});
+
+export const staffUserSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  loginIds: stringArraySchema,
+  roles: stringArraySchema,
+  isVerified: z.boolean(),
+});
+
+export const staffCircleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  groupName: z.string(),
+  participationTypeId: z.string(),
+  participationTypeName: z.string(),
+});
+
+export const staffCircleMailRecipientSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  loginIds: stringArraySchema,
+});
+
+export const staffCircleMailFormSchema = z.object({
+  circle: staffCircleSchema,
+  recipients: z.array(staffCircleMailRecipientSchema),
+});
+
+export const formQuestionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  type: formQuestionTypeSchema,
+  isRequired: z.boolean(),
+  numberMin: z.number().nullable(),
+  numberMax: z.number().nullable(),
+  allowedTypes: z.string(),
+  options: stringArraySchema,
+  priority: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const formSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  openAt: z.string(),
+  closeAt: z.string(),
+  maxAnswers: z.number(),
+  isPublic: z.boolean(),
+  isOpen: z.boolean(),
+  hasAnswer: z.boolean(),
+});
+
+export const formDetailSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  openAt: z.string(),
+  closeAt: z.string(),
+  maxAnswers: z.number(),
+  isPublic: z.boolean(),
+  isOpen: z.boolean(),
+  questions: z.array(formQuestionSchema),
+});
+
+export const answerUploadSchema = z.object({
+  id: z.string(),
+  questionId: z.string(),
+  filename: z.string(),
+  mimeType: z.string(),
+  sizeBytes: z.number(),
+  createdAt: z.string(),
+});
+
+export const answerDetailsSchema = z.record(z.string(), z.array(z.string()));
+
+export const formAnswerSchema = z.object({
+  id: z.string(),
+  body: z.string(),
+  updatedAt: z.string(),
+  details: answerDetailsSchema,
+  uploads: z.array(answerUploadSchema),
+});
+
+export const formAnswerEnvelopeSchema = z.object({
+  answer: formAnswerSchema.nullable(),
+});
+
+export const staffFormSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  openAt: z.string(),
+  closeAt: z.string(),
+  maxAnswers: z.number(),
+  isPublic: z.boolean(),
+  isOpen: z.boolean(),
+});
+
+export const staffFormUploadSchema = answerUploadSchema;
+
+export const staffFormAnswerSchema = z.object({
+  id: z.string(),
+  body: z.string(),
+  updatedAt: z.string(),
+  details: answerDetailsSchema,
+  uploads: z.array(staffFormUploadSchema),
+});
+
+export const staffFormDetailSchema = staffFormSummarySchema.extend({
+  description: z.string(),
+  answerableTags: stringArraySchema,
+  confirmationMessage: z.string(),
+  questions: z.array(formQuestionSchema),
+  answer: staffFormAnswerSchema.nullable(),
+});
+
+export const staffFormPreviewSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  openAt: z.string(),
+  closeAt: z.string(),
+  isPublic: z.boolean(),
+  isOpen: z.boolean(),
+  maxAnswers: z.number(),
+  questions: z.array(formQuestionSchema),
+});
+
+export const staffAnswerCircleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  groupName: z.string(),
+  participationTypeName: z.string(),
+});
+
+export const staffManagedFormAnswerSummarySchema = z.object({
+  id: z.string(),
+  circle: staffAnswerCircleSchema,
+  body: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  uploadCount: z.number(),
+});
+
+export const staffManagedFormAnswerValueSchema = z.object({
+  id: z.string(),
+  body: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  details: answerDetailsSchema,
+  uploads: z.array(staffFormUploadSchema),
+});
+
+export const staffFormAnswersIndexSchema = z.object({
+  form: staffFormSummarySchema,
+  answers: z.array(staffManagedFormAnswerSummarySchema),
+  circles: z.array(staffAnswerCircleSchema),
+  notAnsweredCircles: z.array(staffAnswerCircleSchema),
+});
+
+export const staffManagedFormAnswerDetailSchema = z.object({
+  form: staffFormDetailSchema,
+  circle: staffAnswerCircleSchema,
+  answer: staffManagedFormAnswerValueSchema,
+  siblingAnswers: z.array(staffManagedFormAnswerSummarySchema),
+});
+
+export const existingAnswerConflictSchema = z.object({
+  existingAnswerId: z.string(),
+});
+
+export const staffPageSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  publishedAt: z.string(),
+  isPinned: z.boolean(),
+  isPublic: z.boolean(),
+});
+
+export const staffPageDocumentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+});
+
+export const staffPageDetailSchema = staffPageSummarySchema.extend({
+  body: z.string(),
+  notes: z.string(),
+  viewableTags: stringArraySchema,
+  documentIds: stringArraySchema,
+  documents: z.array(staffPageDocumentSchema),
+});
+
+export const staffDocumentSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  notes: z.string(),
+  isImportant: z.boolean(),
+  filename: z.string(),
+  extension: z.string(),
+  mimeType: z.string(),
+  sizeBytes: z.number(),
+  isPublic: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  downloadUrl: z.string(),
+});
+
+export const staffDocumentDetailSchema = staffDocumentSummarySchema.extend({
+  notes: z.string(),
+});
+
+export const staffPermissionDefinitionSchema = z.object({
+  name: z.string(),
+  group: z.string(),
+  displayName: z.string(),
+  shortName: z.string(),
+  description: z.string(),
+});
+
+export const staffPermissionUserSummarySchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  loginIds: stringArraySchema,
+  roles: stringArraySchema,
+  permissions: z.array(staffPermissionDefinitionSchema),
+  isEditable: z.boolean(),
+});
+
+export const staffPermissionDetailSchema = z.object({
+  user: staffPermissionUserSummarySchema,
+  definedPermissions: z.array(staffPermissionDefinitionSchema),
+  assignedPermissionNames: stringArraySchema,
+});
+
+export const staffParticipationTypeFormSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  openAt: z.string(),
+  closeAt: z.string(),
+  isPublic: z.boolean(),
+  isOpen: z.boolean(),
+  maxAnswers: z.number(),
+  answerableTags: stringArraySchema,
+  confirmationMessage: z.string(),
+});
+
+export const staffParticipationTypeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  usersCountMin: z.number(),
+  usersCountMax: z.number(),
+  tags: stringArraySchema,
+  form: staffParticipationTypeFormSchema,
+});

@@ -1,0 +1,101 @@
+name: Rebuild CI
+
+on:
+  push:
+    branches:
+      - 5.x
+      - 5.x_development
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "packages/**"
+      - "compat/**"
+      - "mise.toml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/rebuild_ci.yml"
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "packages/**"
+      - "compat/**"
+      - "mise.toml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/rebuild_ci.yml"
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Test backend
+        working-directory: backend
+        run: go test ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check frontend
+        working-directory: frontend
+        run: pnpm run ci:check
+
+  frontend-e2e:
+    runs-on: ubuntu-latest
+    needs: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm run build
+
+      - name: Run Playwright
+        working-directory: frontend
+        run: pnpm run test:e2e
