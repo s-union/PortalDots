@@ -9,6 +9,7 @@
       :toolbars="toolbars"
       :footers="footers"
       :theme="colorScheme"
+      :sanitize="sanitize"
       no-iconfont
       ref="editorRef"
       @onUploadImg="() => {}"
@@ -39,6 +40,7 @@ import { MdEditor, NormalToolbar, config } from "md-editor-v3";
 import "md-editor-v3/lib/style.css";
 import JA_JP from "@vavt/md-editor-extension/dist/locale/jp-JP";
 import MarkdownEditorIcons from "./MarkdownEditorIcons.vue";
+import DOMPurify from "dompurify";
 
 config({
   editorConfig: {
@@ -136,6 +138,9 @@ export default {
     isDarkQuery.removeEventListener("change", this.handleChangeColorScheme);
   },
   methods: {
+    sanitize(html) {
+      return DOMPurify.sanitize(html);
+    },
     handleChangeColorScheme() {
       const metaColorScheme = document.querySelector("meta[name=color-scheme]")
         .content;
