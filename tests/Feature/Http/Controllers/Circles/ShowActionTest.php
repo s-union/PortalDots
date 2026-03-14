@@ -25,13 +25,13 @@ class ShowActionTest extends BaseTestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->member = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create([
+        $this->user = User::factory()->create();
+        $this->member = User::factory()->create();
+        $this->circle = Circle::factory()->create([
             'participation_type_id' => $this->participationType->id
         ]);
 
-        $this->notSubmittedCircle = factory(Circle::class)->states('notSubmitted')->create([
+        $this->notSubmittedCircle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id
         ]);
 
@@ -162,7 +162,7 @@ class ShowActionTest extends BaseTestCase
      */
     public function 部外者は企画詳細を表示できない()
     {
-        $anotherUser = factory(User::class)->create();
+        $anotherUser = User::factory()->create();
 
         $response = $this
             ->actingAs($anotherUser)
@@ -181,7 +181,7 @@ class ShowActionTest extends BaseTestCase
      */
     public function 使用場所が表示される()
     {
-        $place = factory(Place::class)->create();
+        $place = Place::factory()->create();
         $this->circle->places()->attach($place->id);
 
         $response = $this

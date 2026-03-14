@@ -27,7 +27,7 @@ class ParticipationTypeFactory extends Factory
             'users_count_min' => $usersCountMin,
             'users_count_max' => $this->faker->numberBetween($usersCountMin, 100),
             'form_id' => function () {
-                return factory(Form::class)->create()->id;
+                return Form::factory()->create()->id;
             }
         ];
     }

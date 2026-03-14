@@ -12,7 +12,7 @@ class VersionTest extends TestCase
         parent::setUp();
     }
 
-    public function versionProvider()
+    public static function versionProvider()
     {
         return [
             ['1.0.0', new Version(1, 0, 0)],

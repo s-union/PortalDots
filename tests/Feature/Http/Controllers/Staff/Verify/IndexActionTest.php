@@ -21,7 +21,7 @@ class IndexActionTest extends TestCase
         Notification::fake();
 
         /** @var User */
-        $staff = factory(User::class)->state('staff')->create();
+        $staff = User::factory()->staff()->create();
 
         $this->actingAs($staff)->get(route('staff.verify.index'));
 
@@ -40,7 +40,7 @@ class IndexActionTest extends TestCase
         Notification::fake();
 
         /** @var User */
-        $staff = factory(User::class)->state('staff')->create();
+        $staff = User::factory()->staff()->create();
 
         $response = $this->actingAs($staff)->get(route('staff.verify.index'));
 

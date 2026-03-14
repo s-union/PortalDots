@@ -30,10 +30,10 @@ class DestroyActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->staff = factory(User::class)->states('staff')->create();
-        $this->tag = factory(Tag::class)->create();
-        $this->page = factory(Page::class)->create();
-        $this->read = factory(Read::class, 5)->create(['page_id' => $this->page->id]);
+        $this->staff = User::factory()->staff()->create();
+        $this->tag = Tag::factory()->create();
+        $this->page = Page::factory()->create();
+        $this->read = Read::factory(5)->create(['page_id' => $this->page->id]);
     }
 
     /**

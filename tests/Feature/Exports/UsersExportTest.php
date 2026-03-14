@@ -27,7 +27,7 @@ class UsersExportTest extends TestCase
     {
         parent::setUp();
         $this->usersExport = App::make(UsersExport::class);
-        $this->user = factory(User::class)->create([
+        $this->user = User::factory()->create([
             'student_id' => '0123456',
             'univemail_local_part' => 'this-is-local-part-12345',
             'univemail_domain_part' => 's.example.ac.jp',

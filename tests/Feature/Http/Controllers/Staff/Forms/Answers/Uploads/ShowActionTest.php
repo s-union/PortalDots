@@ -34,8 +34,8 @@ class ShowActionTest extends TestCase
         parent::setUp();
 
         // フォーム
-        $this->form = factory(Form::class)->create();
-        $this->question = factory(Question::class)->create([
+        $this->form = Form::factory()->create();
+        $this->question = Question::factory()->create([
             'form_id' => $this->form->id,
             'type' => 'upload',
             'number_max' => 1000000000,
@@ -44,11 +44,11 @@ class ShowActionTest extends TestCase
         ]);
 
         // 回答
-        $this->answer = factory(Answer::class)->create();
+        $this->answer = Answer::factory()->create();
 
         $example_file = new File(base_path('tests/TestFile.png'));
         $filename = 'testfile_' . sha1($this->answer->id . '_' . $this->question->id) . '.png';
-        $this->answer_details[] = factory(AnswerDetail::class)->create([
+        $this->answer_details[] = AnswerDetail::factory()->create([
                 'answer_id' => $this->answer->id,
                 'question_id' => $this->question->id,
                 'answer' => 'answer_details/' . $filename,
@@ -56,7 +56,7 @@ class ShowActionTest extends TestCase
         Storage::putFileAs('answer_details', $example_file, $filename);
 
         // スタッフ
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
@@ -99,7 +99,7 @@ class ShowActionTest extends TestCase
      */
     public function スタッフ以外はダウンロードできない()
     {
-        $response = $this->actingAs(factory(User::class)->create())
+        $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.forms.answers.uploads.show', [
                 'form' => $this->form,
                 'answer' => $this->answer,

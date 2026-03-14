@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 class FilterQueryItemTest extends TestCase
 {
-    public function operatorsProvider()
+    public static function operatorsProvider()
     {
         return [
             ['=', '='],

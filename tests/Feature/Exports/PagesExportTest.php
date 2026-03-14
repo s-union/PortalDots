@@ -39,13 +39,13 @@ class PagesExportTest extends TestCase
         parent::setUp();
 
         $this->pagesExport = App::make(PagesExport::class);
-        $this->staff = factory(User::class)->states('staff')->create([
+        $this->staff = User::factory()->staff()->create([
             'name' => '野田 一郎',
         ]);
-        $this->tag = factory(Tag::class)->create([
+        $this->tag = Tag::factory()->create([
             'name' => 'タグです',
         ]);
-        $this->page = factory(Page::class)->create([
+        $this->page = Page::factory()->create([
             'is_pinned' => false,
             'is_public' => true,
         ]);

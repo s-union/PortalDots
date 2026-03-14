@@ -2,6 +2,7 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -34,6 +35,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  */
 class User extends Authenticatable
 {
+    use HasFactory;
+
     use Notifiable;
     use HasRoles;
     use LogsActivity;
@@ -146,17 +149,15 @@ class User extends Authenticatable
      */
     protected $hidden = ['password', 'remember_token'];
 
-    protected $dates = [
-        'email_verified_at',
-        'univemail_verified_at',
-        'signed_up_at',
-        'last_accessed_at',
-    ];
-
     protected $casts = [
+        'password' => 'hashed',
         'is_staff' => 'bool',
         'is_admin' => 'bool',
         'is_verified_by_staff' => 'bool',
+        'email_verified_at' => 'datetime',
+        'univemail_verified_at' => 'datetime',
+        'signed_up_at' => 'datetime',
+        'last_accessed_at' => 'datetime',
     ];
 
     public function circles()

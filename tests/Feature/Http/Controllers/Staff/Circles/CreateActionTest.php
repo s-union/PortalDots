@@ -20,7 +20,7 @@ class CreateActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**

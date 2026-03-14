@@ -37,14 +37,14 @@ class AnswersServiceTest extends TestCase
     public function sendAll()
     {
         /** @var Collection */
-        $staff = factory(User::class, 3)->state('staff')->create();
+        $staff = User::factory(3)->staff()->create();
         $form_creator = $staff[1];
 
         // スタッフとしてフォームを作成する（アクティビティログにフォーム作成者を残す）
         Auth::login($form_creator);
 
         /** @var Form */
-        $form = factory(Form::class)->create();
+        $form = Form::factory()->create();
 
         // 異なるユーザーがフォームを編集する
         Auth::login($staff[0]);
@@ -56,15 +56,15 @@ class AnswersServiceTest extends TestCase
         Auth::logout();
 
         /** @var Illuminate\Database\Eloquent\Collection */
-        $circle_members = factory(User::class, 3)->create();
+        $circle_members = User::factory(3)->create();
 
         Auth::login($circle_members[1]);
 
         /** @var Circle */
-        $circle = factory(Circle::class)->create();
+        $circle = Circle::factory()->create();
 
         /** @var Illuminate\Database\Eloquent\Collection */
-        $questions = factory(Question::class, 5)->create([
+        $questions = Question::factory(5)->create([
             'form_id' => $form->id,
             'is_required' => false
         ]);
@@ -74,7 +74,7 @@ class AnswersServiceTest extends TestCase
         $form->questions()->saveMany($questions);
 
         /** @var Answer */
-        $answer = factory(Answer::class)->create([
+        $answer = Answer::factory()->create([
             'form_id' => $form->id,
             'circle_id' => $circle->id
         ]);

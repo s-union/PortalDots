@@ -22,8 +22,8 @@ class SubmitActionTest extends BaseTestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->states('notSubmitted')->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id,
         ]);
 
@@ -76,7 +76,7 @@ class SubmitActionTest extends BaseTestCase
         }
     }
 
-    public function 受付期間中かどうかに応じてリクエストを許可する_provider()
+    public static function 受付期間中かどうかに応じてリクエストを許可する_provider()
     {
         return [
             '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false],
@@ -189,7 +189,7 @@ class SubmitActionTest extends BaseTestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
-        $anotherCircle = factory(Circle::class)->states('notSubmitted')->create([
+        $anotherCircle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id
         ]);
 
@@ -215,7 +215,7 @@ class SubmitActionTest extends BaseTestCase
      */
     public function 副責任者は企画を提出できない()
     {
-        $member = factory(User::class)->create();
+        $member = User::factory()->create();
         $member->circles()->attach($this->circle->id, ['is_leader' => false]);
 
         // 受付期間内

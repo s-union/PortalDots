@@ -2,6 +2,7 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Contracts\Activity;
 use Spatie\Activitylog\LogOptions;
@@ -9,6 +10,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Circle extends Model
 {
+    use HasFactory;
+
     use LogsActivity;
 
     public function getActivitylogOptions(): LogOptions
@@ -82,8 +85,8 @@ class Circle extends Model
         'notes',
     ];
 
-    protected $dates = [
-        'status_set_at',
+    protected $casts = [
+        'status_set_at' => 'datetime',
     ];
 
     public function participationType()

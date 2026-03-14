@@ -19,18 +19,19 @@ class EditActionTest extends TestCase
     private $user;
     private $circle;
     private $form;
+    private $answer;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create();
-        $this->form = factory(Form::class)->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create();
+        $this->form = Form::factory()->create([
             'open_at' => new CarbonImmutable('2020-01-26 11:42:51'),
             'close_at' => new CarbonImmutable('2020-03-26 15:23:31'),
         ]);
-        $this->answer = factory(Answer::class)->create([
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->form->id,
             'circle_id' => $this->circle->id,
         ]);
@@ -67,7 +68,7 @@ class EditActionTest extends TestCase
         }
     }
 
-    public function 受付期間中かどうかに応じて表示が切り替わる_provider()
+    public static function 受付期間中かどうかに応じて表示が切り替わる_provider()
     {
         return [
             '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false],
@@ -85,8 +86,8 @@ class EditActionTest extends TestCase
      */
     public function 自分が所属していない企画の回答にはアクセスできない()
     {
-        $anotherUser = factory(User::class)->create();
-        $anotherCircle = factory(Circle::class)->create();
+        $anotherUser = User::factory()->create();
+        $anotherCircle = Circle::factory()->create();
         $anotherUser->circles()->attach($anotherCircle->id, ['is_leader' => true]);
 
         $response = $this
@@ -106,8 +107,8 @@ class EditActionTest extends TestCase
      */
     public function 非公開のフォームにはアクセスできない()
     {
-        $privateForm = factory(Form::class)->states('private')->create();
-        $answerOfPrivateForm = factory(Answer::class)->create([
+        $privateForm = Form::factory()->private()->create();
+        $answerOfPrivateForm = Answer::factory()->create([
             'form_id' => $privateForm,
             'circle_id' => $this->circle->id,
         ]);

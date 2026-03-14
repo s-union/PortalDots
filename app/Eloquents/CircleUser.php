@@ -2,10 +2,13 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class CircleUser extends Pivot
 {
+    use HasFactory;
+
     public $incrementing = true;
 
     protected $casts = [

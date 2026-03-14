@@ -17,7 +17,7 @@ class HomeActionTest extends TestCase
     public function スタッフ認証が完了していない場合は認証ページへリダイレクトされる()
     {
         /** @var User */
-        $staff = factory(User::class)->state('staff')->create();
+        $staff = User::factory()->staff()->create();
 
         $response = $this->actingAs($staff)
             ->get(route('staff.index'));
@@ -31,7 +31,7 @@ class HomeActionTest extends TestCase
     public function スタッフ認証が完了している場合はスタッフモードホームが表示される()
     {
         /** @var User */
-        $staff = factory(User::class)->state('staff')->create();
+        $staff = User::factory()->staff()->create();
 
         $response = $this->actingAs($staff)
             ->withSession(['staff_authorized' => true])
@@ -48,7 +48,7 @@ class HomeActionTest extends TestCase
         Config::set('portal.enable_demo_mode', true);
 
         /** @var User */
-        $staff = factory(User::class)->state('staff')->create();
+        $staff = User::factory()->staff()->create();
 
         $response = $this->actingAs($staff)
             ->get(route('staff.index'));

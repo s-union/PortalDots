@@ -33,14 +33,14 @@ class CirclesServiceTest extends TestCase
 
     private function createCircle()
     {
-        $participationForm = factory(Form::class)->create();
+        $participationForm = Form::factory()->create();
         $participationType = ParticipationType::factory()->create([
             'form_id' => $participationForm->id
         ]);
-        $tags = factory(Tag::class, self::PARTICIPATION_TYPE_TAGS_COUNT)->create();
+        $tags = Tag::factory(self::PARTICIPATION_TYPE_TAGS_COUNT)->create();
         $participationType->tags()->attach($tags->pluck('id'));
 
-        $leader = factory(User::class)->create();
+        $leader = User::factory()->create();
         $name = 'サンプル模擬店';
         $name_yomi = 'サンプルもぎてん';
         $group_name = 'サンプル研究会';
@@ -162,7 +162,7 @@ class CirclesServiceTest extends TestCase
             $group_name_yomi
         ] = $this->createCircle();
 
-        $new_user = factory(User::class)->create();
+        $new_user = User::factory()->create();
 
         $this->circlesService->addMember($circle, $new_user);
 
@@ -221,7 +221,7 @@ class CirclesServiceTest extends TestCase
             '新しいタグ1',
             '登録済みタグ',
             '新しいタグ2',
-        ], true, factory(User::class)->create());
+        ], true, User::factory()->create());
 
         // 「登録済みタグ」は tags テーブルに 1 つしか存在しないかチェック
         // (saveTags 実行時、改めて「登録済みタグ」が新規作成されないことをチェック)
@@ -264,7 +264,7 @@ class CirclesServiceTest extends TestCase
             '新しいタグ1',
             '登録済みタグ',
             '新しいタグ2',
-        ], false, factory(User::class)->create());
+        ], false, User::factory()->create());
     }
 
     /**
@@ -272,8 +272,8 @@ class CirclesServiceTest extends TestCase
      */
     public function sendSubmitedEmail()
     {
-        $leader = factory(User::class)->create();
-        $circle = factory(Circle::class)->create();
+        $leader = User::factory()->create();
+        $circle = Circle::factory()->create();
 
         $circle->users()->attach($leader, ['is_leader' => true]);
 
@@ -290,8 +290,8 @@ class CirclesServiceTest extends TestCase
      */
     public function sendApprovedEmail()
     {
-        $leader = factory(User::class)->create();
-        $circle = factory(Circle::class)->create();
+        $leader = User::factory()->create();
+        $circle = Circle::factory()->create();
 
         $circle->users()->attach($leader, ['is_leader' => true]);
 
@@ -308,8 +308,8 @@ class CirclesServiceTest extends TestCase
      */
     public function sendRejectedEmail()
     {
-        $leader = factory(User::class)->create();
-        $circle = factory(Circle::class)->create();
+        $leader = User::factory()->create();
+        $circle = Circle::factory()->create();
 
         $circle->users()->attach($leader, ['is_leader' => true]);
 

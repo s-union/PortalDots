@@ -2,6 +2,7 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  */
 class Form extends Model
 {
+    use HasFactory;
+
     use LogsActivity;
 
     protected $fillable = [
@@ -37,13 +40,11 @@ class Form extends Model
         'is_public',
     ];
 
-    protected $dates = [
-        'open_at', 'close_at',
-    ];
-
     protected $casts = [
         'max_answers' => 'int',
         'is_public' => 'bool',
+        'open_at' => 'datetime',
+        'close_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions

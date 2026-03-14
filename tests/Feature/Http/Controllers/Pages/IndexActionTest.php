@@ -23,21 +23,21 @@ class IndexActionTest extends TestCase
         $privatePageTitle = 'this is a private page';
         $publicPageTitle = 'this is a public form';
 
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $pinnedPrivatePageTitle,
             'is_pinned' => true,
             'is_public' => false,
         ]);
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $pinnedPublicPageTitle,
             'is_pinned' => true,
             'is_public' => true,
         ]);
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $privatePageTitle,
             'is_public' => false,
         ]);
-        factory(Page::class)->create([
+        Page::factory()->create([
             'title' => $publicPageTitle,
             'is_public' => true,
         ]);

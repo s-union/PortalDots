@@ -2,11 +2,14 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Eloquents\ValueObjects\PermissionInfo;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 
 class Permission extends SpatiePermission
 {
+    use HasFactory;
+
     /**
      * モデルの配列形態に追加するアクセサ
      *

@@ -19,7 +19,7 @@ class DestroyActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
+        $this->user = User::factory()->create();
     }
 
     /**
@@ -90,7 +90,7 @@ class DestroyActionTest extends TestCase
      */
     public function 企画に所属しているユーザーは削除できない()
     {
-        $circle = factory(Circle::class)->create();
+        $circle = Circle::factory()->create();
         $this->user->circles()->attach($circle->id);
 
         $this->assertDatabaseHas('users', [

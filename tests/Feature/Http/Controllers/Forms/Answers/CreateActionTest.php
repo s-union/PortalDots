@@ -31,9 +31,9 @@ class CreateActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->create();
-        $this->form = factory(Form::class)->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->create();
+        $this->form = Form::factory()->create([
             'open_at' => new CarbonImmutable('2020-01-26 11:42:51'),
             'close_at' => new CarbonImmutable('2020-03-26 15:23:31'),
         ]);
@@ -73,7 +73,7 @@ class CreateActionTest extends TestCase
         }
     }
 
-    public function 受付期間中かどうかに応じて表示が切り替わる_provider()
+    public static function 受付期間中かどうかに応じて表示が切り替わる_provider()
     {
         return [
             '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false],
@@ -91,7 +91,7 @@ class CreateActionTest extends TestCase
      */
     public function 非公開のフォームにはアクセスできない()
     {
-        $privateForm = factory(Form::class)->states('private')->create();
+        $privateForm = Form::factory()->private()->create();
 
         $this->selectorService->setCircle($this->circle);
 
@@ -111,12 +111,12 @@ class CreateActionTest extends TestCase
      */
     public function 回答可能なタグを持つ企画に所属している場合フォームにアクセスできる()
     {
-        $tag = factory(Tag::class)->create();
+        $tag = Tag::factory()->create();
 
-        $tagged_circle = factory(Circle::class)->create();
+        $tagged_circle = Circle::factory()->create();
         $tagged_circle->tags()->attach($tag->id);
 
-        $tagged_form = factory(Form::class)->create();
+        $tagged_form = Form::factory()->create();
         $tagged_form->answerableTags()->attach($tag->id);
 
         $this->user->circles()->attach($tagged_circle->id, ['is_leader' => true]);
@@ -139,14 +139,14 @@ class CreateActionTest extends TestCase
      */
     public function 回答可能なタグを持つ企画に所属していない場合フォームにアクセスできない()
     {
-        $tag = factory(Tag::class)->create();
+        $tag = Tag::factory()->create();
 
-        $tagged_circle = factory(Circle::class)->create();
+        $tagged_circle = Circle::factory()->create();
 
         // フォームとは別にタグを企画に紐付ける
-        $tagged_circle->tags()->attach(factory(Tag::class)->create());
+        $tagged_circle->tags()->attach(Tag::factory()->create());
 
-        $tagged_form = factory(Form::class)->create();
+        $tagged_form = Form::factory()->create();
         $tagged_form->answerableTags()->attach($tag->id);
 
         $this->user->circles()->attach($tagged_circle->id, ['is_leader' => true]);

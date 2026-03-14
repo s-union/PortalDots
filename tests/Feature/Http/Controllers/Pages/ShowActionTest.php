@@ -11,7 +11,7 @@ class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function 非公開と固定表示のお知らせは表示できない_provider()
+    public static function 非公開と固定表示のお知らせは表示できない_provider()
     {
         return [
             '公開・非固定' => [true, false, true],
@@ -29,7 +29,7 @@ class ShowActionTest extends TestCase
     {
         $page_title = 'これはお知らせのタイトルです';
 
-        $page = factory(Page::class)->create([
+        $page = Page::factory()->create([
             'title' => $page_title,
             'is_pinned' => $is_pinned,
             'is_public' => $is_public,
@@ -52,18 +52,18 @@ class ShowActionTest extends TestCase
     public function お知らせに添付されている非公開の配布資料が一覧に表示されない()
     {
         /** @var Page */
-        $page = factory(Page::class)->create([
+        $page = Page::factory()->create([
             'is_public' => true,
         ]);
 
         /** @var Document */
-        $public_document = factory(Document::class)->create([
+        $public_document = Document::factory()->create([
             'name' => '公開されている配布資料',
             'is_public' => true,
         ]);
 
         /** @var Document */
-        $private_document = factory(Document::class)->create([
+        $private_document = Document::factory()->create([
             'name' => '非公開の配布資料',
             'is_public' => false,
         ]);

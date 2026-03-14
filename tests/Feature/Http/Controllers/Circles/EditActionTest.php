@@ -27,32 +27,32 @@ class EditActionTest extends BaseTestCase
 
         // 企画参加登録と関係ない企画を作成しておく
         // （全く関係のない別の企画による回答が表示されてしまう不具合が過去に発生したため、その再発防止）
-        $anotherUser = factory(User::class)->create();
+        $anotherUser = User::factory()->create();
         $anotherCircle =
-            factory(Circle::class)->states('notSubmitted')->create([
+            Circle::factory()->notSubmitted()->create([
                 'participation_type_id' => $this->participationType->id
             ]);
-        factory(Answer::class)->create([
+        Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $anotherCircle->id,
         ]);
         $anotherUser->circles()->attach($anotherCircle->id, ['is_leader' => true]);
 
         // テストで利用する回答
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->states('notSubmitted')->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id
         ]);
-        $this->answer = factory(Answer::class)->create([
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
-        $this->question = factory(Question::class)->create([
+        $this->question = Question::factory()->create([
             'form_id' => $this->participationForm->id,
             'name' => '参加登録フォームの設問',
             'type' => 'text',
         ]);
-        factory(AnswerDetail::class)->create([
+        AnswerDetail::factory()->create([
             'answer_id' => $this->answer->id,
             'question_id' => $this->question->id,
             'answer' => 'これが回答です'
@@ -89,7 +89,7 @@ class EditActionTest extends BaseTestCase
      */
     public function 副責任者は企画の情報を表示できない()
     {
-        $member = factory(User::class)->create();
+        $member = User::factory()->create();
         $member->circles()->attach($this->circle->id, ['is_leader' => false]);
 
         $responce = $this
@@ -108,7 +108,7 @@ class EditActionTest extends BaseTestCase
      */
     public function 部外者は企画の情報を表示できない()
     {
-        $anotherUser = factory(User::class)->create();
+        $anotherUser = User::factory()->create();
 
         $response = $this
             ->actingAs($anotherUser)

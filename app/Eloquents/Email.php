@@ -2,6 +2,7 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Email extends Model
 {
+    use HasFactory;
+
     /**
      * メール送信済であれば true を返す動的プロパティを作る
      *

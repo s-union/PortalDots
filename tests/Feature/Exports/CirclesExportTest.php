@@ -38,7 +38,7 @@ class CirclesExportTest extends TestCase
     {
         parent::setUp();
 
-        $this->participationForm = factory(Form::class)->create();
+        $this->participationForm = Form::factory()->create();
         $this->participationType = ParticipationType::factory()->create([
             'name' => '体験企画',
             'description' => '',
@@ -46,11 +46,11 @@ class CirclesExportTest extends TestCase
             'users_count_max' => 3,
             'form_id' => $this->participationForm->id,
         ]);
-        $this->staff = factory(User::class)->create([
+        $this->staff = User::factory()->create([
             'name' => '企画 チェック',
             'student_id' => '9999999',
         ]);
-        $this->circle = factory(Circle::class)->create([
+        $this->circle = Circle::factory()->create([
             'participation_type_id' => $this->participationType->id,
             'name' => '運河遊覧船',
             'name_yomi' => 'うんがゆうらんせん',
@@ -59,42 +59,42 @@ class CirclesExportTest extends TestCase
             'notes' => '川の案内をするらしい',
             'status_set_by' => $this->staff->id,
         ]);
-        $this->user = factory(User::class)->create([
+        $this->user = User::factory()->create([
             'name' => '企画 偉い人',
             'student_id' => '0123abc',
         ]);
-        $this->member = factory(User::class)->create([
+        $this->member = User::factory()->create([
             'name' => '企画 運営',
             'student_id' => '7890xyz',
         ]);
-        $this->anotherMember = factory(User::class)->create([
+        $this->anotherMember = User::factory()->create([
             'name' => '企画 手伝い',
             'student_id' => '123123',
         ]);
-        $this->place = factory(Place::class)->create([
+        $this->place = Place::factory()->create([
             'name' => '近くの川',
         ]);
-        $this->tag = factory(Tag::class)->create([
+        $this->tag = Tag::factory()->create([
             'name' => '特殊な企画'
         ]);
-        factory(Question::class)->create([
+        Question::factory()->create([
             'form_id' => $this->participationForm->id,
             'name' => '見出しですよ',
             'type' => 'heading',
             'priority' => 1,
         ]);
-        $this->question = factory(Question::class)->create([
+        $this->question = Question::factory()->create([
             'form_id' => $this->participationForm->id,
             'name' => 'どんなことをしますか',
             'type' => 'text',
             'priority' => 2,
         ]);
 
-        $this->answer = factory(Answer::class)->create([
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
-        $this->answerDetail = factory(AnswerDetail::class)->create([
+        $this->answerDetail = AnswerDetail::factory()->create([
             'answer_id' => $this->answer->id,
             'question_id' => $this->question->id,
             'answer' => '作った船で川を渡ります',

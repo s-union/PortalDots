@@ -20,7 +20,7 @@ class CheckPermissionsTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->states('staff')->create();
+        $this->user = User::factory()->staff()->create();
     }
 
     /**

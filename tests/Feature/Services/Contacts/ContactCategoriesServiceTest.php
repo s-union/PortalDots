@@ -30,7 +30,7 @@ class ContactCategoriesServiceTest extends TestCase
         parent::setUp();
         $this->categoriesService = App::make(ContactCategoriesService::class);
 
-        $this->contactCategory = factory(ContactCategory::class)->create();
+        $this->contactCategory = ContactCategory::factory()->create();
     }
 
     /**

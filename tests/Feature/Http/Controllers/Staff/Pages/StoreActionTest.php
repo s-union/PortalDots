@@ -28,8 +28,8 @@ class StoreActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->staff = factory(User::class)->states('staff')->create();
-        $this->document = factory(Document::class)->create();
+        $this->staff = User::factory()->staff()->create();
+        $this->document = Document::factory()->create();
     }
 
     /**

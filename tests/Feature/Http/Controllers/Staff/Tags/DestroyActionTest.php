@@ -34,12 +34,12 @@ class DestroyActionTest extends TestCase
     {
         parent::setUp();
 
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->staff = User::factory()->staff()->create();
 
-        $this->circle = factory(Circle::class)->create();
-        $this->tag = factory(Tag::class)->create();
-        $this->page = factory(Page::class)->create();
-        $this->form = factory(Form::class)->create();
+        $this->circle = Circle::factory()->create();
+        $this->tag = Tag::factory()->create();
+        $this->page = Page::factory()->create();
+        $this->form = Form::factory()->create();
     }
 
     /**

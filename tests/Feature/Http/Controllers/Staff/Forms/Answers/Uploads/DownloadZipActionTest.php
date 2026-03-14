@@ -30,8 +30,8 @@ class DownloadZipActionTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->form = factory(Form::class)->create();
-        $this->staff = factory(User::class)->states('staff')->create();
+        $this->form = Form::factory()->create();
+        $this->staff = User::factory()->staff()->create();
     }
 
     /**
@@ -118,7 +118,7 @@ class DownloadZipActionTest extends TestCase
      */
     public function スタッフ以外はダウンロードできない()
     {
-        $response = $this->actingAs(factory(User::class)->create())
+        $response = $this->actingAs(User::factory()->create())
             ->post(route('staff.forms.answers.uploads.download_zip', ['form' => $this->form]));
 
         $response->assertStatus(403);

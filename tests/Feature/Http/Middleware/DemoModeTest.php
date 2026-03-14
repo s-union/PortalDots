@@ -31,7 +31,7 @@ class DemoModeTest extends TestCase
     public function handle_デモモードではない場合はGET以外のリクエストも許可する()
     {
         /** @var User */
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 
@@ -52,7 +52,7 @@ class DemoModeTest extends TestCase
         Config::set('portal.enable_demo_mode', true);
 
         /** @var User */
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $this->actingAs($user);
 

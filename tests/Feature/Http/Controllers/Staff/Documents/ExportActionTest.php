@@ -37,13 +37,13 @@ class ExportActionTest extends TestCase
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
 
-        $this->staff = factory(User::class)->state('staff')->create();
+        $this->staff = User::factory()->staff()->create();
 
-        $this->document = factory(Document::class)->create([
+        $this->document = Document::factory()->create([
             'name' => '配布資料',
         ]);
 
-        $this->anotherDocument = factory(Document::class)->create([
+        $this->anotherDocument = Document::factory()->create([
             'name' => '見てほしい資料',
         ]);
     }

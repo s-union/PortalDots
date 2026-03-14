@@ -2,6 +2,7 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\Eloquents\Concerns\IsNewTrait;
@@ -11,6 +12,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Page extends Model
 {
+    use HasFactory;
+
     use IsNewTrait;
     use LogsActivity;
 
@@ -52,7 +55,7 @@ class Page extends Model
         static $result = null;
         if ($result === null) {
             // MySQL 5.7 以上の場合のみ対応
-            $results = DB::select(DB::raw("select version()"));
+            $results = DB::select(DB::raw("select version()")->getValue(DB::connection()->getQueryGrammar()));
             $mysql_version =  $results[0]->{'version()'};
             if (strpos(strtolower($mysql_version), 'mariadb') !== false) {
                 // MariaDB を利用している場合
@@ -75,7 +78,7 @@ class Page extends Model
         // static $result = null;
         // if ($result === null) {
         //     // MariaDB 10 以上の場合のみ対応
-        //     $results = DB::select(DB::raw("select version()"));
+        //     $results = DB::select(DB::raw("select version()")->getValue(DB::connection()->getQueryGrammar()));
         //     $mariadb_version =  $results[0]->{'version()'};
         //     if (strpos(strtolower($mariadb_version), 'mariadb') === false) {
         //         // MySQL を利用している場合

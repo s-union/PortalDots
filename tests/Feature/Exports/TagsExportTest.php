@@ -39,19 +39,19 @@ class TagsExportTest extends TestCase
         parent::setUp();
 
         $this->tagsExport = App::make(TagsExport::class);
-        $this->circle = factory(Circle::class)->create([
+        $this->circle = Circle::factory()->create([
             'name' => 'タグがついた企画',
             'name_yomi' => 'たぐがついたきかく',
             'group_name' => '商品タグ愛好会',
             'group_name_yomi' => 'しょうひんたぐあいこうかい',
         ]);
-        $this->anotherCircle = factory(Circle::class)->create([
+        $this->anotherCircle = Circle::factory()->create([
             'name' => 'タグをつけられた企画',
             'name_yomi' => 'たぐをつけられたきかく',
             'group_name' => '企画タグつけてほしい団体',
             'group_name_yomi' => 'きかくたぐつけてほしいだんたい',
         ]);
-        $this->tag = factory(Tag::class)->create([
+        $this->tag = Tag::factory()->create([
             'name' => 'ぼくタグです',
         ]);
 

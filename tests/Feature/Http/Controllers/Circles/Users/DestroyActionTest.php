@@ -23,11 +23,11 @@ class DestroyActionTest extends BaseTestCase
     {
         parent::setUp();
 
-        $this->user = factory(User::class)->create();
-        $this->circle = factory(Circle::class)->states('notSubmitted')->create([
+        $this->user = User::factory()->create();
+        $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id
         ]);
-        $this->answer = factory(Answer::class)->create([
+        $this->answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
@@ -39,7 +39,7 @@ class DestroyActionTest extends BaseTestCase
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         // メンバー
-        $this->nonLeader = factory(User::class)->create();
+        $this->nonLeader = User::factory()->create();
         $this->nonLeader->circles()->attach($this->circle->id, ['is_leader' => false]);
     }
 
@@ -128,7 +128,7 @@ class DestroyActionTest extends BaseTestCase
      */
     public function 部外者は企画のメンバーを削除できない()
     {
-        $anotherUser = factory(User::class)->create();
+        $anotherUser = User::factory()->create();
 
         $response = $this
             ->actingAs($anotherUser)
