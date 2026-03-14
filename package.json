@@ -1,6 +1,7 @@
 {
     "private": true,
     "name": "portaldots",
+    "type": "module",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/portal-dots/PortalDots.git"
@@ -26,25 +27,25 @@
         "postinstall": "patch-package"
     },
     "devDependencies": {
-        "@vitejs/plugin-vue": "^4.6.2",
-        "@vue/compiler-sfc": "^3.2.45",
+        "@vitejs/plugin-vue": "^5.1.2",
+        "@vue/compiler-sfc": "^3.4.27",
         "blade-formatter": "^1.38.6",
         "cross-env": "^7.0",
-        "eslint": "^8.49.0",
+        "eslint": "^8.57.0",
         "eslint-config-airbnb-base": "^15.0.0",
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-import": "^2.29.1",
         "eslint-plugin-prettier": "^4.2.1",
         "eslint-plugin-vue": "^9.19.2",
         "jquery": "^3.7",
-        "laravel-vite-plugin": "^0.8.1",
+        "laravel-vite-plugin": "^1.0.5",
         "lodash": "^4.17.21",
         "popper.js": "^1.12",
         "postcss": "^8.4",
         "postcss-html": "^1.5.0",
-        "sass": "^1.70.0",
+        "sass": "^1.77",
         "shx": "^0.3.4",
-        "vite": "^4.5.2"
+        "vite": "5.4.21"
     },
     "dependencies": {
         "@fortawesome/fontawesome-free": "^6.5.1",
@@ -61,7 +62,7 @@
         "patch-package": "^8.0.0",
         "postinstall-postinstall": "^2.1.0",
         "turbolinks": "^5.2.0",
-        "vue": "^3.3.11",
+        "vue": "^3.4.27",
         "vue-global-events": "^3.0.0",
         "vuedraggable": "^4.1.0",
         "vuex": "^4.1.0"

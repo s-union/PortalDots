@@ -7,6 +7,15 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `@use "@/sass/variables" as *;`,
+        api: "modern-compiler",
+        quietDeps: true,
+        silenceDeprecations: [
+          "legacy-js-api",
+          "import",
+          "global-builtin",
+          "color-functions",
+          "if-function",
+        ],
       },
     },
   },
