@@ -4,6 +4,8 @@
       :inputName="inputName"
       :defaultValue="value"
       :id="inputId"
+      :disabled="disabled"
+      :read-only="readOnly || disabled"
     />
   </div>
 </template>
@@ -45,6 +47,10 @@ export default {
       default: null,
     },
     disabled: {
+      type: Boolean,
+      default: false,
+    },
+    readOnly: {
       type: Boolean,
       default: false,
     },

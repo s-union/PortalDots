@@ -10,6 +10,7 @@
       :footers="footers"
       :theme="colorScheme"
       :sanitize="sanitize"
+      :readOnly="isReadOnly"
       no-iconfont
       ref="editorRef"
     >
@@ -29,7 +30,13 @@
         </span>
       </template>
     </md-editor>
-    <input type="hidden" :name="inputName" v-if="inputName" :value="content" />
+    <input
+      type="hidden"
+      :name="inputName"
+      v-if="inputName"
+      :value="content"
+      :disabled="isReadOnly"
+    />
     <MarkdownEditorIcons v-if="shouldRenderIconSvg" />
   </div>
 </template>
@@ -88,6 +95,14 @@ export default {
       type: String,
       default: "",
     },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    readOnly: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -119,6 +134,9 @@ export default {
     },
     footers() {
       return ["markdownTotal", "=", 0];
+    },
+    isReadOnly() {
+      return this.disabled || this.readOnly;
     },
   },
   mounted() {

@@ -63,11 +63,6 @@ class ValidationRulesService
                 $rule[] = 'max:' . $question->number_max;
             }
 
-            // markdownタイプで最大文字数が設定されていない場合のデフォルト（余裕を持たせて1000文字程度かデータベースの最大値などにする。今回は安全のため1000とした）
-            if ($question->type === 'markdown' && !isset($question->number_max)) {
-                $rule[] = 'max:1000'; // マークダウンは記号などで文字数を消費しやすいため余裕を持たせる
-            }
-
             // ファイルの種類チェック
             if ($question->type === 'upload') {
                 $rule[] = 'mimes:' . \implode(',', $question->allowed_types_array);
