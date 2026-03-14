@@ -3,7 +3,6 @@
 namespace App\Eloquents;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Carbon\Carbon;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;

@@ -3,7 +3,6 @@
 namespace App\Eloquents;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use App\Eloquents\ValueObjects\PermissionInfo;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 
