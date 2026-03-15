@@ -47,21 +47,9 @@ type patchStaffPagePinRequest struct {
 }
 
 func (h *staffPageHandlers) listStaffPages(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadPages)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadPages)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	pages := h.pages.ListByCircleForStaff(selectedCircle.ID, c.QueryParam("query"))
@@ -74,28 +62,14 @@ func (h *staffPageHandlers) listStaffPages(c echo.Context) error {
 }
 
 func (h *staffPageHandlers) getStaffPage(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadPages)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadPages)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	page, found := h.pages.FindByCircleForStaff(selectedCircle.ID, c.Param("pageID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "page_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
 	response := mapStaffPageDetail(page)
@@ -104,32 +78,17 @@ func (h *staffPageHandlers) getStaffPage(c echo.Context) error {
 }
 
 func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditPages)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditPages)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindStaffPageRequest(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 	if request.SendEmails && !canSendPageEmails(currentSession.User) {
-		return c.JSON(http.StatusForbidden, map[string]string{"message": "forbidden"})
+		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 
 	created := h.pages.Create(
@@ -158,32 +117,17 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 }
 
 func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditPages)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditPages)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindStaffPageRequest(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 	if request.SendEmails && !canSendPageEmails(currentSession.User) {
-		return c.JSON(http.StatusForbidden, map[string]string{"message": "forbidden"})
+		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 
 	updated, found := h.pages.Update(
@@ -198,9 +142,7 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 		request.DocumentIDs,
 	)
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "page_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
 	recordActivity(
@@ -220,35 +162,19 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 }
 
 func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canDeletePages)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canDeletePages)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	pageID := c.Param("pageID")
 	currentPage, found := h.pages.FindByCircleForStaff(selectedCircle.ID, pageID)
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "page_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
 	if deleted := h.pages.Delete(selectedCircle.ID, pageID); !deleted {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "page_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
 	recordActivity(
@@ -265,35 +191,19 @@ func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
 }
 
 func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditPages)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditPages)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	var request patchStaffPagePinRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	updated, found := h.pages.SetPinned(selectedCircle.ID, c.Param("pageID"), request.IsPinned)
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "page_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
 	action := "staff.page.unpinned"
@@ -317,30 +227,16 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 }
 
 func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canExportPages)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canExportPages)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	csvBytes, err := writeCSV(append([][]string{
 		{"id", "title", "viewable_tags", "body", "is_pinned", "is_public", "notes", "published_at"},
 	}, staffPageRows(h.pages.ListByCircleForStaff(selectedCircle.ID, ""))...))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "export_failed",
-		})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := fmt.Sprintf("%s-pages.csv", selectedCircle.ID)

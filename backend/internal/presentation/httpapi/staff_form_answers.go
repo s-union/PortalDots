@@ -65,12 +65,12 @@ type existingStaffFormAnswerResponse struct {
 func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 	_, _, formValue, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 	circleMap := make(map[string]staffAnswerCircleResponse, len(circles))
 	for _, currentCircle := range circles {
@@ -106,17 +106,17 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 	_, _, formValue, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "answer_not_found"})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	currentCircle, err := h.circles.Find(answerValue.CircleID)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 
 	siblings := h.answers.ListByFormAndCircle(formValue.ID, answerValue.CircleID)
@@ -136,16 +136,13 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 	_, currentSession, formValue, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	var request mutateStaffFormAnswerRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"body": {"invalid_request"},
-			},
+		return validationError(c, map[string][]string{
+			"body": {"invalid_request"},
 		})
 	}
 
@@ -161,10 +158,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 	}
 
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	existingAnswers := h.answers.ListByFormAndCircle(formValue.ID, request.CircleID)
@@ -175,20 +169,14 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 				ExistingAnswerID: existingAnswers[0].ID,
 			})
 		}
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"circleId": {"max_answers_exceeded"},
-			},
+		return validationError(c, map[string][]string{
+			"circleId": {"max_answers_exceeded"},
 		})
 	}
 
 	normalizedDetails, fieldErrors := normalizeAnswerDetails(request.Details, questions, nil)
 	if len(fieldErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  fieldErrors,
-		})
+		return validationError(c, fieldErrors)
 	}
 
 	body := strings.TrimSpace(request.Body)
@@ -218,31 +206,25 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 	_, currentSession, formValue, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "answer_not_found"})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	var request mutateStaffFormAnswerRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"body": {"invalid_request"},
-			},
+		return validationError(c, map[string][]string{
+			"body": {"invalid_request"},
 		})
 	}
 
 	uploads := h.answers.ListUploadsByAnswer(answerValue.ID)
 	normalizedDetails, fieldErrors := normalizeAnswerDetails(request.Details, questions, uploads)
 	if len(fieldErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  fieldErrors,
-		})
+		return validationError(c, fieldErrors)
 	}
 
 	body := strings.TrimSpace(request.Body)
@@ -252,7 +234,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 
 	updated, ok := h.answers.Update(answerValue.ID, body, normalizedDetails)
 	if !ok {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "answer_not_found"})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 	if formValue.IsPublic {
 		h.enqueueStaffFormAnswerMail(currentSession.User.ID, formValue, updated)
@@ -274,16 +256,16 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
 	_, currentSession, formValue, _, status, ok := h.staffFormContext(c, canDeleteFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "answer_not_found"})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	if !h.answers.Delete(answerValue.ID) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "answer_not_found"})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	recordActivity(
@@ -302,43 +284,37 @@ func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
 func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 	_, currentSession, formValue, _, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "answer_not_found"})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"file_required"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"file_required"},
 		})
 	}
 
 	questionID := strings.TrimSpace(c.FormValue("questionId"))
 	if questionID == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"questionId": {"question_id_required"},
-			},
+		return validationError(c, map[string][]string{
+			"questionId": {"question_id_required"},
 		})
 	}
 
 	file, err := fileHeader.Open()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "upload_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "upload_failed")
 	}
 	defer file.Close()
 
 	content, err := io.ReadAll(file)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "upload_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "upload_failed")
 	}
 
 	mimeType := strings.TrimSpace(fileHeader.Header.Get(echo.HeaderContentType))
@@ -348,7 +324,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 
 	upload, ok := h.answers.AddUploadToAnswer(answerValue.ID, questionID, fileHeader.Filename, mimeType, content)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "upload_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "upload_failed")
 	}
 
 	recordActivity(
@@ -367,17 +343,17 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c echo.Context) error {
 	_, _, formValue, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "answer_not_found"})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	upload, found := h.answers.FindUploadByAnswerAndQuestion(answerValue.ID, c.Param("questionID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "upload_not_found"})
+		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
 
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", upload.Filename))
@@ -387,12 +363,12 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c echo.Context) error 
 func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c echo.Context) error {
 	_, _, formValue, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	answered := map[string]struct{}{}
@@ -414,12 +390,12 @@ func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c echo.Context) erro
 func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 	_, _, formValue, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 	circleMap := make(map[string]staffAnswerCircleResponse, len(circles))
 	for _, currentCircle := range circles {
@@ -463,7 +439,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 
 	csvBytes, err := writeCSV(rows)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := fmt.Sprintf("%s-answers.csv", formValue.ID)
@@ -475,7 +451,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) error {
 	_, _, formValue, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	uploadQuestions := make(map[string]formquestion.Question)
@@ -502,21 +478,21 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 			writer, err := archive.Create(filename)
 			if err != nil {
 				archive.Close()
-				return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+				return errorJSON(c, http.StatusInternalServerError, "export_failed")
 			}
 			if _, err := writer.Write(fileUpload.Content); err != nil {
 				archive.Close()
-				return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+				return errorJSON(c, http.StatusInternalServerError, "export_failed")
 			}
 			created++
 		}
 	}
 
 	if err := archive.Close(); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 	if created == 0 {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "upload_not_found"})
+		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
 
 	filename := fmt.Sprintf("%s-answer-uploads.zip", formValue.ID)
@@ -526,17 +502,9 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 }
 
 func (h *staffFormHandlers) staffFormContext(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, backendform.Form, []formquestion.Question, int, bool) {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, allowed)
+	sessionID, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, allowed)
 	if !ok {
 		return "", session.Session{}, backendform.Form{}, nil, status, false
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return "", session.Session{}, backendform.Form{}, nil, http.StatusInternalServerError, false
-	}
-	if selectedCircle == nil {
-		return "", session.Session{}, backendform.Form{}, nil, http.StatusConflict, false
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))

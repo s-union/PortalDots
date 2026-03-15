@@ -50,12 +50,12 @@ type mutateStaffParticipationTypeRequest struct {
 func (h *staffCircleHandlers) listStaffParticipationTypes(c echo.Context) error {
 	_, _, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	items, err := h.participationTypes.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]staffParticipationTypeResponse, 0, len(items))
@@ -73,20 +73,20 @@ func (h *staffCircleHandlers) listStaffParticipationTypes(c echo.Context) error 
 func (h *staffCircleHandlers) getStaffParticipationType(c echo.Context) error {
 	_, _, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	item, err := h.participationTypes.Find(c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "participation_type_not_found"})
+		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	formValue, found := h.forms.FindByIDForStaff(item.FormID)
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
 	return c.JSON(http.StatusOK, mapStaffParticipationType(item, formValue))
@@ -95,12 +95,12 @@ func (h *staffCircleHandlers) getStaffParticipationType(c echo.Context) error {
 func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error {
 	_, currentSession, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindAndValidateStaffParticipationType(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{Message: "validation_error", Errors: validationErrors})
+		return validationError(c, validationErrors)
 	}
 
 	formValue := h.forms.Create(
@@ -115,7 +115,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error
 		request.FormConfirmationMessage,
 	)
 	if formValue.ID == "" {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	item, err := h.participationTypes.Create(
@@ -127,7 +127,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error
 		formValue.ID,
 	)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -146,20 +146,20 @@ func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error
 func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error {
 	_, currentSession, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	item, err := h.participationTypes.Find(c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "participation_type_not_found"})
+		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	request, validationErrors, valid := bindAndValidateStaffParticipationType(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{Message: "validation_error", Errors: validationErrors})
+		return validationError(c, validationErrors)
 	}
 
 	updatedForm, ok := h.forms.UpdateByID(
@@ -174,7 +174,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error
 		request.FormConfirmationMessage,
 	)
 	if !ok {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
 	updatedType, err := h.participationTypes.Update(
@@ -186,10 +186,10 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error
 		request.Tags,
 	)
 	if errors.Is(err, participationtype.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "participation_type_not_found"})
+		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -208,25 +208,25 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error
 func (h *staffCircleHandlers) deleteStaffParticipationType(c echo.Context) error {
 	_, currentSession, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	item, err := h.participationTypes.Find(c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "participation_type_not_found"})
+		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	if err := h.participationTypes.Delete(item.ID); errors.Is(err, participationtype.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "participation_type_not_found"})
+		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	if deleted := h.forms.Delete("", item.FormID); !deleted {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
 	recordActivity(

@@ -48,12 +48,12 @@ type sendStaffCircleMailRequest struct {
 func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 	_, _, status, ok := h.requireCircleRead(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	pagination := readPagination(c)
@@ -68,12 +68,12 @@ func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
 	_, _, status, ok := h.requireCircleRead(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]staffCircleResponse, 0, len(circles))
@@ -87,12 +87,12 @@ func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
 func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canExportCircles)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	rows := [][]string{{"id", "name", "group_name", "participation_type_id", "participation_type_name"}}
@@ -108,7 +108,7 @@ func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
 
 	csvBytes, err := writeCSV(rows)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := "staff-circles.csv"
@@ -120,17 +120,15 @@ func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
 func (h *staffCircleHandlers) getStaffCircle(c echo.Context) error {
 	_, _, status, ok := h.requireCircleRead(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circleValue, err := h.circles.Find(c.Param("circleID"))
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "circle_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, mapStaffCircle(circleValue))
@@ -139,28 +137,22 @@ func (h *staffCircleHandlers) getStaffCircle(c echo.Context) error {
 func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 	_, currentSession, status, ok := h.requireCircleEdit(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindAndValidateStaffCircle(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	participationType, err := h.participationTypes.Find(request.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"participationTypeId": {"参加種別を選択してください"},
-			},
+		return validationError(c, map[string][]string{
+			"participationTypeId": {"参加種別を選択してください"},
 		})
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	created, err := h.circles.Create(
@@ -171,7 +163,7 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 		participationType.Tags,
 	)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 	recordActivity(
 		h.activities,
@@ -189,28 +181,22 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 	_, currentSession, status, ok := h.requireCircleEdit(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindAndValidateStaffCircle(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	participationType, err := h.participationTypes.Find(request.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"participationTypeId": {"参加種別を選択してください"},
-			},
+		return validationError(c, map[string][]string{
+			"participationTypeId": {"参加種別を選択してください"},
 		})
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	updated, err := h.circles.Update(
@@ -222,12 +208,10 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		participationType.Tags,
 	)
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "circle_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -246,22 +230,22 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteCircles)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circleID := c.Param("circleID")
 	currentCircle, err := h.circles.Find(circleID)
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	if err := h.circles.Delete(circleID); errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	h.mails.DeleteByCircle(circleID)
@@ -281,15 +265,15 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 func (h *staffCircleHandlers) getStaffCircleMailForm(c echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canSendCircleEmails)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	circleValue, recipients, err := h.loadStaffCircleMailRecipients(c.Param("circleID"), false)
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]staffCircleMailRecipientResponse, 0, len(recipients))
@@ -306,12 +290,12 @@ func (h *staffCircleHandlers) getStaffCircleMailForm(c echo.Context) error {
 func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canSendCircleEmails)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	var request sendStaffCircleMailRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.Recipient = strings.TrimSpace(request.Recipient)
@@ -329,27 +313,21 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 		validationErrors["body"] = []string{"本文を入力してください"}
 	}
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	circleValue, recipients, err := h.loadStaffCircleMailRecipients(c.Param("circleID"), request.Recipient == "leader")
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recipientEmails := collectRecipientLoginIDs(recipients)
 	if len(recipientEmails) == 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"recipient": {"宛先が存在しないため送信できませんでした"},
-			},
+		return validationError(c, map[string][]string{
+			"recipient": {"宛先が存在しないため送信できませんでした"},
 		})
 	}
 

@@ -26,21 +26,9 @@ type enqueueStaffMailRequest struct {
 }
 
 func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canUseMailQueue)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseMailQueue)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	jobs := h.mails.ListByCircle(selectedCircle.ID)
@@ -53,28 +41,14 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 }
 
 func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canUseMailQueue)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseMailQueue)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	var request enqueueStaffMailRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.Subject = strings.TrimSpace(request.Subject)

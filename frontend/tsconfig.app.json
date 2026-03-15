@@ -7,6 +7,6 @@
         },
         "types": ["vite/client", "node"]
     },
-    "include": ["src/**/*.ts", "src/**/*.vue"],
+    "include": ["./typed-router.d.ts", "src/**/*.ts", "src/**/*.vue"],
     "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
 }

@@ -42,12 +42,12 @@ type updateStaffPermissionsRequest struct {
 func (h *staffPermissionHandlers) listStaffPermissions(c echo.Context) error {
 	_, currentSession, status, ok := h.requirePermissionsRead(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	users, err := h.users.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	items := make([]staffPermissionUserSummaryResponse, 0, len(users))
@@ -64,15 +64,15 @@ func (h *staffPermissionHandlers) listStaffPermissions(c echo.Context) error {
 func (h *staffPermissionHandlers) getStaffPermission(c echo.Context) error {
 	_, currentSession, status, ok := h.requirePermissionsRead(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	userValue, err := h.users.Find(c.Param("userID"))
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, staffPermissionDetailResponse{
@@ -85,53 +85,44 @@ func (h *staffPermissionHandlers) getStaffPermission(c echo.Context) error {
 func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
 	_, currentSession, status, ok := h.requirePermissionsEdit(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	userValue, err := h.users.Find(c.Param("userID"))
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	var request updateStaffPermissionsRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	permissions, validationErrors := normalizeRequestedPermissions(request.Permissions)
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	if currentSession.User != nil && currentSession.User.ID == userValue.ID {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"permissions": {"自分自身の権限設定は変更できません"},
-			},
+		return validationError(c, map[string][]string{
+			"permissions": {"自分自身の権限設定は変更できません"},
 		})
 	}
 	if slices.Contains(userValue.Roles, "admin") {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"permissions": {"管理者に対して権限を設定することはできません"},
-			},
+		return validationError(c, map[string][]string{
+			"permissions": {"管理者に対して権限を設定することはできません"},
 		})
 	}
 
 	updatedUser, err := h.users.UpdatePermissions(userValue.ID, permissions)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	actorUserID := ""

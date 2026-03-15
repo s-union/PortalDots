@@ -226,6 +226,6 @@ describe("app router guards", () => {
         await router.push("/definitely-missing");
 
         const matchedRoutes = router.currentRoute.value.matched;
-        expect(matchedRoutes[matchedRoutes.length - 1]?.path).toBe("/:pathMatch(.*)*");
+        expect(matchedRoutes[matchedRoutes.length - 1]?.path).toBe("/:all(.*)");
     });
 });

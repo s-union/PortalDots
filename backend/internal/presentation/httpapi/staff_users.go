@@ -41,12 +41,12 @@ type updateStaffUserRolesRequest struct {
 func (h *staffUserHandlers) listStaffUsers(c echo.Context) error {
 	_, _, status, ok := h.requireUserRead(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	users, err := h.users.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	pagination := readPagination(c)
@@ -61,17 +61,15 @@ func (h *staffUserHandlers) listStaffUsers(c echo.Context) error {
 func (h *staffUserHandlers) getStaffUser(c echo.Context) error {
 	_, _, status, ok := h.requireUserRead(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	userValue, err := h.users.Find(c.Param("userID"))
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "user_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, mapStaffUser(userValue))
@@ -80,33 +78,25 @@ func (h *staffUserHandlers) getStaffUser(c echo.Context) error {
 func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 	sessionID, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindAndValidateStaffUser(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	updatedUser, err := h.users.Update(c.Param("userID"), request.DisplayName, request.LoginIDs)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "user_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if errors.Is(err, useradmin.ErrConflict) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"loginIds": {"入力されたログイン ID はすでに登録されています"},
-			},
+		return validationError(c, map[string][]string{
+			"loginIds": {"入力されたログイン ID はすでに登録されています"},
 		})
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	updateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
@@ -126,72 +116,54 @@ func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 func (h *staffUserHandlers) updateStaffUserRoles(c echo.Context) error {
 	sessionID, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	var request updateStaffUserRolesRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	roles, validationErrors := normalizeRequestedRoles(request.Roles)
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	if currentSession.User != nil && currentSession.User.ID == c.Param("userID") && !rolesGrantUserManagement(roles) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"roles": {"自分自身からユーザー管理権限を外すことはできません"},
-			},
+		return validationError(c, map[string][]string{
+			"roles": {"自分自身からユーザー管理権限を外すことはできません"},
 		})
 	}
 
 	targetUser, err := h.users.Find(c.Param("userID"))
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "user_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	if !slices.Contains(currentSession.User.Roles, "admin") {
 		targetHasAdmin := slices.Contains(targetUser.Roles, "admin")
 		requestedHasAdmin := slices.Contains(roles, "admin")
 		if !targetHasAdmin && requestedHasAdmin {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"roles": {"admin ロールを付与する権限がありません"},
-				},
+			return validationError(c, map[string][]string{
+				"roles": {"admin ロールを付与する権限がありません"},
 			})
 		}
 		if targetHasAdmin && !requestedHasAdmin {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"roles": {"admin ロールを削除する権限がありません"},
-				},
+			return validationError(c, map[string][]string{
+				"roles": {"admin ロールを削除する権限がありません"},
 			})
 		}
 	}
 
 	updatedUser, err := h.users.UpdateRoles(c.Param("userID"), roles)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "user_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	updateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
@@ -211,31 +183,28 @@ func (h *staffUserHandlers) updateStaffUserRoles(c echo.Context) error {
 func (h *staffUserHandlers) verifyStaffUser(c echo.Context) error {
 	_, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	currentUser, err := h.users.Find(c.Param("userID"))
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 	if currentUser.IsVerified {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"user": {"すでに認証済みのユーザーです"},
-			},
+		return validationError(c, map[string][]string{
+			"user": {"すでに認証済みのユーザーです"},
 		})
 	}
 
 	updatedUser, err := h.users.UpdateVerified(c.Param("userID"), true)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -254,31 +223,28 @@ func (h *staffUserHandlers) verifyStaffUser(c echo.Context) error {
 func (h *staffUserHandlers) deleteStaffUser(c echo.Context) error {
 	_, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	userID := c.Param("userID")
 	if currentSession.User != nil && currentSession.User.ID == userID {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"user": {"自分自身を削除することはできません"},
-			},
+		return validationError(c, map[string][]string{
+			"user": {"自分自身を削除することはできません"},
 		})
 	}
 
 	currentUser, err := h.users.Find(userID)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	if err := h.users.Delete(userID); errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -297,12 +263,12 @@ func (h *staffUserHandlers) deleteStaffUser(c echo.Context) error {
 func (h *staffUserHandlers) downloadStaffUsersCSV(c echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canExportUsers)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	users, err := h.users.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	rows := [][]string{{"id", "display_name", "login_ids", "roles", "is_verified"}}
@@ -318,7 +284,7 @@ func (h *staffUserHandlers) downloadStaffUsersCSV(c echo.Context) error {
 
 	csvBytes, err := writeCSV(rows)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := "staff-users.csv"

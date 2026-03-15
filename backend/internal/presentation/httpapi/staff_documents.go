@@ -55,21 +55,9 @@ type mutateStaffDocumentRequest struct {
 }
 
 func (h *staffDocumentHandlers) listStaffDocuments(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadDocuments)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadDocuments)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	documents := h.documents.ListByCircleForStaff(selectedCircle.ID)
@@ -82,65 +70,33 @@ func (h *staffDocumentHandlers) listStaffDocuments(c echo.Context) error {
 }
 
 func (h *staffDocumentHandlers) getStaffDocument(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadDocuments)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadDocuments)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	document, found := h.documents.FindByCircleForStaff(selectedCircle.ID, c.Param("documentID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "document_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
 	return c.JSON(http.StatusOK, mapStaffDocumentDetail(document))
 }
 
 func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditDocuments)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditDocuments)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, true)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	filename, mimeType, content, readErrors, ok := readStaffDocumentUpload(fileHeader)
 	if !ok {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  readErrors,
-		})
+		return validationError(c, readErrors)
 	}
 
 	created, createdOK := h.documents.Create(
@@ -155,9 +111,7 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 		content,
 	)
 	if !createdOK {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -174,37 +128,20 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 }
 
 func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditDocuments)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditDocuments)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	documentID := c.Param("documentID")
 	currentDocument, found := h.documents.FindByCircleForStaff(selectedCircle.ID, documentID)
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "document_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
 	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, false)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	filename := currentDocument.Filename
@@ -215,10 +152,7 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 		var ok bool
 		filename, mimeType, content, readErrors, ok = readStaffDocumentUpload(fileHeader)
 		if !ok {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors:  readErrors,
-			})
+			return validationError(c, readErrors)
 		}
 	}
 
@@ -235,9 +169,7 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 		content,
 	)
 	if !updatedOK {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "document_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
 	recordActivity(
@@ -254,35 +186,19 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 }
 
 func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canDeleteDocuments)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canDeleteDocuments)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	documentID := c.Param("documentID")
 	currentDocument, found := h.documents.FindByCircleForStaff(selectedCircle.ID, documentID)
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "document_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
 	if deleted := h.documents.Delete(selectedCircle.ID, documentID); !deleted {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "document_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
 	recordActivity(
@@ -299,28 +215,14 @@ func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
 }
 
 func (h *staffDocumentHandlers) downloadStaffDocumentFile(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadDocuments)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadDocuments)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	document, found := h.documents.FindByCircleForStaff(selectedCircle.ID, c.Param("documentID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "document_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
 	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+document.Filename+`"`)
@@ -328,30 +230,16 @@ func (h *staffDocumentHandlers) downloadStaffDocumentFile(c echo.Context) error 
 }
 
 func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canExportDocuments)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canExportDocuments)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	csvBytes, err := writeCSV(append([][]string{
 		{"id", "name", "filename", "size_bytes", "extension", "description", "is_public", "is_important", "notes", "created_at", "updated_at"},
 	}, staffDocumentRows(h.documents.ListByCircleForStaff(selectedCircle.ID))...))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "export_failed",
-		})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := fmt.Sprintf("%s-documents.csv", selectedCircle.ID)

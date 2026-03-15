@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { routes } from "vue-router/auto-routes";
 import { pinia } from "@/app/providers/pinia";
 import { type StaffCapability } from "@/features/staff/access/capabilities";
 import { fetchSessionBootstrap } from "@/features/session/api";
@@ -7,9 +8,6 @@ import { queryClient } from "@/app/providers/queryClient";
 import { publicGuard } from "@/app/router/guards/public";
 import { authGuard } from "@/app/router/guards/auth";
 import { staffGuard } from "@/app/router/guards/staff";
-import { publicRoutes } from "@/app/router/routes/public";
-import { staffRoutes } from "@/app/router/routes/staff";
-import { workspaceRoutes } from "@/app/router/routes/workspace";
 
 declare module "vue-router" {
     interface RouteMeta {
@@ -24,7 +22,7 @@ declare module "vue-router" {
 
 export const router = createRouter({
     history: createWebHistory(),
-    routes: [...publicRoutes, ...workspaceRoutes, ...staffRoutes],
+    routes,
 });
 
 async function ensureSessionStore() {

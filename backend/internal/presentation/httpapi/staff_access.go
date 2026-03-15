@@ -1,10 +1,13 @@
 package httpapi
 
 import (
+	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/staffpermission"
 )
@@ -268,22 +271,34 @@ func (s *sharedDeps) requireStaffCapability(c echo.Context, allowed func(*auth.U
 		return "", session.Session{}, status, false
 	}
 	if currentSession.User == nil || !allowed(currentSession.User) {
-		return "", session.Session{}, httpStatusForbidden, false
+		return "", session.Session{}, http.StatusForbidden, false
 	}
-	return sessionID, currentSession, httpStatusOK, true
+	return sessionID, currentSession, http.StatusOK, true
 }
 
-const (
-	httpStatusOK        = 200
-	httpStatusForbidden = 403
-)
+// requireStaffWithCircle combines staff capability check and current circle resolution
+// into a single call, eliminating repeated resolveCurrentCircle + error handling boilerplate.
+func (s *sharedDeps) requireStaffWithCircle(c echo.Context, circles circle.Catalog, allowed func(*auth.User) bool) (string, session.Session, *circleInfo, int, bool) {
+	sessionID, currentSession, status, ok := s.requireStaffCapability(c, allowed)
+	if !ok {
+		return "", session.Session{}, nil, status, false
+	}
+	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, circles, s.sessions)
+	if err != nil {
+		return "", session.Session{}, nil, http.StatusInternalServerError, false
+	}
+	if selectedCircle == nil {
+		return "", session.Session{}, nil, http.StatusConflict, false
+	}
+	return sessionID, currentSession, selectedCircle, http.StatusOK, true
+}
 
 func userHasAnyRole(user *auth.User, roles ...string) bool {
 	if user == nil {
 		return false
 	}
 	for _, role := range roles {
-		if slicesContains(user.Roles, role) {
+		if slices.Contains(user.Roles, role) {
 			return true
 		}
 	}
@@ -295,13 +310,4 @@ func userHasAnyPermission(user *auth.User, permissions ...string) bool {
 		return false
 	}
 	return staffpermission.HasAny(user.Permissions, permissions...)
-}
-
-func slicesContains(values []string, target string) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
 }

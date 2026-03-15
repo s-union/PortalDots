@@ -97,21 +97,9 @@ type mutateStaffFormRequest struct {
 }
 
 func (h *staffFormHandlers) listStaffForms(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadForms)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	forms := h.forms.ListByCircleForStaff(selectedCircle.ID)
@@ -127,38 +115,22 @@ func (h *staffFormHandlers) listStaffForms(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadForms)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	form, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "form_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(form.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	questions, err := h.formQuestions.List(form.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	var answerResponse *staffFormAnswerResponse
@@ -177,29 +149,14 @@ func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindAndValidateStaffForm(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	created := h.forms.Create(
@@ -227,39 +184,22 @@ func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	request, validationErrors, valid := bindAndValidateStaffForm(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "form_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	updated, found := h.forms.Update(
@@ -275,9 +215,7 @@ func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
 		request.ConfirmationMessage,
 	)
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "form_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
 	recordActivity(
@@ -294,30 +232,22 @@ func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadForms)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	questions, err := h.formQuestions.List(formValue.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, formDetailResponse{
@@ -334,30 +264,22 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canDuplicateForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canDuplicateForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	source, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(source.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	sourceQuestions, err := h.formQuestions.List(source.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	copied := h.forms.Create(
@@ -372,13 +294,13 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 		source.ConfirmationMessage,
 	)
 	if copied.ID == "" {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "copy_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 	}
 
 	for _, sourceQuestion := range sourceQuestions {
 		created, err := h.formQuestions.Create(copied.ID, sourceQuestion.Type)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "copy_failed"})
+			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
 		created.Name = sourceQuestion.Name
 		created.Description = sourceQuestion.Description
@@ -389,17 +311,17 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 		created.Options = slices.Clone(sourceQuestion.Options)
 		created.Priority = sourceQuestion.Priority
 		if _, err := h.formQuestions.Update(created); err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "copy_failed"})
+			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
 	}
 
 	if len(sourceQuestions) > 0 {
 		orderedQuestionIDs, err := questionIDsByPriority(h.formQuestions.List(copied.ID))
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "copy_failed"})
+			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
 		if err := h.formQuestions.ReplaceOrder(copied.ID, orderedQuestionIDs); err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": "copy_failed"})
+			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
 	}
 
@@ -417,28 +339,20 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canDeleteForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canDeleteForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 	if deleted := h.forms.Delete(selectedCircle.ID, formValue.ID); !deleted {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
 	recordActivity(
@@ -455,17 +369,9 @@ func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canExportForms)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canExportForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	rows := append([][]string{{
@@ -483,7 +389,7 @@ func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
 	buffer := strings.Builder{}
 	writer := csv.NewWriter(&buffer)
 	if err := writer.WriteAll(rows); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "export_failed"})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := fmt.Sprintf("%s-forms.csv", selectedCircle.ID)
@@ -493,34 +399,18 @@ func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canReadForms)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	if _, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID")); !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "form_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
 	upload, found := h.answers.FindUpload(c.Param("formID"), selectedCircle.ID, c.Param("uploadID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "upload_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
 
 	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
@@ -528,42 +418,31 @@ func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	var request createStaffFormQuestionRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	request.Type = strings.TrimSpace(request.Type)
 	if !slices.Contains(formquestion.AllowedTypes, request.Type) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"type": {"設問タイプが不正です"}},
-		})
+		return validationError(c, map[string][]string{"type": {"設問タイプが不正です"}})
 	}
 
 	created, err := h.formQuestions.Create(formValue.ID, request.Type)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -580,30 +459,22 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	var request updateStaffFormQuestionRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.Name = strings.TrimSpace(request.Name)
@@ -614,10 +485,7 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 
 	validationErrors := validateStaffFormQuestionRequest(request)
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	updated, err := h.formQuestions.Update(formquestion.Question{
@@ -634,10 +502,10 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 		Priority:     request.Priority,
 	})
 	if errors.Is(err, formquestion.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "question_not_found"})
+		return errorJSON(c, http.StatusNotFound, "question_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -654,31 +522,23 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	if err := h.formQuestions.Delete(formValue.ID, c.Param("questionID")); errors.Is(err, formquestion.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "question_not_found"})
+		return errorJSON(c, http.StatusNotFound, "question_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(
@@ -695,37 +555,26 @@ func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
+	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, status)
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "form_not_found"})
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "participation_form_locked"})
+		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	var request reorderStaffFormQuestionsRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	if len(request.QuestionIDs) == 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"questionIds": {"並び順を指定してください"}},
-		})
+		return validationError(c, map[string][]string{"questionIds": {"並び順を指定してください"}})
 	}
 
 	for index := range request.QuestionIDs {
@@ -733,9 +582,9 @@ func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
 	}
 
 	if err := h.formQuestions.ReplaceOrder(formValue.ID, request.QuestionIDs); errors.Is(err, formquestion.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "question_not_found"})
+		return errorJSON(c, http.StatusNotFound, "question_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(

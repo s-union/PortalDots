@@ -28,11 +28,8 @@ type confirmStaffVerificationRequest struct {
 
 func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffUser(c)
-	if !ok && status == http.StatusUnauthorized {
-		return c.JSON(status, map[string]string{"message": "unauthenticated"})
-	}
 	if !ok {
-		return c.JSON(status, map[string]string{"message": "staff_forbidden"})
+		return statusError(c, status)
 	}
 
 	return c.JSON(http.StatusOK, staffStatusResponse{
@@ -44,7 +41,7 @@ func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
 func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 	sessionID, _, status, ok := h.requireStaffUser(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {
@@ -63,34 +60,26 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {
 	sessionID, currentSession, status, ok := h.requireStaffUser(c)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	var request confirmStaffVerificationRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.VerifyCode = strings.TrimSpace(request.VerifyCode)
 	if request.VerifyCode == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"verifyCode": {"認証コードを入力してください"},
-			},
+		return validationError(c, map[string][]string{
+			"verifyCode": {"認証コードを入力してください"},
 		})
 	}
 
 	if currentSession.StaffVerifyCode == "" ||
 		currentSession.StaffVerifyCode != request.VerifyCode ||
 		time.Now().UTC().After(currentSession.StaffVerifyExpires) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"verifyCode": {"認証コードが間違っているか、期限切れです。再度お試しください。"},
-			},
+		return validationError(c, map[string][]string{
+			"verifyCode": {"認証コードが間違っているか、期限切れです。再度お試しください。"},
 		})
 	}
 

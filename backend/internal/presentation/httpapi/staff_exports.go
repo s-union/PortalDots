@@ -16,28 +16,14 @@ import (
 )
 
 func (h *staffAdminHandlers) downloadStaffSummaryCSV(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canUseStaffExports)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseStaffExports)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	csvBytes, err := h.buildStaffSummaryCSV(selectedCircle.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "export_failed",
-		})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := fmt.Sprintf("%s-summary.csv", selectedCircle.ID)
@@ -47,28 +33,14 @@ func (h *staffAdminHandlers) downloadStaffSummaryCSV(c echo.Context) error {
 }
 
 func (h *staffAdminHandlers) downloadStaffBundleZIP(c echo.Context) error {
-	sessionID, currentSession, status, ok := h.requireStaffCapability(c, canUseStaffExports)
+	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseStaffExports)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
-	}
-
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
-	}
-	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, status)
 	}
 
 	zipBytes, err := h.buildStaffBundleZIP(selectedCircle.ID, selectedCircle.Name)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "export_failed",
-		})
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := fmt.Sprintf("%s-bundle.zip", selectedCircle.ID)

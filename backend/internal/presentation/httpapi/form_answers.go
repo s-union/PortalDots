@@ -50,9 +50,7 @@ const maxAnswerUploadBytes = 5 * 1024 * 1024
 func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Get(currentForm.ID, currentSession.CurrentCircleID)
@@ -70,9 +68,7 @@ func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) listFormAnswers(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	answers := h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)
@@ -93,16 +89,12 @@ func (h *workspaceHandlers) listFormAnswers(c echo.Context) error {
 func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "answer_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
@@ -113,18 +105,13 @@ func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
 func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	existingAnswers := h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)
 	if currentForm.MaxAnswers > 0 && int32(len(existingAnswers)) >= currentForm.MaxAnswers {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"answer": {"max_answers_exceeded"},
-			},
+		return validationError(c, map[string][]string{
+			"answer": {"max_answers_exceeded"},
 		})
 	}
 
@@ -137,34 +124,25 @@ func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	var request upsertFormAnswerRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	questions, err := h.formQuestions.List(currentForm.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	existingUploads := h.answers.ListUploads(currentForm.ID, currentSession.CurrentCircleID)
 	trimmedBody := strings.TrimSpace(request.Body)
 	if len(questions) == 0 {
 		if trimmedBody == "" {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"body": {"回答を入力してください"},
-				},
+			return validationError(c, map[string][]string{
+				"body": {"回答を入力してください"},
 			})
 		}
 
@@ -176,10 +154,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 
 	normalizedDetails, validationErrors := normalizeAnswerDetails(request.Details, questions, existingUploads)
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	summaryBody := buildAnswerSummary(questions, normalizedDetails, existingUploads)
@@ -192,49 +167,36 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "answer_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	var request upsertFormAnswerRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	questions, err := h.formQuestions.List(currentForm.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	existingUploads := h.answers.ListUploadsByAnswer(answerValue.ID)
 	trimmedBody := strings.TrimSpace(request.Body)
 	if len(questions) == 0 {
 		if trimmedBody == "" {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"body": {"回答を入力してください"},
-				},
+			return validationError(c, map[string][]string{
+				"body": {"回答を入力してください"},
 			})
 		}
 
 		updatedAnswer, updated := h.answers.Update(answerValue.ID, trimmedBody, map[string][]string{})
 		if !updated {
-			return c.JSON(http.StatusNotFound, map[string]string{
-				"message": "answer_not_found",
-			})
+			return errorJSON(c, http.StatusNotFound, "answer_not_found")
 		}
 
 		return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
@@ -244,18 +206,13 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 
 	normalizedDetails, validationErrors := normalizeAnswerDetails(request.Details, questions, existingUploads)
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	summaryBody := buildAnswerSummary(questions, normalizedDetails, existingUploads)
 	updatedAnswer, updated := h.answers.Update(answerValue.ID, summaryBody, normalizedDetails)
 	if !updated {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "answer_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
@@ -266,16 +223,12 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	questions, err := h.formQuestions.List(currentForm.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	questionID := strings.TrimSpace(c.FormValue("questionId"))
@@ -284,73 +237,51 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 		var found bool
 		uploadQuestion, found = findUploadQuestion(questions, questionID)
 		if !found {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"questionId": {"アップロード先の設問が不正です"},
-				},
+			return validationError(c, map[string][]string{
+				"questionId": {"アップロード先の設問が不正です"},
 			})
 		}
 	}
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"ファイルを選択してください"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"ファイルを選択してください"},
 		})
 	}
 
 	filename := strings.TrimSpace(fileHeader.Filename)
 	if filename == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"ファイル名が不正です"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"ファイル名が不正です"},
 		})
 	}
 
 	file, err := fileHeader.Open()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	defer file.Close()
 
 	content, err := io.ReadAll(io.LimitReader(file, maxAnswerUploadBytes+1))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	if len(content) == 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"空のファイルはアップロードできません"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"空のファイルはアップロードできません"},
 		})
 	}
 	if len(content) > maxAnswerUploadBytes {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"ファイルサイズは 5MB 以下にしてください"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"ファイルサイズは 5MB 以下にしてください"},
 		})
 	}
 
 	if len(questions) > 0 {
 		if uploadValidationMessage := validateUploadExtension(uploadQuestion, filename); uploadValidationMessage != "" {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"file": {uploadValidationMessage},
-				},
+			return validationError(c, map[string][]string{
+				"file": {uploadValidationMessage},
 			})
 		}
 	}
@@ -362,9 +293,7 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 
 	upload, created := h.answers.AddUpload(currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
 	if !created {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusCreated, mapFormAnswerUpload(upload))
@@ -373,23 +302,17 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "answer_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	questions, err := h.formQuestions.List(currentForm.ID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	questionID := strings.TrimSpace(c.FormValue("questionId"))
@@ -398,73 +321,51 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 		var uploadQuestionFound bool
 		uploadQuestion, uploadQuestionFound = findUploadQuestion(questions, questionID)
 		if !uploadQuestionFound {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"questionId": {"アップロード先の設問が不正です"},
-				},
+			return validationError(c, map[string][]string{
+				"questionId": {"アップロード先の設問が不正です"},
 			})
 		}
 	}
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"ファイルを選択してください"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"ファイルを選択してください"},
 		})
 	}
 
 	filename := strings.TrimSpace(fileHeader.Filename)
 	if filename == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"ファイル名が不正です"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"ファイル名が不正です"},
 		})
 	}
 
 	file, err := fileHeader.Open()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	defer file.Close()
 
 	content, err := io.ReadAll(io.LimitReader(file, maxAnswerUploadBytes+1))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	if len(content) == 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"空のファイルはアップロードできません"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"空のファイルはアップロードできません"},
 		})
 	}
 	if len(content) > maxAnswerUploadBytes {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"file": {"ファイルサイズは 5MB 以下にしてください"},
-			},
+		return validationError(c, map[string][]string{
+			"file": {"ファイルサイズは 5MB 以下にしてください"},
 		})
 	}
 
 	if len(questions) > 0 {
 		if uploadValidationMessage := validateUploadExtension(uploadQuestion, filename); uploadValidationMessage != "" {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors: map[string][]string{
-					"file": {uploadValidationMessage},
-				},
+			return validationError(c, map[string][]string{
+				"file": {uploadValidationMessage},
 			})
 		}
 	}
@@ -476,9 +377,7 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 
 	upload, created := h.answers.AddUploadToAnswer(answerValue.ID, questionID, filename, mimeType, content)
 	if !created {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusCreated, mapFormAnswerUpload(upload))
@@ -487,16 +386,12 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	upload, found := h.answers.FindUpload(currentForm.ID, currentSession.CurrentCircleID, c.Param("uploadID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "upload_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
 
 	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
@@ -506,23 +401,17 @@ func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
 func (h *workspaceHandlers) downloadFormAnswerFileByID(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return c.JSON(status, map[string]string{
-			"message": statusMessage(status),
-		})
+		return statusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "answer_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	upload, found := h.answers.FindUploadByAnswerAndQuestion(answerValue.ID, c.Param("questionID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "upload_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
 
 	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
@@ -560,21 +449,6 @@ func (h *workspaceHandlers) resolveCurrentForm(c echo.Context) (formDetailRespon
 		HasAnswer:   len(h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)) > 0,
 		Questions:   mapStaffFormQuestions(questions),
 	}, currentSession, http.StatusOK, true
-}
-
-func statusMessage(status int) string {
-	switch status {
-	case http.StatusUnauthorized:
-		return "unauthenticated"
-	case http.StatusForbidden:
-		return "staff_forbidden"
-	case http.StatusConflict:
-		return "current_circle_required"
-	case http.StatusNotFound:
-		return "form_not_found"
-	default:
-		return "unknown_error"
-	}
 }
 
 func buildFormAnswerResponse(answerValue answer.Answer, uploads []answer.Upload) *formAnswerResponse {

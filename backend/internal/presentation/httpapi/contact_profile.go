@@ -47,15 +47,15 @@ type updatePasswordRequest struct {
 func (h *authHandlers) listContactHistory(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return statusError(c, http.StatusUnauthorized)
 	}
 
 	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, http.StatusConflict)
 	}
 
 	jobs := h.mails.ListByCircle(selectedCircle.ID)
@@ -82,12 +82,12 @@ func (h *authHandlers) listContactHistory(c echo.Context) error {
 func (h *authHandlers) listContactCategories(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return statusError(c, http.StatusUnauthorized)
 	}
 
 	items, err := h.contactCategories.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]participantContactCategoryResponse, 0, len(items))
@@ -104,20 +104,20 @@ func (h *authHandlers) listContactCategories(c echo.Context) error {
 func (h *authHandlers) submitContact(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return statusError(c, http.StatusUnauthorized)
 	}
 
 	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 	if selectedCircle == nil {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "current_circle_required"})
+		return statusError(c, http.StatusConflict)
 	}
 
 	var request submitContactRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.CategoryID = strings.TrimSpace(request.CategoryID)
@@ -135,21 +135,15 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		validationErrors["body"] = []string{"本文を入力してください"}
 	}
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	category, err := findContactCategory(h.contactCategories, request.CategoryID)
 	if errors.Is(err, contactcategory.ErrNotFound) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"categoryId": {"存在しない問い合わせカテゴリです"}},
-		})
+		return validationError(c, map[string][]string{"categoryId": {"存在しない問い合わせカテゴリです"}})
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	body := fmt.Sprintf(
@@ -208,28 +202,25 @@ func extractContactMetadata(body string) (string, string) {
 func (h *authHandlers) updateProfile(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return statusError(c, http.StatusUnauthorized)
 	}
 
 	var request updateProfileRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.DisplayName = strings.TrimSpace(request.DisplayName)
 	if request.DisplayName == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"displayName": {"表示名を入力してください"}},
-		})
+		return validationError(c, map[string][]string{"displayName": {"表示名を入力してください"}})
 	}
 
 	updatedUser, err := h.users.UpdateDisplayName(currentSession.User.ID, request.DisplayName)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "user_not_found"})
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {
@@ -257,15 +248,15 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 func (h *authHandlers) updatePassword(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return statusError(c, http.StatusUnauthorized)
 	}
 	if h.passwordChanger == nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	var request updatePasswordRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.CurrentPassword = strings.TrimSpace(request.CurrentPassword)
@@ -283,10 +274,7 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 		validationErrors["newPassword"] = []string{"現在のパスワードとは異なる文字列を入力してください"}
 	}
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	if err := h.passwordChanger.ChangePassword(
@@ -296,12 +284,9 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 		request.NewPassword,
 	); err != nil {
 		if errors.Is(err, auth.ErrInvalidPassword) {
-			return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-				Message: "validation_error",
-				Errors:  map[string][]string{"currentPassword": {"現在のパスワードが正しくありません"}},
-			})
+			return validationError(c, map[string][]string{"currentPassword": {"現在のパスワードが正しくありません"}})
 		}
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {

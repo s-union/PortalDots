@@ -1425,8 +1425,8 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
 		"name":                "追加ヒアリング",
-		"openAt":              "2026-03-15T09:00:00Z",
-		"closeAt":             "2026-03-30T18:00:00Z",
+		"openAt":              "2099-03-15T09:00:00Z",
+		"closeAt":             "2099-03-30T18:00:00Z",
 		"maxAnswers":          3,
 		"answerableTags":      []string{"展示", "必須"},
 		"confirmationMessage": "回答ありがとうございました。",

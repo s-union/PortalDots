@@ -46,12 +46,12 @@ type mutateStaffContactCategoryRequest struct {
 
 func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadTags); !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	tags, err := h.tags.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]staffTagResponse, 0, len(tags))
@@ -64,24 +64,21 @@ func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
 func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditTags)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	var request mutateStaffTagRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	request.Name = strings.TrimSpace(request.Name)
 	if request.Name == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"name": {"タグ名を入力してください"}},
-		})
+		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
 
 	created, err := h.tags.Create(request.Name)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 	recordActivity(h.activities, currentSession.User.ID, "staff.tag.created", "tag", created.ID, "", buildActivitySummary("staff がタグを作成しました", created.Name))
 	return c.JSON(http.StatusCreated, staffTagResponse{ID: created.ID, Name: created.Name})
@@ -90,27 +87,24 @@ func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {
 func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditTags)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	var request mutateStaffTagRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	request.Name = strings.TrimSpace(request.Name)
 	if request.Name == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"name": {"タグ名を入力してください"}},
-		})
+		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
 
 	updated, err := h.tags.Update(c.Param("tagID"), request.Name)
 	if errors.Is(err, tag.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "tag_not_found"})
+		return errorJSON(c, http.StatusNotFound, "tag_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.tag.updated", "tag", updated.ID, "", buildActivitySummary("staff がタグを更新しました", updated.Name))
@@ -120,13 +114,13 @@ func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
 func (h *staffMastersHandlers) deleteStaffTag(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteTags)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	if err := h.tags.Delete(c.Param("tagID")); errors.Is(err, tag.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "tag_not_found"})
+		return errorJSON(c, http.StatusNotFound, "tag_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.tag.deleted", "tag", c.Param("tagID"), "", "staff がタグを削除しました")
@@ -135,12 +129,12 @@ func (h *staffMastersHandlers) deleteStaffTag(c echo.Context) error {
 
 func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadPlaces); !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	items, err := h.places.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]staffPlaceResponse, 0, len(items))
@@ -158,20 +152,17 @@ func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
 func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPlaces)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, valid := bindStaffPlaceRequest(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"request": {"場所情報が不正です"}},
-		})
+		return validationError(c, map[string][]string{"request": {"場所情報が不正です"}})
 	}
 
 	created, err := h.places.Create(request.Name, request.Type, request.Notes)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 	recordActivity(h.activities, currentSession.User.ID, "staff.place.created", "place", created.ID, "", buildActivitySummary("staff が場所を作成しました", created.Name))
 	return c.JSON(http.StatusCreated, mapStaffPlace(created))
@@ -180,23 +171,20 @@ func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPlaces)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, valid := bindStaffPlaceRequest(c)
 	if !valid {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"request": {"場所情報が不正です"}},
-		})
+		return validationError(c, map[string][]string{"request": {"場所情報が不正です"}})
 	}
 
 	updated, err := h.places.Update(c.Param("placeID"), request.Name, request.Type, request.Notes)
 	if errors.Is(err, place.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "place_not_found"})
+		return errorJSON(c, http.StatusNotFound, "place_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.place.updated", "place", updated.ID, "", buildActivitySummary("staff が場所を更新しました", updated.Name))
@@ -206,13 +194,13 @@ func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
 func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeletePlaces)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	if err := h.places.Delete(c.Param("placeID")); errors.Is(err, place.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "place_not_found"})
+		return errorJSON(c, http.StatusNotFound, "place_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.place.deleted", "place", c.Param("placeID"), "", "staff が場所を削除しました")
@@ -221,12 +209,12 @@ func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
 
 func (h *staffMastersHandlers) listStaffContactCategories(c echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadContactCategories); !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	items, err := h.contactCategories.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]staffContactCategoryResponse, 0, len(items))
@@ -239,20 +227,17 @@ func (h *staffMastersHandlers) listStaffContactCategories(c echo.Context) error 
 func (h *staffMastersHandlers) createStaffContactCategory(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditContactCategories)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, validationErrors := bindStaffContactCategoryRequest(c)
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	created, err := h.contactCategories.Create(request.Name, request.Email)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.contact_category.created", "contact_category", created.ID, "", buildActivitySummary("staff が問い合わせカテゴリを作成しました", created.Name))
@@ -262,23 +247,20 @@ func (h *staffMastersHandlers) createStaffContactCategory(c echo.Context) error 
 func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditContactCategories)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	request, validationErrors := bindStaffContactCategoryRequest(c)
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	updated, err := h.contactCategories.Update(c.Param("categoryID"), request.Name, request.Email)
 	if errors.Is(err, contactcategory.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "contact_category_not_found"})
+		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.contact_category.updated", "contact_category", updated.ID, "", buildActivitySummary("staff が問い合わせカテゴリを更新しました", updated.Name))
@@ -288,13 +270,13 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 func (h *staffMastersHandlers) deleteStaffContactCategory(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteContactCategories)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	if err := h.contactCategories.Delete(c.Param("categoryID")); errors.Is(err, contactcategory.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "contact_category_not_found"})
+		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.contact_category.deleted", "contact_category", c.Param("categoryID"), "", "staff が問い合わせカテゴリを削除しました")

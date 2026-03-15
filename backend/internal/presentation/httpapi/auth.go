@@ -14,17 +14,10 @@ type loginRequest struct {
 	Remember bool   `json:"remember"`
 }
 
-type validationErrorResponse struct {
-	Message string              `json:"message"`
-	Errors  map[string][]string `json:"errors"`
-}
-
 func (h *authHandlers) login(c echo.Context) error {
 	var request loginRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.LoginID = strings.TrimSpace(request.LoginID)
@@ -37,10 +30,7 @@ func (h *authHandlers) login(c echo.Context) error {
 		errors["password"] = []string{"パスワードを入力してください"}
 	}
 	if len(errors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  errors,
-		})
+		return validationError(c, errors)
 	}
 
 	user, ok := h.authenticator.Authenticate(c.Request().Context(), request.LoginID, request.Password)
@@ -55,9 +45,7 @@ func (h *authHandlers) login(c echo.Context) error {
 
 	sessionID, _, err := h.sessions.Create(user)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "failed_to_create_session",
-		})
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_session")
 	}
 
 	cookie := &http.Cookie{

@@ -35,21 +35,15 @@ type pageDocumentResponse struct {
 func (h *workspaceHandlers) listPages(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"message": "unauthenticated",
-		})
+		return statusError(c, http.StatusUnauthorized)
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, http.StatusConflict)
 	}
 
 	selectedCircle, err := h.circles.Find(currentSession.CurrentCircleID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	pages := h.pages.ListByCircle(currentSession.CurrentCircleID, selectedCircle.Tags, c.QueryParam("query"))
@@ -68,28 +62,20 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 func (h *workspaceHandlers) getPage(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"message": "unauthenticated",
-		})
+		return statusError(c, http.StatusUnauthorized)
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, http.StatusConflict)
 	}
 
 	selectedCircle, err := h.circles.Find(currentSession.CurrentCircleID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	page, found := h.pages.FindByCircle(currentSession.CurrentCircleID, selectedCircle.Tags, c.Param("pageID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "page_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
 	return c.JSON(http.StatusOK, pageDetailResponse{

@@ -81,16 +81,12 @@ func mapCircleDetail(c circle.Circle) circleDetailResponse {
 func (h *workspaceHandlers) listCircles(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"message": "unauthenticated",
-		})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
 	circles, err := h.circles.ListSelectable(currentSession.User)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	response := make([]selectableCircleResponse, 0, len(circles))
@@ -109,38 +105,27 @@ func (h *workspaceHandlers) listCircles(c echo.Context) error {
 func (h *workspaceHandlers) setCurrentCircle(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"message": "unauthenticated",
-		})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
 	var request setCurrentCircleRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "invalid_request",
-		})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.CircleID = strings.TrimSpace(request.CircleID)
 	if request.CircleID == "" {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"circleId": {"企画を選択してください"},
-			},
+		return validationError(c, map[string][]string{
+			"circleId": {"企画を選択してください"},
 		})
 	}
 
 	selectedCircle, err := h.circles.FindSelectable(currentSession.User, request.CircleID)
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "circle_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {
@@ -153,12 +138,12 @@ func (h *workspaceHandlers) setCurrentCircle(c echo.Context) error {
 func (h *workspaceHandlers) createCircle(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
 	var req createCircleRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	req.Name = strings.TrimSpace(req.Name)
@@ -178,18 +163,12 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 		validationErrors["participationTypeId"] = []string{"参加種別を選択してください"}
 	}
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	pt, err := h.participationTypes.Find(req.ParticipationTypeID)
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  map[string][]string{"participationTypeId": {"参加種別が存在しません"}},
-		})
+		return validationError(c, map[string][]string{"participationTypeId": {"参加種別が存在しません"}})
 	}
 
 	created, err := h.circles.CreateForUser(currentSession.User, circle.CreateCircleParams{
@@ -202,7 +181,7 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 		Notes:                 req.Notes,
 	})
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {
@@ -215,18 +194,18 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 func (h *workspaceHandlers) getCurrentCircleDetail(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "no_current_circle"})
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
 	circleValue, err := h.circles.GetUserCircle(currentSession.User, currentSession.CurrentCircleID)
 	if errors.Is(err, circle.ErrNotFound) || errors.Is(err, circle.ErrForbidden) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, mapCircleDetail(circleValue))
@@ -235,15 +214,15 @@ func (h *workspaceHandlers) getCurrentCircleDetail(c echo.Context) error {
 func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "no_current_circle"})
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
 	var req updateCircleRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	req.Name = strings.TrimSpace(req.Name)
@@ -259,10 +238,7 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 		validationErrors["groupName"] = []string{"団体名を入力してください"}
 	}
 	if len(validationErrors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
-			Message: "validation_error",
-			Errors:  validationErrors,
-		})
+		return validationError(c, validationErrors)
 	}
 
 	updated, err := h.circles.UpdateForUser(currentSession.User, currentSession.CurrentCircleID, circle.UpdateCircleParams{
@@ -273,13 +249,13 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 		Notes:         req.Notes,
 	})
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if errors.Is(err, circle.ErrForbidden) {
-		return c.JSON(http.StatusForbidden, map[string]string{"message": "forbidden"})
+		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, mapCircleDetail(updated))
@@ -288,18 +264,18 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 func (h *workspaceHandlers) deleteCurrentCircle(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "no_current_circle"})
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
 	if err := h.circles.DeleteForUser(currentSession.User, currentSession.CurrentCircleID); errors.Is(err, circle.ErrForbidden) {
-		return c.JSON(http.StatusForbidden, map[string]string{"message": "forbidden"})
+		return errorJSON(c, http.StatusForbidden, "forbidden")
 	} else if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {
@@ -312,21 +288,21 @@ func (h *workspaceHandlers) deleteCurrentCircle(c echo.Context) error {
 func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "no_current_circle"})
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
 	submitted, err := h.circles.Submit(currentSession.User, currentSession.CurrentCircleID)
 	if errors.Is(err, circle.ErrForbidden) {
-		return c.JSON(http.StatusForbidden, map[string]string{"message": "forbidden"})
+		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, mapCircleDetail(submitted))
@@ -335,15 +311,15 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 func (h *workspaceHandlers) listCurrentCircleMembers(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "no_current_circle"})
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
 	members, err := h.circles.ListMembers(currentSession.CurrentCircleID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	response := make([]circleMemberResponse, 0, len(members))
@@ -361,21 +337,21 @@ func (h *workspaceHandlers) listCurrentCircleMembers(c echo.Context) error {
 func (h *workspaceHandlers) removeCurrentCircleMember(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "no_current_circle"})
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
 	targetUserID := c.Param("userID")
 	if targetUserID == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	if err := h.circles.RemoveMember(currentSession.User, currentSession.CurrentCircleID, targetUserID); errors.Is(err, circle.ErrForbidden) {
-		return c.JSON(http.StatusForbidden, map[string]string{"message": "forbidden"})
+		return errorJSON(c, http.StatusForbidden, "forbidden")
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -384,21 +360,21 @@ func (h *workspaceHandlers) removeCurrentCircleMember(c echo.Context) error {
 func (h *workspaceHandlers) regenerateInvitationToken(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "no_current_circle"})
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
 	updated, err := h.circles.RegenerateInvitationToken(currentSession.User, currentSession.CurrentCircleID)
 	if errors.Is(err, circle.ErrForbidden) {
-		return c.JSON(http.StatusForbidden, map[string]string{"message": "forbidden"})
+		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "circle_not_found"})
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, mapCircleDetail(updated))
@@ -407,23 +383,23 @@ func (h *workspaceHandlers) regenerateInvitationToken(c echo.Context) error {
 func (h *workspaceHandlers) joinCircleByToken(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
 	token := c.Param("token")
 	if token == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	joined, err := h.circles.JoinByToken(currentSession.User, token)
 	if errors.Is(err, circle.ErrNotFound) {
-		return c.JSON(http.StatusNotFound, map[string]string{"message": "invalid_token"})
+		return errorJSON(c, http.StatusNotFound, "invalid_token")
 	}
 	if errors.Is(err, circle.ErrAlreadyMember) {
-		return c.JSON(http.StatusConflict, map[string]string{"message": "already_member"})
+		return errorJSON(c, http.StatusConflict, "already_member")
 	}
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "internal_error"})
+		return internalError(c)
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {

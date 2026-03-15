@@ -6,7 +6,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
-	"github.com/s-union/PortalDots/backend/internal/domain/session"
 )
 
 type staffActivityLogResponse struct {
@@ -21,16 +20,14 @@ type staffActivityLogResponse struct {
 }
 
 func (h *staffAdminHandlers) listStaffActivityLogs(c echo.Context) error {
-	_, _, status, ok := h.requireActivityLogAdmin(c)
+	_, _, status, ok := h.requireStaffCapability(c, canViewActivityLogs)
 	if !ok {
-		return c.JSON(status, map[string]string{"message": statusMessage(status)})
+		return statusError(c, status)
 	}
 
 	logs, err := h.activities.List()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"message": "internal_error",
-		})
+		return internalError(c)
 	}
 
 	pagination := readPagination(c)
@@ -40,18 +37,6 @@ func (h *staffAdminHandlers) listStaffActivityLogs(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
-}
-
-func (h *staffAdminHandlers) requireActivityLogAdmin(c echo.Context) (string, session.Session, int, bool) {
-	sessionID, currentSession, status, ok := h.requireStaffMode(c)
-	if !ok {
-		return "", session.Session{}, status, false
-	}
-	if currentSession.User == nil || !canViewActivityLogs(currentSession.User) {
-		return "", session.Session{}, http.StatusForbidden, false
-	}
-
-	return sessionID, currentSession, http.StatusOK, true
 }
 
 func recordActivity(
