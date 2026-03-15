@@ -6,10 +6,15 @@ definePage({
 });
 
 import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import BackLink from "@/components/ui/BackLink.vue";
 import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import {
+  extractDeleteAccountValidationMessage,
+  useDeleteOwnAccountMutation,
+} from "@/features/session/deleteAccount";
 import {
   extractPasswordValidationMessage,
   useUpdatePasswordMutation,
@@ -19,11 +24,14 @@ import {
   useUpdateProfileMutation,
 } from "@/features/session/profile";
 import { useSessionStore } from "@/features/session/store";
+import { hasStaffAccess } from "@/features/staff/access/capabilities";
 import { useUiThemePreference, type UiTheme } from "@/features/session/theme";
 
+const router = useRouter();
 const sessionStore = useSessionStore();
 const updateProfileMutation = useUpdateProfileMutation();
 const updatePasswordMutation = useUpdatePasswordMutation();
+const deleteAccountMutation = useDeleteOwnAccountMutation();
 const { theme, setTheme } = useUiThemePreference();
 const displayName = ref(sessionStore.user?.displayName ?? "");
 const errorMessage = ref("");
@@ -35,6 +43,26 @@ const passwordForm = ref({
 });
 const passwordErrorMessage = ref("");
 const passwordSuccessMessage = ref("");
+const deleteAccountErrorMessage = ref("");
+
+const hasPrivilegedRole = computed(() =>
+  hasStaffAccess(sessionStore.roles, sessionStore.permissions),
+);
+const belongsToCircle = computed(() => sessionStore.currentCircle !== null);
+const canDeleteAccountFromServer = computed(() => sessionStore.user?.canDeleteAccount === true);
+const canDeleteAccount = computed(() => canDeleteAccountFromServer.value);
+const deleteAccountBlockedReason = computed(() => {
+  if (canDeleteAccountFromServer.value) {
+    return "アカウントを削除すると、このブラウザー上の利用履歴や設定も利用できなくなります。";
+  }
+  if (hasPrivilegedRole.value) {
+    return "管理者ユーザー・スタッフ相当の権限を持つため、アカウント削除はできません。";
+  }
+  if (belongsToCircle.value) {
+    return "企画に所属しているため、企画を離れるまでアカウント削除はできません。";
+  }
+  return "企画所属または権限状態のため、現在はアカウント削除できません。";
+});
 
 const themeOptions: Array<{
   value: UiTheme;
@@ -98,6 +126,24 @@ async function handleSavePassword() {
     passwordSuccessMessage.value = "パスワードを更新しました。";
   } catch (error) {
     passwordErrorMessage.value = extractPasswordValidationMessage(error);
+  }
+}
+
+async function handleDeleteAccount() {
+  if (!canDeleteAccount.value) {
+    return;
+  }
+  if (typeof window !== "undefined" && !window.confirm("本当にアカウントを削除しますか？")) {
+    return;
+  }
+
+  deleteAccountErrorMessage.value = "";
+
+  try {
+    await deleteAccountMutation.mutateAsync();
+    await router.replace("/");
+  } catch (error) {
+    deleteAccountErrorMessage.value = extractDeleteAccountValidationMessage(error);
   }
 }
 </script>
@@ -276,6 +322,40 @@ async function handleSavePassword() {
           </div>
         </div>
       </template>
+    </SettingsSection>
+
+    <SettingsSection title="アカウント削除">
+      <SettingsRow>
+        <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+          <div class="space-y-1">
+            <p class="text-sm font-semibold text-body">削除条件</p>
+            <p class="text-xs leading-6 text-muted">
+              legacy の制約に合わせ、権限保有中または企画所属中は削除できません。
+            </p>
+          </div>
+          <div class="space-y-3">
+            <p class="text-sm leading-7 text-muted">
+              {{ deleteAccountBlockedReason }}
+            </p>
+            <p
+              v-if="deleteAccountErrorMessage"
+              class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
+            >
+              {{ deleteAccountErrorMessage }}
+            </p>
+            <div class="flex justify-end">
+              <button
+                class="rounded border border-danger px-6 py-3 text-sm font-bold text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:border-border disabled:text-muted"
+                :disabled="!canDeleteAccount || deleteAccountMutation.isPending.value"
+                type="button"
+                @click="handleDeleteAccount"
+              >
+                {{ deleteAccountMutation.isPending.value ? "削除中..." : "アカウントを削除" }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </SettingsRow>
     </SettingsSection>
   </section>
 </template>

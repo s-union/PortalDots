@@ -1051,7 +1051,7 @@ export interface paths {
         /** Return selectable circles for the authenticated user */
         get: operations["getSelectableCircles"];
         put?: never;
-        /** Create a new circle */
+        /** Create a circle for the current user */
         post: operations["postCircle"];
         delete?: never;
         options?: never;
@@ -1070,7 +1070,7 @@ export interface paths {
         /** Select the current working circle */
         put: operations["putCurrentCircle"];
         post?: never;
-        /** Delete the current circle */
+        /** Delete the current circle for the authenticated user */
         delete: operations["deleteCurrentCircle"];
         options?: never;
         head?: never;
@@ -1084,9 +1084,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Return detail of the current circle */
+        /** Return the current circle detail */
         get: operations["getCurrentCircleDetail"];
-        /** Update the current circle */
+        /** Update the current circle detail */
         put: operations["putCurrentCircleDetail"];
         post?: never;
         delete?: never;
@@ -1133,15 +1133,13 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                userID: string;
-            };
+            path?: never;
             cookie?: never;
         };
         get?: never;
         put?: never;
         post?: never;
-        /** Remove a member from the current circle */
+        /** Remove one member from the current circle */
         delete: operations["deleteCurrentCircleMember"];
         options?: never;
         head?: never;
@@ -1157,8 +1155,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Regenerate the invitation token for the current circle */
-        post: operations["postRegenerateInvitationToken"];
+        /** Regenerate the current circle invitation token */
+        post: operations["postCurrentCircleInvitationTokenRegenerate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1169,15 +1167,13 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                token: string;
-            };
+            path?: never;
             cookie?: never;
         };
         get?: never;
         put?: never;
         /** Join a circle by invitation token */
-        post: operations["postJoinCircleByToken"];
+        post: operations["postCirclesJoinByToken"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1438,6 +1434,23 @@ export interface paths {
         put: operations["putSessionPassword"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete the current user's account */
+        delete: operations["deleteSessionAccount"];
         options?: never;
         head?: never;
         patch?: never;
@@ -6063,6 +6076,62 @@ export interface operations {
             };
         };
     };
+    postCircle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    nameYomi?: string;
+                    groupName: string;
+                    groupNameYomi?: string;
+                    participationTypeId: string;
+                    notes?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created circle */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        nameYomi: string;
+                        groupName: string;
+                        groupNameYomi: string;
+                        participationTypeId: string;
+                        participationTypeName: string;
+                        notes: string;
+                        invitationToken: string;
+                        submittedAt: null | string;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     putCurrentCircle: {
         parameters: {
             query?: never;
@@ -6101,6 +6170,396 @@ export interface operations {
             };
             /** @description Validation error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteCurrentCircle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current user cannot delete the selected circle */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getCurrentCircleDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current circle detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        nameYomi: string;
+                        groupName: string;
+                        groupNameYomi: string;
+                        participationTypeId: string;
+                        participationTypeName: string;
+                        notes: string;
+                        invitationToken: string;
+                        submittedAt: null | string;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    putCurrentCircleDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    nameYomi?: string;
+                    groupName: string;
+                    groupNameYomi?: string;
+                    notes?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated current circle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        nameYomi: string;
+                        groupName: string;
+                        groupNameYomi: string;
+                        participationTypeId: string;
+                        participationTypeName: string;
+                        notes: string;
+                        invitationToken: string;
+                        submittedAt: null | string;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current user cannot update the selected circle */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postCurrentCircleSubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Submitted current circle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        nameYomi: string;
+                        groupName: string;
+                        groupNameYomi: string;
+                        participationTypeId: string;
+                        participationTypeName: string;
+                        notes: string;
+                        invitationToken: string;
+                        submittedAt: null | string;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current user cannot submit the selected circle */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getCurrentCircleMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current circle members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        userId: string;
+                        displayName: string;
+                        isLeader: boolean;
+                    }[];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteCurrentCircleMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Member removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current user cannot remove the member */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postCurrentCircleInvitationTokenRegenerate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated current circle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        nameYomi: string;
+                        groupName: string;
+                        groupNameYomi: string;
+                        participationTypeId: string;
+                        participationTypeName: string;
+                        notes: string;
+                        invitationToken: string;
+                        submittedAt: null | string;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current user cannot regenerate the token */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postCirclesJoinByToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Joined circle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        nameYomi: string;
+                        groupName: string;
+                        groupNameYomi: string;
+                        participationTypeId: string;
+                        participationTypeName: string;
+                        notes: string;
+                        invitationToken: string;
+                        submittedAt: null | string;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid invitation token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already joined */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7091,6 +7550,7 @@ export interface operations {
                         user: null | {
                             id: string;
                             displayName: string;
+                            canDeleteAccount: boolean;
                         };
                     };
                 };
@@ -7179,49 +7639,7 @@ export interface operations {
             };
         };
     };
-    postCircle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    nameYomi: string;
-                    groupName: string;
-                    groupNameYomi: string;
-                    participationTypeId: string;
-                    notes: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Created circle */
-            201: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string;
-                        nameYomi: string;
-                        groupName: string;
-                        groupNameYomi: string;
-                        participationTypeId: string;
-                        participationTypeName: string;
-                        notes: string;
-                        invitationToken: string;
-                        submittedAt: string | null;
-                    };
-                };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            422: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    deleteCurrentCircle: {
+    deleteSessionAccount: {
         parameters: {
             query?: never;
             header?: never;
@@ -7230,223 +7648,34 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            204: { headers: { [name: string]: unknown }; content?: never };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    getCurrentCircleDetail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Circle detail */
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string;
-                        nameYomi: string;
-                        groupName: string;
-                        groupNameYomi: string;
-                        participationTypeId: string;
-                        participationTypeName: string;
-                        notes: string;
-                        invitationToken: string;
-                        submittedAt: string | null;
-                    };
+            /** @description Account deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    putCurrentCircleDetail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    nameYomi: string;
-                    groupName: string;
-                    groupNameYomi: string;
-                    notes: string;
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
             };
-        };
-        responses: {
-            /** @description Updated circle */
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string;
-                        nameYomi: string;
-                        groupName: string;
-                        groupNameYomi: string;
-                        participationTypeId: string;
-                        participationTypeName: string;
-                        notes: string;
-                        invitationToken: string;
-                        submittedAt: string | null;
-                    };
+            /** @description User was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-            422: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    postCurrentCircleSubmit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Submitted circle */
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string;
-                        nameYomi: string;
-                        groupName: string;
-                        groupNameYomi: string;
-                        participationTypeId: string;
-                        participationTypeName: string;
-                        notes: string;
-                        invitationToken: string;
-                        submittedAt: string | null;
-                    };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content?: never;
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    getCurrentCircleMembers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Circle members */
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        userId: string;
-                        displayName: string;
-                        isLeader: boolean;
-                    }[];
-                };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    deleteCurrentCircleMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userID: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: { headers: { [name: string]: unknown }; content?: never };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    postRegenerateInvitationToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Updated circle with new token */
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string;
-                        nameYomi: string;
-                        groupName: string;
-                        groupNameYomi: string;
-                        participationTypeId: string;
-                        participationTypeName: string;
-                        notes: string;
-                        invitationToken: string;
-                        submittedAt: string | null;
-                    };
-                };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    postJoinCircleByToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Joined circle */
-            200: {
-                headers: { [name: string]: unknown };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string;
-                        nameYomi: string;
-                        groupName: string;
-                        groupNameYomi: string;
-                        participationTypeId: string;
-                        participationTypeName: string;
-                        notes: string;
-                        invitationToken: string;
-                        submittedAt: string | null;
-                    };
-                };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content?: never };
-            409: { headers: { [name: string]: unknown }; content?: never };
         };
     };
 }

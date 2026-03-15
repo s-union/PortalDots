@@ -22,6 +22,7 @@ type Store interface {
 	Create(user *auth.User) (string, Session, error)
 	Get(id string) (Session, bool)
 	Delete(id string)
+	DeleteByUserID(userID string)
 	Update(id string, update func(*Session)) bool
 }
 
@@ -111,6 +112,18 @@ func (s *MemoryStore) Delete(id string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.sessions, id)
+}
+
+func (s *MemoryStore) DeleteByUserID(userID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for id, entry := range s.sessions {
+		if entry.session.User == nil || entry.session.User.ID != userID {
+			continue
+		}
+		delete(s.sessions, id)
+	}
 }
 
 func (s *MemoryStore) Update(id string, update func(*Session)) bool {

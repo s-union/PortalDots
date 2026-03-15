@@ -86,6 +86,7 @@ export const sessionCircleSchema = z.object({
 export const sessionUserSchema = z.object({
     id: z.string(),
     displayName: z.string(),
+    canDeleteAccount: z.boolean().default(false),
 });
 
 export const sessionBootstrapSchema = z.object({

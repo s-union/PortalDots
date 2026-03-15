@@ -9,10 +9,17 @@ export type SessionBootstrap = {
     featureFlags: string[];
     roles: string[];
     permissions?: string[];
-    user: null | {
-        id: string;
-        displayName: string;
-    };
+    user: null | SessionUser;
+};
+
+export type SessionUser = {
+    id: string;
+    displayName: string;
+    canDeleteAccount: boolean;
+};
+
+type SessionBootstrapPayload = Omit<SessionBootstrap, "user"> & {
+    user: null | (Omit<SessionUser, "canDeleteAccount"> & { canDeleteAccount?: boolean });
 };
 
 const emptySession: SessionBootstrap = {
@@ -30,13 +37,18 @@ export const useSessionStore = defineStore("session", {
         isAuthenticated: (state) => state.user !== null,
     },
     actions: {
-        hydrate(payload: SessionBootstrap) {
+        hydrate(payload: SessionBootstrapPayload) {
             this.csrfToken = payload.csrfToken;
             this.currentCircle = payload.currentCircle;
             this.featureFlags = payload.featureFlags;
             this.roles = payload.roles;
             this.permissions = payload.permissions ?? [];
-            this.user = payload.user;
+            this.user = payload.user
+                ? {
+                      ...payload.user,
+                      canDeleteAccount: payload.user.canDeleteAccount ?? false,
+                  }
+                : null;
         },
         reset() {
             this.hydrate(emptySession);

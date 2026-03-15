@@ -1,11 +1,13 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
 
 type loginRequest struct {
@@ -22,15 +24,15 @@ func (h *authHandlers) login(c echo.Context) error {
 
 	request.LoginID = strings.TrimSpace(request.LoginID)
 
-	errors := map[string][]string{}
+	validationErrors := map[string][]string{}
 	if request.LoginID == "" {
-		errors["loginId"] = []string{"学籍番号または連絡先メールアドレスを入力してください"}
+		validationErrors["loginId"] = []string{"学籍番号または連絡先メールアドレスを入力してください"}
 	}
 	if request.Password == "" {
-		errors["password"] = []string{"パスワードを入力してください"}
+		validationErrors["password"] = []string{"パスワードを入力してください"}
 	}
-	if len(errors) > 0 {
-		return validationError(c, errors)
+	if len(validationErrors) > 0 {
+		return validationError(c, validationErrors)
 	}
 
 	user, ok := h.authenticator.Authenticate(c.Request().Context(), request.LoginID, request.Password)
@@ -42,6 +44,22 @@ func (h *authHandlers) login(c echo.Context) error {
 			},
 		})
 	}
+
+	managedUser, err := h.users.Find(user.ID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
+			Message: "authentication_failed",
+			Errors: map[string][]string{
+				"loginId": {"ログイン情報が正しくありません"},
+			},
+		})
+	}
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_load_user")
+	}
+	user.DisplayName = managedUser.DisplayName
+	user.Roles = append([]string{}, managedUser.Roles...)
+	user.Permissions = append([]string{}, managedUser.Permissions...)
 
 	sessionID, _, err := h.sessions.Create(user)
 	if err != nil {

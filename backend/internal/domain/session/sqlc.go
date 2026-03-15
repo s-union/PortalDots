@@ -105,6 +105,10 @@ func (s *SQLCStore) Delete(id string) {
 	_ = s.queries.DeleteSession(context.Background(), id)
 }
 
+func (s *SQLCStore) DeleteByUserID(userID string) {
+	_ = s.queries.DeleteSessionsByUserID(context.Background(), userID)
+}
+
 func (s *SQLCStore) Update(id string, update func(*Session)) bool {
 	current, ok := s.Get(id)
 	if !ok {

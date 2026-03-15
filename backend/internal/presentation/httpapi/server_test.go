@@ -51,6 +51,9 @@ func TestLoginAndBootstrap(t *testing.T) {
 	if response.User.DisplayName != "Demo User" {
 		t.Fatalf("expected display name Demo User, got %s", response.User.DisplayName)
 	}
+	if !response.User.CanDeleteAccount {
+		t.Fatal("expected bootstrap to allow account deletion for demo user")
+	}
 	if len(response.Roles) != 1 || response.Roles[0] != "participant" {
 		t.Fatalf("expected participant role, got %#v", response.Roles)
 	}
@@ -167,7 +170,7 @@ func TestUpdateProfileReflectsInBootstrap(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var updated userInfo
+	var updated updatedProfileResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
 		t.Fatalf("unmarshal updated profile: %v", err)
 	}
@@ -222,6 +225,79 @@ func TestUpdatePasswordAllowsLoginWithNewPassword(t *testing.T) {
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestDeleteOwnAccountClearsSession(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/session/account", nil)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	if _, ok := cookies["test_session"]; ok {
+		t.Fatalf("expected session cookie to be removed, got %#v", cookies)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/session/bootstrap", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var bootstrap sessionBootstrapResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &bootstrap); err != nil {
+		t.Fatalf("unmarshal bootstrap after account delete: %v", err)
+	}
+	if bootstrap.User != nil {
+		t.Fatalf("expected anonymous bootstrap after account delete, got %#v", bootstrap.User)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestDeleteOwnAccountRejectsCircleMembers(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(circleMemberConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "circle-b@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/session/account", nil)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response validationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal delete account validation response: %v", err)
+	}
+	if len(response.Errors["user"]) == 0 {
+		t.Fatalf("expected user validation error, got %#v", response.Errors)
 	}
 }
 
@@ -3174,6 +3250,19 @@ func testStaffConfig() config.Config {
 		DisplayName: "Staff User",
 		Password:    "password",
 		Roles:       []string{"admin"},
+	}
+
+	return cfg
+}
+
+func circleMemberConfig() config.Config {
+	cfg := testConfig()
+	cfg.AuthUser = config.AuthUser{
+		ID:          "member-circle-b",
+		LoginIDs:    []string{"circle-b@example.com"},
+		DisplayName: "Circle B Member",
+		Password:    "password",
+		Roles:       []string{"participant"},
 	}
 
 	return cfg

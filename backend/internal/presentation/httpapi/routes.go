@@ -6,6 +6,7 @@ func registerPublicRoutes(v1 *echo.Group, authH *authHandlers, staffVerifyH *sta
 	v1.GET("/session/bootstrap", authH.sessionBootstrap)
 	v1.PUT("/session/profile", authH.updateProfile)
 	v1.PUT("/session/password", authH.updatePassword)
+	v1.DELETE("/session/account", authH.deleteAccount)
 	v1.POST("/auth/login", authH.login)
 	v1.POST("/auth/logout", authH.logout)
 	v1.GET("/contact-categories", authH.listContactCategories)

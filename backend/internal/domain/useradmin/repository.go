@@ -44,17 +44,31 @@ type StaticRepository struct {
 
 func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticRepository {
 	built := make([]User, 0, len(users)+1)
+	matchedAuthUserIndex := slices.IndexFunc(users, func(user config.User) bool {
+		return user.ID == authUser.ID
+	})
+	authCircleIDs := []string{}
+	authLeaderCircleIDs := []string{}
+	authIsVerified := true
+	if matchedAuthUserIndex >= 0 {
+		authCircleIDs = slices.Clone(users[matchedAuthUserIndex].CircleIDs)
+		authLeaderCircleIDs = slices.Clone(users[matchedAuthUserIndex].LeaderCircleIDs)
+		authIsVerified = users[matchedAuthUserIndex].IsVerified
+	}
 	built = append(built, User{
 		ID:              authUser.ID,
 		DisplayName:     authUser.DisplayName,
 		LoginIDs:        slices.Clone(authUser.LoginIDs),
 		Roles:           slices.Clone(authUser.Roles),
 		Permissions:     slices.Clone(authUser.Permissions),
-		CircleIDs:       []string{},
-		LeaderCircleIDs: []string{},
-		IsVerified:      true,
+		CircleIDs:       authCircleIDs,
+		LeaderCircleIDs: authLeaderCircleIDs,
+		IsVerified:      authIsVerified,
 	})
 	for _, user := range users {
+		if user.ID == authUser.ID {
+			continue
+		}
 		built = append(built, User{
 			ID:              user.ID,
 			DisplayName:     user.DisplayName,

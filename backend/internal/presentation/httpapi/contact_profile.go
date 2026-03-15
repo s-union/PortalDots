@@ -44,6 +44,11 @@ type updatePasswordRequest struct {
 	NewPassword     string `json:"newPassword"`
 }
 
+type updatedProfileResponse struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+}
+
 func (h *authHandlers) listContactHistory(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
@@ -239,7 +244,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 		buildActivitySummary("利用者が表示名を更新しました", updatedUser.DisplayName),
 	)
 
-	return c.JSON(http.StatusOK, userInfo{
+	return c.JSON(http.StatusOK, updatedProfileResponse{
 		ID:          updatedUser.ID,
 		DisplayName: updatedUser.DisplayName,
 	})
@@ -307,6 +312,60 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 		"利用者がパスワードを更新しました",
 	)
 
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *authHandlers) deleteAccount(c echo.Context) error {
+	_, currentSession, ok := h.getSession(c)
+	if !ok || currentSession.User == nil {
+		return statusError(c, http.StatusUnauthorized)
+	}
+
+	currentUser, err := h.users.Find(currentSession.User.ID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	if hasStaffAccess(currentUser.Roles, currentUser.Permissions) {
+		return validationError(c, map[string][]string{
+			"user": {"管理者ユーザー・スタッフはアカウント削除できません"},
+		})
+	}
+	if len(currentUser.CircleIDs) > 0 {
+		return validationError(c, map[string][]string{
+			"user": {"企画に所属しているため、アカウント削除はできません"},
+		})
+	}
+
+	recordActivity(
+		h.activities,
+		currentUser.ID,
+		"user.deleted",
+		"user",
+		currentUser.ID,
+		"",
+		buildActivitySummary("利用者が自分のアカウントを削除しました", currentUser.DisplayName),
+	)
+	if err := h.users.Delete(currentUser.ID); errors.Is(err, useradmin.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
+	} else if err != nil {
+		return internalError(c)
+	}
+
+	h.sessions.DeleteByUserID(currentUser.ID)
+	c.SetCookie(&http.Cookie{
+		Name:     h.sessionCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0).UTC(),
+		SameSite: http.SameSiteLaxMode,
+		Secure:   h.sessionCookieSecure,
+	})
 	return c.NoContent(http.StatusNoContent)
 }
 

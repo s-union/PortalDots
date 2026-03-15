@@ -20,7 +20,8 @@
       "id": "3",
       "title": "アカウント削除導線をGo APIとVueに移植",
       "description": "legacy の制約を保ちながら自分自身のアカウント削除 API と UI を実装し、削除後に安全にセッションを終了する",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-16T03:05:00Z"
     },
     {
       "id": "4",
