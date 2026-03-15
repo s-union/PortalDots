@@ -7,6 +7,7 @@ use App\Services\Documents\DocumentsService;
 use Tests\TestCase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use App\Eloquents\User;
 
@@ -24,9 +25,16 @@ class DocumentsServiceTest extends TestCase
      */
     private $staff;
 
+    /**
+     * @var FilesystemAdapter
+     */
+    private $localDisk;
+
     public function setUp(): void
     {
         parent::setUp();
+        Storage::fake('local');
+        $this->localDisk = Storage::disk('local');
         $this->documentsService = App::make(DocumentsService::class);
         $this->staff = User::factory()->staff()->create();
     }
@@ -36,8 +44,6 @@ class DocumentsServiceTest extends TestCase
      */
     public function createDocument()
     {
-        Storage::fake('local');
-
         $filesize = 1;  // 単位 : KiB
         $file = UploadedFile::fake()->create('第２回.pdf', $filesize, 'application/pdf');
 
@@ -50,7 +56,7 @@ class DocumentsServiceTest extends TestCase
             'メモです'
         );
 
-        Storage::disk('local')->assertExists("documents/{$file->hashName()}");
+        $this->localDisk->assertExists("documents/{$file->hashName()}");
 
         $this->assertDatabaseHas('documents', [
             'name' => '第２回会議資料',
@@ -102,7 +108,6 @@ class DocumentsServiceTest extends TestCase
      */
     public function updateDocument_ファイルのアップデートができる()
     {
-        Storage::fake('local');
         $oldFile = UploadedFile::fake()->create('第２回.pdf', 1, 'application/pdf');
 
         $document = $this->documentsService->createDocument(
@@ -124,7 +129,7 @@ class DocumentsServiceTest extends TestCase
             'updated notes'
         );
 
-        Storage::disk('local')->assertMissing("document/{$oldFile->hashName()}");
+        $this->localDisk->assertMissing("document/{$oldFile->hashName()}");
 
         $this->assertDatabaseHas('documents', [
             'name' => 'updated filename',
@@ -141,7 +146,6 @@ class DocumentsServiceTest extends TestCase
      */
     public function deleteDocument_ファイルの削除ができる()
     {
-        Storage::fake('local');
         $file = UploadedFile::fake()->create('削除されちゃう.pdf', 1, 'application/pdf');
 
         $document = $this->documentsService->createDocument(
@@ -153,11 +157,11 @@ class DocumentsServiceTest extends TestCase
             'ドロン'
         );
 
-        Storage::disk('local')->assertExists("documents/{$file->hashName()}");
+        $this->localDisk->assertExists("documents/{$file->hashName()}");
 
         $this->documentsService->deleteDocument($document);
 
-        Storage::disk('local')->assertMissing("documents/{$file->hashName()}");
+        $this->localDisk->assertMissing("documents/{$file->hashName()}");
         $this->assertDatabaseMissing('documents', [
             'id' => $document->id,
             'name' => '削除される資料です'

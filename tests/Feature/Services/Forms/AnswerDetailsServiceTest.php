@@ -8,6 +8,7 @@ use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\Eloquents\User;
 use App\Services\Forms\AnswerDetailsService;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\App;
@@ -28,10 +29,14 @@ class AnswerDetailsServiceTest extends TestCase
     /** @var Circle */
     private $circle;
 
+    /** @var FilesystemAdapter */
+    private $localDisk;
+
     public function setUp(): void
     {
         parent::setUp();
         Storage::fake('local');
+        $this->localDisk = Storage::disk('local');
 
         $this->answerDetailsService = App::make(AnswerDetailsService::class);
 
@@ -65,14 +70,14 @@ class AnswerDetailsServiceTest extends TestCase
         $this->answerDetailsService->updateAnswerDetails($form, $answer, [$file_upload->id => $old_file]);
 
         // ファイルの存在を確認
-        Storage::disk('local')->assertExists($old_file);
+        $this->localDisk->assertExists($old_file);
 
         $new_file = UploadedFile::fake()->create('update.png', 0, 'image/png')->store('answer_details');
 
         $this->answerDetailsService->updateAnswerDetails($form, $answer, [$file_upload->id => $new_file]);
 
-        Storage::disk('local')->assertExists($new_file);
-        Storage::disk('local')->assertMissing($old_file);
+        $this->localDisk->assertExists($new_file);
+        $this->localDisk->assertMissing($old_file);
     }
 
     /**
@@ -99,11 +104,11 @@ class AnswerDetailsServiceTest extends TestCase
         $this->answerDetailsService->updateAnswerDetails($form, $answer, [$file_upload->id => $file]);
 
         // ファイルの存在を確認
-        Storage::disk('local')->assertExists($file);
+        $this->localDisk->assertExists($file);
 
         $this->answerDetailsService->updateAnswerDetails($form, $answer, []);
 
-        Storage::disk('local')->assertMissing($file);
+        $this->localDisk->assertMissing($file);
     }
 
     /**
@@ -130,10 +135,10 @@ class AnswerDetailsServiceTest extends TestCase
         $this->answerDetailsService->updateAnswerDetails($form, $answer, [$file_upload->id => $file]);
 
         // ファイルの存在を確認
-        Storage::disk('local')->assertExists($file);
+        $this->localDisk->assertExists($file);
 
         $this->answerDetailsService->updateAnswerDetails($form, $answer, [$file_upload->id => '__KEEP__']);
 
-        Storage::disk('local')->assertExists($file);
+        $this->localDisk->assertExists($file);
     }
 }
