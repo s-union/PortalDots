@@ -13,3 +13,4 @@
 - 2026-03-16: `session/bootstrap` の `canDeleteAccount` は OpenAPI 上は必須だが、既存テスト fixture には未指定が残るため、store と zod schema では `false` fallback を入れつつ API 契約自体は必須のまま保つと移行中でも安全。
 - 2026-03-16: `openapi-typescript` の generated schema で path parameter が欠けるときは、generated 側ではなく `backend/api/openapi.yaml` の endpoint 定義を見直す。今回は circle 系 endpoint 定義を揃えることで `/circles/current/members/{userID}` と `/circles/join/{token}` の path 型崩れを解消できた。
 - 2026-03-16: `frontend ci:check` は task 3 完了時点でも `frontend/src/features/circles/api.ts` の既存 `no-floating-promises` warnings を出すが、error ではなく今回変更起因でもない。
+- 2026-03-16: task 4 では backend 側に「staff は削除不可」の API test を追加し、frontend 側に「DELETE 422 の validation message をそのまま表示する」テストを追加した。削除失敗時は session を維持したまま同一画面に留まることも合わせて確認できる。

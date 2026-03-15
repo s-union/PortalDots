@@ -368,6 +368,84 @@ describe("UserSettingsPage", () => {
             "企画所属または権限状態のため、現在はアカウント削除できません。",
         );
     });
+
+    it("shows the backend validation message when account deletion fails", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+                canDeleteAccount: true,
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/", component: { template: "<div>home</div>" } },
+                { path: "/workspace", component: { template: "<div>workspace</div>" } },
+                { path: "/workspace/settings", component: UserSettingsPage },
+            ],
+        });
+        await router.push("/workspace/settings");
+        await router.isReady();
+
+        vi.stubGlobal(
+            "confirm",
+            vi.fn(() => true),
+        );
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/session/account") && method === "DELETE") {
+                    return jsonResponse(
+                        {
+                            message: "validation_error",
+                            errors: {
+                                user: ["企画に所属しているため、アカウント削除はできません"],
+                            },
+                        },
+                        422,
+                    );
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(UserSettingsPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        const deleteButton = wrapper
+            .findAll('button[type="button"]')
+            .find((button) => button.text().includes("アカウントを削除"));
+        if (!deleteButton) throw new Error("delete account button not found");
+        await deleteButton.trigger("click");
+        await flushPromises();
+
+        expect(wrapper.text()).toContain("企画に所属しているため、アカウント削除はできません");
+        expect(sessionStore.isAuthenticated).toBe(true);
+        expect(router.currentRoute.value.path).toBe("/workspace/settings");
+    });
 });
 
 function jsonResponse(body: unknown, status = 200) {

@@ -301,6 +301,50 @@ func TestDeleteOwnAccountRejectsCircleMembers(t *testing.T) {
 	}
 }
 
+func TestDeleteOwnAccountRejectsStaffUsers(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "staff@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/session/bootstrap", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var bootstrap sessionBootstrapResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &bootstrap); err != nil {
+		t.Fatalf("unmarshal bootstrap for staff user: %v", err)
+	}
+	if bootstrap.User == nil {
+		t.Fatal("expected authenticated staff user")
+	}
+	if bootstrap.User.CanDeleteAccount {
+		t.Fatal("expected staff bootstrap to disallow account deletion")
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/session/account", nil)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response validationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal delete account validation response: %v", err)
+	}
+	if len(response.Errors["user"]) == 0 {
+		t.Fatalf("expected user validation error, got %#v", response.Errors)
+	}
+}
+
 func TestLoginValidation(t *testing.T) {
 	t.Parallel()
 
