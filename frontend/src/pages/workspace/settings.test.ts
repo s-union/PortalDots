@@ -22,6 +22,8 @@ function createQueryPlugin() {
 describe("UserSettingsPage", () => {
     afterEach(() => {
         vi.unstubAllGlobals();
+        document.cookie = "ui_theme=; Path=/; Max-Age=0; SameSite=Lax";
+        document.documentElement.classList.remove("theme-system", "theme-light", "theme-dark");
     });
 
     it("updates the display name and password", async () => {
@@ -116,6 +118,79 @@ describe("UserSettingsPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("パスワードを更新しました。");
+    });
+
+    it("updates theme preference immediately and stores it in cookie", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-a",
+                name: "デモ企画A",
+            },
+            featureFlags: [],
+            roles: ["participant"],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/workspace", component: { template: "<div>workspace</div>" } },
+                { path: "/workspace/settings", component: UserSettingsPage },
+            ],
+        });
+        await router.push("/workspace/settings");
+        await router.isReady();
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                    return jsonResponse({
+                        csrfToken: "csrf-token",
+                        currentCircle: {
+                            id: "circle-a",
+                            name: "デモ企画A",
+                        },
+                        featureFlags: [],
+                        roles: ["participant"],
+                        user: {
+                            id: "demo-user",
+                            displayName: "Demo User",
+                        },
+                    });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(UserSettingsPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        await wrapper.get('input[type="radio"][value="dark"]').setValue();
+
+        expect(document.documentElement.classList.contains("theme-dark")).toBe(true);
+        expect(document.cookie).toContain("ui_theme=dark");
     });
 });
 

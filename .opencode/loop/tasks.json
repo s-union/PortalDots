@@ -13,7 +13,8 @@
       "id": "2",
       "title": "ユーザー設定の外観設定をVueに移植",
       "description": "legacy の theme cookie と同等の light/dark/system 切替を frontend 側へ復元し、workspace/settings から保存できるようにする",
-      "status": "in_progress"
+      "status": "done",
+      "completedAt": "2026-03-15T17:13:40Z"
     },
     {
       "id": "3",

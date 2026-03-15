@@ -1,8 +1,25 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" class="theme-system">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script>
+            (() => {
+                const themes = ["system", "light", "dark"];
+                const matched = document.cookie
+                    .split(";")
+                    .map((part) => part.trim())
+                    .find((part) => part.startsWith("ui_theme="));
+                const theme = matched
+                    ? decodeURIComponent(matched.slice("ui_theme=".length))
+                    : "system";
+                const normalizedTheme = themes.includes(theme) ? theme : "system";
+                const root = document.documentElement;
+
+                root.classList.remove("theme-system", "theme-light", "theme-dark");
+                root.classList.add(`theme-${normalizedTheme}`);
+            })();
+        </script>
         <title>PortalDots Frontend</title>
     </head>
     <body>
