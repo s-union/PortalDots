@@ -8,7 +8,10 @@ use App\Console\Kernel;
 
 class KernelTest extends TestCase
 {
-    public function test_schedule_is_configured_properly()
+    /**
+     * @test
+     */
+    public function スケジュールが適切に設定されていること()
     {
         $kernel = app()->make(Kernel::class);
         $schedule = app()->make(Schedule::class);
