@@ -8,7 +8,10 @@ use Tests\TestCase;
 
 class AuthenticateTest extends TestCase
 {
-    public function test_it_does_not_redirect_when_expecting_json()
+    /**
+     * @test
+     */
+    public function jsonを要求するリクエストの場合はログイン画面へリダイレクトするためのURLを返さずnullを返す()
     {
         $middleware = new Authenticate(app('auth'));
 

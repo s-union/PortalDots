@@ -8,7 +8,10 @@ use Tests\TestCase;
 
 class BroadcastServiceProviderTest extends TestCase
 {
-    public function test_boot_method_registers_routes()
+    /**
+     * @test
+     */
+    public function bootメソッドがエラーなく実行されチャンネルのルーティングが読み込まれること()
     {
         $provider = new BroadcastServiceProvider($this->app);
 
