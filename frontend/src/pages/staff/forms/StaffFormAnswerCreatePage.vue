@@ -25,9 +25,7 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true &&
-      sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 const createAnswerMutation = useCreateStaffFormAnswerMutation(formId);
@@ -44,8 +42,11 @@ const selectedCircle = computed(
   () =>
     answersQuery.data.value?.circles.find((circle) => circle.id === selectedCircleId.value) ?? null,
 );
-const selectedCircleAnswers = computed(() =>
-  answersQuery.data.value?.answers.filter((answer) => answer.circle.id === selectedCircleId.value) ?? [],
+const selectedCircleAnswers = computed(
+  () =>
+    answersQuery.data.value?.answers.filter(
+      (answer) => answer.circle.id === selectedCircleId.value,
+    ) ?? [],
 );
 
 async function handleCreateAnswer() {
@@ -123,7 +124,11 @@ async function handleCreateAnswer() {
               {{ selectedCircle.groupName }} / {{ selectedCircle.participationTypeName }}
             </p>
             <p class="mt-3">
-              {{ answersQuery.data.value.form.isPublic ? "公開フォームのため、保存時に確認メールをキューへ追加します。" : "非公開フォームのため、保存しても確認メールは送信しません。" }}
+              {{
+                answersQuery.data.value.form.isPublic
+                  ? "公開フォームのため、保存時に確認メールをキューへ追加します。"
+                  : "非公開フォームのため、保存しても確認メールは送信しません。"
+              }}
             </p>
           </div>
 

@@ -26,7 +26,8 @@ const errorMessage = ref("");
 const successMessage = ref("");
 const selectedCategoryName = computed(
   () =>
-    categoriesQuery.data.value?.find((category) => category.id === form.value.categoryId)?.name ?? "",
+    categoriesQuery.data.value?.find((category) => category.id === form.value.categoryId)?.name ??
+    "",
 );
 
 async function handleSubmit() {

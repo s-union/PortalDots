@@ -20,9 +20,7 @@ const sessionStore = useSessionStore();
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
 const documentsQuery = useStaffDocumentsQuery(
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true &&
-      sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 const createDocumentMutation = useCreateStaffDocumentMutation();

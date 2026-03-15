@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { cn } from "@/lib/ui/cn";
+import { buttonVariants, surfaceVariants } from "@/lib/ui/variants";
+
 defineProps<{
   hasError?: boolean;
   errorText?: string;
@@ -10,16 +13,16 @@ defineProps<{
     <!-- Navbar mock -->
     <header
       class="border-b border-border bg-surface"
-      style="height: 5rem; display: flex; align-items: center; padding: 0 1.5rem;"
+      style="height: 5rem; display: flex; align-items: center; padding: 0 1.5rem"
     >
-      <span style="font-weight: var(--font-weight-bold);">PortalDots</span>
+      <span style="font-weight: var(--font-weight-bold)">PortalDots</span>
     </header>
 
     <div class="flex">
       <!-- Drawer mock -->
       <aside
-        class="hidden border-r border-border bg-surface lg:block"
-        style="width: 320px; min-height: calc(100vh - 5rem);"
+        class="hidden border-r border-border bg-surface min-[1001px]:block"
+        style="width: 320px; min-height: calc(100vh - 5rem)"
       >
         <nav class="py-2">
           <a
@@ -35,7 +38,9 @@ defineProps<{
         </nav>
         <div class="mt-auto border-t border-border p-6">
           <a
-            class="btn-base block w-full border border-primary bg-primary font-bold text-center text-white no-underline hover:bg-primary-hover"
+            :class="
+              buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold', fullWidth: true })
+            "
             href="#"
           >
             ログイン
@@ -45,25 +50,22 @@ defineProps<{
 
       <!-- Content -->
       <main class="flex-1 p-6">
-        <section
-          class="mx-auto rounded border border-border bg-surface p-8 shadow-lv1"
-          style="max-width: 400px;"
-        >
-          <h2 class="text-xl" style="font-weight: var(--font-weight-bold);">ログイン</h2>
+        <section :class="cn(surfaceVariants(), 'mx-auto p-8')" style="max-width: 400px">
+          <h2 class="text-xl" style="font-weight: var(--font-weight-bold)">ログイン</h2>
           <p class="mt-3 text-sm text-muted">
             学籍番号または連絡先メールアドレスでログインします。
           </p>
 
           <form class="mt-6 grid gap-4">
             <div>
-              <label class="mb-[0.2rem] block" style="font-weight: var(--font-weight-bold);"
+              <label class="mb-[0.2rem] block" style="font-weight: var(--font-weight-bold)"
                 >学籍番号またはメールアドレス</label
               >
               <input placeholder="例: 2024T001" type="text" />
             </div>
 
             <div>
-              <label class="mb-[0.2rem] block" style="font-weight: var(--font-weight-bold);"
+              <label class="mb-[0.2rem] block" style="font-weight: var(--font-weight-bold)"
                 >パスワード</label
               >
               <input placeholder="パスワードを入力" type="password" />
@@ -77,7 +79,7 @@ defineProps<{
             </p>
 
             <button
-              class="btn-base border border-primary bg-primary font-bold text-white hover:bg-primary-hover"
+              :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
               type="button"
             >
               ログイン

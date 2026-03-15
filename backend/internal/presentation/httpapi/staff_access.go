@@ -206,43 +206,49 @@ func canAccessCapability(user *auth.User, capability string) bool {
 	return userHasAnyRole(user, check.roles...) || userHasAnyPermission(user, check.permissions...)
 }
 
-func canReadUsers(user *auth.User) bool        { return canAccessCapability(user, "users.read") }
-func canEditUsers(user *auth.User) bool         { return canAccessCapability(user, "users.edit") }
-func canExportUsers(user *auth.User) bool       { return canAccessCapability(user, "users.export") }
-func canReadPermissions(user *auth.User) bool   { return canAccessCapability(user, "permissions.read") }
-func canEditPermissions(user *auth.User) bool   { return canAccessCapability(user, "permissions.edit") }
-func canReadCircles(user *auth.User) bool       { return canAccessCapability(user, "circles.read") }
-func canEditCircles(user *auth.User) bool       { return canAccessCapability(user, "circles.edit") }
-func canDeleteCircles(user *auth.User) bool     { return canAccessCapability(user, "circles.delete") }
-func canExportCircles(user *auth.User) bool     { return canAccessCapability(user, "circles.export") }
-func canSendCircleEmails(user *auth.User) bool  { return canAccessCapability(user, "circles.sendEmails") }
+func canReadUsers(user *auth.User) bool       { return canAccessCapability(user, "users.read") }
+func canEditUsers(user *auth.User) bool       { return canAccessCapability(user, "users.edit") }
+func canExportUsers(user *auth.User) bool     { return canAccessCapability(user, "users.export") }
+func canReadPermissions(user *auth.User) bool { return canAccessCapability(user, "permissions.read") }
+func canEditPermissions(user *auth.User) bool { return canAccessCapability(user, "permissions.edit") }
+func canReadCircles(user *auth.User) bool     { return canAccessCapability(user, "circles.read") }
+func canEditCircles(user *auth.User) bool     { return canAccessCapability(user, "circles.edit") }
+func canDeleteCircles(user *auth.User) bool   { return canAccessCapability(user, "circles.delete") }
+func canExportCircles(user *auth.User) bool   { return canAccessCapability(user, "circles.export") }
+func canSendCircleEmails(user *auth.User) bool {
+	return canAccessCapability(user, "circles.sendEmails")
+}
 func canManageParticipationTypes(user *auth.User) bool {
 	return canAccessCapability(user, "circles.participationTypes")
 }
-func canReadPages(user *auth.User) bool          { return canAccessCapability(user, "pages.read") }
-func canEditPages(user *auth.User) bool          { return canAccessCapability(user, "pages.edit") }
-func canDeletePages(user *auth.User) bool        { return canAccessCapability(user, "pages.delete") }
-func canExportPages(user *auth.User) bool        { return canAccessCapability(user, "pages.export") }
-func canSendPageEmails(user *auth.User) bool     { return canAccessCapability(user, "pages.sendEmails") }
-func canReadDocuments(user *auth.User) bool      { return canAccessCapability(user, "documents.read") }
-func canEditDocuments(user *auth.User) bool      { return canAccessCapability(user, "documents.edit") }
-func canDeleteDocuments(user *auth.User) bool    { return canAccessCapability(user, "documents.delete") }
-func canExportDocuments(user *auth.User) bool    { return canAccessCapability(user, "documents.export") }
-func canReadForms(user *auth.User) bool          { return canAccessCapability(user, "forms.read") }
-func canEditForms(user *auth.User) bool          { return canAccessCapability(user, "forms.edit") }
-func canDeleteForms(user *auth.User) bool        { return canAccessCapability(user, "forms.delete") }
-func canExportForms(user *auth.User) bool        { return canAccessCapability(user, "forms.export") }
-func canDuplicateForms(user *auth.User) bool     { return canAccessCapability(user, "forms.duplicate") }
-func canReadFormAnswers(user *auth.User) bool    { return canAccessCapability(user, "formAnswers.read") }
-func canEditFormAnswers(user *auth.User) bool    { return canAccessCapability(user, "formAnswers.edit") }
-func canDeleteFormAnswers(user *auth.User) bool  { return canAccessCapability(user, "formAnswers.delete") }
-func canExportFormAnswers(user *auth.User) bool  { return canAccessCapability(user, "formAnswers.export") }
-func canReadTags(user *auth.User) bool           { return canAccessCapability(user, "tags.read") }
-func canEditTags(user *auth.User) bool           { return canAccessCapability(user, "tags.edit") }
-func canDeleteTags(user *auth.User) bool         { return canAccessCapability(user, "tags.delete") }
-func canReadPlaces(user *auth.User) bool         { return canAccessCapability(user, "places.read") }
-func canEditPlaces(user *auth.User) bool         { return canAccessCapability(user, "places.edit") }
-func canDeletePlaces(user *auth.User) bool       { return canAccessCapability(user, "places.delete") }
+func canReadPages(user *auth.User) bool       { return canAccessCapability(user, "pages.read") }
+func canEditPages(user *auth.User) bool       { return canAccessCapability(user, "pages.edit") }
+func canDeletePages(user *auth.User) bool     { return canAccessCapability(user, "pages.delete") }
+func canExportPages(user *auth.User) bool     { return canAccessCapability(user, "pages.export") }
+func canSendPageEmails(user *auth.User) bool  { return canAccessCapability(user, "pages.sendEmails") }
+func canReadDocuments(user *auth.User) bool   { return canAccessCapability(user, "documents.read") }
+func canEditDocuments(user *auth.User) bool   { return canAccessCapability(user, "documents.edit") }
+func canDeleteDocuments(user *auth.User) bool { return canAccessCapability(user, "documents.delete") }
+func canExportDocuments(user *auth.User) bool { return canAccessCapability(user, "documents.export") }
+func canReadForms(user *auth.User) bool       { return canAccessCapability(user, "forms.read") }
+func canEditForms(user *auth.User) bool       { return canAccessCapability(user, "forms.edit") }
+func canDeleteForms(user *auth.User) bool     { return canAccessCapability(user, "forms.delete") }
+func canExportForms(user *auth.User) bool     { return canAccessCapability(user, "forms.export") }
+func canDuplicateForms(user *auth.User) bool  { return canAccessCapability(user, "forms.duplicate") }
+func canReadFormAnswers(user *auth.User) bool { return canAccessCapability(user, "formAnswers.read") }
+func canEditFormAnswers(user *auth.User) bool { return canAccessCapability(user, "formAnswers.edit") }
+func canDeleteFormAnswers(user *auth.User) bool {
+	return canAccessCapability(user, "formAnswers.delete")
+}
+func canExportFormAnswers(user *auth.User) bool {
+	return canAccessCapability(user, "formAnswers.export")
+}
+func canReadTags(user *auth.User) bool     { return canAccessCapability(user, "tags.read") }
+func canEditTags(user *auth.User) bool     { return canAccessCapability(user, "tags.edit") }
+func canDeleteTags(user *auth.User) bool   { return canAccessCapability(user, "tags.delete") }
+func canReadPlaces(user *auth.User) bool   { return canAccessCapability(user, "places.read") }
+func canEditPlaces(user *auth.User) bool   { return canAccessCapability(user, "places.edit") }
+func canDeletePlaces(user *auth.User) bool { return canAccessCapability(user, "places.delete") }
 func canReadContactCategories(user *auth.User) bool {
 	return canAccessCapability(user, "contactCategories.read")
 }
@@ -252,9 +258,9 @@ func canEditContactCategories(user *auth.User) bool {
 func canDeleteContactCategories(user *auth.User) bool {
 	return canAccessCapability(user, "contactCategories.delete")
 }
-func canUseMailQueue(user *auth.User) bool      { return canAccessCapability(user, "mailQueue.use") }
-func canUseStaffExports(user *auth.User) bool   { return canAccessCapability(user, "exports.use") }
-func canViewActivityLogs(user *auth.User) bool  { return canAccessCapability(user, "activityLogs.read") }
+func canUseMailQueue(user *auth.User) bool     { return canAccessCapability(user, "mailQueue.use") }
+func canUseStaffExports(user *auth.User) bool  { return canAccessCapability(user, "exports.use") }
+func canViewActivityLogs(user *auth.User) bool { return canAccessCapability(user, "activityLogs.read") }
 
 func (s *sharedDeps) requireStaffCapability(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, int, bool) {
 	sessionID, currentSession, status, ok := s.requireStaffMode(c)

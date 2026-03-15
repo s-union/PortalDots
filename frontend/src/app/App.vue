@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
 import BottomTabLink from "@/components/ui/BottomTabLink.vue";
 import ModeSwitchLink from "@/components/ui/ModeSwitchLink.vue";
@@ -7,6 +7,8 @@ import NavMenuLink from "@/components/ui/NavMenuLink.vue";
 import { useSessionBootstrapQuery } from "@/features/session/api";
 import { useLogoutMutation } from "@/features/auth/api";
 import { useSessionStore } from "@/features/session/store";
+import { cn } from "@/lib/ui/cn";
+import { buttonVariants } from "@/lib/ui/variants";
 import {
   canReadCircles,
   canReadContactCategories,
@@ -29,17 +31,33 @@ const sessionStore = useSessionStore();
 const bootstrapQuery = useSessionBootstrapQuery();
 const logoutMutation = useLogoutMutation();
 
-const canAccessStaff = computed(() =>
-  hasStaffAccess(sessionStore.roles, sessionStore.permissions),
-);
+const isDrawerOpen = ref(false);
+const isSmallScreen = ref(typeof window !== "undefined" && window.innerWidth <= 1000);
+
+onMounted(() => {
+  const mq = window.matchMedia("(max-width: 1000px)");
+  mq.addEventListener("change", (e) => {
+    isSmallScreen.value = e.matches;
+    if (!e.matches) isDrawerOpen.value = false;
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") isDrawerOpen.value = false;
+  });
+});
+
+// On small screens: slide in/out. On desktop: always visible (no transform).
+const drawerTranslateClass = computed(() => {
+  if (!isSmallScreen.value) return "";
+  return isDrawerOpen.value ? "translate-x-0" : "-translate-x-full";
+});
+
+const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions));
 const canAccessUsers = computed(() => canReadUsers(sessionStore.roles, sessionStore.permissions));
 const canAccessCircles = computed(() =>
   canReadCircles(sessionStore.roles, sessionStore.permissions),
 );
 const canAccessTags = computed(() => canReadTags(sessionStore.roles, sessionStore.permissions));
-const canAccessPlaces = computed(() =>
-  canReadPlaces(sessionStore.roles, sessionStore.permissions),
-);
+const canAccessPlaces = computed(() => canReadPlaces(sessionStore.roles, sessionStore.permissions));
 const canAccessPages = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions));
 const canAccessDocuments = computed(() =>
   canReadDocuments(sessionStore.roles, sessionStore.permissions),
@@ -54,7 +72,9 @@ const canAccessPermissions = computed(() =>
 const canAccessExports = computed(() =>
   canUseStaffExports(sessionStore.roles, sessionStore.permissions),
 );
-const canAccessMails = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions));
+const canAccessMails = computed(() =>
+  canUseMailQueue(sessionStore.roles, sessionStore.permissions),
+);
 const canAccessActivityLogs = computed(() =>
   canViewActivityLogs(sessionStore.roles, sessionStore.permissions),
 );
@@ -233,51 +253,174 @@ async function handleLogout() {
 
 <template>
   <div class="min-h-screen bg-base text-body">
-    <header class="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur">
-      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-        <div>
+    <!-- Fixed Navbar: height 5rem (h-20), z-[9980] — matches $z-index-navbar -->
+    <header
+      class="fixed inset-x-0 top-0 z-[9980] flex h-20 items-center justify-between border-b border-border bg-surface-2 px-6"
+    >
+      <!-- Hamburger button: visible only at ≤1000px -->
+      <button
+        class="hidden max-[1000px]:flex items-center justify-center rounded p-2 text-body transition hover:bg-surface-light"
+        type="button"
+        aria-label="メニューを開く"
+        @click="isDrawerOpen = true"
+      >
+        <span class="text-xl leading-none">☰</span>
+      </button>
+
+      <div>
+        <p class="text-lg font-semibold text-body">PortalDots</p>
+        <div class="mt-1 flex flex-wrap items-center gap-2">
+          <p class="text-xs text-muted">{{ appModeLabel }}</p>
+          <span
+            v-if="sessionStore.currentCircle && !isStaffRoute"
+            class="rounded-full bg-surface-light px-2 py-0.5 text-[10px] font-semibold text-muted"
+          >
+            {{ sessionStore.currentCircle.name }}
+          </span>
+          <span
+            v-for="badge in statusBadges"
+            :key="badge"
+            class="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary"
+          >
+            {{ badge }}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <p class="hidden min-[1001px]:block text-sm text-muted">{{ authLabel }}</p>
+        <RouterLink
+          v-if="sessionStore.isAuthenticated && !isStaffRoute"
+          :class="
+            cn(
+              buttonVariants({ variant: 'secondary', size: 'md' }),
+              'hidden min-[1001px]:inline-flex',
+            )
+          "
+          to="/circles/select"
+        >
+          {{ circleActionLabel }}
+        </RouterLink>
+        <ModeSwitchLink
+          v-if="sessionStore.isAuthenticated && canAccessStaff && !isStaffRoute"
+          to="/staff"
+          label="スタッフモードへ"
+        />
+        <ModeSwitchLink
+          v-if="sessionStore.isAuthenticated && canAccessStaff && isStaffRoute"
+          to="/"
+          label="一般モードへ"
+        />
+        <ModeSwitchLink v-if="!sessionStore.isAuthenticated" to="/login" label="ログイン" />
+        <button
+          v-if="sessionStore.isAuthenticated"
+          :class="buttonVariants({ variant: 'secondary', size: 'md' })"
+          :disabled="logoutMutation.isPending.value"
+          type="button"
+          @click="handleLogout"
+        >
+          ログアウト
+        </button>
+      </div>
+    </header>
+
+    <!-- Drawer Backdrop: visible on small screens when drawer is open -->
+    <div
+      v-if="isSmallScreen"
+      class="fixed inset-0 z-[9989] bg-drawer-backdrop transition-[opacity,visibility] duration-300"
+      :class="isDrawerOpen ? 'opacity-100 visible' : 'invisible opacity-0'"
+      @click="isDrawerOpen = false"
+    />
+
+    <!-- Drawer: fixed 320px (280px at ≤1440px), slides off at ≤1000px — z-[9990] -->
+    <aside
+      class="fixed left-0 top-0 z-[9990] h-full w-[320px] max-[1440px]:w-[280px] max-w-[80vw] overflow-y-auto border-r border-border bg-surface-2 transition-transform duration-300"
+      :class="drawerTranslateClass"
+    >
+      <div class="flex h-full flex-col">
+        <!-- Drawer Header: pt accounts for fixed navbar ($navbar-height + $spacing = 6.5rem) -->
+        <div class="border-b border-border px-6 pb-6 pt-[6.5rem]">
           <p class="text-lg font-semibold text-body">PortalDots</p>
-          <div class="mt-1 flex flex-wrap items-center gap-2">
-            <p class="text-xs text-muted">{{ appModeLabel }}</p>
+          <div v-if="isStaffRoute" class="mt-2 flex items-center gap-2">
             <span
-              v-if="sessionStore.currentCircle && !isStaffRoute"
-              class="rounded-full bg-surface-light px-2 py-0.5 text-[10px] font-semibold text-muted"
+              class="rounded-full bg-primary-light px-2.5 py-1 text-xs font-semibold text-primary"
             >
-              {{ sessionStore.currentCircle.name }}
-            </span>
-            <span
-              v-for="badge in statusBadges"
-              :key="badge"
-              class="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary"
-            >
-              {{ badge }}
+              {{ appModeLabel }}
             </span>
           </div>
+          <p class="mt-3 text-sm text-muted">
+            {{
+              isStaffRoute
+                ? authLabel
+                : `現在の企画: ${sessionStore.currentCircle?.name ?? "未選択"}`
+            }}
+          </p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <p class="hidden text-sm text-muted md:block">{{ authLabel }}</p>
-          <RouterLink
-            v-if="sessionStore.isAuthenticated && !isStaffRoute"
-            class="hidden rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light md:inline-flex"
-            to="/circles/select"
-          >
-            {{ circleActionLabel }}
-          </RouterLink>
+        <!-- Mode Switch -->
+        <div class="border-b border-border px-6 py-4">
           <ModeSwitchLink
             v-if="sessionStore.isAuthenticated && canAccessStaff && !isStaffRoute"
             to="/staff"
             label="スタッフモードへ"
           />
           <ModeSwitchLink
-            v-if="sessionStore.isAuthenticated && canAccessStaff && isStaffRoute"
+            v-else-if="sessionStore.isAuthenticated && canAccessStaff && isStaffRoute"
             to="/"
             label="一般モードへ"
           />
-          <ModeSwitchLink v-if="!sessionStore.isAuthenticated" to="/login" label="ログイン" />
+          <ModeSwitchLink v-else-if="!sessionStore.isAuthenticated" to="/login" label="ログイン" />
+        </div>
+
+        <!-- Circle Selection (general mode only) -->
+        <div
+          v-if="sessionStore.isAuthenticated && !isStaffRoute"
+          class="border-b border-border px-6 py-4"
+        >
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">選択中の企画</p>
+          <p class="mt-2 text-sm text-body">
+            {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
+          </p>
+          <RouterLink
+            :class="
+              cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')
+            "
+            to="/circles/select"
+          >
+            {{ circleActionLabel }}
+          </RouterLink>
+        </div>
+
+        <!-- Nav Links -->
+        <nav class="flex-1 py-2">
+          <NavMenuLink
+            v-for="link in isStaffRoute ? staffLinks : generalLinks"
+            v-show="link.hidden !== true"
+            :key="link.to"
+            :to="link.to"
+            :label="link.label"
+            :icon="link.icon"
+            :active="link.active"
+          />
+        </nav>
+
+        <!-- Footer: pushed to bottom of scrollable content -->
+        <div class="mt-auto border-t border-border px-6 py-6">
+          <p v-if="isStaffRoute" class="text-sm text-muted">{{ authLabel }}</p>
+          <div v-if="statusBadges.length > 0" class="mt-3 flex flex-wrap gap-2">
+            <span
+              v-for="badge in statusBadges"
+              :key="`drawer-${badge}`"
+              class="rounded-full bg-primary-light px-2 py-1 text-[10px] font-semibold text-primary"
+            >
+              {{ badge }}
+            </span>
+          </div>
           <button
             v-if="sessionStore.isAuthenticated"
-            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:opacity-60"
+            :class="
+              cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')
+            "
             :disabled="logoutMutation.isPending.value"
             type="button"
             @click="handleLogout"
@@ -286,109 +429,24 @@ async function handleLogout() {
           </button>
         </div>
       </div>
-    </header>
+    </aside>
 
-    <div class="mx-auto flex max-w-7xl gap-6 px-4 py-6 md:px-6">
-      <aside class="hidden w-72 shrink-0 md:block">
-        <div class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
-          <div class="border-b border-border px-5 py-5">
-            <p class="text-lg font-semibold text-body">PortalDots</p>
-            <div v-if="isStaffRoute" class="mt-2 flex items-center gap-2">
-              <span
-                class="rounded-full bg-primary-light px-2.5 py-1 text-xs font-semibold text-primary"
-              >
-                {{ appModeLabel }}
-              </span>
-            </div>
-            <p class="mt-3 text-sm text-muted">
-              {{
-                isStaffRoute
-                  ? authLabel
-                  : `現在の企画: ${sessionStore.currentCircle?.name ?? "未選択"}`
-              }}
-            </p>
-          </div>
+    <!-- Main Content: offset by navbar height (pt-20) and drawer width (pl-*) -->
+    <main
+      class="pt-20 pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0 max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]"
+    >
+      <RouterView />
+    </main>
 
-          <div class="border-b border-border px-5 py-4">
-            <ModeSwitchLink
-              v-if="sessionStore.isAuthenticated && canAccessStaff && !isStaffRoute"
-              to="/staff"
-              label="スタッフモードへ"
-            />
-            <ModeSwitchLink
-              v-else-if="sessionStore.isAuthenticated && canAccessStaff && isStaffRoute"
-              to="/"
-              label="一般モードへ"
-            />
-            <ModeSwitchLink
-              v-else-if="!sessionStore.isAuthenticated"
-              to="/login"
-              label="ログイン"
-            />
-          </div>
-
-          <div
-            v-if="sessionStore.isAuthenticated && !isStaffRoute"
-            class="border-b border-border px-5 py-4"
-          >
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">選択中の企画</p>
-            <p class="mt-2 text-sm text-body">
-              {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
-            </p>
-            <RouterLink
-              class="mt-3 inline-flex w-full items-center justify-center rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-              to="/circles/select"
-            >
-              {{ circleActionLabel }}
-            </RouterLink>
-          </div>
-
-          <nav class="grid">
-            <NavMenuLink
-              v-for="link in isStaffRoute ? staffLinks : generalLinks"
-              v-show="link.hidden !== true"
-              :key="link.to"
-              :to="link.to"
-              :label="link.label"
-              :icon="link.icon"
-              :active="link.active"
-            />
-          </nav>
-
-          <div class="border-t border-border px-5 py-4">
-            <p v-if="isStaffRoute" class="text-sm text-muted">{{ authLabel }}</p>
-            <div v-if="statusBadges.length > 0" class="mt-3 flex flex-wrap gap-2">
-              <span
-                v-for="badge in statusBadges"
-                :key="`drawer-${badge}`"
-                class="rounded-full bg-primary-light px-2 py-1 text-[10px] font-semibold text-primary"
-              >
-                {{ badge }}
-              </span>
-            </div>
-            <button
-              v-if="sessionStore.isAuthenticated"
-              class="mt-3 inline-flex w-full items-center justify-center rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:opacity-60"
-              :disabled="logoutMutation.isPending.value"
-              type="button"
-              @click="handleLogout"
-            >
-              ログアウト
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <main class="min-w-0 flex-1 pb-20 md:pb-0">
-        <RouterView />
-      </main>
-    </div>
-
+    <!-- Bottom Tabs: fixed, only visible at ≤1000px — z-[9980] matches $z-index-bottom-tabs -->
     <nav
       v-if="!isStaffRoute"
-      class="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface md:hidden"
+      class="fixed inset-x-0 bottom-0 z-[9980] hidden max-[1000px]:block border-t border-border bg-surface-2"
     >
-      <div class="grid" :style="mobileTabsStyle">
+      <div
+        class="mx-auto grid w-full max-w-[600px] pb-[env(safe-area-inset-bottom)]"
+        :style="mobileTabsStyle"
+      >
         <BottomTabLink
           v-for="tab in mobileTabs"
           :key="tab.to"

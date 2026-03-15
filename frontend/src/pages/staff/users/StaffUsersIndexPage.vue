@@ -20,7 +20,10 @@ const usersQuery = useStaffUsersQuery(
   })),
 );
 const totalPages = computed(() =>
-  calculateTotalPages(usersQuery.data.value?.total ?? 0, usersQuery.data.value?.pageSize ?? pageSize),
+  calculateTotalPages(
+    usersQuery.data.value?.total ?? 0,
+    usersQuery.data.value?.pageSize ?? pageSize,
+  ),
 );
 const exportUrl = buildStaffUsersExportUrl();
 

@@ -24,8 +24,7 @@ const sessionStore = useSessionStore();
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
 const formsQuery = useStaffFormsQuery(
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 const createFormMutation = useCreateStaffFormMutation();

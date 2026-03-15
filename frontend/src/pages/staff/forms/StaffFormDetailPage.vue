@@ -35,9 +35,7 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const formQuery = useStaffFormDetailQuery(
   formId,
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true &&
-      sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 const updateFormMutation = useUpdateStaffFormMutation(formId);
@@ -102,7 +100,10 @@ watch(
       isPublic: value.isPublic,
     };
     questionEdits.value = Object.fromEntries(
-      value.questions.map((question) => [question.id, { ...question, options: [...question.options] }]),
+      value.questions.map((question) => [
+        question.id,
+        { ...question, options: [...question.options] },
+      ]),
     );
   },
   { immediate: true },
@@ -211,11 +212,7 @@ function optionsText(question: StaffFormQuestion) {
   return question.options.join("\n");
 }
 
-function updateQuestionNumber(
-  questionId: string,
-  field: "numberMin" | "numberMax",
-  event: Event,
-) {
+function updateQuestionNumber(questionId: string, field: "numberMin" | "numberMax", event: Event) {
   const target = event.target;
   const question = questionEdits.value[questionId];
   if (!(target instanceof HTMLInputElement) || !question) {
@@ -305,20 +302,20 @@ async function handleDeleteForm() {
                 <span
                   class="rounded-full px-3 py-1"
                   :class="
-                  formQuery.data.value.isPublic
-                    ? 'bg-success-light text-success'
-                    : 'bg-danger-light text-danger'
-                "
+                    formQuery.data.value.isPublic
+                      ? 'bg-success-light text-success'
+                      : 'bg-danger-light text-danger'
+                  "
                 >
                   {{ formQuery.data.value.isPublic ? "public" : "private" }}
                 </span>
                 <span
                   class="rounded-full px-3 py-1"
                   :class="
-                  formQuery.data.value.isOpen
-                    ? 'bg-primary-light text-primary'
-                    : 'bg-muted-light text-muted'
-                "
+                    formQuery.data.value.isOpen
+                      ? 'bg-primary-light text-primary'
+                      : 'bg-muted-light text-muted'
+                  "
                 >
                   {{ formQuery.data.value.isOpen ? "open" : "closed" }}
                 </span>

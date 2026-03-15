@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { buttonVariants } from "@/lib/ui/variants";
+
 defineProps<{
   to: string;
   label: string;
@@ -8,7 +10,7 @@ defineProps<{
 <template>
   <RouterLink
     :to="to"
-    class="inline-flex items-center justify-center rounded bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-hover"
+    :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'semibold' })"
   >
     {{ label }}
   </RouterLink>

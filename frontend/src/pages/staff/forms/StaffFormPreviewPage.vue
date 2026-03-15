@@ -13,9 +13,7 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const previewQuery = useStaffFormPreviewQuery(
   formId,
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true &&
-      sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 </script>

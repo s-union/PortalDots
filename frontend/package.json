@@ -22,7 +22,9 @@
     "dependencies": {
         "@portaldots/api-client": "workspace:*",
         "@tanstack/vue-query": "^5.92.9",
+        "class-variance-authority": "^0.7.1",
         "pinia": "^3.0.4",
+        "tailwind-merge": "^3.5.0",
         "vue": "^3.5.30",
         "vue-router": "^5.0.3",
         "zod": "^4.3.6"

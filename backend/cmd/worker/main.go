@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
+	"github.com/s-union/PortalDots/backend/internal/app/worker"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/platform/database"
-	"github.com/s-union/PortalDots/backend/internal/app/worker"
 )
 
 func main() {

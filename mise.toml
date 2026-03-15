@@ -1,22 +1,26 @@
 [tools]
-node = "22"
+node = "24"
 go = "1.26"
 sqlc = "1.30.0"
+staticcheck = "latest"
+prek = "latest"
 
 [tasks.frontend-install]
 description = "Install dependencies for the new frontend workspace"
-dir = "frontend"
-run = "ni"
+run = "pnpm install"
 
 [tasks.frontend-dev]
-description = "Start the new Vue frontend"
+description = "Start vue vite dev server"
 dir = "frontend"
-run = "nr dev"
+run = "pnpm run dev"
 
 [tasks.frontend-check]
-description = "Run all static checks for the new Vue frontend"
-dir = "frontend"
-run = "nr ci:check"
+description = "Run frontend static checks"
+run = "pnpm run ci:check"
+
+[tasks.frontend-format]
+description = "Run frontend formatter"
+run = "pnpm format"
 
 [tasks.backend-dev]
 description = "Start the new Go API"
@@ -29,9 +33,19 @@ dir = "backend"
 run = "go run ./cmd/migrate"
 
 [tasks.backend-test]
-description = "Run Go tests for the new backend"
+description = "Run Go tests for backend"
 dir = "backend"
-run = "GOCACHE=/tmp/portaldots-go-cache go test ./..."
+run = "go test ./..."
+
+[tasks.backend-check]
+description = "Run staticcheck for Go backend"
+dir = "backend"
+run = "staticcheck ./..."
+
+[tasks.backend-format]
+description = "Run go fmt"
+dir = "backend"
+run = "go fmt ./..."
 
 [tasks.backend-sqlc-generate]
 description = "Generate Go code from backend sqlc queries"
@@ -43,6 +57,8 @@ description = "Run the sqlc smoke command against PORTALDOTS_DATABASE_URL"
 dir = "backend"
 run = "go run ./cmd/sqlc-smoke"
 
-[tasks.compat-docs]
-description = "Show compatibility matrix files"
-run = "rg --files compat"
+[tasks.check]
+depends = ["frontend-check", "backend-check"]
+
+[tasks.format]
+depends = ["frontend-format", "backend-format"]

@@ -7,7 +7,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
-	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
@@ -19,6 +18,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
 type Dependencies struct {

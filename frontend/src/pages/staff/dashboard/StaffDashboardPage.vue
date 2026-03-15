@@ -20,7 +20,9 @@ import {
 import { useSessionStore } from "@/features/session/store";
 
 const sessionStore = useSessionStore();
-const pageAdminAvailable = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions));
+const pageAdminAvailable = computed(() =>
+  canReadPages(sessionStore.roles, sessionStore.permissions),
+);
 const documentAdminAvailable = computed(() =>
   canReadDocuments(sessionStore.roles, sessionStore.permissions),
 );
@@ -37,7 +39,9 @@ const circleAdminAvailable = computed(() =>
 const participationTypeAvailable = computed(() =>
   canManageParticipationTypes(sessionStore.roles, sessionStore.permissions),
 );
-const formsAdminAvailable = computed(() => canReadForms(sessionStore.roles, sessionStore.permissions));
+const formsAdminAvailable = computed(() =>
+  canReadForms(sessionStore.roles, sessionStore.permissions),
+);
 const userAdminAvailable = computed(() =>
   canManageUsers(sessionStore.roles, sessionStore.permissions),
 );

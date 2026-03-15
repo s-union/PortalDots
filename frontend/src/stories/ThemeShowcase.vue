@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { cn } from "@/lib/ui/cn";
+import { buttonVariants, surfaceVariants } from "@/lib/ui/variants";
+
 defineProps<{
   primaryLabel?: string;
   showDanger?: boolean;
@@ -12,55 +15,50 @@ defineProps<{
     <section class="mb-8">
       <h2 class="mb-4 text-xl font-semibold">ボタン (.btn)</h2>
       <p class="mb-4 text-sm text-muted">
-        btn-base: padding 0.75rem 1rem / line-height 1.15 / border-radius 0.45rem / text-center /
-        whitespace-nowrap
+        cva で共通化: rounded / whitespace-nowrap / line-height 1.15 / transition を variants に集約
       </p>
       <div class="flex flex-wrap items-center gap-3">
-        <button
-          class="btn-base border border-primary bg-primary font-bold text-white hover:bg-primary-hover"
-        >
+        <button :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })">
           {{ primaryLabel ?? "プライマリ (.is-primary)" }}
         </button>
-        <button class="btn-base border border-border bg-surface text-body hover:bg-surface-light">
+        <button :class="buttonVariants({ variant: 'secondary', size: 'lg' })">
           セカンダリ (.is-secondary)
         </button>
         <button
           v-if="showDanger"
-          class="btn-base border border-danger bg-danger font-bold text-white hover:bg-danger-hover"
+          :class="buttonVariants({ variant: 'danger', size: 'lg', weight: 'bold' })"
         >
           デンジャー (.is-danger)
         </button>
         <button
           v-if="showSuccess"
-          class="btn-base border border-success bg-success font-bold text-white hover:bg-success-hover"
+          :class="buttonVariants({ variant: 'success', size: 'lg', weight: 'bold' })"
         >
           サクセス (.is-success)
         </button>
         <button
-          class="btn-base border border-primary bg-primary font-bold text-white opacity-50 pointer-events-none"
+          :class="
+            cn(
+              buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }),
+              'pointer-events-none',
+            )
+          "
           disabled
         >
           無効 (disabled)
         </button>
       </div>
       <div class="mt-4 flex flex-wrap items-center gap-3">
-        <button
-          class="btn-base border border-border bg-surface text-primary hover:bg-primary-inverse-hover"
-        >
+        <button :class="buttonVariants({ variant: 'primaryInverse', size: 'lg' })">
           プライマリ逆 (.is-primary-inverse)
         </button>
-        <button class="btn-base border border-border bg-transparent text-body hover:bg-surface">
+        <button :class="buttonVariants({ variant: 'transparent', size: 'lg' })">
           透過 (.is-transparent)
         </button>
-        <button
-          class="btn-base border border-primary bg-primary px-8 font-bold text-white hover:bg-primary-hover"
-        >
+        <button :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })">
           幅広 (.is-wide)
         </button>
-        <button
-          class="btn-base border border-primary bg-primary text-xs font-bold text-white hover:bg-primary-hover"
-          style="padding: 0.2rem 0.5rem; font-size: 0.9rem;"
-        >
+        <button :class="buttonVariants({ variant: 'primary', size: 'sm', weight: 'bold' })">
           小 (.is-sm)
         </button>
       </div>
@@ -69,14 +67,14 @@ defineProps<{
     <!-- Cards -->
     <section class="mb-8">
       <h2 class="mb-4 text-xl font-semibold">カード</h2>
-      <div class="grid gap-4 md:grid-cols-2">
-        <div class="rounded border border-border bg-surface p-6 shadow-lv1">
+      <div class="grid gap-4 min-[1001px]:grid-cols-2">
+        <div :class="cn(surfaceVariants(), 'p-6')">
           <h3 class="text-lg font-semibold">通常カード (shadow-lv1)</h3>
           <p class="mt-2 text-muted">
             bg-surface + border-border + shadow-lv1。Laravelの .content 内カードに相当。
           </p>
         </div>
-        <div class="rounded border border-border bg-surface p-6 shadow-lv2">
+        <div :class="cn(surfaceVariants({ shadow: 'lv2' }), 'p-6')">
           <h3 class="text-lg font-semibold">カード (shadow-lv2)</h3>
           <p class="mt-2 text-muted">影がやや強め。ドロワーやモーダルに使用。</p>
         </div>
@@ -172,15 +170,15 @@ defineProps<{
       <p class="mb-4 text-sm text-muted">
         base: 15px / line-height 1.7 / font-family: Segoe UI, Meiryo, system-ui...
       </p>
-      <div class="rounded border border-border bg-surface p-6 shadow-lv1">
-        <p style="font-size: 1.6rem; font-weight: var(--font-weight-bold);">
+      <div :class="cn(surfaceVariants(), 'p-6')">
+        <p style="font-size: 1.6rem; font-weight: var(--font-weight-bold)">
           $font-size-xl (1.6rem = 24px) — 見出し大
         </p>
-        <p class="mt-2" style="font-size: 1.333rem; font-weight: var(--font-weight-bold);">
+        <p class="mt-2" style="font-size: 1.333rem; font-weight: var(--font-weight-bold)">
           $font-size-lg (1.333rem = 20px) — 見出し
         </p>
         <p class="mt-2">通常テキスト (15px) — 本文</p>
-        <p class="mt-2" style="font-size: 0.933rem;">$font-size (0.933rem = 14px) — 補足</p>
+        <p class="mt-2" style="font-size: 0.933rem">$font-size (0.933rem = 14px) — 補足</p>
         <hr />
         <p class="text-primary">text-primary — プライマリカラー</p>
         <p class="text-danger">text-danger — エラーカラー</p>
@@ -208,10 +206,10 @@ defineProps<{
       <p class="mb-4 text-sm text-muted">
         width: 320px / bg-surface / border-right / active link: border-right 4px primary
       </p>
-      <div class="rounded border-r border-border bg-surface shadow-lv1" style="width: 320px">
+      <div :class="cn(surfaceVariants(), 'border-r')" style="width: 320px">
         <div
           class="border-b border-border p-6"
-          style="font-weight: var(--font-weight-bold); padding-top: calc(5rem + 1.5rem);"
+          style="font-weight: var(--font-weight-bold); padding-top: calc(5rem + 1.5rem)"
         >
           PortalDots
         </div>
@@ -219,7 +217,7 @@ defineProps<{
           <a
             class="relative block py-3 pr-6 pl-6 text-primary"
             href="#"
-            style="font-weight: var(--font-weight-bold);"
+            style="font-weight: var(--font-weight-bold)"
           >
             <span class="absolute top-2 right-0 bottom-2 w-1 rounded-l bg-primary"></span>
             ホーム
@@ -250,12 +248,10 @@ defineProps<{
           </a>
         </nav>
         <div class="border-t border-border p-6">
-          <p class="mb-4 text-center" style="font-weight: var(--font-weight-bold);">
+          <p class="mb-4 text-center" style="font-weight: var(--font-weight-bold)">
             山田太郎としてログイン中
           </p>
-          <button
-            class="btn-base w-full border border-border bg-surface text-body hover:bg-surface-light"
-          >
+          <button :class="buttonVariants({ variant: 'secondary', size: 'lg', fullWidth: true })">
             ログアウト
           </button>
         </div>
@@ -265,24 +261,24 @@ defineProps<{
     <!-- List View -->
     <section>
       <h2 class="mb-4 text-xl font-semibold">リストビュー</h2>
-      <div class="rounded border border-border bg-surface shadow-lv1">
+      <div :class="surfaceVariants()">
         <div class="border-b border-border px-6 py-4">
           <div class="flex items-center justify-between">
-            <h3 style="font-weight: var(--font-weight-bold);">第1回 実行委員会ミーティング</h3>
+            <h3 style="font-weight: var(--font-weight-bold)">第1回 実行委員会ミーティング</h3>
             <span class="rounded-full bg-success-light px-3 py-1 text-xs text-success">受理</span>
           </div>
           <p class="mt-1 text-sm text-muted">2026-03-10 に公開</p>
         </div>
         <div class="border-b border-border px-6 py-4">
           <div class="flex items-center justify-between">
-            <h3 style="font-weight: var(--font-weight-bold);">企画参加申込書</h3>
+            <h3 style="font-weight: var(--font-weight-bold)">企画参加申込書</h3>
             <span class="rounded-full bg-primary-light px-3 py-1 text-xs text-primary">受付中</span>
           </div>
           <p class="mt-1 text-sm text-muted">締切: 2026-04-01</p>
         </div>
         <div class="px-6 py-4">
           <div class="flex items-center justify-between">
-            <h3 style="font-weight: var(--font-weight-bold);">会場マップ (PDF)</h3>
+            <h3 style="font-weight: var(--font-weight-bold)">会場マップ (PDF)</h3>
             <span class="rounded-full bg-muted-light px-3 py-1 text-xs text-muted">配布中</span>
           </div>
           <p class="mt-1 text-sm text-muted">2026-03-01 に追加</p>

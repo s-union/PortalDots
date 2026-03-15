@@ -1,27 +1,12 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
+    "extends": "@vue/tsconfig/tsconfig.dom.json",
+    "compilerOptions": {
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "types": ["vite/client", "node"]
     },
-    "types": [
-      "vite/client",
-      "node"
-    ],
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.vue"
-  ],
-  "exclude": [
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts"
-  ],
+    "include": ["src/**/*.ts", "src/**/*.vue"],
+    "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
 }

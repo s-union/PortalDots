@@ -112,7 +112,16 @@ func registerStaffRoutes(
 
 func registerWorkspaceRoutes(v1 *echo.Group, workspaceH *workspaceHandlers) {
 	v1.GET("/circles", workspaceH.listCircles)
+	v1.POST("/circles", workspaceH.createCircle)
 	v1.PUT("/circles/current", workspaceH.setCurrentCircle)
+	v1.GET("/circles/current/detail", workspaceH.getCurrentCircleDetail)
+	v1.PUT("/circles/current/detail", workspaceH.updateCurrentCircle)
+	v1.DELETE("/circles/current", workspaceH.deleteCurrentCircle)
+	v1.POST("/circles/current/submit", workspaceH.submitCurrentCircle)
+	v1.GET("/circles/current/members", workspaceH.listCurrentCircleMembers)
+	v1.DELETE("/circles/current/members/:userID", workspaceH.removeCurrentCircleMember)
+	v1.POST("/circles/current/invitation-token/regenerate", workspaceH.regenerateInvitationToken)
+	v1.POST("/circles/join/:token", workspaceH.joinCircleByToken)
 	v1.GET("/documents", workspaceH.listDocuments)
 	v1.GET("/documents/:documentID", workspaceH.getDocument)
 	v1.GET("/forms", workspaceH.listForms)

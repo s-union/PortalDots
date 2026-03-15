@@ -40,7 +40,9 @@ const form = ref({
 const errorMessage = ref("");
 const successMessage = ref("");
 
-const settingsRoute = computed(() => `/staff/participation-types/${encodeURIComponent(typeId.value)}`);
+const settingsRoute = computed(
+  () => `/staff/participation-types/${encodeURIComponent(typeId.value)}`,
+);
 
 const formEditorRoute = computed(() => {
   const current = detailQuery.data.value;
@@ -271,7 +273,9 @@ async function handleDelete() {
               </p>
             </div>
             <div class="grid gap-4">
-              <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+              <div
+                class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted"
+              >
                 詳細な設問追加や並び替えは専用エディターで行います。ここでは公開状態と文面を先に整えます。
               </div>
               <label class="flex items-center gap-3 text-sm text-body">

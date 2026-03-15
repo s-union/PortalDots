@@ -2,10 +2,7 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import ListPanel from "@/components/ui/ListPanel.vue";
-import {
-  useSelectableCirclesQuery,
-  useSelectCurrentCircleMutation,
-} from "@/features/circles/api";
+import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from "@/features/circles/api";
 import { useSessionStore } from "@/features/session/store";
 
 const router = useRouter();
@@ -36,11 +33,7 @@ async function handleSelectCircle(circleId: string) {
           v-for="circle in circlesQuery.data.value"
           :key="circle.id"
           class="w-full px-6 py-5 text-left transition hover:bg-form-control disabled:opacity-50"
-          :class="
-            sessionStore.currentCircle?.id === circle.id
-              ? 'bg-primary-light'
-              : ''
-          "
+          :class="sessionStore.currentCircle?.id === circle.id ? 'bg-primary-light' : ''"
           :disabled="isSelecting"
           type="button"
           @click="handleSelectCircle(circle.id)"

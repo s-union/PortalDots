@@ -5,106 +5,110 @@ import { documentSummarySchema, parseWithSchema } from "@/lib/api/schema";
 import { useSessionStore } from "@/features/session/store";
 
 export type DocumentSummary = {
-  id: string;
-  name: string;
-  description: string;
-  isImportant: boolean;
-  isNew: boolean;
-  extension: string;
-  sizeBytes: number;
-  updatedAt: string;
-  downloadUrl: string;
+    id: string;
+    name: string;
+    description: string;
+    isImportant: boolean;
+    isNew: boolean;
+    extension: string;
+    sizeBytes: number;
+    updatedAt: string;
+    downloadUrl: string;
 };
 
 export type DocumentsPagination = {
-  page: number;
-  pageSize: number;
+    page: number;
+    pageSize: number;
 };
 
 export type DocumentPage = PaginatedResult<DocumentSummary>;
 
 export async function fetchDocuments(pagination: DocumentsPagination) {
-  return $api.queryData(
-    "get",
-    "/documents",
-    {
-      headers: createJsonHeaders(),
-      params: {
-        query: {
-          page: pagination.page,
-          pageSize: pagination.pageSize,
+    return $api.queryData(
+        "get",
+        "/documents",
+        {
+            headers: createJsonHeaders(),
+            params: {
+                query: {
+                    page: pagination.page,
+                    pageSize: pagination.pageSize,
+                },
+            },
         },
-      },
-    },
-    (value) => parsePaginatedResult(value, parseDocumentSummary, "documents"),
-    {
-      errorMessage: "Failed to fetch documents",
-    },
-  );
+        (value) => parsePaginatedResult(value, parseDocumentSummary, "documents"),
+        {
+            errorMessage: "Failed to fetch documents",
+        },
+    );
 }
 
 export function useDocumentsQuery() {
-  const sessionStore = useSessionStore();
+    const sessionStore = useSessionStore();
 
-  return $api.useQueryData(
-    "get",
-    "/documents",
-    {
-      headers: createJsonHeaders(),
-      params: {
-        query: {
-          page: 1,
-          pageSize: 10,
+    return $api.useQueryData(
+        "get",
+        "/documents",
+        {
+            headers: createJsonHeaders(),
+            params: {
+                query: {
+                    page: 1,
+                    pageSize: 10,
+                },
+            },
         },
-      },
-    },
-    (value) => parsePaginatedResult(value, parseDocumentSummary, "documents"),
-    {
-      queryKey: computed(() => [
-        "documents",
-        sessionStore.currentCircle?.id ?? "none",
-        { page: 1, pageSize: 10 },
-      ]),
-      enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
-      retry: false,
-    },
-    {
-      errorMessage: "Failed to fetch documents",
-    },
-  );
+        (value) => parsePaginatedResult(value, parseDocumentSummary, "documents"),
+        {
+            queryKey: computed(() => [
+                "documents",
+                sessionStore.currentCircle?.id ?? "none",
+                { page: 1, pageSize: 10 },
+            ]),
+            enabled: computed(
+                () => sessionStore.isAuthenticated && sessionStore.currentCircle !== null,
+            ),
+            retry: false,
+        },
+        {
+            errorMessage: "Failed to fetch documents",
+        },
+    );
 }
 
 export function useDocumentsPageQuery(pagination: MaybeRefOrGetter<DocumentsPagination>) {
-  const sessionStore = useSessionStore();
+    const sessionStore = useSessionStore();
 
-  return $api.useQueryData(
-    "get",
-    "/documents",
-    () => ({
-      headers: createJsonHeaders(),
-      params: {
-        query: {
-          page: toValue(pagination).page,
-          pageSize: toValue(pagination).pageSize,
+    return $api.useQueryData(
+        "get",
+        "/documents",
+        () => ({
+            headers: createJsonHeaders(),
+            params: {
+                query: {
+                    page: toValue(pagination).page,
+                    pageSize: toValue(pagination).pageSize,
+                },
+            },
+        }),
+        (value) => parsePaginatedResult(value, parseDocumentSummary, "documents"),
+        {
+            queryKey: computed(() => [
+                "documents",
+                sessionStore.currentCircle?.id ?? "none",
+                toValue(pagination),
+            ]),
+            enabled: computed(
+                () => sessionStore.isAuthenticated && sessionStore.currentCircle !== null,
+            ),
+            retry: false,
         },
-      },
-    }),
-    (value) => parsePaginatedResult(value, parseDocumentSummary, "documents"),
-    {
-      queryKey: computed(() => [
-        "documents",
-        sessionStore.currentCircle?.id ?? "none",
-        toValue(pagination),
-      ]),
-      enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
-      retry: false,
-    },
-    {
-      errorMessage: "Failed to fetch documents",
-    },
-  );
+        {
+            errorMessage: "Failed to fetch documents",
+        },
+    );
 }
 
 function parseDocumentSummary(value: unknown): DocumentSummary {
-  return parseWithSchema(documentSummarySchema, value, "documents");
+    return parseWithSchema(documentSummarySchema, value, "documents");
 }

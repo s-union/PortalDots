@@ -25,10 +25,7 @@ const route = useRoute();
 const router = useRouter();
 const userId = computed(() => String(route.params.userId ?? ""));
 const { enabled } = useAuthorizedStaffContext({ capability: "users.edit" });
-const userQuery = useStaffUserDetailQuery(
-  userId,
-  enabled,
-);
+const userQuery = useStaffUserDetailQuery(userId, enabled);
 const updateUserMutation = useUpdateStaffUserMutation();
 const updateRolesMutation = useUpdateStaffUserRolesMutation();
 const verifyUserMutation = useVerifyStaffUserMutation(userId);
@@ -223,7 +220,11 @@ function handleRoleChange(event: Event, role: string) {
                 <span class="grid gap-1">
                   <span class="font-medium">{{ role }}</span>
                   <span class="text-xs leading-6 text-muted">
-                    {{ role === "admin" ? "スタッフモードを含む全機能を利用できます。" : "このロールに紐づく staff 機能を利用できます。" }}
+                    {{
+                      role === "admin"
+                        ? "スタッフモードを含む全機能を利用できます。"
+                        : "このロールに紐づく staff 機能を利用できます。"
+                    }}
                   </span>
                 </span>
               </label>

@@ -75,7 +75,11 @@ async function handleSearchReset() {
       class="rounded border border-border bg-surface p-10 text-center text-muted shadow-lv1"
     >
       <p class="text-base">
-        {{ String(route.query.query ?? "") === "" ? "お知らせはまだありません" : "検索結果が見つかりませんでした" }}
+        {{
+          String(route.query.query ?? "") === ""
+            ? "お知らせはまだありません"
+            : "検索結果が見つかりませんでした"
+        }}
       </p>
       <p v-if="String(route.query.query ?? '') !== ''" class="mt-3 text-sm">
         入力するキーワードを変えて、再度検索をお試しください。

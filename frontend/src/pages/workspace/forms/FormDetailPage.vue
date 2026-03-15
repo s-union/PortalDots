@@ -74,7 +74,9 @@ watch(
       return;
     }
 
-    const hasSelectedAnswer = currentAnswers.some((answer) => answer.id === currentSelectedAnswerId);
+    const hasSelectedAnswer = currentAnswers.some(
+      (answer) => answer.id === currentSelectedAnswerId,
+    );
     if (hasSelectedAnswer) {
       return;
     }
@@ -135,7 +137,11 @@ async function handleUploadFile(questionId: string) {
   }
 
   try {
-    await uploadMutation.mutateAsync({ questionId, file, answerId: selectedAnswerId.value || undefined });
+    await uploadMutation.mutateAsync({
+      questionId,
+      file,
+      answerId: selectedAnswerId.value || undefined,
+    });
     selectedFiles.value = { ...selectedFiles.value, [questionId]: null };
   } catch (error) {
     uploadErrorMessages.value = {
@@ -247,7 +253,9 @@ function handleFileChange(questionId: string, event: Event) {
             </RouterLink>
             <button
               class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="isDisabled || hasReachedAnswerLimit || createAnswerMutation.isPending.value"
+              :disabled="
+                isDisabled || hasReachedAnswerLimit || createAnswerMutation.isPending.value
+              "
               type="button"
               @click="handleCreateAnswer"
             >
@@ -278,7 +286,13 @@ function handleFileChange(questionId: string, event: Event) {
                   name="answer-body"
                   :disabled="isDisabled"
                   placeholder="回答内容を入力してください"
-                  @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
+                  @input="
+                    updateDraftValue(
+                      draft,
+                      'legacy-body',
+                      ($event.target as HTMLTextAreaElement).value,
+                    )
+                  "
                 />
               </label>
             </div>
@@ -324,10 +338,16 @@ function handleFileChange(questionId: string, event: Event) {
                   :download-href="
                     (currentQuestion) =>
                       selectedAnswerId
-                        ? buildFormAnswerUploadDownloadUrlByAnswer(formId, selectedAnswerId, currentQuestion.id)
+                        ? buildFormAnswerUploadDownloadUrlByAnswer(
+                            formId,
+                            selectedAnswerId,
+                            currentQuestion.id,
+                          )
                         : buildFormAnswerUploadDownloadUrl(
                             formId,
-                            (selectedAnswer?.uploads ?? []).find((upload) => upload.questionId === currentQuestion.id)?.id ?? '',
+                            (selectedAnswer?.uploads ?? []).find(
+                              (upload) => upload.questionId === currentQuestion.id,
+                            )?.id ?? '',
                           )
                   "
                   @upload="handleUploadFile"

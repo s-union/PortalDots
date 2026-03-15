@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import { buttonVariants, formControlVariants } from "@/lib/ui/variants";
 import {
   extractStaffVerifyError,
   useConfirmStaffVerificationMutation,
@@ -67,7 +68,7 @@ async function handleConfirm() {
 
       <div class="border-b border-border px-6 py-5">
         <button
-          class="rounded bg-primary px-5 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+          :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
           :disabled="requestMutation.isPending.value"
           type="button"
           @click="handleRequestCode"
@@ -81,7 +82,7 @@ async function handleConfirm() {
           <span class="font-medium">認証コード</span>
           <input
             v-model="form.verifyCode"
-            class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+            :class="formControlVariants()"
             name="verifyCode"
             type="text"
           />
@@ -103,7 +104,7 @@ async function handleConfirm() {
 
         <div class="pt-6 text-center">
           <button
-            class="rounded bg-primary px-10 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })"
             :disabled="confirmMutation.isPending.value"
             type="submit"
           >

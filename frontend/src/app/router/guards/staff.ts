@@ -8,34 +8,41 @@ type SessionStore = ReturnType<typeof useSessionStore>;
 type GuardResult = RouteLocationRaw | true;
 
 export async function staffGuard(
-  to: RouteLocationNormalized,
-  sessionStore: SessionStore,
+    to: RouteLocationNormalized,
+    sessionStore: SessionStore,
 ): Promise<GuardResult> {
-  if (to.meta.requiresStaffRole && !hasStaffAccess(sessionStore.roles, sessionStore.permissions)) {
-    return "/";
-  }
-
-  if (
-    to.meta.staffCapability &&
-    !canAccessStaffCapability(to.meta.staffCapability, sessionStore.roles, sessionStore.permissions)
-  ) {
-    return to.path === "/staff" ? true : "/staff";
-  }
-
-  if (to.meta.requiresStaffRole || to.meta.requiresStaffAuthorized) {
-    const staffStatus = await queryClient.fetchQuery({
-      queryKey: ["staff", "status"],
-      queryFn: fetchStaffStatus,
-    });
-
-    if (to.path === "/staff/verify" && staffStatus.authorized) {
-      return "/staff";
+    if (
+        to.meta.requiresStaffRole &&
+        !hasStaffAccess(sessionStore.roles, sessionStore.permissions)
+    ) {
+        return "/";
     }
 
-    if (to.meta.requiresStaffAuthorized && !staffStatus.authorized) {
-      return "/staff/verify";
+    if (
+        to.meta.staffCapability &&
+        !canAccessStaffCapability(
+            to.meta.staffCapability,
+            sessionStore.roles,
+            sessionStore.permissions,
+        )
+    ) {
+        return to.path === "/staff" ? true : "/staff";
     }
-  }
 
-  return true;
+    if (to.meta.requiresStaffRole || to.meta.requiresStaffAuthorized) {
+        const staffStatus = await queryClient.fetchQuery({
+            queryKey: ["staff", "status"],
+            queryFn: fetchStaffStatus,
+        });
+
+        if (to.path === "/staff/verify" && staffStatus.authorized) {
+            return "/staff";
+        }
+
+        if (to.meta.requiresStaffAuthorized && !staffStatus.authorized) {
+            return "/staff/verify";
+        }
+    }
+
+    return true;
 }

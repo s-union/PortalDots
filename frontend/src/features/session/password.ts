@@ -4,36 +4,36 @@ import { extractValidationMessage, parseValidationError } from "@/lib/api/valida
 import { useSessionStore } from "@/features/session/store";
 
 type UpdatePasswordPayload = {
-  currentPassword: string;
-  newPassword: string;
+    currentPassword: string;
+    newPassword: string;
 };
 
 export async function updatePassword(payload: UpdatePasswordPayload, csrfToken: string) {
-  await $api.noContentMutation(
-    "put",
-    "/session/password",
-    {
-      headers: createJsonHeaders(csrfToken),
-      body: payload,
-    },
-    {
-      errorMessage: "Failed to update password",
-      errorParsers: {
-        422: (error) => parseValidationError(error, "password"),
-      },
-    },
-  );
+    await $api.noContentMutation(
+        "put",
+        "/session/password",
+        {
+            headers: createJsonHeaders(csrfToken),
+            body: payload,
+        },
+        {
+            errorMessage: "Failed to update password",
+            errorParsers: {
+                422: (error) => parseValidationError(error, "password"),
+            },
+        },
+    );
 }
 
 export function useUpdatePasswordMutation() {
-  const sessionStore = useSessionStore();
+    const sessionStore = useSessionStore();
 
-  return useMutation({
-    mutationFn: async (payload: UpdatePasswordPayload) =>
-      updatePassword(payload, sessionStore.csrfToken),
-  });
+    return useMutation({
+        mutationFn: async (payload: UpdatePasswordPayload) =>
+            updatePassword(payload, sessionStore.csrfToken),
+    });
 }
 
 export function extractPasswordValidationMessage(error: unknown) {
-  return extractValidationMessage(error, "パスワードの更新に失敗しました。");
+    return extractValidationMessage(error, "パスワードの更新に失敗しました。");
 }

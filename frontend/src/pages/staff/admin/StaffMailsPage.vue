@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { cn } from "@/lib/ui/cn";
+import { buttonVariants, formControlVariants, surfaceVariants } from "@/lib/ui/variants";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
   extractStaffMailValidationMessage,
@@ -14,9 +16,7 @@ const sessionStore = useSessionStore();
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
 const mailsQuery = useStaffMailsQuery(
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true &&
-      sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 const createMailMutation = useCreateStaffMailMutation();
@@ -53,16 +53,13 @@ async function handleCreateMail() {
           {{ sessionStore.currentCircle?.name ?? "企画未選択" }} 向けのメールを queue に積みます。
         </p>
       </div>
-      <RouterLink
-        class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-        to="/staff"
-      >
+      <RouterLink :class="buttonVariants({ variant: 'secondary', size: 'md' })" to="/staff">
         Staff top へ戻る
       </RouterLink>
     </header>
 
     <section class="space-y-6">
-      <section class="rounded border border-border bg-surface shadow-lv1">
+      <section :class="surfaceVariants()">
         <div class="border-b border-border px-6 py-4">
           <h3 class="text-lg font-semibold text-body">
             メールの一斉送信機能を利用するにはサーバー側の設定が必要です
@@ -80,10 +77,7 @@ async function handleCreateMail() {
         </div>
       </section>
 
-      <form
-        class="rounded border border-border bg-surface shadow-lv1"
-        @submit.prevent="handleCreateMail"
-      >
+      <form :class="surfaceVariants()" @submit.prevent="handleCreateMail">
         <div class="border-b border-border px-6 py-4">
           <h3 class="text-lg font-semibold text-body">メール配信設定</h3>
         </div>
@@ -92,7 +86,7 @@ async function handleCreateMail() {
             <span class="font-medium">件名</span>
             <input
               v-model="form.subject"
-              class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+              :class="formControlVariants()"
               name="subject"
               type="text"
             />
@@ -102,7 +96,7 @@ async function handleCreateMail() {
             <span class="font-medium">本文</span>
             <textarea
               v-model="form.body"
-              class="min-h-40 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+              :class="cn(formControlVariants(), 'min-h-40')"
               name="body"
             />
           </label>
@@ -111,7 +105,7 @@ async function handleCreateMail() {
             <span class="font-medium">宛先</span>
             <textarea
               v-model="form.recipientsText"
-              class="min-h-28 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+              :class="cn(formControlVariants(), 'min-h-28')"
               name="recipients"
               placeholder="demo@example.com, sub@example.com"
             />
@@ -126,7 +120,7 @@ async function handleCreateMail() {
         </div>
         <div class="border-t border-border px-6 py-5">
           <button
-            class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })"
             :disabled="createMailMutation.isPending.value"
             type="submit"
           >
@@ -135,7 +129,7 @@ async function handleCreateMail() {
         </div>
       </form>
 
-      <section class="rounded border border-border bg-surface shadow-lv1">
+      <section :class="surfaceVariants()">
         <div class="border-b border-border px-6 py-4">
           <h3 class="text-lg font-semibold text-body">メールキュー</h3>
         </div>

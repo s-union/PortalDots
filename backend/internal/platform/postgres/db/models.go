@@ -60,6 +60,11 @@ type Circle struct {
 	CreatedAt             pgtype.Timestamptz
 	Tags                  []string
 	ParticipationTypeID   pgtype.Text
+	NameYomi              string
+	GroupNameYomi         string
+	InvitationToken       pgtype.Text
+	SubmittedAt           pgtype.Timestamptz
+	Notes                 string
 }
 
 type CircleUser struct {

@@ -6,114 +6,114 @@ import { extractValidationMessage, parseValidationError } from "@/lib/api/valida
 import { useSessionStore } from "@/features/session/store";
 
 export type StaffMail = {
-  id: string;
-  subject: string;
-  body: string;
-  recipients: string[];
-  status: "queued" | "sent";
-  createdAt: string;
-  deliveredAt: string;
+    id: string;
+    subject: string;
+    body: string;
+    recipients: string[];
+    status: "queued" | "sent";
+    createdAt: string;
+    deliveredAt: string;
 };
 
 type CreateStaffMailPayload = {
-  subject: string;
-  body: string;
-  recipients: string[];
+    subject: string;
+    body: string;
+    recipients: string[];
 };
 
 export async function fetchStaffMails() {
-  return $api.queryData(
-    "get",
-    "/staff/mails",
-    {
-      headers: createJsonHeaders(),
-    },
-    parseStaffMails,
-    {
-      errorMessage: "Failed to fetch staff mails",
-    },
-  );
+    return $api.queryData(
+        "get",
+        "/staff/mails",
+        {
+            headers: createJsonHeaders(),
+        },
+        parseStaffMails,
+        {
+            errorMessage: "Failed to fetch staff mails",
+        },
+    );
 }
 
 export async function createStaffMail(payload: CreateStaffMailPayload, csrfToken: string) {
-  return $api.mutationData(
-    "post",
-    "/staff/mails",
-    {
-      headers: createJsonHeaders(csrfToken),
-      body: payload,
-    },
-    parseStaffMail,
-    {
-      errorMessage: "Failed to enqueue staff mail",
-      errorParsers: {
-        422: (error) => parseValidationError(error, "staff mail"),
-      },
-    },
-  );
+    return $api.mutationData(
+        "post",
+        "/staff/mails",
+        {
+            headers: createJsonHeaders(csrfToken),
+            body: payload,
+        },
+        parseStaffMail,
+        {
+            errorMessage: "Failed to enqueue staff mail",
+            errorParsers: {
+                422: (error) => parseValidationError(error, "staff mail"),
+            },
+        },
+    );
 }
 
 export function useStaffMailsQuery(enabled: MaybeRefOrGetter<boolean>) {
-  return $api.useQueryData(
-    "get",
-    "/staff/mails",
-    {
-      headers: createJsonHeaders(),
-    },
-    parseStaffMails,
-    {
-      queryKey: ["staff", "mails"],
-      enabled: computed(() => toValue(enabled)),
-      retry: false,
-    },
-    {
-      errorMessage: "Failed to fetch staff mails",
-    },
-  );
+    return $api.useQueryData(
+        "get",
+        "/staff/mails",
+        {
+            headers: createJsonHeaders(),
+        },
+        parseStaffMails,
+        {
+            queryKey: ["staff", "mails"],
+            enabled: computed(() => toValue(enabled)),
+            retry: false,
+        },
+        {
+            errorMessage: "Failed to fetch staff mails",
+        },
+    );
 }
 
 export function useCreateStaffMailMutation() {
-  const queryClient = useQueryClient();
-  const sessionStore = useSessionStore();
+    const queryClient = useQueryClient();
+    const sessionStore = useSessionStore();
 
-  return useMutation({
-    mutationFn: async (payload: CreateStaffMailPayload) =>
-      createStaffMail(payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["staff", "mails"],
-      });
-    },
-  });
+    return useMutation({
+        mutationFn: async (payload: CreateStaffMailPayload) =>
+            createStaffMail(payload, sessionStore.csrfToken),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ["staff", "mails"],
+            });
+        },
+    });
 }
 
 export function useStaffMailForm() {
-  return ref({
-    subject: "",
-    body: "",
-    recipientsText: "",
-  });
+    return ref({
+        subject: "",
+        body: "",
+        recipientsText: "",
+    });
 }
 
 export function normalizeRecipientList(recipientsText: string) {
-  return [
-    ...new Set(
-      recipientsText
-        .split(/[\n,]/)
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ),
-  ];
+    return [
+        ...new Set(
+            recipientsText
+                .split(/[\n,]/)
+                .map((value) => value.trim())
+                .filter(Boolean),
+        ),
+    ];
 }
 
 export function extractStaffMailValidationMessage(error: unknown) {
-  return extractValidationMessage(error, "メールの登録に失敗しました。");
+    return extractValidationMessage(error, "メールの登録に失敗しました。");
 }
 
 function parseStaffMails(value: unknown): StaffMail[] {
-  return parseWithSchema(staffMailSchema.array(), value, "staff mails");
+    return parseWithSchema(staffMailSchema.array(), value, "staff mails");
 }
 
 function parseStaffMail(value: unknown): StaffMail {
-  return parseWithSchema(staffMailSchema, value, "staff mail");
+    return parseWithSchema(staffMailSchema, value, "staff mail");
 }

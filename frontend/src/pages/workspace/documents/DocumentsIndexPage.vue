@@ -24,7 +24,10 @@ const documentsQuery = useDocumentsPageQuery(
   })),
 );
 const totalPages = computed(() =>
-  calculateTotalPages(documentsQuery.data.value?.total ?? 0, documentsQuery.data.value?.pageSize ?? pageSize),
+  calculateTotalPages(
+    documentsQuery.data.value?.total ?? 0,
+    documentsQuery.data.value?.pageSize ?? pageSize,
+  ),
 );
 
 watch(

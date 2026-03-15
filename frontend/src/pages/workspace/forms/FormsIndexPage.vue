@@ -69,11 +69,7 @@ function formHref(form: FormSummary) {
           <template #prefix>
             <span
               class="rounded-full border px-2.5 py-1 text-xs font-semibold"
-              :class="
-                form.isPublic
-                  ? 'border-border text-muted'
-                  : 'border-primary text-primary'
-              "
+              :class="form.isPublic ? 'border-border text-muted' : 'border-primary text-primary'"
             >
               {{ form.isPublic ? "全員に公開" : "限定公開" }}
             </span>

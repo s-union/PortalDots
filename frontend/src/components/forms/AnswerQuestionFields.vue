@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { buttonVariants } from "@/lib/ui/variants";
 import {
   answerValue,
   createAnswerableQuestionRef,
@@ -35,11 +36,19 @@ function toggleCheckboxValue(option: string, checked: boolean) {
     }
   } else {
     const nextOptions = currentOptions.filter((currentOption) => currentOption !== option);
-    setAnswerValue(props.draft, createAnswerableQuestionRef(props.question.id, "checkbox"), nextOptions);
+    setAnswerValue(
+      props.draft,
+      createAnswerableQuestionRef(props.question.id, "checkbox"),
+      nextOptions,
+    );
     return;
   }
 
-  setAnswerValue(props.draft, createAnswerableQuestionRef(props.question.id, "checkbox"), currentOptions);
+  setAnswerValue(
+    props.draft,
+    createAnswerableQuestionRef(props.question.id, "checkbox"),
+    currentOptions,
+  );
 }
 
 function isChecked(option: string) {
@@ -53,7 +62,9 @@ function draftValue() {
 
 function eventTargetValue(event: Event) {
   const target = event.target;
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
+  return target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
     ? target.value
     : "";
 }
@@ -156,14 +167,14 @@ function eventTargetChecked(event: Event) {
         </div>
         <a
           :href="downloadHref(question)"
-          class="rounded border border-border bg-surface px-4 py-2 text-xs text-body transition hover:bg-surface-light"
+          :class="buttonVariants({ variant: 'secondary', size: 'xs' })"
         >
           {{ downloadLabel ?? "表示" }}
         </a>
       </li>
     </ul>
 
-    <div class="grid gap-3 md:grid-cols-[1fr_auto]">
+    <div class="grid gap-3 min-[1001px]:grid-cols-[1fr_auto]">
       <input
         :disabled="disabled"
         :name="`answer-file-${question.id}`"
@@ -171,7 +182,7 @@ function eventTargetChecked(event: Event) {
         @change="emit('fileChange', question.id, $event)"
       />
       <button
-        class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
+        :class="buttonVariants({ variant: 'secondary', size: 'md' })"
         :disabled="disabled || uploadPending"
         type="button"
         @click="emit('upload', question.id)"

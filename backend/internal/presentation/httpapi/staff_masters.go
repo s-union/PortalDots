@@ -3,7 +3,6 @@ package httpapi
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -350,18 +349,5 @@ func mapStaffContactCategory(item contactcategory.Category) staffContactCategory
 		ID:    item.ID,
 		Name:  item.Name,
 		Email: item.Email,
-	}
-}
-
-func placeTypeLabel(placeType int32) string {
-	switch placeType {
-	case 1:
-		return "屋内"
-	case 2:
-		return "屋外"
-	case 3:
-		return "特殊場所"
-	default:
-		return strconv.Itoa(int(placeType))
 	}
 }

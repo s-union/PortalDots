@@ -26,9 +26,7 @@ const sessionStore = useSessionStore();
 const pageId = computed(() => String(route.params.pageId ?? ""));
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
 const pageFormEnabled = computed(
-  () =>
-    staffStatusQuery.data.value?.authorized === true &&
-    sessionStore.currentCircle !== null,
+  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
 );
 const pageQuery = useStaffPageDetailQuery(pageId, pageFormEnabled);
 const tagsQuery = useStaffTagsQuery(pageFormEnabled);
@@ -231,10 +229,9 @@ function handleDocumentChange(documentId: string, event: Event) {
                   />
                   <span>
                     <strong class="text-body">{{ document.name }}</strong>
-                    <span
-                      class="block text-xs text-muted"
-                      >{{ document.description || "説明なし" }}</span
-                    >
+                    <span class="block text-xs text-muted">{{
+                      document.description || "説明なし"
+                    }}</span>
                   </span>
                 </label>
               </div>

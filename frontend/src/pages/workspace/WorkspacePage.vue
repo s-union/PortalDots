@@ -6,11 +6,41 @@ import { useSessionStore } from "@/features/session/store";
 const sessionStore = useSessionStore();
 
 const quickLinks = [
-  { to: "/workspace/pages", label: "お知らせを見る", description: "公開されているお知らせを確認します。" },
-  { to: "/workspace/documents", label: "配布資料を見る", description: "配布資料を一覧で確認します。" },
-  { to: "/workspace/forms", label: "申請を見る", description: "提出可能な申請フォームを確認します。" },
-  { to: "/workspace/contact", label: "お問い合わせ", description: "問い合わせ前提情報と窓口案内を確認します。" },
-  { to: "/workspace/settings", label: "ユーザー設定", description: "ログイン中のアカウント情報を確認します。" },
+  {
+    to: "/workspace/circles/detail",
+    label: "企画情報を管理",
+    description: "企画名・団体名の編集や参加登録の提出を行います。",
+  },
+  {
+    to: "/workspace/circles/members",
+    label: "メンバーを管理",
+    description: "招待リンクの確認やメンバーの管理を行います。",
+  },
+  {
+    to: "/workspace/pages",
+    label: "お知らせを見る",
+    description: "公開されているお知らせを確認します。",
+  },
+  {
+    to: "/workspace/documents",
+    label: "配布資料を見る",
+    description: "配布資料を一覧で確認します。",
+  },
+  {
+    to: "/workspace/forms",
+    label: "申請を見る",
+    description: "提出可能な申請フォームを確認します。",
+  },
+  {
+    to: "/workspace/contact",
+    label: "お問い合わせ",
+    description: "問い合わせ前提情報と窓口案内を確認します。",
+  },
+  {
+    to: "/workspace/settings",
+    label: "ユーザー設定",
+    description: "ログイン中のアカウント情報を確認します。",
+  },
 ];
 </script>
 
@@ -39,6 +69,12 @@ const quickLinks = [
             to="/circles/select"
           >
             企画を切り替える
+          </RouterLink>
+          <RouterLink
+            class="rounded border border-primary px-4 py-3 text-sm font-bold text-primary transition hover:bg-primary-light"
+            to="/circles/new"
+          >
+            新しい企画を作成
           </RouterLink>
         </div>
       </div>

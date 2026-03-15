@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { navMenuLinkVariants } from "@/lib/ui/variants";
+
 defineProps<{
   to: string;
   label: string;
@@ -8,16 +10,14 @@ defineProps<{
 </script>
 
 <template>
-  <RouterLink
-    :to="to"
-    class="flex items-center gap-3 border-b border-border px-5 py-3 text-sm transition last:border-b-0"
-    :class="active ? 'bg-primary-light font-semibold text-primary' : 'text-body hover:bg-form-control'"
-  >
+  <RouterLink :to="to" :class="navMenuLinkVariants({ active })">
+    <!-- Active indicator: right-side 4px vertical bar (replaces ::before pseudo-element) -->
     <span
-      class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-current text-[10px]"
-    >
-      {{ icon }}
-    </span>
+      v-if="active"
+      class="absolute right-0 top-2 bottom-2 w-1 rounded-l bg-primary"
+      aria-hidden="true"
+    />
+    <span class="mr-2 text-[1.2rem] opacity-50">{{ icon }}</span>
     {{ label }}
   </RouterLink>
 </template>

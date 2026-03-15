@@ -145,7 +145,9 @@ async function handleSendMail() {
         <SettingsSection title="企画基本情報">
           <SettingsRow>
             <div class="grid gap-4">
-              <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+              <div
+                class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted"
+              >
                 参加種別の詳細設定や参加登録フォーム編集は参加種別管理画面から行います。
                 <RouterLink :to="participationTypeEditorRoute" class="ml-2 text-primary underline">
                   参加種別を開く
@@ -209,9 +211,7 @@ async function handleSendMail() {
           </div>
 
           <div v-else class="grid gap-4">
-            <p class="text-sm text-muted">
-              送信対象: {{ mailRecipientCount }} 名
-            </p>
+            <p class="text-sm text-muted">送信対象: {{ mailRecipientCount }} 名</p>
 
             <p
               v-if="mailRecipientCount === 0"

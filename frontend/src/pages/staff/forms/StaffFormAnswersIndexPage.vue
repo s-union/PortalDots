@@ -19,9 +19,7 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true &&
-      sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 

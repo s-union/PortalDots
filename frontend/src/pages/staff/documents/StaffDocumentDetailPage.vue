@@ -23,9 +23,7 @@ const sessionStore = useSessionStore();
 const documentId = computed(() => String(route.params.documentId ?? ""));
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
 const detailEnabled = computed(
-  () =>
-    staffStatusQuery.data.value?.authorized === true &&
-    sessionStore.currentCircle !== null,
+  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
 );
 const documentQuery = useStaffDocumentDetailQuery(documentId, detailEnabled);
 const updateDocumentMutation = useUpdateStaffDocumentMutation(documentId);

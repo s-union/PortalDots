@@ -20,9 +20,7 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
   computed(
-    () =>
-      staffStatusQuery.data.value?.authorized === true &&
-      sessionStore.currentCircle !== null,
+    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
 </script>
@@ -59,7 +57,9 @@ const answersQuery = useStaffFormAnswersIndexQuery(
             <li>ファイル数が多い場合、ダウンロード完了まで時間がかかることがあります。</li>
             <li>
               アップロード件数:
-              {{ answersQuery.data.value.answers.reduce((sum, answer) => sum + answer.uploadCount, 0) }}
+              {{
+                answersQuery.data.value.answers.reduce((sum, answer) => sum + answer.uploadCount, 0)
+              }}
               件
             </li>
           </ul>

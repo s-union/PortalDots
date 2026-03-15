@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { bottomTabLabelVariants, bottomTabLinkVariants } from "@/lib/ui/variants";
+
 defineProps<{
   to: string;
   label: string;
@@ -8,14 +10,10 @@ defineProps<{
 </script>
 
 <template>
-  <RouterLink
-    :to="to"
-    class="px-2 py-3 text-center text-xs"
-    :class="active ? 'font-semibold text-primary' : 'text-muted'"
-  >
-    <div class="mx-auto mb-1 inline-flex h-5 w-5 items-center justify-center text-[10px]">
-      {{ icon }}
-    </div>
-    {{ label }}
+  <RouterLink :to="to" :class="bottomTabLinkVariants({ active })">
+    <span class="mb-2 block text-[1.4rem] leading-none">{{ icon }}</span>
+    <span :class="bottomTabLabelVariants({ active })">
+      {{ label }}
+    </span>
   </RouterLink>
 </template>

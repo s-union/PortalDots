@@ -23,11 +23,7 @@ const router = useRouter();
 const formId = computed(() => String(route.params.formId ?? ""));
 const answerId = computed(() => String(route.params.answerId ?? ""));
 const { enabled } = useAuthorizedStaffContext({ requiresCircle: true });
-const answerQuery = useStaffFormAnswerDetailQuery(
-  formId,
-  answerId,
-  enabled,
-);
+const answerQuery = useStaffFormAnswerDetailQuery(formId, answerId, enabled);
 const updateAnswerMutation = useUpdateStaffFormAnswerMutation(formId, answerId);
 const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId);
 const uploadMutation = useUploadStaffFormAnswerFileMutation(formId, answerId);
@@ -46,7 +42,9 @@ async function handleSaveAnswer() {
 
   errorMessage.value = "";
   const body =
-    typeof draft.value["legacy-body"] === "string" ? draft.value["legacy-body"] : answerQuery.data.value.answer.body;
+    typeof draft.value["legacy-body"] === "string"
+      ? draft.value["legacy-body"]
+      : answerQuery.data.value.answer.body;
 
   try {
     await updateAnswerMutation.mutateAsync(
@@ -153,7 +151,13 @@ function handleFileChange(questionId: string, event: Event) {
                   :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
                   class="min-h-40"
                   name="answer-body"
-                  @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
+                  @input="
+                    updateDraftValue(
+                      draft,
+                      'legacy-body',
+                      ($event.target as HTMLTextAreaElement).value,
+                    )
+                  "
                 />
               </label>
             </div>

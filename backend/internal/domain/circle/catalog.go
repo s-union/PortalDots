@@ -5,20 +5,53 @@ import (
 	"slices"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
 var ErrNotFound = errors.New("circle not found")
+var ErrForbidden = errors.New("circle forbidden")
+var ErrAlreadyMember = errors.New("already a member")
+var ErrAlreadySubmitted = errors.New("circle already submitted")
 
 type Circle struct {
 	ID                    string
 	Name                  string
+	NameYomi              string
 	GroupName             string
+	GroupNameYomi         string
 	ParticipationTypeID   string
 	ParticipationTypeName string
 	Tags                  []string
+	InvitationToken       string
+	SubmittedAt           *time.Time
+	Notes                 string
+}
+
+type CircleMember struct {
+	UserID      string
+	DisplayName string
+	IsLeader    bool
+}
+
+type CreateCircleParams struct {
+	Name                  string
+	NameYomi              string
+	GroupName             string
+	GroupNameYomi         string
+	ParticipationTypeID   string
+	ParticipationTypeName string
+	Notes                 string
+}
+
+type UpdateCircleParams struct {
+	Name          string
+	NameYomi      string
+	GroupName     string
+	GroupNameYomi string
+	Notes         string
 }
 
 type Catalog interface {
@@ -29,6 +62,17 @@ type Catalog interface {
 	Create(name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error)
 	Update(circleID, name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error)
 	Delete(circleID string) error
+
+	// Workspace user-facing methods
+	GetUserCircle(user *auth.User, circleID string) (Circle, error)
+	CreateForUser(user *auth.User, params CreateCircleParams) (Circle, error)
+	UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error)
+	DeleteForUser(user *auth.User, circleID string) error
+	Submit(user *auth.User, circleID string) (Circle, error)
+	ListMembers(circleID string) ([]CircleMember, error)
+	RemoveMember(requester *auth.User, circleID, targetUserID string) error
+	RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error)
+	JoinByToken(user *auth.User, token string) (Circle, error)
 }
 
 type StaticCatalog struct {
@@ -134,6 +178,77 @@ func (c *StaticCatalog) Delete(circleID string) error {
 	}
 
 	return ErrNotFound
+}
+
+func (c *StaticCatalog) GetUserCircle(_ *auth.User, circleID string) (Circle, error) {
+	return c.Find(circleID)
+}
+
+func (c *StaticCatalog) CreateForUser(_ *auth.User, params CreateCircleParams) (Circle, error) {
+	return c.Create(params.Name, params.GroupName, params.ParticipationTypeID, params.ParticipationTypeName, nil)
+}
+
+func (c *StaticCatalog) UpdateForUser(_ *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for index := range c.circles {
+		if c.circles[index].ID != circleID {
+			continue
+		}
+		c.circles[index].Name = params.Name
+		c.circles[index].NameYomi = params.NameYomi
+		c.circles[index].GroupName = params.GroupName
+		c.circles[index].GroupNameYomi = params.GroupNameYomi
+		c.circles[index].Notes = params.Notes
+		return cloneCircle(c.circles[index]), nil
+	}
+
+	return Circle{}, ErrNotFound
+}
+
+func (c *StaticCatalog) DeleteForUser(_ *auth.User, circleID string) error {
+	return c.Delete(circleID)
+}
+
+func (c *StaticCatalog) Submit(_ *auth.User, circleID string) (Circle, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	now := time.Now()
+	for index := range c.circles {
+		if c.circles[index].ID != circleID {
+			continue
+		}
+		c.circles[index].SubmittedAt = &now
+		return cloneCircle(c.circles[index]), nil
+	}
+
+	return Circle{}, ErrNotFound
+}
+
+func (c *StaticCatalog) ListMembers(_ string) ([]CircleMember, error) {
+	return []CircleMember{}, nil
+}
+
+func (c *StaticCatalog) RemoveMember(_ *auth.User, _, _ string) error {
+	return nil
+}
+
+func (c *StaticCatalog) RegenerateInvitationToken(_ *auth.User, circleID string) (Circle, error) {
+	return c.Find(circleID)
+}
+
+func (c *StaticCatalog) JoinByToken(_ *auth.User, token string) (Circle, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, circle := range c.circles {
+		if circle.InvitationToken == token {
+			return cloneCircle(circle), nil
+		}
+	}
+	return Circle{}, ErrNotFound
 }
 
 func cloneCircles(values []Circle) []Circle {

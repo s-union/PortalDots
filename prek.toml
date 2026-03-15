@@ -1,0 +1,11 @@
+#:schema https://www.schemastore.org/prek.json
+
+default_install_hook_types = ["pre-commit"]
+minimum_prek_version = "0.3.5"
+
+[[repos]]
+repo = "local"
+hooks = [
+    { id = "mise-format", name = "mise run format", entry = "mise run format", language = "system", pass_filenames = false, always_run = true, stages = ["pre-commit"], priority = 1, require_serial = true },
+    { id = "mise-check", name = "mise run check", entry = "mise run check", language = "system", pass_filenames = false, always_run = true, stages = ["pre-commit"], priority = 2, require_serial = true },
+]

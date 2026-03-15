@@ -31,7 +31,10 @@ const createCircleMutation = useCreateStaffCircleMutation();
 const form = useStaffCircleForm();
 const errorMessage = ref("");
 const totalPages = computed(() =>
-  calculateTotalPages(circlesQuery.data.value?.total ?? 0, circlesQuery.data.value?.pageSize ?? pageSize),
+  calculateTotalPages(
+    circlesQuery.data.value?.total ?? 0,
+    circlesQuery.data.value?.pageSize ?? pageSize,
+  ),
 );
 const exportUrl = buildStaffCirclesExportUrl();
 

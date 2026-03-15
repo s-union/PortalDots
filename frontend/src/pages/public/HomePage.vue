@@ -9,10 +9,7 @@ import { useDocumentsPageQuery } from "@/features/documents/api";
 import { useFormsQuery } from "@/features/forms/api";
 import { usePagesQuery } from "@/features/pages/api";
 import { hasStaffAccess } from "@/features/staff/access/capabilities";
-import {
-  useSelectableCirclesQuery,
-  useSelectCurrentCircleMutation,
-} from "@/features/circles/api";
+import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from "@/features/circles/api";
 import { useSessionStore } from "@/features/session/store";
 
 const sessionStore = useSessionStore();
@@ -28,17 +25,20 @@ const documentsQuery = useDocumentsPageQuery(
 const formsQuery = useFormsQuery();
 
 const roleSummary = computed(() => sessionStore.roles.join(", ") || "no roles");
-const canAccessStaff = computed(() =>
-  hasStaffAccess(sessionStore.roles, sessionStore.permissions),
-);
+const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions));
 const hasSelectableCircles = computed(() => (circlesQuery.data.value?.length ?? 0) > 0);
 const isSelectingCircle = computed(() => selectCircleMutation.isPending.value);
-const selectedCircleSummary = computed(() =>
-  (circlesQuery.data.value ?? []).find((circle) => circle.id === sessionStore.currentCircle?.id) ?? null,
+const selectedCircleSummary = computed(
+  () =>
+    (circlesQuery.data.value ?? []).find(
+      (circle) => circle.id === sessionStore.currentCircle?.id,
+    ) ?? null,
 );
 const recentPages = computed(() => (pagesQuery.data.value ?? []).slice(0, 3));
 const recentDocuments = computed(() => documentsQuery.data.value?.items ?? []);
-const openForms = computed(() => (formsQuery.data.value ?? []).filter((form) => form.isOpen).slice(0, 3));
+const openForms = computed(() =>
+  (formsQuery.data.value ?? []).filter((form) => form.isOpen).slice(0, 3),
+);
 
 async function handleSelectCircle(circleId: string) {
   await selectCircleMutation.mutateAsync(circleId);
@@ -51,8 +51,7 @@ async function handleSelectCircle(circleId: string) {
       <div class="border-b border-border px-6 py-5">
         <h2 class="text-2xl font-semibold text-body">認証から縦切りで移行を進めます。</h2>
         <p class="mt-2 text-sm text-muted">
-          まずはログインと session bootstrap を新 API
-          に移し、その上で画面ごとに互換性を確認しながら置き換えます。
+          まずはログインと session bootstrap を新 API に移し、その上で画面ごとに順次置き換えます。
         </p>
       </div>
 

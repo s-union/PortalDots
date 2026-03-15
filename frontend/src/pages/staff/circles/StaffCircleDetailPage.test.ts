@@ -7,351 +7,369 @@ import { useSessionStore } from "@/features/session/store";
 import StaffCircleDetailPage from "./StaffCircleDetailPage.vue";
 
 function createQueryPlugin() {
-  return [
-    VueQueryPlugin,
-    {
-      queryClient: new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
+    return [
+        VueQueryPlugin,
+        {
+            queryClient: new QueryClient({
+                defaultOptions: {
+                    queries: { retry: false },
+                },
+            }),
         },
-      }),
-    },
-  ];
+    ];
 }
 
 describe("StaffCircleDetailPage", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("renders, updates, and queues circle mail", async () => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
-    const sessionStore = useSessionStore();
-    sessionStore.hydrate({
-      csrfToken: "csrf-token",
-      currentCircle: {
-        id: "circle-b",
-        name: "デモ企画B",
-      },
-      featureFlags: [],
-      roles: ["admin"],
-      user: {
-        id: "staff-user",
-        displayName: "Staff User",
-      },
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
-    vi.stubGlobal(
-      "confirm",
-      vi.fn(() => true),
-    );
-
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [
-        { path: "/staff/circles", component: { template: "<div>circles</div>" } },
-        { path: "/staff/circles/:circleId", component: StaffCircleDetailPage },
-        { path: "/staff/participation-types/:typeId", component: { template: "<div>type</div>" } },
-      ],
-    });
-    await router.push("/staff/circles/circle-b");
-    await router.isReady();
-
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve();
-        const url =
-          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-        const method = init?.method ?? "GET";
-
-        if (url.endsWith("/staff/status") && method === "GET") {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        if (url.endsWith("/staff/participation-types") && method === "GET") {
-          return new Response(
-            JSON.stringify([
-              {
-                id: "participation-type-food",
-                name: "模擬店",
-                description: "",
-                usersCountMin: 1,
-                usersCountMax: 4,
-                tags: ["模擬店"],
-                form: {
-                  id: "form-participation-food",
-                  name: "企画参加登録",
-                  description: "",
-                  openAt: "2025-01-10T00:00:00Z",
-                  closeAt: "2025-02-10T00:00:00Z",
-                  isPublic: true,
-                  isOpen: false,
-                  maxAnswers: 1,
-                  answerableTags: [],
-                  confirmationMessage: "",
-                },
-              },
-              {
-                id: "participation-type-exhibit",
-                name: "展示",
-                description: "",
-                usersCountMin: 1,
-                usersCountMax: 4,
-                tags: ["展示"],
-                form: {
-                  id: "form-participation-exhibit",
-                  name: "企画参加登録",
-                  description: "",
-                  openAt: "2025-01-10T00:00:00Z",
-                  closeAt: "2025-02-10T00:00:00Z",
-                  isPublic: true,
-                  isOpen: false,
-                  maxAnswers: 1,
-                  answerableTags: [],
-                  confirmationMessage: "",
-                },
-              },
-            ]),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-        }
-
-        if (url.endsWith("/staff/circles/circle-b") && method === "GET") {
-          return new Response(
-            JSON.stringify({
-              id: "circle-b",
-              name: "デモ企画B",
-              groupName: "Bブロック",
-              participationTypeId: "participation-type-exhibit",
-              participationTypeName: "展示",
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-        }
-
-        if (url.endsWith("/staff/circles/circle-b/email") && method === "GET") {
-          return new Response(
-            JSON.stringify({
-              circle: {
+    it("renders, updates, and queues circle mail", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
                 id: "circle-b",
                 name: "デモ企画B",
-                groupName: "Bブロック",
-                participationTypeId: "participation-type-exhibit",
-                participationTypeName: "展示",
-              },
-              recipients: [
-                {
-                  id: "user-1",
-                  displayName: "責任者A",
-                  loginIds: ["leader@example.com"],
-                },
-                {
-                  id: "user-2",
-                  displayName: "構成員B",
-                  loginIds: ["member@example.com"],
-                },
-              ],
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
             },
-          );
-        }
-
-        if (url.endsWith("/staff/circles/circle-b") && method === "PUT") {
-          return new Response(
-            JSON.stringify({
-              id: "circle-b",
-              name: "更新後の企画B",
-              groupName: "更新後Bブロック",
-              participationTypeId: "participation-type-food",
-              participationTypeName: "模擬店",
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-        }
-
-        if (url.endsWith("/staff/circles/circle-b/email") && method === "POST") {
-          return new Response("{}", {
-            status: 201,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        if (url.endsWith("/session/bootstrap") && method === "GET") {
-          return new Response(
-            JSON.stringify({
-              csrfToken: "csrf-token",
-              currentCircle: {
-                id: "circle-b",
-                name: "更新後の企画B",
-              },
-              featureFlags: [],
-              roles: ["admin"],
-              user: {
+            featureFlags: [],
+            roles: ["admin"],
+            user: {
                 id: "staff-user",
                 displayName: "Staff User",
-              },
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
             },
-          );
-        }
+        });
 
-        throw new Error(`Unexpected request: ${method} ${url}`);
-      }),
-    );
+        vi.stubGlobal(
+            "confirm",
+            vi.fn(() => true),
+        );
 
-    const wrapper = mount(StaffCircleDetailPage, {
-      global: {
-        plugins: [pinia, router, createQueryPlugin()],
-      },
-    });
-    await flushPromises();
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/staff/circles", component: { template: "<div>circles</div>" } },
+                { path: "/staff/circles/:circleId", component: StaffCircleDetailPage },
+                {
+                    path: "/staff/participation-types/:typeId",
+                    component: { template: "<div>type</div>" },
+                },
+            ],
+        });
+        await router.push("/staff/circles/circle-b");
+        await router.isReady();
 
-    expect(wrapper.text()).toContain("デモ企画B");
-    expect(wrapper.text()).toContain("参加種別を開く");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
 
-    await wrapper.get('input[name="name"]').setValue("更新後の企画B");
-    await wrapper.get('input[name="groupName"]').setValue("更新後Bブロック");
-    await wrapper.get('button[type="submit"]').trigger("submit");
-    await flushPromises();
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
 
-    expect(wrapper.text()).toContain("企画を更新しました。");
-    expect(wrapper.text()).toContain("既存企画の参加種別変更は Laravel 版に合わせて無効化しています。");
+                if (url.endsWith("/staff/participation-types") && method === "GET") {
+                    return new Response(
+                        JSON.stringify([
+                            {
+                                id: "participation-type-food",
+                                name: "模擬店",
+                                description: "",
+                                usersCountMin: 1,
+                                usersCountMax: 4,
+                                tags: ["模擬店"],
+                                form: {
+                                    id: "form-participation-food",
+                                    name: "企画参加登録",
+                                    description: "",
+                                    openAt: "2025-01-10T00:00:00Z",
+                                    closeAt: "2025-02-10T00:00:00Z",
+                                    isPublic: true,
+                                    isOpen: false,
+                                    maxAnswers: 1,
+                                    answerableTags: [],
+                                    confirmationMessage: "",
+                                },
+                            },
+                            {
+                                id: "participation-type-exhibit",
+                                name: "展示",
+                                description: "",
+                                usersCountMin: 1,
+                                usersCountMax: 4,
+                                tags: ["展示"],
+                                form: {
+                                    id: "form-participation-exhibit",
+                                    name: "企画参加登録",
+                                    description: "",
+                                    openAt: "2025-01-10T00:00:00Z",
+                                    closeAt: "2025-02-10T00:00:00Z",
+                                    isPublic: true,
+                                    isOpen: false,
+                                    maxAnswers: 1,
+                                    answerableTags: [],
+                                    confirmationMessage: "",
+                                },
+                            },
+                        ]),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
 
-    await wrapper.get('select[name="recipient"]').setValue("leader");
-    await wrapper.get('input[name="subject"]').setValue("搬入のご案内");
-    await wrapper.get('textarea[name="body"]').setValue("9:00 に集合してください。");
-    await wrapper.findAll('button[type="button"]')[1]?.trigger("click");
-    await flushPromises();
+                if (url.endsWith("/staff/circles/circle-b") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            id: "circle-b",
+                            name: "デモ企画B",
+                            groupName: "Bブロック",
+                            participationTypeId: "participation-type-exhibit",
+                            participationTypeName: "展示",
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
 
-    expect(wrapper.text()).toContain("企画所属者向けメールをキューに追加しました。");
-    expect(wrapper.text()).toContain("送信対象: 2 名");
-    expect(wrapper.text()).toContain("責任者A / 構成員B");
-    expect(wrapper.text()).toContain("Markdown 記法");
-  });
+                if (url.endsWith("/staff/circles/circle-b/email") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            circle: {
+                                id: "circle-b",
+                                name: "デモ企画B",
+                                groupName: "Bブロック",
+                                participationTypeId: "participation-type-exhibit",
+                                participationTypeName: "展示",
+                            },
+                            recipients: [
+                                {
+                                    id: "user-1",
+                                    displayName: "責任者A",
+                                    loginIds: ["leader@example.com"],
+                                },
+                                {
+                                    id: "user-2",
+                                    displayName: "構成員B",
+                                    loginIds: ["member@example.com"],
+                                },
+                            ],
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
 
-  it("disables mail submission when there are no recipients", async () => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
-    const sessionStore = useSessionStore();
-    sessionStore.hydrate({
-      csrfToken: "csrf-token",
-      currentCircle: {
-        id: "circle-b",
-        name: "デモ企画B",
-      },
-      featureFlags: [],
-      roles: ["admin"],
-      user: {
-        id: "staff-user",
-        displayName: "Staff User",
-      },
-    });
+                if (url.endsWith("/staff/circles/circle-b") && method === "PUT") {
+                    return new Response(
+                        JSON.stringify({
+                            id: "circle-b",
+                            name: "更新後の企画B",
+                            groupName: "更新後Bブロック",
+                            participationTypeId: "participation-type-food",
+                            participationTypeName: "模擬店",
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
 
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [
-        { path: "/staff/circles", component: { template: "<div>circles</div>" } },
-        { path: "/staff/circles/:circleId", component: StaffCircleDetailPage },
-        { path: "/staff/participation-types/:typeId", component: { template: "<div>type</div>" } },
-      ],
-    });
-    await router.push("/staff/circles/circle-b");
-    await router.isReady();
+                if (url.endsWith("/staff/circles/circle-b/email") && method === "POST") {
+                    return new Response("{}", {
+                        status: 201,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
 
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve();
-        const url =
-          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-        const method = init?.method ?? "GET";
+                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            csrfToken: "csrf-token",
+                            currentCircle: {
+                                id: "circle-b",
+                                name: "更新後の企画B",
+                            },
+                            featureFlags: [],
+                            roles: ["admin"],
+                            user: {
+                                id: "staff-user",
+                                displayName: "Staff User",
+                            },
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
 
-        if (url.endsWith("/staff/status") && method === "GET") {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        if (url.endsWith("/staff/participation-types") && method === "GET") {
-          return new Response(JSON.stringify([]), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        if (url.endsWith("/staff/circles/circle-b") && method === "GET") {
-          return new Response(
-            JSON.stringify({
-              id: "circle-b",
-              name: "デモ企画B",
-              groupName: "Bブロック",
-              participationTypeId: "participation-type-exhibit",
-              participationTypeName: "展示",
+                throw new Error(`Unexpected request: ${method} ${url}`);
             }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-        }
+        );
 
-        if (url.endsWith("/staff/circles/circle-b/email") && method === "GET") {
-          return new Response(
-            JSON.stringify({
-              circle: {
+        const wrapper = mount(StaffCircleDetailPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        expect(wrapper.text()).toContain("デモ企画B");
+        expect(wrapper.text()).toContain("参加種別を開く");
+
+        await wrapper.get('input[name="name"]').setValue("更新後の企画B");
+        await wrapper.get('input[name="groupName"]').setValue("更新後Bブロック");
+        await wrapper.get('button[type="submit"]').trigger("submit");
+        await flushPromises();
+
+        expect(wrapper.text()).toContain("企画を更新しました。");
+        expect(wrapper.text()).toContain(
+            "既存企画の参加種別変更は Laravel 版に合わせて無効化しています。",
+        );
+
+        await wrapper.get('select[name="recipient"]').setValue("leader");
+        await wrapper.get('input[name="subject"]').setValue("搬入のご案内");
+        await wrapper.get('textarea[name="body"]').setValue("9:00 に集合してください。");
+        await wrapper.findAll('button[type="button"]')[1]?.trigger("click");
+        await flushPromises();
+
+        expect(wrapper.text()).toContain("企画所属者向けメールをキューに追加しました。");
+        expect(wrapper.text()).toContain("送信対象: 2 名");
+        expect(wrapper.text()).toContain("責任者A / 構成員B");
+        expect(wrapper.text()).toContain("Markdown 記法");
+    });
+
+    it("disables mail submission when there are no recipients", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
                 id: "circle-b",
                 name: "デモ企画B",
-                groupName: "Bブロック",
-                participationTypeId: "participation-type-exhibit",
-                participationTypeName: "展示",
-              },
-              recipients: [],
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
             },
-          );
+            featureFlags: [],
+            roles: ["admin"],
+            user: {
+                id: "staff-user",
+                displayName: "Staff User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/staff/circles", component: { template: "<div>circles</div>" } },
+                { path: "/staff/circles/:circleId", component: StaffCircleDetailPage },
+                {
+                    path: "/staff/participation-types/:typeId",
+                    component: { template: "<div>type</div>" },
+                },
+            ],
+        });
+        await router.push("/staff/circles/circle-b");
+        await router.isReady();
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+
+                if (url.endsWith("/staff/participation-types") && method === "GET") {
+                    return new Response(JSON.stringify([]), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+
+                if (url.endsWith("/staff/circles/circle-b") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            id: "circle-b",
+                            name: "デモ企画B",
+                            groupName: "Bブロック",
+                            participationTypeId: "participation-type-exhibit",
+                            participationTypeName: "展示",
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (url.endsWith("/staff/circles/circle-b/email") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            circle: {
+                                id: "circle-b",
+                                name: "デモ企画B",
+                                groupName: "Bブロック",
+                                participationTypeId: "participation-type-exhibit",
+                                participationTypeName: "展示",
+                            },
+                            recipients: [],
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffCircleDetailPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        expect(wrapper.text()).toContain(
+            "宛先となる企画所属者がいないため、メールは送信できません。",
+        );
+        const buttons = wrapper.findAll('button[type="button"]');
+        const mailButton = buttons.find((button) => button.text().includes("メールをキューに追加"));
+        if (!mailButton) {
+            throw new Error("mail button not found");
         }
-
-        throw new Error(`Unexpected request: ${method} ${url}`);
-      }),
-    );
-
-    const wrapper = mount(StaffCircleDetailPage, {
-      global: {
-        plugins: [pinia, router, createQueryPlugin()],
-      },
+        expect(mailButton.attributes("disabled")).toBeDefined();
     });
-    await flushPromises();
-
-    expect(wrapper.text()).toContain("宛先となる企画所属者がいないため、メールは送信できません。");
-    const buttons = wrapper.findAll('button[type="button"]');
-    const mailButton = buttons.find((button) => button.text().includes("メールをキューに追加"));
-    if (!mailButton) {
-      throw new Error("mail button not found");
-    }
-    expect(mailButton.attributes("disabled")).toBeDefined();
-  });
 });
