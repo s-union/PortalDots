@@ -14,7 +14,7 @@ use Mockery\MockInterface;
 class RegisterControllerTest extends TestCase
 {
     use RefreshDatabase;
-    
+
     /**
      * @test
      */
