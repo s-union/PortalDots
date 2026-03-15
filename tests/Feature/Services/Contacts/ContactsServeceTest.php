@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use App\Services\Contacts\ContactsService;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
-use App;
+use Illuminate\Support\Facades\App;
 use App\Eloquents\Circle;
 use App\Eloquents\ContactCategory;
 use App\Eloquents\User;

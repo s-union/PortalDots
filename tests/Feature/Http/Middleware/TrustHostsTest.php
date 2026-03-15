@@ -8,7 +8,10 @@ use Tests\TestCase;
 
 class TrustHostsTest extends TestCase
 {
-    public function test_hosts_returns_array_with_application_url()
+    /**
+     * @test
+     */
+    public function 信頼するホストとしてアプリケーションUrlとそのサブドメインが設定配列で返される()
     {
         $middleware = app(TrustHosts::class);
         $hosts = $middleware->hosts();
@@ -16,7 +19,7 @@ class TrustHostsTest extends TestCase
         $this->assertIsArray($hosts);
         $this->assertNotEmpty($hosts);
 
-        // $this->allSubdomainsOfApplicationUrl() usually returns a regex pattern starting with ^(.*\.?)
+        // $this->allSubdomainsOfApplicationUrl() は通常 ^(.*\.?) から始まる正規表現を返す
         $this->assertStringContainsString('^', $hosts[0]);
     }
 }

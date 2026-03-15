@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Services\Contacts;
 
-use App;
+use Illuminate\Support\Facades\App;
 use App\Eloquents\ContactCategory;
 use App\Mail\Contacts\EmailCategoryMailable;
 use App\Services\Contacts\ContactCategoriesService;
