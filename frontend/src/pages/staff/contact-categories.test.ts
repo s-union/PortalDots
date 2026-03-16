@@ -21,6 +21,7 @@ function createQueryPlugin() {
 
 describe("StaffContactCategoriesPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
@@ -50,6 +51,9 @@ describe("StaffContactCategoriesPage", () => {
         });
         await router.push("/staff/contact-categories");
         await router.isReady();
+
+        const confirmMock = vi.fn(() => true);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
 
         vi.stubGlobal(
             "fetch",
@@ -126,6 +130,85 @@ describe("StaffContactCategoriesPage", () => {
 
         await buttons[3].trigger("click");
         await flushPromises();
+        expect(confirmMock).toHaveBeenCalledWith("安全(safety@example.com)を削除しますか？");
         expect(wrapper.text()).not.toContain("安全");
+    });
+
+    it("does not delete contact categories when confirmation is cancelled", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: { id: "circle-b", name: "デモ企画B" },
+            featureFlags: [],
+            roles: ["admin"],
+            user: { id: "staff-user", displayName: "Staff User" },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/staff", component: { template: "<div>staff</div>" } },
+                { path: "/staff/contact-categories", component: StaffContactCategoriesPage },
+            ],
+        });
+        await router.push("/staff/contact-categories");
+        await router.isReady();
+
+        const confirmMock = vi.fn(() => false);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
+
+        const deleteRequests: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+                if (url.endsWith("/staff/contact-categories") && method === "GET") {
+                    return new Response(
+                        JSON.stringify([
+                            { id: "category-1", name: "総合", email: "general@example.com" },
+                            { id: "category-2", name: "安全", email: "safety@example.com" },
+                        ]),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+                if (url.endsWith("/staff/contact-categories/category-2") && method === "DELETE") {
+                    deleteRequests.push(url);
+                    return new Response(null, { status: 204 });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffContactCategoriesPage, {
+            global: { plugins: [pinia, router, createQueryPlugin()] },
+        });
+        await flushPromises();
+
+        const buttons = wrapper.findAll('button[type="button"]');
+        await buttons[3].trigger("click");
+        await flushPromises();
+
+        expect(confirmMock).toHaveBeenCalledWith("安全(safety@example.com)を削除しますか？");
+        expect(deleteRequests).toHaveLength(0);
+        expect(wrapper.text()).toContain("安全");
     });
 });

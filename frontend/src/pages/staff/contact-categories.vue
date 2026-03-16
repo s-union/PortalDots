@@ -12,6 +12,7 @@ definePage({
 import { computed, ref } from "vue";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
+  buildDeleteStaffContactCategoryConfirmMessage,
   extractStaffContactCategoryValidationMessage,
   useCreateStaffContactCategoryMutation,
   useDeleteStaffContactCategoryMutation,
@@ -57,6 +58,15 @@ async function handleUpdateCategory(categoryId: string) {
 }
 
 async function handleDeleteCategory(categoryId: string) {
+  const category = categoriesQuery.data.value?.find((value) => value.id === categoryId);
+  if (
+    category &&
+    typeof window !== "undefined" &&
+    !window.confirm(buildDeleteStaffContactCategoryConfirmMessage(category))
+  ) {
+    return;
+  }
+
   await deleteMutation.mutateAsync(categoryId);
 }
 </script>

@@ -141,6 +141,10 @@ export function extractStaffContactCategoryValidationMessage(error: unknown) {
     return extractValidationMessage(error, "問い合わせカテゴリの保存に失敗しました。");
 }
 
+export function buildDeleteStaffContactCategoryConfirmMessage(category: StaffContactCategory) {
+    return `${category.name}(${category.email})を削除しますか？`;
+}
+
 function parseStaffContactCategories(value: unknown): StaffContactCategory[] {
     return parseWithSchema(staffContactCategorySchema.array(), value, "staff contact categories");
 }

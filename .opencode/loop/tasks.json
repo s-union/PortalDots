@@ -176,6 +176,14 @@
       "status": "done",
       "addedAt": "2026-03-16T12:12:30Z",
       "completedAt": "2026-03-16T13:03:05Z"
+    },
+    {
+      "id": "23",
+      "title": "contact categories の削除確認を復元する",
+      "description": "legacy delete 画面のカテゴリ名・メールアドレス確認を migrated contact categories 一覧に戻す",
+      "status": "done",
+      "addedAt": "2026-03-16T13:04:49Z",
+      "completedAt": "2026-03-16T13:06:19Z"
     }
   ]
 }
