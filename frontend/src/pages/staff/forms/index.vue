@@ -44,6 +44,14 @@ const form = useStaffFormForm();
 const errorMessage = ref("");
 const exportHref = computed(() => buildStaffFormsExportUrl());
 
+function buildCopyFormConfirmMessage(formName: string) {
+  return `フォーム「${formName}」を複製しますか？\n\n• 設問は全て複製されます\n• 「${formName}のコピー」という名前のフォームが作成されます\n• 「${formName}のコピー」は非公開です。後から必要に応じて設定を変更してください`;
+}
+
+function buildDeleteFormConfirmMessage(formName: string) {
+  return `フォーム「${formName}」を削除しますか？\n\n• 設問、回答は全て削除されます`;
+}
+
 function handleAnswerableTagsInput(event: Event) {
   const target = event.target;
   if (!(target instanceof HTMLTextAreaElement)) {
@@ -74,6 +82,12 @@ async function handleCreateForm() {
 }
 
 async function handleCopyForm(formId: string) {
+  const formName =
+    formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? "このフォーム";
+  if (typeof window !== "undefined" && !window.confirm(buildCopyFormConfirmMessage(formName))) {
+    return;
+  }
+
   try {
     const copied = await copyFormMutation.mutateAsync(formId);
     if (copied?.id) {
@@ -85,6 +99,12 @@ async function handleCopyForm(formId: string) {
 }
 
 async function handleDeleteForm(formId: string) {
+  const formName =
+    formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? "このフォーム";
+  if (typeof window !== "undefined" && !window.confirm(buildDeleteFormConfirmMessage(formName))) {
+    return;
+  }
+
   try {
     await deleteFormMutation.mutateAsync(formId);
   } catch (error) {

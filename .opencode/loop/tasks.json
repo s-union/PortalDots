@@ -152,6 +152,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:54:00Z",
       "completedAt": "2026-03-16T11:52:00Z"
+    },
+    {
+      "id": "20",
+      "title": "staff forms の copy/delete 確認を復元する",
+      "description": "legacy forms 一覧の confirm 文面を migrated copy/delete ボタンに戻し、破壊的操作の誤爆を減らす",
+      "status": "done",
+      "addedAt": "2026-03-16T11:57:00Z",
+      "completedAt": "2026-03-16T11:56:21Z"
     }
   ]
 }

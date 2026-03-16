@@ -24,3 +24,4 @@
 - 2026-03-16: public footer を drawer にだけ置くと mobile で気づきにくい。`PublicFooterLinks` のような小コンポーネントへ抽出して `main` 下にも再利用すると、desktop/mobile の両方で parity を保ちやすい。
 - 2026-03-16: legacy toolbar の補助導線は、一覧 page の `SurfaceHeader` actions に戻すのが最小差分で効く。`staff/pages/index.vue` なら `/staff/mails` CTA を 1 本足すだけで send_emails 相当の再発見性をかなり戻せる。
 - 2026-03-16: destructive action の legacy parity は専用 delete page を作り直さなくても `window.confirm` で十分回収できる。`staff/tags.vue` のように注意文を複数行メッセージへ寄せ、テストでは confirm 文面の要点だけを見ると保守しやすい。
+- 2026-03-16: `staff/forms/index.vue` の copy/delete も tags と同じ confirm パターンで安全に復元できる。confirm をキャンセルしたときに mutation が走らないことと、copy 後の詳細遷移だけを `index.test.ts` で押さえると一覧ページの destructive parity を軽く固定できる。
