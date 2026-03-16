@@ -19,3 +19,4 @@
 - 2026-03-16: `vitest.config.ts` 側の `VueRouter()` も d.ts を書き換えるため、test 実行後に `typed-router.d.ts` が dirty になりうる。テスト環境では `VueRouter({ dts: false })` にして、型生成は Vite 本体だけに寄せると `mise run check` の二重 `ci:check` が安定する。
 - 2026-03-16: 認証後の legacy `/user/*` `/selector` `/logout` は、すでに migrated 側に相当機能があるので catch-all から移行先の 1 次導線を返すだけでも有効。特に `/user/edit` `/user/password` `/user/delete` `/user/appearance` は `workspace/settings` へまとめると説明も実装も簡潔に保てる。
 - 2026-03-16: 認証済み legacy `/contacts` と `/circles/create` も catch-all で十分に救済できる。前者は `workspace/contact`、後者は `/circles/new` が既存 migrated 画面なので、個別 route を増やすより保守が軽い。
+- 2026-03-16: legacy の `/email/verify` 系は migrated stack で直接処理できないため、成功を装う UI は出さず「未移行であること」と次の安全な操作だけを案内するのがよい。署名付き URL は `type` と `userId` を表示する程度に留め、状態変更は試みない。

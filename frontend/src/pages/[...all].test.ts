@@ -132,6 +132,33 @@ describe("NotFoundPage", () => {
         expect(primaryLink.text()).toContain("企画作成画面へ");
     });
 
+    it("guides the legacy email verification notice route", async () => {
+        const wrapper = await mountAt("/email/verify");
+        const primaryLink = wrapper.get('a[href="/login"]');
+
+        expect(wrapper.text()).toContain("メール認証導線は移行中です");
+        expect(wrapper.text()).toContain("確認メール再送と認証状況の確認");
+        expect(primaryLink.text()).toContain("ログイン画面へ");
+    });
+
+    it("guides the legacy email verification completed route", async () => {
+        const wrapper = await mountAt("/email/verify/completed");
+        const primaryLink = wrapper.get('a[href="/login"]');
+
+        expect(wrapper.text()).toContain("legacy のメール認証完了画面");
+        expect(wrapper.text()).toContain("ログイン導線を優先します");
+        expect(primaryLink.text()).toContain("ログイン画面へ");
+    });
+
+    it("guides the legacy signed email verification route", async () => {
+        const wrapper = await mountAt("/email/verify/email/user-123");
+        const primaryLink = wrapper.get('a[href="/"]');
+
+        expect(wrapper.text()).toContain("legacy の署名付きメール認証リンク");
+        expect(wrapper.text()).toContain("認証種別: email / 対象ユーザー: user-123");
+        expect(primaryLink.text()).toContain("ホームへ戻る");
+    });
+
     it("keeps the generic 404 for unrelated routes", async () => {
         const wrapper = await mountAt("/definitely-missing");
 

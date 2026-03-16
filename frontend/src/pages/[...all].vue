@@ -107,8 +107,34 @@ const isLegacyCircleSelectorPath = computed(
 const isLegacyLogoutPath = computed(() => normalizedPath.value === "/logout");
 const isLegacyContactPath = computed(() => normalizedPath.value === "/contacts");
 const isLegacyCircleCreatePath = computed(() => normalizedPath.value === "/circles/create");
+const isLegacyEmailVerifyNoticePath = computed(() => normalizedPath.value === "/email/verify");
+const isLegacyEmailVerifyCompletedPath = computed(
+  () => normalizedPath.value === "/email/verify/completed",
+);
+const legacyEmailVerifyAction = computed(() => {
+  const match = normalizedPath.value.match(/^\/email\/verify\/([^/]+)\/([^/]+)$/);
+  if (!match?.[1] || !match[2]) {
+    return null;
+  }
+
+  return {
+    type: decodeURIComponent(match[1]),
+    userId: decodeURIComponent(match[2]),
+  };
+});
+const isLegacyEmailVerifyActionPath = computed(() => legacyEmailVerifyAction.value !== null);
+const isLegacyEmailVerifyPath = computed(
+  () =>
+    isLegacyEmailVerifyNoticePath.value ||
+    isLegacyEmailVerifyCompletedPath.value ||
+    isLegacyEmailVerifyActionPath.value,
+);
 
 const legacyPrivateRouteTitle = computed(() => {
+  if (isLegacyEmailVerifyPath.value) {
+    return "メール認証導線は移行中です";
+  }
+
   if (isLegacyContactPath.value) {
     return "お問い合わせ導線が移動しました";
   }
@@ -129,6 +155,18 @@ const legacyPrivateRouteTitle = computed(() => {
 });
 
 const legacyPrivateRouteLead = computed(() => {
+  if (isLegacyEmailVerifyNoticePath.value) {
+    return "旧 `/email/verify` は、legacy では確認メール再送と認証状況の確認に使っていた画面です。migrated stack ではまだ同等画面を提供していません。";
+  }
+
+  if (isLegacyEmailVerifyCompletedPath.value) {
+    return "旧 `/email/verify/completed` は、legacy のメール認証完了画面です。移行後はこの完了表示をまだ再実装していません。";
+  }
+
+  if (isLegacyEmailVerifyActionPath.value) {
+    return "この URL は legacy の署名付きメール認証リンクです。migrated stack では、このリンクをそのまま処理する画面をまだ提供していません。";
+  }
+
   if (isLegacyContactPath.value) {
     return "旧 `/contacts` は、移行後はワークスペース配下のお問い合わせ画面へ移動しています。";
   }
@@ -149,6 +187,18 @@ const legacyPrivateRouteLead = computed(() => {
 });
 
 const legacyPrivateRouteBody = computed(() => {
+  if (isLegacyEmailVerifyNoticePath.value) {
+    return "ログイン済みなら migrated ワークスペースで作業を継続し、必要に応じて運営へ確認してください。確認メールの再送や大学メール・連絡先メールの個別認証状態表示は未移行です。";
+  }
+
+  if (isLegacyEmailVerifyCompletedPath.value) {
+    return "認証結果の反映確認は、ログイン後に利用できる画面で進めてください。完了表示だけを信頼させる導線は避け、現時点ではログイン導線を優先します。";
+  }
+
+  if (isLegacyEmailVerifyActionPath.value) {
+    return `認証種別: ${legacyEmailVerifyAction.value?.type ?? "unknown"} / 対象ユーザー: ${legacyEmailVerifyAction.value?.userId ?? "unknown"}。ログインできる場合は migrated 画面から状況確認を進め、ログインできない場合は運営へ再案内を依頼してください。`;
+  }
+
   if (isLegacyContactPath.value) {
     return "現在の企画コンテキスト付きで問い合わせカテゴリの選択、本文送信、送信履歴の確認ができます。";
   }
@@ -169,6 +219,14 @@ const legacyPrivateRouteBody = computed(() => {
 });
 
 const legacyPrivateRoutePrimaryLink = computed(() => {
+  if (isLegacyEmailVerifyNoticePath.value || isLegacyEmailVerifyCompletedPath.value) {
+    return "/login";
+  }
+
+  if (isLegacyEmailVerifyActionPath.value) {
+    return "/";
+  }
+
   if (isLegacyContactPath.value) {
     return "/workspace/contact";
   }
@@ -189,6 +247,14 @@ const legacyPrivateRoutePrimaryLink = computed(() => {
 });
 
 const legacyPrivateRoutePrimaryLabel = computed(() => {
+  if (isLegacyEmailVerifyNoticePath.value || isLegacyEmailVerifyCompletedPath.value) {
+    return "ログイン画面へ";
+  }
+
+  if (isLegacyEmailVerifyActionPath.value) {
+    return "ホームへ戻る";
+  }
+
   if (isLegacyContactPath.value) {
     return "お問い合わせ画面へ";
   }
@@ -328,6 +394,7 @@ const isLegacyDocumentsPath = computed(
         isLegacyCircleSelectorPath ||
         isLegacyUserSettingsPath ||
         isLegacyLogoutPath ||
+        isLegacyEmailVerifyPath ||
         isLegacyContactPath ||
         isLegacyCircleCreatePath
       "

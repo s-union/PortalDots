@@ -91,8 +91,9 @@
       "id": "12",
       "title": "メール認証 legacy 導線の受け皿を用意する",
       "description": "`/email/verify` 系の legacy URL を Vue 側で受け、現状の migrated stack で可能な案内と次の操作へ接続する",
-      "status": "pending",
-      "addedAt": "2026-03-16T04:18:38Z"
+      "status": "done",
+      "addedAt": "2026-03-16T04:18:38Z",
+      "completedAt": "2026-03-16T04:24:50Z"
     }
   ]
 }
