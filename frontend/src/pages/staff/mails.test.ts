@@ -127,6 +127,7 @@ describe("StaffMailsPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("メールキューはまだありません。");
+        expect(wrapper.text()).toContain("legacy の `/staff/send_emails` にあったメール配信設定");
 
         await wrapper.get('input[name="subject"]').setValue("搬入のご案内");
         await wrapper.get('textarea[name="body"]').setValue("9:00 に集合してください。");

@@ -12,6 +12,8 @@ async function mountAt(path: string) {
             { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
             { path: "/workspace/forms/:formId", component: { template: "<div>form</div>" } },
             { path: "/circles/select", component: { template: "<div>selector</div>" } },
+            { path: "/staff/mails", component: { template: "<div>staff mails</div>" } },
+            { path: "/staff/pages", component: { template: "<div>staff pages</div>" } },
             { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
             { path: "/workspace/pages/:pageId", component: { template: "<div>page</div>" } },
             { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
@@ -37,6 +39,8 @@ async function mountAtWithRouter(path: string) {
             { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
             { path: "/workspace/forms/:formId", component: { template: "<div>form</div>" } },
             { path: "/circles/select", component: { template: "<div>selector</div>" } },
+            { path: "/staff/mails", component: { template: "<div>staff mails</div>" } },
+            { path: "/staff/pages", component: { template: "<div>staff pages</div>" } },
             { path: "/:all(.*)", component: NotFoundPage },
         ],
     });
@@ -192,6 +196,17 @@ describe("NotFoundPage", () => {
         expect(wrapper.text()).toContain("お問い合わせ導線が移動しました");
         expect(wrapper.text()).toContain("ワークスペース配下のお問い合わせ画面へ移動しています");
         expect(primaryLink.text()).toContain("お問い合わせ画面へ");
+    });
+
+    it("guides the legacy staff send_emails route to staff mails", async () => {
+        const wrapper = await mountAt("/staff/send_emails");
+        const primaryLink = wrapper.get('a[href="/staff/mails"]');
+        const secondaryLink = wrapper.get('a[href="/staff/pages"]');
+
+        expect(wrapper.text()).toContain("メール配信設定の導線が移動しました");
+        expect(wrapper.text()).toContain("旧 `/staff/send_emails` は、移行後は staff mails 画面");
+        expect(primaryLink.text()).toContain("メールキュー画面へ");
+        expect(secondaryLink.text()).toContain("お知らせ管理へ");
     });
 
     it("guides the legacy circle create route to migrated circle creation", async () => {

@@ -205,6 +205,7 @@ const legacyCircleSelectorCircleId = computed(() => {
 const isLegacyLogoutPath = computed(() => normalizedPath.value === "/logout");
 const isLegacyContactPath = computed(() => normalizedPath.value === "/contacts");
 const isLegacyCircleCreatePath = computed(() => normalizedPath.value === "/circles/create");
+const isLegacyStaffSendEmailsPath = computed(() => normalizedPath.value === "/staff/send_emails");
 const legacyCircleCreateParticipationTypeId = computed(() => {
   const participationType = route.query.participation_type;
   return typeof participationType === "string" ? participationType : null;
@@ -303,6 +304,10 @@ const legacyPrivateRouteTitle = computed(() => {
     return "お問い合わせ導線が移動しました";
   }
 
+  if (isLegacyStaffSendEmailsPath.value) {
+    return "メール配信設定の導線が移動しました";
+  }
+
   if (isLegacyCircleCreatePath.value) {
     return "企画作成の導線が移動しました";
   }
@@ -333,6 +338,10 @@ const legacyPrivateRouteLead = computed(() => {
 
   if (isLegacyContactPath.value) {
     return "旧 `/contacts` は、移行後はワークスペース配下のお問い合わせ画面へ移動しています。";
+  }
+
+  if (isLegacyStaffSendEmailsPath.value) {
+    return "旧 `/staff/send_emails` は、移行後は staff mails 画面での queue 登録と確認へ整理しています。";
   }
 
   if (isLegacyCircleCreatePath.value) {
@@ -367,6 +376,10 @@ const legacyPrivateRouteBody = computed(() => {
     return "現在の企画コンテキスト付きで問い合わせカテゴリの選択、本文送信、送信履歴の確認ができます。";
   }
 
+  if (isLegacyStaffSendEmailsPath.value) {
+    return "migrated ではメールの一斉配信設定を `staff/mails` へ寄せ、queue 登録済みメールの確認も同じ画面で扱います。旧画面にあったサーバー設定案内もその画面へ統合しています。";
+  }
+
   if (isLegacyCircleCreatePath.value) {
     return legacyCircleCreateParticipationTypeId.value
       ? `新しい企画作成画面へ移動し、legacy で指定されていた参加種別 ${legacyCircleCreateParticipationTypeId.value} を引き継ぎます。`
@@ -399,6 +412,10 @@ const legacyPrivateRoutePrimaryLink = computed(() => {
 
   if (isLegacyContactPath.value) {
     return "/workspace/contact";
+  }
+
+  if (isLegacyStaffSendEmailsPath.value) {
+    return "/staff/mails";
   }
 
   if (isLegacyCircleCreatePath.value) {
@@ -438,6 +455,10 @@ const legacyPrivateRoutePrimaryLabel = computed(() => {
 
   if (isLegacyContactPath.value) {
     return "お問い合わせ画面へ";
+  }
+
+  if (isLegacyStaffSendEmailsPath.value) {
+    return "メールキュー画面へ";
   }
 
   if (isLegacyCircleCreatePath.value) {
@@ -580,6 +601,31 @@ watch(
             class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
           >
             ワークスペースへ
+          </RouterLink>
+        </div>
+      </div>
+    </SurfaceCard>
+
+    <SurfaceCard v-else-if="isLegacyStaffSendEmailsPath">
+      <div class="border-b border-border px-6 py-5">
+        <p class="text-sm text-primary">Legacy Route</p>
+        <h2 class="mt-2 text-2xl font-semibold text-body">{{ legacyPrivateRouteTitle }}</h2>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>{{ legacyPrivateRouteLead }}</p>
+        <p>{{ legacyPrivateRouteBody }}</p>
+        <div class="flex flex-wrap gap-3">
+          <RouterLink
+            :to="legacyPrivateRoutePrimaryLink"
+            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
+          >
+            {{ legacyPrivateRoutePrimaryLabel }}
+          </RouterLink>
+          <RouterLink
+            to="/staff/pages"
+            class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
+          >
+            お知らせ管理へ
           </RouterLink>
         </div>
       </div>

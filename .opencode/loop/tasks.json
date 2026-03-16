@@ -29,8 +29,9 @@
       "id": "4",
       "title": "staff send_emails 導線を migrated 画面へ寄せる",
       "description": "legacy `/staff/send_emails` の入口を migrated staff mails/関連ハブから自然に辿れるよう整理する",
-      "status": "pending",
-      "addedAt": "2026-03-16T09:29:54Z"
+      "status": "done",
+      "addedAt": "2026-03-16T09:29:54Z",
+      "completedAt": "2026-03-16T09:43:17Z"
     },
     {
       "id": "5",

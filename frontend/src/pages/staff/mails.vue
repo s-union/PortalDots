@@ -84,6 +84,10 @@ async function handleCreateMail() {
           <p class="mt-3">
             {{ sessionStore.currentCircle?.name ?? "企画未選択" }} 向けのメールを queue に積みます。
           </p>
+          <p class="mt-3">
+            legacy の `/staff/send_emails`
+            にあったメール配信設定の導線も、この画面へ統合しています。
+          </p>
         </div>
       </section>
 
