@@ -146,6 +146,14 @@ describe("NotFoundPage", () => {
         expect(primaryLink.text()).toContain("企画作成画面へ");
     });
 
+    it("preserves legacy participation_type when guiding circle create", async () => {
+        const wrapper = await mountAt("/circles/create?participation_type=pt-food");
+        const primaryLink = wrapper.get('a[href="/circles/new?participation_type=pt-food"]');
+
+        expect(wrapper.text()).toContain("legacy で指定されていた参加種別 pt-food を引き継ぎます");
+        expect(primaryLink.text()).toContain("企画作成画面へ");
+    });
+
     it("guides the legacy email verification notice route", async () => {
         const wrapper = await mountAt("/email/verify");
         const primaryLink = wrapper.get('a[href="/login"]');

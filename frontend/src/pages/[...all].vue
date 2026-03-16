@@ -124,6 +124,10 @@ const legacyCircleSelectorRedirect = computed(() => {
 const isLegacyLogoutPath = computed(() => normalizedPath.value === "/logout");
 const isLegacyContactPath = computed(() => normalizedPath.value === "/contacts");
 const isLegacyCircleCreatePath = computed(() => normalizedPath.value === "/circles/create");
+const legacyCircleCreateParticipationTypeId = computed(() => {
+  const participationType = route.query.participation_type;
+  return typeof participationType === "string" ? participationType : null;
+});
 const isLegacyEmailVerifyNoticePath = computed(() => normalizedPath.value === "/email/verify");
 const isLegacyEmailVerifyCompletedPath = computed(
   () => normalizedPath.value === "/email/verify/completed",
@@ -283,7 +287,9 @@ const legacyPrivateRouteBody = computed(() => {
   }
 
   if (isLegacyCircleCreatePath.value) {
-    return "新しい企画を作成すると、そのまま企画責任者として migrated ワークスペースで編集を続けられます。";
+    return legacyCircleCreateParticipationTypeId.value
+      ? `新しい企画作成画面へ移動し、legacy で指定されていた参加種別 ${legacyCircleCreateParticipationTypeId.value} を引き継ぎます。`
+      : "新しい企画を作成すると、そのまま企画責任者として migrated ワークスペースで編集を続けられます。";
   }
 
   if (isLegacyCircleSelectorPath.value) {
@@ -313,6 +319,13 @@ const legacyPrivateRoutePrimaryLink = computed(() => {
   }
 
   if (isLegacyCircleCreatePath.value) {
+    if (legacyCircleCreateParticipationTypeId.value) {
+      return {
+        path: "/circles/new",
+        query: { participation_type: legacyCircleCreateParticipationTypeId.value },
+      };
+    }
+
     return "/circles/new";
   }
 

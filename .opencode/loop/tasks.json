@@ -139,8 +139,9 @@
       "id": "18",
       "title": "circle create の participation_type 互換を復元する",
       "description": "legacy `/circles/create?participation_type=...` から migrated `/circles/new` へ遷移したとき、参加種別の事前選択を引き継げるようにする",
-      "status": "pending",
-      "addedAt": "2026-03-16T07:59:26Z"
+      "status": "done",
+      "addedAt": "2026-03-16T07:59:26Z",
+      "completedAt": "2026-03-16T08:07:21Z"
     }
   ]
 }

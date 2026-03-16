@@ -5,8 +5,8 @@ definePage({
   },
 });
 
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import BackLink from "@/components/ui/BackLink.vue";
 import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
@@ -14,6 +14,7 @@ import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import { useCreateCircleMutation } from "@/features/circles/api";
 import { useParticipationTypesQuery } from "@/features/participation-types/api";
 
+const route = useRoute();
 const router = useRouter();
 const createMutation = useCreateCircleMutation();
 const participationTypesQuery = useParticipationTypesQuery(true);
@@ -28,6 +29,37 @@ const form = ref({
 });
 
 const errorMessage = ref("");
+const requestedParticipationTypeId = computed(() => {
+  const legacyValue = route.query.participation_type;
+  if (typeof legacyValue === "string") {
+    return legacyValue;
+  }
+
+  const migratedValue = route.query.participationTypeId;
+  return typeof migratedValue === "string" ? migratedValue : "";
+});
+
+watch(
+  [requestedParticipationTypeId, () => participationTypesQuery.data.value],
+  ([requestedId, participationTypes]) => {
+    if (form.value.participationTypeId !== "") {
+      return;
+    }
+
+    if (!requestedId) {
+      return;
+    }
+
+    if (
+      !(participationTypes ?? []).some((participationType) => participationType.id === requestedId)
+    ) {
+      return;
+    }
+
+    form.value.participationTypeId = requestedId;
+  },
+  { immediate: true },
+);
 
 async function handleSubmit() {
   errorMessage.value = "";
@@ -50,6 +82,9 @@ async function handleSubmit() {
       <h2 class="mt-3 text-3xl font-semibold text-body">企画を新規作成</h2>
       <p class="mt-3 text-sm leading-7 text-muted">
         新しい企画を作成します。あなたが企画のリーダーになります。
+      </p>
+      <p v-if="requestedParticipationTypeId" class="mt-2 text-sm text-muted">
+        legacy 導線から受け取った参加種別をもとに、該当する項目があればあらかじめ選択しています。
       </p>
     </SurfaceCard>
 

@@ -168,6 +168,39 @@ describe("CircleCreatePage", () => {
         expect(requestedUrls).not.toContain("http://127.0.0.1:8081/v1/staff/participation-types");
     });
 
+    it("preselects the participation type from the legacy query parameter", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            user: { id: "demo-user", displayName: "Demo User" },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/workspace", component: { template: "<div>workspace</div>" } },
+                { path: "/circles/new", component: CircleCreatePage },
+            ],
+        });
+        await router.push("/circles/new?participation_type=pt-food");
+        await router.isReady();
+
+        vi.stubGlobal("fetch", buildFetchMock());
+
+        const wrapper = mount(CircleCreatePage, {
+            global: { plugins: [pinia, router, createQueryPlugin()] },
+        });
+        await flushPromises();
+
+        expect(wrapper.text()).toContain("legacy 導線から受け取った参加種別");
+        expect(wrapper.get('input[type="radio"][value="pt-food"]').element.checked).toBe(true);
+    });
+
     it("navigates to detail page after successful creation", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
