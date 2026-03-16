@@ -4,6 +4,7 @@ import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
 import BottomTabLink from "@/components/ui/BottomTabLink.vue";
 import ModeSwitchLink from "@/components/ui/ModeSwitchLink.vue";
 import NavMenuLink from "@/components/ui/NavMenuLink.vue";
+import PublicFooterLinks from "@/components/ui/PublicFooterLinks.vue";
 import { useSessionBootstrapQuery } from "@/features/session/api";
 import { useLogoutMutation } from "@/features/auth/api";
 import { useSessionStore } from "@/features/session/store";
@@ -427,33 +428,8 @@ async function handleLogout() {
           >
             ログアウト
           </button>
-          <div class="mt-5 space-y-2 text-xs text-muted">
-            <p>
-              Powered by
-              <a
-                class="font-semibold text-muted transition hover:text-body hover:underline"
-                href="https://www.portaldots.com"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                PortalDots
-              </a>
-            </p>
-            <div class="flex flex-wrap gap-x-2 gap-y-1">
-              <RouterLink
-                class="font-semibold text-muted transition hover:text-body hover:underline"
-                to="/support"
-              >
-                推奨動作環境
-              </RouterLink>
-              <span aria-hidden="true">•</span>
-              <RouterLink
-                class="font-semibold text-muted transition hover:text-body hover:underline"
-                to="/privacy_policy"
-              >
-                プライバシーポリシー
-              </RouterLink>
-            </div>
+          <div class="mt-5">
+            <PublicFooterLinks />
           </div>
         </div>
       </div>
@@ -464,6 +440,9 @@ async function handleLogout() {
       class="pt-20 pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0 max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]"
     >
       <RouterView />
+      <footer v-if="isSmallScreen" class="border-t border-border px-6 py-8 text-center">
+        <PublicFooterLinks />
+      </footer>
     </main>
 
     <!-- Bottom Tabs: fixed, only visible at ≤1000px — z-[9980] matches $z-index-bottom-tabs -->

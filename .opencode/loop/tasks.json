@@ -128,6 +128,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:39:00Z",
       "completedAt": "2026-03-16T11:37:00Z"
+    },
+    {
+      "id": "17",
+      "title": "mobile 向けの public footer を追加する",
+      "description": "drawer を開かなくても `/support` `/privacy_policy` と公式サイトへ辿れるよう、app shell 本文下にも footer を出す",
+      "status": "done",
+      "addedAt": "2026-03-16T11:42:00Z",
+      "completedAt": "2026-03-16T11:39:00Z"
     }
   ]
 }
