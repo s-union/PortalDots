@@ -27,7 +27,9 @@
       "id": "4",
       "title": "関連テストと移行メモを更新する",
       "description": "参加種別導線の回帰テストと progress の知見を更新し、残課題を整理する",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-16T10:04:00Z"
     }
-  ]
+  ],
+  "completedAt": "2026-03-16T10:04:00Z"
 }

@@ -148,7 +148,8 @@ describe("CircleCreatePage", () => {
         await router.push("/workspace/circles/create");
         await router.isReady();
 
-        vi.stubGlobal("fetch", buildFetchMock());
+        const fetchMock = buildFetchMock();
+        vi.stubGlobal("fetch", fetchMock);
 
         const wrapper = mount(CircleCreatePage, {
             global: { plugins: [pinia, router, createQueryPlugin()] },
@@ -159,6 +160,12 @@ describe("CircleCreatePage", () => {
         expect(wrapper.text()).toContain("展示");
         expect(wrapper.text()).toContain("模擬店");
         expect(wrapper.text()).toContain("企画を作成する");
+
+        const requestedUrls = fetchMock.mock.calls.map(([input]) =>
+            typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+        );
+        expect(requestedUrls).toContain("http://127.0.0.1:8081/v1/participation-types");
+        expect(requestedUrls).not.toContain("http://127.0.0.1:8081/v1/staff/participation-types");
     });
 
     it("navigates to detail page after successful creation", async () => {
