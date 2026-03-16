@@ -13,12 +13,14 @@ import {
   sanitizeCircleSelectorCircleId,
 } from "@/app/router/circleSelectorRedirect";
 import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from "@/features/circles/api";
+import { useParticipationTypesQuery } from "@/features/participation-types/api";
 import { useSessionStore } from "@/features/session/store";
 
 const route = useRoute();
 const router = useRouter();
 const sessionStore = useSessionStore();
 const circlesQuery = useSelectableCirclesQuery();
+const participationTypesQuery = useParticipationTypesQuery(true);
 const selectCircleMutation = useSelectCurrentCircleMutation();
 
 const isSelecting = computed(() => selectCircleMutation.isPending.value);
@@ -31,6 +33,7 @@ const requestedCircleId = computed(() => {
   return sanitizeCircleSelectorCircleId(typeof circle === "string" ? circle : undefined);
 });
 const hasTriedAutoSelect = ref(false);
+const participationTypeCards = computed(() => participationTypesQuery.data.value ?? []);
 
 async function handleSelectCircle(circleId: string) {
   await selectCircleMutation.mutateAsync(circleId);
@@ -87,6 +90,31 @@ watch(
             {{ circle.groupName }} / {{ circle.participationTypeName }}
           </p>
         </button>
+      </div>
+    </ListPanel>
+
+    <ListPanel
+      title="別の企画を参加登録する"
+      description="参加種別ごとに新しい企画を作成します。legacy selector と同様に、作成後は migrated ワークスペースで続けて編集できます。"
+    >
+      <div v-if="participationTypesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
+        参加種別を読み込み中...
+      </div>
+
+      <div v-else class="grid gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">
+        <RouterLink
+          v-for="participationType in participationTypeCards"
+          :key="participationType.id"
+          :to="{
+            path: '/circles/new',
+            query: { participation_type: participationType.id },
+          }"
+          class="rounded-lg border border-border bg-background px-5 py-5 transition hover:border-primary hover:bg-primary-light"
+        >
+          <p class="text-base font-semibold text-body">{{ participationType.name }}</p>
+          <p class="mt-2 text-sm text-primary">{{ participationType.form.closeAt }} まで受付</p>
+          <p class="mt-2 text-sm leading-6 text-muted">{{ participationType.description }}</p>
+        </RouterLink>
       </div>
     </ListPanel>
   </section>

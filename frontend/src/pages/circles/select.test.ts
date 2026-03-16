@@ -20,6 +20,122 @@ function createQueryPlugin() {
     ];
 }
 
+function buildFetchMock() {
+    let selected = false;
+
+    return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve();
+        const url =
+            typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        const method = init?.method ?? "GET";
+
+        if (url.endsWith("/session/bootstrap") && method === "GET") {
+            return new Response(
+                JSON.stringify({
+                    csrfToken: "csrf-token",
+                    currentCircle: selected
+                        ? {
+                              id: "circle-b",
+                              name: "デモ企画B",
+                          }
+                        : null,
+                    featureFlags: [],
+                    roles: ["participant"],
+                    user: {
+                        id: "demo-user",
+                        displayName: "Demo User",
+                    },
+                }),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        }
+
+        if (url.endsWith("/circles") && method === "GET") {
+            return new Response(
+                JSON.stringify([
+                    {
+                        id: "circle-a",
+                        name: "デモ企画A",
+                        groupName: "Aブロック",
+                        participationTypeName: "模擬店",
+                    },
+                    {
+                        id: "circle-b",
+                        name: "デモ企画B",
+                        groupName: "Bブロック",
+                        participationTypeName: "展示",
+                    },
+                ]),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        }
+
+        if (url.endsWith("/participation-types") && method === "GET") {
+            return new Response(
+                JSON.stringify([
+                    {
+                        id: "pt-exhibit",
+                        name: "展示",
+                        description: "展示企画です",
+                        usersCountMin: 1,
+                        usersCountMax: 4,
+                        tags: [],
+                        form: {
+                            id: "form-pt-exhibit",
+                            name: "参加登録",
+                            description: "",
+                            openAt: "2026-01-01T00:00:00Z",
+                            closeAt: "2026-12-31T23:59:59Z",
+                            isPublic: true,
+                            isOpen: true,
+                            maxAnswers: 1,
+                            answerableTags: [],
+                            confirmationMessage: "",
+                        },
+                    },
+                    {
+                        id: "pt-food",
+                        name: "模擬店",
+                        description: "模擬店企画です",
+                        usersCountMin: 2,
+                        usersCountMax: 6,
+                        tags: [],
+                        form: {
+                            id: "form-pt-food",
+                            name: "参加登録",
+                            description: "",
+                            openAt: "2026-01-01T00:00:00Z",
+                            closeAt: "2026-10-31T23:59:59Z",
+                            isPublic: true,
+                            isOpen: true,
+                            maxAnswers: 1,
+                            answerableTags: [],
+                            confirmationMessage: "",
+                        },
+                    },
+                ]),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        }
+
+        if (url.endsWith("/circles/current") && method === "PUT") {
+            selected = true;
+            return new Response(null, { status: 204 });
+        }
+
+        throw new Error(`Unexpected request: ${method} ${url}`);
+    });
+}
+
 describe("CircleSelectorPage", () => {
     afterEach(() => {
         vi.unstubAllGlobals();
@@ -50,71 +166,7 @@ describe("CircleSelectorPage", () => {
         await router.push("/circles/select");
         await router.isReady();
 
-        let selected = false;
-        const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-            await Promise.resolve();
-            const url =
-                typeof input === "string"
-                    ? input
-                    : input instanceof URL
-                      ? input.toString()
-                      : input.url;
-            const method = init?.method ?? "GET";
-
-            if (url.endsWith("/session/bootstrap") && method === "GET") {
-                return new Response(
-                    JSON.stringify({
-                        csrfToken: "csrf-token",
-                        currentCircle: selected
-                            ? {
-                                  id: "circle-b",
-                                  name: "デモ企画B",
-                              }
-                            : null,
-                        featureFlags: [],
-                        roles: ["participant"],
-                        user: {
-                            id: "demo-user",
-                            displayName: "Demo User",
-                        },
-                    }),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            if (url.endsWith("/circles") && method === "GET") {
-                return new Response(
-                    JSON.stringify([
-                        {
-                            id: "circle-a",
-                            name: "デモ企画A",
-                            groupName: "Aブロック",
-                            participationTypeName: "模擬店",
-                        },
-                        {
-                            id: "circle-b",
-                            name: "デモ企画B",
-                            groupName: "Bブロック",
-                            participationTypeName: "展示",
-                        },
-                    ]),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            if (url.endsWith("/circles/current") && method === "PUT") {
-                selected = true;
-                return new Response(null, { status: 204 });
-            }
-
-            throw new Error(`Unexpected request: ${method} ${url}`);
-        });
+        const fetchMock = buildFetchMock();
 
         vi.stubGlobal("fetch", fetchMock);
 
@@ -157,71 +209,7 @@ describe("CircleSelectorPage", () => {
         await router.push("/circles/select?redirect=/workspace/forms/form-1%3Fanswer%3Danswer-1");
         await router.isReady();
 
-        let selected = false;
-        const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-            await Promise.resolve();
-            const url =
-                typeof input === "string"
-                    ? input
-                    : input instanceof URL
-                      ? input.toString()
-                      : input.url;
-            const method = init?.method ?? "GET";
-
-            if (url.endsWith("/session/bootstrap") && method === "GET") {
-                return new Response(
-                    JSON.stringify({
-                        csrfToken: "csrf-token",
-                        currentCircle: selected
-                            ? {
-                                  id: "circle-b",
-                                  name: "デモ企画B",
-                              }
-                            : null,
-                        featureFlags: [],
-                        roles: ["participant"],
-                        user: {
-                            id: "demo-user",
-                            displayName: "Demo User",
-                        },
-                    }),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            if (url.endsWith("/circles") && method === "GET") {
-                return new Response(
-                    JSON.stringify([
-                        {
-                            id: "circle-a",
-                            name: "デモ企画A",
-                            groupName: "Aブロック",
-                            participationTypeName: "模擬店",
-                        },
-                        {
-                            id: "circle-b",
-                            name: "デモ企画B",
-                            groupName: "Bブロック",
-                            participationTypeName: "展示",
-                        },
-                    ]),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            if (url.endsWith("/circles/current") && method === "PUT") {
-                selected = true;
-                return new Response(null, { status: 204 });
-            }
-
-            throw new Error(`Unexpected request: ${method} ${url}`);
-        });
+        const fetchMock = buildFetchMock();
 
         vi.stubGlobal("fetch", fetchMock);
 
@@ -267,71 +255,7 @@ describe("CircleSelectorPage", () => {
         );
         await router.isReady();
 
-        let selected = false;
-        const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-            await Promise.resolve();
-            const url =
-                typeof input === "string"
-                    ? input
-                    : input instanceof URL
-                      ? input.toString()
-                      : input.url;
-            const method = init?.method ?? "GET";
-
-            if (url.endsWith("/session/bootstrap") && method === "GET") {
-                return new Response(
-                    JSON.stringify({
-                        csrfToken: "csrf-token",
-                        currentCircle: selected
-                            ? {
-                                  id: "circle-b",
-                                  name: "デモ企画B",
-                              }
-                            : null,
-                        featureFlags: [],
-                        roles: ["participant"],
-                        user: {
-                            id: "demo-user",
-                            displayName: "Demo User",
-                        },
-                    }),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            if (url.endsWith("/circles") && method === "GET") {
-                return new Response(
-                    JSON.stringify([
-                        {
-                            id: "circle-a",
-                            name: "デモ企画A",
-                            groupName: "Aブロック",
-                            participationTypeName: "模擬店",
-                        },
-                        {
-                            id: "circle-b",
-                            name: "デモ企画B",
-                            groupName: "Bブロック",
-                            participationTypeName: "展示",
-                        },
-                    ]),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            if (url.endsWith("/circles/current") && method === "PUT") {
-                selected = true;
-                return new Response(null, { status: 204 });
-            }
-
-            throw new Error(`Unexpected request: ${method} ${url}`);
-        });
+        const fetchMock = buildFetchMock();
 
         vi.stubGlobal("fetch", fetchMock);
 
@@ -343,5 +267,50 @@ describe("CircleSelectorPage", () => {
         await flushPromises();
 
         expect(router.currentRoute.value.fullPath).toBe("/workspace/forms/form-1?answer=answer-1");
+    });
+
+    it("shows participation type cards linking to circle creation", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/circles/select", component: CircleSelectorPage },
+                { path: "/circles/new", component: { template: "<div>new</div>" } },
+            ],
+        });
+        await router.push("/circles/select");
+        await router.isReady();
+
+        vi.stubGlobal("fetch", buildFetchMock());
+
+        const wrapper = mount(CircleSelectorPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        expect(wrapper.text()).toContain("別の企画を参加登録する");
+        expect(wrapper.text()).toContain("展示企画です");
+        expect(wrapper.text()).toContain("2026-12-31T23:59:59Z まで受付");
+        expect(
+            wrapper.get('a[href="/circles/new?participation_type=pt-exhibit"]').text(),
+        ).toContain("展示");
+        expect(wrapper.get('a[href="/circles/new?participation_type=pt-food"]').text()).toContain(
+            "模擬店",
+        );
     });
 });

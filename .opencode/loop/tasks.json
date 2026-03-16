@@ -1,6 +1,7 @@
 {
   "startedAt": "2026-03-16T01:29:05Z",
   "description": "LaravelからVueとGoへの未移行箇所と齟齬を調査し、高優先度の移行を自律的に進める",
+  "completedAt": "2026-03-16T08:41:22Z",
   "tasks": [
     {
       "id": "1",
@@ -166,6 +167,14 @@
       "status": "done",
       "addedAt": "2026-03-16T08:34:16Z",
       "completedAt": "2026-03-16T08:36:07Z"
+    },
+    {
+      "id": "22",
+      "title": "circle selector に企画新規作成導線を戻す",
+      "description": "legacy selector にあった参加種別ごとの企画新規作成カードを migrated `/circles/select` に追加し、`/circles/new?participation_type=...` へつなぐ",
+      "status": "done",
+      "addedAt": "2026-03-16T08:36:56Z",
+      "completedAt": "2026-03-16T08:41:22Z"
     }
   ]
 }

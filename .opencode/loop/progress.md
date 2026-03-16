@@ -30,3 +30,4 @@
 - 2026-03-16: legacy `/forms` 系の GET 救済は、一覧タブ (`/forms`, `/forms/closed`, `/forms/all`) と回答系 (`/forms/:form/answers/create|:answer/edit|:answer/uploads/:question`) を分けて扱うと説明が整理しやすい。upload URL は migrated 詳細画面への導線に加えて API file URL 直リンクも出すと、メールや古いブックマーク由来のダウンロード需要をそのまま満たせる。
 - 2026-03-16: legacy `/selector/set` 互換は catch-all 画面を見せるより即 `router.replace()` で `/circles/select` へ正規化した方が自然。`circle` query は軽く sanitize して selector で auto-select を 1 回だけ試すと、旧直リンクと手動選択 UI の両立がしやすい。
 - 2026-03-16: migrated 画面側にも selector への戻り口を足すと rescue の価値が上がる。`route.fullPath` を encode して `/circles/select?redirect=...` を組むだけで、問い合わせ画面や申請詳細から企画切り替え後に同じ作業へ戻れる。
+- 2026-03-16: selector の「別の企画を参加登録する」は route view 内で participation types を別 query として読むだけで薄く復元できる。既存の circle 選択 state と混ぜず、`/circles/new?participation_type=...` への `RouterLink` を cards として出すと、legacy の用途を保ちながら migrated create の preselect と自然につながる。
