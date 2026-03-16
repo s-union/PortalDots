@@ -35,8 +35,9 @@
       "id": "5",
       "title": "公開導線の legacy 404 を減らす",
       "description": "support/privacy_policy と legacy の pages/documents 導線を Vue ルートで受け、既存 migrated 画面または情報ページへ接続する",
-      "status": "pending",
-      "addedAt": "2026-03-16T02:09:21Z"
+      "status": "done",
+      "addedAt": "2026-03-16T02:09:21Z",
+      "completedAt": "2026-03-16T02:31:22Z"
     }
   ]
 }

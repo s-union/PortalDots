@@ -11,3 +11,5 @@
 - 2026-03-16: `staff/places` の「場所別企画一覧」は現行 migrated stack に circle-place 紐付けが存在しないため未移行。UI をプレースホルダリンクのまま残さず、未対応理由を明示して誤操作を避けるのが安全。
 - 2026-03-16: `@tanstack/query` の `invalidateQueries` は Promise を返すため、mutation の `onSuccess` では待つか `void` で明示的に捨てる。frontend の oxlint は no-floating-promises を厳格に見る。
 - 2026-03-16: `frontend/typed-router.d.ts` は生成物でも `oxfmt` 監視対象なので、差分が残ると `frontend-check` が落ちる。手編集は避け、必要なら formatter を先に通す。
+- 2026-03-16: file-based route を増やすと `frontend/typed-router.d.ts` の生成差分まで面倒を見る必要がある。移行中の legacy 導線救済だけなら `frontend/src/pages/[...all].vue` で既知パスを吸収する方が安全。
+- 2026-03-16: catch-all で legacy `/documents/:id` を扱う場合、詳細 UI を無理に再実装せず API download URL への直リンクを出すだけでも 404 回避と既存導線の保全に効く。
