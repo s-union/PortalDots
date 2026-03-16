@@ -20,3 +20,4 @@
 - 2026-03-16: public 静的ページを切り出したら、legacy `AppFooter` 相当の shell 導線も一緒に戻すと到達性が上がる。`frontend/src/app/App.vue` の drawer footer に `/support` `/privacy_policy` と公式サイトリンクを置き、`App.test.ts` で anchor href だけを軽く確認するのが安全。
 - 2026-03-16: file-based public route を増やした後は router guard テストも合わせて追加する。`frontend/src/app/router/index.test.ts` で `fetch` が呼ばれないことまで確認すると、session bootstrap を誤って必須化した退行を防げる。
 - 2026-03-16: guest auth parity は page 本体だけでなく login からの補助リンクも要固定。`frontend/src/pages/login.test.ts` に `/password/reset` と `/register` の href 確認を足しておくと、文言や遷移先の崩れを安く拾える。
+- 2026-03-16: auth guidance page を増やした後は route variant ごとの guard 差も router test に寄せる。`publicOnly` の signed link 群と `requiresAuth` の completed 画面を同じ `index.test.ts` で押さえると、個別 page test より guard 退行を見つけやすい。

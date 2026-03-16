@@ -120,6 +120,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:36:00Z",
       "completedAt": "2026-03-16T11:34:00Z"
+    },
+    {
+      "id": "16",
+      "title": "auth route variant の guard テストを補う",
+      "description": "`/password/reset/:userId` `/email/verify/:type/:userId` `/email/verify/completed` の publicOnly/requiresAuth 挙動を router test で固定する",
+      "status": "done",
+      "addedAt": "2026-03-16T11:39:00Z",
+      "completedAt": "2026-03-16T11:37:00Z"
     }
   ]
 }
