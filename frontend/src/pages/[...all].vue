@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import {
+  buildCircleSelectorLocation,
+  sanitizeCircleSelectorRedirect,
+} from "@/app/router/circleSelectorRedirect";
 import BackLink from "@/components/ui/BackLink.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import { buildApiUrl, encodePathSegment } from "@/lib/api/client";
@@ -104,6 +108,19 @@ const isLegacyUserSettingsPath = computed(() =>
 const isLegacyCircleSelectorPath = computed(
   () => normalizedPath.value === "/selector" || normalizedPath.value === "/selector/set",
 );
+const legacyCircleSelectorRedirect = computed(() => {
+  const redirectTo = route.query.redirect_to;
+  if (typeof redirectTo === "string") {
+    return sanitizeCircleSelectorRedirect(redirectTo);
+  }
+
+  const redirect = route.query.redirect;
+  if (typeof redirect === "string") {
+    return sanitizeCircleSelectorRedirect(redirect);
+  }
+
+  return null;
+});
 const isLegacyLogoutPath = computed(() => normalizedPath.value === "/logout");
 const isLegacyContactPath = computed(() => normalizedPath.value === "/contacts");
 const isLegacyCircleCreatePath = computed(() => normalizedPath.value === "/circles/create");
@@ -270,7 +287,9 @@ const legacyPrivateRouteBody = computed(() => {
   }
 
   if (isLegacyCircleSelectorPath.value) {
-    return "企画を選び直すと、その後の migrated 画面も選択した企画コンテキストで動作します。`redirect` パラメーター互換はまだありません。";
+    return legacyCircleSelectorRedirect.value
+      ? `企画を選び直すと、その後は ${legacyCircleSelectorRedirect.value} へ戻って作業を続けられます。`
+      : "企画を選び直すと、その後の migrated 画面も選択した企画コンテキストで動作します。";
   }
 
   if (isLegacyUserSettingsPath.value) {
@@ -298,7 +317,10 @@ const legacyPrivateRoutePrimaryLink = computed(() => {
   }
 
   if (isLegacyCircleSelectorPath.value) {
-    return "/circles/select";
+    const selectorLocation = buildCircleSelectorLocation(
+      legacyCircleSelectorRedirect.value ?? undefined,
+    );
+    return typeof selectorLocation === "string" ? selectorLocation : selectorLocation;
   }
 
   if (isLegacyUserSettingsPath.value) {

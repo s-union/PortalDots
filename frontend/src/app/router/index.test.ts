@@ -109,7 +109,7 @@ describe("app router guards", () => {
 
         await router.push("/workspace");
 
-        expect(router.currentRoute.value.fullPath).toBe("/circles/select");
+        expect(router.currentRoute.value.fullPath).toBe("/circles/select?redirect=/workspace");
     });
 
     it("redirects staff dashboard access to staff verify when not yet authorized", async () => {

@@ -24,3 +24,5 @@
 - 2026-03-16: 招待受け入れだけは `POST /v1/circles/join/{token}` が既にあるので、`/circles/join/[token].vue` を追加して migrated 側で完結できる。legacy `/circles/:circle/users/invite/:token` は catch-all から新ページへつなぐのが最短。
 - 2026-03-16: legacy `/circles/:circle/auth` も専用画面を無理に再実装せず、現在選択中の企画情報画面への案内に寄せるのが安全。auth 専用の状態遷移は migrated stack に見当たらないため、アクセス可否の確認先だけを明示する。
 - 2026-03-16: catch-all で `/circles/:circle/edit|confirm|done|delete` を detail 画面へ寄せたら、個別 URL ごとの回帰テストもまとめて固定しておくと sibling action の取りこぼしを防げる。
+- 2026-03-16: `requiresCircle` ガードで selector へ送るときは `to.fullPath` を query に持たせるだけで、workspace 詳細や query 付き画面への復帰を薄く復元できる。open redirect を避けるため `//` と改行を除去し、`/circles/select` 自身への再帰 redirect は潰しておく。
+- 2026-03-16: Vue Router の `RouterLink` は query 値の `/` や `?` を href で再エンコードしないことがあるため、selector redirect 互換のテストは `%2F...` 前提にせず、実際の `href` 文字列と遷移結果の両方を確認する方が安定する。

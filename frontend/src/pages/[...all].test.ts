@@ -105,6 +105,20 @@ describe("NotFoundPage", () => {
         expect(primaryLink.text()).toContain("企画選択画面へ");
     });
 
+    it("preserves legacy selector redirect_to when linking to migrated selector", async () => {
+        const wrapper = await mountAt(
+            "/selector?redirect_to=%2Fworkspace%2Fforms%2Fform-1%3Fanswer%3Danswer-1",
+        );
+        const primaryLink = wrapper.get(
+            'a[href="/circles/select?redirect=/workspace/forms/form-1?answer=answer-1"]',
+        );
+
+        expect(wrapper.text()).toContain(
+            "/workspace/forms/form-1?answer=answer-1 へ戻って作業を続けられます",
+        );
+        expect(primaryLink.text()).toContain("企画選択画面へ");
+    });
+
     it("guides the legacy logout route to login", async () => {
         const wrapper = await mountAt("/logout");
         const primaryLink = wrapper.get('a[href="/login"]');

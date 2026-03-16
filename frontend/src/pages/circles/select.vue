@@ -6,21 +6,27 @@ definePage({
 });
 
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import ListPanel from "@/components/ui/ListPanel.vue";
+import { resolveCircleSelectorDestination } from "@/app/router/circleSelectorRedirect";
 import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from "@/features/circles/api";
 import { useSessionStore } from "@/features/session/store";
 
+const route = useRoute();
 const router = useRouter();
 const sessionStore = useSessionStore();
 const circlesQuery = useSelectableCirclesQuery();
 const selectCircleMutation = useSelectCurrentCircleMutation();
 
 const isSelecting = computed(() => selectCircleMutation.isPending.value);
+const redirectDestination = computed(() => {
+  const redirect = route.query.redirect;
+  return resolveCircleSelectorDestination(typeof redirect === "string" ? redirect : undefined);
+});
 
 async function handleSelectCircle(circleId: string) {
   await selectCircleMutation.mutateAsync(circleId);
-  await router.push("/workspace");
+  await router.push(redirectDestination.value);
 }
 </script>
 
@@ -28,7 +34,11 @@ async function handleSelectCircle(circleId: string) {
   <section class="space-y-6">
     <ListPanel
       title="作業対象の企画を選択します。"
-      description="legacy の circle selector と同じく、以後の画面はここで選んだ企画コンテキストで動きます。"
+      :description="
+        redirectDestination === '/workspace'
+          ? 'legacy の circle selector と同じく、以後の画面はここで選んだ企画コンテキストで動きます。'
+          : '企画選択後は、元の画面へ戻ってそのまま作業を続けられます。'
+      "
     >
       <div v-if="circlesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
         読み込み中...
