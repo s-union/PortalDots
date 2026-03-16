@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Providers;
 
-use App\Providers\BroadcastServiceProvider;
-use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Routing\RouteCollection;
 use Tests\TestCase;
 
 final class BroadcastServiceProviderTest extends TestCase
 {
     #[\PHPUnit\Framework\Attributes\Test]
-    public function bootメソッドがエラーなく実行されチャンネルのルーティングが読み込まれること()
+    public function broadcasting_authルートが読み込まれていること()
     {
-        $provider = new BroadcastServiceProvider($this->app);
+        /** @var RouteCollection $routes */
+        $routes = app('router')->getRoutes();
 
-        $provider->boot();
+        $broadcastAuthRoute = collect($routes->getRoutes())->first(
+            fn ($route) => $route->uri() === 'broadcasting/auth'
+        );
 
-        // Broadcast::routes() が呼ばれ、routes/channels.php がロードされることを確認する。
-        // 単にエラーが起きずboot()が通過できればOK。
-        $this->assertTrue(true);
+        $this->assertNotNull($broadcastAuthRoute);
     }
 }

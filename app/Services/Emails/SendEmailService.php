@@ -70,7 +70,7 @@ class SendEmailService
                 $email->sent_at = $now;
                 $email->locked_at = null;
                 $email->save();
-            } catch (Exception) {
+            } catch (\Throwable) {
                 // 送信失敗したので失敗カウントを1つ追加
                 $email->count_failed++;
                 $count_failed_now++;
@@ -124,7 +124,7 @@ class SendEmailService
     public static function isServiceOperational()
     {
         $emails = Email::whereNull('sent_at')
-            ->where('count_failed', '===', 0)
+            ->where('count_failed', '=', 0)
             ->where('created_at', '<', now()->subDay())
             ->get();
 

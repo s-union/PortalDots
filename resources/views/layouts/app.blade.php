@@ -1,7 +1,7 @@
 @inject('uiThemeService', 'App\Services\Utils\UIThemeService')
 
 @php
-    $is_iframe = (bool) request()->get('iframe');
+    $is_iframe = (bool) request()->query('iframe');
 @endphp
 
 <!DOCTYPE html>
