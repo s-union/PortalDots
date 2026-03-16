@@ -58,6 +58,35 @@ describe("NotFoundPage", () => {
         expect(downloadLink.text()).toContain("この資料を直接開く");
     });
 
+    it("guides the legacy register route to migrated auth guidance", async () => {
+        const wrapper = await mountAt("/register");
+        const primaryLink = wrapper.get('a[href="/login"]');
+
+        expect(wrapper.text()).toContain("認証導線は移行中です");
+        expect(wrapper.text()).toContain("まだ新規ユーザー登録フォームを提供していません");
+        expect(primaryLink.text()).toContain("ログイン画面へ戻る");
+    });
+
+    it("guides the legacy password reset route to migrated auth guidance", async () => {
+        const wrapper = await mountAt("/password/reset");
+        const primaryLink = wrapper.get('a[href="/login"]');
+
+        expect(wrapper.text()).toContain("パスワード再設定は移行中です");
+        expect(wrapper.text()).toContain(
+            "現在の migrated stack ではメール送信付きの再設定開始フローをまだ提供していません",
+        );
+        expect(primaryLink.text()).toContain("ログイン画面へ戻る");
+    });
+
+    it("guides the legacy signed password reset route to reset instructions", async () => {
+        const wrapper = await mountAt("/password/reset/user-123");
+        const primaryLink = wrapper.get('a[href="/password/reset"]');
+
+        expect(wrapper.text()).toContain("legacy の署名付きパスワード再設定リンク");
+        expect(wrapper.text()).toContain("ワークスペースの設定画面からパスワードを変更できます");
+        expect(primaryLink.text()).toContain("再設定方法の案内を見る");
+    });
+
     it("keeps the generic 404 for unrelated routes", async () => {
         const wrapper = await mountAt("/definitely-missing");
 
