@@ -20,3 +20,4 @@
 - 2026-03-16: 認証後の legacy `/user/*` `/selector` `/logout` は、すでに migrated 側に相当機能があるので catch-all から移行先の 1 次導線を返すだけでも有効。特に `/user/edit` `/user/password` `/user/delete` `/user/appearance` は `workspace/settings` へまとめると説明も実装も簡潔に保てる。
 - 2026-03-16: 認証済み legacy `/contacts` と `/circles/create` も catch-all で十分に救済できる。前者は `workspace/contact`、後者は `/circles/new` が既存 migrated 画面なので、個別 route を増やすより保守が軽い。
 - 2026-03-16: legacy の `/email/verify` 系は migrated stack で直接処理できないため、成功を装う UI は出さず「未移行であること」と次の安全な操作だけを案内するのがよい。署名付き URL は `type` と `userId` を表示する程度に留め、状態変更は試みない。
+- 2026-03-16: legacy `/circles/:id` と `/circles/:id/users` は現在選択中の企画コンテキスト前提だが、404 を避けるだけなら `workspace/circles/detail` と `workspace/circles/members` への誘導で十分実用的。circle id は説明文に残し、実データの照合までは行わない方が安全。

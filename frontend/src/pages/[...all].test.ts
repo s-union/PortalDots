@@ -159,6 +159,24 @@ describe("NotFoundPage", () => {
         expect(primaryLink.text()).toContain("ホームへ戻る");
     });
 
+    it("guides the legacy circle detail route to workspace circle detail", async () => {
+        const wrapper = await mountAt("/circles/circle-a");
+        const primaryLink = wrapper.get('a[href="/workspace/circles/detail"]');
+
+        expect(wrapper.text()).toContain("企画情報の導線が移動しました");
+        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a");
+        expect(primaryLink.text()).toContain("企画情報画面へ");
+    });
+
+    it("guides the legacy circle members route to workspace members", async () => {
+        const wrapper = await mountAt("/circles/circle-a/users");
+        const primaryLink = wrapper.get('a[href="/workspace/circles/members"]');
+
+        expect(wrapper.text()).toContain("メンバー管理の導線が移動しました");
+        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a");
+        expect(primaryLink.text()).toContain("メンバー管理画面へ");
+    });
+
     it("keeps the generic 404 for unrelated routes", async () => {
         const wrapper = await mountAt("/definitely-missing");
 

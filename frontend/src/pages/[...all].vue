@@ -129,6 +129,44 @@ const isLegacyEmailVerifyPath = computed(
     isLegacyEmailVerifyCompletedPath.value ||
     isLegacyEmailVerifyActionPath.value,
 );
+const legacyCircleRoute = computed(() => {
+  const match = normalizedPath.value.match(/^\/circles\/([^/]+)(?:\/([^/]+))?$/);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  const circleId = decodeURIComponent(match[1]);
+  const action = match[2] ? decodeURIComponent(match[2]) : null;
+
+  if (["new", "select", "create", "join"].includes(circleId)) {
+    return null;
+  }
+
+  if (action === null || ["edit", "confirm", "done", "delete"].includes(action)) {
+    return {
+      circleId,
+      target: "/workspace/circles/detail",
+      targetLabel: "企画情報画面へ",
+      title: "企画情報の導線が移動しました",
+      lead: "旧 `/circles/:circle` 系 URL は、移行後は現在選択中の企画情報画面で確認します。",
+      body: `legacy の企画 ID: ${circleId} を含むブックマークです。企画の編集、提出状況の確認、提出後の作業、削除導線は migrated の企画情報画面へ統合されています。`,
+    };
+  }
+
+  if (action === "users") {
+    return {
+      circleId,
+      target: "/workspace/circles/members",
+      targetLabel: "メンバー管理画面へ",
+      title: "メンバー管理の導線が移動しました",
+      lead: "旧 `/circles/:circle/users` は、移行後は現在選択中の企画のメンバー管理画面で扱います。",
+      body: `legacy の企画 ID: ${circleId} を含むブックマークです。招待リンクの確認、再生成、所属メンバーの確認と削除は migrated のメンバー管理画面へ集約しています。`,
+    };
+  }
+
+  return null;
+});
+const isLegacyCircleRoutePath = computed(() => legacyCircleRoute.value !== null);
 
 const legacyPrivateRouteTitle = computed(() => {
   if (isLegacyEmailVerifyPath.value) {
@@ -386,6 +424,31 @@ const isLegacyDocumentsPath = computed(
         <p v-if="isLegacyPasswordResetPath" class="text-muted">
           ログイン済みなら、ワークスペース内の設定画面から現在のパスワードを変更できます。
         </p>
+      </div>
+    </SurfaceCard>
+
+    <SurfaceCard v-else-if="isLegacyCircleRoutePath">
+      <div class="border-b border-border px-6 py-5">
+        <p class="text-sm text-primary">Legacy Route</p>
+        <h2 class="mt-2 text-2xl font-semibold text-body">{{ legacyCircleRoute?.title }}</h2>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>{{ legacyCircleRoute?.lead }}</p>
+        <p>{{ legacyCircleRoute?.body }}</p>
+        <div class="flex flex-wrap gap-3">
+          <RouterLink
+            :to="legacyCircleRoute?.target ?? '/workspace'"
+            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
+          >
+            {{ legacyCircleRoute?.targetLabel }}
+          </RouterLink>
+          <RouterLink
+            to="/workspace"
+            class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
+          >
+            ワークスペースへ
+          </RouterLink>
+        </div>
       </div>
     </SurfaceCard>
 

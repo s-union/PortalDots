@@ -94,6 +94,14 @@
       "status": "done",
       "addedAt": "2026-03-16T04:18:38Z",
       "completedAt": "2026-03-16T04:24:50Z"
+    },
+    {
+      "id": "13",
+      "title": "circle 詳細系 legacy 導線の救済方針を進める",
+      "description": "follow-up check で残った legacy `/circles/{circle}` 系を棚卸しし、既存 migrated の detail/members/new 画面で安全に救済できる導線から実装する",
+      "status": "done",
+      "addedAt": "2026-03-16T04:24:50Z",
+      "completedAt": "2026-03-16T04:28:31Z"
     }
   ]
 }
