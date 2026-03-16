@@ -27,8 +27,9 @@ describe("RegisterPage", () => {
     it("shows migrated registration guidance", async () => {
         const wrapper = await mountAtRegister();
 
-        expect(wrapper.text()).toContain("ユーザー登録は移行中です");
-        expect(wrapper.text()).toContain("学籍番号または大学メール");
+        expect(wrapper.text()).toContain("ユーザー登録");
+        expect(wrapper.text()).toContain("運営から案内された手順");
+        expect(wrapper.text()).toContain("旧 Laravel URL を移植せず");
         expect(wrapper.get('a[href="/login"]').text()).toContain("ログイン画面へ");
     });
 });

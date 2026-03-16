@@ -33,9 +33,9 @@ const verifyNotes = computed(() => [
 
 <template>
   <AuthRouteNotice
-    body="ログインできる場合は migrated 画面から状態を確認してください。ログインできない場合は、運営へ最新の認証案内を確認してください。"
+    body="ログインできる場合はログイン後の設定画面から状態を確認してください。ログインできない場合は、運営へ最新の認証案内を確認してください。署名付きメール経由の旧フローは移植していません。"
     :actions="actions"
-    lead="この URL は legacy の署名付きメール認証リンクです。移行後の stack では、リンクを直接処理する backend API をまだ用意していません。"
+    lead="この旧 Laravel URL は利用せず、現在はモック前提の案内のみ提供しています。"
     :notes="verifyNotes"
     title="署名付きメール認証リンクです"
   />

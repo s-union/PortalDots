@@ -43,8 +43,9 @@ describe("EmailVerifyPage", () => {
     it("shows logged-in verification guidance", async () => {
         const wrapper = await mountAtVerify();
 
-        expect(wrapper.text()).toContain("メール認証は段階移行中です");
+        expect(wrapper.text()).toContain("メール認証");
         expect(wrapper.text()).toContain("Demo User として確認しています。");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植せず");
         expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain("ユーザー設定へ");
     });
 });

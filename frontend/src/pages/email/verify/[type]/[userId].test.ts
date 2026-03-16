@@ -30,6 +30,7 @@ describe("EmailVerifyActionPage", () => {
         expect(wrapper.text()).toContain("署名付きメール認証リンクです");
         expect(wrapper.text()).toContain("認証種別: email");
         expect(wrapper.text()).toContain("対象ユーザー: user-123");
+        expect(wrapper.text()).toContain("この旧 Laravel URL は利用せず");
         expect(wrapper.get('a[href="/"]').text()).toContain("ホームへ戻る");
     });
 });

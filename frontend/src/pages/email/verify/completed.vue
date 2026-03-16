@@ -12,16 +12,14 @@ const actions = [
   { label: "ワークスペースへ", to: "/workspace" },
 ];
 
-const completedNotes = [
-  "legacy の完了画面にあった一時的な成功表示は、この migrated 画面では簡潔な案内に置き換えています。",
-];
+const completedNotes: string[] = [];
 </script>
 
 <template>
   <AuthRouteNotice
-    body="認証結果の最終確認は、ログイン後に利用できる migrated 画面から進めてください。表示専用の完了画面に依存しない導線へ整理しています。"
+    body="認証結果の最終確認は、ログイン後の画面から進めてください。メール設計は未確定のため、この完了画面もモック前提の案内として残しています。"
     :actions="actions"
-    lead="legacy の `/email/verify/completed` は認証完了メッセージ専用の画面でした。移行後は、完了後の次の操作へ進みやすい案内に置き換えています。"
+    lead="メール認証完了の旧 Laravel URL は移植せず、現在はログイン後導線へ案内します。"
     :notes="completedNotes"
     title="メール認証の完了案内"
   />

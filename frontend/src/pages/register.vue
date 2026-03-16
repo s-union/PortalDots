@@ -7,10 +7,7 @@ definePage({
 
 import AuthRouteNotice from "@/components/auth/AuthRouteNotice.vue";
 
-const registrationNotes = [
-  "legacy では学籍番号または大学メール、氏名、連絡先メール、電話番号、パスワードをまとめて登録していました。",
-  "新しい stack では自己登録フォームをまだ backend API 化していないため、運営案内または招待導線から利用開始してください。",
-];
+const registrationNotes = ["アカウント作成は、運営から案内された手順で進めてください。"];
 
 const actions = [
   { label: "ログイン画面へ", to: "/login", variant: "primary" as const },
@@ -20,10 +17,10 @@ const actions = [
 
 <template>
   <AuthRouteNotice
-    body="既存アカウントを持っている場合はログインしてください。初回利用の方は、運営から案内された手順でアカウント作成または招待受け入れを進めてください。"
+    body="既存アカウントを持っている場合はログインしてください。初回利用の方は、運営から案内された手順でアカウント作成または招待受け入れを進めてください。メール設計は未確定のため、この画面単体では本登録フローを提供していません。"
     :actions="actions"
-    lead="legacy の `/register` で行っていたユーザー自己登録は、移行後の stack ではまだ提供していません。"
+    lead="ユーザー登録は旧 Laravel URL を移植せず、現在は案内ベースで運用しています。"
     :notes="registrationNotes"
-    title="ユーザー登録は移行中です"
+    title="ユーザー登録"
   />
 </template>

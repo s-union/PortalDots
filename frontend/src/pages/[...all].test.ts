@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import { flushPromises } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
 import NotFoundPage from "./[...all].vue";
 
@@ -31,223 +30,131 @@ async function mountAt(path: string) {
     });
 }
 
-async function mountAtWithRouter(path: string) {
-    const router = createRouter({
-        history: createMemoryHistory(),
-        routes: [
-            { path: "/", component: { template: "<div>home</div>" } },
-            { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
-            { path: "/workspace/forms/:formId", component: { template: "<div>form</div>" } },
-            { path: "/circles/select", component: { template: "<div>selector</div>" } },
-            { path: "/staff/mails", component: { template: "<div>staff mails</div>" } },
-            { path: "/staff/pages", component: { template: "<div>staff pages</div>" } },
-            { path: "/:all(.*)", component: NotFoundPage },
-        ],
-    });
-
-    await router.push(path);
-    await router.isReady();
-
-    const wrapper = mount(NotFoundPage, {
-        global: {
-            plugins: [router],
-        },
-    });
-    await flushPromises();
-
-    return { wrapper, router };
-}
-
 describe("NotFoundPage", () => {
-    it("guides legacy page detail URLs to the workspace page detail", async () => {
+    it("shows the non-migrated message for a legacy page detail URL", async () => {
         const wrapper = await mountAt("/pages/page-circle-a-1");
-        const pageLink = wrapper.get('a[href="/workspace/pages/page-circle-a-1"]');
 
-        expect(wrapper.text()).toContain("お知らせの導線が移動しました");
-        expect(pageLink.text()).toContain("このお知らせを開く");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides legacy document detail URLs to the API download route", async () => {
+    it("shows the non-migrated message for a legacy document detail URL", async () => {
         const wrapper = await mountAt("/documents/document-circle-a-1");
-        const downloadLink = wrapper.get(
-            'a[href="http://127.0.0.1:8081/v1/documents/document-circle-a-1"]',
-        );
 
-        expect(wrapper.text()).toContain("配布資料の導線が移動しました");
-        expect(downloadLink.text()).toContain("この資料を直接開く");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy user settings route to workspace settings", async () => {
+    it("shows the non-migrated message for a legacy user settings URL", async () => {
         const wrapper = await mountAt("/user/password");
-        const primaryLink = wrapper.get('a[href="/workspace/settings"]');
 
-        expect(wrapper.text()).toContain("ユーザー設定の導線が移動しました");
-        expect(wrapper.text()).toContain("ワークスペースのユーザー設定では");
-        expect(primaryLink.text()).toContain("ユーザー設定へ");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy selector route to the migrated circle selector", async () => {
+    it("shows the non-migrated message for a legacy selector URL", async () => {
         const wrapper = await mountAt("/selector");
-        const primaryLink = wrapper.get('a[href="/circles/select"]');
 
-        expect(wrapper.text()).toContain("企画セレクターの導線が移動しました");
-        expect(wrapper.text()).toContain("企画選択画面へ統合されています");
-        expect(primaryLink.text()).toContain("企画選択画面へ");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("preserves legacy selector redirect_to when linking to migrated selector", async () => {
+    it("does not preserve legacy redirect parameters anymore", async () => {
         const wrapper = await mountAt(
             "/selector?redirect_to=%2Fworkspace%2Fforms%2Fform-1%3Fanswer%3Danswer-1",
         );
-        const primaryLink = wrapper.get(
-            'a[href="/circles/select?redirect=/workspace/forms/form-1?answer=answer-1"]',
-        );
 
-        expect(wrapper.text()).toContain(
-            "/workspace/forms/form-1?answer=answer-1 へ戻って作業を続けられます",
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
+        expect(wrapper.findAll("a").map((link) => link.attributes("href"))).not.toContain(
+            "/circles/select?redirect=/workspace/forms/form-1?answer=answer-1",
         );
-        expect(primaryLink.text()).toContain("企画選択画面へ");
     });
 
-    it("preserves legacy selector circle query when linking to migrated selector", async () => {
+    it("ignores legacy circle selector query parameters", async () => {
         const wrapper = await mountAt(
             "/selector?redirect_to=%2Fworkspace%2Fforms%2Fform-1%3Fanswer%3Danswer-1&circle=circle-b",
         );
-        const primaryLink = wrapper.findAll("a").find((link) => link.text() === "企画選択画面へ");
 
-        expect(primaryLink).toBeDefined();
-        if (!primaryLink) {
-            throw new Error("primary link was not rendered");
-        }
-
-        expect(wrapper.text()).toContain("指定された企画 circle-b を優先して");
-        expect(primaryLink.text()).toContain("企画選択画面へ");
-        expect(primaryLink.attributes("href")).toBe(
-            "/circles/select?redirect=/workspace/forms/form-1?answer=answer-1&circle=circle-b",
-        );
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
+        expect(wrapper.text()).not.toContain("circle-b");
     });
 
-    it("redirects legacy selector set links to migrated selector immediately", async () => {
-        const { router } = await mountAtWithRouter(
-            "/selector/set?redirect_to=%2Fworkspace%2Fforms%2Fform-1%3Fanswer%3Danswer-1&circle=circle-b",
-        );
-
-        expect(router.currentRoute.value.fullPath).toBe(
-            "/circles/select?redirect=/workspace/forms/form-1?answer=answer-1&circle=circle-b",
-        );
-    });
-
-    it("guides the legacy logout route to login", async () => {
+    it("shows the non-migrated message for the legacy logout URL", async () => {
         const wrapper = await mountAt("/logout");
-        const primaryLink = wrapper.get('a[href="/login"]');
 
-        expect(wrapper.text()).toContain("ログアウト導線が変わりました");
-        expect(wrapper.text()).toContain("旧 `/logout` の GET 導線は廃止し");
-        expect(primaryLink.text()).toContain("ログイン画面へ");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy contacts route to workspace contact", async () => {
+    it("shows the non-migrated message for the legacy contacts URL", async () => {
         const wrapper = await mountAt("/contacts");
-        const primaryLink = wrapper.get('a[href="/workspace/contact"]');
 
-        expect(wrapper.text()).toContain("お問い合わせ導線が移動しました");
-        expect(wrapper.text()).toContain("ワークスペース配下のお問い合わせ画面へ移動しています");
-        expect(primaryLink.text()).toContain("お問い合わせ画面へ");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy staff send_emails route to staff mails", async () => {
+    it("shows the non-migrated message for the legacy staff mail URL", async () => {
         const wrapper = await mountAt("/staff/send_emails");
-        const primaryLink = wrapper.get('a[href="/staff/mails"]');
-        const secondaryLink = wrapper.get('a[href="/staff/pages"]');
 
-        expect(wrapper.text()).toContain("メール配信設定の導線が移動しました");
-        expect(wrapper.text()).toContain("旧 `/staff/send_emails` は、移行後は staff mails 画面");
-        expect(primaryLink.text()).toContain("メールキュー画面へ");
-        expect(secondaryLink.text()).toContain("お知らせ管理へ");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy circle create route to migrated circle creation", async () => {
+    it("shows the non-migrated message for the legacy circle create URL", async () => {
         const wrapper = await mountAt("/circles/create");
-        const primaryLink = wrapper.get('a[href="/circles/new"]');
 
-        expect(wrapper.text()).toContain("企画作成の導線が移動しました");
-        expect(wrapper.text()).toContain("新しい企画作成画面へ置き換えています");
-        expect(primaryLink.text()).toContain("企画作成画面へ");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("preserves legacy participation_type when guiding circle create", async () => {
+    it("does not surface legacy participation type query anymore", async () => {
         const wrapper = await mountAt("/circles/create?participation_type=pt-food");
-        const primaryLink = wrapper.get('a[href="/circles/new?participation_type=pt-food"]');
 
-        expect(wrapper.text()).toContain("legacy で指定されていた参加種別 pt-food を引き継ぎます");
-        expect(primaryLink.text()).toContain("企画作成画面へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
+        expect(wrapper.text()).not.toContain("pt-food");
     });
 
-    it("guides the legacy forms index route to the open forms tab", async () => {
+    it("shows the non-migrated message for the legacy forms index URL", async () => {
         const wrapper = await mountAt("/forms");
-        const primaryLink = wrapper.get('a[href="/workspace/forms"]');
 
-        expect(wrapper.text()).toContain("申請一覧の導線が移動しました");
-        expect(wrapper.text()).toContain("受付中タブを開きます");
-        expect(primaryLink.text()).toContain("申請一覧へ");
+        expect(wrapper.text()).toContain("ページが見つかりません");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy closed forms route to the closed forms tab", async () => {
+    it("shows the non-migrated message for the legacy closed forms URL", async () => {
         const wrapper = await mountAt("/forms/closed");
-        const primaryLink = wrapper.get('a[href="/workspace/forms?status=closed"]');
 
-        expect(wrapper.text()).toContain("受付終了タブを開きます");
-        expect(primaryLink.text()).toContain("申請一覧へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy all forms route to the all forms tab", async () => {
+    it("shows the non-migrated message for the legacy all forms URL", async () => {
         const wrapper = await mountAt("/forms/all");
-        const primaryLink = wrapper.get('a[href="/workspace/forms?status=all"]');
 
-        expect(wrapper.text()).toContain("全てタブを開きます");
-        expect(primaryLink.text()).toContain("申請一覧へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides legacy form answer create to migrated form detail", async () => {
+    it("shows the non-migrated message for legacy form answer create URLs", async () => {
         const wrapper = await mountAt("/forms/form-circle-a-1/answers/create");
-        const primaryLink = wrapper.get('a[href="/workspace/forms/form-circle-a-1"]');
 
-        expect(wrapper.text()).toContain("申請回答の導線が移動しました");
-        expect(wrapper.text()).toContain("/forms/:form/answers/create");
-        expect(primaryLink.text()).toContain("この申請を開く");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides legacy form answer edit to migrated answer detail", async () => {
+    it("shows the non-migrated message for legacy form answer edit URLs", async () => {
         const wrapper = await mountAt("/forms/form-circle-a-1/answers/answer-2/edit");
-        const primaryLink = wrapper.get(
-            'a[href="/workspace/forms/form-circle-a-1?answer=answer-2"]',
-        );
 
-        expect(wrapper.text()).toContain("answer ID: answer-2");
-        expect(primaryLink.text()).toContain("この回答を開く");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("offers direct download for legacy form upload routes", async () => {
+    it("shows the non-migrated message for legacy form upload URLs", async () => {
         const wrapper = await mountAt("/forms/form-circle-a-1/answers/answer-2/uploads/question-3");
-        const primaryLink = wrapper.get(
-            'a[href="/workspace/forms/form-circle-a-1?answer=answer-2"]',
-        );
-        const downloadLink = wrapper.get(
-            'a[href="http://127.0.0.1:8081/v1/forms/form-circle-a-1/answers/answer-2/uploads/question-3/file"]',
-        );
 
-        expect(wrapper.text()).toContain("question ID: question-3");
-        expect(primaryLink.text()).toContain("回答画面へ");
-        expect(downloadLink.text()).toContain("添付ファイルを直接開く");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy circle detail route to workspace circle detail", async () => {
+    it("shows the non-migrated message for legacy circle detail URLs", async () => {
         const wrapper = await mountAt("/circles/circle-a");
-        const primaryLink = wrapper.get('a[href="/workspace/circles/detail"]');
 
-        expect(wrapper.text()).toContain("企画情報の導線が移動しました");
-        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a");
-        expect(primaryLink.text()).toContain("企画情報画面へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
     it.each([
@@ -255,50 +162,34 @@ describe("NotFoundPage", () => {
         "/circles/circle-a/confirm",
         "/circles/circle-a/done",
         "/circles/circle-a/delete",
-    ])("guides the legacy circle action route %s to workspace circle detail", async (path) => {
+    ])("shows the non-migrated message for legacy circle action routes: %s", async (path) => {
         const wrapper = await mountAt(path);
-        const primaryLink = wrapper.get('a[href="/workspace/circles/detail"]');
 
-        expect(wrapper.text()).toContain("企画情報の導線が移動しました");
-        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a");
-        expect(primaryLink.text()).toContain("企画情報画面へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy circle auth route to workspace circle detail", async () => {
+    it("shows the non-migrated message for the legacy circle auth URL", async () => {
         const wrapper = await mountAt("/circles/circle-a/auth");
-        const primaryLink = wrapper.get('a[href="/workspace/circles/detail"]');
 
-        expect(wrapper.text()).toContain(
-            "旧 `/circles/:circle/auth` は、legacy では企画ごとの認証画面でした",
-        );
-        expect(wrapper.text()).toContain(
-            "legacy の企画 ID: circle-a を含む認証付きブックマークです",
-        );
-        expect(primaryLink.text()).toContain("企画情報画面へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy circle members route to workspace members", async () => {
+    it("shows the non-migrated message for the legacy circle members URL", async () => {
         const wrapper = await mountAt("/circles/circle-a/users");
-        const primaryLink = wrapper.get('a[href="/workspace/circles/members"]');
 
-        expect(wrapper.text()).toContain("メンバー管理の導線が移動しました");
-        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a");
-        expect(primaryLink.text()).toContain("メンバー管理画面へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
-    it("guides the legacy circle invite route to migrated invite acceptance", async () => {
+    it("shows the non-migrated message for the legacy circle invite URL", async () => {
         const wrapper = await mountAt("/circles/circle-a/users/invite/invite-token");
-        const primaryLink = wrapper.get('a[href="/circles/join/invite-token"]');
 
-        expect(wrapper.text()).toContain("招待受け入れの導線が移動しました");
-        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a / 招待トークン: invite-token");
-        expect(primaryLink.text()).toContain("招待受け入れ画面へ");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 
     it("keeps the generic 404 for unrelated routes", async () => {
         const wrapper = await mountAt("/definitely-missing");
 
         expect(wrapper.text()).toContain("ページが見つかりません");
-        expect(wrapper.text()).not.toContain("Legacy Route");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植対象外です");
     });
 });

@@ -27,8 +27,9 @@ describe("PasswordResetPage", () => {
     it("shows reset guidance without email flow", async () => {
         const wrapper = await mountAtPasswordReset();
 
-        expect(wrapper.text()).toContain("パスワード再設定は移行中です");
-        expect(wrapper.text()).toContain("再設定メール送信 API");
+        expect(wrapper.text()).toContain("パスワード再設定");
+        expect(wrapper.text()).toContain("旧 Laravel URL は移植せず");
+        expect(wrapper.text()).toContain("本番メール送信は行いません");
         expect(wrapper.get('a[href="/login"]').text()).toContain("ログイン画面へ");
     });
 });

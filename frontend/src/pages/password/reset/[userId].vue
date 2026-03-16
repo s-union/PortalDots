@@ -21,17 +21,14 @@ const actions = [
   { label: "ログイン画面へ", to: "/login" },
 ];
 
-const resetNotes = computed(() => [
-  `legacy の対象ユーザー ID: ${userId.value || "unknown"}`,
-  "署名付きリンクの直接処理はまだ migrated stack へ移していません。",
-]);
+const resetNotes = computed(() => [] as string[]);
 </script>
 
 <template>
   <AuthRouteNotice
-    body="ログイン可能であればワークスペース設定からパスワードを変更できます。ログインできない場合は、運営へ再案内を依頼してください。"
+    body="ログイン可能であればワークスペース設定からパスワードを変更できます。ログインできない場合は、運営へ再案内を依頼してください。署名付きメール経由の旧フローは移植していません。"
     :actions="actions"
-    lead="この URL は legacy の署名付きパスワード再設定リンクです。移行後の stack では、再設定完了フローをまだ提供していません。"
+    lead="この旧 Laravel URL は利用せず、現在はモック前提の案内のみ提供しています。"
     :notes="resetNotes"
     title="署名付きパスワード再設定リンクです"
   />

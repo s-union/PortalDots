@@ -28,7 +28,8 @@ describe("PasswordResetSignedPage", () => {
         const wrapper = await mountAtSignedReset();
 
         expect(wrapper.text()).toContain("署名付きパスワード再設定リンクです");
-        expect(wrapper.text()).toContain("legacy の対象ユーザー ID: user-123");
+        expect(wrapper.text()).toContain("この旧 Laravel URL は利用せず");
+        expect(wrapper.text()).toContain("署名付きメール経由の旧フローは移植していません");
         expect(wrapper.get('a[href="/password/reset"]').text()).toContain("再設定方法の案内を見る");
     });
 });
