@@ -21,6 +21,7 @@ function createQueryPlugin() {
 
 describe("StaffPlacesPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
@@ -50,6 +51,9 @@ describe("StaffPlacesPage", () => {
         });
         await router.push("/staff/places");
         await router.isReady();
+
+        const confirmMock = vi.fn(() => true);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
 
         vi.stubGlobal(
             "fetch",
@@ -123,6 +127,92 @@ describe("StaffPlacesPage", () => {
 
         await buttons[3].trigger("click");
         await flushPromises();
+        expect(confirmMock).toHaveBeenCalledWith(
+            expect.stringContaining("場所「中庭」を削除しますか？"),
+        );
+        expect(confirmMock).toHaveBeenCalledWith(
+            expect.stringContaining("企画自体は削除されません"),
+        );
         expect(wrapper.text()).not.toContain("中庭");
+    });
+
+    it("does not delete when place deletion is cancelled", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: { id: "circle-b", name: "デモ企画B" },
+            featureFlags: [],
+            roles: ["admin"],
+            user: { id: "staff-user", displayName: "Staff User" },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/staff", component: { template: "<div>staff</div>" } },
+                { path: "/staff/places", component: StaffPlacesPage },
+            ],
+        });
+        await router.push("/staff/places");
+        await router.isReady();
+
+        const confirmMock = vi.fn(() => false);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
+
+        const deleteRequests: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+                if (url.endsWith("/staff/places") && method === "GET") {
+                    return new Response(
+                        JSON.stringify([
+                            { id: "place-1", name: "1号館", type: 1, notes: "屋内" },
+                            { id: "place-2", name: "中庭", type: 2, notes: "屋外" },
+                        ]),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+                if (url.endsWith("/staff/places/place-2") && method === "DELETE") {
+                    deleteRequests.push(url);
+                    return new Response(null, { status: 204 });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffPlacesPage, {
+            global: { plugins: [pinia, router, createQueryPlugin()] },
+        });
+        await flushPromises();
+
+        const buttons = wrapper.findAll('button[type="button"]');
+        await buttons[3].trigger("click");
+        await flushPromises();
+
+        expect(confirmMock).toHaveBeenCalledWith(
+            expect.stringContaining("場所「中庭」を削除しますか？"),
+        );
+        expect(deleteRequests).toHaveLength(0);
+        expect(wrapper.text()).toContain("中庭");
     });
 });

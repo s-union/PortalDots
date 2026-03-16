@@ -27,3 +27,4 @@
 - 2026-03-16: `staff/forms/index.vue` の copy/delete も tags と同じ confirm パターンで安全に復元できる。confirm をキャンセルしたときに mutation が走らないことと、copy 後の詳細遷移だけを `index.test.ts` で押さえると一覧ページの destructive parity を軽く固定できる。
 - 2026-03-16: follow-up で changed symbol の caller を見ると `useCopyStaffFormMutation` / `useDeleteStaffFormMutation` は `/staff/forms/[formId]` でも使われていた。一覧だけ confirm 復元すると detail との体験差が残るので、sibling page まで同じ文面と回帰テストをそろえるのが次の最小タスク。
 - 2026-03-16: form detail 側も confirm 文面は一覧と共有 utility に寄せるとぶれない。follow-up で legacy `staff/places/index.blade.php` を見ると「削除時は企画自体ではなく使用場所設定だけ解除される」注意が未移植だったので、次は `staff/places.vue` の destructive parity を埋めるのが自然。
+- 2026-03-16: `staff/places.vue` の delete confirm は legacy の注意文をそのまま移すだけで十分効く。作成・更新・削除が同じテストに載っている一覧ページでは、confirm 実行ケースに加えて cancel 時に DELETE が飛ばないケースを別テストへ分けると読みやすい。

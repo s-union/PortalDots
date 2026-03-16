@@ -12,6 +12,7 @@ definePage({
 import { computed, ref } from "vue";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
+  buildDeleteStaffPlaceConfirmMessage,
   extractStaffPlaceValidationMessage,
   placeTypeLabel,
   useCreateStaffPlaceMutation,
@@ -59,6 +60,15 @@ async function handleUpdatePlace(placeId: string) {
 }
 
 async function handleDeletePlace(placeId: string) {
+  const placeName =
+    placesQuery.data.value?.find((place) => place.id === placeId)?.name ?? "この場所";
+  if (
+    typeof window !== "undefined" &&
+    !window.confirm(buildDeleteStaffPlaceConfirmMessage(placeName))
+  ) {
+    return;
+  }
+
   await deleteMutation.mutateAsync(placeId);
 }
 </script>

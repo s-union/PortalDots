@@ -173,8 +173,9 @@
       "id": "22",
       "title": "staff places の削除確認を復元する",
       "description": "legacy places 一覧にある削除 confirm 文面を migrated places 画面へ戻し、関連解除の注意を伝える",
-      "status": "in_progress",
-      "addedAt": "2026-03-16T12:12:30Z"
+      "status": "done",
+      "addedAt": "2026-03-16T12:12:30Z",
+      "completedAt": "2026-03-16T13:03:05Z"
     }
   ]
 }

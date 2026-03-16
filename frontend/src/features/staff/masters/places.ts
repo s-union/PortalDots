@@ -139,6 +139,10 @@ export function extractStaffPlaceValidationMessage(error: unknown) {
     return extractValidationMessage(error, "場所の保存に失敗しました。");
 }
 
+export function buildDeleteStaffPlaceConfirmMessage(placeName: string) {
+    return `場所「${placeName}」を削除しますか？\n\n• 企画の使用場所として「${placeName}」が設定されている場合、その設定は解除されます。企画自体は削除されません`;
+}
+
 export function placeTypeLabel(placeType: number) {
     switch (placeType) {
         case 1:
