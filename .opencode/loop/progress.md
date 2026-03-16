@@ -11,3 +11,4 @@
 - 2026-03-16: staff の CRUD detail テストは `documents/[documentId]/edit.test.ts` を雛形にすると速い。detail GET に加えて update / pin toggle / delete の mutation を 1 テストでまとめて固定すると sibling 間の回帰差が減る。
 - 2026-03-16: `staff/forms/[formId]` 配下の sibling 画面テストは、`/staff/status` と対象画面の GET だけを最小 stub すると十分固定できる。`answers/uploads` の ZIP 導線は `buildStaffFormAnswerUploadsZipUrl()` の生成結果まで anchor href で確認しておくと URL 退行も拾いやすい。
 - 2026-03-16: `workspace/contact` は categories/history の query が独立しているので、失敗系テストも UI 全体を壊さずに局所確認しやすい。カテゴリ取得失敗時は select がプレースホルダのみになること、422 送信失敗時は `extractContactValidationMessage()` 経由の文言だけを出すことを固定すると安心。
+- 2026-03-16: public auth の legacy 導線は、backend API が未移行でも file-based route を先に生やして `catch-all` から切り離せる。`publicOnly` と `requiresAuth` を URL ごとに分け、共通 notice component で legacy との差分だけ説明すると route guard とテストの見通しがよい。

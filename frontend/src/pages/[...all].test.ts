@@ -91,35 +91,6 @@ describe("NotFoundPage", () => {
         expect(downloadLink.text()).toContain("この資料を直接開く");
     });
 
-    it("guides the legacy register route to migrated auth guidance", async () => {
-        const wrapper = await mountAt("/register");
-        const primaryLink = wrapper.get('a[href="/login"]');
-
-        expect(wrapper.text()).toContain("認証導線は移行中です");
-        expect(wrapper.text()).toContain("まだ新規ユーザー登録フォームを提供していません");
-        expect(primaryLink.text()).toContain("ログイン画面へ戻る");
-    });
-
-    it("guides the legacy password reset route to migrated auth guidance", async () => {
-        const wrapper = await mountAt("/password/reset");
-        const primaryLink = wrapper.get('a[href="/login"]');
-
-        expect(wrapper.text()).toContain("パスワード再設定は移行中です");
-        expect(wrapper.text()).toContain(
-            "現在の migrated stack ではメール送信付きの再設定開始フローをまだ提供していません",
-        );
-        expect(primaryLink.text()).toContain("ログイン画面へ戻る");
-    });
-
-    it("guides the legacy signed password reset route to reset instructions", async () => {
-        const wrapper = await mountAt("/password/reset/user-123");
-        const primaryLink = wrapper.get('a[href="/password/reset"]');
-
-        expect(wrapper.text()).toContain("legacy の署名付きパスワード再設定リンク");
-        expect(wrapper.text()).toContain("ワークスペースの設定画面からパスワードを変更できます");
-        expect(primaryLink.text()).toContain("再設定方法の案内を見る");
-    });
-
     it("guides the legacy user settings route to workspace settings", async () => {
         const wrapper = await mountAt("/user/password");
         const primaryLink = wrapper.get('a[href="/workspace/settings"]');
@@ -282,33 +253,6 @@ describe("NotFoundPage", () => {
         expect(wrapper.text()).toContain("question ID: question-3");
         expect(primaryLink.text()).toContain("回答画面へ");
         expect(downloadLink.text()).toContain("添付ファイルを直接開く");
-    });
-
-    it("guides the legacy email verification notice route", async () => {
-        const wrapper = await mountAt("/email/verify");
-        const primaryLink = wrapper.get('a[href="/login"]');
-
-        expect(wrapper.text()).toContain("メール認証導線は移行中です");
-        expect(wrapper.text()).toContain("確認メール再送と認証状況の確認");
-        expect(primaryLink.text()).toContain("ログイン画面へ");
-    });
-
-    it("guides the legacy email verification completed route", async () => {
-        const wrapper = await mountAt("/email/verify/completed");
-        const primaryLink = wrapper.get('a[href="/login"]');
-
-        expect(wrapper.text()).toContain("legacy のメール認証完了画面");
-        expect(wrapper.text()).toContain("ログイン導線を優先します");
-        expect(primaryLink.text()).toContain("ログイン画面へ");
-    });
-
-    it("guides the legacy signed email verification route", async () => {
-        const wrapper = await mountAt("/email/verify/email/user-123");
-        const primaryLink = wrapper.get('a[href="/"]');
-
-        expect(wrapper.text()).toContain("legacy の署名付きメール認証リンク");
-        expect(wrapper.text()).toContain("認証種別: email / 対象ユーザー: user-123");
-        expect(primaryLink.text()).toContain("ホームへ戻る");
     });
 
     it("guides the legacy circle detail route to workspace circle detail", async () => {

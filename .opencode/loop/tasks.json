@@ -61,8 +61,9 @@
       "id": "8",
       "title": "public auth 導線の本移植候補を具体実装する",
       "description": "`/register` `/password/reset` `/email/verify` の catch-all 案内止まりを減らせるものから migrated 画面化する",
-      "status": "pending",
-      "addedAt": "2026-03-16T09:29:54Z"
+      "status": "done",
+      "addedAt": "2026-03-16T09:29:54Z",
+      "completedAt": "2026-03-16T10:02:23Z"
     }
   ]
 }
