@@ -142,14 +142,22 @@ const legacyCircleRoute = computed(() => {
     return null;
   }
 
-  if (action === null || ["edit", "confirm", "done", "delete"].includes(action)) {
+  if (action === null || ["auth", "edit", "confirm", "done", "delete"].includes(action)) {
+    const body =
+      action === "auth"
+        ? `legacy の企画 ID: ${circleId} を含む認証付きブックマークです。migrated stack では個別の認証画面を出さず、現在選択中の企画情報画面からアクセス可否を確認します。必要なら企画責任者に共有された最新の導線を確認してください。`
+        : `legacy の企画 ID: ${circleId} を含むブックマークです。企画の編集、提出状況の確認、提出後の作業、削除導線は migrated の企画情報画面へ統合されています。`;
+
     return {
       circleId,
       target: "/workspace/circles/detail",
       targetLabel: "企画情報画面へ",
       title: "企画情報の導線が移動しました",
-      lead: "旧 `/circles/:circle` 系 URL は、移行後は現在選択中の企画情報画面で確認します。",
-      body: `legacy の企画 ID: ${circleId} を含むブックマークです。企画の編集、提出状況の確認、提出後の作業、削除導線は migrated の企画情報画面へ統合されています。`,
+      lead:
+        action === "auth"
+          ? "旧 `/circles/:circle/auth` は、legacy では企画ごとの認証画面でした。移行後は現在選択中の企画情報画面で状況を確認します。"
+          : "旧 `/circles/:circle` 系 URL は、移行後は現在選択中の企画情報画面で確認します。",
+      body,
     };
   }
 

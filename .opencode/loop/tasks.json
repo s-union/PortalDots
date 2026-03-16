@@ -110,6 +110,14 @@
       "status": "done",
       "addedAt": "2026-03-16T04:28:31Z",
       "completedAt": "2026-03-16T04:39:36Z"
+    },
+    {
+      "id": "15",
+      "title": "残る circle auth legacy 導線を救済する",
+      "description": "follow-up check で残った `/circles/{circle}/auth` を Vue 側で受け、migrated の企画情報導線と安全な案内へ接続する",
+      "status": "done",
+      "addedAt": "2026-03-16T04:42:41Z",
+      "completedAt": "2026-03-16T04:44:43Z"
     }
   ]
 }
