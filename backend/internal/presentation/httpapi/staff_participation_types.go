@@ -34,6 +34,8 @@ type staffParticipationTypeResponse struct {
 	Form          staffParticipationTypeFormResponse `json:"form"`
 }
 
+type participationTypeResponse = staffParticipationTypeResponse
+
 type mutateStaffParticipationTypeRequest struct {
 	Name                    string   `json:"name"`
 	Description             string   `json:"description"`
@@ -289,8 +291,8 @@ func bindAndValidateStaffParticipationType(c echo.Context) (mutateStaffParticipa
 	return request, errors, len(errors) == 0
 }
 
-func mapStaffParticipationType(item participationtype.ParticipationType, formValue backendform.Form) staffParticipationTypeResponse {
-	return staffParticipationTypeResponse{
+func mapParticipationType(item participationtype.ParticipationType, formValue backendform.Form) participationTypeResponse {
+	return participationTypeResponse{
 		ID:            item.ID,
 		Name:          item.Name,
 		Description:   item.Description,
@@ -310,6 +312,10 @@ func mapStaffParticipationType(item participationtype.ParticipationType, formVal
 			ConfirmationMessage: formValue.ConfirmationMessage,
 		},
 	}
+}
+
+func mapStaffParticipationType(item participationtype.ParticipationType, formValue backendform.Form) staffParticipationTypeResponse {
+	return mapParticipationType(item, formValue)
 }
 
 func normalizeParticipationTypeTags(tags []string) []string {

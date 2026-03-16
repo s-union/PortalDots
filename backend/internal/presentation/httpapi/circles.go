@@ -3,11 +3,14 @@ package httpapi
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
+	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
+	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 )
 
@@ -97,6 +100,34 @@ func (h *workspaceHandlers) listCircles(c echo.Context) error {
 			GroupName:             selectable.GroupName,
 			ParticipationTypeName: selectable.ParticipationTypeName,
 		})
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func (h *workspaceHandlers) listParticipationTypes(c echo.Context) error {
+	_, currentSession, ok := h.getSession(c)
+	if !ok || currentSession.User == nil {
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
+	}
+
+	items, err := h.participationTypes.List()
+	if err != nil {
+		return internalError(c)
+	}
+
+	slices.SortFunc(items, func(left, right participationtype.ParticipationType) int {
+		return strings.Compare(left.Name, right.Name)
+	})
+
+	response := make([]participationTypeResponse, 0, len(items))
+	for _, item := range items {
+		formValue, found := h.forms.FindByIDForStaff(item.FormID)
+		if !found || !isPublicParticipationForm(formValue) {
+			continue
+		}
+
+		response = append(response, mapParticipationType(item, formValue))
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -407,4 +438,8 @@ func (h *workspaceHandlers) joinCircleByToken(c echo.Context) error {
 	})
 
 	return c.JSON(http.StatusOK, mapCircleDetail(joined))
+}
+
+func isPublicParticipationForm(formValue backendform.Form) bool {
+	return formValue.IsPublic && formValue.IsOpen
 }

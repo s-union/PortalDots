@@ -1,34 +1,32 @@
 {
-  "startedAt": "2026-03-15T16:42:25Z",
-  "description": "Vue/Go移植の残タスクを洗い出し、優先度順に実装・検証・レビューして完了まで進める",
+  "startedAt": "2026-03-16T03:12:00Z",
+  "description": "コードベースを再調査して今やるべき移行タスクを見直し、優先度順に自律実装・検証・コミットまで進める",
   "tasks": [
     {
       "id": "1",
-      "title": "残タスクの調査とループ計画作成",
-      "description": "LaravelからVue/Goへの移行状況を確認し、未移植または不整合な箇所を洗い出してタスク化する",
+      "title": "残タスクを再調査して新ループ計画を立てる",
+      "description": "frontend と backend、および legacy 実装を見直して今やるべき候補を再確認し、優先度付きで loop に落とし込む",
       "status": "done",
-      "completedAt": "2026-03-15T16:54:14Z"
+      "completedAt": "2026-03-16T03:15:00Z"
     },
     {
       "id": "2",
-      "title": "ユーザー設定の外観設定をVueに移植",
-      "description": "legacy の theme cookie と同等の light/dark/system 切替を frontend 側へ復元し、workspace/settings から保存できるようにする",
+      "title": "一般ユーザー向け参加種別一覧を migrated API に追加する",
+      "description": "circle 作成画面が staff API へ依存しないよう、参加種別一覧を一般利用者が取得できる Go API と契約を追加する",
       "status": "done",
-      "completedAt": "2026-03-15T17:13:40Z"
+      "completedAt": "2026-03-16T10:00:00Z"
     },
     {
       "id": "3",
-      "title": "アカウント削除導線をGo APIとVueに移植",
-      "description": "legacy の制約を保ちながら自分自身のアカウント削除 API と UI を実装し、削除後に安全にセッションを終了する",
-      "status": "done",
-      "completedAt": "2026-03-16T03:05:00Z"
+      "title": "企画新規作成画面を public participation types に切り替える",
+      "description": "frontend の circles/new を新 API へ接続し、非 staff でも参加種別を選んで企画作成できるようにする",
+      "status": "pending"
     },
     {
       "id": "4",
-      "title": "関連テストと移行メモを更新",
-      "description": "workspace settings の新フローを検証するテストを整備し、残課題と注意点を progress に追記する",
-      "status": "done",
-      "completedAt": "2026-03-16T03:07:30Z"
+      "title": "関連テストと移行メモを更新する",
+      "description": "参加種別導線の回帰テストと progress の知見を更新し、残課題を整理する",
+      "status": "pending"
     }
   ]
 }

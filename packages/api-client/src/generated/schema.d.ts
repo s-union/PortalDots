@@ -1059,6 +1059,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/participation-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return public participation types available to authenticated users */
+        get: operations["getParticipationTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/circles/current": {
         parameters: {
             query?: never;
@@ -6125,6 +6142,54 @@ export interface operations {
             };
             /** @description Validation error */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getParticipationTypes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public participation type list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        description: string;
+                        usersCountMin: number;
+                        usersCountMax: number;
+                        tags: string[];
+                        form: {
+                            id: string;
+                            name: string;
+                            description: string;
+                            /** Format: date-time */
+                            openAt: string;
+                            /** Format: date-time */
+                            closeAt: string;
+                            isPublic: boolean;
+                            isOpen: boolean;
+                            maxAnswers: number;
+                            answerableTags: string[];
+                            confirmationMessage: string;
+                        };
+                    }[];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

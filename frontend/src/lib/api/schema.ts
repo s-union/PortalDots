@@ -424,6 +424,18 @@ export const staffParticipationTypeFormSchema = z.object({
     confirmationMessage: z.string(),
 });
 
+export const participationTypeFormSchema = staffParticipationTypeFormSchema;
+
+export const participationTypeSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    usersCountMin: z.number(),
+    usersCountMax: z.number(),
+    tags: stringArraySchema,
+    form: participationTypeFormSchema,
+});
+
 export const staffParticipationTypeSchema = z.object({
     id: z.string(),
     name: z.string(),

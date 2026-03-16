@@ -421,6 +421,103 @@ func TestListCirclesRequiresAuthentication(t *testing.T) {
 	}
 }
 
+func TestListParticipationTypesRequiresAuthentication(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/participation-types", nil)
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnauthorized, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.ParticipationTypes = append(cfg.ParticipationTypes,
+		config.ParticipationType{
+			ID:            "participation-type-private",
+			Name:          "非公開企画",
+			Description:   "非公開フォームに紐づく参加種別",
+			UsersCountMin: 1,
+			UsersCountMax: 2,
+			Tags:          []string{"限定"},
+			FormID:        "form-participation-private",
+		},
+		config.ParticipationType{
+			ID:            "participation-type-closed",
+			Name:          "締切済み企画",
+			Description:   "締切済みフォームに紐づく参加種別",
+			UsersCountMin: 1,
+			UsersCountMax: 3,
+			Tags:          []string{"締切"},
+			FormID:        "form-participation-closed",
+		},
+	)
+	cfg.Forms = append(cfg.Forms,
+		config.Form{
+			ID:                  "form-participation-private",
+			CircleID:            "",
+			Name:                "企画参加登録",
+			Description:         "非公開の参加登録フォームです。",
+			IsPublic:            false,
+			IsOpen:              true,
+			OpenAt:              "2026-03-01T00:00:00Z",
+			CloseAt:             "2026-03-31T23:59:59Z",
+			MaxAnswers:          1,
+			AnswerableTags:      []string{},
+			ConfirmationMessage: "",
+		},
+		config.Form{
+			ID:                  "form-participation-closed",
+			CircleID:            "",
+			Name:                "企画参加登録",
+			Description:         "締切済みの参加登録フォームです。",
+			IsPublic:            true,
+			IsOpen:              false,
+			OpenAt:              "2026-02-01T00:00:00Z",
+			CloseAt:             "2026-02-10T23:59:59Z",
+			MaxAnswers:          1,
+			AnswerableTags:      []string{},
+			ConfirmationMessage: "",
+		},
+	)
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/participation-types", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response []participationTypeResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal participation types response: %v", err)
+	}
+
+	if len(response) != 2 {
+		t.Fatalf("expected 2 public open participation types, got %#v", response)
+	}
+	if response[0].ID != "participation-type-exhibit" || response[1].ID != "participation-type-food" {
+		t.Fatalf("expected sorted public participation types, got %#v", response)
+	}
+	if !response[0].Form.IsPublic || !response[0].Form.IsOpen {
+		t.Fatalf("expected public open form metadata, got %#v", response[0].Form)
+	}
+}
+
 func TestSetCurrentCircleUpdatesBootstrap(t *testing.T) {
 	t.Parallel()
 

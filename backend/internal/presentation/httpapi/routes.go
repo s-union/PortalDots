@@ -113,6 +113,7 @@ func registerStaffRoutes(
 
 func registerWorkspaceRoutes(v1 *echo.Group, workspaceH *workspaceHandlers) {
 	v1.GET("/circles", workspaceH.listCircles)
+	v1.GET("/participation-types", workspaceH.listParticipationTypes)
 	v1.POST("/circles", workspaceH.createCircle)
 	v1.PUT("/circles/current", workspaceH.setCurrentCircle)
 	v1.GET("/circles/current/detail", workspaceH.getCurrentCircleDetail)

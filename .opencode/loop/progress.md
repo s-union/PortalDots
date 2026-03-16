@@ -14,3 +14,6 @@
 - 2026-03-16: `openapi-typescript` の generated schema で path parameter が欠けるときは、generated 側ではなく `backend/api/openapi.yaml` の endpoint 定義を見直す。今回は circle 系 endpoint 定義を揃えることで `/circles/current/members/{userID}` と `/circles/join/{token}` の path 型崩れを解消できた。
 - 2026-03-16: `frontend ci:check` は task 3 完了時点でも `frontend/src/features/circles/api.ts` の既存 `no-floating-promises` warnings を出すが、error ではなく今回変更起因でもない。
 - 2026-03-16: task 4 では backend 側に「staff は削除不可」の API test を追加し、frontend 側に「DELETE 422 の validation message をそのまま表示する」テストを追加した。削除失敗時は session を維持したまま同一画面に留まることも合わせて確認できる。
+
+- 2026-03-16: ループ再調査の結果、最優先は `frontend/src/pages/circles/new.vue` の staff API 依存を外すこと。現状は一般利用者導線なのに `/staff/participation-types` を叩いており、非 staff では migrated UI から企画作成が成立しない。
+- 2026-03-16: 一般ユーザー向け参加種別一覧は `GET /v1/participation-types` として追加し、legacy の `ParticipationType::open()->public()` に合わせて `form.IsPublic && form.IsOpen` のものだけ返す。response shape は staff 用 mapping を共通化して流用できた。
