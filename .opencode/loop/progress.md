@@ -32,3 +32,5 @@
 - 2026-03-16: `staff/contact-categories.vue` の confirm は複雑な注意文までは不要で、legacy delete page と同じ 1 行メッセージで十分。`名前(email)` の完全一致をテストしておくと、連絡先メールの取り違えも拾える。
 - 2026-03-16: destructive parity の横展開先としては `staff/forms/[formId]/answers/[answerId]/edit.vue` も自然。legacy answers 一覧には「削除通知は企画に送られない」という 1 行注意があるので、answer edit の削除ボタンにも同じ confirm を足しておくと staff 操作の意図が伝わりやすい。
 - 2026-03-16: answer edit の delete confirm は `groupName` があれば十分組み立てられるので detail query の追加 API は不要。cancel 時に route が変わらず DELETE も飛ばないことまで test で押さえると、回答編集の事故を防ぎやすい。
+- 2026-03-16: 次の parity 候補は document detail。legacy 一覧の confirm は資料名を含むだけの単純文なので、`staff/documents/[documentId]/edit.vue` でも detail query の `name` を使って同じ文字列へ寄せるだけで十分。
+- 2026-03-16: document detail も confirm 文面は feature API 側 utility に寄せると一覧/detail で共有しやすい。cancel 時の route 維持を別テストにしておくと、既存の update/delete 複合テストを壊さず parity を足せる。

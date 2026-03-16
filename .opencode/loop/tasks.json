@@ -192,6 +192,14 @@
       "status": "done",
       "addedAt": "2026-03-16T13:08:49Z",
       "completedAt": "2026-03-16T13:10:20Z"
+    },
+    {
+      "id": "25",
+      "title": "staff document 詳細の削除確認を legacy 文面へそろえる",
+      "description": "migrated document detail の簡素な confirm を legacy 一覧の文言へ合わせ、資料名を含めて確認できるようにする",
+      "status": "done",
+      "addedAt": "2026-03-16T13:12:54Z",
+      "completedAt": "2026-03-16T13:14:56Z"
     }
   ]
 }

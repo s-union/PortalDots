@@ -24,6 +24,7 @@ function createQueryPlugin() {
 
 describe("StaffDocumentDetailPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
@@ -85,10 +86,8 @@ describe("StaffDocumentDetailPage", () => {
         await router.push("/staff/documents/document-circle-b-1/edit");
         await router.isReady();
 
-        vi.stubGlobal(
-            "confirm",
-            vi.fn(() => true),
-        );
+        const confirmMock = vi.fn(() => true);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -190,7 +189,115 @@ describe("StaffDocumentDetailPage", () => {
         await wrapper.get('button[type="button"]').trigger("click");
         await flushPromises();
 
+        expect(confirmMock).toHaveBeenCalledWith("配布資料「展示ガイド」を削除しますか？");
         expect(deleted).toBe(true);
         expect(router.currentRoute.value.fullPath).toBe("/staff/documents");
+    });
+
+    it("does not delete a staff document when confirmation is cancelled", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-b",
+                name: "デモ企画B",
+            },
+            featureFlags: [],
+            roles: ["admin"],
+            user: {
+                id: "staff-user",
+                displayName: "Staff User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/login", component: { template: "<div>login</div>" } },
+                { path: "/", component: { template: "<div>home</div>" } },
+                { path: "/circles/select", component: { template: "<div>circles</div>" } },
+                { path: "/staff", component: StaffDashboardPage },
+                { path: "/staff/verify", component: StaffVerifyPage },
+                { path: "/staff/documents", component: StaffDocumentsIndexPage },
+                { path: "/staff/documents/:documentId/edit", component: StaffDocumentDetailPage },
+            ],
+        });
+        await router.push("/staff/documents/document-circle-b-1/edit");
+        await router.isReady();
+
+        const confirmMock = vi.fn(() => false);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
+        let deleted = false;
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+
+                if (url.endsWith("/staff/documents/document-circle-b-1/edit") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            id: "document-circle-b-1",
+                            name: "展示ガイド",
+                            description: "Bブロック向けの展示ガイドです。",
+                            notes: "展示班の責任者に共有済みです。",
+                            isImportant: true,
+                            filename: "b-exhibition-guide.txt",
+                            extension: "TXT",
+                            mimeType: "text/plain",
+                            sizeBytes: 1024,
+                            isPublic: true,
+                            createdAt: "2026-03-03T09:00:00Z",
+                            updatedAt: "2026-03-05T09:00:00Z",
+                            downloadUrl: "/v1/staff/documents/document-circle-b-1",
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (url.endsWith("/staff/documents/document-circle-b-1") && method === "DELETE") {
+                    deleted = true;
+                    return new Response(null, { status: 204 });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffDocumentDetailPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+        await flushPromises();
+
+        await wrapper.get('button[type="button"]').trigger("click");
+        await flushPromises();
+
+        expect(confirmMock).toHaveBeenCalledWith("配布資料「展示ガイド」を削除しますか？");
+        expect(deleted).toBe(false);
+        expect(router.currentRoute.value.fullPath).toBe(
+            "/staff/documents/document-circle-b-1/edit",
+        );
     });
 });

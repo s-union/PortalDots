@@ -276,6 +276,10 @@ export function extractStaffDocumentValidationMessage(error: unknown) {
     return extractValidationMessage(error, "配布資料のアップロードに失敗しました。");
 }
 
+export function buildDeleteStaffDocumentConfirmMessage(documentName: string) {
+    return `配布資料「${documentName}」を削除しますか？`;
+}
+
 export function buildStaffDocumentDownloadUrl(documentId: string) {
     return buildApiUrl(`/staff/documents/${encodeURIComponent(documentId)}`);
 }

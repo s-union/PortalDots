@@ -19,6 +19,7 @@ import { formatFileSize } from "@/lib/format/fileSize";
 import { useSessionStore } from "@/features/session/store";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
+  buildDeleteStaffDocumentConfirmMessage,
   buildStaffDocumentDownloadUrl,
   extractStaffDocumentValidationMessage,
   useDeleteStaffDocumentMutation,
@@ -91,7 +92,11 @@ async function handleSaveDocument() {
 }
 
 async function handleDeleteDocument() {
-  if (typeof window !== "undefined" && !window.confirm("この配布資料を削除しますか？")) {
+  const documentName = documentQuery.data.value?.name ?? "この配布資料";
+  if (
+    typeof window !== "undefined" &&
+    !window.confirm(buildDeleteStaffDocumentConfirmMessage(documentName))
+  ) {
     return;
   }
 
