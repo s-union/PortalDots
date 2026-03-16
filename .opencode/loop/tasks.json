@@ -1,58 +1,33 @@
 {
-  "startedAt": "2026-03-16T13:40:00Z",
-  "description": "残る Laravel から Vue+Go への移植ギャップを順に実装し、送信系を migrated 側で一律モック化する",
+  "startedAt": "2026-03-17T00:00:00Z",
+  "description": "旧URLは移植しない方針を migrated 側で明確化し、メール関連モック表現を維持しつつ残る導線を整理する",
   "tasks": [
     {
       "id": "1",
       "title": ".opencode/loop を再作成する",
-      "description": "既存 loop 状態を破棄し、新しいタスク一覧と進捗ノートを作成する",
+      "description": "削除済みの loop state を作り直し、今回の自律タスクを登録する",
       "status": "done",
-      "completedAt": "2026-03-16T13:41:00Z"
+      "completedAt": "2026-03-17T00:01:00Z"
     },
     {
       "id": "2",
-      "title": "Portal 設定を /staff/settings/portal に移植する",
-      "description": "admin 向け Portal 設定 UI と Go API を追加し、staff settings から辿れるようにする",
+      "title": "旧URL互換レイヤーを撤去する",
+      "description": "frontend の legacy redirect と関連テストを削除し、旧URLは移植対象外であることが 404 で分かるようにする",
       "status": "done",
-      "completedAt": "2026-03-16T14:18:00Z"
+      "completedAt": "2026-03-17T01:40:00Z"
     },
     {
       "id": "3",
-      "title": "参加種別ごとの企画一覧と CSV を移植する",
-      "description": "legacy の participation type detail 一覧/API/export を Vue+Go に追加する",
+      "title": "認証系の非移植メッセージを整理する",
+      "description": "register/password reset/email verify の案内を、メール設計未確定のためモック運用中かつ旧URL非対応であることが分かる表現にそろえる",
       "status": "done",
-      "completedAt": "2026-03-16T14:27:00Z"
+      "completedAt": "2026-03-17T01:41:00Z"
     },
     {
       "id": "4",
-      "title": "場所別企画一覧 CSV を移植する",
-      "description": "places 画面からダウンロードできる場所別企画 CSV を Go API とともに追加する",
-      "status": "done",
-      "completedAt": "2026-03-16T14:52:00Z"
-    },
-    {
-      "id": "5",
-      "title": "workspace の企画メンバー直接追加を移植する",
-      "description": "招待 URL に加え、legacy の直接追加導線を Vue+Go に追加する",
-      "status": "pending"
-    },
-    {
-      "id": "6",
-      "title": "参加種別フォームの locked 制限を見直す",
-      "description": "participation type に紐づく form の編集可能範囲を migrated 側に寄せる",
-      "status": "pending"
-    },
-    {
-      "id": "7",
-      "title": "migrated 側のメール送信を一律モック表現へそろえる",
-      "description": "staff verify・contact・mail queue などの送信系を実送信ではなく mock と明示する",
-      "status": "pending"
-    },
-    {
-      "id": "8",
-      "title": "follow-up checks で追加ギャップを潰す",
-      "description": "git log・TODO 検索・テスト・caller/sibling 調査を行い、必要なら追加実装する",
-      "status": "pending"
+      "title": "follow-up checks を実行する",
+      "description": "ログ・TODO・テスト・caller/sibling 調査を実施し、追加作業があれば継続する",
+      "status": "in_progress"
     }
   ]
 }

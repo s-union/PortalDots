@@ -3,7 +3,7 @@
 ## Patterns & Notes
 <!-- Append important discoveries, pitfalls, and workarounds as you work -->
 
-- 2026-03-16: user 指示どおり開始前に `/.opencode/loop` を削除して新規 loop を再作成した。既存の repo には他作業の未コミット変更が多いので、以後の実装は touched file を最小化し、commit ごとに対象差分を明確に分ける。
-- 2026-03-16: Portal 設定は `admin` 専用 capability として切り出し、既存 `staff/settings` 配下に `portal` page を追加するだけで安全に移せた。OpenAPI 型生成を使っているので、新 endpoint 追加時は `backend/api/openapi.yaml` と `packages/api-client/src/generated/schema.d.ts` の再生成が必須。
-- 2026-03-16: participation type detail に一覧を戻すときは新 route を増やすより detail page に section を足す方が既存導線と自然に繋がる。circle 一覧は既存 `staffCircleResponse` をそのまま再利用でき、CSV も `writeCSV()` と既存 export の pattern で十分だった。
-- 2026-03-16: 場所別企画一覧 CSV は migrated 側に `booths` 相当の place-circle relation が無いと legacy と同じ出力を作れない。`booths` table / sqlc query / booth repository / seed data を追加し、place 削除時と circle 削除時に relation も掃除することで、legacy と同じ multi-row CSV 形式を再現できた。
+- 2026-03-17: loop state が消されていたので再作成して開始。既存 worktree には他変更が多いため、今回の修正は `frontend/src/pages/[...all]*` と認証案内ページ周辺に限定して差分を分ける。
+- 2026-03-17: `nr test -- src/pages/[...all].test.ts ...` は zsh の glob 展開で失敗した。角括弧を含むパスは必ずクォートして実行する。
+- 2026-03-17: 旧URL互換は案内カードを維持するより catch-all 404 に一本化した方が「移植しない」方針を明確に伝えられる。関連 composable と `_legacy` コンポーネント群も丸ごと削除できた。
+- 2026-03-17: auth 系は API 未実装よりも「メール設計未確定のためモック案内のみ」という方針を明言した方が、staff verify / contact / mail queue の既存表現とそろう。
