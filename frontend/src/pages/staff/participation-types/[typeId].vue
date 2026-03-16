@@ -16,7 +16,9 @@ import SettingsSection from "@/components/ui/SettingsSection.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
 import { useAuthorizedStaffContext } from "@/features/staff/hooks/useAuthorizedStaffContext";
+import { calculateTotalPages } from "@/lib/pagination";
 import {
+  buildStaffParticipationTypeCirclesExportUrl,
   buildDeleteStaffParticipationTypeConfirmMessage,
   extractStaffParticipationTypeValidationMessage,
   formatDateTimeLocalValue,
@@ -24,6 +26,7 @@ import {
   parseDateTimeLocalValue,
   parseParticipationTypeTags,
   useDeleteStaffParticipationTypeMutation,
+  useStaffParticipationTypeCirclesQuery,
   useStaffParticipationTypeDetailQuery,
   useUpdateStaffParticipationTypeMutation,
 } from "@/features/staff/participation-types/api";
@@ -33,6 +36,14 @@ const router = useRouter();
 const typeId = computed(() => String(route.params.typeId ?? ""));
 const { enabled } = useAuthorizedStaffContext({ capability: "circles.participationTypes" });
 const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled);
+const circlesPage = ref(1);
+const circlesPageSize = 10;
+const circlesQuery = useStaffParticipationTypeCirclesQuery(
+  typeId,
+  enabled,
+  circlesPage,
+  circlesPageSize,
+);
 const updateMutation = useUpdateStaffParticipationTypeMutation(typeId);
 const deleteMutation = useDeleteStaffParticipationTypeMutation(typeId);
 const form = ref({
@@ -52,6 +63,13 @@ const successMessage = ref("");
 
 const settingsRoute = computed(
   () => `/staff/participation-types/${encodeURIComponent(typeId.value)}`,
+);
+const circlesExportUrl = computed(() => buildStaffParticipationTypeCirclesExportUrl(typeId.value));
+const circlesTotalPages = computed(() =>
+  calculateTotalPages(
+    circlesQuery.data.value?.total ?? 0,
+    circlesQuery.data.value?.pageSize ?? circlesPageSize,
+  ),
 );
 
 const formEditorRoute = computed(() => {
@@ -123,6 +141,10 @@ async function handleDelete() {
   } catch (error) {
     errorMessage.value = extractStaffParticipationTypeValidationMessage(error);
   }
+}
+
+function moveCirclesPage(nextPage: number) {
+  circlesPage.value = Math.min(Math.max(nextPage, 1), circlesTotalPages.value);
 }
 </script>
 
@@ -390,6 +412,95 @@ async function handleDelete() {
                 type="submit"
               >
                 {{ updateMutation.isPending.value ? "保存中..." : "保存" }}
+              </button>
+            </div>
+          </div>
+        </template>
+      </SettingsSection>
+
+      <SettingsSection title="この参加種別に紐づく企画">
+        <SurfaceHeader>
+          <template #title>企画一覧</template>
+          <template #description>
+            legacy の参加種別詳細画面にあった所属企画一覧をここで確認できます。
+          </template>
+          <template #actions>
+            <a
+              :href="circlesExportUrl"
+              class="rounded border border-border px-3 py-2 text-xs text-body transition hover:bg-surface-light"
+            >
+              CSV をダウンロード
+            </a>
+          </template>
+        </SurfaceHeader>
+
+        <div v-if="circlesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">
+          読み込み中...
+        </div>
+        <div
+          v-else-if="(circlesQuery.data.value?.items.length ?? 0) === 0"
+          class="px-6 py-5 text-sm text-muted"
+        >
+          この参加種別に紐づく企画はありません。
+        </div>
+        <div v-else class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-border text-sm">
+            <thead class="bg-surface-light text-left text-muted-2">
+              <tr>
+                <th class="px-5 py-3 font-medium">企画ID</th>
+                <th class="px-5 py-3 font-medium">企画名</th>
+                <th class="px-5 py-3 font-medium">企画グループ名</th>
+                <th class="px-5 py-3 font-medium text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              <tr v-for="circle in circlesQuery.data.value?.items" :key="circle.id">
+                <td class="px-5 py-4 text-muted">{{ circle.id }}</td>
+                <td class="px-5 py-4 text-body">{{ circle.name }}</td>
+                <td class="px-5 py-4 text-muted">{{ circle.groupName }}</td>
+                <td class="px-5 py-4 text-right">
+                  <RouterLink
+                    :to="`/staff/circles/${encodeURIComponent(circle.id)}`"
+                    class="text-primary underline"
+                  >
+                    企画を開く
+                  </RouterLink>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <template v-if="circlesQuery.data.value && circlesQuery.data.value.total > 0" #footer>
+          <div class="flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
+            <p>
+              {{ circlesQuery.data.value.total }} 件中
+              {{ (circlesQuery.data.value.page - 1) * circlesQuery.data.value.pageSize + 1 }}
+              -
+              {{
+                Math.min(
+                  circlesQuery.data.value.page * circlesQuery.data.value.pageSize,
+                  circlesQuery.data.value.total,
+                )
+              }}
+              件
+            </p>
+            <div class="flex items-center gap-3">
+              <button
+                class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:opacity-50"
+                :disabled="circlesPage <= 1"
+                type="button"
+                @click="moveCirclesPage(circlesPage - 1)"
+              >
+                前へ
+              </button>
+              <span>{{ circlesPage }} / {{ circlesTotalPages }}</span>
+              <button
+                class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:opacity-50"
+                :disabled="circlesPage >= circlesTotalPages"
+                type="button"
+                @click="moveCirclesPage(circlesPage + 1)"
+              >
+                次へ
               </button>
             </div>
           </div>

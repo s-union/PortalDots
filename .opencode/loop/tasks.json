@@ -20,13 +20,14 @@
       "id": "3",
       "title": "参加種別ごとの企画一覧と CSV を移植する",
       "description": "legacy の participation type detail 一覧/API/export を Vue+Go に追加する",
-      "status": "in_progress"
+      "status": "done",
+      "completedAt": "2026-03-16T14:27:00Z"
     },
     {
       "id": "4",
       "title": "場所別企画一覧 CSV を移植する",
       "description": "places 画面からダウンロードできる場所別企画 CSV を Go API とともに追加する",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "id": "5",

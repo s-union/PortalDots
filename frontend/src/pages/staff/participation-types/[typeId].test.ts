@@ -58,6 +58,10 @@ describe("StaffParticipationTypeDetailPage", () => {
                     path: "/staff/participation-types/:typeId",
                     component: StaffParticipationTypeDetailPage,
                 },
+                {
+                    path: "/staff/circles/:circleId",
+                    component: { template: "<div>circle detail</div>" },
+                },
                 { path: "/staff/forms/:formId", component: { template: "<div>form detail</div>" } },
             ],
         });
@@ -80,6 +84,26 @@ describe("StaffParticipationTypeDetailPage", () => {
 
                 if (url.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
+                }
+
+                if (
+                    url.includes("/staff/participation-types/participation-type-food/circles") &&
+                    method === "GET"
+                ) {
+                    return jsonResponse({
+                        items: [
+                            {
+                                id: "circle-a",
+                                name: "屋台企画A",
+                                groupName: "Aブロック",
+                                participationTypeId: "participation-type-food",
+                                participationTypeName: "模擬店",
+                            },
+                        ],
+                        page: 1,
+                        pageSize: 10,
+                        total: 1,
+                    });
                 }
 
                 if (
@@ -160,11 +184,21 @@ describe("StaffParticipationTypeDetailPage", () => {
 
         expect(wrapper.text()).toContain("模擬店");
         expect(wrapper.text()).toContain("参加登録フォームを編集");
+        expect(wrapper.text()).toContain("この参加種別に紐づく企画");
+        expect(wrapper.text()).toContain("屋台企画A");
         expect(wrapper.text()).toContain("企画参加登録のカスタムフォーム");
         expect(wrapper.text()).toContain("Markdown 記法をそのまま利用できます。");
         expect(wrapper.get('a[href="/staff/forms/form-participation-food"]').text()).toContain(
             "参加登録フォームを編集",
         );
+        expect(
+            wrapper
+                .get(
+                    'a[href="http://127.0.0.1:8081/v1/staff/participation-types/participation-type-food/circles/export"]',
+                )
+                .text(),
+        ).toContain("CSV をダウンロード");
+        expect(wrapper.get('a[href="/staff/circles/circle-a"]').text()).toContain("企画を開く");
         expect(wrapper.get('input[name="openAt"]').element).toHaveProperty(
             "value",
             formatDateTimeLocalValue("2026-03-01T00:00:00Z"),
@@ -227,6 +261,10 @@ describe("StaffParticipationTypeDetailPage", () => {
                     path: "/staff/participation-types/:typeId",
                     component: StaffParticipationTypeDetailPage,
                 },
+                {
+                    path: "/staff/circles/:circleId",
+                    component: { template: "<div>circle detail</div>" },
+                },
                 { path: "/staff/forms/:formId", component: { template: "<div>form detail</div>" } },
             ],
         });
@@ -248,6 +286,18 @@ describe("StaffParticipationTypeDetailPage", () => {
 
                 if (url.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
+                }
+
+                if (
+                    url.includes("/staff/participation-types/participation-type-food/circles") &&
+                    method === "GET"
+                ) {
+                    return jsonResponse({
+                        items: [],
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                    });
                 }
 
                 if (

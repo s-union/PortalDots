@@ -2,7 +2,9 @@ package httpapi
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -92,6 +94,83 @@ func (h *staffCircleHandlers) getStaffParticipationType(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, mapStaffParticipationType(item, formValue))
+}
+
+func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c echo.Context) error {
+	_, _, status, ok := h.requireParticipationTypeAdmin(c)
+	if !ok {
+		return statusError(c, status)
+	}
+
+	participationType, err := h.participationTypes.Find(c.Param("typeID"))
+	if errors.Is(err, participationtype.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	circles, err := h.circles.ListForStaff()
+	if err != nil {
+		return internalError(c)
+	}
+
+	filtered := make([]staffCircleResponse, 0)
+	for _, currentCircle := range circles {
+		if currentCircle.ParticipationTypeID != participationType.ID {
+			continue
+		}
+		filtered = append(filtered, mapStaffCircle(currentCircle))
+	}
+	slices.SortFunc(filtered, func(a, b staffCircleResponse) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	return c.JSON(http.StatusOK, paginateItems(filtered, readPagination(c)))
+}
+
+func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c echo.Context) error {
+	_, _, status, ok := h.requireParticipationTypeAdmin(c)
+	if !ok {
+		return statusError(c, status)
+	}
+
+	participationType, err := h.participationTypes.Find(c.Param("typeID"))
+	if errors.Is(err, participationtype.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	circles, err := h.circles.ListForStaff()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	rows := [][]string{{"participation_type_id", "participation_type_name", "circle_id", "circle_name", "group_name"}}
+	for _, currentCircle := range circles {
+		if currentCircle.ParticipationTypeID != participationType.ID {
+			continue
+		}
+		rows = append(rows, []string{
+			participationType.ID,
+			participationType.Name,
+			currentCircle.ID,
+			currentCircle.Name,
+			currentCircle.GroupName,
+		})
+	}
+
+	csvBytes, err := writeCSV(rows)
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	filename := fmt.Sprintf("staff-participation-type-%s-circles.csv", participationType.ID)
+	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
+	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
+	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
 }
 
 func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error {

@@ -3133,6 +3133,46 @@ func TestStaffPortalSettingsValidateInput(t *testing.T) {
 	}
 }
 
+func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types/participation-type-food/circles?page=1&pageSize=10", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response paginatedResponse[staffCircleResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal participation type circles: %v", err)
+	}
+	if response.Total != 1 || len(response.Items) != 1 || response.Items[0].ID != "circle-a" {
+		t.Fatalf("unexpected participation type circle response: %#v", response)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types/participation-type-food/circles/export", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if got := recorder.Header().Get("Content-Disposition"); !strings.Contains(got, "staff-participation-type-participation-type-food-circles.csv") {
+		t.Fatalf("unexpected content disposition: %s", got)
+	}
+
+	rows, err := csv.NewReader(bytes.NewReader(recorder.Body.Bytes())).ReadAll()
+	if err != nil {
+		t.Fatalf("read participation type csv: %v", err)
+	}
+	if len(rows) != 2 || rows[1][2] != "circle-a" {
+		t.Fatalf("unexpected csv rows: %#v", rows)
+	}
+}
+
 func TestStaffTagsExportCSV(t *testing.T) {
 	t.Parallel()
 

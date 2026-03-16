@@ -1,12 +1,15 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from "vue";
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { z } from "zod";
-import { createJsonHeaders, $api } from "@/lib/api/client";
+import { buildApiUrl, createJsonHeaders, $api } from "@/lib/api/client";
 import { parseWithSchema, staffParticipationTypeSchema } from "@/lib/api/schema";
+import { parsePaginatedResult, type PaginatedResult } from "@/lib/api/pagination";
+import { staffCircleSchema } from "@/lib/api/schema";
 import { extractValidationMessage, parseValidationError } from "@/lib/api/validation";
 import { useSessionStore } from "@/features/session/store";
 
 export type StaffParticipationType = z.infer<typeof staffParticipationTypeSchema>;
+export type StaffParticipationTypeCircle = z.infer<typeof staffCircleSchema>;
 
 export type MutateStaffParticipationTypePayload = {
     name: string;
@@ -51,6 +54,38 @@ export async function fetchStaffParticipationType(typeId: string) {
         parseStaffParticipationType,
         {
             errorMessage: "Failed to fetch participation type",
+        },
+    );
+}
+
+export async function fetchStaffParticipationTypeCircles(
+    typeId: string,
+    page: number,
+    pageSize: number,
+) {
+    return $api.queryData(
+        "get",
+        "/staff/participation-types/{typeID}/circles",
+        {
+            headers: createJsonHeaders(),
+            params: {
+                path: {
+                    typeID: typeId,
+                },
+                query: {
+                    page,
+                    pageSize,
+                },
+            },
+        },
+        (value) =>
+            parsePaginatedResult(
+                value,
+                parseStaffParticipationTypeCircle,
+                "participation type circles",
+            ),
+        {
+            errorMessage: "Failed to fetch participation type circles",
         },
     );
 }
@@ -168,6 +203,51 @@ export function useStaffParticipationTypeDetailQuery(
     );
 }
 
+export function useStaffParticipationTypeCirclesQuery(
+    typeId: MaybeRefOrGetter<string>,
+    enabled: MaybeRefOrGetter<boolean>,
+    page: MaybeRefOrGetter<number>,
+    pageSize: MaybeRefOrGetter<number>,
+) {
+    return $api.useQueryData(
+        "get",
+        "/staff/participation-types/{typeID}/circles",
+        () => ({
+            headers: createJsonHeaders(),
+            params: {
+                path: {
+                    typeID: toValue(typeId),
+                },
+                query: {
+                    page: toValue(page),
+                    pageSize: toValue(pageSize),
+                },
+            },
+        }),
+        (value) =>
+            parsePaginatedResult(
+                value,
+                parseStaffParticipationTypeCircle,
+                "participation type circles",
+            ),
+        {
+            queryKey: computed(() => [
+                "staff",
+                "participation-types",
+                toValue(typeId),
+                "circles",
+                toValue(page),
+                toValue(pageSize),
+            ]),
+            enabled: computed(() => toValue(enabled) && toValue(typeId).trim().length > 0),
+            retry: false,
+        },
+        {
+            errorMessage: "Failed to fetch participation type circles",
+        },
+    );
+}
+
 export function useCreateStaffParticipationTypeMutation() {
     const queryClient = useQueryClient();
     const sessionStore = useSessionStore();
@@ -273,6 +353,10 @@ export function extractStaffParticipationTypeValidationMessage(error: unknown) {
     return extractValidationMessage(error, "参加種別の保存に失敗しました。");
 }
 
+export function buildStaffParticipationTypeCirclesExportUrl(typeId: string) {
+    return buildApiUrl(`/staff/participation-types/${encodeURIComponent(typeId)}/circles/export`);
+}
+
 export function buildDeleteStaffParticipationTypeConfirmMessage() {
     return "本当にこの参加種別を削除しますか？この参加種別に紐づく企画もすべて削除されます。";
 }
@@ -281,6 +365,12 @@ function parseStaffParticipationType(value: unknown): StaffParticipationType {
     return parseWithSchema(staffParticipationTypeSchema, value, "participation type");
 }
 
+function parseStaffParticipationTypeCircle(value: unknown): StaffParticipationTypeCircle {
+    return parseWithSchema(staffCircleSchema, value, "participation type circle");
+}
+
 function padDateTimeLocalValue(value: number) {
     return String(value).padStart(2, "0");
 }
+
+export type StaffParticipationTypeCirclePage = PaginatedResult<StaffParticipationTypeCircle>;

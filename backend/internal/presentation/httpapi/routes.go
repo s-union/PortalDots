@@ -84,6 +84,8 @@ func registerStaffRoutes(
 	v1.GET("/staff/participation-types", staffCircleH.listStaffParticipationTypes)
 	v1.POST("/staff/participation-types", staffCircleH.createStaffParticipationType)
 	v1.GET("/staff/participation-types/:typeID", staffCircleH.getStaffParticipationType)
+	v1.GET("/staff/participation-types/:typeID/circles", staffCircleH.listStaffParticipationTypeCircles)
+	v1.GET("/staff/participation-types/:typeID/circles/export", staffCircleH.downloadStaffParticipationTypeCirclesCSV)
 	v1.PUT("/staff/participation-types/:typeID", staffCircleH.updateStaffParticipationType)
 	v1.DELETE("/staff/participation-types/:typeID", staffCircleH.deleteStaffParticipationType)
 	v1.GET("/staff/circles", staffCircleH.listStaffCircles)

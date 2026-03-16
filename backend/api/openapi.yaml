@@ -4159,6 +4159,87 @@ paths:
           description: Unauthenticated
         "403":
           description: Staff verification is required
+  /staff/participation-types/{typeID}/circles:
+    get:
+      operationId: getStaffParticipationTypeCircles
+      summary: Return circles that belong to the selected participation type
+      parameters:
+        - in: path
+          name: typeID
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated circle list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, page, pageSize, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, groupName, participationTypeId, participationTypeName]
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        groupName:
+                          type: string
+                        participationTypeId:
+                          type: string
+                        participationTypeName:
+                          type: string
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
+        "404":
+          description: Participation type not found
+  /staff/participation-types/{typeID}/circles/export:
+    get:
+      operationId: downloadStaffParticipationTypeCirclesCsv
+      summary: Download a CSV for circles in the selected participation type
+      parameters:
+        - in: path
+          name: typeID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV export
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
+        "404":
+          description: Participation type not found
         "409":
           description: Current circle is not selected
   /staff/exports/bundle.zip:
