@@ -51,6 +51,9 @@ describe("StaffTagsPage", () => {
         await router.push("/staff/tags");
         await router.isReady();
 
+        const confirmMock = vi.fn(() => true);
+        vi.stubGlobal("confirm", confirmMock);
+
         vi.stubGlobal(
             "fetch",
             vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -120,6 +123,12 @@ describe("StaffTagsPage", () => {
 
         await buttons[3].trigger("click");
         await flushPromises();
+        expect(confirmMock).toHaveBeenCalledWith(
+            expect.stringContaining("本当に「展示」タグを削除しますか？"),
+        );
+        expect(confirmMock).toHaveBeenCalledWith(
+            expect.stringContaining("全ユーザー公開になります"),
+        );
         expect(wrapper.text()).not.toContain("展示");
     });
 });

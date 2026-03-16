@@ -144,6 +144,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:46:00Z",
       "completedAt": "2026-03-16T11:49:00Z"
+    },
+    {
+      "id": "19",
+      "title": "staff tags の削除確認を復元する",
+      "description": "legacy の注意文付き delete confirm を migrated tags 一覧へ戻し、タグ削除の影響範囲を分かりやすくする",
+      "status": "done",
+      "addedAt": "2026-03-16T11:54:00Z",
+      "completedAt": "2026-03-16T11:52:00Z"
     }
   ]
 }

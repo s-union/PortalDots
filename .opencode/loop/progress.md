@@ -23,3 +23,4 @@
 - 2026-03-16: auth guidance page を増やした後は route variant ごとの guard 差も router test に寄せる。`publicOnly` の signed link 群と `requiresAuth` の completed 画面を同じ `index.test.ts` で押さえると、個別 page test より guard 退行を見つけやすい。
 - 2026-03-16: public footer を drawer にだけ置くと mobile で気づきにくい。`PublicFooterLinks` のような小コンポーネントへ抽出して `main` 下にも再利用すると、desktop/mobile の両方で parity を保ちやすい。
 - 2026-03-16: legacy toolbar の補助導線は、一覧 page の `SurfaceHeader` actions に戻すのが最小差分で効く。`staff/pages/index.vue` なら `/staff/mails` CTA を 1 本足すだけで send_emails 相当の再発見性をかなり戻せる。
+- 2026-03-16: destructive action の legacy parity は専用 delete page を作り直さなくても `window.confirm` で十分回収できる。`staff/tags.vue` のように注意文を複数行メッセージへ寄せ、テストでは confirm 文面の要点だけを見ると保守しやすい。
