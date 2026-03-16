@@ -102,6 +102,14 @@
       "status": "done",
       "addedAt": "2026-03-16T04:24:50Z",
       "completedAt": "2026-03-16T04:28:31Z"
+    },
+    {
+      "id": "14",
+      "title": "招待受け入れ legacy 導線の受け皿を追加する",
+      "description": "follow-up check で残った `/circles/{circle}/users/invite/{token}` を Vue 側で受け、既存 join API を使う migrated 受け入れ導線へつなぐ",
+      "status": "done",
+      "addedAt": "2026-03-16T04:28:31Z",
+      "completedAt": "2026-03-16T04:39:36Z"
     }
   ]
 }

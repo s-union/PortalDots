@@ -177,6 +177,15 @@ describe("NotFoundPage", () => {
         expect(primaryLink.text()).toContain("メンバー管理画面へ");
     });
 
+    it("guides the legacy circle invite route to migrated invite acceptance", async () => {
+        const wrapper = await mountAt("/circles/circle-a/users/invite/invite-token");
+        const primaryLink = wrapper.get('a[href="/circles/join/invite-token"]');
+
+        expect(wrapper.text()).toContain("招待受け入れの導線が移動しました");
+        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a / 招待トークン: invite-token");
+        expect(primaryLink.text()).toContain("招待受け入れ画面へ");
+    });
+
     it("keeps the generic 404 for unrelated routes", async () => {
         const wrapper = await mountAt("/definitely-missing");
 

@@ -166,7 +166,23 @@ const legacyCircleRoute = computed(() => {
 
   return null;
 });
+const legacyCircleInviteRoute = computed(() => {
+  const match = normalizedPath.value.match(/^\/circles\/([^/]+)\/users\/invite\/([^/]+)$/);
+  if (!match?.[1] || !match[2]) {
+    return null;
+  }
+
+  const circleId = decodeURIComponent(match[1]);
+  const token = decodeURIComponent(match[2]);
+
+  return {
+    circleId,
+    token,
+    target: `/circles/join/${encodeURIComponent(token)}`,
+  };
+});
 const isLegacyCircleRoutePath = computed(() => legacyCircleRoute.value !== null);
+const isLegacyCircleInviteRoutePath = computed(() => legacyCircleInviteRoute.value !== null);
 
 const legacyPrivateRouteTitle = computed(() => {
   if (isLegacyEmailVerifyPath.value) {
@@ -424,6 +440,37 @@ const isLegacyDocumentsPath = computed(
         <p v-if="isLegacyPasswordResetPath" class="text-muted">
           ログイン済みなら、ワークスペース内の設定画面から現在のパスワードを変更できます。
         </p>
+      </div>
+    </SurfaceCard>
+
+    <SurfaceCard v-else-if="isLegacyCircleInviteRoutePath">
+      <div class="border-b border-border px-6 py-5">
+        <p class="text-sm text-primary">Legacy Route</p>
+        <h2 class="mt-2 text-2xl font-semibold text-body">招待受け入れの導線が移動しました</h2>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>
+          旧 `/circles/:circle/users/invite/:token` は、移行後は招待受け入れ画面へ移動しています。
+        </p>
+        <p>
+          legacy の企画 ID: {{ legacyCircleInviteRoute?.circleId }} / 招待トークン:
+          {{ legacyCircleInviteRoute?.token }}
+        </p>
+        <p>ログイン済みなら、そのまま migrated の招待受け入れ画面で参加処理を続けられます。</p>
+        <div class="flex flex-wrap gap-3">
+          <RouterLink
+            :to="legacyCircleInviteRoute?.target ?? '/circles/select'"
+            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
+          >
+            招待受け入れ画面へ
+          </RouterLink>
+          <RouterLink
+            to="/circles/select"
+            class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
+          >
+            企画選択へ
+          </RouterLink>
+        </div>
       </div>
     </SurfaceCard>
 
