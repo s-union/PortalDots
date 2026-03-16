@@ -1208,7 +1208,8 @@ export interface paths {
         /** Return members of the current circle */
         get: operations["getCurrentCircleMembers"];
         put?: never;
-        post?: never;
+        /** Add one member to the current circle by login ID */
+        post: operations["postCurrentCircleMember"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6884,6 +6885,58 @@ export interface operations {
             };
             /** @description Current circle was not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postCurrentCircleMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    loginId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Member added */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The current user cannot add members */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current circle was not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid login ID or unverified member */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

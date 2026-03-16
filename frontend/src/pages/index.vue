@@ -24,7 +24,6 @@ const documentsQuery = useDocumentsPageQuery(
 );
 const formsQuery = useFormsQuery();
 
-const roleSummary = computed(() => sessionStore.roles.join(", ") || "no roles");
 const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions));
 const hasSelectableCircles = computed(() => (circlesQuery.data.value?.length ?? 0) > 0);
 const isSelectingCircle = computed(() => selectCircleMutation.isPending.value);
@@ -47,61 +46,42 @@ async function handleSelectCircle(circleId: string) {
 
 <template>
   <section class="space-y-6">
-    <SurfaceCard>
-      <div class="border-b border-border px-6 py-5">
-        <h2 class="text-2xl font-semibold text-body">認証から縦切りで移行を進めます。</h2>
-        <p class="mt-2 text-sm text-muted">
-          まずはログインと session bootstrap を新 API に移し、その上で画面ごとに順次置き換えます。
+    <SurfaceCard tag="header">
+      <h2 class="text-2xl font-semibold text-body">PortalDots へようこそ</h2>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <RouterLink
+          v-if="!sessionStore.isAuthenticated"
+          class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
+          to="/login"
+        >
+          ログイン画面へ
+        </RouterLink>
+        <RouterLink
+          v-if="!sessionStore.isAuthenticated"
+          class="rounded border border-border px-4 py-3 text-sm text-body transition hover:bg-surface-light"
+          to="/register"
+        >
+          新規ユーザー登録
+        </RouterLink>
+        <p v-else class="rounded border border-primary px-4 py-3 text-sm text-primary">
+          {{ sessionStore.user?.displayName }} としてログイン中です
         </p>
-      </div>
-
-      <div class="px-6 py-5">
-        <div class="flex flex-wrap gap-3">
-          <RouterLink
-            v-if="!sessionStore.isAuthenticated"
-            class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
-            to="/login"
-          >
-            ログイン画面へ
-          </RouterLink>
-          <RouterLink
-            v-if="!sessionStore.isAuthenticated"
-            class="rounded border border-border px-4 py-3 text-sm text-body transition hover:bg-surface-light"
-            to="/register"
-          >
-            新規ユーザー登録
-          </RouterLink>
-          <p v-else class="rounded border border-primary px-4 py-3 text-sm text-primary">
-            {{ sessionStore.user?.displayName }} としてログイン中です
-          </p>
-          <RouterLink
-            v-if="sessionStore.isAuthenticated"
-            class="rounded border border-border px-4 py-3 text-sm text-body transition hover:bg-surface-light"
-            to="/workspace"
-          >
-            ワークスペースへ
-          </RouterLink>
-          <RouterLink
-            v-if="sessionStore.isAuthenticated && canAccessStaff"
-            class="rounded border border-primary px-4 py-3 text-sm text-primary transition hover:bg-primary-light"
-            to="/staff"
-          >
-            スタッフ画面へ
-          </RouterLink>
-        </div>
+        <RouterLink
+          v-if="sessionStore.isAuthenticated"
+          class="rounded border border-border px-4 py-3 text-sm text-body transition hover:bg-surface-light"
+          to="/workspace"
+        >
+          ワークスペースへ
+        </RouterLink>
+        <RouterLink
+          v-if="sessionStore.isAuthenticated && canAccessStaff"
+          class="rounded border border-primary px-4 py-3 text-sm text-primary transition hover:bg-primary-light"
+          to="/staff"
+        >
+          スタッフ画面へ
+        </RouterLink>
       </div>
     </SurfaceCard>
-
-    <section class="rounded border border-primary bg-primary-light shadow-lv1">
-      <div class="border-b border-primary/30 px-6 py-5">
-        <h3 class="text-xl font-semibold text-body">Session bootstrap</h3>
-      </div>
-      <div class="grid gap-2 px-6 py-5 text-sm text-muted">
-        <p>Authenticated: {{ sessionStore.isAuthenticated ? "yes" : "no" }}</p>
-        <p>Roles: {{ roleSummary }}</p>
-        <p>Current circle: {{ sessionStore.currentCircle?.name ?? "not selected" }}</p>
-      </div>
-    </section>
 
     <ListPanel
       v-if="sessionStore.isAuthenticated && selectedCircleSummary"

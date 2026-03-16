@@ -242,9 +242,7 @@ describe("StaffCircleDetailPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("企画を更新しました。");
-        expect(wrapper.text()).toContain(
-            "既存企画の参加種別変更は Laravel 版に合わせて無効化しています。",
-        );
+        expect(wrapper.text()).toContain("既存企画の参加種別は変更できません。");
 
         await wrapper.get('select[name="recipient"]').setValue("leader");
         await wrapper.get('input[name="subject"]').setValue("搬入のご案内");
@@ -252,10 +250,15 @@ describe("StaffCircleDetailPage", () => {
         await wrapper.findAll('button[type="button"]')[1]?.trigger("click");
         await flushPromises();
 
-        expect(wrapper.text()).toContain("企画所属者向けメールをキューに追加しました。");
+        expect(wrapper.text()).toContain(
+            "企画所属者向けモックメールをキューに追加しました。実メールは送信していません。",
+        );
         expect(wrapper.text()).toContain("送信対象: 2 名");
         expect(wrapper.text()).toContain("責任者A / 構成員B");
         expect(wrapper.text()).toContain("Markdown 記法");
+        expect(wrapper.text()).toContain(
+            "この送信はモックです。登録内容はキューで確認できますが、外部メール送信は行いません。",
+        );
     });
 
     it("disables mail submission when there are no recipients", async () => {
@@ -366,7 +369,9 @@ describe("StaffCircleDetailPage", () => {
             "宛先となる企画所属者がいないため、メールは送信できません。",
         );
         const buttons = wrapper.findAll('button[type="button"]');
-        const mailButton = buttons.find((button) => button.text().includes("メールをキューに追加"));
+        const mailButton = buttons.find((button) =>
+            button.text().includes("モックメールをキューに追加"),
+        );
         if (!mailButton) {
             throw new Error("mail button not found");
         }

@@ -1,35 +1,35 @@
 {
   "startedAt": "2026-03-17T00:00:00Z",
-  "description": "旧URLは移植しない方針を migrated 側で明確化し、メール関連モック表現を維持しつつ残る導線を整理する",
-  "completedAt": "2026-03-17T01:43:00Z",
+  "description": "Laravel側ファイルを1件ずつ確認し、Vue/Go移行先との対応表を作成する",
   "tasks": [
     {
       "id": "1",
-      "title": ".opencode/loop を再作成する",
-      "description": "削除済みの loop state を作り直し、今回の自律タスクを登録する",
+      "title": "Laravelルートと画面/API入口の棚卸し",
+      "description": "routes/ と app/Http/Controllers/ を確認し、frontend/src/pages と backend/internal/presentation/httpapi への対応を整理する",
       "status": "done",
-      "completedAt": "2026-03-17T00:01:00Z"
+      "completedAt": "2026-03-16T19:26:14Z"
     },
     {
       "id": "2",
-      "title": "旧URL互換レイヤーを撤去する",
-      "description": "frontend の legacy redirect と関連テストを削除し、旧URLは移植対象外であることが 404 で分かるようにする",
+      "title": "Laravelドメイン/サービス層の棚卸し",
+      "description": "app/Services, app/Eloquents, app/Policies, app/Http/Requests などを確認し、backend/internal と frontend/src/features の対応を整理する",
       "status": "done",
-      "completedAt": "2026-03-17T01:40:00Z"
+      "completedAt": "2026-03-16T19:26:14Z"
     },
     {
       "id": "3",
-      "title": "認証系の非移植メッセージを整理する",
-      "description": "register/password reset/email verify の案内を、メール設計未確定のためモック運用中かつ旧URL非対応であることが分かる表現にそろえる",
+      "title": "Bladeビューとアセットの棚卸し",
+      "description": "resources/views, resources/sass, resources/js, resources/md, resources/img を確認し、frontend/src 以下への対応を整理する",
       "status": "done",
-      "completedAt": "2026-03-17T01:41:00Z"
+      "completedAt": "2026-03-16T19:26:14Z"
     },
     {
       "id": "4",
-      "title": "follow-up checks を実行する",
-      "description": "ログ・TODO・テスト・caller/sibling 調査を実施し、追加作業があれば継続する",
+      "title": "対応表ドキュメント作成",
+      "description": "確認結果を docs 配下に対応表としてまとめ、移行済み/部分移行/未対応を明記する",
       "status": "done",
-      "completedAt": "2026-03-17T01:43:00Z"
+      "completedAt": "2026-03-16T19:26:14Z"
     }
-  ]
+  ],
+  "completedAt": "2026-03-16T19:26:14Z"
 }

@@ -127,6 +127,7 @@ func registerWorkspaceRoutes(v1 *echo.Group, workspaceH *workspaceHandlers) {
 	v1.DELETE("/circles/current", workspaceH.deleteCurrentCircle)
 	v1.POST("/circles/current/submit", workspaceH.submitCurrentCircle)
 	v1.GET("/circles/current/members", workspaceH.listCurrentCircleMembers)
+	v1.POST("/circles/current/members", workspaceH.addCurrentCircleMember)
 	v1.DELETE("/circles/current/members/:userID", workspaceH.removeCurrentCircleMember)
 	v1.POST("/circles/current/invitation-token/regenerate", workspaceH.regenerateInvitationToken)
 	v1.POST("/circles/join/:token", workspaceH.joinCircleByToken)

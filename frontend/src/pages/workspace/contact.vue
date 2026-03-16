@@ -52,7 +52,7 @@ async function handleSubmit() {
       subject: form.value.subject,
       body: form.value.body,
     });
-    successMessage.value = `「${result.categoryName}」へお問い合わせを送信しました。`;
+    successMessage.value = `「${result.categoryName}」宛てのモック問い合わせを登録しました。実メールは送信していません。`;
     form.value = {
       categoryId: "",
       subject: "",
@@ -72,8 +72,10 @@ async function handleSubmit() {
       <p class="text-sm text-primary">Contact</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">お問い合わせ</h2>
       <p class="mt-3 text-sm leading-7 text-muted">
-        Laravel
-        側にあったお問い合わせ導線を復元し、現在の企画コンテキスト付きで送信できるようにしています。
+        お問い合わせを現在の企画コンテキスト付きでモック登録できます。
+      </p>
+      <p class="mt-2 text-sm leading-7 text-muted">
+        実メール送信は行わず、履歴に残して確認します。
       </p>
     </SurfaceCard>
 
@@ -114,7 +116,7 @@ async function handleSubmit() {
       class="rounded border border-border bg-surface p-6 shadow-lv1"
       @submit.prevent="handleSubmit"
     >
-      <h3 class="text-lg font-semibold text-body">お問い合わせを送信</h3>
+      <h3 class="text-lg font-semibold text-body">お問い合わせをモック送信</h3>
       <div class="mt-4 grid gap-4">
         <label class="grid gap-2 text-sm text-body">
           <span>問い合わせカテゴリ</span>
@@ -159,13 +161,17 @@ async function handleSubmit() {
             :disabled="submitContactMutation.isPending.value || categoriesQuery.isPending.value"
             type="submit"
           >
-            {{ submitContactMutation.isPending.value ? "送信中..." : "送信する" }}
+            {{ submitContactMutation.isPending.value ? "登録中..." : "モック送信する" }}
           </button>
         </div>
       </div>
     </form>
 
-    <ListPanel title="送信履歴" description="この企画で送信したお問い合わせです。" overflow-hidden>
+    <ListPanel
+      title="送信履歴"
+      description="この企画でモック送信したお問い合わせです。"
+      overflow-hidden
+    >
       <div v-if="historyQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
         読み込み中...
       </div>
@@ -173,7 +179,7 @@ async function handleSubmit() {
         v-else-if="(historyQuery.data.value?.length ?? 0) === 0"
         class="px-6 py-6 text-sm text-muted"
       >
-        まだお問い合わせは送信していません。
+        まだモック問い合わせは送信していません。
       </div>
       <div v-else class="divide-y divide-border">
         <div v-for="item in historyQuery.data.value" :key="item.id" class="px-6 py-5">

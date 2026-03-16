@@ -66,6 +66,18 @@ func (r *SQLCRepository) Find(userID string) (User, error) {
 	}, nil
 }
 
+func (r *SQLCRepository) FindByLoginID(loginID string) (User, error) {
+	userRow, err := r.queries.GetUserByLoginID(context.Background(), loginID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+
+	return r.Find(userRow.ID)
+}
+
 func (r *SQLCRepository) UpdateDisplayName(userID, displayName string) (User, error) {
 	_, err := r.queries.UpdateUserDisplayName(context.Background(), dbgen.UpdateUserDisplayNameParams{
 		ID:          userID,

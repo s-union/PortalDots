@@ -65,7 +65,7 @@ watch(
       title="作業対象の企画を選択します。"
       :description="
         redirectDestination === '/workspace'
-          ? 'legacy の circle selector と同じく、以後の画面はここで選んだ企画コンテキストで動きます。'
+          ? 'ここで選んだ企画コンテキストで以後の画面が動きます。'
           : requestedCircleId
             ? '指定された企画を確認できれば自動で選択し、元の画面へ戻ります。'
             : '企画選択後は、元の画面へ戻ってそのまま作業を続けられます。'
@@ -95,7 +95,7 @@ watch(
 
     <ListPanel
       title="別の企画を参加登録する"
-      description="参加種別ごとに新しい企画を作成します。legacy selector と同様に、作成後は migrated ワークスペースで続けて編集できます。"
+      description="参加種別ごとに新しい企画を作成します。作成後はワークスペースで続けて編集できます。"
     >
       <div v-if="participationTypesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
         参加種別を読み込み中...

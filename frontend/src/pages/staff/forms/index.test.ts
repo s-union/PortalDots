@@ -97,6 +97,7 @@ describe("StaffFormsIndexPage", () => {
                                           maxAnswers: 2,
                                           isPublic: true,
                                           isOpen: true,
+                                          isParticipationForm: false,
                                       },
                                   ]
                                 : [
@@ -108,6 +109,7 @@ describe("StaffFormsIndexPage", () => {
                                           maxAnswers: 2,
                                           isPublic: true,
                                           isOpen: true,
+                                          isParticipationForm: false,
                                       },
                                       {
                                           id: "form-circle-b-closed",
@@ -117,6 +119,7 @@ describe("StaffFormsIndexPage", () => {
                                           maxAnswers: 1,
                                           isPublic: true,
                                           isOpen: false,
+                                          isParticipationForm: false,
                                       },
                                   ],
                         ),
@@ -161,6 +164,7 @@ describe("StaffFormsIndexPage", () => {
 
         expect(wrapper.text()).toContain("展示チェックフォーム");
         expect(wrapper.text()).toContain("締切済みフォーム");
+        expect(wrapper.text()).not.toContain("企画参加登録");
 
         await wrapper.get('input[name="name"]').setValue("追加ヒアリング");
         await wrapper
@@ -250,6 +254,7 @@ describe("StaffFormsIndexPage", () => {
                                 maxAnswers: 2,
                                 isPublic: true,
                                 isOpen: true,
+                                isParticipationForm: false,
                             },
                         ]),
                         {
@@ -293,8 +298,13 @@ describe("StaffFormsIndexPage", () => {
         });
         await flushPromises();
 
-        const buttons = wrapper.findAll('button[type="button"]');
-        await buttons[0].trigger("click");
+        const copyButton = wrapper
+            .findAll('button[type="button"]')
+            .find((button) => button.text().includes("複製"));
+        if (!copyButton) {
+            throw new Error("copy button not found");
+        }
+        await copyButton.trigger("click");
         await flushPromises();
         expect(confirmMock).toHaveBeenNthCalledWith(
             1,
@@ -306,7 +316,7 @@ describe("StaffFormsIndexPage", () => {
         );
         expect(router.currentRoute.value.fullPath).toBe("/staff/forms");
 
-        await buttons[0].trigger("click");
+        await copyButton.trigger("click");
         await flushPromises();
         expect(confirmMock).toHaveBeenNthCalledWith(
             2,
@@ -317,8 +327,13 @@ describe("StaffFormsIndexPage", () => {
         await router.push("/staff/forms");
         await flushPromises();
 
-        const refreshedButtons = wrapper.findAll('button[type="button"]');
-        await refreshedButtons[1].trigger("click");
+        const deleteButton = wrapper
+            .findAll('button[type="button"]')
+            .find((button) => button.text().includes("削除"));
+        if (!deleteButton) {
+            throw new Error("delete button not found");
+        }
+        await deleteButton.trigger("click");
         await flushPromises();
         expect(confirmMock).toHaveBeenNthCalledWith(
             3,
@@ -326,7 +341,7 @@ describe("StaffFormsIndexPage", () => {
         );
         expect(deleteRequests).toHaveLength(0);
 
-        await refreshedButtons[1].trigger("click");
+        await deleteButton.trigger("click");
         await flushPromises();
         expect(confirmMock).toHaveBeenNthCalledWith(
             4,

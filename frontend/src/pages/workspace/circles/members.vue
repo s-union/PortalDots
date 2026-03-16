@@ -6,12 +6,14 @@ definePage({
   },
 });
 
-import { ref, computed } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import BackLink from "@/components/ui/BackLink.vue";
 import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import {
+  extractAddCircleMemberValidationMessage,
+  useAddCircleMemberMutation,
   useCurrentCircleDetailQuery,
   useCircleMembersQuery,
   useRemoveMemberMutation,
@@ -23,11 +25,13 @@ import { useSessionStore } from "@/features/session/store";
 const sessionStore = useSessionStore();
 const detailQuery = useCurrentCircleDetailQuery();
 const membersQuery = useCircleMembersQuery();
+const addMemberMutation = useAddCircleMemberMutation();
 const removeMutation = useRemoveMemberMutation();
 const regenerateMutation = useRegenerateInvitationTokenMutation();
 
-const copySuccess = ref(false);
-const errorMessage = ref("");
+const addMemberLoginId = shallowRef("");
+const copySuccess = shallowRef(false);
+const errorMessage = shallowRef("");
 
 const currentUserId = computed(() => sessionStore.user?.id ?? "");
 
@@ -61,6 +65,19 @@ async function handleRegenerate() {
     await regenerateMutation.mutateAsync();
   } catch {
     errorMessage.value = "招待トークンの再生成に失敗しました。";
+  }
+}
+
+async function handleAddMember() {
+  errorMessage.value = "";
+
+  try {
+    await addMemberMutation.mutateAsync({
+      loginId: addMemberLoginId.value,
+    });
+    addMemberLoginId.value = "";
+  } catch (error) {
+    errorMessage.value = extractAddCircleMemberValidationMessage(error);
   }
 }
 
@@ -117,6 +134,29 @@ async function handleRemoveMember(userId: string, displayName: string) {
           </button>
         </div>
       </template>
+    </SettingsSection>
+
+    <SettingsSection v-if="isCurrentUserLeader" title="メンバーを直接追加">
+      <form class="grid gap-3 px-6 py-6" @submit.prevent="handleAddMember">
+        <p class="text-sm text-muted">
+          学籍番号または連絡先メールアドレスを入力して、学園祭係(副責任者)を直接追加できます。
+        </p>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            v-model="addMemberLoginId"
+            type="text"
+            class="flex-1"
+            placeholder="24a0000 / demo@example.com"
+          />
+          <button
+            class="rounded border border-primary px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary-light disabled:opacity-60"
+            :disabled="addMemberMutation.isPending.value"
+            type="submit"
+          >
+            {{ addMemberMutation.isPending.value ? "追加中..." : "メンバーを追加" }}
+          </button>
+        </div>
+      </form>
     </SettingsSection>
 
     <!-- メンバー一覧 -->

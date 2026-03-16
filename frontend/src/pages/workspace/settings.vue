@@ -194,9 +194,7 @@ async function handleDeleteAccount() {
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">補足</p>
-          <p class="text-sm leading-7 text-muted">
-            通知設定や一般情報の詳細編集は今後の移植対象ですが、現時点でも主要な利用者設定はここから変更できます。
-          </p>
+          <p class="text-sm leading-7 text-muted">主要な利用者設定はここから変更できます。</p>
         </div>
       </SettingsRow>
       <template #footer>
@@ -329,9 +327,7 @@ async function handleDeleteAccount() {
         <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <div class="space-y-1">
             <p class="text-sm font-semibold text-body">削除条件</p>
-            <p class="text-xs leading-6 text-muted">
-              legacy の制約に合わせ、権限保有中または企画所属中は削除できません。
-            </p>
+            <p class="text-xs leading-6 text-muted">権限保有中または企画所属中は削除できません。</p>
           </div>
           <div class="space-y-3">
             <p class="text-sm leading-7 text-muted">

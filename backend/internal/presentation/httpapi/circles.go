@@ -44,6 +44,10 @@ type circleMemberResponse struct {
 	IsLeader    bool   `json:"isLeader"`
 }
 
+type addCurrentCircleMemberRequest struct {
+	LoginID string `json:"loginId"`
+}
+
 type createCircleRequest struct {
 	Name                string `json:"name"`
 	NameYomi            string `json:"nameYomi"`
@@ -363,6 +367,55 @@ func (h *workspaceHandlers) listCurrentCircleMembers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+func (h *workspaceHandlers) addCurrentCircleMember(c echo.Context) error {
+	_, currentSession, ok := h.getSession(c)
+	if !ok || currentSession.User == nil {
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
+	}
+	if currentSession.CurrentCircleID == "" {
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
+	}
+
+	var req addCurrentCircleMemberRequest
+	if err := c.Bind(&req); err != nil {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	req.LoginID = strings.TrimSpace(req.LoginID)
+	if req.LoginID == "" {
+		return validationError(c, map[string][]string{
+			"loginId": {"学籍番号または連絡先メールアドレスを入力してください"},
+		})
+	}
+
+	targetUser, err := h.users.FindByLoginID(req.LoginID)
+	if err != nil {
+		return validationError(c, map[string][]string{
+			"loginId": {"この学籍番号または連絡先メールアドレスは登録されていません"},
+		})
+	}
+
+	err = h.circles.AddMember(currentSession.User, currentSession.CurrentCircleID, targetUser.ID, targetUser.DisplayName, targetUser.IsVerified)
+	if errors.Is(err, circle.ErrForbidden) {
+		return errorJSON(c, http.StatusForbidden, "forbidden")
+	}
+	if errors.Is(err, circle.ErrAlreadyMember) {
+		return validationError(c, map[string][]string{
+			"loginId": {"このユーザーは既にメンバーです"},
+		})
+	}
+	if errors.Is(err, circle.ErrInviteeUnverified) {
+		return validationError(c, map[string][]string{
+			"loginId": {"このユーザーはメール認証が完了していません"},
+		})
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *workspaceHandlers) removeCurrentCircleMember(c echo.Context) error {

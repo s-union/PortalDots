@@ -71,7 +71,9 @@ describe("ContactPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("前回のお問い合わせ");
-        expect(wrapper.text()).toContain("「総合窓口」へお問い合わせを送信しました。");
+        expect(wrapper.text()).toContain(
+            "「総合窓口」宛てのモック問い合わせを登録しました。実メールは送信していません。",
+        );
         expect(
             wrapper.get('a[href="/circles/select?redirect=%2Fworkspace%2Fcontact"]').text(),
         ).toContain("企画を変更");
@@ -94,7 +96,7 @@ describe("ContactPage", () => {
             throw new Error(`Unexpected request: ${method} ${url}`);
         });
 
-        expect(wrapper.text()).toContain("まだお問い合わせは送信していません。");
+        expect(wrapper.text()).toContain("まだモック問い合わせは送信していません。");
         expect(wrapper.text()).toContain("カテゴリを選択してください");
     });
 
@@ -132,7 +134,7 @@ describe("ContactPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("件名を入力してください");
-        expect(wrapper.text()).not.toContain("へお問い合わせを送信しました");
+        expect(wrapper.text()).not.toContain("モック問い合わせを登録しました");
     });
 
     it("keeps the page usable when categories fetch fails", async () => {
@@ -154,7 +156,7 @@ describe("ContactPage", () => {
         const options = wrapper.findAll('select[name="categoryId"] option');
 
         expect(wrapper.text()).toContain("カテゴリを選択してください");
-        expect(wrapper.text()).toContain("まだお問い合わせは送信していません。");
+        expect(wrapper.text()).toContain("まだモック問い合わせは送信していません。");
         expect(options).toHaveLength(1);
         expect(options[0]?.text()).toBe("選択してください");
     });

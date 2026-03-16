@@ -15,6 +15,8 @@ var ErrNotFound = errors.New("circle not found")
 var ErrForbidden = errors.New("circle forbidden")
 var ErrAlreadyMember = errors.New("already a member")
 var ErrAlreadySubmitted = errors.New("circle already submitted")
+var ErrInviteeNotFound = errors.New("invitee not found")
+var ErrInviteeUnverified = errors.New("invitee unverified")
 
 type Circle struct {
 	ID                    string
@@ -70,6 +72,7 @@ type Catalog interface {
 	DeleteForUser(user *auth.User, circleID string) error
 	Submit(user *auth.User, circleID string) (Circle, error)
 	ListMembers(circleID string) ([]CircleMember, error)
+	AddMember(requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error
 	RemoveMember(requester *auth.User, circleID, targetUserID string) error
 	RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error)
 	JoinByToken(user *auth.User, token string) (Circle, error)
@@ -78,11 +81,13 @@ type Catalog interface {
 type StaticCatalog struct {
 	mu      sync.RWMutex
 	circles []Circle
+	members map[string][]CircleMember
 	nextID  int
 }
 
-func NewStaticCatalog(cfg []config.Circle) *StaticCatalog {
+func NewStaticCatalog(cfg []config.Circle, authUser config.AuthUser, users []config.User) *StaticCatalog {
 	circles := make([]Circle, 0, len(cfg))
+	members := map[string][]CircleMember{}
 	for _, item := range cfg {
 		circles = append(circles, Circle{
 			ID:                    item.ID,
@@ -93,10 +98,27 @@ func NewStaticCatalog(cfg []config.Circle) *StaticCatalog {
 			ParticipationTypeID:   item.ParticipationTypeID,
 			ParticipationTypeName: item.ParticipationTypeName,
 			Tags:                  slices.Clone(item.Tags),
+			InvitationToken:       item.ID + "-invite-token",
 		})
+		members[item.ID] = []CircleMember{}
+	}
+
+	appendMember := func(circleID, userID, displayName string, isLeader bool) {
+		members[circleID] = append(members[circleID], CircleMember{
+			UserID:      userID,
+			DisplayName: displayName,
+			IsLeader:    isLeader,
+		})
+	}
+
+	for _, user := range users {
+		for _, circleID := range user.CircleIDs {
+			appendMember(circleID, user.ID, user.DisplayName, slices.Contains(user.LeaderCircleIDs, circleID))
+		}
 	}
 	return &StaticCatalog{
 		circles: circles,
+		members: members,
 		nextID:  len(circles) + 1,
 	}
 }
@@ -176,6 +198,7 @@ func (c *StaticCatalog) Delete(circleID string) error {
 			continue
 		}
 		c.circles = append(c.circles[:index], c.circles[index+1:]...)
+		delete(c.members, circleID)
 		return nil
 	}
 
@@ -187,7 +210,14 @@ func (c *StaticCatalog) GetUserCircle(_ *auth.User, circleID string) (Circle, er
 }
 
 func (c *StaticCatalog) CreateForUser(_ *auth.User, params CreateCircleParams) (Circle, error) {
-	return c.Create(params.Name, params.GroupName, params.ParticipationTypeID, params.ParticipationTypeName, nil)
+	created, err := c.Create(params.Name, params.GroupName, params.ParticipationTypeID, params.ParticipationTypeName, nil)
+	if err != nil {
+		return Circle{}, err
+	}
+	created.NameYomi = params.NameYomi
+	created.GroupNameYomi = params.GroupNameYomi
+	created.Notes = params.Notes
+	return created, nil
 }
 
 func (c *StaticCatalog) UpdateForUser(_ *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
@@ -229,16 +259,102 @@ func (c *StaticCatalog) Submit(_ *auth.User, circleID string) (Circle, error) {
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) ListMembers(_ string) ([]CircleMember, error) {
-	return []CircleMember{}, nil
+func (c *StaticCatalog) ListMembers(circleID string) ([]CircleMember, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return cloneMembers(c.members[circleID]), nil
 }
 
-func (c *StaticCatalog) RemoveMember(_ *auth.User, _, _ string) error {
+func (c *StaticCatalog) AddMember(requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	requesterIsLeader := false
+	for _, member := range c.members[circleID] {
+		if member.UserID == requester.ID && member.IsLeader {
+			requesterIsLeader = true
+			break
+		}
+	}
+	if !requesterIsLeader {
+		return ErrForbidden
+	}
+	if !verified {
+		return ErrInviteeUnverified
+	}
+	for _, member := range c.members[circleID] {
+		if member.UserID == targetUserID {
+			return ErrAlreadyMember
+		}
+	}
+
+	c.members[circleID] = append(c.members[circleID], CircleMember{
+		UserID:      targetUserID,
+		DisplayName: targetDisplayName,
+		IsLeader:    false,
+	})
+	slices.SortFunc(c.members[circleID], func(left, right CircleMember) int {
+		if left.IsLeader != right.IsLeader {
+			if left.IsLeader {
+				return -1
+			}
+			return 1
+		}
+		if left.DisplayName < right.DisplayName {
+			return -1
+		}
+		if left.DisplayName > right.DisplayName {
+			return 1
+		}
+		return 0
+	})
+	return nil
+}
+
+func (c *StaticCatalog) RemoveMember(requester *auth.User, circleID, targetUserID string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	requesterIsLeader := false
+	for _, member := range c.members[circleID] {
+		if member.UserID == requester.ID && member.IsLeader {
+			requesterIsLeader = true
+			break
+		}
+	}
+
+	isSelf := requester.ID == targetUserID
+	if !requesterIsLeader && !isSelf {
+		return ErrForbidden
+	}
+
+	for index, member := range c.members[circleID] {
+		if member.UserID != targetUserID {
+			continue
+		}
+		if member.IsLeader {
+			return ErrForbidden
+		}
+		c.members[circleID] = append(c.members[circleID][:index], c.members[circleID][index+1:]...)
+		return nil
+	}
 	return nil
 }
 
 func (c *StaticCatalog) RegenerateInvitationToken(_ *auth.User, circleID string) (Circle, error) {
-	return c.Find(circleID)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for index := range c.circles {
+		if c.circles[index].ID != circleID {
+			continue
+		}
+		c.circles[index].InvitationToken = c.circles[index].ID + "-invite-token-regenerated"
+		return cloneCircle(c.circles[index]), nil
+	}
+
+	return Circle{}, ErrNotFound
 }
 
 func (c *StaticCatalog) JoinByToken(_ *auth.User, token string) (Circle, error) {
@@ -265,4 +381,8 @@ func cloneCircles(values []Circle) []Circle {
 func cloneCircle(value Circle) Circle {
 	value.Tags = slices.Clone(value.Tags)
 	return value
+}
+
+func cloneMembers(values []CircleMember) []CircleMember {
+	return append([]CircleMember{}, values...)
 }

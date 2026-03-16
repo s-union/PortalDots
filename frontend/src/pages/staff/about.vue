@@ -28,10 +28,6 @@ import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
     <SurfaceCard>
       <SurfaceHeader>
         <template #title>できること</template>
-        <template #description>
-          旧 Laravel 版の about ページにあった製品紹介を、migrated staff
-          画面でも参照できるようにしています。
-        </template>
       </SurfaceHeader>
 
       <div class="grid gap-4 px-6 py-5 md:grid-cols-3">
@@ -54,23 +50,6 @@ import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
             画面で進められます。
           </p>
         </article>
-      </div>
-    </SurfaceCard>
-
-    <SurfaceCard>
-      <SurfaceHeader>
-        <template #title>移行メモ</template>
-      </SurfaceHeader>
-
-      <div class="space-y-3 px-6 py-5 text-sm leading-7 text-muted">
-        <p>
-          現在の PortalDots は Laravel から Vue / Go への段階的な移行中です。このページは、legacy の
-          補助情報ページを migrated staff UI に寄せるための受け皿として追加しています。
-        </p>
-        <p>
-          バージョン確認やセルフアップデート案内のようなサーバー固有情報は、現時点では migrated
-          stack に まだ寄せていません。まずは staff 作業中に必要な概要説明と参照先を維持します。
-        </p>
       </div>
     </SurfaceCard>
 

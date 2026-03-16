@@ -39,11 +39,16 @@ const membersFixture = [
 
 function buildFetchMock(
     options: {
+        addShouldSucceed?: boolean;
         members?: object[];
         removeShouldSucceed?: boolean;
     } = {},
 ) {
-    const { members = membersFixture, removeShouldSucceed = true } = options;
+    const {
+        addShouldSucceed = true,
+        members = membersFixture,
+        removeShouldSucceed = true,
+    } = options;
 
     return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         await Promise.resolve();
@@ -63,6 +68,24 @@ function buildFetchMock(
                 status: 200,
                 headers: { "Content-Type": "application/json" },
             });
+        }
+
+        if (url.endsWith("/circles/current/members") && method === "POST") {
+            if (!addShouldSucceed) {
+                return new Response(
+                    JSON.stringify({
+                        message: "validation_error",
+                        errors: {
+                            loginId: ["この学籍番号または連絡先メールアドレスは登録されていません"],
+                        },
+                    }),
+                    {
+                        status: 422,
+                        headers: { "Content-Type": "application/json" },
+                    },
+                );
+            }
+            return new Response(null, { status: 204 });
         }
 
         if (url.includes("/circles/current/members/") && method === "DELETE") {
@@ -157,6 +180,52 @@ describe("CircleMembersPage", () => {
             .filter((b) => b.text() === "削除");
         // リーダー自身は削除できないので、メンバー分だけ削除ボタンが出る
         expect(deleteButtons).toHaveLength(1);
+    });
+
+    it("adds a member by login id", async () => {
+        const { pinia, router } = setupTest("leader-user");
+        await router.push("/workspace/circles/members");
+        await router.isReady();
+
+        vi.stubGlobal("fetch", buildFetchMock());
+
+        const wrapper = mount(CircleMembersPage, {
+            global: { plugins: [pinia, router, createQueryPlugin()] },
+        });
+        await flushPromises();
+
+        const loginInput = wrapper.get('input[placeholder="24a0000 / demo@example.com"]');
+        await loginInput.setValue("24a0000");
+        await wrapper.get("form").trigger("submit");
+        await flushPromises();
+
+        expect((loginInput.element as HTMLInputElement).value).toBe("");
+        expect(wrapper.text()).not.toContain(
+            "この学籍番号または連絡先メールアドレスは登録されていません",
+        );
+    });
+
+    it("shows validation error when adding a member fails", async () => {
+        const { pinia, router } = setupTest("leader-user");
+        await router.push("/workspace/circles/members");
+        await router.isReady();
+
+        vi.stubGlobal("fetch", buildFetchMock({ addShouldSucceed: false }));
+
+        const wrapper = mount(CircleMembersPage, {
+            global: { plugins: [pinia, router, createQueryPlugin()] },
+        });
+        await flushPromises();
+
+        await wrapper
+            .get('input[placeholder="24a0000 / demo@example.com"]')
+            .setValue("missing-user");
+        await wrapper.get("form").trigger("submit");
+        await flushPromises();
+
+        expect(wrapper.text()).toContain(
+            "この学籍番号または連絡先メールアドレスは登録されていません",
+        );
     });
 
     it("removes a member after confirmation", async () => {

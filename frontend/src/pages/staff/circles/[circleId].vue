@@ -124,7 +124,8 @@ async function handleSendMail() {
       subject: "",
       body: "",
     };
-    mailSuccessMessage.value = "企画所属者向けメールをキューに追加しました。";
+    mailSuccessMessage.value =
+      "企画所属者向けモックメールをキューに追加しました。実メールは送信していません。";
   } catch (error) {
     mailErrorMessage.value = extractStaffCircleMailValidationMessage(error);
   }
@@ -182,9 +183,7 @@ async function handleSendMail() {
                     {{ participationType.name }}
                   </option>
                 </select>
-                <span class="text-xs text-muted-2">
-                  既存企画の参加種別変更は Laravel 版に合わせて無効化しています。
-                </span>
+                <span class="text-xs text-muted-2"> 既存企画の参加種別は変更できません。 </span>
               </label>
             </div>
           </SettingsRow>
@@ -250,6 +249,9 @@ async function handleSendMail() {
             <div
               class="rounded border border-border bg-surface-light px-4 py-4 text-sm leading-7 text-muted"
             >
+              <p>
+                この送信はモックです。登録内容はキューで確認できますが、外部メール送信は行いません。
+              </p>
               <p>本文は Markdown 記法をそのまま記入できます。</p>
               <p class="mt-2">現在はスタッフ用控えを送らず、本体送信のみを先行実装しています。</p>
               <p class="mt-2">
@@ -270,7 +272,9 @@ async function handleSendMail() {
             type="button"
             @click="handleSendMail"
           >
-            {{ sendCircleMailMutation.isPending.value ? "登録中..." : "メールをキューに追加" }}
+            {{
+              sendCircleMailMutation.isPending.value ? "登録中..." : "モックメールをキューに追加"
+            }}
           </button>
         </template>
       </SettingsSection>

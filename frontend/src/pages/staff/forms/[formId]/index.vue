@@ -93,6 +93,7 @@ const editableQuestions = computed(() =>
       } => value.edit !== undefined,
     ),
 );
+const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false);
 
 watch(
   () => formQuery.data.value,
@@ -316,6 +317,9 @@ async function handleDeleteForm() {
         <p class="text-sm text-primary">Form Detail</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">設定</h2>
         <div class="mt-3 text-sm text-muted">フォームID : {{ formQuery.data.value.id }}</div>
+        <p v-if="isParticipationForm" class="mt-3 text-sm text-muted">
+          このフォームは参加登録フォームです。基本設定は参加種別画面で管理し、ここでは設問編集のみ行えます。
+        </p>
       </SurfaceCard>
 
       <SettingsSection title="フォーム設定">
@@ -356,6 +360,7 @@ async function handleDeleteForm() {
                   プレビュー
                 </RouterLink>
                 <button
+                  v-if="!isParticipationForm"
                   class="rounded border border-border px-3 py-2 text-xs text-body transition hover:bg-surface-light"
                   type="button"
                   @click="handleCopyForm"
@@ -363,6 +368,7 @@ async function handleDeleteForm() {
                   複製
                 </button>
                 <button
+                  v-if="!isParticipationForm"
                   class="rounded border border-danger px-3 py-2 text-xs text-danger transition hover:bg-danger-light"
                   type="button"
                   @click="handleDeleteForm"
@@ -386,6 +392,7 @@ async function handleDeleteForm() {
               <span class="sr-only">フォーム名</span>
               <input
                 v-model="editForm.name"
+                :disabled="isParticipationForm"
                 class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                 name="name"
                 type="text"
@@ -398,12 +405,13 @@ async function handleDeleteForm() {
           <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-body">フォームの説明</p>
-              <p class="text-xs text-muted-2">Laravel 側のアコーディオンに置いていた説明欄です。</p>
+              <p class="text-xs text-muted-2">フォームの説明を入力します。</p>
             </div>
             <label class="grid gap-2 text-sm text-body">
               <span class="sr-only">説明</span>
               <textarea
                 v-model="editForm.description"
+                :disabled="isParticipationForm"
                 class="min-h-32 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                 name="description"
               />
@@ -424,6 +432,7 @@ async function handleDeleteForm() {
                 <span>開始日時</span>
                 <input
                   v-model="editForm.openAt"
+                  :disabled="isParticipationForm"
                   class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   name="openAt"
                   type="text"
@@ -434,6 +443,7 @@ async function handleDeleteForm() {
                 <span>締切日時</span>
                 <input
                   v-model="editForm.closeAt"
+                  :disabled="isParticipationForm"
                   class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   name="closeAt"
                   type="text"
@@ -453,7 +463,12 @@ async function handleDeleteForm() {
             </div>
             <div class="flex flex-wrap gap-4">
               <label class="flex items-center gap-3 text-sm text-body">
-                <input v-model="editForm.isPublic" name="isPublic" type="checkbox" />
+                <input
+                  v-model="editForm.isPublic"
+                  :disabled="isParticipationForm"
+                  name="isPublic"
+                  type="checkbox"
+                />
                 公開する
               </label>
             </div>
@@ -464,15 +479,14 @@ async function handleDeleteForm() {
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-body">回答条件</p>
-              <p class="text-xs text-muted-2">
-                Laravel 側で扱っていた回答数上限と回答可能タグを設定します。
-              </p>
+              <p class="text-xs text-muted-2">回答数上限と回答可能タグを設定します。</p>
             </div>
             <div class="grid gap-4">
               <label class="grid gap-2 text-sm text-body">
                 <span>最大回答数</span>
                 <input
                   :value="editForm.maxAnswers"
+                  :disabled="isParticipationForm"
                   class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   min="1"
                   name="maxAnswers"
@@ -483,6 +497,7 @@ async function handleDeleteForm() {
               <label class="grid gap-2 text-sm text-body">
                 <span>回答可能タグ</span>
                 <textarea
+                  :disabled="isParticipationForm"
                   class="min-h-24 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   name="answerableTags"
                   :value="formatStaffFormTags(editForm.answerableTags)"
@@ -505,6 +520,7 @@ async function handleDeleteForm() {
               <span class="sr-only">回答完了メッセージ</span>
               <textarea
                 v-model="editForm.confirmationMessage"
+                :disabled="isParticipationForm"
                 class="min-h-24 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                 name="confirmationMessage"
               />
@@ -515,6 +531,12 @@ async function handleDeleteForm() {
         <template #footer>
           <div class="space-y-4">
             <p
+              v-if="isParticipationForm"
+              class="rounded border border-border bg-surface-light px-4 py-3 text-sm text-muted"
+            >
+              参加登録フォームの公開設定・受付期間・人数条件は参加種別画面から変更してください。
+            </p>
+            <p
               v-if="errorMessage"
               class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
             >
@@ -523,11 +545,17 @@ async function handleDeleteForm() {
             <div class="flex justify-end">
               <button
                 class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="updateFormMutation.isPending.value"
+                :disabled="isParticipationForm || updateFormMutation.isPending.value"
                 type="button"
                 @click="handleSaveForm"
               >
-                {{ updateFormMutation.isPending.value ? "保存中..." : "変更を保存" }}
+                {{
+                  isParticipationForm
+                    ? "参加種別画面で編集"
+                    : updateFormMutation.isPending.value
+                      ? "保存中..."
+                      : "変更を保存"
+                }}
               </button>
             </div>
           </div>
@@ -706,6 +734,7 @@ async function handleDeleteForm() {
         id="answer-panel"
         :form="formQuery.data.value"
         :form-id="formId"
+        :is-participation-form="isParticipationForm"
       />
     </article>
 

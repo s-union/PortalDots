@@ -84,7 +84,7 @@ async function handleSubmit() {
         新しい企画を作成します。あなたが企画のリーダーになります。
       </p>
       <p v-if="requestedParticipationTypeId" class="mt-2 text-sm text-muted">
-        legacy 導線から受け取った参加種別をもとに、該当する項目があればあらかじめ選択しています。
+        URLパラメータで指定された参加種別を自動選択しています。
       </p>
     </SurfaceCard>
 

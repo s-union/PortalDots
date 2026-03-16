@@ -95,9 +95,7 @@ async function handleDeleteTag(tagId: string) {
       >
         <div>
           <h3 class="text-base font-semibold text-body">企画タグ一覧</h3>
-          <p class="mt-1 text-sm text-muted">
-            Laravel 側の data-grid と同じく、タグの編集と削除を一覧上で行います。
-          </p>
+          <p class="mt-1 text-sm text-muted">タグの編集と削除を一覧上で行います。</p>
         </div>
         <a
           class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"

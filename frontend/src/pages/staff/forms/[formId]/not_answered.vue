@@ -54,8 +54,7 @@ const answersQuery = useStaffFormAnswersIndexQuery(
         <p class="text-sm text-primary">Not Answered Circles</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">未回答企画一覧</h2>
         <p class="mt-3 text-sm leading-7 text-muted">
-          {{ answersQuery.data.value.form.name }} に未回答の企画を確認します。 legacy の
-          `/staff/forms/{form}/not_answered` に相当する migrated 画面です。
+          {{ answersQuery.data.value.form.name }} に未回答の企画を確認します。
         </p>
       </SurfaceCard>
 

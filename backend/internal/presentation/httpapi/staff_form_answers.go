@@ -507,7 +507,7 @@ func (h *staffFormHandlers) staffFormContext(c echo.Context, allowed func(*auth.
 		return "", session.Session{}, backendform.Form{}, nil, status, false
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), false)
 	if !found {
 		return "", session.Session{}, backendform.Form{}, nil, http.StatusNotFound, false
 	}

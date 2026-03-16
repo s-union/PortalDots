@@ -5,6 +5,7 @@ import { buildStaffFormUploadDownloadUrl, type StaffFormDetail } from "@/feature
 const props = defineProps<{
   formId: string;
   form: StaffFormDetail;
+  isParticipationForm?: boolean;
 }>();
 
 function answerDetails(questionId: string) {
@@ -29,7 +30,11 @@ const totalUploads = computed(() => props.form.answer?.uploads.length ?? 0);
         <p class="text-xs text-muted-2">
           {{ form.answer?.updatedAt ? `last updated: ${form.answer.updatedAt}` : "未回答" }}
         </p>
+        <p v-if="isParticipationForm" class="text-xs text-muted-2">
+          参加登録フォームの回答管理はここでは行えません。
+        </p>
         <RouterLink
+          v-else
           :to="`/staff/forms/${formId}/answers`"
           class="rounded border border-border px-3 py-2 text-xs text-body transition hover:bg-surface-light"
         >

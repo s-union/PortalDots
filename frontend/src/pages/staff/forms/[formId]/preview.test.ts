@@ -66,6 +66,7 @@ describe("StaffFormPreviewPage", () => {
                             maxAnswers: 2,
                             isPublic: true,
                             isOpen: true,
+                            isParticipationForm: false,
                             questions: [
                                 {
                                     id: "heading-1",

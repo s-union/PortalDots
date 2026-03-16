@@ -78,6 +78,10 @@ export const circleMemberSchema = z.object({
     isLeader: z.boolean(),
 });
 
+export const addCircleMemberInputSchema = z.object({
+    loginId: z.string().trim().min(1),
+});
+
 export const sessionCircleSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -287,6 +291,7 @@ export const staffFormSummarySchema = z.object({
     maxAnswers: z.number(),
     isPublic: z.boolean(),
     isOpen: z.boolean(),
+    isParticipationForm: z.boolean().default(false),
 });
 
 export const staffFormUploadSchema = answerUploadSchema;

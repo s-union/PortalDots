@@ -75,7 +75,7 @@ const circlesTotalPages = computed(() =>
 const formEditorRoute = computed(() => {
   const current = detailQuery.data.value;
   if (!current) {
-    return "/staff/forms";
+    return settingsRoute.value;
   }
   return `/staff/forms/${encodeURIComponent(current.form.id)}`;
 });

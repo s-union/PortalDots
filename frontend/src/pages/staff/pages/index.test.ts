@@ -230,6 +230,10 @@ describe("StaffPagesIndexPage", () => {
 
         expect(wrapper.text()).toContain("非公開メモ");
         expect(wrapper.get('a[href="/staff/mails"]').text()).toContain("メール配信設定");
+        expect(wrapper.text()).toContain("保存後にモックメール配信を予約する");
+        expect(wrapper.text()).toContain(
+            "配信予約はモックキューへの登録のみ行います。実メール送信は行いません。",
+        );
 
         await wrapper.get('input[name="title"]').setValue("新着スタッフ連絡");
         await wrapper.get('textarea[name="body"]').setValue("設営順を更新しました。");

@@ -259,8 +259,11 @@ function handleDocumentChange(documentId: string, event: Event) {
 
             <label class="flex items-center gap-3 text-sm text-body">
               <input v-model="form.sendEmails" name="sendEmails" type="checkbox" />
-              保存時にメール配信を予約する
+              保存時にモックメール配信を予約する
             </label>
+            <p class="text-sm text-muted">
+              予約された通知はモックキューに積まれ、実メールは送信しません。
+            </p>
           </div>
         </SettingsRow>
       </SettingsSection>

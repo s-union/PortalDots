@@ -120,12 +120,9 @@ func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	form, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	form, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
-	}
-	if h.isParticipationForm(form.ID) {
-		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	questions, err := h.formQuestions.List(form.ID)
@@ -194,7 +191,7 @@ func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -237,12 +234,9 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
-	}
-	if h.isParticipationForm(formValue.ID) {
-		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	questions, err := h.formQuestions.List(formValue.ID)
@@ -269,7 +263,7 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	source, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	source, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -344,7 +338,7 @@ func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -423,12 +417,9 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
-	}
-	if h.isParticipationForm(formValue.ID) {
-		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	var request createStaffFormQuestionRequest
@@ -464,12 +455,9 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
-	}
-	if h.isParticipationForm(formValue.ID) {
-		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	var request updateStaffFormQuestionRequest
@@ -527,12 +515,9 @@ func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
-	}
-	if h.isParticipationForm(formValue.ID) {
-		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	if err := h.formQuestions.Delete(formValue.ID, c.Param("questionID")); errors.Is(err, formquestion.ErrNotFound) {
@@ -560,12 +545,9 @@ func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID"))
+	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
-	}
-	if h.isParticipationForm(formValue.ID) {
-		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
 	var request reorderStaffFormQuestionsRequest
@@ -649,6 +631,22 @@ func (h *staffFormHandlers) filterEditableStaffForms(forms []backendform.Form) [
 	}
 
 	return filtered
+}
+
+func (h *staffFormHandlers) findStaffFormForManagement(selectedCircleID, formID string, allowParticipation bool) (backendform.Form, bool) {
+	if formValue, found := h.forms.FindByCircleForStaff(selectedCircleID, formID); found {
+		return formValue, true
+	}
+	if !allowParticipation {
+		return backendform.Form{}, false
+	}
+
+	formValue, found := h.forms.FindByIDForStaff(formID)
+	if !found || !h.isParticipationForm(formValue.ID) {
+		return backendform.Form{}, false
+	}
+
+	return formValue, true
 }
 
 func questionIDsByPriority(questions []formquestion.Question, err error) ([]string, error) {

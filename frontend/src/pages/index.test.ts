@@ -55,7 +55,7 @@ describe("HomePage", () => {
             },
         });
 
-        expect(wrapper.text()).toContain("認証から縦切りで移行を進めます。");
+        expect(wrapper.text()).toContain("PortalDots へようこそ");
         expect(wrapper.text()).toContain("ログイン画面へ");
         expect(wrapper.get('a[href="/register"]').text()).toContain("新規ユーザー登録");
     });
@@ -220,7 +220,6 @@ describe("HomePage", () => {
         await flushPromises();
 
         expect(sessionStore.currentCircle?.name).toBe("デモ企画B");
-        expect(wrapper.text()).toContain("Current circle: デモ企画B");
         expect(wrapper.text()).toContain("搬入時間のお知らせ");
         expect(wrapper.text()).toContain("搬入手順書");
         expect(wrapper.text()).toContain("TXTファイル");

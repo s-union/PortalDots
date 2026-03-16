@@ -328,6 +328,43 @@ func (c *SQLCCatalog) ListMembers(circleID string) ([]CircleMember, error) {
 	return members, nil
 }
 
+func (c *SQLCCatalog) AddMember(requester *auth.User, circleID, targetUserID, _ string, verified bool) error {
+	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+		CircleID: circleID,
+		UserID:   requester.ID,
+	})
+	if err != nil {
+		return err
+	}
+	if !isLeader {
+		return ErrForbidden
+	}
+	if !verified {
+		return ErrInviteeUnverified
+	}
+
+	isMember, err := c.queries.IsCircleMember(context.Background(), dbgen.IsCircleMemberParams{
+		CircleID: circleID,
+		UserID:   targetUserID,
+	})
+	if err != nil {
+		return err
+	}
+	if isMember {
+		return ErrAlreadyMember
+	}
+
+	if err := c.queries.CreateCircleUser(context.Background(), dbgen.CreateCircleUserParams{
+		CircleID: circleID,
+		UserID:   targetUserID,
+		IsLeader: false,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *SQLCCatalog) RemoveMember(requester *auth.User, circleID, targetUserID string) error {
 	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
 		CircleID: circleID,

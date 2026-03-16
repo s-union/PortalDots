@@ -556,6 +556,149 @@ func TestSetCurrentCircleUpdatesBootstrap(t *testing.T) {
 	}
 }
 
+func TestAddCurrentCircleMemberByLoginID(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.AuthUser = config.AuthUser{
+		ID:          "member-circle-a",
+		LoginIDs:    []string{"circle-a@example.com"},
+		DisplayName: "Circle A Member",
+		Password:    "password",
+		Roles:       []string{"participant"},
+	}
+	cfg.Users = append(cfg.Users, config.User{
+		ID:          "demo-user",
+		LoginIDs:    []string{"demo@example.com", "24a0000"},
+		DisplayName: "Demo User",
+		Password:    "password",
+		Roles:       []string{"participant"},
+		IsVerified:  true,
+	})
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "circle-a@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
+		"circleId": "circle-a",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
+		"loginId": "demo@example.com",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/circles/current/members", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var members []circleMemberResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &members); err != nil {
+		t.Fatalf("unmarshal circle members response: %v", err)
+	}
+	if len(members) != 2 {
+		t.Fatalf("expected 2 members after direct add, got %#v", members)
+	}
+	if members[1].UserID != "demo-user" || members[1].DisplayName != "Demo User" || members[1].IsLeader {
+		t.Fatalf("unexpected added member: %#v", members[1])
+	}
+}
+
+func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.AuthUser = config.AuthUser{
+		ID:          "member-circle-a",
+		LoginIDs:    []string{"circle-a@example.com"},
+		DisplayName: "Circle A Member",
+		Password:    "password",
+		Roles:       []string{"participant"},
+	}
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "circle-a@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
+		"circleId": "circle-a",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
+		"loginId": "missing-user",
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response validationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal validation response: %v", err)
+	}
+	if len(response.Errors["loginId"]) == 0 {
+		t.Fatalf("expected loginId validation error, got %#v", response.Errors)
+	}
+}
+
+func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(circleMemberConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "circle-b@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
+		"circleId": "circle-b",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
+		"loginId": "circle-b-unverified@example.com",
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response validationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal validation response: %v", err)
+	}
+	if len(response.Errors["loginId"]) == 0 || response.Errors["loginId"][0] != "このユーザーはメール認証が完了していません" {
+		t.Fatalf("unexpected validation error: %#v", response.Errors)
+	}
+}
+
 func TestListPagesUsesCurrentCircle(t *testing.T) {
 	t.Parallel()
 
@@ -1620,10 +1763,15 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 		t.Fatalf("unmarshal staff forms response: %v", err)
 	}
 	if len(forms) != 3 {
-		t.Fatalf("expected 3 staff forms for circle-b, got %#v", forms)
+		t.Fatalf("expected 3 editable staff forms for circle-b, got %#v", forms)
 	}
 	if forms[0].MaxAnswers < 1 {
 		t.Fatalf("expected max answers to be populated, got %#v", forms[0])
+	}
+	if slices.ContainsFunc(forms, func(form staffFormSummaryResponse) bool {
+		return form.ID == "form-participation-exhibit"
+	}) {
+		t.Fatalf("expected participation form to stay out of staff forms index, got %#v", forms)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1", nil)
@@ -2143,6 +2291,94 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/"+copied.ID, nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-participation-exhibit", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail staffFormDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal participation form detail: %v", err)
+	}
+	if !detail.IsParticipationForm || detail.Name != "企画参加登録" {
+		t.Fatalf("unexpected participation form detail: %#v", detail)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-participation-exhibit/preview", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var preview formDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &preview); err != nil {
+		t.Fatalf("unmarshal participation form preview: %v", err)
+	}
+	if preview.ID != "form-participation-exhibit" {
+		t.Fatalf("unexpected participation form preview: %#v", preview)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-participation-exhibit", map[string]any{
+		"name":                "変更不可",
+		"description":         "変更不可",
+		"openAt":              "2026-03-10T09:00:00Z",
+		"closeAt":             "2026-03-25T18:00:00Z",
+		"maxAnswers":          4,
+		"answerableTags":      []string{"展示", "新規"},
+		"confirmationMessage": "更新完了です。",
+		"isPublic":            false,
+	})
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusBadRequest, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-participation-exhibit/questions", map[string]string{
+		"type": "text",
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+
+	var created staffFormQuestion
+	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("unmarshal participation question: %v", err)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-participation-exhibit/questions/"+created.ID, map[string]any{
+		"name":         "追加設問",
+		"description":  "補足事項を入力してください",
+		"type":         "text",
+		"isRequired":   false,
+		"numberMin":    nil,
+		"numberMax":    nil,
+		"allowedTypes": "",
+		"options":      []string{},
+		"priority":     1,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/forms/form-participation-exhibit/questions/"+created.ID, nil)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-participation-exhibit/answers", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}

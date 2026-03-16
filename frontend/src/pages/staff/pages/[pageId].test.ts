@@ -203,6 +203,10 @@ describe("StaffPageDetailPage", () => {
             "展示",
         );
         expect(wrapper.text()).toContain("展示ガイド");
+        expect(wrapper.text()).toContain("保存時にモックメール配信を予約する");
+        expect(wrapper.text()).toContain(
+            "予約された通知はモックキューに積まれ、実メールは送信しません。",
+        );
 
         await wrapper.get('input[name="title"]').setValue("展示担当向け更新連絡");
         await wrapper.get('textarea[name="body"]').setValue("更新後本文です。");

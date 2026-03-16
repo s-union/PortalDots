@@ -197,7 +197,7 @@ describe("CircleCreatePage", () => {
         });
         await flushPromises();
 
-        expect(wrapper.text()).toContain("legacy 導線から受け取った参加種別");
+        expect(wrapper.text()).toContain("URLパラメータで指定された参加種別を自動選択しています");
         expect(wrapper.get('input[type="radio"][value="pt-food"]').element.checked).toBe(true);
     });
 

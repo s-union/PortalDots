@@ -160,6 +160,7 @@ type workspaceHandlers struct {
 	formQuestions      formquestion.Repository
 	pages              page.Repository
 	participationTypes participationtype.Repository
+	users              useradmin.Repository
 }
 
 func NewServer(cfg config.Config) *echo.Echo {
@@ -169,7 +170,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 		answer.NewMemoryRepository(),
 		auth.NewStaticAuthenticator(cfg.AuthUser),
 		booth.NewMemoryRepository(cfg.Booths),
-		circle.NewStaticCatalog(cfg.Circles),
+		circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		contactcategory.NewMemoryRepository(cfg.ContactCategories),
 		document.NewStaticRepository(cfg.Documents),
 		form.NewStaticRepository(cfg.Forms),
@@ -337,6 +338,7 @@ func NewServerWithDependencies(
 		formQuestions:      formQuestions,
 		pages:              pages,
 		participationTypes: participationTypes,
+		users:              users,
 	}
 
 	e.GET("/healthz", func(c echo.Context) error {

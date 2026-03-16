@@ -60,7 +60,8 @@ async function handleCreateMail() {
         <p class="text-sm text-primary">Staff Mail Queue</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">メールキュー</h2>
         <p class="mt-3 text-sm leading-7 text-muted">
-          {{ sessionStore.currentCircle?.name ?? "企画未選択" }} 向けのメールを queue に積みます。
+          {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
+          向けのメールをモックキューに積みます。 実メールは送信しません。
         </p>
       </div>
       <RouterLink :class="buttonVariants({ variant: 'secondary', size: 'md' })" to="/staff">
@@ -69,33 +70,14 @@ async function handleCreateMail() {
     </header>
 
     <section class="space-y-6">
-      <section :class="surfaceVariants()">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-lg font-semibold text-body">
-            メールの一斉送信機能を利用するにはサーバー側の設定が必要です
-          </h3>
-        </div>
-        <div class="px-6 py-5 text-sm leading-7 text-muted">
-          <p>
-            現在は queue 登録までを移植しています。worker
-            と送信基盤を後続で差し替える前提で、ここでは staff mail queue
-            の操作だけを再現しています。
-          </p>
-          <p class="mt-3">
-            {{ sessionStore.currentCircle?.name ?? "企画未選択" }} 向けのメールを queue に積みます。
-          </p>
-          <p class="mt-3">
-            legacy の `/staff/send_emails`
-            にあったメール配信設定の導線も、この画面へ統合しています。
-          </p>
-        </div>
-      </section>
-
       <form :class="surfaceVariants()" @submit.prevent="handleCreateMail">
         <div class="border-b border-border px-6 py-4">
           <h3 class="text-lg font-semibold text-body">メール配信設定</h3>
         </div>
         <div class="grid gap-4 px-6 py-5">
+          <p class="rounded border border-border bg-surface-light px-4 py-3 text-sm text-muted">
+            この画面で登録したメールはすべてモック扱いです。宛先や本文は確認できますが、外部送信は行いません。
+          </p>
           <label class="grid gap-2 text-sm text-body">
             <span class="font-medium">件名</span>
             <input
@@ -138,7 +120,7 @@ async function handleCreateMail() {
             :disabled="createMailMutation.isPending.value"
             type="submit"
           >
-            {{ createMailMutation.isPending.value ? "登録中..." : "メールを queue に追加" }}
+            {{ createMailMutation.isPending.value ? "登録中..." : "モックメールをキューに追加" }}
           </button>
         </div>
       </form>
@@ -156,7 +138,7 @@ async function handleCreateMail() {
           v-else-if="(mailsQuery.data.value?.length ?? 0) === 0"
           class="px-6 py-5 text-sm text-muted"
         >
-          メールキューはまだありません。
+          モックメールキューはまだありません。
         </div>
 
         <div v-else class="divide-y divide-border">
@@ -171,7 +153,7 @@ async function handleCreateMail() {
                     : 'bg-primary-light text-primary'
                 "
               >
-                {{ mail.status === "sent" ? "送信済み" : "待機中" }}
+                {{ mail.status === "sent" ? "モック送信済み" : "モック待機中" }}
               </span>
             </div>
             <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{ mail.body }}</p>

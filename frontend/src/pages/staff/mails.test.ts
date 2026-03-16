@@ -126,8 +126,7 @@ describe("StaffMailsPage", () => {
         });
         await flushPromises();
 
-        expect(wrapper.text()).toContain("メールキューはまだありません。");
-        expect(wrapper.text()).toContain("legacy の `/staff/send_emails` にあったメール配信設定");
+        expect(wrapper.text()).toContain("モックメールキューはまだありません。");
 
         await wrapper.get('input[name="subject"]').setValue("搬入のご案内");
         await wrapper.get('textarea[name="body"]').setValue("9:00 に集合してください。");
@@ -139,5 +138,7 @@ describe("StaffMailsPage", () => {
 
         expect(wrapper.text()).toContain("搬入のご案内");
         expect(wrapper.text()).toContain("demo@example.com, sub@example.com");
+        expect(wrapper.text()).toContain("この画面で登録したメールはすべてモック扱いです。");
+        expect(wrapper.text()).toContain("モック待機中");
     });
 });

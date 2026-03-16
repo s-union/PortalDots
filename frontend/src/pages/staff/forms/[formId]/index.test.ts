@@ -114,6 +114,7 @@ describe("StaffFormDetailPage", () => {
                             confirmationMessage: updatedConfirmationMessage,
                             isPublic: true,
                             isOpen: true,
+                            isParticipationForm: false,
                             questions,
                             answer: {
                                 id: "answer-1",
@@ -156,6 +157,7 @@ describe("StaffFormDetailPage", () => {
                             maxAnswers: updatedMaxAnswers,
                             isPublic: true,
                             isOpen: true,
+                            isParticipationForm: false,
                         }),
                         {
                             status: 200,
@@ -337,6 +339,7 @@ describe("StaffFormDetailPage", () => {
                             confirmationMessage: "回答ありがとうございました。",
                             isPublic: true,
                             isOpen: true,
+                            isParticipationForm: false,
                             questions: [],
                             answer: null,
                         }),
@@ -427,6 +430,126 @@ describe("StaffFormDetailPage", () => {
                 expect(router.currentRoute.value.fullPath).toBe("/staff/forms");
             }
         }
+    });
+
+    it("shows participation forms as question-editor only", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-b",
+                name: "デモ企画B",
+            },
+            featureFlags: [],
+            roles: ["admin"],
+            user: {
+                id: "staff-user",
+                displayName: "Staff User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/staff/forms", component: { template: "<div>forms</div>" } },
+                { path: "/staff/forms/:formId", component: StaffFormDetailPage },
+                {
+                    path: "/staff/forms/:formId/answers",
+                    component: { template: "<div>answers</div>" },
+                },
+                {
+                    path: "/staff/forms/:formId/preview",
+                    component: { template: "<div>preview</div>" },
+                },
+            ],
+        });
+        await router.push("/staff/forms/form-participation-exhibit");
+        await router.isReady();
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+
+                if (url.endsWith("/staff/forms/form-participation-exhibit") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            id: "form-participation-exhibit",
+                            name: "企画参加登録",
+                            description: "参加登録を提出してください。",
+                            openAt: "2026-03-01T00:00:00Z",
+                            closeAt: "2026-03-31T23:59:59Z",
+                            maxAnswers: 1,
+                            answerableTags: [],
+                            confirmationMessage: "ありがとうございました。",
+                            isPublic: true,
+                            isOpen: true,
+                            isParticipationForm: true,
+                            questions: [
+                                {
+                                    id: "question-1",
+                                    name: "追加設問",
+                                    description: "補足事項を入力してください",
+                                    type: "text",
+                                    isRequired: false,
+                                    numberMin: null,
+                                    numberMax: null,
+                                    allowedTypes: "",
+                                    options: [],
+                                    priority: 1,
+                                    createdAt: "2026-03-01T00:00:00Z",
+                                    updatedAt: "2026-03-01T00:00:00Z",
+                                },
+                            ],
+                            answer: null,
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffFormDetailPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        expect(wrapper.text()).toContain(
+            "このフォームは参加登録フォームです。基本設定は参加種別画面で管理し、ここでは設問編集のみ行えます。",
+        );
+        expect(wrapper.text()).toContain(
+            "参加登録フォームの公開設定・受付期間・人数条件は参加種別画面から変更してください。",
+        );
+        expect(wrapper.text()).toContain("参加登録フォームの回答管理はここでは行えません。");
+        expect(wrapper.get('input[name="name"]').attributes("disabled")).toBeDefined();
+        expect(wrapper.get('textarea[name="description"]').attributes("disabled")).toBeDefined();
+        expect(wrapper.text()).toContain("追加設問");
+        expect(wrapper.text()).not.toContain("複製");
+        expect(wrapper.text()).not.toContain("回答管理へ");
+        expect(wrapper.text()).toContain("参加種別画面で編集");
     });
 });
 

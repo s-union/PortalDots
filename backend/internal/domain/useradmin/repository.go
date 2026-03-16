@@ -25,6 +25,7 @@ type User struct {
 type Repository interface {
 	List() ([]User, error)
 	Find(userID string) (User, error)
+	FindByLoginID(loginID string) (User, error)
 	Update(userID, displayName string, loginIDs []string) (User, error)
 	UpdateDisplayName(userID, displayName string) (User, error)
 	UpdateRoles(userID string, roles []string) (User, error)
@@ -103,6 +104,21 @@ func (r *StaticRepository) Find(userID string) (User, error) {
 	for _, user := range r.users {
 		if user.ID == userID {
 			return cloneUser(user), nil
+		}
+	}
+
+	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) FindByLoginID(loginID string) (User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, user := range r.users {
+		for _, current := range user.LoginIDs {
+			if current == loginID {
+				return cloneUser(user), nil
+			}
 		}
 	}
 

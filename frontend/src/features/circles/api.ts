@@ -3,10 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { createJsonHeaders, $api } from "@/lib/api/client";
 import {
     parseWithSchema,
+    addCircleMemberInputSchema,
     selectableCircleSchema,
     circleDetailSchema,
     circleMemberSchema,
 } from "@/lib/api/schema";
+import { extractValidationMessage } from "@/lib/api/validation";
 import { fetchSessionBootstrap } from "@/features/session/api";
 import { useSessionStore } from "@/features/session/store";
 
@@ -34,6 +36,10 @@ export type CircleMember = {
     userId: string;
     displayName: string;
     isLeader: boolean;
+};
+
+export type AddCircleMemberInput = {
+    loginId: string;
 };
 
 export type CreateCircleInput = {
@@ -282,6 +288,29 @@ export function useRemoveMemberMutation() {
     });
 }
 
+export function useAddCircleMemberMutation() {
+    const queryClient = useQueryClient();
+    const sessionStore = useSessionStore();
+
+    return useMutation({
+        mutationFn: async (input: AddCircleMemberInput) => {
+            const parsed = addCircleMemberInputSchema.parse(input);
+            await $api.noContentMutation(
+                "post",
+                "/circles/current/members",
+                {
+                    headers: createJsonHeaders(sessionStore.csrfToken),
+                    body: parsed,
+                },
+                { errorMessage: "メンバーの追加に失敗しました" },
+            );
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["circles", "current", "members"] });
+        },
+    });
+}
+
 export function useRegenerateInvitationTokenMutation() {
     const queryClient = useQueryClient();
     const sessionStore = useSessionStore();
@@ -324,6 +353,10 @@ export function useJoinCircleMutation() {
             await queryClient.invalidateQueries({ queryKey: ["circles"] });
         },
     });
+}
+
+export function extractAddCircleMemberValidationMessage(error: unknown) {
+    return extractValidationMessage(error, "メンバーの追加に失敗しました。");
 }
 
 function parseSelectableCircles(value: unknown): SelectableCircle[] {
