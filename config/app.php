@@ -3,7 +3,6 @@
 use App\Providers\AppServiceProvider;
 use App\Providers\BladeServiceProvider;
 use App\Providers\EventServiceProvider;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\AuthServiceProvider;
 use Illuminate\Auth\Passwords\PasswordResetServiceProvider;
 use Illuminate\Broadcasting\BroadcastServiceProvider;
