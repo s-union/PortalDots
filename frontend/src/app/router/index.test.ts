@@ -458,6 +458,61 @@ describe("app router guards", () => {
         expect(router.currentRoute.value.fullPath).toBe("/staff");
     });
 
+    it("redirects non-admin staff portal settings access to staff top", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+
+                if (url.endsWith("/session/bootstrap")) {
+                    return new Response(
+                        JSON.stringify({
+                            csrfToken: "csrf-token",
+                            currentCircle: {
+                                id: "circle-a",
+                                name: "デモ企画A",
+                            },
+                            featureFlags: [],
+                            roles: ["content_manager"],
+                            user: {
+                                id: "content-user",
+                                displayName: "Content User",
+                            },
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (url.endsWith("/staff/status")) {
+                    return new Response(
+                        JSON.stringify({
+                            allowed: true,
+                            authorized: true,
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                throw new Error(`Unexpected request: ${url}`);
+            }),
+        );
+
+        await router.push("/staff/settings/portal");
+
+        expect(router.currentRoute.value.fullPath).toBe("/staff");
+    });
+
     it("resolves unknown routes to the not-found page", async () => {
         await router.push("/definitely-missing");
 

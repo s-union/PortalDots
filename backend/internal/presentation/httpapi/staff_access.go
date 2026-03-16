@@ -264,6 +264,9 @@ func canDeleteContactCategories(user *auth.User) bool {
 func canUseMailQueue(user *auth.User) bool     { return canAccessCapability(user, "mailQueue.use") }
 func canUseStaffExports(user *auth.User) bool  { return canAccessCapability(user, "exports.use") }
 func canViewActivityLogs(user *auth.User) bool { return canAccessCapability(user, "activityLogs.read") }
+func canManagePortalSettings(user *auth.User) bool {
+	return userHasAnyRole(user, "admin")
+}
 
 func (s *sharedDeps) requireStaffCapability(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, int, bool) {
 	sessionID, currentSession, status, ok := s.requireStaffMode(c)

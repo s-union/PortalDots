@@ -33,6 +33,7 @@ func main() {
 		dependencies.Mails,
 		dependencies.Pages,
 		dependencies.ParticipationTypes,
+		dependencies.Portal,
 		dependencies.Places,
 		dependencies.Sessions,
 		dependencies.Tags,

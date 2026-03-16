@@ -18,6 +18,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
+	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -142,6 +143,7 @@ type staffAdminHandlers struct {
 	forms      form.Repository
 	mails      mailqueue.Repository
 	pages      page.Repository
+	portal     portalsetting.Repository
 }
 
 // workspaceHandlers handles participant-facing workspace endpoints.
@@ -171,6 +173,21 @@ func NewServer(cfg config.Config) *echo.Echo {
 		mailqueue.NewMemoryRepository(),
 		page.NewStaticRepository(cfg.Pages),
 		participationtype.NewMemoryRepository(cfg.ParticipationTypes),
+		portalsetting.NewMemoryRepository(portalsetting.Settings{
+			AppName:                   cfg.AppName,
+			PortalDescription:         cfg.PortalDescription,
+			AppURL:                    cfg.AppURL,
+			AppForceHTTPS:             cfg.AppForceHTTPS,
+			PortalAdminName:           cfg.PortalAdminName,
+			PortalContactEmail:        cfg.PortalContactEmail,
+			PortalUnivemailLocalPart:  cfg.PortalUnivemailLocalPart,
+			PortalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
+			PortalStudentIDName:       cfg.PortalStudentIDName,
+			PortalUnivemailName:       cfg.PortalUnivemailName,
+			PortalPrimaryColorH:       cfg.PortalPrimaryColorH,
+			PortalPrimaryColorS:       cfg.PortalPrimaryColorS,
+			PortalPrimaryColorL:       cfg.PortalPrimaryColorL,
+		}),
 		place.NewMemoryRepository(cfg.Places),
 		session.NewMemoryStore(cfg.SessionTTL),
 		tag.NewMemoryRepository(cfg.Tags),
@@ -191,6 +208,7 @@ func NewServerWithDependencies(
 	mails mailqueue.Repository,
 	pages page.Repository,
 	participationTypes participationtype.Repository,
+	portal portalsetting.Repository,
 	places place.Repository,
 	sessionStore session.Store,
 	tags tag.Repository,
@@ -299,6 +317,7 @@ func NewServerWithDependencies(
 		forms:      forms,
 		mails:      mails,
 		pages:      pages,
+		portal:     portal,
 	}
 
 	workspaceH := &workspaceHandlers{

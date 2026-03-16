@@ -96,6 +96,8 @@ func registerStaffRoutes(
 	v1.GET("/staff/circles/:circleID/email", staffCircleH.getStaffCircleMailForm)
 	v1.POST("/staff/circles/:circleID/email", staffCircleH.sendStaffCircleMail)
 	v1.GET("/staff/activity-logs", staffAdminH.listStaffActivityLogs)
+	v1.GET("/staff/portal-settings", staffAdminH.getStaffPortalSettings)
+	v1.PUT("/staff/portal-settings", staffAdminH.updateStaffPortalSettings)
 	v1.GET("/staff/exports/summary.csv", staffAdminH.downloadStaffSummaryCSV)
 	v1.GET("/staff/exports/bundle.zip", staffAdminH.downloadStaffBundleZIP)
 	v1.GET("/staff/mails", staffAdminH.listStaffMails)

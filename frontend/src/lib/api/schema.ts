@@ -174,6 +174,22 @@ export const staffMailSchema = z.object({
     deliveredAt: z.string(),
 });
 
+export const staffPortalSettingsSchema = z.object({
+    appName: z.string(),
+    portalDescription: z.string(),
+    appUrl: z.string(),
+    appForceHttps: z.boolean(),
+    portalAdminName: z.string(),
+    portalContactEmail: z.string(),
+    portalUnivemailLocalPart: z.string(),
+    portalUnivemailDomainPart: z.string(),
+    portalStudentIdName: z.string(),
+    portalUnivemailName: z.string(),
+    portalPrimaryColorH: z.number(),
+    portalPrimaryColorS: z.number(),
+    portalPrimaryColorL: z.number(),
+});
+
 export const staffUserSchema = z.object({
     id: z.string(),
     displayName: z.string(),

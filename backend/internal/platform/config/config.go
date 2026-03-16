@@ -15,26 +15,39 @@ const (
 )
 
 type Config struct {
-	BindAddress             string
-	DatabaseURL             string
-	MigrationsDir           string
-	AllowInsecureDefaults   bool
-	SessionCookieName       string
-	SessionCookieSecure     bool
-	SessionTTL              time.Duration
-	AuthUser                AuthUser
-	Users                   []User
-	StaffVerifyCode         string
-	ParticipationTypes      []ParticipationType
-	Circles                 []Circle
-	Pages                   []Page
-	Documents               []Document
-	Forms                   []Form
-	Tags                    []Tag
-	Places                  []Place
-	ContactCategories       []ContactCategory
-	authPasswordProvided    bool
-	staffVerifyCodeProvided bool
+	BindAddress               string
+	DatabaseURL               string
+	MigrationsDir             string
+	AllowInsecureDefaults     bool
+	SessionCookieName         string
+	SessionCookieSecure       bool
+	SessionTTL                time.Duration
+	AppName                   string
+	PortalDescription         string
+	AppURL                    string
+	AppForceHTTPS             bool
+	PortalAdminName           string
+	PortalContactEmail        string
+	PortalUnivemailLocalPart  string
+	PortalUnivemailDomainPart string
+	PortalStudentIDName       string
+	PortalUnivemailName       string
+	PortalPrimaryColorH       int
+	PortalPrimaryColorS       int
+	PortalPrimaryColorL       int
+	AuthUser                  AuthUser
+	Users                     []User
+	StaffVerifyCode           string
+	ParticipationTypes        []ParticipationType
+	Circles                   []Circle
+	Pages                     []Page
+	Documents                 []Document
+	Forms                     []Form
+	Tags                      []Tag
+	Places                    []Place
+	ContactCategories         []ContactCategory
+	authPasswordProvided      bool
+	staffVerifyCodeProvided   bool
 }
 
 type AuthUser struct {
@@ -142,13 +155,26 @@ func FromEnv() Config {
 	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTALDOTS_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
 
 	return Config{
-		BindAddress:           getenv("PORTALDOTS_API_BIND", ":8081"),
-		DatabaseURL:           getenv("PORTALDOTS_DATABASE_URL", ""),
-		MigrationsDir:         getenv("PORTALDOTS_MIGRATIONS_DIR", "db/migrations"),
-		AllowInsecureDefaults: getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true",
-		SessionCookieName:     getenv("PORTALDOTS_SESSION_COOKIE", "portaldots_session"),
-		SessionCookieSecure:   getenv("PORTALDOTS_SESSION_COOKIE_SECURE", "") == "true",
-		SessionTTL:            time.Duration(getenvInt("PORTALDOTS_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
+		BindAddress:               getenv("PORTALDOTS_API_BIND", ":8081"),
+		DatabaseURL:               getenv("PORTALDOTS_DATABASE_URL", ""),
+		MigrationsDir:             getenv("PORTALDOTS_MIGRATIONS_DIR", "db/migrations"),
+		AllowInsecureDefaults:     getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true",
+		SessionCookieName:         getenv("PORTALDOTS_SESSION_COOKIE", "portaldots_session"),
+		SessionCookieSecure:       getenv("PORTALDOTS_SESSION_COOKIE_SECURE", "") == "true",
+		SessionTTL:                time.Duration(getenvInt("PORTALDOTS_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
+		AppName:                   getenv("APP_NAME", "PortalDots"),
+		PortalDescription:         getenv("PORTAL_DESCRIPTION", "学園祭参加団体向けポータル"),
+		AppURL:                    getenv("APP_URL", "http://127.0.0.1:8080"),
+		AppForceHTTPS:             getenv("APP_FORCE_HTTPS", "") == "true",
+		PortalAdminName:           getenv("PORTAL_ADMIN_NAME", "PortalDots 実行委員会"),
+		PortalContactEmail:        getenv("PORTAL_CONTACT_EMAIL", "contact@example.com"),
+		PortalUnivemailLocalPart:  getenv("PORTAL_UNIVEMAIL_LOCAL_PART", "student_id"),
+		PortalUnivemailDomainPart: getenv("PORTAL_UNIVEMAIL_DOMAIN_PART", "example.ac.jp"),
+		PortalStudentIDName:       getenv("PORTAL_STUDENT_ID_NAME", "学籍番号"),
+		PortalUnivemailName:       getenv("PORTAL_UNIVEMAIL_NAME", "大学メールアドレス"),
+		PortalPrimaryColorH:       getenvInt("PORTAL_PRIMARY_COLOR_H", 190),
+		PortalPrimaryColorS:       getenvInt("PORTAL_PRIMARY_COLOR_S", 80),
+		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 45),
 		AuthUser: AuthUser{
 			ID:          getenv("PORTALDOTS_AUTH_USER_ID", "demo-user"),
 			LoginIDs:    splitCSV(getenv("PORTALDOTS_AUTH_LOGIN_IDS", "demo@example.com,24a0000")),

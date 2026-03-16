@@ -35,7 +35,8 @@ export type StaffCapability =
     | "contactCategories.delete"
     | "mailQueue.use"
     | "exports.use"
-    | "activityLogs.read";
+    | "activityLogs.read"
+    | "portalSettings.manage";
 
 function hasAnyRole(roles: string[], ...candidates: string[]) {
     return roles.some((role) => candidates.includes(role));
@@ -436,6 +437,10 @@ export function canViewActivityLogs(roles: string[], _permissions: string[] = []
     return hasAnyRole(roles, "admin");
 }
 
+export function canManagePortalSettings(roles: string[], _permissions: string[] = []) {
+    return hasAnyRole(roles, "admin");
+}
+
 export function canManageUsers(roles: string[], permissions: string[] = []) {
     return canReadUsers(roles, permissions);
 }
@@ -528,5 +533,7 @@ export function canAccessStaffCapability(
             return canUseStaffExports(roles, permissions);
         case "activityLogs.read":
             return canViewActivityLogs(roles, permissions);
+        case "portalSettings.manage":
+            return canManagePortalSettings(roles, permissions);
     }
 }

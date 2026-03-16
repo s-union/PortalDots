@@ -989,6 +989,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/staff/portal-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return portal-wide settings for admin staff */
+        get: operations["getStaffPortalSettings"];
+        /** Update portal-wide settings for admin staff */
+        put: operations["putStaffPortalSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/staff/exports/summary.csv": {
         parameters: {
             query?: never;
@@ -5857,6 +5875,127 @@ export interface operations {
             };
             /** @description Staff verification and admin role are required */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getStaffPortalSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Portal settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        appName: string;
+                        portalDescription: string;
+                        appUrl: string;
+                        appForceHttps: boolean;
+                        portalAdminName: string;
+                        portalContactEmail: string;
+                        portalUnivemailLocalPart: string;
+                        portalUnivemailDomainPart: string;
+                        portalStudentIdName: string;
+                        portalUnivemailName: string;
+                        portalPrimaryColorH: number;
+                        portalPrimaryColorS: number;
+                        portalPrimaryColorL: number;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Staff verification and admin role are required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    putStaffPortalSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    appName: string;
+                    portalDescription: string;
+                    appUrl: string;
+                    appForceHttps: boolean;
+                    portalAdminName: string;
+                    portalContactEmail: string;
+                    portalUnivemailLocalPart: string;
+                    portalUnivemailDomainPart: string;
+                    portalStudentIdName: string;
+                    portalUnivemailName: string;
+                    portalPrimaryColorH: number;
+                    portalPrimaryColorS: number;
+                    portalPrimaryColorL: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated portal settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        appName: string;
+                        portalDescription: string;
+                        appUrl: string;
+                        appForceHttps: boolean;
+                        portalAdminName: string;
+                        portalContactEmail: string;
+                        portalUnivemailLocalPart: string;
+                        portalUnivemailDomainPart: string;
+                        portalStudentIdName: string;
+                        portalUnivemailName: string;
+                        portalPrimaryColorH: number;
+                        portalPrimaryColorS: number;
+                        portalPrimaryColorL: number;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Staff verification and admin role are required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

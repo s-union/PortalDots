@@ -3006,6 +3006,133 @@ func TestStaffExportsDownloadArtifacts(t *testing.T) {
 	}
 }
 
+func TestStaffPortalSettingsRequireAdminRole(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.AuthUser.Roles = []string{"content_manager"}
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/portal-settings", nil)
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestStaffPortalSettingsGetAndUpdate(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/portal-settings", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var before staffPortalSettingsResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &before); err != nil {
+		t.Fatalf("unmarshal portal settings: %v", err)
+	}
+	if before.AppName != "PortalDots" || before.PortalContactEmail != "contact@example.com" {
+		t.Fatalf("unexpected portal settings before update: %#v", before)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/portal-settings", map[string]any{
+		"appName":                   "PortalDots Next",
+		"portalDescription":         "次世代の学園祭ポータル",
+		"appUrl":                    "https://next.example.com",
+		"appForceHttps":             false,
+		"portalAdminName":           "次世代実行委員会",
+		"portalContactEmail":        "next@example.com",
+		"portalUnivemailLocalPart":  "user_id",
+		"portalUnivemailDomainPart": "next.example.ac.jp",
+		"portalStudentIdName":       "学生番号",
+		"portalUnivemailName":       "学校メール",
+		"portalPrimaryColorH":       24,
+		"portalPrimaryColorS":       68,
+		"portalPrimaryColorL":       52,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var updated staffPortalSettingsResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
+		t.Fatalf("unmarshal updated portal settings: %v", err)
+	}
+	if updated.AppName != "PortalDots Next" || updated.PortalUnivemailLocalPart != "user_id" || updated.PortalPrimaryColorH != 24 {
+		t.Fatalf("unexpected updated portal settings: %#v", updated)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/activity-logs?page=1&pageSize=20", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var logs paginatedResponse[staffActivityLogResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &logs); err != nil {
+		t.Fatalf("unmarshal paginated logs response: %v", err)
+	}
+	found := false
+	for _, item := range logs.Items {
+		if item.Action == "staff.portal.updated" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected portal update activity log, got %#v", logs.Items)
+	}
+}
+
+func TestStaffPortalSettingsValidateInput(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/portal-settings", map[string]any{
+		"appName":                   " ",
+		"portalDescription":         "",
+		"appUrl":                    " ",
+		"appForceHttps":             true,
+		"portalAdminName":           " ",
+		"portalContactEmail":        " ",
+		"portalUnivemailLocalPart":  "invalid",
+		"portalUnivemailDomainPart": " ",
+		"portalStudentIdName":       " ",
+		"portalUnivemailName":       " ",
+		"portalPrimaryColorH":       400,
+		"portalPrimaryColorS":       -1,
+		"portalPrimaryColorL":       101,
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response validationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal validation response: %v", err)
+	}
+	if len(response.Errors["appName"]) == 0 || len(response.Errors["portalUnivemailLocalPart"]) == 0 || len(response.Errors["portalPrimaryColorH"]) == 0 {
+		t.Fatalf("unexpected validation errors: %#v", response.Errors)
+	}
+}
+
 func TestStaffTagsExportCSV(t *testing.T) {
 	t.Parallel()
 
@@ -3182,9 +3309,22 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 
 func testConfig() config.Config {
 	return config.Config{
-		SessionCookieName: "test_session",
-		SessionTTL:        12 * time.Hour,
-		StaffVerifyCode:   "123456",
+		SessionCookieName:         "test_session",
+		SessionTTL:                12 * time.Hour,
+		StaffVerifyCode:           "123456",
+		AppName:                   "PortalDots",
+		PortalDescription:         "学園祭参加団体向けポータル",
+		AppURL:                    "https://portal.example.com",
+		AppForceHTTPS:             true,
+		PortalAdminName:           "PortalDots 実行委員会",
+		PortalContactEmail:        "contact@example.com",
+		PortalUnivemailLocalPart:  "student_id",
+		PortalUnivemailDomainPart: "example.ac.jp",
+		PortalStudentIDName:       "学籍番号",
+		PortalUnivemailName:       "大学メールアドレス",
+		PortalPrimaryColorH:       190,
+		PortalPrimaryColorS:       80,
+		PortalPrimaryColorL:       45,
 		AuthUser: config.AuthUser{
 			ID:          "demo-user",
 			LoginIDs:    []string{"demo@example.com", "24a0000"},

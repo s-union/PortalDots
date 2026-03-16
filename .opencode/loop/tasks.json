@@ -13,13 +13,14 @@
       "id": "2",
       "title": "Portal 設定を /staff/settings/portal に移植する",
       "description": "admin 向け Portal 設定 UI と Go API を追加し、staff settings から辿れるようにする",
-      "status": "in_progress"
+      "status": "done",
+      "completedAt": "2026-03-16T14:18:00Z"
     },
     {
       "id": "3",
       "title": "参加種別ごとの企画一覧と CSV を移植する",
       "description": "legacy の participation type detail 一覧/API/export を Vue+Go に追加する",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "id": "4",

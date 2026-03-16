@@ -23,6 +23,7 @@ import {
   canReadTags,
   canUseMailQueue,
   canUseStaffExports,
+  canManagePortalSettings,
   canViewActivityLogs,
 } from "@/features/staff/access/capabilities";
 import { useSessionStore } from "@/features/session/store";
@@ -64,6 +65,9 @@ const mailQueueAvailable = computed(() =>
 );
 const activityLogAvailable = computed(() =>
   canViewActivityLogs(sessionStore.roles, sessionStore.permissions),
+);
+const portalSettingsAvailable = computed(() =>
+  canManagePortalSettings(sessionStore.roles, sessionStore.permissions),
 );
 
 const sections = computed(() => [
@@ -117,6 +121,11 @@ const sections = computed(() => [
         to: "/staff/activity-logs",
         label: "活動ログへ",
         hidden: !activityLogAvailable.value,
+      },
+      {
+        to: "/staff/settings/portal",
+        label: "Portal 設定へ",
+        hidden: !portalSettingsAvailable.value,
       },
     ],
   },
