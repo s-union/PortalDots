@@ -262,7 +262,6 @@ return [
         BladeServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
         EventServiceProvider::class,
-        RouteServiceProvider::class,
 
     ],
 
