@@ -105,8 +105,18 @@ const isLegacyCircleSelectorPath = computed(
   () => normalizedPath.value === "/selector" || normalizedPath.value === "/selector/set",
 );
 const isLegacyLogoutPath = computed(() => normalizedPath.value === "/logout");
+const isLegacyContactPath = computed(() => normalizedPath.value === "/contacts");
+const isLegacyCircleCreatePath = computed(() => normalizedPath.value === "/circles/create");
 
 const legacyPrivateRouteTitle = computed(() => {
+  if (isLegacyContactPath.value) {
+    return "お問い合わせ導線が移動しました";
+  }
+
+  if (isLegacyCircleCreatePath.value) {
+    return "企画作成の導線が移動しました";
+  }
+
   if (isLegacyCircleSelectorPath.value) {
     return "企画セレクターの導線が移動しました";
   }
@@ -119,6 +129,14 @@ const legacyPrivateRouteTitle = computed(() => {
 });
 
 const legacyPrivateRouteLead = computed(() => {
+  if (isLegacyContactPath.value) {
+    return "旧 `/contacts` は、移行後はワークスペース配下のお問い合わせ画面へ移動しています。";
+  }
+
+  if (isLegacyCircleCreatePath.value) {
+    return "旧 `/circles/create` は、移行後は新しい企画作成画面へ置き換えています。";
+  }
+
   if (isLegacyCircleSelectorPath.value) {
     return "旧 `/selector` 系 URL は、移行後は企画選択画面へ統合されています。";
   }
@@ -131,6 +149,14 @@ const legacyPrivateRouteLead = computed(() => {
 });
 
 const legacyPrivateRouteBody = computed(() => {
+  if (isLegacyContactPath.value) {
+    return "現在の企画コンテキスト付きで問い合わせカテゴリの選択、本文送信、送信履歴の確認ができます。";
+  }
+
+  if (isLegacyCircleCreatePath.value) {
+    return "新しい企画を作成すると、そのまま企画責任者として migrated ワークスペースで編集を続けられます。";
+  }
+
   if (isLegacyCircleSelectorPath.value) {
     return "企画を選び直すと、その後の migrated 画面も選択した企画コンテキストで動作します。`redirect` パラメーター互換はまだありません。";
   }
@@ -143,6 +169,14 @@ const legacyPrivateRouteBody = computed(() => {
 });
 
 const legacyPrivateRoutePrimaryLink = computed(() => {
+  if (isLegacyContactPath.value) {
+    return "/workspace/contact";
+  }
+
+  if (isLegacyCircleCreatePath.value) {
+    return "/circles/new";
+  }
+
   if (isLegacyCircleSelectorPath.value) {
     return "/circles/select";
   }
@@ -155,6 +189,14 @@ const legacyPrivateRoutePrimaryLink = computed(() => {
 });
 
 const legacyPrivateRoutePrimaryLabel = computed(() => {
+  if (isLegacyContactPath.value) {
+    return "お問い合わせ画面へ";
+  }
+
+  if (isLegacyCircleCreatePath.value) {
+    return "企画作成画面へ";
+  }
+
   if (isLegacyCircleSelectorPath.value) {
     return "企画選択画面へ";
   }
@@ -282,7 +324,13 @@ const isLegacyDocumentsPath = computed(
     </SurfaceCard>
 
     <SurfaceCard
-      v-else-if="isLegacyCircleSelectorPath || isLegacyUserSettingsPath || isLegacyLogoutPath"
+      v-else-if="
+        isLegacyCircleSelectorPath ||
+        isLegacyUserSettingsPath ||
+        isLegacyLogoutPath ||
+        isLegacyContactPath ||
+        isLegacyCircleCreatePath
+      "
     >
       <div class="border-b border-border px-6 py-5">
         <p class="text-sm text-primary">Legacy Route</p>

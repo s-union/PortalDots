@@ -78,6 +78,21 @@
       "status": "done",
       "addedAt": "2026-03-16T04:15:14Z",
       "completedAt": "2026-03-16T04:18:38Z"
+    },
+    {
+      "id": "11",
+      "title": "残る認証済み legacy 導線を migrated 画面へ寄せる",
+      "description": "follow-up check で見つかった `/contacts` と `/circles/create` を Vue 側で受け、既存 migrated 画面への案内へ接続する",
+      "status": "done",
+      "addedAt": "2026-03-16T04:18:38Z",
+      "completedAt": "2026-03-16T04:22:01Z"
+    },
+    {
+      "id": "12",
+      "title": "メール認証 legacy 導線の受け皿を用意する",
+      "description": "`/email/verify` 系の legacy URL を Vue 側で受け、現状の migrated stack で可能な案内と次の操作へ接続する",
+      "status": "pending",
+      "addedAt": "2026-03-16T04:18:38Z"
     }
   ]
 }

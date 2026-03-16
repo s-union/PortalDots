@@ -18,3 +18,4 @@
 - 2026-03-16: `frontend/src/pages/[...all].vue` で `/register` と `/password/reset` 系を catch-all 案内へ吸収すると、file-based route を増やさず login から辿れる legacy auth 404 を減らせる。署名付き `/password/reset/:user` は安全のため完了 UI を偽装せず、案内画面へ寄せるのが無難。
 - 2026-03-16: `vitest.config.ts` 側の `VueRouter()` も d.ts を書き換えるため、test 実行後に `typed-router.d.ts` が dirty になりうる。テスト環境では `VueRouter({ dts: false })` にして、型生成は Vite 本体だけに寄せると `mise run check` の二重 `ci:check` が安定する。
 - 2026-03-16: 認証後の legacy `/user/*` `/selector` `/logout` は、すでに migrated 側に相当機能があるので catch-all から移行先の 1 次導線を返すだけでも有効。特に `/user/edit` `/user/password` `/user/delete` `/user/appearance` は `workspace/settings` へまとめると説明も実装も簡潔に保てる。
+- 2026-03-16: 認証済み legacy `/contacts` と `/circles/create` も catch-all で十分に救済できる。前者は `workspace/contact`、後者は `/circles/new` が既存 migrated 画面なので、個別 route を増やすより保守が軽い。
