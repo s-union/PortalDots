@@ -77,6 +77,12 @@ const uploadsZipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.va
               >
                 添付管理
               </RouterLink>
+              <RouterLink
+                :to="`/staff/forms/${formId}/not_answered`"
+                class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+              >
+                未回答企画一覧
+              </RouterLink>
             </div>
           </template>
         </SurfaceHeader>
@@ -144,12 +150,20 @@ const uploadsZipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.va
           </ul>
           <p v-else class="px-6 py-5 text-sm text-muted-2">未回答の企画はありません。</p>
           <div class="border-t border-border px-6 py-4">
-            <a
-              :href="uploadsZipUrl"
-              class="inline-flex rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-            >
-              ZIP を直接ダウンロード
-            </a>
+            <div class="flex flex-wrap gap-3">
+              <RouterLink
+                :to="`/staff/forms/${formId}/not_answered`"
+                class="inline-flex rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+              >
+                専用画面で見る
+              </RouterLink>
+              <a
+                :href="uploadsZipUrl"
+                class="inline-flex rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+              >
+                ZIP を直接ダウンロード
+              </a>
+            </div>
           </div>
         </aside>
       </section>

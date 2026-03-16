@@ -21,8 +21,9 @@
       "id": "3",
       "title": "staff forms の未回答企画導線を復元する",
       "description": "legacy `/staff/forms/{form}/not_answered` 相当の導線を migrated staff forms 画面に追加し、既存一覧情報で確認しやすくする",
-      "status": "pending",
-      "addedAt": "2026-03-16T09:29:54Z"
+      "status": "done",
+      "addedAt": "2026-03-16T09:29:54Z",
+      "completedAt": "2026-03-16T09:39:51Z"
     },
     {
       "id": "4",
