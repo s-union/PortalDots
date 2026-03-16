@@ -158,6 +158,14 @@
       "status": "done",
       "addedAt": "2026-03-16T08:21:39Z",
       "completedAt": "2026-03-16T08:26:17Z"
+    },
+    {
+      "id": "21",
+      "title": "migrated 画面から企画変更導線を追加する",
+      "description": "workspace の申請詳細とお問い合わせ画面から `/circles/select?redirect=...` へ戻れる導線を追加し、legacy の circle selector 利用感を近づける",
+      "status": "done",
+      "addedAt": "2026-03-16T08:34:16Z",
+      "completedAt": "2026-03-16T08:36:07Z"
     }
   ]
 }

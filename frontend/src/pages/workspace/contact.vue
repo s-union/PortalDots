@@ -7,6 +7,7 @@ definePage({
 });
 
 import { computed, ref } from "vue";
+import { useRoute } from "vue-router";
 import BackLink from "@/components/ui/BackLink.vue";
 import ListPanel from "@/components/ui/ListPanel.vue";
 import SettingsRow from "@/components/ui/SettingsRow.vue";
@@ -20,6 +21,7 @@ import {
 } from "@/features/contact/api";
 import { useSessionStore } from "@/features/session/store";
 
+const route = useRoute();
 const sessionStore = useSessionStore();
 const categoriesQuery = useContactCategoriesQuery();
 const historyQuery = useContactHistoryQuery();
@@ -35,6 +37,9 @@ const selectedCategoryName = computed(
   () =>
     categoriesQuery.data.value?.find((category) => category.id === form.value.categoryId)?.name ??
     "",
+);
+const circleSelectorLink = computed(
+  () => `/circles/select?redirect=${encodeURIComponent(route.fullPath)}`,
 );
 
 async function handleSubmit() {
@@ -76,7 +81,15 @@ async function handleSubmit() {
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">現在の企画</p>
-          <p class="text-sm text-body">{{ sessionStore.currentCircle?.name ?? "企画未選択" }}</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <p class="text-sm text-body">{{ sessionStore.currentCircle?.name ?? "企画未選択" }}</p>
+            <RouterLink
+              :to="circleSelectorLink"
+              class="inline-flex rounded border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-body transition hover:bg-surface-light"
+            >
+              企画を変更
+            </RouterLink>
+          </div>
         </div>
       </SettingsRow>
       <SettingsRow>

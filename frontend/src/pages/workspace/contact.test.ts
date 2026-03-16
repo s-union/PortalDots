@@ -46,6 +46,7 @@ describe("ContactPage", () => {
             history: createMemoryHistory(),
             routes: [
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
+                { path: "/circles/select", component: { template: "<div>selector</div>" } },
                 { path: "/workspace/contact", component: ContactPage },
             ],
         });
@@ -117,6 +118,9 @@ describe("ContactPage", () => {
 
         expect(wrapper.text()).toContain("前回のお問い合わせ");
         expect(wrapper.text()).toContain("「総合窓口」へお問い合わせを送信しました。");
+        expect(
+            wrapper.get('a[href="/circles/select?redirect=%2Fworkspace%2Fcontact"]').text(),
+        ).toContain("企画を変更");
     });
 });
 

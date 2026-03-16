@@ -30,6 +30,9 @@ const route = useRoute("/workspace/forms/[formId]");
 const router = useRouter();
 const sessionStore = useSessionStore();
 const formId = computed(() => String(route.params.formId ?? ""));
+const circleSelectorLink = computed(
+  () => `/circles/select?redirect=${encodeURIComponent(route.fullPath)}`,
+);
 const formQuery = useFormDetailQuery(formId);
 const answersQuery = useFormAnswersQuery(formId);
 const legacyAnswerQuery = useFormAnswerQuery(formId);
@@ -217,12 +220,20 @@ function handleFileChange(questionId: string, event: Event) {
           <h3 class="text-base font-semibold text-body">申請企画名</h3>
         </div>
         <div class="px-6 py-5">
-          <input
-            class="bg-form-control"
-            readonly
-            type="text"
-            :value="sessionStore.currentCircle?.name ?? ''"
-          />
+          <div class="flex flex-wrap items-center gap-3">
+            <input
+              class="min-w-0 flex-1 bg-form-control"
+              readonly
+              type="text"
+              :value="sessionStore.currentCircle?.name ?? ''"
+            />
+            <RouterLink
+              :to="circleSelectorLink"
+              class="inline-flex rounded border border-border bg-surface px-4 py-2 text-sm font-semibold text-body transition hover:bg-surface-light"
+            >
+              企画を変更
+            </RouterLink>
+          </div>
         </div>
       </section>
 

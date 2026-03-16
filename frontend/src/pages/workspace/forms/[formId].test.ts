@@ -297,6 +297,13 @@ describe("FormDetailPage", () => {
         expect(wrapper.text()).toContain("必要設備");
         expect(wrapper.text()).toContain("レイアウト図");
         expect(wrapper.text()).toContain("1企画あたり 2 件まで回答できます。");
+        expect(
+            wrapper
+                .get(
+                    'a[href="/circles/select?redirect=%2Fworkspace%2Fforms%2Fform-circle-a-1%3Fanswer%3Danswer-1"]',
+                )
+                .text(),
+        ).toContain("企画を変更");
 
         const inputs = wrapper.findAll('input[type="text"]');
         const textInput = inputs[1];
