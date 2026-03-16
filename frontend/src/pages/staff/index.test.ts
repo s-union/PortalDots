@@ -62,6 +62,11 @@ describe("StaffDashboardPage", () => {
                 },
                 { path: "/staff/forms", component: { template: "<div>staff forms</div>" } },
                 { path: "/staff/settings", component: { template: "<div>staff settings</div>" } },
+                { path: "/staff/about", component: { template: "<div>staff about</div>" } },
+                {
+                    path: "/staff/markdown-guide",
+                    component: { template: "<div>staff markdown guide</div>" },
+                },
                 {
                     path: "/staff/permissions",
                     component: { template: "<div>staff permissions</div>" },
@@ -92,6 +97,8 @@ describe("StaffDashboardPage", () => {
         expect(wrapper.text()).toContain("参加種別管理へ");
         expect(wrapper.text()).toContain("フォーム管理へ");
         expect(wrapper.text()).toContain("PortalDots 設定へ");
+        expect(wrapper.text()).toContain("PortalDots について");
+        expect(wrapper.text()).toContain("Markdown ガイド");
         expect(wrapper.text()).toContain("権限設定へ");
         expect(wrapper.text()).toContain("ユーザー管理へ");
         expect(wrapper.text()).toContain("CSV / ZIP 出力へ");

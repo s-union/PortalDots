@@ -1,180 +1,63 @@
 {
-  "startedAt": "2026-03-16T01:29:05Z",
-  "description": "LaravelからVueとGoへの未移行箇所と齟齬を調査し、高優先度の移行を自律的に進める",
-  "completedAt": "2026-03-16T08:41:22Z",
+  "startedAt": "2026-03-16T09:21:50Z",
+  "description": "Laravel から Vue/Go への移植ギャップを広めに再探索し、高優先度から自律的に実装・検証する",
   "tasks": [
     {
       "id": "1",
-      "title": "移行ギャップを棚卸しする",
-      "description": "Laravelの画面・APIとfrontend/backendの実装を比較し、未移行または齟齬のある高優先度項目を特定する",
+      "title": "残る移植ギャップを広めに再棚卸しする",
+      "description": "legacy routes・Blade 導線・migrated placeholder・回帰しやすい sibling module を横断して、追加実装できる具体タスクを多めに洗い出す",
       "status": "done",
-      "completedAt": "2026-03-16T01:36:01Z"
+      "completedAt": "2026-03-16T09:29:54Z"
     },
     {
       "id": "2",
-      "title": "最優先のフロント移行ギャップを解消する",
-      "description": "調査で見つけた未移行または不整合のうち、Vue側で完結できる高優先度項目を実装する",
+      "title": "staff の静的補助ページを移植する",
+      "description": "legacy `/staff/about` と `/staff/markdown-guide` を Vue 側へ移し、staff ハブと settings から辿れるようにする",
       "status": "done",
-      "completedAt": "2026-03-16T01:39:06Z"
+      "addedAt": "2026-03-16T09:29:54Z",
+      "completedAt": "2026-03-16T09:35:06Z"
     },
     {
       "id": "3",
-      "title": "必要なバックエンド齟齬を解消して検証する",
-      "description": "フロント移行に必要なGo APIや契約差分を補い、関連チェックを実行して結果を記録する",
-      "status": "done",
-      "completedAt": "2026-03-16T01:44:26Z"
+      "title": "staff forms の未回答企画導線を復元する",
+      "description": "legacy `/staff/forms/{form}/not_answered` 相当の導線を migrated staff forms 画面に追加し、既存一覧情報で確認しやすくする",
+      "status": "pending",
+      "addedAt": "2026-03-16T09:29:54Z"
     },
     {
       "id": "4",
-      "title": "フロントエンドチェック退行を解消する",
-      "description": "follow-up check で見つかった circles API の no-floating-promises と typed-router の整形差分を直し、frontend-check を通す",
-      "status": "done",
-      "addedAt": "2026-03-16T02:09:21Z",
-      "completedAt": "2026-03-16T02:13:26Z"
+      "title": "staff send_emails 導線を migrated 画面へ寄せる",
+      "description": "legacy `/staff/send_emails` の入口を migrated staff mails/関連ハブから自然に辿れるよう整理する",
+      "status": "pending",
+      "addedAt": "2026-03-16T09:29:54Z"
     },
     {
       "id": "5",
-      "title": "公開導線の legacy 404 を減らす",
-      "description": "support/privacy_policy と legacy の pages/documents 導線を Vue ルートで受け、既存 migrated 画面または情報ページへ接続する",
-      "status": "done",
-      "addedAt": "2026-03-16T02:09:21Z",
-      "completedAt": "2026-03-16T02:31:22Z"
+      "title": "staff pages 詳細画面の回帰テストを補う",
+      "description": "`/staff/pages/[pageId].vue` に対して、既存 sibling と同等の詳細・更新・削除まわりのテストを追加する",
+      "status": "pending",
+      "addedAt": "2026-03-16T09:29:54Z"
     },
     {
       "id": "6",
-      "title": "typed-router の check 失敗を解消する",
-      "description": "frontend check の残課題である typed-router.d.ts の format:check 失敗原因を特定し、必要なら生成物差分を整える",
-      "status": "done",
-      "addedAt": "2026-03-16T02:33:27Z",
-      "completedAt": "2026-03-16T02:35:55Z"
+      "title": "staff forms preview と uploads の回帰テストを補う",
+      "description": "未テストの preview / answers uploads 画面を固定して、staff forms sibling の回帰耐性を上げる",
+      "status": "pending",
+      "addedAt": "2026-03-16T09:29:54Z"
     },
     {
       "id": "7",
-      "title": "typed-router の format check 再発を止める",
-      "description": "follow-up check で再検出された frontend/typed-router.d.ts の format:check 失敗を再現し、安定して check が通る状態へ直す",
-      "status": "done",
-      "addedAt": "2026-03-16T03:56:51Z",
-      "completedAt": "2026-03-16T03:58:47Z"
+      "title": "workspace contact の失敗系テストを補強する",
+      "description": "カテゴリ取得失敗・送信失敗・履歴空などの重要ケースを追加し、legacy `/contacts` 救済先の信頼性を上げる",
+      "status": "pending",
+      "addedAt": "2026-03-16T09:29:54Z"
     },
     {
       "id": "8",
-      "title": "auth 系 legacy 公開導線の 404 を減らす",
-      "description": "login から辿れる /register と /password/reset を Vue 側で受け、移行状況に応じた案内または安全な代替導線へ接続する",
-      "status": "done",
-      "addedAt": "2026-03-16T03:56:51Z",
-      "completedAt": "2026-03-16T04:10:17Z"
-    },
-    {
-      "id": "9",
-      "title": "frontend-check の typed-router 再退行を止める",
-      "description": "finish check で再検出された root の `mise run check` 失敗を再現し、typed-router.d.ts が二重 check でも dirty にならないよう安定化する",
-      "status": "done",
-      "addedAt": "2026-03-16T04:10:17Z",
-      "completedAt": "2026-03-16T04:15:14Z"
-    },
-    {
-      "id": "10",
-      "title": "認証後 legacy 導線の 404 を減らす",
-      "description": "follow-up check で見つかった `/logout` `/selector` `/user/*` などの legacy 導線を、既存 Vue 画面や安全な案内へ接続する",
-      "status": "done",
-      "addedAt": "2026-03-16T04:15:14Z",
-      "completedAt": "2026-03-16T04:18:38Z"
-    },
-    {
-      "id": "11",
-      "title": "残る認証済み legacy 導線を migrated 画面へ寄せる",
-      "description": "follow-up check で見つかった `/contacts` と `/circles/create` を Vue 側で受け、既存 migrated 画面への案内へ接続する",
-      "status": "done",
-      "addedAt": "2026-03-16T04:18:38Z",
-      "completedAt": "2026-03-16T04:22:01Z"
-    },
-    {
-      "id": "12",
-      "title": "メール認証 legacy 導線の受け皿を用意する",
-      "description": "`/email/verify` 系の legacy URL を Vue 側で受け、現状の migrated stack で可能な案内と次の操作へ接続する",
-      "status": "done",
-      "addedAt": "2026-03-16T04:18:38Z",
-      "completedAt": "2026-03-16T04:24:50Z"
-    },
-    {
-      "id": "13",
-      "title": "circle 詳細系 legacy 導線の救済方針を進める",
-      "description": "follow-up check で残った legacy `/circles/{circle}` 系を棚卸しし、既存 migrated の detail/members/new 画面で安全に救済できる導線から実装する",
-      "status": "done",
-      "addedAt": "2026-03-16T04:24:50Z",
-      "completedAt": "2026-03-16T04:28:31Z"
-    },
-    {
-      "id": "14",
-      "title": "招待受け入れ legacy 導線の受け皿を追加する",
-      "description": "follow-up check で残った `/circles/{circle}/users/invite/{token}` を Vue 側で受け、既存 join API を使う migrated 受け入れ導線へつなぐ",
-      "status": "done",
-      "addedAt": "2026-03-16T04:28:31Z",
-      "completedAt": "2026-03-16T04:39:36Z"
-    },
-    {
-      "id": "15",
-      "title": "残る circle auth legacy 導線を救済する",
-      "description": "follow-up check で残った `/circles/{circle}/auth` を Vue 側で受け、migrated の企画情報導線と安全な案内へ接続する",
-      "status": "done",
-      "addedAt": "2026-03-16T04:42:41Z",
-      "completedAt": "2026-03-16T04:44:43Z"
-    },
-    {
-      "id": "16",
-      "title": "残る circle action legacy 導線の回帰テストを補う",
-      "description": "follow-up check で sibling として残った `/circles/{circle}/edit|confirm|done|delete` の救済導線をテストで固定し、catch-all の退行を防ぐ",
-      "status": "done",
-      "addedAt": "2026-03-16T04:45:58Z",
-      "completedAt": "2026-03-16T04:46:38Z"
-    },
-    {
-      "id": "17",
-      "title": "circle selector の redirect 互換を復元する",
-      "description": "requiresCircle で飛ばされた先や legacy `/selector` の redirect_to を migrated `/circles/select` に引き継ぎ、選択後に元画面へ戻せるようにする",
-      "status": "done",
-      "addedAt": "2026-03-16T07:59:26Z",
-      "completedAt": "2026-03-16T08:04:08Z"
-    },
-    {
-      "id": "18",
-      "title": "circle create の participation_type 互換を復元する",
-      "description": "legacy `/circles/create?participation_type=...` から migrated `/circles/new` へ遷移したとき、参加種別の事前選択を引き継げるようにする",
-      "status": "done",
-      "addedAt": "2026-03-16T07:59:26Z",
-      "completedAt": "2026-03-16T08:07:21Z"
-    },
-    {
-      "id": "19",
-      "title": "legacy forms GET 導線の rescue を拡張する",
-      "description": "`/forms` `/forms/closed` `/forms/all` と `/forms/{form}/answers/*` の legacy GET URL を migrated workspace forms 画面へ案内または遷移できるようにする",
-      "status": "done",
-      "addedAt": "2026-03-16T08:16:29Z",
-      "completedAt": "2026-03-16T08:19:36Z"
-    },
-    {
-      "id": "20",
-      "title": "legacy selector set 直リンク互換を復元する",
-      "description": "`/selector/set?redirect_to=...&circle=...` を migrated selector で吸収し、指定企画を自動選択して元画面へ戻れるようにする",
-      "status": "done",
-      "addedAt": "2026-03-16T08:21:39Z",
-      "completedAt": "2026-03-16T08:26:17Z"
-    },
-    {
-      "id": "21",
-      "title": "migrated 画面から企画変更導線を追加する",
-      "description": "workspace の申請詳細とお問い合わせ画面から `/circles/select?redirect=...` へ戻れる導線を追加し、legacy の circle selector 利用感を近づける",
-      "status": "done",
-      "addedAt": "2026-03-16T08:34:16Z",
-      "completedAt": "2026-03-16T08:36:07Z"
-    },
-    {
-      "id": "22",
-      "title": "circle selector に企画新規作成導線を戻す",
-      "description": "legacy selector にあった参加種別ごとの企画新規作成カードを migrated `/circles/select` に追加し、`/circles/new?participation_type=...` へつなぐ",
-      "status": "done",
-      "addedAt": "2026-03-16T08:36:56Z",
-      "completedAt": "2026-03-16T08:41:22Z"
+      "title": "public auth 導線の本移植候補を具体実装する",
+      "description": "`/register` `/password/reset` `/email/verify` の catch-all 案内止まりを減らせるものから migrated 画面化する",
+      "status": "pending",
+      "addedAt": "2026-03-16T09:29:54Z"
     }
   ]
 }

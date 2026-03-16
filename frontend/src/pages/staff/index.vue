@@ -106,6 +106,8 @@ const sections = computed(() => [
         hidden: !formsAdminAvailable.value,
       },
       { to: "/staff/settings", label: "PortalDots 設定へ" },
+      { to: "/staff/about", label: "PortalDots について" },
+      { to: "/staff/markdown-guide", label: "Markdown ガイド" },
       {
         to: "/staff/exports",
         label: "CSV / ZIP 出力へ",

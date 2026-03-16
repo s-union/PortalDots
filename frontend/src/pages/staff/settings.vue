@@ -36,6 +36,16 @@ const settingLinks = [
     label: "CSV / ZIP 出力",
     description: "PortalDots 全体の確認や移行用の出力を扱います。",
   },
+  {
+    to: "/staff/about",
+    label: "PortalDots について",
+    description: "システム概要と移行メモ、公式サイトへの導線を確認します。",
+  },
+  {
+    to: "/staff/markdown-guide",
+    label: "Markdown ガイド",
+    description: "本文入力でよく使う Markdown 記法を確認します。",
+  },
 ];
 </script>
 
