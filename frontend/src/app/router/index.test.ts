@@ -329,4 +329,30 @@ describe("app router guards", () => {
         const matchedRoutes = router.currentRoute.value.matched;
         expect(matchedRoutes[matchedRoutes.length - 1]?.path).toBe("/:all(.*)");
     });
+
+    it("opens the support page without session bootstrap", async () => {
+        const fetchMock = vi.fn(() => {
+            throw new Error("session bootstrap should not be fetched for /support");
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await router.push("/support");
+        await router.isReady();
+
+        expect(router.currentRoute.value.fullPath).toBe("/support");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("opens the privacy policy page without session bootstrap", async () => {
+        const fetchMock = vi.fn(() => {
+            throw new Error("session bootstrap should not be fetched for /privacy_policy");
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await router.push("/privacy_policy");
+        await router.isReady();
+
+        expect(router.currentRoute.value.fullPath).toBe("/privacy_policy");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
 });

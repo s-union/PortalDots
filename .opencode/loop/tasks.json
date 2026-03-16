@@ -104,6 +104,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:31:00Z",
       "completedAt": "2026-03-16T11:30:00Z"
+    },
+    {
+      "id": "14",
+      "title": "public route の router guard 回帰を補う",
+      "description": "新設した `/support` と `/privacy_policy` が session bootstrap 不要で開けることを router test で固定する",
+      "status": "done",
+      "addedAt": "2026-03-16T11:33:00Z",
+      "completedAt": "2026-03-16T11:32:00Z"
     }
   ]
 }
