@@ -17,3 +17,4 @@
 - 2026-03-16: `staff/participation-types/index.vue` の回帰テストは `staff/circles/index.test.ts` と同じく `fetch` stub だけで十分書ける。`/staff/status` と一覧 GET/POST を最小限返し、作成後の再取得で追加行と詳細リンク href を確認すると一覧画面の主要導線を安く固定できる。
 - 2026-03-16: legacy `/staff` の「権限未付与」カードは、現行 migrated では `staffGuard()` が staff 権限ゼロのユーザーを `/` に戻すためそのままは再現しにくい。follow-up は dashboard 内の非表示リンクよりも、到達可能な public/home 導線の parity を優先した方が小さく前進しやすい。
 - 2026-03-16: legacy home の guest parity は `frontend/src/pages/index.vue` の CTA 群だけで小さく改善できる。`/login` だけでなく `/register` も並べ、`index.test.ts` で href を固定すると public 導線の後退を防ぎやすい。
+- 2026-03-16: public 静的ページを切り出したら、legacy `AppFooter` 相当の shell 導線も一緒に戻すと到達性が上がる。`frontend/src/app/App.vue` の drawer footer に `/support` `/privacy_policy` と公式サイトリンクを置き、`App.test.ts` で anchor href だけを軽く確認するのが安全。
