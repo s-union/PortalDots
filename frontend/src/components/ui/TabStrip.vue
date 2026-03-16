@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { tabStripItemVariants } from "@/lib/ui/variants";
+import { RouterLink, type RouteLocationRaw } from "vue-router";
+import { tabStripBadgeVariants, tabStripItemVariants } from "@/lib/ui/variants";
 
 type TabItem = {
   label: string;
   active?: boolean;
   href?: string;
+  to?: RouteLocationRaw;
+  badge?: string;
+  badgeTone?: "primary" | "muted" | "danger";
 };
 
 defineProps<{
@@ -15,12 +19,13 @@ defineProps<{
 <template>
   <!-- Container: border-bottom, centered, scrollable on narrow screens (≤860px) -->
   <div
-    class="flex overflow-hidden border-b border-border px-6 justify-center max-[860px]:justify-start max-[860px]:overflow-x-auto max-[860px]:px-2"
+    class="flex justify-center overflow-hidden border-b border-border bg-surface px-6 max-[860px]:justify-start max-[860px]:overflow-x-auto max-[860px]:px-2"
   >
     <component
       v-for="tab in tabs"
       :key="tab.label"
-      :is="tab.href ? 'a' : 'span'"
+      :is="tab.to ? RouterLink : tab.href ? 'a' : 'span'"
+      :to="tab.to"
       :href="tab.href"
       :class="tabStripItemVariants({ active: tab.active })"
     >
@@ -30,7 +35,12 @@ defineProps<{
         class="absolute inset-x-0 bottom-0 h-1 rounded-t bg-primary"
         aria-hidden="true"
       />
-      {{ tab.label }}
+      <span class="inline-flex items-center gap-2">
+        <span>{{ tab.label }}</span>
+        <span v-if="tab.badge" :class="tabStripBadgeVariants({ tone: tab.badgeTone })">
+          {{ tab.badge }}
+        </span>
+      </span>
     </component>
   </div>
 </template>

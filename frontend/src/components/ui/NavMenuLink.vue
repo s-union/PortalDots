@@ -4,7 +4,7 @@ import { navMenuLinkVariants } from "@/lib/ui/variants";
 defineProps<{
   to: string;
   label: string;
-  icon: string;
+  iconClass?: string;
   active?: boolean;
 }>();
 </script>
@@ -17,7 +17,7 @@ defineProps<{
       class="absolute right-0 top-2 bottom-2 w-1 rounded-l bg-primary"
       aria-hidden="true"
     />
-    <span class="mr-2 text-[1.2rem] opacity-50">{{ icon }}</span>
+    <i v-if="iconClass" :class="[iconClass, 'mr-2 text-[1.2rem] opacity-50']" aria-hidden="true" />
     {{ label }}
   </RouterLink>
 </template>

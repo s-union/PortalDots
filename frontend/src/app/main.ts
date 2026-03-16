@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import { VueQueryPlugin } from "@tanstack/vue-query";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import App from "@/app/App.vue";
 import { pinia } from "@/app/providers/pinia";
 import { router } from "@/app/router";

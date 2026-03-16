@@ -64,7 +64,7 @@ export const surfaceVariants = cva("rounded border border-border bg-surface", {
 export type SurfaceVariantProps = VariantProps<typeof surfaceVariants>;
 
 export const navMenuLinkVariants = cva(
-    "relative flex items-center px-6 py-[1.2rem] text-sm transition-colors duration-[0.15s] hover:bg-surface-light",
+    "relative flex items-center px-6 py-[1.2rem] text-sm no-underline transition-colors duration-[0.15s] hover:bg-surface-light hover:no-underline",
     {
         variants: {
             active: {
@@ -78,17 +78,20 @@ export const navMenuLinkVariants = cva(
     },
 );
 
-export const bottomTabLinkVariants = cva("flex w-full flex-col items-center py-3 text-center", {
-    variants: {
-        active: {
-            true: "text-primary",
-            false: "text-muted",
+export const bottomTabLinkVariants = cva(
+    "flex w-full flex-col items-center py-3 text-center no-underline hover:no-underline",
+    {
+        variants: {
+            active: {
+                true: "text-primary",
+                false: "text-muted",
+            },
+        },
+        defaultVariants: {
+            active: false,
         },
     },
-    defaultVariants: {
-        active: false,
-    },
-});
+);
 
 export const bottomTabLabelVariants = cva(
     "inline-block rounded-full px-2 text-[0.6rem] font-bold",
@@ -106,7 +109,7 @@ export const bottomTabLabelVariants = cva(
 );
 
 export const tabStripItemVariants = cva(
-    "relative block px-6 pb-4 pt-6 text-body max-[860px]:whitespace-nowrap",
+    "relative block px-6 pb-4 pt-6 text-body no-underline hover:no-underline max-[860px]:whitespace-nowrap",
     {
         variants: {
             active: {
@@ -116,6 +119,22 @@ export const tabStripItemVariants = cva(
         },
         defaultVariants: {
             active: false,
+        },
+    },
+);
+
+export const tabStripBadgeVariants = cva(
+    "inline-flex items-center rounded-full px-2 py-0.5 text-[0.7rem] font-bold leading-none",
+    {
+        variants: {
+            tone: {
+                primary: "bg-primary-light text-primary",
+                muted: "bg-surface-light text-muted",
+                danger: "bg-danger-light text-danger",
+            },
+        },
+        defaultVariants: {
+            tone: "muted",
         },
     },
 );

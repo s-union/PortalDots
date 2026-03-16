@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
+import { RouterLinkStub } from "@vue/test-utils";
 import TabStrip from "./TabStrip.vue";
 
 describe("TabStrip", () => {
@@ -35,6 +36,20 @@ describe("TabStrip", () => {
         expect(wrapper.find("a").exists()).toBe(false);
     });
 
+    it("renders a router link when to is provided", () => {
+        const wrapper = mount(TabStrip, {
+            props: {
+                tabs: [{ label: "設定", to: "/settings" }],
+            },
+            global: {
+                stubs: { RouterLink: RouterLinkStub },
+            },
+        });
+        const link = wrapper.findComponent(RouterLinkStub);
+        expect(link.exists()).toBe(true);
+        expect(link.props("to")).toBe("/settings");
+    });
+
     it("shows active indicator for active tab", () => {
         const wrapper = mount(TabStrip, {
             props: {
@@ -56,5 +71,14 @@ describe("TabStrip", () => {
             },
         });
         expect(wrapper.find('span[aria-hidden="true"]').exists()).toBe(false);
+    });
+
+    it("renders a badge when provided", () => {
+        const wrapper = mount(TabStrip, {
+            props: {
+                tabs: [{ label: "フォーム", badge: "受付期間内", badgeTone: "primary" }],
+            },
+        });
+        expect(wrapper.text()).toContain("受付期間内");
     });
 });

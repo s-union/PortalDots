@@ -13,7 +13,8 @@
       "id": "2",
       "title": "共通ナビゲーション部品の見た目互換を揃える",
       "description": "NavMenuLink、BottomTabLink、TabStrip を Laravel の active indicator、背景、notifier、アイコン表現に寄せる",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-16T23:44:57Z"
     },
     {
       "id": "3",

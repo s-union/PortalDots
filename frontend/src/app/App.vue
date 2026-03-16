@@ -86,161 +86,177 @@ const circleActionLabel = computed(() =>
 );
 
 const generalLinks = computed(() => [
-  { to: "/", label: "ホーム", icon: "H", active: route.path === "/" },
+  {
+    to: "/",
+    label: "ホーム",
+    iconClass: "fas fa-home fa-fw",
+    active: route.path === "/",
+  },
   {
     to: "/workspace/pages",
     label: "お知らせ",
-    icon: "P",
+    iconClass: "fas fa-bullhorn fa-fw",
     active: route.path.startsWith("/workspace/pages"),
   },
   {
     to: "/workspace/documents",
     label: "配布資料",
-    icon: "D",
+    iconClass: "far fa-file-alt fa-fw",
     active: route.path.startsWith("/workspace/documents"),
   },
   {
     to: "/workspace/forms",
     label: "申請",
-    icon: "F",
+    iconClass: "far fa-edit fa-fw",
     active: route.path.startsWith("/workspace/forms"),
     hidden: sessionStore.currentCircle === null,
   },
   {
     to: "/workspace/contact",
     label: "お問い合わせ",
-    icon: "?",
+    iconClass: "far fa-envelope fa-fw",
     active: route.path.startsWith("/workspace/contact"),
     hidden: !sessionStore.isAuthenticated,
   },
   {
     to: "/workspace/settings",
     label: "ユーザー設定",
-    icon: "S",
+    iconClass: "fas fa-cog fa-fw",
     active: route.path.startsWith("/workspace/settings"),
     hidden: !sessionStore.isAuthenticated,
   },
 ]);
 
 const mobileTabs = computed(() => [
-  { to: "/", label: "ホーム", icon: "H", active: route.path === "/" },
+  {
+    to: "/",
+    label: "ホーム",
+    iconClass: "fas fa-home",
+    active: route.path === "/",
+  },
   {
     to: "/workspace/pages",
     label: "お知らせ",
-    icon: "P",
+    iconClass: "fas fa-bullhorn",
     active: route.path.startsWith("/workspace/pages"),
+    showNotifier: false,
   },
   {
     to: "/workspace/documents",
     label: "配布資料",
-    icon: "D",
+    iconClass: "far fa-file-alt",
     active: route.path.startsWith("/workspace/documents"),
   },
   {
     to: "/workspace/forms",
     label: "申請",
-    icon: "F",
+    iconClass: "far fa-edit",
     active: route.path.startsWith("/workspace/forms"),
     hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null,
   },
   {
     to: "/workspace/contact",
     label: "お問い合わせ",
-    icon: "?",
+    iconClass: "far fa-envelope",
     active: route.path.startsWith("/workspace/contact"),
     hidden: !sessionStore.isAuthenticated,
   },
 ]);
 
 const staffLinks = computed(() => [
-  { to: "/staff", label: "スタッフモード ホーム", icon: "H", active: route.path === "/staff" },
+  {
+    to: "/staff",
+    label: "スタッフモード ホーム",
+    iconClass: "fas fa-home fa-fw",
+    active: route.path === "/staff",
+  },
   {
     to: "/staff/users",
     label: "ユーザー情報管理",
-    icon: "U",
+    iconClass: "far fa-address-book fa-fw",
     active: route.path.startsWith("/staff/users"),
     hidden: !canAccessUsers.value,
   },
   {
     to: "/staff/circles",
     label: "企画情報管理",
-    icon: "C",
+    iconClass: "fas fa-star fa-fw",
     active: route.path.startsWith("/staff/circles"),
     hidden: !canAccessCircles.value,
   },
   {
     to: "/staff/tags",
     label: "企画タグ管理",
-    icon: "T",
+    iconClass: "fas fa-tags fa-fw",
     active: route.path.startsWith("/staff/tags"),
     hidden: !canAccessTags.value,
   },
   {
     to: "/staff/places",
     label: "場所情報管理",
-    icon: "L",
+    iconClass: "fas fa-store fa-fw",
     active: route.path.startsWith("/staff/places"),
     hidden: !canAccessPlaces.value,
   },
   {
     to: "/staff/pages",
     label: "お知らせ管理",
-    icon: "P",
+    iconClass: "fas fa-bullhorn fa-fw",
     active: route.path.startsWith("/staff/pages"),
     hidden: !canAccessPages.value,
   },
   {
     to: "/staff/documents",
     label: "配布資料管理",
-    icon: "D",
+    iconClass: "far fa-file-alt fa-fw",
     active: route.path.startsWith("/staff/documents"),
     hidden: !canAccessDocuments.value,
   },
   {
     to: "/staff/forms",
     label: "申請管理",
-    icon: "F",
+    iconClass: "far fa-edit fa-fw",
     active: route.path.startsWith("/staff/forms"),
     hidden: !canAccessForms.value,
   },
   {
     to: "/staff/contact-categories",
     label: "お問い合わせ受付設定",
-    icon: "@",
+    iconClass: "fas fa-at fa-fw",
     active: route.path.startsWith("/staff/contact-categories"),
     hidden: !canAccessContactCategories.value,
   },
   {
     to: "/staff/permissions",
     label: "スタッフの権限設定",
-    icon: "R",
+    iconClass: "fas fa-key fa-fw",
     active: route.path.startsWith("/staff/permissions"),
     hidden: !canAccessPermissions.value,
   },
   {
     to: "/staff/settings",
     label: "PortalDots の設定",
-    icon: "S",
+    iconClass: "fas fa-cog fa-fw",
     active: route.path.startsWith("/staff/settings"),
   },
   {
     to: "/staff/activity-logs",
     label: "アクティビティログ",
-    icon: "A",
+    iconClass: "fas fa-user-edit fa-fw",
     active: route.path.startsWith("/staff/activity-logs"),
     hidden: !canAccessActivityLogs.value,
   },
   {
     to: "/staff/exports",
     label: "CSV / ZIP 出力",
-    icon: "E",
+    iconClass: "fas fa-file-export fa-fw",
     active: route.path.startsWith("/staff/exports"),
     hidden: !canAccessExports.value,
   },
   {
     to: "/staff/mails",
     label: "メールキュー",
-    icon: "M",
+    iconClass: "far fa-envelope fa-fw",
     active: route.path.startsWith("/staff/mails"),
     hidden: !canAccessMails.value,
   },
@@ -390,7 +406,7 @@ async function handleLogout() {
             :key="link.to"
             :to="link.to"
             :label="link.label"
-            :icon="link.icon"
+            :icon-class="link.iconClass"
             :active="link.active"
           />
         </nav>
@@ -447,8 +463,9 @@ async function handleLogout() {
           :key="tab.to"
           :to="tab.to"
           :label="tab.label"
-          :icon="tab.icon"
+          :icon-class="tab.iconClass"
           :active="tab.active"
+          :show-notifier="tab.showNotifier"
         />
       </div>
     </nav>
