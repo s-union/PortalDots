@@ -142,6 +142,12 @@ function handleDocumentChange(documentId: string, event: Event) {
           <span class="rounded border border-border px-4 py-2 text-sm text-muted">
             閲覧タグ・配布資料に対応
           </span>
+          <RouterLink
+            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            to="/staff/mails"
+          >
+            メール配信設定
+          </RouterLink>
           <a
             :href="exportHref"
             class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"

@@ -55,6 +55,7 @@ describe("StaffPagesIndexPage", () => {
                 { path: "/staff/verify", component: StaffVerifyPage },
                 { path: "/staff/pages", component: StaffPagesIndexPage },
                 { path: "/staff/pages/:pageId", component: { template: "<div>detail</div>" } },
+                { path: "/staff/mails", component: { template: "<div>mails</div>" } },
             ],
         });
         await router.push("/staff/pages");
@@ -228,6 +229,7 @@ describe("StaffPagesIndexPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("非公開メモ");
+        expect(wrapper.get('a[href="/staff/mails"]').text()).toContain("メール配信設定");
 
         await wrapper.get('input[name="title"]').setValue("新着スタッフ連絡");
         await wrapper.get('textarea[name="body"]').setValue("設営順を更新しました。");

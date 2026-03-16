@@ -136,6 +136,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:42:00Z",
       "completedAt": "2026-03-16T11:39:00Z"
+    },
+    {
+      "id": "18",
+      "title": "staff pages 一覧にメール配信設定導線を戻す",
+      "description": "legacy `/staff/pages` の toolbar にあった `/staff/send_emails` 相当の入口を migrated pages 一覧から `/staff/mails` へ戻す",
+      "status": "done",
+      "addedAt": "2026-03-16T11:46:00Z",
+      "completedAt": "2026-03-16T11:49:00Z"
     }
   ]
 }
