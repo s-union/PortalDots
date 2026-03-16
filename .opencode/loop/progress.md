@@ -17,3 +17,4 @@
 - 2026-03-16: `nr ci:check` 単体では通っても、直後の追加 `nr format:check` で `frontend/typed-router.d.ts` が再び dirty になることがある。vue-router の d.ts 生成タイミングに揺らぎがあるため、この生成物に依存する follow-up では最後に `nr format && nr ci:check` を再度まとめて走らせて安定状態を確認するとよい。
 - 2026-03-16: `frontend/src/pages/[...all].vue` で `/register` と `/password/reset` 系を catch-all 案内へ吸収すると、file-based route を増やさず login から辿れる legacy auth 404 を減らせる。署名付き `/password/reset/:user` は安全のため完了 UI を偽装せず、案内画面へ寄せるのが無難。
 - 2026-03-16: `vitest.config.ts` 側の `VueRouter()` も d.ts を書き換えるため、test 実行後に `typed-router.d.ts` が dirty になりうる。テスト環境では `VueRouter({ dts: false })` にして、型生成は Vite 本体だけに寄せると `mise run check` の二重 `ci:check` が安定する。
+- 2026-03-16: 認証後の legacy `/user/*` `/selector` `/logout` は、すでに migrated 側に相当機能があるので catch-all から移行先の 1 次導線を返すだけでも有効。特に `/user/edit` `/user/password` `/user/delete` `/user/appearance` は `workspace/settings` へまとめると説明も実装も簡潔に保てる。

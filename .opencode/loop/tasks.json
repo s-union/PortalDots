@@ -70,6 +70,14 @@
       "status": "done",
       "addedAt": "2026-03-16T04:10:17Z",
       "completedAt": "2026-03-16T04:15:14Z"
+    },
+    {
+      "id": "10",
+      "title": "認証後 legacy 導線の 404 を減らす",
+      "description": "follow-up check で見つかった `/logout` `/selector` `/user/*` などの legacy 導線を、既存 Vue 画面や安全な案内へ接続する",
+      "status": "done",
+      "addedAt": "2026-03-16T04:15:14Z",
+      "completedAt": "2026-03-16T04:18:38Z"
     }
   ]
 }

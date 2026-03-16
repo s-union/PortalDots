@@ -87,6 +87,33 @@ describe("NotFoundPage", () => {
         expect(primaryLink.text()).toContain("再設定方法の案内を見る");
     });
 
+    it("guides the legacy user settings route to workspace settings", async () => {
+        const wrapper = await mountAt("/user/password");
+        const primaryLink = wrapper.get('a[href="/workspace/settings"]');
+
+        expect(wrapper.text()).toContain("ユーザー設定の導線が移動しました");
+        expect(wrapper.text()).toContain("ワークスペースのユーザー設定では");
+        expect(primaryLink.text()).toContain("ユーザー設定へ");
+    });
+
+    it("guides the legacy selector route to the migrated circle selector", async () => {
+        const wrapper = await mountAt("/selector");
+        const primaryLink = wrapper.get('a[href="/circles/select"]');
+
+        expect(wrapper.text()).toContain("企画セレクターの導線が移動しました");
+        expect(wrapper.text()).toContain("企画選択画面へ統合されています");
+        expect(primaryLink.text()).toContain("企画選択画面へ");
+    });
+
+    it("guides the legacy logout route to login", async () => {
+        const wrapper = await mountAt("/logout");
+        const primaryLink = wrapper.get('a[href="/login"]');
+
+        expect(wrapper.text()).toContain("ログアウト導線が変わりました");
+        expect(wrapper.text()).toContain("旧 `/logout` の GET 導線は廃止し");
+        expect(primaryLink.text()).toContain("ログイン画面へ");
+    });
+
     it("keeps the generic 404 for unrelated routes", async () => {
         const wrapper = await mountAt("/definitely-missing");
 

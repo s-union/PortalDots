@@ -92,6 +92,80 @@ const legacyAuthBody = computed(() => {
   return "ログイン済みならワークスペース設定からパスワード変更が可能です。ログインできない場合は、運営へ連絡して案内を確認してください。";
 });
 
+const legacyUserSettingsPaths = [
+  "/user/edit",
+  "/user/password",
+  "/user/delete",
+  "/user/appearance",
+];
+const isLegacyUserSettingsPath = computed(() =>
+  legacyUserSettingsPaths.includes(normalizedPath.value),
+);
+const isLegacyCircleSelectorPath = computed(
+  () => normalizedPath.value === "/selector" || normalizedPath.value === "/selector/set",
+);
+const isLegacyLogoutPath = computed(() => normalizedPath.value === "/logout");
+
+const legacyPrivateRouteTitle = computed(() => {
+  if (isLegacyCircleSelectorPath.value) {
+    return "企画セレクターの導線が移動しました";
+  }
+
+  if (isLegacyUserSettingsPath.value) {
+    return "ユーザー設定の導線が移動しました";
+  }
+
+  return "ログアウト導線が変わりました";
+});
+
+const legacyPrivateRouteLead = computed(() => {
+  if (isLegacyCircleSelectorPath.value) {
+    return "旧 `/selector` 系 URL は、移行後は企画選択画面へ統合されています。";
+  }
+
+  if (isLegacyUserSettingsPath.value) {
+    return "旧 `/user/*` 系 URL で分かれていた表示名変更・テーマ設定・パスワード変更・退会導線は、移行後は 1 つの設定画面へ統合されています。";
+  }
+
+  return "旧 `/logout` の GET 導線は廃止し、移行後は画面右上やサイドバーのログアウト操作へ集約しています。";
+});
+
+const legacyPrivateRouteBody = computed(() => {
+  if (isLegacyCircleSelectorPath.value) {
+    return "企画を選び直すと、その後の migrated 画面も選択した企画コンテキストで動作します。`redirect` パラメーター互換はまだありません。";
+  }
+
+  if (isLegacyUserSettingsPath.value) {
+    return "ワークスペースのユーザー設定では、表示名、外観、パスワード変更、アカウント削除をまとめて扱えます。";
+  }
+
+  return "ログアウト後はログイン画面へ戻ります。古いブックマークではなく、移行後アプリ内のボタン操作を利用してください。";
+});
+
+const legacyPrivateRoutePrimaryLink = computed(() => {
+  if (isLegacyCircleSelectorPath.value) {
+    return "/circles/select";
+  }
+
+  if (isLegacyUserSettingsPath.value) {
+    return "/workspace/settings";
+  }
+
+  return "/login";
+});
+
+const legacyPrivateRoutePrimaryLabel = computed(() => {
+  if (isLegacyCircleSelectorPath.value) {
+    return "企画選択画面へ";
+  }
+
+  if (isLegacyUserSettingsPath.value) {
+    return "ユーザー設定へ";
+  }
+
+  return "ログイン画面へ";
+});
+
 const isSupportPath = computed(() => normalizedPath.value === "/support");
 const isPrivacyPolicyPath = computed(() => normalizedPath.value === "/privacy_policy");
 const isLegacyPagesPath = computed(
@@ -204,6 +278,33 @@ const isLegacyDocumentsPath = computed(
         <p v-if="isLegacyPasswordResetPath" class="text-muted">
           ログイン済みなら、ワークスペース内の設定画面から現在のパスワードを変更できます。
         </p>
+      </div>
+    </SurfaceCard>
+
+    <SurfaceCard
+      v-else-if="isLegacyCircleSelectorPath || isLegacyUserSettingsPath || isLegacyLogoutPath"
+    >
+      <div class="border-b border-border px-6 py-5">
+        <p class="text-sm text-primary">Legacy Route</p>
+        <h2 class="mt-2 text-2xl font-semibold text-body">{{ legacyPrivateRouteTitle }}</h2>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>{{ legacyPrivateRouteLead }}</p>
+        <p>{{ legacyPrivateRouteBody }}</p>
+        <div class="flex flex-wrap gap-3">
+          <RouterLink
+            :to="legacyPrivateRoutePrimaryLink"
+            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
+          >
+            {{ legacyPrivateRoutePrimaryLabel }}
+          </RouterLink>
+          <RouterLink
+            to="/workspace"
+            class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
+          >
+            ワークスペースへ
+          </RouterLink>
+        </div>
       </div>
     </SurfaceCard>
 
