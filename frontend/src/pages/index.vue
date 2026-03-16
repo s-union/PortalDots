@@ -64,6 +64,13 @@ async function handleSelectCircle(circleId: string) {
           >
             ログイン画面へ
           </RouterLink>
+          <RouterLink
+            v-if="!sessionStore.isAuthenticated"
+            class="rounded border border-border px-4 py-3 text-sm text-body transition hover:bg-surface-light"
+            to="/register"
+          >
+            新規ユーザー登録
+          </RouterLink>
           <p v-else class="rounded border border-primary px-4 py-3 text-sm text-primary">
             {{ sessionStore.user?.displayName }} としてログイン中です
           </p>

@@ -12,6 +12,7 @@ function createTestRouter() {
         routes: [
             { path: "/", component: HomePage },
             { path: "/login", component: { template: "<div>login</div>" } },
+            { path: "/register", component: { template: "<div>register</div>" } },
             { path: "/workspace", component: { template: "<div>workspace</div>" } },
             { path: "/workspace/pages/:pageId", component: { template: "<div>page</div>" } },
             {
@@ -56,6 +57,7 @@ describe("HomePage", () => {
 
         expect(wrapper.text()).toContain("認証から縦切りで移行を進めます。");
         expect(wrapper.text()).toContain("ログイン画面へ");
+        expect(wrapper.get('a[href="/register"]').text()).toContain("新規ユーザー登録");
     });
 
     it("allows the authenticated user to switch the current circle", async () => {

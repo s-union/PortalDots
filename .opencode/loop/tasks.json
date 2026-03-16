@@ -88,6 +88,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:01:00Z",
       "completedAt": "2026-03-16T11:20:00Z"
+    },
+    {
+      "id": "12",
+      "title": "home の新規登録 CTA を復元する",
+      "description": "legacy home の guest 導線に合わせて、migrated ホームでもログイン横から `/register` へ進めるようにする",
+      "status": "done",
+      "addedAt": "2026-03-16T11:25:00Z",
+      "completedAt": "2026-03-16T11:27:00Z"
     }
   ]
 }
