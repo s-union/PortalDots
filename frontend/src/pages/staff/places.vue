@@ -88,12 +88,9 @@ async function handleDeletePlace(placeId: string) {
             Laravel 側の data-grid と同じく、場所名・タイプ・スタッフ用メモを一覧で管理します。
           </p>
         </div>
-        <a
-          class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-          href="#"
-        >
-          CSVで出力(場所別企画一覧)
-        </a>
+        <p class="text-sm text-muted">
+          場所別企画一覧 CSV は、企画と場所の紐付け API 移行後に対応予定です。
+        </p>
       </div>
 
       <form class="border-b border-border px-5 py-4" @submit.prevent="handleCreatePlace">

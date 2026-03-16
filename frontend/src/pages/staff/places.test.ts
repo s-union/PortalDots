@@ -103,6 +103,9 @@ describe("StaffPlacesPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("1号館");
+        expect(wrapper.text()).toContain(
+            "場所別企画一覧 CSV は、企画と場所の紐付け API 移行後に対応予定です。",
+        );
 
         const createInputs = wrapper.findAll("input[name]");
         await createInputs[0].setValue("体育館");

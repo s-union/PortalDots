@@ -3006,6 +3006,61 @@ func TestStaffExportsDownloadArtifacts(t *testing.T) {
 	}
 }
 
+func TestStaffTagsExportCSV(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/tags/export", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if got := recorder.Header().Get("Content-Type"); got != "text/csv; charset=utf-8" {
+		t.Fatalf("unexpected content type: %s", got)
+	}
+	if got := recorder.Header().Get("Content-Disposition"); !strings.Contains(got, "staff-tags.csv") {
+		t.Fatalf("unexpected content disposition: %s", got)
+	}
+
+	rows, err := csv.NewReader(bytes.NewReader(recorder.Body.Bytes())).ReadAll()
+	if err != nil {
+		t.Fatalf("read tags csv: %v", err)
+	}
+	if len(rows) < 2 {
+		t.Fatalf("expected exported rows, got %#v", rows)
+	}
+	wantHeader := []string{
+		"tag_id",
+		"tag_name",
+		"circle_id",
+		"circle_name",
+		"circle_name_yomi",
+		"group_name",
+		"group_name_yomi",
+	}
+	if !slices.Equal(rows[0], wantHeader) {
+		t.Fatalf("unexpected header: want=%#v got=%#v", wantHeader, rows[0])
+	}
+
+	foundTaggedCircle := false
+	for _, row := range rows[1:] {
+		if len(row) != 7 {
+			t.Fatalf("unexpected row width: %#v", row)
+		}
+		if row[1] == "展示" && row[2] == "circle-b" {
+			foundTaggedCircle = true
+		}
+	}
+	if !foundTaggedCircle {
+		t.Fatalf("expected tag export to include circle-b row, got %#v", rows)
+	}
+}
+
 func TestStaffMailsListAndEnqueue(t *testing.T) {
 	t.Parallel()
 
@@ -3187,6 +3242,10 @@ func testConfig() config.Config {
 				Tags:          []string{"展示"},
 				FormID:        "form-participation-exhibit",
 			},
+		},
+		Tags: []config.Tag{
+			{ID: "tag-food", Name: "模擬店"},
+			{ID: "tag-exhibit", Name: "展示"},
 		},
 		Circles: []config.Circle{
 			{

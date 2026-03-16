@@ -103,6 +103,7 @@ describe("StaffTagsPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("飲食");
+        expect(wrapper.get('a[href$="/staff/tags/export"]').text()).toContain("CSVで出力");
 
         await wrapper.get('input[name="name"]').setValue("新規タグ");
         await wrapper.get("form").trigger("submit");

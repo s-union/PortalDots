@@ -2,10 +2,13 @@ package httpapi
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
@@ -59,6 +62,75 @@ func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
 		response = append(response, staffTagResponse{ID: item.ID, Name: item.Name})
 	}
 	return c.JSON(http.StatusOK, response)
+}
+
+func (h *staffMastersHandlers) downloadStaffTagsCSV(c echo.Context) error {
+	if _, _, status, ok := h.requireStaffCapability(c, canReadTags); !ok {
+		return statusError(c, status)
+	}
+
+	tags, err := h.tags.List()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	circles, err := h.circles.ListForStaff()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	slices.SortFunc(circles, func(left, right circle.Circle) int {
+		switch {
+		case left.Name < right.Name:
+			return -1
+		case left.Name > right.Name:
+			return 1
+		default:
+			return 0
+		}
+	})
+
+	rows := [][]string{{
+		"tag_id",
+		"tag_name",
+		"circle_id",
+		"circle_name",
+		"circle_name_yomi",
+		"group_name",
+		"group_name_yomi",
+	}}
+	for _, currentTag := range tags {
+		matchedCircles := make([]circle.Circle, 0)
+		for _, currentCircle := range circles {
+			if slices.Contains(currentCircle.Tags, currentTag.Name) {
+				matchedCircles = append(matchedCircles, currentCircle)
+			}
+		}
+
+		if len(matchedCircles) == 0 {
+			rows = append(rows, []string{currentTag.ID, currentTag.Name, "", "", "", "", ""})
+			continue
+		}
+
+		for index, currentCircle := range matchedCircles {
+			row := []string{"", "", currentCircle.ID, currentCircle.Name, currentCircle.NameYomi, currentCircle.GroupName, currentCircle.GroupNameYomi}
+			if index == 0 {
+				row[0] = currentTag.ID
+				row[1] = currentTag.Name
+			}
+			rows = append(rows, row)
+		}
+	}
+
+	csvBytes, err := writeCSV(rows)
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	filename := "staff-tags.csv"
+	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
+	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
+	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
 }
 
 func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {

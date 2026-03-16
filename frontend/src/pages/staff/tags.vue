@@ -10,6 +10,7 @@ definePage({
 });
 
 import { computed, ref } from "vue";
+import { buildApiUrl } from "@/lib/api/client";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
   extractStaffTagValidationMessage,
@@ -29,6 +30,7 @@ const tagsQuery = useStaffTagsQuery(enabled);
 const createMutation = useCreateStaffTagMutation();
 const updateMutation = useUpdateStaffTagMutation();
 const deleteMutation = useDeleteStaffTagMutation();
+const exportHref = computed(() => buildApiUrl("/staff/tags/export"));
 const newTagName = ref("");
 const errorMessage = ref("");
 const editingNames = ref<Record<string, string>>({});
@@ -87,7 +89,7 @@ async function handleDeleteTag(tagId: string) {
         </div>
         <a
           class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-          href="#"
+          :href="exportHref"
         >
           CSVで出力(タグ別企画一覧)
         </a>

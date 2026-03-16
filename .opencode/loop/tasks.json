@@ -20,7 +20,9 @@
       "id": "3",
       "title": "必要なバックエンド齟齬を解消して検証する",
       "description": "フロント移行に必要なGo APIや契約差分を補い、関連チェックを実行して結果を記録する",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-16T01:44:26Z"
     }
-  ]
+  ],
+  "completedAt": "2026-03-16T01:44:26Z"
 }

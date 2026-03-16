@@ -119,6 +119,7 @@ type staffDocumentHandlers struct {
 type staffMastersHandlers struct {
 	sharedDeps
 	activities        activitylog.Repository
+	circles           circle.Catalog
 	contactCategories contactcategory.Repository
 	places            place.Repository
 	tags              tag.Repository
@@ -277,6 +278,7 @@ func NewServerWithDependencies(
 	staffMastersH := &staffMastersHandlers{
 		sharedDeps:        shared,
 		activities:        activities,
+		circles:           circles,
 		contactCategories: contactCategories,
 		places:            places,
 		tags:              tags,
