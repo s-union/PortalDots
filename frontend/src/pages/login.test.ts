@@ -12,6 +12,8 @@ function createTestRouter() {
         routes: [
             { path: "/", component: { template: "<div>home</div>" } },
             { path: "/login", component: LoginPage },
+            { path: "/register", component: { template: "<div>register</div>" } },
+            { path: "/password/reset", component: { template: "<div>password reset</div>" } },
         ],
     });
 }
@@ -161,5 +163,39 @@ describe("LoginPage", () => {
 
         expect(wrapper.text()).toContain("ログイン情報が正しくありません");
         expect(router.currentRoute.value.path).toBe("/login");
+    });
+
+    it("keeps password reset and register helper links", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const router = createTestRouter();
+        await router.push("/login");
+        await router.isReady();
+
+        const wrapper = mount(LoginPage, {
+            global: {
+                plugins: [
+                    pinia,
+                    router,
+                    [
+                        VueQueryPlugin,
+                        {
+                            queryClient: new QueryClient({
+                                defaultOptions: {
+                                    queries: { retry: false },
+                                },
+                            }),
+                        },
+                    ],
+                ],
+            },
+        });
+
+        expect(wrapper.get('a[href="/password/reset"]').text()).toContain(
+            "パスワードをお忘れの場合はこちら",
+        );
+        expect(wrapper.get('a[href="/register"]').text()).toContain(
+            "はじめての方は新規ユーザー登録",
+        );
     });
 });

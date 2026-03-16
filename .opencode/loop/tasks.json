@@ -112,6 +112,14 @@
       "status": "done",
       "addedAt": "2026-03-16T11:33:00Z",
       "completedAt": "2026-03-16T11:32:00Z"
+    },
+    {
+      "id": "15",
+      "title": "login 補助リンクの回帰テストを補う",
+      "description": "legacy/login から残している `/password/reset` と `/register` の導線をテストで固定し、guest auth parity を保つ",
+      "status": "done",
+      "addedAt": "2026-03-16T11:36:00Z",
+      "completedAt": "2026-03-16T11:34:00Z"
     }
   ]
 }

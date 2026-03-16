@@ -19,3 +19,4 @@
 - 2026-03-16: legacy home の guest parity は `frontend/src/pages/index.vue` の CTA 群だけで小さく改善できる。`/login` だけでなく `/register` も並べ、`index.test.ts` で href を固定すると public 導線の後退を防ぎやすい。
 - 2026-03-16: public 静的ページを切り出したら、legacy `AppFooter` 相当の shell 導線も一緒に戻すと到達性が上がる。`frontend/src/app/App.vue` の drawer footer に `/support` `/privacy_policy` と公式サイトリンクを置き、`App.test.ts` で anchor href だけを軽く確認するのが安全。
 - 2026-03-16: file-based public route を増やした後は router guard テストも合わせて追加する。`frontend/src/app/router/index.test.ts` で `fetch` が呼ばれないことまで確認すると、session bootstrap を誤って必須化した退行を防げる。
+- 2026-03-16: guest auth parity は page 本体だけでなく login からの補助リンクも要固定。`frontend/src/pages/login.test.ts` に `/password/reset` と `/register` の href 確認を足しておくと、文言や遷移先の崩れを安く拾える。
