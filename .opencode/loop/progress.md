@@ -23,3 +23,4 @@
 - 2026-03-16: legacy `/circles/:id` と `/circles/:id/users` は現在選択中の企画コンテキスト前提だが、404 を避けるだけなら `workspace/circles/detail` と `workspace/circles/members` への誘導で十分実用的。circle id は説明文に残し、実データの照合までは行わない方が安全。
 - 2026-03-16: 招待受け入れだけは `POST /v1/circles/join/{token}` が既にあるので、`/circles/join/[token].vue` を追加して migrated 側で完結できる。legacy `/circles/:circle/users/invite/:token` は catch-all から新ページへつなぐのが最短。
 - 2026-03-16: legacy `/circles/:circle/auth` も専用画面を無理に再実装せず、現在選択中の企画情報画面への案内に寄せるのが安全。auth 専用の状態遷移は migrated stack に見当たらないため、アクセス可否の確認先だけを明示する。
+- 2026-03-16: catch-all で `/circles/:circle/edit|confirm|done|delete` を detail 画面へ寄せたら、個別 URL ごとの回帰テストもまとめて固定しておくと sibling action の取りこぼしを防げる。

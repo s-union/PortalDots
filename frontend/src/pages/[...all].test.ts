@@ -168,6 +168,20 @@ describe("NotFoundPage", () => {
         expect(primaryLink.text()).toContain("企画情報画面へ");
     });
 
+    it.each([
+        "/circles/circle-a/edit",
+        "/circles/circle-a/confirm",
+        "/circles/circle-a/done",
+        "/circles/circle-a/delete",
+    ])("guides the legacy circle action route %s to workspace circle detail", async (path) => {
+        const wrapper = await mountAt(path);
+        const primaryLink = wrapper.get('a[href="/workspace/circles/detail"]');
+
+        expect(wrapper.text()).toContain("企画情報の導線が移動しました");
+        expect(wrapper.text()).toContain("legacy の企画 ID: circle-a");
+        expect(primaryLink.text()).toContain("企画情報画面へ");
+    });
+
     it("guides the legacy circle auth route to workspace circle detail", async () => {
         const wrapper = await mountAt("/circles/circle-a/auth");
         const primaryLink = wrapper.get('a[href="/workspace/circles/detail"]');

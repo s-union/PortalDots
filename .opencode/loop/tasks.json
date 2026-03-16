@@ -118,6 +118,14 @@
       "status": "done",
       "addedAt": "2026-03-16T04:42:41Z",
       "completedAt": "2026-03-16T04:44:43Z"
+    },
+    {
+      "id": "16",
+      "title": "残る circle action legacy 導線の回帰テストを補う",
+      "description": "follow-up check で sibling として残った `/circles/{circle}/edit|confirm|done|delete` の救済導線をテストで固定し、catch-all の退行を防ぐ",
+      "status": "done",
+      "addedAt": "2026-03-16T04:45:58Z",
+      "completedAt": "2026-03-16T04:46:38Z"
     }
   ]
 }
