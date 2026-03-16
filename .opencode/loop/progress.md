@@ -34,3 +34,5 @@
 - 2026-03-16: answer edit の delete confirm は `groupName` があれば十分組み立てられるので detail query の追加 API は不要。cancel 時に route が変わらず DELETE も飛ばないことまで test で押さえると、回答編集の事故を防ぎやすい。
 - 2026-03-16: 次の parity 候補は document detail。legacy 一覧の confirm は資料名を含むだけの単純文なので、`staff/documents/[documentId]/edit.vue` でも detail query の `name` を使って同じ文字列へ寄せるだけで十分。
 - 2026-03-16: document detail も confirm 文面は feature API 側 utility に寄せると一覧/detail で共有しやすい。cancel 時の route 維持を別テストにしておくと、既存の update/delete 複合テストを壊さず parity を足せる。
+- 2026-03-16: 次の強い gap は participation type detail。legacy では「この参加種別に紐づく企画もすべて削除される」と明示しているので、migrated 側の単純 confirm は危険寄り。ここも utility + cancel test の型へそろえるのが良い。
+- 2026-03-16: participation type detail は文面が固定なので引数なし utility で十分。delete の影響が重い画面ほど cancel test を追加して、route が残ることを明示的に押さえておくと安心。

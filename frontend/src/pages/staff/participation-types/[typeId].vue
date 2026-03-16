@@ -17,6 +17,7 @@ import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
 import { useAuthorizedStaffContext } from "@/features/staff/hooks/useAuthorizedStaffContext";
 import {
+  buildDeleteStaffParticipationTypeConfirmMessage,
   extractStaffParticipationTypeValidationMessage,
   formatDateTimeLocalValue,
   formatParticipationTypeTags,
@@ -107,7 +108,10 @@ async function handleSave() {
 }
 
 async function handleDelete() {
-  if (typeof window !== "undefined" && !window.confirm("この参加種別を削除しますか？")) {
+  if (
+    typeof window !== "undefined" &&
+    !window.confirm(buildDeleteStaffParticipationTypeConfirmMessage())
+  ) {
     return;
   }
 

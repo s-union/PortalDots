@@ -200,6 +200,14 @@
       "status": "done",
       "addedAt": "2026-03-16T13:12:54Z",
       "completedAt": "2026-03-16T13:14:56Z"
+    },
+    {
+      "id": "26",
+      "title": "participation type 詳細の削除確認を強化する",
+      "description": "legacy participation type 編集画面の注意文を migrated detail に戻し、紐づく企画も削除されることを明示する",
+      "status": "done",
+      "addedAt": "2026-03-16T13:16:49Z",
+      "completedAt": "2026-03-16T13:18:10Z"
     }
   ]
 }

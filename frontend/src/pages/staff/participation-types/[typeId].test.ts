@@ -25,6 +25,7 @@ function createQueryPlugin() {
 
 describe("StaffParticipationTypeDetailPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
@@ -46,10 +47,8 @@ describe("StaffParticipationTypeDetailPage", () => {
             },
         });
 
-        vi.stubGlobal(
-            "confirm",
-            vi.fn(() => true),
-        );
+        const confirmMock = vi.fn(() => true);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
 
         const router = createRouter({
             history: createMemoryHistory(),
@@ -193,7 +192,125 @@ describe("StaffParticipationTypeDetailPage", () => {
         await deleteButton.trigger("click");
         await flushPromises();
 
+        expect(confirmMock).toHaveBeenCalledWith(
+            "本当にこの参加種別を削除しますか？この参加種別に紐づく企画もすべて削除されます。",
+        );
         expect(router.currentRoute.value.path).toBe("/staff/participation-types");
+    });
+
+    it("does not delete participation types when confirmation is cancelled", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-b",
+                name: "デモ企画B",
+            },
+            featureFlags: [],
+            roles: ["admin"],
+            user: {
+                id: "staff-user",
+                displayName: "Staff User",
+            },
+        });
+
+        const confirmMock = vi.fn(() => false);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/staff/participation-types", component: { template: "<div>types</div>" } },
+                {
+                    path: "/staff/participation-types/:typeId",
+                    component: StaffParticipationTypeDetailPage,
+                },
+                { path: "/staff/forms/:formId", component: { template: "<div>form detail</div>" } },
+            ],
+        });
+        await router.push("/staff/participation-types/participation-type-food");
+        await router.isReady();
+
+        let deleted = false;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return jsonResponse({ allowed: true, authorized: true });
+                }
+
+                if (
+                    url.endsWith("/staff/participation-types/participation-type-food") &&
+                    method === "GET"
+                ) {
+                    return jsonResponse({
+                        id: "participation-type-food",
+                        name: "模擬店",
+                        description: "模擬店の参加種別です。",
+                        usersCountMin: 1,
+                        usersCountMax: 4,
+                        tags: ["模擬店"],
+                        form: {
+                            id: "form-participation-food",
+                            name: "企画参加登録",
+                            description: "参加登録を提出してください。",
+                            openAt: "2026-03-01T00:00:00Z",
+                            closeAt: "2026-03-31T23:59:59Z",
+                            isPublic: true,
+                            isOpen: true,
+                            maxAnswers: 1,
+                            answerableTags: [],
+                            confirmationMessage: "ありがとうございました。",
+                        },
+                    });
+                }
+
+                if (
+                    url.endsWith("/staff/participation-types/participation-type-food") &&
+                    method === "DELETE"
+                ) {
+                    deleted = true;
+                    return new Response(null, { status: 204 });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffParticipationTypeDetailPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        const deleteButton = wrapper
+            .findAll('button[type="button"]')
+            .find((button) => button.text().includes("参加種別を削除"));
+        if (!deleteButton) {
+            throw new Error("delete button not found");
+        }
+        await deleteButton.trigger("click");
+        await flushPromises();
+
+        expect(confirmMock).toHaveBeenCalledWith(
+            "本当にこの参加種別を削除しますか？この参加種別に紐づく企画もすべて削除されます。",
+        );
+        expect(deleted).toBe(false);
+        expect(router.currentRoute.value.path).toBe(
+            "/staff/participation-types/participation-type-food",
+        );
     });
 });
 

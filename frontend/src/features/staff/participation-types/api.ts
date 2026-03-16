@@ -273,6 +273,10 @@ export function extractStaffParticipationTypeValidationMessage(error: unknown) {
     return extractValidationMessage(error, "参加種別の保存に失敗しました。");
 }
 
+export function buildDeleteStaffParticipationTypeConfirmMessage() {
+    return "本当にこの参加種別を削除しますか？この参加種別に紐づく企画もすべて削除されます。";
+}
+
 function parseStaffParticipationType(value: unknown): StaffParticipationType {
     return parseWithSchema(staffParticipationTypeSchema, value, "participation type");
 }
