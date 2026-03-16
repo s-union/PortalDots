@@ -1,213 +1,55 @@
 {
-  "startedAt": "2026-03-16T09:21:50Z",
-  "description": "Laravel から Vue/Go への移植ギャップを広めに再探索し、高優先度から自律的に実装・検証する",
+  "startedAt": "2026-03-16T13:40:00Z",
+  "description": "残る Laravel から Vue+Go への移植ギャップを順に実装し、送信系を migrated 側で一律モック化する",
   "tasks": [
     {
       "id": "1",
-      "title": "残る移植ギャップを広めに再棚卸しする",
-      "description": "legacy routes・Blade 導線・migrated placeholder・回帰しやすい sibling module を横断して、追加実装できる具体タスクを多めに洗い出す",
+      "title": ".opencode/loop を再作成する",
+      "description": "既存 loop 状態を破棄し、新しいタスク一覧と進捗ノートを作成する",
       "status": "done",
-      "completedAt": "2026-03-16T09:29:54Z"
+      "completedAt": "2026-03-16T13:41:00Z"
     },
     {
       "id": "2",
-      "title": "staff の静的補助ページを移植する",
-      "description": "legacy `/staff/about` と `/staff/markdown-guide` を Vue 側へ移し、staff ハブと settings から辿れるようにする",
-      "status": "done",
-      "addedAt": "2026-03-16T09:29:54Z",
-      "completedAt": "2026-03-16T09:35:06Z"
+      "title": "Portal 設定を /staff/settings/portal に移植する",
+      "description": "admin 向け Portal 設定 UI と Go API を追加し、staff settings から辿れるようにする",
+      "status": "in_progress"
     },
     {
       "id": "3",
-      "title": "staff forms の未回答企画導線を復元する",
-      "description": "legacy `/staff/forms/{form}/not_answered` 相当の導線を migrated staff forms 画面に追加し、既存一覧情報で確認しやすくする",
-      "status": "done",
-      "addedAt": "2026-03-16T09:29:54Z",
-      "completedAt": "2026-03-16T09:39:51Z"
+      "title": "参加種別ごとの企画一覧と CSV を移植する",
+      "description": "legacy の participation type detail 一覧/API/export を Vue+Go に追加する",
+      "status": "pending"
     },
     {
       "id": "4",
-      "title": "staff send_emails 導線を migrated 画面へ寄せる",
-      "description": "legacy `/staff/send_emails` の入口を migrated staff mails/関連ハブから自然に辿れるよう整理する",
-      "status": "done",
-      "addedAt": "2026-03-16T09:29:54Z",
-      "completedAt": "2026-03-16T09:43:17Z"
+      "title": "場所別企画一覧 CSV を移植する",
+      "description": "places 画面からダウンロードできる場所別企画 CSV を Go API とともに追加する",
+      "status": "pending"
     },
     {
       "id": "5",
-      "title": "staff pages 詳細画面の回帰テストを補う",
-      "description": "`/staff/pages/[pageId].vue` に対して、既存 sibling と同等の詳細・更新・削除まわりのテストを追加する",
-      "status": "done",
-      "addedAt": "2026-03-16T09:29:54Z",
-      "completedAt": "2026-03-16T09:45:16Z"
+      "title": "workspace の企画メンバー直接追加を移植する",
+      "description": "招待 URL に加え、legacy の直接追加導線を Vue+Go に追加する",
+      "status": "pending"
     },
     {
       "id": "6",
-      "title": "staff forms preview と uploads の回帰テストを補う",
-      "description": "未テストの preview / answers uploads 画面を固定して、staff forms sibling の回帰耐性を上げる",
-      "status": "done",
-      "addedAt": "2026-03-16T09:29:54Z",
-      "completedAt": "2026-03-16T09:49:50Z"
+      "title": "参加種別フォームの locked 制限を見直す",
+      "description": "participation type に紐づく form の編集可能範囲を migrated 側に寄せる",
+      "status": "pending"
     },
     {
       "id": "7",
-      "title": "workspace contact の失敗系テストを補強する",
-      "description": "カテゴリ取得失敗・送信失敗・履歴空などの重要ケースを追加し、legacy `/contacts` 救済先の信頼性を上げる",
-      "status": "done",
-      "addedAt": "2026-03-16T09:29:54Z",
-      "completedAt": "2026-03-16T09:53:28Z"
+      "title": "migrated 側のメール送信を一律モック表現へそろえる",
+      "description": "staff verify・contact・mail queue などの送信系を実送信ではなく mock と明示する",
+      "status": "pending"
     },
     {
       "id": "8",
-      "title": "public auth 導線の本移植候補を具体実装する",
-      "description": "`/register` `/password/reset` `/email/verify` の catch-all 案内止まりを減らせるものから migrated 画面化する",
-      "status": "done",
-      "addedAt": "2026-03-16T09:29:54Z",
-      "completedAt": "2026-03-16T10:02:23Z"
-    },
-    {
-      "id": "9",
-      "title": "auth 移行後の legacy fallback を整理する",
-      "description": "新設した auth route と重複する catch-all 分岐を削り、route guard の期待動作をテストで固定する",
-      "status": "done",
-      "addedAt": "2026-03-16T10:05:00Z",
-      "completedAt": "2026-03-16T10:07:28Z"
-    },
-    {
-      "id": "10",
-      "title": "public support/privacy の専用ページを切り出す",
-      "description": "legacy `/support` と `/privacy_policy` を catch-all から独立した Vue page に移し、静的案内の移植を一段進める",
-      "status": "done",
-      "addedAt": "2026-03-16T11:01:00Z",
-      "completedAt": "2026-03-16T11:18:00Z"
-    },
-    {
-      "id": "11",
-      "title": "staff participation-types 一覧の回帰テストを補う",
-      "description": "一覧表示・作成導線・詳細遷移を固定して、移植済み管理画面の足場を強くする",
-      "status": "done",
-      "addedAt": "2026-03-16T11:01:00Z",
-      "completedAt": "2026-03-16T11:20:00Z"
-    },
-    {
-      "id": "12",
-      "title": "home の新規登録 CTA を復元する",
-      "description": "legacy home の guest 導線に合わせて、migrated ホームでもログイン横から `/register` へ進めるようにする",
-      "status": "done",
-      "addedAt": "2026-03-16T11:25:00Z",
-      "completedAt": "2026-03-16T11:27:00Z"
-    },
-    {
-      "id": "13",
-      "title": "app shell に public footer リンクを戻す",
-      "description": "legacy footer にあった `/support` `/privacy_policy` と PortalDots 公式サイト導線を migrated shell に追加する",
-      "status": "done",
-      "addedAt": "2026-03-16T11:31:00Z",
-      "completedAt": "2026-03-16T11:30:00Z"
-    },
-    {
-      "id": "14",
-      "title": "public route の router guard 回帰を補う",
-      "description": "新設した `/support` と `/privacy_policy` が session bootstrap 不要で開けることを router test で固定する",
-      "status": "done",
-      "addedAt": "2026-03-16T11:33:00Z",
-      "completedAt": "2026-03-16T11:32:00Z"
-    },
-    {
-      "id": "15",
-      "title": "login 補助リンクの回帰テストを補う",
-      "description": "legacy/login から残している `/password/reset` と `/register` の導線をテストで固定し、guest auth parity を保つ",
-      "status": "done",
-      "addedAt": "2026-03-16T11:36:00Z",
-      "completedAt": "2026-03-16T11:34:00Z"
-    },
-    {
-      "id": "16",
-      "title": "auth route variant の guard テストを補う",
-      "description": "`/password/reset/:userId` `/email/verify/:type/:userId` `/email/verify/completed` の publicOnly/requiresAuth 挙動を router test で固定する",
-      "status": "done",
-      "addedAt": "2026-03-16T11:39:00Z",
-      "completedAt": "2026-03-16T11:37:00Z"
-    },
-    {
-      "id": "17",
-      "title": "mobile 向けの public footer を追加する",
-      "description": "drawer を開かなくても `/support` `/privacy_policy` と公式サイトへ辿れるよう、app shell 本文下にも footer を出す",
-      "status": "done",
-      "addedAt": "2026-03-16T11:42:00Z",
-      "completedAt": "2026-03-16T11:39:00Z"
-    },
-    {
-      "id": "18",
-      "title": "staff pages 一覧にメール配信設定導線を戻す",
-      "description": "legacy `/staff/pages` の toolbar にあった `/staff/send_emails` 相当の入口を migrated pages 一覧から `/staff/mails` へ戻す",
-      "status": "done",
-      "addedAt": "2026-03-16T11:46:00Z",
-      "completedAt": "2026-03-16T11:49:00Z"
-    },
-    {
-      "id": "19",
-      "title": "staff tags の削除確認を復元する",
-      "description": "legacy の注意文付き delete confirm を migrated tags 一覧へ戻し、タグ削除の影響範囲を分かりやすくする",
-      "status": "done",
-      "addedAt": "2026-03-16T11:54:00Z",
-      "completedAt": "2026-03-16T11:52:00Z"
-    },
-    {
-      "id": "20",
-      "title": "staff forms の copy/delete 確認を復元する",
-      "description": "legacy forms 一覧の confirm 文面を migrated copy/delete ボタンに戻し、破壊的操作の誤爆を減らす",
-      "status": "done",
-      "addedAt": "2026-03-16T11:57:00Z",
-      "completedAt": "2026-03-16T11:56:21Z"
-    },
-    {
-      "id": "21",
-      "title": "staff forms 詳細の copy/delete 確認をそろえる",
-      "description": "一覧で復元した confirm 文面を `/staff/forms/[formId]` にも適用し、sibling 間の destructive action parity を保つ",
-      "status": "done",
-      "addedAt": "2026-03-16T11:58:20Z",
-      "completedAt": "2026-03-16T12:12:30Z"
-    },
-    {
-      "id": "22",
-      "title": "staff places の削除確認を復元する",
-      "description": "legacy places 一覧にある削除 confirm 文面を migrated places 画面へ戻し、関連解除の注意を伝える",
-      "status": "done",
-      "addedAt": "2026-03-16T12:12:30Z",
-      "completedAt": "2026-03-16T13:03:05Z"
-    },
-    {
-      "id": "23",
-      "title": "contact categories の削除確認を復元する",
-      "description": "legacy delete 画面のカテゴリ名・メールアドレス確認を migrated contact categories 一覧に戻す",
-      "status": "done",
-      "addedAt": "2026-03-16T13:04:49Z",
-      "completedAt": "2026-03-16T13:06:19Z"
-    },
-    {
-      "id": "24",
-      "title": "staff form answer 編集の削除確認を復元する",
-      "description": "legacy answers 一覧の削除 confirm 文面を migrated answer edit 画面へ戻し、通知されない注意も伝える",
-      "status": "done",
-      "addedAt": "2026-03-16T13:08:49Z",
-      "completedAt": "2026-03-16T13:10:20Z"
-    },
-    {
-      "id": "25",
-      "title": "staff document 詳細の削除確認を legacy 文面へそろえる",
-      "description": "migrated document detail の簡素な confirm を legacy 一覧の文言へ合わせ、資料名を含めて確認できるようにする",
-      "status": "done",
-      "addedAt": "2026-03-16T13:12:54Z",
-      "completedAt": "2026-03-16T13:14:56Z"
-    },
-    {
-      "id": "26",
-      "title": "participation type 詳細の削除確認を強化する",
-      "description": "legacy participation type 編集画面の注意文を migrated detail に戻し、紐づく企画も削除されることを明示する",
-      "status": "done",
-      "addedAt": "2026-03-16T13:16:49Z",
-      "completedAt": "2026-03-16T13:18:10Z"
+      "title": "follow-up checks で追加ギャップを潰す",
+      "description": "git log・TODO 検索・テスト・caller/sibling 調査を行い、必要なら追加実装する",
+      "status": "pending"
     }
   ]
 }
