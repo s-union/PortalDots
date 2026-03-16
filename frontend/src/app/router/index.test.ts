@@ -112,6 +112,107 @@ describe("app router guards", () => {
         expect(router.currentRoute.value.fullPath).toBe("/circles/select?redirect=/workspace");
     });
 
+    it("redirects authenticated register access to home via public-only guard", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                if (url.endsWith("/session/bootstrap")) {
+                    return new Response(
+                        JSON.stringify({
+                            csrfToken: "csrf-token",
+                            currentCircle: null,
+                            featureFlags: [],
+                            roles: ["participant"],
+                            user: {
+                                id: "demo-user",
+                                displayName: "Demo User",
+                            },
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (url.endsWith("/staff/status")) {
+                    return new Response(
+                        JSON.stringify({
+                            allowed: true,
+                            authorized: true,
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                throw new Error(`Unexpected request: ${url}`);
+            }),
+        );
+
+        await router.push("/register");
+        await router.isReady();
+
+        expect(router.currentRoute.value.fullPath).toBe("/");
+    });
+
+    it("redirects unauthenticated email verify access to login", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                if (url.endsWith("/session/bootstrap")) {
+                    return new Response(
+                        JSON.stringify({
+                            csrfToken: "",
+                            currentCircle: null,
+                            featureFlags: [],
+                            roles: [],
+                            user: null,
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (url.endsWith("/staff/status")) {
+                    return new Response(
+                        JSON.stringify({
+                            allowed: true,
+                            authorized: true,
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                throw new Error(`Unexpected request: ${url}`);
+            }),
+        );
+
+        await router.push("/email/verify");
+        await router.isReady();
+
+        expect(router.currentRoute.value.fullPath).toBe("/login");
+    });
+
     it("redirects staff dashboard access to staff verify when not yet authorized", async () => {
         vi.stubGlobal(
             "fetch",

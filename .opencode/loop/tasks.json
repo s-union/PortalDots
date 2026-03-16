@@ -64,6 +64,14 @@
       "status": "done",
       "addedAt": "2026-03-16T09:29:54Z",
       "completedAt": "2026-03-16T10:02:23Z"
+    },
+    {
+      "id": "9",
+      "title": "auth 移行後の legacy fallback を整理する",
+      "description": "新設した auth route と重複する catch-all 分岐を削り、route guard の期待動作をテストで固定する",
+      "status": "done",
+      "addedAt": "2026-03-16T10:05:00Z",
+      "completedAt": "2026-03-16T10:07:28Z"
     }
   ]
 }

@@ -125,54 +125,6 @@ const workspaceFormsLink = computed(() => {
   return "/workspace/forms";
 });
 
-const isLegacyRegisterPath = computed(() => normalizedPath.value === "/register");
-const isLegacyPasswordResetRequestPath = computed(() => normalizedPath.value === "/password/reset");
-const legacyPasswordResetUserId = computed(() => {
-  const match = normalizedPath.value.match(/^\/password\/reset\/([^/]+)$/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
-});
-const isLegacyPasswordResetPath = computed(
-  () => isLegacyPasswordResetRequestPath.value || legacyPasswordResetUserId.value !== null,
-);
-
-const legacyAuthPrimaryLink = computed(() => {
-  if (legacyPasswordResetUserId.value !== null) {
-    return "/password/reset";
-  }
-  return "/login";
-});
-
-const legacyAuthPrimaryLabel = computed(() => {
-  if (legacyPasswordResetUserId.value !== null) {
-    return "再設定方法の案内を見る";
-  }
-  return "ログイン画面へ戻る";
-});
-
-const legacyAuthLead = computed(() => {
-  if (isLegacyRegisterPath.value) {
-    return "旧 `/register` は移行中のため、この環境ではまだ新規ユーザー登録フォームを提供していません。";
-  }
-
-  if (legacyPasswordResetUserId.value !== null) {
-    return "この URL は legacy の署名付きパスワード再設定リンクです。移行後の stack ではまだ再設定完了画面を提供していません。";
-  }
-
-  return "旧 `/password/reset` は移行中のため、現在の migrated stack ではメール送信付きの再設定開始フローをまだ提供していません。";
-});
-
-const legacyAuthBody = computed(() => {
-  if (isLegacyRegisterPath.value) {
-    return "既存アカウントをお持ちの場合はログインしてください。はじめて利用する方や招待を受けた方は、運営から案内された手順を利用してください。";
-  }
-
-  if (legacyPasswordResetUserId.value !== null) {
-    return "ログイン可能であればワークスペースの設定画面からパスワードを変更できます。ログインできない場合は、運営へ再案内を依頼してください。";
-  }
-
-  return "ログイン済みならワークスペース設定からパスワード変更が可能です。ログインできない場合は、運営へ連絡して案内を確認してください。";
-});
-
 const legacyUserSettingsPaths = [
   "/user/edit",
   "/user/password",
@@ -210,28 +162,6 @@ const legacyCircleCreateParticipationTypeId = computed(() => {
   const participationType = route.query.participation_type;
   return typeof participationType === "string" ? participationType : null;
 });
-const isLegacyEmailVerifyNoticePath = computed(() => normalizedPath.value === "/email/verify");
-const isLegacyEmailVerifyCompletedPath = computed(
-  () => normalizedPath.value === "/email/verify/completed",
-);
-const legacyEmailVerifyAction = computed(() => {
-  const match = normalizedPath.value.match(/^\/email\/verify\/([^/]+)\/([^/]+)$/);
-  if (!match?.[1] || !match[2]) {
-    return null;
-  }
-
-  return {
-    type: decodeURIComponent(match[1]),
-    userId: decodeURIComponent(match[2]),
-  };
-});
-const isLegacyEmailVerifyActionPath = computed(() => legacyEmailVerifyAction.value !== null);
-const isLegacyEmailVerifyPath = computed(
-  () =>
-    isLegacyEmailVerifyNoticePath.value ||
-    isLegacyEmailVerifyCompletedPath.value ||
-    isLegacyEmailVerifyActionPath.value,
-);
 const legacyCircleRoute = computed(() => {
   const match = normalizedPath.value.match(/^\/circles\/([^/]+)(?:\/([^/]+))?$/);
   if (!match?.[1]) {
@@ -296,10 +226,6 @@ const isLegacyCircleRoutePath = computed(() => legacyCircleRoute.value !== null)
 const isLegacyCircleInviteRoutePath = computed(() => legacyCircleInviteRoute.value !== null);
 
 const legacyPrivateRouteTitle = computed(() => {
-  if (isLegacyEmailVerifyPath.value) {
-    return "メール認証導線は移行中です";
-  }
-
   if (isLegacyContactPath.value) {
     return "お問い合わせ導線が移動しました";
   }
@@ -324,18 +250,6 @@ const legacyPrivateRouteTitle = computed(() => {
 });
 
 const legacyPrivateRouteLead = computed(() => {
-  if (isLegacyEmailVerifyNoticePath.value) {
-    return "旧 `/email/verify` は、legacy では確認メール再送と認証状況の確認に使っていた画面です。migrated stack ではまだ同等画面を提供していません。";
-  }
-
-  if (isLegacyEmailVerifyCompletedPath.value) {
-    return "旧 `/email/verify/completed` は、legacy のメール認証完了画面です。移行後はこの完了表示をまだ再実装していません。";
-  }
-
-  if (isLegacyEmailVerifyActionPath.value) {
-    return "この URL は legacy の署名付きメール認証リンクです。migrated stack では、このリンクをそのまま処理する画面をまだ提供していません。";
-  }
-
   if (isLegacyContactPath.value) {
     return "旧 `/contacts` は、移行後はワークスペース配下のお問い合わせ画面へ移動しています。";
   }
@@ -360,18 +274,6 @@ const legacyPrivateRouteLead = computed(() => {
 });
 
 const legacyPrivateRouteBody = computed(() => {
-  if (isLegacyEmailVerifyNoticePath.value) {
-    return "ログイン済みなら migrated ワークスペースで作業を継続し、必要に応じて運営へ確認してください。確認メールの再送や大学メール・連絡先メールの個別認証状態表示は未移行です。";
-  }
-
-  if (isLegacyEmailVerifyCompletedPath.value) {
-    return "認証結果の反映確認は、ログイン後に利用できる画面で進めてください。完了表示だけを信頼させる導線は避け、現時点ではログイン導線を優先します。";
-  }
-
-  if (isLegacyEmailVerifyActionPath.value) {
-    return `認証種別: ${legacyEmailVerifyAction.value?.type ?? "unknown"} / 対象ユーザー: ${legacyEmailVerifyAction.value?.userId ?? "unknown"}。ログインできる場合は migrated 画面から状況確認を進め、ログインできない場合は運営へ再案内を依頼してください。`;
-  }
-
   if (isLegacyContactPath.value) {
     return "現在の企画コンテキスト付きで問い合わせカテゴリの選択、本文送信、送信履歴の確認ができます。";
   }
@@ -402,14 +304,6 @@ const legacyPrivateRouteBody = computed(() => {
 });
 
 const legacyPrivateRoutePrimaryLink = computed(() => {
-  if (isLegacyEmailVerifyNoticePath.value || isLegacyEmailVerifyCompletedPath.value) {
-    return "/login";
-  }
-
-  if (isLegacyEmailVerifyActionPath.value) {
-    return "/";
-  }
-
   if (isLegacyContactPath.value) {
     return "/workspace/contact";
   }
@@ -445,14 +339,6 @@ const legacyPrivateRoutePrimaryLink = computed(() => {
 });
 
 const legacyPrivateRoutePrimaryLabel = computed(() => {
-  if (isLegacyEmailVerifyNoticePath.value || isLegacyEmailVerifyCompletedPath.value) {
-    return "ログイン画面へ";
-  }
-
-  if (isLegacyEmailVerifyActionPath.value) {
-    return "ホームへ戻る";
-  }
-
   if (isLegacyContactPath.value) {
     return "お問い合わせ画面へ";
   }
@@ -679,36 +565,6 @@ watch(
       </div>
     </SurfaceCard>
 
-    <SurfaceCard v-else-if="isLegacyRegisterPath || isLegacyPasswordResetPath">
-      <div class="border-b border-border px-6 py-5">
-        <p class="text-sm text-primary">Legacy Route</p>
-        <h2 class="mt-2 text-2xl font-semibold text-body">
-          {{ isLegacyRegisterPath ? "認証導線は移行中です" : "パスワード再設定は移行中です" }}
-        </h2>
-      </div>
-      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
-        <p>{{ legacyAuthLead }}</p>
-        <p>{{ legacyAuthBody }}</p>
-        <div class="flex flex-wrap gap-3">
-          <RouterLink
-            :to="legacyAuthPrimaryLink"
-            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
-          >
-            {{ legacyAuthPrimaryLabel }}
-          </RouterLink>
-          <RouterLink
-            to="/"
-            class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
-          >
-            ホームへ戻る
-          </RouterLink>
-        </div>
-        <p v-if="isLegacyPasswordResetPath" class="text-muted">
-          ログイン済みなら、ワークスペース内の設定画面から現在のパスワードを変更できます。
-        </p>
-      </div>
-    </SurfaceCard>
-
     <SurfaceCard v-else-if="isLegacyCircleInviteRoutePath">
       <div class="border-b border-border px-6 py-5">
         <p class="text-sm text-primary">Legacy Route</p>
@@ -770,7 +626,6 @@ watch(
         isLegacyCircleSelectorPath ||
         isLegacyUserSettingsPath ||
         isLegacyLogoutPath ||
-        isLegacyEmailVerifyPath ||
         isLegacyContactPath ||
         isLegacyCircleCreatePath
       "
