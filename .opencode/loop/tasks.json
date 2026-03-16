@@ -184,6 +184,14 @@
       "status": "done",
       "addedAt": "2026-03-16T13:04:49Z",
       "completedAt": "2026-03-16T13:06:19Z"
+    },
+    {
+      "id": "24",
+      "title": "staff form answer 編集の削除確認を復元する",
+      "description": "legacy answers 一覧の削除 confirm 文面を migrated answer edit 画面へ戻し、通知されない注意も伝える",
+      "status": "done",
+      "addedAt": "2026-03-16T13:08:49Z",
+      "completedAt": "2026-03-16T13:10:20Z"
     }
   ]
 }

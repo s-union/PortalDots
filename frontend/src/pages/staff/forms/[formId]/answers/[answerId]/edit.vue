@@ -20,6 +20,7 @@ import {
 } from "@/features/forms/answers";
 import { useAuthorizedStaffContext } from "@/features/staff/hooks/useAuthorizedStaffContext";
 import {
+  buildDeleteStaffFormAnswerConfirmMessage,
   extractStaffFormAnswerValidationMessage,
   staffAnswerDraftToPayload,
   useDeleteStaffFormAnswerMutation,
@@ -66,6 +67,15 @@ async function handleSaveAnswer() {
 }
 
 async function handleDeleteAnswer() {
+  const groupName = answerQuery.data.value?.circle.groupName;
+  if (
+    groupName &&
+    typeof window !== "undefined" &&
+    !window.confirm(buildDeleteStaffFormAnswerConfirmMessage(groupName))
+  ) {
+    return;
+  }
+
   try {
     await deleteAnswerMutation.mutateAsync(answerId.value);
     await router.push(`/staff/forms/${encodeURIComponent(formId.value)}/answers`);

@@ -8,6 +8,7 @@ import StaffFormAnswerDetailPage from "./edit.vue";
 
 describe("StaffFormAnswerDetailPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
@@ -195,5 +196,151 @@ describe("StaffFormAnswerDetailPage", () => {
         await flushPromises();
 
         expect(updatedBody).toContain("更新後責任者");
+    });
+
+    it("confirms before deleting a staff answer", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-b",
+                name: "デモ企画B",
+            },
+            featureFlags: [],
+            roles: ["admin"],
+            user: {
+                id: "staff-user",
+                displayName: "Staff User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                {
+                    path: "/staff/forms/:formId/answers",
+                    component: { template: "<div>index</div>" },
+                },
+                {
+                    path: "/staff/forms/:formId/answers/:answerId/edit",
+                    component: StaffFormAnswerDetailPage,
+                },
+            ],
+        });
+        await router.push("/staff/forms/form-circle-b-1/answers/answer-1/edit");
+        await router.isReady();
+
+        const deleteRequests: string[] = [];
+        const confirmMock = vi.fn(() => false);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status")) {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+
+                if (
+                    url.endsWith("/staff/forms/form-circle-b-1/answers/answer-1/edit") &&
+                    method === "GET"
+                ) {
+                    return new Response(
+                        JSON.stringify({
+                            form: {
+                                id: "form-circle-b-1",
+                                name: "展示チェックフォーム",
+                                description: "提出してください。",
+                                openAt: "2026-03-02T00:00:00Z",
+                                closeAt: "2026-03-22T23:59:59Z",
+                                maxAnswers: 2,
+                                isPublic: true,
+                                isOpen: true,
+                                answerableTags: ["展示"],
+                                confirmationMessage: "ありがとうございました。",
+                                questions: [],
+                                answer: null,
+                            },
+                            circle: {
+                                id: "circle-a",
+                                name: "デモ企画A",
+                                groupName: "Aブロック",
+                                participationTypeName: "模擬店",
+                            },
+                            answer: {
+                                id: "answer-1",
+                                body: "初期本文",
+                                createdAt: "2026-03-14T02:00:00Z",
+                                updatedAt: "2026-03-14T02:30:00Z",
+                                details: {},
+                                uploads: [],
+                            },
+                            siblingAnswers: [],
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (
+                    url.endsWith("/staff/forms/form-circle-b-1/answers/answer-1") &&
+                    method === "DELETE"
+                ) {
+                    deleteRequests.push(url);
+                    return new Response(null, { status: 204 });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffFormAnswerDetailPage, {
+            global: {
+                plugins: [
+                    pinia,
+                    router,
+                    [
+                        VueQueryPlugin,
+                        {
+                            queryClient: new QueryClient({
+                                defaultOptions: { queries: { retry: false } },
+                            }),
+                        },
+                    ],
+                ],
+            },
+        });
+
+        await flushPromises();
+        const deleteButton = wrapper.findAll('button[type="button"]')[0];
+        await deleteButton.trigger("click");
+        await flushPromises();
+
+        expect(confirmMock).toHaveBeenCalledWith(
+            expect.stringContaining("この回答を削除しますか？"),
+        );
+        expect(confirmMock).toHaveBeenCalledWith(
+            expect.stringContaining("回答が削除されたという通知はAブロックには送信されません。"),
+        );
+        expect(deleteRequests).toHaveLength(0);
+        expect(router.currentRoute.value.fullPath).toBe(
+            "/staff/forms/form-circle-b-1/answers/answer-1/edit",
+        );
     });
 });

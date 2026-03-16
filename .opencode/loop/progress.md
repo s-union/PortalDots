@@ -30,3 +30,5 @@
 - 2026-03-16: `staff/places.vue` の delete confirm は legacy の注意文をそのまま移すだけで十分効く。作成・更新・削除が同じテストに載っている一覧ページでは、confirm 実行ケースに加えて cancel 時に DELETE が飛ばないケースを別テストへ分けると読みやすい。
 - 2026-03-16: places の次は `staff/contacts/categories/delete.blade.php` が同系統の未移植ギャップとして残る。カテゴリ一覧には delete 確認がないので、legacy の「名前 + メールアドレス」を確認する単文 confirm を戻すと sibling の destructive parity を横展開しやすい。
 - 2026-03-16: `staff/contact-categories.vue` の confirm は複雑な注意文までは不要で、legacy delete page と同じ 1 行メッセージで十分。`名前(email)` の完全一致をテストしておくと、連絡先メールの取り違えも拾える。
+- 2026-03-16: destructive parity の横展開先としては `staff/forms/[formId]/answers/[answerId]/edit.vue` も自然。legacy answers 一覧には「削除通知は企画に送られない」という 1 行注意があるので、answer edit の削除ボタンにも同じ confirm を足しておくと staff 操作の意図が伝わりやすい。
+- 2026-03-16: answer edit の delete confirm は `groupName` があれば十分組み立てられるので detail query の追加 API は不要。cancel 時に route が変わらず DELETE も飛ばないことまで test で押さえると、回答編集の事故を防ぎやすい。

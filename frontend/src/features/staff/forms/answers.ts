@@ -397,6 +397,10 @@ export function extractStaffFormAnswerValidationMessage(error: unknown) {
     return extractApiValidationMessage(error, "回答の保存に失敗しました。");
 }
 
+export function buildDeleteStaffFormAnswerConfirmMessage(groupName: string) {
+    return `この回答を削除しますか？\n\n• 回答が削除されたという通知は${groupName}には送信されません。`;
+}
+
 export function extractExistingAnswerId(error: unknown) {
     if (!(error instanceof Error) || !hasErrorCause(error)) {
         return null;
