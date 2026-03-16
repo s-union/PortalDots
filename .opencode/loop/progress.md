@@ -8,3 +8,4 @@
 - 2026-03-16: static な legacy 補助ページは runtime 依存まで無理に移さず、まず Vue の file-based route で概要・導線・早見表を復元する方が安全。`staff/index` と `staff/settings` の両方に入口を足し、単体テストで文言を固定すると後の整理もしやすい。
 - 2026-03-16: legacy の `/staff/forms/{form}/not_answered` は新 API を増やさなくても `useStaffFormAnswersIndexQuery()` の `notAnsweredCircles` を再利用して復元できる。answers index から専用画面へのリンクを足すだけで一覧画面の圧迫も減らせる。
 - 2026-03-16: staff の legacy URL 救済は participant 向けと同じく `frontend/src/pages/[...all].vue` に集約すると file-based route の増殖を防げる。`/staff/send_emails` のような旧管理導線も、移行先画面への案内と補助リンクを 1 枚で出すだけで十分実用的。
+- 2026-03-16: staff の CRUD detail テストは `documents/[documentId]/edit.test.ts` を雛形にすると速い。detail GET に加えて update / pin toggle / delete の mutation を 1 テストでまとめて固定すると sibling 間の回帰差が減る。

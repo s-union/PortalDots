@@ -37,8 +37,9 @@
       "id": "5",
       "title": "staff pages 詳細画面の回帰テストを補う",
       "description": "`/staff/pages/[pageId].vue` に対して、既存 sibling と同等の詳細・更新・削除まわりのテストを追加する",
-      "status": "pending",
-      "addedAt": "2026-03-16T09:29:54Z"
+      "status": "done",
+      "addedAt": "2026-03-16T09:29:54Z",
+      "completedAt": "2026-03-16T09:45:16Z"
     },
     {
       "id": "6",
