@@ -46,7 +46,21 @@
       "status": "done",
       "addedAt": "2026-03-16T02:33:27Z",
       "completedAt": "2026-03-16T02:35:55Z"
+    },
+    {
+      "id": "7",
+      "title": "typed-router の format check 再発を止める",
+      "description": "follow-up check で再検出された frontend/typed-router.d.ts の format:check 失敗を再現し、安定して check が通る状態へ直す",
+      "status": "done",
+      "addedAt": "2026-03-16T03:56:51Z",
+      "completedAt": "2026-03-16T03:58:47Z"
+    },
+    {
+      "id": "8",
+      "title": "auth 系 legacy 公開導線の 404 を減らす",
+      "description": "login から辿れる /register と /password/reset を Vue 側で受け、移行状況に応じた案内または安全な代替導線へ接続する",
+      "status": "pending",
+      "addedAt": "2026-03-16T03:56:51Z"
     }
-  ],
-  "completedAt": "2026-03-16T02:35:55Z"
+  ]
 }
