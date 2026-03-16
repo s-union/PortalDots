@@ -1,6 +1,7 @@
 {
   "startedAt": "2026-03-17T00:00:00Z",
   "description": "旧URLは移植しない方針を migrated 側で明確化し、メール関連モック表現を維持しつつ残る導線を整理する",
+  "completedAt": "2026-03-17T01:43:00Z",
   "tasks": [
     {
       "id": "1",
@@ -27,7 +28,8 @@
       "id": "4",
       "title": "follow-up checks を実行する",
       "description": "ログ・TODO・テスト・caller/sibling 調査を実施し、追加作業があれば継続する",
-      "status": "in_progress"
+      "status": "done",
+      "completedAt": "2026-03-17T01:43:00Z"
     }
   ]
 }
