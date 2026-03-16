@@ -1033,6 +1033,11 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/places/export", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/contact-categories/"+createdCategory.ID, nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -3228,6 +3233,59 @@ func TestStaffTagsExportCSV(t *testing.T) {
 	}
 }
 
+func TestStaffPlacesExportCSV(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/places/export", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if got := recorder.Header().Get("Content-Type"); got != "text/csv; charset=utf-8" {
+		t.Fatalf("unexpected content type: %s", got)
+	}
+	if got := recorder.Header().Get("Content-Disposition"); !strings.Contains(got, "staff-places.csv") {
+		t.Fatalf("unexpected content disposition: %s", got)
+	}
+
+	rows, err := csv.NewReader(bytes.NewReader(recorder.Body.Bytes())).ReadAll()
+	if err != nil {
+		t.Fatalf("read places csv: %v", err)
+	}
+	if len(rows) != 4 {
+		t.Fatalf("unexpected row count: %#v", rows)
+	}
+	wantHeader := []string{
+		"place_id",
+		"place_name",
+		"place_type",
+		"place_notes",
+		"circle_id",
+		"circle_name",
+		"circle_name_yomi",
+		"group_name",
+		"group_name_yomi",
+	}
+	if !slices.Equal(rows[0], wantHeader) {
+		t.Fatalf("unexpected header: want=%#v got=%#v", wantHeader, rows[0])
+	}
+	if rows[1][0] != "place-indoor-1" || rows[1][4] != "circle-a" {
+		t.Fatalf("unexpected first export row: %#v", rows[1])
+	}
+	if rows[2][0] != "" || rows[2][4] != "circle-b" {
+		t.Fatalf("unexpected second export row: %#v", rows[2])
+	}
+	if rows[3][0] != "place-outdoor-1" || rows[3][4] != "circle-b" {
+		t.Fatalf("unexpected third export row: %#v", rows[3])
+	}
+}
+
 func TestStaffMailsListAndEnqueue(t *testing.T) {
 	t.Parallel()
 
@@ -3431,7 +3489,9 @@ func testConfig() config.Config {
 			{
 				ID:                    "circle-a",
 				Name:                  "デモ企画A",
+				NameYomi:              "でもきかくえー",
 				GroupName:             "Aブロック",
+				GroupNameYomi:         "えーぶろっく",
 				ParticipationTypeID:   "participation-type-food",
 				ParticipationTypeName: "模擬店",
 				Tags:                  []string{"模擬店"},
@@ -3439,11 +3499,22 @@ func testConfig() config.Config {
 			{
 				ID:                    "circle-b",
 				Name:                  "デモ企画B",
+				NameYomi:              "でもきかくびー",
 				GroupName:             "Bブロック",
+				GroupNameYomi:         "びーぶろっく",
 				ParticipationTypeID:   "participation-type-exhibit",
 				ParticipationTypeName: "展示",
 				Tags:                  []string{"展示"},
 			},
+		},
+		Places: []config.Place{
+			{ID: "place-indoor-1", Name: "1号館 101", Type: 1, Notes: "屋内"},
+			{ID: "place-outdoor-1", Name: "中庭", Type: 2, Notes: "屋外"},
+		},
+		Booths: []config.BoothAssignment{
+			{PlaceID: "place-indoor-1", CircleID: "circle-a"},
+			{PlaceID: "place-indoor-1", CircleID: "circle-b"},
+			{PlaceID: "place-outdoor-1", CircleID: "circle-b"},
 		},
 		Pages: []config.Page{
 			{

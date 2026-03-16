@@ -45,6 +45,7 @@ type Config struct {
 	Forms                     []Form
 	Tags                      []Tag
 	Places                    []Place
+	Booths                    []BoothAssignment
 	ContactCategories         []ContactCategory
 	authPasswordProvided      bool
 	staffVerifyCodeProvided   bool
@@ -74,7 +75,9 @@ type User struct {
 type Circle struct {
 	ID                    string
 	Name                  string
+	NameYomi              string
 	GroupName             string
+	GroupNameYomi         string
 	ParticipationTypeID   string
 	ParticipationTypeName string
 	Tags                  []string
@@ -142,6 +145,11 @@ type Place struct {
 	Name  string
 	Type  int
 	Notes string
+}
+
+type BoothAssignment struct {
+	PlaceID  string
+	CircleID string
 }
 
 type ContactCategory struct {
@@ -245,7 +253,9 @@ func FromEnv() Config {
 			{
 				ID:                    "circle-a",
 				Name:                  "デモ企画A",
+				NameYomi:              "でもきかくえー",
 				GroupName:             "Aブロック",
+				GroupNameYomi:         "えーぶろっく",
 				ParticipationTypeID:   "participation-type-food",
 				ParticipationTypeName: "模擬店",
 				Tags:                  []string{"模擬店"},
@@ -253,7 +263,9 @@ func FromEnv() Config {
 			{
 				ID:                    "circle-b",
 				Name:                  "デモ企画B",
+				NameYomi:              "でもきかくびー",
 				GroupName:             "Bブロック",
+				GroupNameYomi:         "びーぶろっく",
 				ParticipationTypeID:   "participation-type-exhibit",
 				ParticipationTypeName: "展示",
 				Tags:                  []string{"展示"},
@@ -442,6 +454,11 @@ func FromEnv() Config {
 		Places: []Place{
 			{ID: "place-indoor-1", Name: "1号館 101", Type: 1, Notes: "屋内"},
 			{ID: "place-outdoor-1", Name: "中庭", Type: 2, Notes: "屋外"},
+		},
+		Booths: []BoothAssignment{
+			{PlaceID: "place-indoor-1", CircleID: "circle-a"},
+			{PlaceID: "place-indoor-1", CircleID: "circle-b"},
+			{PlaceID: "place-outdoor-1", CircleID: "circle-b"},
 		},
 		ContactCategories: []ContactCategory{
 			{ID: "contact-general", Name: "総合窓口", Email: "general@example.com"},

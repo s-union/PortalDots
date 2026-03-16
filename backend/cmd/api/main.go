@@ -25,6 +25,7 @@ func main() {
 		dependencies.Activities,
 		dependencies.Answers,
 		dependencies.Authenticator,
+		dependencies.Booths,
 		dependencies.Circles,
 		dependencies.ContactCategories,
 		dependencies.Documents,

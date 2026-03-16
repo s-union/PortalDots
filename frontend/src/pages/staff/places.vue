@@ -12,6 +12,7 @@ definePage({
 import { computed, ref } from "vue";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
+  buildStaffPlacesExportUrl,
   buildDeleteStaffPlaceConfirmMessage,
   extractStaffPlaceValidationMessage,
   placeTypeLabel,
@@ -32,6 +33,7 @@ const placesQuery = useStaffPlacesQuery(enabled);
 const createMutation = useCreateStaffPlaceMutation();
 const updateMutation = useUpdateStaffPlaceMutation();
 const deleteMutation = useDeleteStaffPlaceMutation();
+const exportHref = buildStaffPlacesExportUrl();
 const errorMessage = ref("");
 const form = ref<Omit<StaffPlace, "id">>({
   name: "",
@@ -94,13 +96,14 @@ async function handleDeletePlace(placeId: string) {
       >
         <div>
           <h3 class="text-base font-semibold text-body">場所一覧</h3>
-          <p class="mt-1 text-sm text-muted">
-            Laravel 側の data-grid と同じく、場所名・タイプ・スタッフ用メモを一覧で管理します。
-          </p>
+          <p class="mt-1 text-sm text-muted">場所名・タイプ・スタッフ用メモを一覧で管理します。</p>
         </div>
-        <p class="text-sm text-muted">
-          場所別企画一覧 CSV は、企画と場所の紐付け API 移行後に対応予定です。
-        </p>
+        <a
+          :href="exportHref"
+          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+        >
+          CSVで出力(場所別企画一覧)
+        </a>
       </div>
 
       <form class="border-b border-border px-5 py-4" @submit.prevent="handleCreatePlace">

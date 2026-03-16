@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from "vue";
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import { createJsonHeaders, $api } from "@/lib/api/client";
+import { buildApiUrl, createJsonHeaders, $api } from "@/lib/api/client";
 import { parseWithSchema, staffPlaceSchema } from "@/lib/api/schema";
 import { extractValidationMessage, parseValidationError } from "@/lib/api/validation";
 import { useSessionStore } from "@/features/session/store";
@@ -154,6 +154,10 @@ export function placeTypeLabel(placeType: number) {
         default:
             return String(placeType);
     }
+}
+
+export function buildStaffPlacesExportUrl() {
+    return buildApiUrl("/staff/places/export");
 }
 
 function parseStaffPlaces(value: unknown): StaffPlace[] {

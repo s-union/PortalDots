@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/booth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
@@ -221,6 +223,38 @@ func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+func (h *staffMastersHandlers) downloadStaffPlacesCSV(c echo.Context) error {
+	if _, _, status, ok := h.requireStaffCapability(c, canReadPlaces); !ok {
+		return statusError(c, status)
+	}
+
+	places, err := h.places.List()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	circles, err := h.circles.ListForStaff()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	assignments, err := h.booths.List()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	rows := buildStaffPlacesExportRows(places, circles, assignments)
+	csvBytes, err := writeCSV(rows)
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	filename := "staff-places.csv"
+	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
+	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
+	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
+}
+
 func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPlaces)
 	if !ok {
@@ -272,6 +306,9 @@ func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
 	if err := h.places.Delete(c.Param("placeID")); errors.Is(err, place.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "place_not_found")
 	} else if err != nil {
+		return internalError(c)
+	}
+	if err := h.booths.DeleteByPlace(c.Param("placeID")); err != nil {
 		return internalError(c)
 	}
 
@@ -395,6 +432,110 @@ func mapStaffPlace(item place.Place) staffPlaceResponse {
 		Name:  item.Name,
 		Type:  item.Type,
 		Notes: item.Notes,
+	}
+}
+
+func buildStaffPlacesExportRows(places []place.Place, circles []circle.Circle, assignments []booth.Assignment) [][]string {
+	slices.SortFunc(places, func(left, right place.Place) int {
+		switch {
+		case left.Name < right.Name:
+			return -1
+		case left.Name > right.Name:
+			return 1
+		default:
+			return 0
+		}
+	})
+
+	circleByID := make(map[string]circle.Circle, len(circles))
+	for _, currentCircle := range circles {
+		circleByID[currentCircle.ID] = currentCircle
+	}
+
+	assignmentMap := make(map[string][]circle.Circle, len(places))
+	for _, assignment := range assignments {
+		currentCircle, ok := circleByID[assignment.CircleID]
+		if !ok {
+			continue
+		}
+		assignmentMap[assignment.PlaceID] = append(assignmentMap[assignment.PlaceID], currentCircle)
+	}
+	for placeID := range assignmentMap {
+		slices.SortFunc(assignmentMap[placeID], func(left, right circle.Circle) int {
+			switch {
+			case left.Name < right.Name:
+				return -1
+			case left.Name > right.Name:
+				return 1
+			default:
+				return 0
+			}
+		})
+	}
+
+	rows := [][]string{{
+		"place_id",
+		"place_name",
+		"place_type",
+		"place_notes",
+		"circle_id",
+		"circle_name",
+		"circle_name_yomi",
+		"group_name",
+		"group_name_yomi",
+	}}
+	for _, currentPlace := range places {
+		matchedCircles := assignmentMap[currentPlace.ID]
+		if len(matchedCircles) == 0 {
+			rows = append(rows, []string{
+				currentPlace.ID,
+				currentPlace.Name,
+				staffPlaceTypeLabel(currentPlace.Type),
+				currentPlace.Notes,
+				"",
+				"",
+				"",
+				"",
+				"",
+			})
+			continue
+		}
+
+		for index, currentCircle := range matchedCircles {
+			row := []string{
+				"",
+				"",
+				"",
+				"",
+				currentCircle.ID,
+				currentCircle.Name,
+				currentCircle.NameYomi,
+				currentCircle.GroupName,
+				currentCircle.GroupNameYomi,
+			}
+			if index == 0 {
+				row[0] = currentPlace.ID
+				row[1] = currentPlace.Name
+				row[2] = staffPlaceTypeLabel(currentPlace.Type)
+				row[3] = currentPlace.Notes
+			}
+			rows = append(rows, row)
+		}
+	}
+
+	return rows
+}
+
+func staffPlaceTypeLabel(placeType int32) string {
+	switch placeType {
+	case 1:
+		return "屋内"
+	case 2:
+		return "屋外"
+	case 3:
+		return "特殊場所"
+	default:
+		return strconv.Itoa(int(placeType))
 	}
 }
 

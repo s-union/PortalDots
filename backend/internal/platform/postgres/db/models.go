@@ -52,6 +52,13 @@ type AnswerUpload struct {
 	QuestionID pgtype.Text
 }
 
+type Booth struct {
+	ID        string
+	PlaceID   string
+	CircleID  string
+	CreatedAt pgtype.Timestamptz
+}
+
 type Circle struct {
 	ID                    string
 	Name                  string

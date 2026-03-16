@@ -87,7 +87,9 @@ func NewStaticCatalog(cfg []config.Circle) *StaticCatalog {
 		circles = append(circles, Circle{
 			ID:                    item.ID,
 			Name:                  item.Name,
+			NameYomi:              item.NameYomi,
 			GroupName:             item.GroupName,
+			GroupNameYomi:         item.GroupNameYomi,
 			ParticipationTypeID:   item.ParticipationTypeID,
 			ParticipationTypeName: item.ParticipationTypeName,
 			Tags:                  slices.Clone(item.Tags),

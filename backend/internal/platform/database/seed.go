@@ -42,6 +42,9 @@ func Seed(ctx context.Context, pool *pgxpool.Pool, cfg config.Config) error {
 	if err := seedPlaces(ctx, tx, cfg.Places); err != nil {
 		return err
 	}
+	if err := seedBooths(ctx, tx, cfg.Booths); err != nil {
+		return err
+	}
 	if err := seedContactCategories(ctx, tx, cfg.ContactCategories); err != nil {
 		return err
 	}
@@ -149,15 +152,17 @@ func seedUsers(ctx context.Context, tx pgx.Tx, authUser config.AuthUser, users [
 func seedCircles(ctx context.Context, tx pgx.Tx, circles []config.Circle) error {
 	for _, item := range circles {
 		if _, err := tx.Exec(ctx, `
-			INSERT INTO circles (id, name, group_name, participation_type_id, participation_type_name, tags)
-			VALUES ($1, $2, $3, $4, $5, $6)
+			INSERT INTO circles (id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			ON CONFLICT (id) DO UPDATE
 			SET name = EXCLUDED.name,
+			    name_yomi = EXCLUDED.name_yomi,
 			    group_name = EXCLUDED.group_name,
+			    group_name_yomi = EXCLUDED.group_name_yomi,
 			    participation_type_id = EXCLUDED.participation_type_id,
 			    participation_type_name = EXCLUDED.participation_type_name,
 			    tags = EXCLUDED.tags
-		`, item.ID, item.Name, item.GroupName, nullableTextArg(item.ParticipationTypeID), item.ParticipationTypeName, item.Tags); err != nil {
+		`, item.ID, item.Name, item.NameYomi, item.GroupName, item.GroupNameYomi, nullableTextArg(item.ParticipationTypeID), item.ParticipationTypeName, item.Tags); err != nil {
 			return err
 		}
 	}
@@ -331,6 +336,20 @@ func seedPlaces(ctx context.Context, tx pgx.Tx, places []config.Place) error {
 			    notes = EXCLUDED.notes,
 			    updated_at = now()
 		`, item.ID, item.Name, item.Type, item.Notes); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func seedBooths(ctx context.Context, tx pgx.Tx, booths []config.BoothAssignment) error {
+	for _, item := range booths {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO booths (place_id, circle_id)
+			VALUES ($1, $2)
+			ON CONFLICT (place_id, circle_id) DO NOTHING
+		`, item.PlaceID, item.CircleID); err != nil {
 			return err
 		}
 	}

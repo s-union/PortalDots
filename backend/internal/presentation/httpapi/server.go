@@ -9,6 +9,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
+	"github.com/s-union/PortalDots/backend/internal/domain/booth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
@@ -76,6 +77,7 @@ type staffUserHandlers struct {
 type staffCircleHandlers struct {
 	sharedDeps
 	activities         activitylog.Repository
+	booths             booth.Repository
 	circles            circle.Catalog
 	forms              form.Repository
 	mails              mailqueue.Repository
@@ -120,6 +122,7 @@ type staffDocumentHandlers struct {
 type staffMastersHandlers struct {
 	sharedDeps
 	activities        activitylog.Repository
+	booths            booth.Repository
 	circles           circle.Catalog
 	contactCategories contactcategory.Repository
 	places            place.Repository
@@ -165,6 +168,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 		activitylog.NewMemoryRepository(),
 		answer.NewMemoryRepository(),
 		auth.NewStaticAuthenticator(cfg.AuthUser),
+		booth.NewMemoryRepository(cfg.Booths),
 		circle.NewStaticCatalog(cfg.Circles),
 		contactcategory.NewMemoryRepository(cfg.ContactCategories),
 		document.NewStaticRepository(cfg.Documents),
@@ -200,6 +204,7 @@ func NewServerWithDependencies(
 	activities activitylog.Repository,
 	answers answer.Repository,
 	authenticator auth.Authenticator,
+	booths booth.Repository,
 	circles circle.Catalog,
 	contactCategories contactcategory.Repository,
 	documents document.Repository,
@@ -256,6 +261,7 @@ func NewServerWithDependencies(
 	staffCircleH := &staffCircleHandlers{
 		sharedDeps:         shared,
 		activities:         activities,
+		booths:             booths,
 		circles:            circles,
 		forms:              forms,
 		mails:              mails,
@@ -296,6 +302,7 @@ func NewServerWithDependencies(
 	staffMastersH := &staffMastersHandlers{
 		sharedDeps:        shared,
 		activities:        activities,
+		booths:            booths,
 		circles:           circles,
 		contactCategories: contactCategories,
 		places:            places,

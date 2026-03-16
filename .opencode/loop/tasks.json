@@ -27,7 +27,8 @@
       "id": "4",
       "title": "場所別企画一覧 CSV を移植する",
       "description": "places 画面からダウンロードできる場所別企画 CSV を Go API とともに追加する",
-      "status": "in_progress"
+      "status": "done",
+      "completedAt": "2026-03-16T14:52:00Z"
     },
     {
       "id": "5",

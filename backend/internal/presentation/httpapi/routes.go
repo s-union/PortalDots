@@ -48,6 +48,7 @@ func registerStaffRoutes(
 	v1.PUT("/staff/tags/:tagID", staffMastersH.updateStaffTag)
 	v1.DELETE("/staff/tags/:tagID", staffMastersH.deleteStaffTag)
 	v1.GET("/staff/places", staffMastersH.listStaffPlaces)
+	v1.GET("/staff/places/export", staffMastersH.downloadStaffPlacesCSV)
 	v1.POST("/staff/places", staffMastersH.createStaffPlace)
 	v1.PUT("/staff/places/:placeID", staffMastersH.updateStaffPlace)
 	v1.DELETE("/staff/places/:placeID", staffMastersH.deleteStaffPlace)

@@ -1124,6 +1124,10 @@ paths:
                       type: integer
                     notes:
                       type: string
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
     post:
       operationId: postStaffPlaces
       summary: Create a staff-manageable place
@@ -1157,8 +1161,30 @@ paths:
                     type: string
                   type:
                     type: integer
-                  notes:
-                    type: string
+                    notes:
+                      type: string
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
+        "422":
+          description: Validation error
+  /staff/places/export:
+    get:
+      operationId: getStaffPlacesExport
+      summary: Export staff-manageable places and related circles as CSV
+      responses:
+        "200":
+          description: Staff places CSV
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
   /staff/places/{placeID}:
     put:
       operationId: putStaffPlace
@@ -1199,8 +1225,16 @@ paths:
                     type: string
                   type:
                     type: integer
-                  notes:
-                    type: string
+                    notes:
+                      type: string
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
+        "404":
+          description: Place not found
+        "422":
+          description: Validation error
     delete:
       operationId: deleteStaffPlace
       summary: Delete a staff-manageable place
@@ -1213,6 +1247,12 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
+        "404":
+          description: Place not found
   /staff/contact-categories:
     get:
       operationId: getStaffContactCategories
