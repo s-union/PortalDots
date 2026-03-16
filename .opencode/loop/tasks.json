@@ -20,7 +20,8 @@
       "id": "3",
       "title": "企画新規作成画面を public participation types に切り替える",
       "description": "frontend の circles/new を新 API へ接続し、非 staff でも参加種別を選んで企画作成できるようにする",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-16T10:02:00Z"
     },
     {
       "id": "4",

@@ -17,3 +17,4 @@
 
 - 2026-03-16: ループ再調査の結果、最優先は `frontend/src/pages/circles/new.vue` の staff API 依存を外すこと。現状は一般利用者導線なのに `/staff/participation-types` を叩いており、非 staff では migrated UI から企画作成が成立しない。
 - 2026-03-16: 一般ユーザー向け参加種別一覧は `GET /v1/participation-types` として追加し、legacy の `ParticipationType::open()->public()` に合わせて `form.IsPublic && form.IsOpen` のものだけ返す。response shape は staff 用 mapping を共通化して流用できた。
+- 2026-03-16: `frontend/src/pages/circles/new.vue` は `frontend/src/features/participation-types/api.ts` の public query に差し替えた。staff 用 feature は管理画面でも使うので別 feature のまま残し、一般利用者導線だけ endpoint を分離するのが安全。

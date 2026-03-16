@@ -12,11 +12,11 @@ import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import { useCreateCircleMutation } from "@/features/circles/api";
-import { useStaffParticipationTypesQuery } from "@/features/staff/participation-types/api";
+import { useParticipationTypesQuery } from "@/features/participation-types/api";
 
 const router = useRouter();
 const createMutation = useCreateCircleMutation();
-const participationTypesQuery = useStaffParticipationTypesQuery(true);
+const participationTypesQuery = useParticipationTypesQuery(true);
 
 const form = ref({
   name: "",

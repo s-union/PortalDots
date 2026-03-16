@@ -28,7 +28,7 @@ function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
             typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         const method = init?.method ?? "GET";
 
-        if (url.endsWith("/staff/participation-types") && method === "GET") {
+        if (url.endsWith("/participation-types") && method === "GET") {
             return new Response(
                 JSON.stringify([
                     {
