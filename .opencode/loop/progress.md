@@ -13,3 +13,4 @@
 - 2026-03-16: `frontend/typed-router.d.ts` は生成物でも `oxfmt` 監視対象なので、差分が残ると `frontend-check` が落ちる。手編集は避け、必要なら formatter を先に通す。
 - 2026-03-16: file-based route を増やすと `frontend/typed-router.d.ts` の生成差分まで面倒を見る必要がある。移行中の legacy 導線救済だけなら `frontend/src/pages/[...all].vue` で既知パスを吸収する方が安全。
 - 2026-03-16: catch-all で legacy `/documents/:id` を扱う場合、詳細 UI を無理に再実装せず API download URL への直リンクを出すだけでも 404 回避と既存導線の保全に効く。
+- 2026-03-16: `frontend-check` で残っていた `typed-router.d.ts` の format:check 失敗は、作業中の古い差分が残っていただけで、`nr format` 後は再現しなかった。生成物が dirty なときはまず formatter を再実行して差分有無を確認する。

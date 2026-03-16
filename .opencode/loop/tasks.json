@@ -38,6 +38,14 @@
       "status": "done",
       "addedAt": "2026-03-16T02:09:21Z",
       "completedAt": "2026-03-16T02:31:22Z"
+    },
+    {
+      "id": "6",
+      "title": "typed-router の check 失敗を解消する",
+      "description": "frontend check の残課題である typed-router.d.ts の format:check 失敗原因を特定し、必要なら生成物差分を整える",
+      "status": "done",
+      "addedAt": "2026-03-16T02:33:27Z",
+      "completedAt": "2026-03-16T02:35:55Z"
     }
   ]
 }
