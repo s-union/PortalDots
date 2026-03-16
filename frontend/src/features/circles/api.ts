@@ -154,7 +154,7 @@ export function useCreateCircleMutation() {
             const session = await fetchSessionBootstrap();
             sessionStore.hydrate(session);
             queryClient.setQueryData(["session", "bootstrap"], session);
-            queryClient.invalidateQueries({ queryKey: ["circles"] });
+            await queryClient.invalidateQueries({ queryKey: ["circles"] });
         },
     });
 }
@@ -196,7 +196,7 @@ export function useUpdateCircleMutation() {
                 { errorMessage: "企画情報の更新に失敗しました" },
             ),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["circles", "current", "detail"] });
+            void queryClient.invalidateQueries({ queryKey: ["circles", "current", "detail"] });
         },
     });
 }
@@ -217,7 +217,7 @@ export function useDeleteCircleMutation() {
             const session = await fetchSessionBootstrap();
             sessionStore.hydrate(session);
             queryClient.setQueryData(["session", "bootstrap"], session);
-            queryClient.invalidateQueries({ queryKey: ["circles"] });
+            await queryClient.invalidateQueries({ queryKey: ["circles"] });
         },
     });
 }
@@ -236,7 +236,7 @@ export function useSubmitCircleMutation() {
                 { errorMessage: "参加登録の提出に失敗しました" },
             ),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["circles", "current", "detail"] });
+            void queryClient.invalidateQueries({ queryKey: ["circles", "current", "detail"] });
         },
     });
 }
@@ -277,7 +277,7 @@ export function useRemoveMemberMutation() {
                 { errorMessage: "メンバーの削除に失敗しました" },
             ),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["circles", "current", "members"] });
+            void queryClient.invalidateQueries({ queryKey: ["circles", "current", "members"] });
         },
     });
 }
@@ -296,7 +296,7 @@ export function useRegenerateInvitationTokenMutation() {
                 { errorMessage: "招待トークンの再生成に失敗しました" },
             ),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["circles", "current", "detail"] });
+            void queryClient.invalidateQueries({ queryKey: ["circles", "current", "detail"] });
         },
     });
 }
@@ -321,7 +321,7 @@ export function useJoinCircleMutation() {
             const session = await fetchSessionBootstrap();
             sessionStore.hydrate(session);
             queryClient.setQueryData(["session", "bootstrap"], session);
-            queryClient.invalidateQueries({ queryKey: ["circles"] });
+            await queryClient.invalidateQueries({ queryKey: ["circles"] });
         },
     });
 }
