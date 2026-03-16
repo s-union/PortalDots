@@ -13,16 +13,6 @@ class LoginController extends Controller
 {
     use AuthenticatesUsers;
 
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    /**
-     * @var StaffAuthService
-     */
-    private $staffAuthService;
-
     /*
     |--------------------------------------------------------------------------
     | Login Controller
@@ -51,12 +41,9 @@ class LoginController extends Controller
      *
      * @return void
      */
-    public function __construct(SelectorService $selectorService, StaffAuthService $staffAuthService)
+    public function __construct(private SelectorService $selectorService, private StaffAuthService $staffAuthService)
     {
         $this->middleware('guest')->except('logout', 'showLogout');
-
-        $this->selectorService = $selectorService;
-        $this->staffAuthService = $staffAuthService;
     }
 
     /**

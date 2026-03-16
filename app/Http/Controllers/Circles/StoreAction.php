@@ -12,20 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class StoreAction extends Controller
 {
-    /**
-     * @var CirclesService
-     */
-    private $circlesService;
-
-    /**
-     * @var AnswersService
-     */
-    private $answersService;
-
-    public function __construct(CirclesService $circlesService, AnswersService $answersService)
+    public function __construct(private readonly CirclesService $circlesService, private readonly AnswersService $answersService)
     {
-        $this->circlesService = $circlesService;
-        $this->answersService = $answersService;
     }
 
     public function __invoke(CircleRequest $request)
@@ -63,12 +51,10 @@ class StoreAction extends Controller
                     }
                 }
 
-                return redirect()
-                    ->route('circles.confirm', ['circle' => $circle]);
+                return to_route('circles.confirm', ['circle' => $circle]);
             }
 
-            return redirect()
-                ->route('circles.users.index', ['circle' => $circle]);
+            return to_route('circles.users.index', ['circle' => $circle]);
         });
 
         activity()->enableLogging();

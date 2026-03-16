@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Eloquents\Document;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Document>
+ */
 class DocumentFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Document::class;
@@ -14,14 +17,14 @@ class DocumentFactory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
-            'description' => $this->faker->text,
+            'name' => fake()->name,
+            'description' => fake()->text,
             'path' => 'documents/foobar.pdf',
             'size' => 1,
             'extension' => 'pdf',
             'is_public' => true,
             'is_important' => false,
-            'notes' => $this->faker->text,
+            'notes' => fake()->text,
         ];
     }
 }

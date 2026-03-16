@@ -12,14 +12,8 @@ use Symfony\Component\Mime\Exception\RfcComplianceException;
 
 class UpdateInfoAction extends Controller
 {
-    private EmailService $emailService;
-
-    private VerifyService $verifyService;
-
-    public function __construct(EmailService $emailService, VerifyService $verifyService)
+    public function __construct(private readonly EmailService $emailService, private readonly VerifyService $verifyService)
     {
-        $this->emailService = $emailService;
-        $this->verifyService = $verifyService;
     }
 
     public function __invoke(ChangeInfoRequest $request)
@@ -67,29 +61,25 @@ class UpdateInfoAction extends Controller
             if ($changed_univemail) {
                 $this->emailService->sendToUnivemail($user);
             }
-        } catch (RfcComplianceException $e) {
-            return redirect()
-                ->route('user.edit')
+        } catch (RfcComplianceException) {
+            return to_route('user.edit')
                 ->withInput()
                 ->withErrors(['student_id' => config('portal.student_id_name').'を正しく入力してください']);
         }
 
         if (! $user->save()) {
-            return redirect()
-                ->route('user.edit')
+            return to_route('user.edit')
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.title', 'ユーザー情報の更新に失敗しました')
                 ->withInput();
         }
 
         if ($changed_univemail || $changed_email) {
-            return redirect()
-                ->route('verification.notice')
+            return to_route('verification.notice')
                 ->with('topAlert.title', '確認メールを送信しました');
         }
 
-        return redirect()
-            ->route('user.edit')
+        return to_route('user.edit')
             ->with('topAlert.title', 'ユーザー情報を更新しました');
     }
 }

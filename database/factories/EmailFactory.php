@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Eloquents\Email;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Email>
+ */
 class EmailFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Email::class;
@@ -14,10 +17,10 @@ class EmailFactory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'subject' => $this->faker->text,
-            'body' => $this->faker->text,
-            'email_to' => $this->faker->email,
-            'email_to_name' => $this->faker->name,
+            'subject' => fake()->text,
+            'body' => fake()->text,
+            'email_to' => fake()->email,
+            'email_to_name' => fake()->name,
             'locked_at' => null,
             'sent_at' => null,
             'count_failed' => 0,

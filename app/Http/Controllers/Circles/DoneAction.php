@@ -11,8 +11,7 @@ class DoneAction extends Controller
     public function __invoke(Request $request, Circle $circle)
     {
         if (! $request->session()->has('done')) {
-            return redirect()
-                ->route('home');
+            return to_route('home');
         }
 
         $circle->load('participationType.form');

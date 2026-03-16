@@ -22,8 +22,7 @@ class CopyAction extends Controller
     {
         $this->formsService->copyForm($form);
 
-        return redirect()
-            ->route('staff.forms.index')
+        return to_route('staff.forms.index')
             ->with('topAlert.title', 'フォームを複製しました');
     }
 }

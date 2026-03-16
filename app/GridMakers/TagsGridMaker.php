@@ -16,14 +16,8 @@ class TagsGridMaker implements GridMakable
 {
     use UseEloquent;
 
-    /**
-     * @var FormatTextService
-     */
-    private $formatTextService;
-
-    public function __construct(FormatTextService $formatTextService)
+    public function __construct(private FormatTextService $formatTextService)
     {
-        $this->formatTextService = $formatTextService;
     }
 
     /**
@@ -85,16 +79,11 @@ class TagsGridMaker implements GridMakable
     {
         $item = [];
         foreach ($this->keys() as $key) {
-            switch ($key) {
-                case 'created_at':
-                    $item[$key] = ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'updated_at':
-                    $item[$key] = ! empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null;
-                    break;
-                default:
-                    $item[$key] = $record->$key;
-            }
+            $item[$key] = match ($key) {
+                'created_at' => ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null,
+                'updated_at' => ! empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null,
+                default => $record->$key,
+            };
         }
 
         return $item;

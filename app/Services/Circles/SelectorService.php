@@ -47,16 +47,14 @@ class SelectorService
     {
         $circles = $this->getSelectableCirclesList($user);
 
-        return $circles->map(function (Circle $circle) use ($redirect_to) {
-            return [
-                'id' => $circle->id,
-                'name' => $circle->name,
-                'group_name' => $circle->group_name,
-                'participation_type_name' => isset($circle->participationType)
-                    ? $circle->participationType->name : null,
-                'href' => route('circles.selector.set', ['redirect_to' => $redirect_to, 'circle' => $circle]),
-            ];
-        })->toJson();
+        return $circles->map(fn(Circle $circle) => [
+            'id' => $circle->id,
+            'name' => $circle->name,
+            'group_name' => $circle->group_name,
+            'participation_type_name' => isset($circle->participationType)
+                ? $circle->participationType->name : null,
+            'href' => route('circles.selector.set', ['redirect_to' => $redirect_to, 'circle' => $circle]),
+        ])->toJson();
     }
 
     public function setCircle(?Circle $circle = null)

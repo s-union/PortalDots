@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers\Filter;
 
 use App\GridMakers\Filter\FilterQueries;
@@ -7,11 +9,9 @@ use App\GridMakers\Filter\FilterQueryItem;
 use InvalidArgumentException;
 use Tests\TestCase;
 
-class FilterQueriesTest extends TestCase
+final class FilterQueriesTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_正常()
     {
         $queries = [
@@ -24,9 +24,7 @@ class FilterQueriesTest extends TestCase
         $this->assertInstanceOf(FilterQueries::class, $obj);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_引数配列に違うオブジェクトが入っていたら例外が発生する()
     {
         $this->expectException(InvalidArgumentException::class);
@@ -40,9 +38,7 @@ class FilterQueriesTest extends TestCase
         new FilterQueries($queries);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function from_array()
     {
         $obj = FilterQueries::fromArray([
@@ -67,20 +63,16 @@ class FilterQueriesTest extends TestCase
             ['key_name' => 'name', 'operator' => 'not like', 'value' => ''],
             ['key_name' => 'created_at', 'operator' => '>', 'value' => ''],
         ];
-        $actual = array_map(function (FilterQueryItem $item) {
-            return [
-                'key_name' => $item->getFullKeyName(),
-                'operator' => $item->getOperator(),
-                'value' => $item->getValue(),
-            ];
-        }, iterator_to_array($obj->getIterator()));
+        $actual = array_map(fn(FilterQueryItem $item) => [
+            'key_name' => $item->getFullKeyName(),
+            'operator' => $item->getOperator(),
+            'value' => $item->getValue(),
+        ], iterator_to_array($obj->getIterator()));
 
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function from_json()
     {
         $obj = FilterQueries::fromJson(json_encode([
@@ -105,14 +97,12 @@ class FilterQueriesTest extends TestCase
             ['key_name' => 'name', 'operator' => 'not like', 'value' => ''],
             ['key_name' => 'created_at', 'operator' => '>', 'value' => ''],
         ];
-        $actual = array_map(function (FilterQueryItem $item) {
-            return [
-                'key_name' => $item->getFullKeyName(),
-                'operator' => $item->getOperator(),
-                'value' => $item->getValue(),
-            ];
-        }, iterator_to_array($obj->getIterator()));
+        $actual = array_map(fn(FilterQueryItem $item) => [
+            'key_name' => $item->getFullKeyName(),
+            'operator' => $item->getOperator(),
+            'value' => $item->getValue(),
+        ], iterator_to_array($obj->getIterator()));
 
-        $this->assertEquals($expected, $actual);
+        $this->assertSame($expected, $actual);
     }
 }

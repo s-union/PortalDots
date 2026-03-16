@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Documents;
 
 use App\Eloquents\Document;
@@ -9,7 +11,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class ShowActionTest extends TestCase
+final class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -35,9 +37,7 @@ class ShowActionTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできる()
     {
         $response = $this->actingAs($this->user)
@@ -48,9 +48,7 @@ class ShowActionTest extends TestCase
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 非公開の場合はダウンロードできない()
     {
         $this->document->is_public = false;

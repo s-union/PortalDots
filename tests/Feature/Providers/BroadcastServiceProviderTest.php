@@ -1,16 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Providers;
 
 use App\Providers\BroadcastServiceProvider;
 use Illuminate\Support\Facades\Broadcast;
 use Tests\TestCase;
 
-class BroadcastServiceProviderTest extends TestCase
+final class BroadcastServiceProviderTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function bootメソッドがエラーなく実行されチャンネルのルーティングが読み込まれること()
     {
         $provider = new BroadcastServiceProvider($this->app);

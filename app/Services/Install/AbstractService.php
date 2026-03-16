@@ -14,14 +14,8 @@ abstract class AbstractService
 
     abstract public function getFormLabels(): array;
 
-    /**
-     * @var DotenvService
-     */
-    private $dotenvService;
-
-    public function __construct(DotenvService $dotenvService)
+    public function __construct(private readonly DotenvService $dotenvService)
     {
-        $this->dotenvService = $dotenvService;
     }
 
     public function getInfo()
@@ -31,7 +25,7 @@ abstract class AbstractService
         foreach ($this->getEnvKeys() as $key) {
             // $key に PASSWORD という文字列が含まれている場合は、
             // セキュリティのため値を取得しない
-            if (strpos($key, 'PASSWORD') !== false) {
+            if (str_contains((string) $key, 'PASSWORD')) {
                 $result[$key] = '';
 
                 continue;

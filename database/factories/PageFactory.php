@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Eloquents\Page;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Page>
+ */
 class PageFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Page::class;
@@ -14,8 +17,8 @@ class PageFactory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'title' => $this->faker->name,
-            'body' => $this->faker->text,
+            'title' => fake()->name,
+            'body' => fake()->text,
             'is_pinned' => false,
             'is_public' => true,
         ];

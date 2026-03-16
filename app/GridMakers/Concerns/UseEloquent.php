@@ -278,9 +278,7 @@ trait UseEloquent
 
         $query = $this->makeFilterAppliedQuery($query, $filter_queries, $filter_mode);
 
-        return $query->offset($offset)->limit($limit)->get()->map(function ($record) {
-            return $this->map($record);
-        })->toArray();
+        return $query->offset($offset)->limit($limit)->get()->map(fn($record) => $this->map($record))->toArray();
     }
 
     /**

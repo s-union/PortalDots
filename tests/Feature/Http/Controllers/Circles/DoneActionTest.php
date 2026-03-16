@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
 use App\Eloquents\Circle;
 use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class DoneActionTest extends BaseTestCase
+final class DoneActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
@@ -29,9 +31,7 @@ class DoneActionTest extends BaseTestCase
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 参加登録の提出後に表示する内容が表示される()
     {
         $response = $this
@@ -46,9 +46,7 @@ class DoneActionTest extends BaseTestCase
         $response->assertSee('これが確認メッセージです。');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function セッションがセットされていない場合はアクセスできない()
     {
         $response = $this

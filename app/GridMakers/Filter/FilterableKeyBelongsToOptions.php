@@ -8,20 +8,8 @@ use JsonSerializable;
 
 class FilterableKeyBelongsToOptions implements JsonSerializable
 {
-    /**
-     * @var string
-     */
-    private $to;
-
-    /**
-     * @var FilterableKeysDict
-     */
-    private $keys;
-
-    public function __construct(string $to, FilterableKeysDict $keys)
+    public function __construct(private readonly string $to, private readonly FilterableKeysDict $keys)
     {
-        $this->to = $to;
-        $this->keys = $keys;
     }
 
     public function getTo(): string

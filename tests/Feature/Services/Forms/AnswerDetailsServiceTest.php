@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Forms;
 
 use App\Eloquents\Answer;
@@ -16,7 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class AnswerDetailsServiceTest extends TestCase
+final class AnswerDetailsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -46,9 +48,7 @@ class AnswerDetailsServiceTest extends TestCase
         $this->circle->users()->save($this->user);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function update_answer_details_ファイルの更新した時に古いファイルが削除される()
     {
         $form = Form::factory()->create();
@@ -80,9 +80,7 @@ class AnswerDetailsServiceTest extends TestCase
         $this->localDisk->assertMissing($old_file);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function update_answer_details_ファイルの削除した時に古いファイルが削除される()
     {
         $form = Form::factory()->create();
@@ -111,9 +109,7 @@ class AnswerDetailsServiceTest extends TestCase
         $this->localDisk->assertMissing($file);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function update_answer_details_ファイルの更新をしていない時はアップロードされたファイルを削除しない()
     {
         $form = Form::factory()->create();

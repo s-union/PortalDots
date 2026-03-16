@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Pages;
 
 use App\Eloquents\Circle;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
-class PagesServiceTest extends TestCase
+final class PagesServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -43,9 +45,7 @@ class PagesServiceTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function create_page_お知らせを保存する()
     {
         $this->assertSame(0, Page::count());
@@ -66,9 +66,7 @@ class PagesServiceTest extends TestCase
         $this->assertDatabaseHas('pages', $content_on_db);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function set_pin_status_for_page_お知らせを固定表示できる()
     {
         $page = $this->pagesService->createPage(
@@ -79,7 +77,7 @@ class PagesServiceTest extends TestCase
             [],
             [],
             $this->content['is_public'],
-            0,
+            false,
         );
 
         $this->pagesService->setPinStatusForPage($page, true);
@@ -92,9 +90,7 @@ class PagesServiceTest extends TestCase
         $this->assertDatabaseHas('pages', $content_on_db);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function set_pin_status_for_page_お知らせを固定解除できる()
     {
         $page = $this->pagesService->createPage(
@@ -105,7 +101,7 @@ class PagesServiceTest extends TestCase
             [],
             [],
             $this->content['is_public'],
-            1,
+            true,
         );
 
         $this->pagesService->setPinStatusForPage($page, false);
@@ -118,9 +114,7 @@ class PagesServiceTest extends TestCase
         $this->assertDatabaseHas('pages', $content_on_db);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function update_page()
     {
         $this->assertSame(0, Page::count());
@@ -157,9 +151,7 @@ class PagesServiceTest extends TestCase
         $this->assertDatabaseHas('pages', $content_on_db);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function send_emails_by_page_全ユーザーに対し一斉送信予約する()
     {
         $this->assertSame(0, Page::count());
@@ -185,9 +177,7 @@ class PagesServiceTest extends TestCase
         $this->assertSame(User::count(), Email::count());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function create_page_お知らせを保存する際にアクセス可能な企画タグを指定する()
     {
         $tags_count = 4;
@@ -229,9 +219,7 @@ class PagesServiceTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function create_page_未作成のタグを指定した場合は無視される()
     {
         $tag = Tag::factory()->create();

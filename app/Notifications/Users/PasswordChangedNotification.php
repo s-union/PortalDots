@@ -12,21 +12,18 @@ class PasswordChangedNotification extends Notification
     use Queueable;
 
     /**
-     * 受信者
-     *
-     * @var User
-     */
-    private $user;
-
-    /**
      * Create a new notification instance.
      *
      * @param  User  $user  受信者
      * @return void
      */
-    public function __construct(User $user)
+    public function __construct(
+        /**
+         * 受信者
+         */
+        private User $user
+    )
     {
-        $this->user = $user;
     }
 
     /**

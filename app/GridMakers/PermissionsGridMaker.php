@@ -99,21 +99,16 @@ class PermissionsGridMaker implements GridMakable
         ];
         $item = [];
         foreach ($keys as $key) {
-            switch ($key) {
-                case 'permissions':
-                    $item[$key] = $record->permissions->map(function ($permission) {
-                        return Permission::getDefinedPermissions()[$permission->name]
-                            ?? new PermissionInfo(
-                                $permission->name,
-                                $permission->name,
-                                '（不明）',
-                                '（不明）'
-                            );
-                    });
-                    break;
-                default:
-                    $item[$key] = $record->$key;
-            }
+            $item[$key] = match ($key) {
+                'permissions' => $record->permissions->map(fn($permission) => Permission::getDefinedPermissions()[$permission->name]
+                    ?? new PermissionInfo(
+                        $permission->name,
+                        $permission->name,
+                        '（不明）',
+                        '（不明）'
+                    )),
+                default => $record->$key,
+            };
         }
 
         return $item;

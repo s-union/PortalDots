@@ -14,20 +14,8 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 
 class ReleaseInfoService
 {
-    /**
-     * @var Client
-     */
-    private $client;
-
-    /**
-     * @var Cache
-     */
-    private $cache;
-
-    public function __construct(Client $client, Cache $cache)
+    public function __construct(private readonly Client $client, private readonly Cache $cache)
     {
-        $this->client = $client;
-        $this->cache = $cache;
     }
 
     /**
@@ -83,7 +71,7 @@ class ReleaseInfoService
                     );
                 }
             );
-        } catch (ClientException $e) {
+        } catch (ClientException) {
             return null;
         }
     }

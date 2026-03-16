@@ -7,14 +7,8 @@ use App\Services\Install\DatabaseService;
 
 class EditAction extends Controller
 {
-    /**
-     * @var DatabaseService
-     */
-    private $databaseService;
-
-    public function __construct(DatabaseService $databaseService)
+    public function __construct(private readonly DatabaseService $databaseService)
     {
-        $this->databaseService = $databaseService;
     }
 
     public function __invoke()

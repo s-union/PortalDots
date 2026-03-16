@@ -54,13 +54,6 @@ class Question extends Model
         'priority',
     ];
 
-    protected $casts = [
-        'is_required' => 'bool',
-        'number_min' => 'int',
-        'number_max' => 'int',
-        'priority' => 'int',
-    ];
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -96,23 +89,29 @@ class Question extends Model
         return $this->belongsTo(Form::class);
     }
 
-    public function getAllowedTypesArrayAttribute()
+    protected function allowedTypesArray(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return explode('|', (string) $this->allowed_types);
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => explode('|', (string) $this->allowed_types), set: fn(array $value) => ['allowed_types' => implode('|', $value)]);
     }
 
-    public function setAllowedTypesArrayAttribute(array $value)
+    protected function optionsArray(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        $this->attributes['allowed_types'] = implode('|', $value);
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: function () {
+            $options = explode("\n", (string) $this->options);
+            $options = array_map(trim(...), $options);
+            $options = array_filter($options, strlen(...));
+            $options = array_values($options);
+            return $options;
+        });
     }
 
-    public function getOptionsArrayAttribute()
+    protected function casts(): array
     {
-        $options = explode("\n", (string) $this->options);
-        $options = array_map('trim', $options);
-        $options = array_filter($options, 'strlen');
-        $options = array_values($options);
-
-        return $options;
+        return [
+            'is_required' => 'bool',
+            'number_min' => 'int',
+            'number_max' => 'int',
+            'priority' => 'int',
+        ];
     }
 }

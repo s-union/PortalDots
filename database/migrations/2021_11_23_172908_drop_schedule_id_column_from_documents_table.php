@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class DropScheduleIdColumnFromDocumentsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,7 +17,6 @@ class DropScheduleIdColumnFromDocumentsTable extends Migration
             $table->dropColumn('schedule_id');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -29,4 +28,4 @@ class DropScheduleIdColumnFromDocumentsTable extends Migration
             $table->unsignedInteger('schedule_id')->after('is_important');
         });
     }
-}
+};

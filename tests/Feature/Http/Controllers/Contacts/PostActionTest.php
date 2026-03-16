@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Contacts;
 
 use App\Eloquents\Circle;
@@ -9,7 +11,7 @@ use App\Services\Contacts\ContactsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class PostActionTest extends TestCase
+final class PostActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -40,9 +42,7 @@ class PostActionTest extends TestCase
         $this->ContactCategory = ContactCategory::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function contacts_serviceのcreateが呼び出される()
     {
         $this->mock(ContactsService::class, function ($mock) {

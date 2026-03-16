@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers\Filter;
 
 use App\GridMakers\Filter\FilterableKey;
@@ -8,11 +10,9 @@ use Exception;
 use InvalidArgumentException;
 use Tests\TestCase;
 
-class FilterableKeysDictTest extends TestCase
+final class FilterableKeysDictTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_空配列でもインスタンス化できる()
     {
         $obj = new FilterableKeysDict([]);
@@ -20,9 +20,7 @@ class FilterableKeysDictTest extends TestCase
         $this->assertInstanceOf(FilterableKeysDict::class, $obj);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize_空配列の場合()
     {
         $obj = new FilterableKeysDict([]);
@@ -30,9 +28,7 @@ class FilterableKeysDictTest extends TestCase
         $this->assertJsonStringEqualsJsonString(json_encode([]), json_encode($obj));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_配列の内部に違う型のオブジェクトが入っている場合は例外発生する()
     {
         $this->expectException(InvalidArgumentException::class);
@@ -44,9 +40,7 @@ class FilterableKeysDictTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_引数が連想配列ではない場合例外発生する()
     {
         $this->expectException(InvalidArgumentException::class);
@@ -57,9 +51,7 @@ class FilterableKeysDictTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_正常()
     {
         $obj = new FilterableKeysDict([
@@ -71,9 +63,7 @@ class FilterableKeysDictTest extends TestCase
         $this->assertInstanceOf(FilterableKeysDict::class, $obj);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_by_key_正常()
     {
         $obj = new FilterableKeysDict([
@@ -87,9 +77,7 @@ class FilterableKeysDictTest extends TestCase
         $this->assertEquals('enum', $obj->getByKey('status')->getType());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_by_key_存在しないキーが指定された場合は例外発生する()
     {
         $this->expectException(Exception::class);
@@ -103,9 +91,7 @@ class FilterableKeysDictTest extends TestCase
         $obj->getByKey('foobar');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize()
     {
         $expected = json_encode([

@@ -91,10 +91,6 @@ class Circle extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'status_set_at' => 'datetime',
-    ];
-
     public function participationType()
     {
         return $this->belongsTo(ParticipationType::class);
@@ -147,12 +143,12 @@ class Circle extends Model
      * @param  Builder  $query
      * @return Builder
      */
-    public function scopeNotSubmitted($query)
+    protected function scopeNotSubmitted($query)
     {
         return $query->whereNull('submitted_at');
     }
 
-    public function scopeSubmitted($query)
+    protected function scopeSubmitted($query)
     {
         return $query->whereNotNull('submitted_at');
     }
@@ -165,7 +161,7 @@ class Circle extends Model
     /**
      * 参加登録は提出されているが、スタッフによるチェックがPendingな企画だけに限定するクエリスコープ
      */
-    public function scopePending($query)
+    protected function scopePending($query)
     {
         return $query->whereNotNull('submitted_at')->whereNull('status');
     }
@@ -178,7 +174,7 @@ class Circle extends Model
     /**
      * スタッフによるチェックがApprovedな企画だけに限定するクエリスコープ
      */
-    public function scopeApproved($query)
+    protected function scopeApproved($query)
     {
         return $query->whereNotNull('submitted_at')->where('status', 'approved');
     }
@@ -191,7 +187,7 @@ class Circle extends Model
     /**
      * スタッフによるチェックがRejectedな企画だけに限定するクエリスコープ
      */
-    public function scopeRejected($query)
+    protected function scopeRejected($query)
     {
         return $query->whereNotNull('submitted_at')->where('status', 'rejected');
     }
@@ -206,10 +202,9 @@ class Circle extends Model
      *
      * @param  string  $value
      */
-    public function setNameYomiAttribute($value)
+    protected function nameYomi(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
-        $this->attributes['name_yomi'] = mb_convert_kana($value, 'HVc');
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(set: fn($value) => ['name_yomi' => mb_convert_kana((string) $value, 'HVc')]);
     }
 
     /**
@@ -217,10 +212,9 @@ class Circle extends Model
      *
      * @param  string  $value
      */
-    public function setGroupNameYomiAttribute($value)
+    protected function groupNameYomi(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
-        $this->attributes['group_name_yomi'] = mb_convert_kana($value, 'HVc');
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(set: fn($value) => ['group_name_yomi' => mb_convert_kana((string) $value, 'HVc')]);
     }
 
     public function getParticipationFormAnswer(): ?Answer
@@ -232,5 +226,11 @@ class Circle extends Model
         return Answer::where('form_id', $this->participationType->form->id)
             ->where('circle_id', $this->id)
             ->first();
+    }
+    protected function casts(): array
+    {
+        return [
+            'status_set_at' => 'datetime',
+        ];
     }
 }

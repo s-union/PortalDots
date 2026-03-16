@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Circles;
 
 use App\Eloquents\Circle;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
-class CirclesServiceTest extends TestCase
+final class CirclesServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -63,9 +65,7 @@ class CirclesServiceTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function create()
     {
         [
@@ -96,9 +96,7 @@ class CirclesServiceTest extends TestCase
         $this->assertNotEmpty($circle->invitation_token);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function update()
     {
         [
@@ -123,9 +121,7 @@ class CirclesServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function regenerate_invitation_token()
     {
         [
@@ -148,9 +144,7 @@ class CirclesServiceTest extends TestCase
         $this->assertNotSame($old_token, $circle->invitation_token);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function add_member()
     {
         [
@@ -173,9 +167,7 @@ class CirclesServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function submit()
     {
         [
@@ -198,9 +190,7 @@ class CirclesServiceTest extends TestCase
         $this->assertDatabaseCount('circle_tag', self::PARTICIPATION_TYPE_TAGS_COUNT);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function save_tags()
     {
         // 予め tag テーブルに登録されているタグ
@@ -239,9 +229,7 @@ class CirclesServiceTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function save_tags_タグの新規作成が許可されていない場合は例外が発生する()
     {
         $this->expectException(DenyCreateTagsException::class);
@@ -267,9 +255,7 @@ class CirclesServiceTest extends TestCase
         ], false, User::factory()->create());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function send_submited_email()
     {
         $leader = User::factory()->create();
@@ -280,14 +266,10 @@ class CirclesServiceTest extends TestCase
         Mail::fake();
         $this->circlesService->sendSubmitedEmail($leader, $circle);
 
-        Mail::assertSent(SubmittedMailable::class, function ($mail) use ($leader) {
-            return $mail->hasTo($leader->email);
-        });
+        Mail::assertSent(SubmittedMailable::class, fn($mail) => $mail->hasTo($leader->email));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function send_approved_email()
     {
         $leader = User::factory()->create();
@@ -298,14 +280,10 @@ class CirclesServiceTest extends TestCase
         Mail::fake();
         $this->circlesService->sendApprovedEmail($leader, $circle);
 
-        Mail::assertSent(ApprovedMailable::class, function ($mail) use ($leader) {
-            return $mail->hasTo($leader->email);
-        });
+        Mail::assertSent(ApprovedMailable::class, fn($mail) => $mail->hasTo($leader->email));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function send_rejected_email()
     {
         $leader = User::factory()->create();
@@ -316,8 +294,6 @@ class CirclesServiceTest extends TestCase
         Mail::fake();
         $this->circlesService->sendRejectedEmail($leader, $circle);
 
-        Mail::assertSent(RejectedMailable::class, function ($mail) use ($leader) {
-            return $mail->hasTo($leader->email);
-        });
+        Mail::assertSent(RejectedMailable::class, fn($mail) => $mail->hasTo($leader->email));
     }
 }

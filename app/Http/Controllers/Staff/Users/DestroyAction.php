@@ -11,8 +11,7 @@ class DestroyAction extends Controller
     {
         $user->delete();
 
-        return redirect()
-            ->route('staff.users.index')
+        return to_route('staff.users.index')
             ->with('topAlert.title', 'ユーザーを削除しました');
     }
 }

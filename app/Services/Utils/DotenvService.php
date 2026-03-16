@@ -9,14 +9,8 @@ use Jackiedo\DotenvEditor\Exceptions\KeyNotFoundException;
 
 class DotenvService
 {
-    /**
-     * @var DotenvEditor
-     */
-    private $editor;
-
-    public function __construct(DotenvEditor $editor)
+    public function __construct(private readonly DotenvEditor $editor)
     {
-        $this->editor = $editor;
     }
 
     /**
@@ -30,7 +24,7 @@ class DotenvService
     {
         try {
             return $this->editor->getValue($key);
-        } catch (KeyNotFoundException $e) {
+        } catch (KeyNotFoundException) {
             // .env ファイルにキーが存在しない場合はデフォルト値を返す
             return $default;
         }

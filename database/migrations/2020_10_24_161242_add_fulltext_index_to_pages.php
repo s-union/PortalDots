@@ -4,7 +4,7 @@ use App\Eloquents\Page;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-class AddFulltextIndexToPages extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,7 +17,6 @@ class AddFulltextIndexToPages extends Migration
             DB::statement('ALTER TABLE pages ADD FULLTEXT INDEX fulltext_index (title,body) WITH PARSER ngram');
         }
     }
-
     /**
      * Reverse the migrations.
      *
@@ -29,4 +28,4 @@ class AddFulltextIndexToPages extends Migration
             DB::statement('ALTER TABLE pages DROP INDEX fulltext_index');
         }
     }
-}
+};

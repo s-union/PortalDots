@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Pages;
 
 use App\Eloquents\Page;
@@ -12,7 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
-class ExportActionTest extends TestCase
+final class ExportActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -29,7 +31,7 @@ class ExportActionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
 
         $this->staff = User::factory()->staff()->create();
@@ -37,9 +39,7 @@ class ExportActionTest extends TestCase
         $this->pages = Page::factory(2)->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function お知らせを_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.pages.export']);
@@ -50,7 +50,7 @@ class ExportActionTest extends TestCase
             ->withSession(['staff_authorized' => true])
             ->get(route('staff.pages.export'));
 
-        $now = Carbon::now()->format('Y-m-d_H-i-s');
+        $now = \Illuminate\Support\Facades\Date::now()->format('Y-m-d_H-i-s');
 
         Excel::assertDownloaded("お知らせ一覧_{$now}.csv", function (PagesExport $export) {
             $titles = $this->pages->pluck('title');
@@ -60,9 +60,7 @@ class ExportActionTest extends TestCase
         });
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)

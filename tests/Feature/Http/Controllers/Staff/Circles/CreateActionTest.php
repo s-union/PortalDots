@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Circles;
 
 use App\Eloquents\Permission;
@@ -7,7 +9,7 @@ use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class CreateActionTest extends TestCase
+final class CreateActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -22,9 +24,7 @@ class CreateActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 企画の新規作成フォームが表示される()
     {
         Permission::create(['name' => 'staff.circles.edit']);
@@ -39,9 +39,7 @@ class CreateActionTest extends TestCase
         $responce->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は企画の新規作成フォームが表示されない()
     {
         $responce = $this->actingAs($this->staff)

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Utils;
 
 use App\Services\Utils\DotenvService;
@@ -8,11 +10,9 @@ use Jackiedo\DotenvEditor\DotenvEditor;
 use Jackiedo\DotenvEditor\Exceptions\KeyNotFoundException;
 use Tests\TestCase;
 
-class DotenvServiceTest extends TestCase
+final class DotenvServiceTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_value_値が存在すれば取得できる()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
@@ -24,9 +24,7 @@ class DotenvServiceTest extends TestCase
         $this->assertSame('exampleValue', $dotenvService->getValue('EXAMPLE_KEY'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_value_値が存在しなければデフォルト値を返す()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
@@ -41,9 +39,7 @@ class DotenvServiceTest extends TestCase
         $this->assertSame('defaultValue', $dotenvService->getValue('EXAMPLE_KEY', 'defaultValue'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_value_値が存在せずデフォルト値も未設定の場合はnullを返す()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
@@ -52,12 +48,10 @@ class DotenvServiceTest extends TestCase
 
         $dotenvService = App::make(DotenvService::class);
 
-        $this->assertSame(null, $dotenvService->getValue('EXAMPLE_KEY'));
+        $this->assertNull($dotenvService->getValue('EXAMPLE_KEY'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function save_keys()
     {
         $this->mock(DotenvEditor::class, function ($mock) {

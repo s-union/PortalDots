@@ -11,14 +11,8 @@ use App\Services\Pages\PagesService;
 
 class PatchPinAction extends Controller
 {
-    /**
-     * @var PagesService
-     */
-    private $pagesService;
-
-    public function __construct(PagesService $pagesService)
+    public function __construct(private readonly PagesService $pagesService)
     {
-        $this->pagesService = $pagesService;
     }
 
     public function __invoke(PatchPinRequest $request, Page $page)
@@ -28,8 +22,7 @@ class PatchPinAction extends Controller
 
         $this->pagesService->setPinStatusForPage($page, $isPinned);
 
-        return redirect()
-            ->route('staff.pages.index')
+        return to_route('staff.pages.index')
             ->with('topAlert.title', $isPinned ? 'お知らせを固定表示しました' : 'お知らせの固定表示を解除しました');
     }
 }

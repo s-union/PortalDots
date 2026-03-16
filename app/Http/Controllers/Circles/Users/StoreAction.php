@@ -10,11 +10,8 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreAction extends Controller
 {
-    private $circlesService;
-
-    public function __construct(CirclesService $circlesService)
+    public function __construct(private readonly CirclesService $circlesService)
     {
-        $this->circlesService = $circlesService;
     }
 
     public function __invoke(Circle $circle, Request $request)
@@ -35,8 +32,7 @@ class StoreAction extends Controller
         }
 
         if ($circle->users->contains(Auth::user())) {
-            return redirect()
-                ->route('circles.show', ['circle' => $circle])
+            return to_route('circles.show', ['circle' => $circle])
                 ->with('topAlert.title', 'あなたは既にメンバーです');
         }
 
@@ -44,8 +40,7 @@ class StoreAction extends Controller
         $this->circlesService->addMember($circle, Auth::user());
         activity()->enableLogging();
 
-        return redirect()
-            ->route('circles.show', ['circle' => $circle])
+        return to_route('circles.show', ['circle' => $circle])
             ->with('topAlert.title', "「{$circle->name}」の学園祭係(副責任者)になりました");
     }
 }

@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers\Filter;
 
 use App\GridMakers\Filter\FilterableKeyBelongsToManyOptions;
 use Tests\TestCase;
 
-class FilterableKeyBelongsToManyOptionsTest extends TestCase
+final class FilterableKeyBelongsToManyOptionsTest extends TestCase
 {
     public function instantiate()
     {
@@ -22,45 +24,35 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor()
     {
         $obj = $this->instantiate();
         $this->assertInstanceOf(FilterableKeyBelongsToManyOptions::class, $obj);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_pivot()
     {
         $obj = $this->instantiate();
         $this->assertEquals('circle_user', $obj->getPivot());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_foreign_key()
     {
         $obj = $this->instantiate();
         $this->assertEquals('circle_id', $obj->getForeignKey());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_related_key()
     {
         $obj = $this->instantiate();
         $this->assertEquals('user_id', $obj->getRelatedKey());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_choices()
     {
         $obj = $this->instantiate();
@@ -71,18 +63,14 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
         ], $obj->getChoices());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_choices_name()
     {
         $obj = $this->instantiate();
         $this->assertEquals('name', $obj->getChoicesName());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize()
     {
         $obj = $this->instantiate();

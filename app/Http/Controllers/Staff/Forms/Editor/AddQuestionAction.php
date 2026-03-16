@@ -10,11 +10,8 @@ use Carbon\Carbon;
 
 class AddQuestionAction extends Controller
 {
-    private $questionsService;
-
-    public function __construct(QuestionsService $questionsService)
+    public function __construct(private readonly QuestionsService $questionsService)
     {
-        $this->questionsService = $questionsService;
     }
 
     public function __invoke(Form $form, AddQuestionRequest $request)

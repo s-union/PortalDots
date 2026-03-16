@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Eloquents\ContactCategory;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\ContactCategory>
+ */
 class ContactCategoryFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = ContactCategory::class;
@@ -14,8 +17,8 @@ class ContactCategoryFactory extends \Illuminate\Database\Eloquent\Factories\Fac
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
-            'email' => $this->faker->email,
+            'name' => fake()->name,
+            'email' => fake()->email,
         ];
     }
 }

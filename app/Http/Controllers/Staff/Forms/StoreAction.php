@@ -13,14 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class StoreAction extends Controller
 {
-    /**
-     * @var FormsService
-     */
-    private $formsService;
-
-    public function __construct(FormsService $formsService)
+    public function __construct(private readonly FormsService $formsService)
     {
-        $this->formsService = $formsService;
     }
 
     public function __invoke(FormRequest $request)
@@ -40,8 +34,7 @@ class StoreAction extends Controller
                 $values['answerable_tags'] ?? []
             );
 
-            return redirect()
-                ->route('staff.forms.editor', ['form' => $form]);
+            return to_route('staff.forms.editor', ['form' => $form]);
         });
     }
 }

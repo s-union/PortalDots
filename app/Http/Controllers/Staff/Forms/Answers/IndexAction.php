@@ -11,7 +11,7 @@ class IndexAction extends Controller
     {
         if (isset($form->participationType)) {
             // このフォームが企画参加登録フォームの場合、企画情報管理ページへリダイレクト
-            return redirect()->route('staff.circles.participation_types.index', [
+            return to_route('staff.circles.participation_types.index', [
                 'participation_type' => $form->participationType,
             ]);
         }

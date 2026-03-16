@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Document;
@@ -9,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class DocumentsExportTest extends TestCase
+final class DocumentsExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -17,11 +19,6 @@ class DocumentsExportTest extends TestCase
      * @var DocumentsExport
      */
     private $documentsExport;
-
-    /**
-     * @var User
-     */
-    private $user;
 
     /**
      * @var Document
@@ -34,7 +31,7 @@ class DocumentsExportTest extends TestCase
 
         $this->documentsExport = App::make(DocumentsExport::class);
 
-        $this->user = User::factory()->create();
+        $user = User::factory()->create();
 
         $this->document = Document::factory()->create([
             'name' => '見たくなる資料',
@@ -47,9 +44,7 @@ class DocumentsExportTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_配布資料の情報のフォーマットが正常に行われる()
     {
         $this->assertEquals(

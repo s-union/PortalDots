@@ -15,7 +15,7 @@ return [
     // 'student_id' (学籍番号) または 'user_id` (学籍番号ではない文字列) のどちらかを指定
     'univemail_local_part' => env('PORTAL_UNIVEMAIL_LOCAL_PART'),
     // 大学提供メールアドレスのドメイン・@ より後ろの文字列を指定
-    'univemail_domain_part' => explode('|', env('PORTAL_UNIVEMAIL_DOMAIN_PART')),
+    'univemail_domain_part' => explode('|', (string) env('PORTAL_UNIVEMAIL_DOMAIN_PART')),
     // 「学籍番号」の呼称
     'student_id_name' => env('PORTAL_STUDENT_ID_NAME'),
     // 「学校発行メールアドレス」の呼称

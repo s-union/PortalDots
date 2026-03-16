@@ -22,17 +22,14 @@ class CirclesGridMaker implements GridMakable
 {
     use UseEloquent;
 
-    private FormatTextService $formatTextService;
-
     private ?ParticipationType $participationType = null;
 
     public const PARTICIPATION_FORM_QUESTIONS_KEY_PREFIX = 'participation_form_question_';
 
     public const CHECKBOX_GROUP_CONCAT_SEPARATOR = "\n";
 
-    public function __construct(FormatTextService $formatTextService)
+    public function __construct(private FormatTextService $formatTextService)
     {
-        $this->formatTextService = $formatTextService;
     }
 
     /**
@@ -259,33 +256,20 @@ class CirclesGridMaker implements GridMakable
         // カスタムフォームへの回答以外の項目
         $itemsExpectForms = [];
 
-        $keysExceptParticipationForms = array_filter($this->keys(), function ($key) {
-            return strpos($key, self::PARTICIPATION_FORM_QUESTIONS_KEY_PREFIX) !== 0;
-        });
+        $keysExceptParticipationForms = array_filter($this->keys(), fn($key) => !str_starts_with((string) $key, self::PARTICIPATION_FORM_QUESTIONS_KEY_PREFIX));
 
         foreach ($keysExceptParticipationForms as $key) {
-            switch ($key) {
-                case 'participation_type_id':
-                    $itemsExpectForms[$key] = $record->participationType;
-                    break;
-                case 'status_set_by':
-                    $itemsExpectForms[$key] = $record->statusSetBy;
-                    break;
-                case 'status_set_at':
-                    $itemsExpectForms[$key] = ! empty($record->status_set_at)
-                        ? $record->status_set_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'created_at':
-                    $itemsExpectForms[$key] = ! empty($record->created_at)
-                        ? $record->created_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'updated_at':
-                    $itemsExpectForms[$key] = ! empty($record->updated_at)
-                        ? $record->updated_at->format('Y/m/d H:i:s') : null;
-                    break;
-                default:
-                    $itemsExpectForms[$key] = $record->$key;
-            }
+            $itemsExpectForms[$key] = match ($key) {
+                'participation_type_id' => $record->participationType,
+                'status_set_by' => $record->statusSetBy,
+                'status_set_at' => ! empty($record->status_set_at)
+                    ? $record->status_set_at->format('Y/m/d H:i:s') : null,
+                'created_at' => ! empty($record->created_at)
+                    ? $record->created_at->format('Y/m/d H:i:s') : null,
+                'updated_at' => ! empty($record->updated_at)
+                    ? $record->updated_at->format('Y/m/d H:i:s') : null,
+                default => $record->$key,
+            };
         }
 
         return array_merge($itemsExpectForms, $itemsOfAnswerDetails);

@@ -9,14 +9,8 @@ use Auth;
 
 class RegenerateTokenAction extends Controller
 {
-    /**
-     * @var CirclesService
-     */
-    private $circlesService;
-
-    public function __construct(CirclesService $circlesService)
+    public function __construct(private readonly CirclesService $circlesService)
     {
-        $this->circlesService = $circlesService;
     }
 
     public function __invoke(Circle $circle)
@@ -31,8 +25,7 @@ class RegenerateTokenAction extends Controller
         $this->circlesService->regenerateInvitationToken($circle);
         activity()->enableLogging();
 
-        return redirect()
-            ->route('circles.users.index', ['circle' => $circle])
+        return to_route('circles.users.index', ['circle' => $circle])
             ->with('topAlert.title', '招待URLを新しくつくりなおしました');
     }
 }

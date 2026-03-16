@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Responders\Staff;
 
 use App\GridMakers\Filter\FilterableKey;
@@ -14,11 +16,9 @@ use Illuminate\Http\Response;
 use Mockery;
 use Tests\TestCase;
 
-class GridResponderTest extends TestCase
+final class GridResponderTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function response_set_grid_makerされていない場合は例外発生()
     {
         $this->expectException(GridMakerNotSetException::class);
@@ -29,9 +29,7 @@ class GridResponderTest extends TestCase
         $obj->response();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function response_set_requestされていない場合は例外発生()
     {
         $this->expectException(RequestNotSetException::class);
@@ -42,9 +40,7 @@ class GridResponderTest extends TestCase
         $obj->response();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function response()
     {
         $request = new Request([

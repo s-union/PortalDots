@@ -9,14 +9,8 @@ use App\Services\Forms\QuestionsService;
 
 class UpdateQuestionAction extends Controller
 {
-    /**
-     * @var QuestionsService
-     */
-    private $questionsService;
-
-    public function __construct(QuestionsService $questionsService)
+    public function __construct(private readonly QuestionsService $questionsService)
     {
-        $this->questionsService = $questionsService;
     }
 
     public function __invoke(Form $form, UpdateQuestionRequest $request)

@@ -49,7 +49,7 @@ class DatabaseService extends AbstractService
             $result = empty($mysqli->connect_error);
 
             return $result;
-        } catch (Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }

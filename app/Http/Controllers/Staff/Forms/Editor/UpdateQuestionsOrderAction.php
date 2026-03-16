@@ -9,20 +9,15 @@ use App\Services\Forms\QuestionsService;
 
 class UpdateQuestionsOrderAction extends Controller
 {
-    private $questionsService;
-
-    public function __construct(QuestionsService $questionsService)
+    public function __construct(private readonly QuestionsService $questionsService)
     {
-        $this->questionsService = $questionsService;
     }
 
     public function __invoke(Form $form, UpdateQuestionsOrderRequest $request)
     {
         $this->questionsService->updateQuestionsOrder(
             $form,
-            collect($request->questions)->mapWithKeys(function ($question) {
-                return [$question['id'] => $question['priority']];
-            })->toArray()
+            collect($request->questions)->mapWithKeys(fn($question) => [$question['id'] => $question['priority']])->toArray()
         );
     }
 }

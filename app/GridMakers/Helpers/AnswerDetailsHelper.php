@@ -54,9 +54,7 @@ class AnswerDetailsHelper
                         return "GROUP_CONCAT(CASE WHEN question_id = {$idInt} THEN answer ELSE NULL END SEPARATOR '{$separator}') AS '{$columnAlias}'";
                 }
             })
-            ->filter(function ($column) {
-                return ! is_null($column);
-            });
+            ->filter(fn($column) => ! is_null($column));
 
         $answerDetailsSubQueryColumns = ['answer_id', ...$questionColumns];
 
@@ -83,9 +81,7 @@ class AnswerDetailsHelper
 
                 return self::getFormQuestionKey($question, $questionsKeyPrefix);
             })
-                ->filter(function ($column) {
-                    return ! is_null($column);
-                })
+                ->filter(fn($column) => ! is_null($column))
                 ->all();
     }
 

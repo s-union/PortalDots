@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Users;
 
 use App\Eloquents\User;
@@ -9,13 +11,11 @@ use Mockery\MockInterface;
 use Symfony\Component\Mime\Exception\RfcComplianceException;
 use Tests\TestCase;
 
-class UpdateInfoActionTest extends TestCase
+final class UpdateInfoActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ユーザー情報更新時にメールアドレスが_rf_c違反だった場合、元の画面にエラー付きでリダイレクトされる()
     {
         $user = User::factory()->create([

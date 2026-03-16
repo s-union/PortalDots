@@ -13,36 +13,8 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreAction extends Controller
 {
-    /**
-     * @var RegisterService
-     */
-    private $registerService;
-
-    /**
-     * @var EmailService
-     */
-    private $emailService;
-
-    /**
-     * @var RunInstallService
-     */
-    private $runInstallService;
-
-    /**
-     * @var VerifyService
-     */
-    private $verifyService;
-
-    public function __construct(
-        RegisterService $registerService,
-        EmailService $emailService,
-        RunInstallService $runInstallService,
-        VerifyService $verifyService
-    ) {
-        $this->registerService = $registerService;
-        $this->emailService = $emailService;
-        $this->runInstallService = $runInstallService;
-        $this->verifyService = $verifyService;
+    public function __construct(private readonly RegisterService $registerService, private readonly EmailService $emailService, private readonly RunInstallService $runInstallService, private readonly VerifyService $verifyService)
+    {
     }
 
     public function __invoke(AdminRequest $request)
@@ -52,8 +24,7 @@ class StoreAction extends Controller
         } catch (\Exception $e) {
             $this->runInstallService->rollback();
 
-            return redirect()
-                ->back()
+            return back()
                 ->withInput()
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.keepVisible', true)
@@ -83,8 +54,7 @@ class StoreAction extends Controller
 
         Auth::login($user);
 
-        return redirect()
-            ->route('verification.notice')
+        return to_route('verification.notice')
             ->with('topAlert.keepVisible', true)
             ->with('topAlert.title', 'インストールが完了しました！')
             ->with('topAlert.body', '最後に、管理者ユーザーのメール認証を行ってください');

@@ -119,9 +119,7 @@ class FormatTextService
             '(',
             ')',
         ];
-        $escaped_special_chars = array_map(function ($char) {
-            return "\\{$char}";
-        }, $special_chars);
+        $escaped_special_chars = array_map(fn($char) => "\\{$char}", $special_chars);
 
         return str_replace($special_chars, $escaped_special_chars, $text);
     }

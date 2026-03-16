@@ -9,14 +9,8 @@ use App\Services\Forms\FormEditorService;
 
 class UpdateFormAction extends Controller
 {
-    /**
-     * @var FormEditorService
-     */
-    private $formEditorService;
-
-    public function __construct(FormEditorService $formEditorService)
+    public function __construct(private readonly FormEditorService $formEditorService)
     {
-        $this->formEditorService = $formEditorService;
     }
 
     public function __invoke(int $form_id, UpdateFormRequest $request)

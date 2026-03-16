@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Forms\Answers;
 
 use App\Eloquents\Answer;
@@ -11,7 +13,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class EditActionTest extends TestCase
+final class EditActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -41,16 +43,13 @@ class EditActionTest extends TestCase
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider 受付期間中かどうかに応じて表示が切り替わる_provider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('受付期間中かどうかに応じて表示が切り替わる_provider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 受付期間中かどうかに応じて表示が切り替わる(
         CarbonImmutable $today,
         bool $is_answerable
     ) {
-        Carbon::setTestNowAndTimezone($today);
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone($today);
         CarbonImmutable::setTestNowAndTimezone($today);
 
         $response = $this
@@ -71,22 +70,18 @@ class EditActionTest extends TestCase
         }
     }
 
-    public static function 受付期間中かどうかに応じて表示が切り替わる_provider()
+    public static function 受付期間中かどうかに応じて表示が切り替わる_provider(): \Iterator
     {
-        return [
-            '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false],
-            '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false],
-            '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true],
-            '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true],
-            '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true],
-            '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false],
-            '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false],
-        ];
+        yield '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false];
+        yield '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false];
+        yield '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true];
+        yield '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true];
+        yield '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true];
+        yield '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false];
+        yield '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false];
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 自分が所属していない企画の回答にはアクセスできない()
     {
         $anotherUser = User::factory()->create();
@@ -105,9 +100,7 @@ class EditActionTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 非公開のフォームにはアクセスできない()
     {
         $privateForm = Form::factory()->private()->create();

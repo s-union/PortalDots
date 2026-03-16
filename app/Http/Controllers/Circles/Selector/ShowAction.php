@@ -11,20 +11,8 @@ use Illuminate\Support\Facades\Auth;
 
 class ShowAction extends Controller
 {
-    /**
-     * @var Router
-     */
-    private $router;
-
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    public function __construct(Router $router, SelectorService $selectorService)
+    public function __construct(private readonly Router $router, private readonly SelectorService $selectorService)
     {
-        $this->router = $router;
-        $this->selectorService = $selectorService;
     }
 
     public function __invoke(Request $request)

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Answers\Uploads;
 
 use App\Eloquents\Form;
@@ -13,7 +15,7 @@ use Illuminate\Http\File;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class DownloadZipActionTest extends TestCase
+final class DownloadZipActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -34,9 +36,7 @@ class DownloadZipActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできる()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
@@ -59,9 +59,7 @@ class DownloadZipActionTest extends TestCase
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできるファイルがない時に適切にエラー表示される()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
@@ -80,9 +78,7 @@ class DownloadZipActionTest extends TestCase
         $response->assertSessionHas('topAlert.title');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function zip_archive非対応時に適切にエラー表示される()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
@@ -101,9 +97,7 @@ class DownloadZipActionTest extends TestCase
         $response->assertSessionHas('topAlert.title');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はダウンロードできない()
     {
         $response = $this->actingAs($this->staff)
@@ -113,9 +107,7 @@ class DownloadZipActionTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ以外はダウンロードできない()
     {
         $response = $this->actingAs(User::factory()->create())

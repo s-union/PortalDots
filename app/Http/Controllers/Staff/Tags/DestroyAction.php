@@ -11,8 +11,7 @@ class DestroyAction extends Controller
     {
         $tag->delete();
 
-        return redirect()
-            ->route('staff.tags.index')
+        return to_route('staff.tags.index')
             ->with('topAlert.title', 'タグを削除しました');
     }
 }

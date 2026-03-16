@@ -23,8 +23,7 @@ class DestroyAction extends Controller
 
         $circle->delete();
 
-        return redirect()
-            ->route('home')
+        return to_route('home')
             ->with('topAlert.title', '企画参加登録を削除しました');
     }
 }

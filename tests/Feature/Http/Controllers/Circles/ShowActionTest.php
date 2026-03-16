@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
 use App\Eloquents\Circle;
@@ -9,7 +11,7 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class ShowActionTest extends BaseTestCase
+final class ShowActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
@@ -46,13 +48,11 @@ class ShowActionTest extends BaseTestCase
         ]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 提出済み企画の場合で未認証ユーザーには認証ページを表示する()
     {
         $response = $this->actingAs($this->user)
@@ -70,9 +70,7 @@ class ShowActionTest extends BaseTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 未提出の企画の場合は認証画面を表示しない()
     {
         $response = $this->actingAs($this->user)
@@ -85,9 +83,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function メンバーは企画の詳細を表示できる()
     {
         $response = $this
@@ -102,9 +98,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 未提出の場合副責任者は削除ボタンが表示される()
     {
         $response = $this
@@ -119,9 +113,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertSee('この企画から抜ける');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 提出済の場合副責任者は削除ボタンが表示されない()
     {
         $this->circle->submitted_at = now();
@@ -140,9 +132,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertDontSee('この企画から抜ける');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 責任者には削除ボタンを表示しない()
     {
         $response = $this
@@ -157,9 +147,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertDontSee('この企画から抜ける');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 部外者は企画詳細を表示できない()
     {
         $anotherUser = User::factory()->create();
@@ -176,9 +164,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 使用場所が表示される()
     {
         $place = Place::factory()->create();
@@ -197,9 +183,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertSee($place->name);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 場所が登録されていないときは使用場所を表示しない()
     {
         $response = $this

@@ -12,11 +12,8 @@ use Illuminate\Support\HtmlString;
 
 class PostAction extends Controller
 {
-    private $contactsService;
-
-    public function __construct(ContactsService $contactsService)
+    public function __construct(private readonly ContactsService $contactsService)
     {
-        $this->contactsService = $contactsService;
     }
 
     public function __invoke(ContactFormRequest $request)
@@ -34,8 +31,7 @@ class PostAction extends Controller
 
         $this->contactsService->create($circle, $sender, $request->contact_body, $category);
 
-        return redirect()
-            ->route('contacts')
+        return to_route('contacts')
             ->with('topAlert.title', 'お問い合わせを受け付けました。')
             ->with('topAlert.body', new HtmlString(nl2br(e($request->contact_body))));
     }

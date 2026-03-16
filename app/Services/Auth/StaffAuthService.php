@@ -48,7 +48,7 @@ final class StaffAuthService
         session([
             self::SESSION_KEY_USER_ID => $user->id,
             self::SESSION_KEY_VERIFY_CODE_HASH => Hash::make($verify_code),
-            self::SESSION_KEY_EXPIRED_AT => Carbon::now()->addMinutes(5)->format('Y-m-d H:i:s'),
+            self::SESSION_KEY_EXPIRED_AT => \Illuminate\Support\Facades\Date::now()->addMinutes(5)->format('Y-m-d H:i:s'),
         ]);
 
         return $verify_code;
@@ -70,7 +70,7 @@ final class StaffAuthService
         $result = isset($user_id) && isset($verify_code_hash) && isset($expired_at) &&
             $user->id === $user_id &&
             Hash::check($verify_code, $verify_code_hash) &&
-            Carbon::now()->lte($expired_at);
+            \Illuminate\Support\Facades\Date::now()->lte($expired_at);
 
         if ($result) {
             session([self::SESSION_KEY_STAFF_AUTHORIZED => true]);

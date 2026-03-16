@@ -15,11 +15,6 @@ class Document extends Model
     use IsNewTrait;
     use LogsActivity;
 
-    protected $casts = [
-        'is_public' => 'bool',
-        'is_important' => 'bool',
-    ];
-
     protected $fillable = [
         'name',
         'description',
@@ -59,7 +54,7 @@ class Document extends Model
         parent::boot();
 
         static::addGlobalScope('updated_at', function (Builder $builder) {
-            $builder->orderBy('updated_at', 'desc');
+            $builder->latest('updated_at');
         });
     }
 
@@ -74,8 +69,15 @@ class Document extends Model
      * @param  Builder  $query
      * @return Builder
      */
-    public function scopePublic($query)
+    protected function scopePublic($query)
     {
         return $query->where('is_public', true);
+    }
+    protected function casts(): array
+    {
+        return [
+            'is_public' => 'bool',
+            'is_important' => 'bool',
+        ];
     }
 }

@@ -10,14 +10,8 @@ use App\Services\Forms\Exceptions\ZipArchiveNotSupportedException;
 
 class DownloadZipAction extends Controller
 {
-    /**
-     * @var DownloadZipService
-     */
-    private $downloadZipService;
-
-    public function __construct(DownloadZipService $downloadZipService)
+    public function __construct(private readonly DownloadZipService $downloadZipService)
     {
-        $this->downloadZipService = $downloadZipService;
     }
 
     public function __invoke(Form $form)
@@ -29,9 +23,7 @@ class DownloadZipAction extends Controller
         }]);
 
         $upload_question_ids = $form->questions->pluck('id')->all();
-        $flatten_details = $form->answers->filter(function ($answer) {
-            return ! empty($answer->circle->submitted_at);
-        })->pluck('details')->flatten();
+        $flatten_details = $form->answers->filter(fn($answer) => ! empty($answer->circle->submitted_at))->pluck('details')->flatten();
 
         $uploaded_file_paths = [];
 
@@ -45,10 +37,10 @@ class DownloadZipAction extends Controller
             $zip_path = $this->downloadZipService->makeZip($form, $uploaded_file_paths);
 
             return response()->download($zip_path);
-        } catch (NoDownloadFileExistException $e) {
+        } catch (NoDownloadFileExistException) {
             return back()
                 ->with('topAlert.title', 'ダウンロードできるファイルはありません');
-        } catch (ZipArchiveNotSupportedException $e) {
+        } catch (ZipArchiveNotSupportedException) {
             return back()
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.title', 'このサーバーは、ZIPダウンロードに対応していません');

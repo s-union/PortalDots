@@ -9,14 +9,8 @@ use Exception;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var MailService
-     */
-    private $mailService;
-
-    public function __construct(MailService $mailService)
+    public function __construct(private readonly MailService $mailService)
     {
-        $this->mailService = $mailService;
     }
 
     public function __invoke(MailRequest $request)

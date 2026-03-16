@@ -27,8 +27,7 @@ class UpdateAction extends Controller
 
         $user->save();
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', 'ユーザーを更新しました');
     }
 }

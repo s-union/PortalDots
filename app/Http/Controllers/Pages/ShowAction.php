@@ -10,22 +10,8 @@ use Illuminate\Support\Facades\Auth;
 
 class ShowAction extends Controller
 {
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    /**
-     * @var ReadsService
-     */
-    private $readsService;
-
-    public function __construct(
-        SelectorService $selectorService,
-        ReadsService $readsService
-    ) {
-        $this->selectorService = $selectorService;
-        $this->readsService = $readsService;
+    public function __construct(private readonly SelectorService $selectorService, private readonly ReadsService $readsService)
+    {
     }
 
     public function __invoke(Page $page)

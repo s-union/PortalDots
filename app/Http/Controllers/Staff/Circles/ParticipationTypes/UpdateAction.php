@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\DB;
 class UpdateAction extends Controller
 {
     public function __construct(
-        private FormEditorService $formEditorService,
-        private ParticipationTypesService $participationTypesService
+        private readonly FormEditorService $formEditorService,
+        private readonly ParticipationTypesService $participationTypesService
     ) {}
 
     public function __invoke(
@@ -41,14 +41,12 @@ class UpdateAction extends Controller
             } catch (DenyCreateTagsException $e) {
                 DB::rollBack();
 
-                return redirect()
-                    ->back()
+                return back()
                     ->withInput()
                     ->withErrors(['tags' => $e->getMessage()]);
             }
 
-            return redirect()
-                ->route('staff.circles.participation_types.edit', ['participation_type' => $participationType])
+            return to_route('staff.circles.participation_types.edit', ['participation_type' => $participationType])
                 ->with('topAlert.title', '変更を保存しました');
         });
     }

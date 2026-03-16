@@ -12,20 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var CirclesService
-     */
-    private $circlesService;
-
-    /**
-     * @var AnswersService
-     */
-    private $answersService;
-
-    public function __construct(CirclesService $circlesService, AnswersService $answersService)
+    public function __construct(private readonly CirclesService $circlesService, private readonly AnswersService $answersService)
     {
-        $this->circlesService = $circlesService;
-        $this->answersService = $answersService;
     }
 
     public function __invoke(CircleRequest $request, Circle $circle)
@@ -69,11 +57,9 @@ class UpdateAction extends Controller
         activity()->enableLogging();
 
         if ($circle->can_change_group_name) {
-            return redirect()
-                ->route('circles.users.index', ['circle' => $circle]);
+            return to_route('circles.users.index', ['circle' => $circle]);
         } else {
-            return redirect()
-                ->route('circles.confirm', ['circle' => $circle]);
+            return to_route('circles.confirm', ['circle' => $circle]);
         }
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Forms;
 
 use App\Eloquents\Form;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class FormsServiceTest extends TestCase
+final class FormsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -28,9 +30,7 @@ class FormsServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function copy_form_申請の複製ができる()
     {
         $form = $this->formsService->copyForm($this->form);

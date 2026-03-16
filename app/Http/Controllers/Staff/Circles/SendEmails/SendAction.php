@@ -27,8 +27,7 @@ class SendAction extends Controller
         }
 
         if ($recipients->isEmpty()) {
-            return redirect()
-                ->route('staff.circles.email', ['circle' => $circle])
+            return to_route('staff.circles.email', ['circle' => $circle])
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.title', '宛先が存在しないため送信できませんでした')
                 ->withInput();
@@ -46,7 +45,7 @@ class SendAction extends Controller
             new Collection([Auth::user()])
         );
 
-        return redirect()->route('staff.circles.email', ['circle' => $circle])
+        return to_route('staff.circles.email', ['circle' => $circle])
             ->with('topAlert.title', "件名：「{$request->subject}」を送信予約しました")
             ->with('topAlert.body', 'メールを送信するのに時間がかかる場合があります。');
     }

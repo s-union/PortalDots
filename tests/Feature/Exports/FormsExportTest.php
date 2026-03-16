@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Form;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class FormsExportTest extends TestCase
+final class FormsExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -20,19 +22,9 @@ class FormsExportTest extends TestCase
     private $formsExport;
 
     /**
-     * @var User
-     */
-    private $user;
-
-    /**
      * @var Form
      */
     private $form;
-
-    /**
-     * @var Tag
-     */
-    private $tag;
 
     protected function setUp(): void
     {
@@ -40,22 +32,20 @@ class FormsExportTest extends TestCase
 
         $this->formsExport = App::make(FormsExport::class);
 
-        $this->user = User::factory()->create();
+        $user = User::factory()->create();
 
         $this->form = Form::factory()->create([
             'name' => '場所登録申請',
             'max_answers' => 2,
         ]);
 
-        $this->tag = Tag::factory()->create([
+        $tag = Tag::factory()->create([
             'name' => '屋内',
         ]);
-        $this->form->answerableTags()->attach($this->tag->id);
+        $this->form->answerableTags()->attach($tag->id);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_フォーム情報のフォーマットが正常に行われる()
     {
         $this->assertEquals(

@@ -15,14 +15,8 @@ use Illuminate\Support\Facades\Storage;
 
 class AnswerDetailsService
 {
-    /**
-     * @var ActivityLogService
-     */
-    private $activityLogService;
-
-    public function __construct(ActivityLogService $activityLogService)
+    public function __construct(private readonly ActivityLogService $activityLogService)
     {
-        $this->activityLogService = $activityLogService;
     }
 
     /**

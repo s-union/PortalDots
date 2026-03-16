@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Pages;
 
 use App\Eloquents\Page;
@@ -10,7 +12,7 @@ use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class DestroyActionTest extends TestCase
+final class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -23,9 +25,6 @@ class DestroyActionTest extends TestCase
     /** @var Page */
     private $page;
 
-    /** @var Read */
-    private $read;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -33,12 +32,10 @@ class DestroyActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
         $this->tag = Tag::factory()->create();
         $this->page = Page::factory()->create();
-        $this->read = Read::factory(5)->create(['page_id' => $this->page->id]);
+        $read = Read::factory(5)->create(['page_id' => $this->page->id]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function お知らせを削除できる()
     {
         Permission::create(['name' => 'staff.pages.delete']);
@@ -85,9 +82,7 @@ class DestroyActionTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はお知らせを削除できない()
     {
         $this->actingAs($this->staff)

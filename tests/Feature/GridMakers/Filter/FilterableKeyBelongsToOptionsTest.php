@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers\Filter;
 
 use App\GridMakers\Filter\FilterableKey;
@@ -7,7 +9,7 @@ use App\GridMakers\Filter\FilterableKeyBelongsToOptions;
 use App\GridMakers\Filter\FilterableKeysDict;
 use Tests\TestCase;
 
-class FilterableKeyBelongsToOptionsTest extends TestCase
+final class FilterableKeyBelongsToOptionsTest extends TestCase
 {
     public function instantiate()
     {
@@ -21,27 +23,21 @@ class FilterableKeyBelongsToOptionsTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor()
     {
         $obj = $this->instantiate();
         $this->assertInstanceOf(FilterableKeyBelongsToOptions::class, $obj);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_to()
     {
         $obj = $this->instantiate();
         $this->assertEquals('users', $obj->getTo());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_keys()
     {
         $obj = $this->instantiate();
@@ -55,9 +51,7 @@ class FilterableKeyBelongsToOptionsTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize()
     {
         $obj = $this->instantiate();

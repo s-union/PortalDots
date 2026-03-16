@@ -13,14 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class FormsService
 {
-    /**
-     * @var ActivityLogService
-     */
-    private $activityLogService;
-
-    public function __construct(ActivityLogService $activityLogService)
+    public function __construct(private readonly ActivityLogService $activityLogService)
     {
-        $this->activityLogService = $activityLogService;
     }
 
     /**
@@ -73,12 +67,10 @@ class FormsService
             $form->answerableTags()->sync($exist_tags->pluck('id')->all());
 
             // ログに残す
-            $map_function = function ($tag) {
-                return [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                ];
-            };
+            $map_function = (fn($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+            ]);
 
             $this->activityLogService->logOnlyAttributesChanged(
                 'form_answerable_tag',
@@ -147,12 +139,10 @@ class FormsService
             $form->answerableTags()->sync($exist_tags->pluck('id')->all());
 
             // ログに残す
-            $map_function = function ($tag) {
-                return [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                ];
-            };
+            $map_function = (fn($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+            ]);
 
             $this->activityLogService->logOnlyAttributesChanged(
                 'form_answerable_tag',
@@ -191,9 +181,7 @@ class FormsService
             $form_copy->save();
 
             $questions = $form->questions()->get();
-            $questions_copy = $questions->map(function ($question) {
-                return $question->replicate(['form_id']);
-            });
+            $questions_copy = $questions->map(fn($question) => $question->replicate(['form_id']));
 
             $form_copy->questions()->createMany($questions_copy->toArray());
 

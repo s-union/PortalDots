@@ -18,10 +18,6 @@ class Place extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'type' => 'int',
-    ];
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -38,5 +34,11 @@ class Place extends Model
     public function circles()
     {
         return $this->belongsToMany(Circle::class, 'booths')->using(Booth::class);
+    }
+    protected function casts(): array
+    {
+        return [
+            'type' => 'int',
+        ];
     }
 }

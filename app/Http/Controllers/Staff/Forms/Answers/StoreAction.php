@@ -11,14 +11,8 @@ use Auth;
 
 class StoreAction extends Controller
 {
-    /**
-     * @var AnswersService
-     */
-    private $answersService;
-
-    public function __construct(AnswersService $answersService)
+    public function __construct(private readonly AnswersService $answersService)
     {
-        $this->answersService = $answersService;
     }
 
     public function __invoke(Form $form, AnswerRequest $request)
@@ -36,8 +30,7 @@ class StoreAction extends Controller
                 $this->answersService->sendAll($answer, Auth::user(), true);
             }
 
-            return redirect()
-                ->route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answer])
+            return to_route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answer])
                 ->with('topAlert.title', '回答を作成しました — 回答ID : '.$answer->id)
                 ->with('topAlert.body', '以下のフォームより、回答を修正することもできます');
         }

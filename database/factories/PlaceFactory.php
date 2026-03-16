@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Eloquents\Place;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Place>
+ */
 class PlaceFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Place::class;
@@ -14,8 +17,8 @@ class PlaceFactory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
-            'type' => $this->faker->numberBetween(1, 3),
+            'name' => fake()->name,
+            'type' => fake()->numberBetween(1, 3),
         ];
     }
 }

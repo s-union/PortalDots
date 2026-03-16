@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class DropCreatedByAndUpdatedByColumns extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -27,7 +27,6 @@ class DropCreatedByAndUpdatedByColumns extends Migration
             $table->dropColumn('updated_by');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -49,4 +48,4 @@ class DropCreatedByAndUpdatedByColumns extends Migration
             $table->unsignedInteger('updated_by')->after('updated_at');
         });
     }
-}
+};

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Documents;
 
 use App\Eloquents\Document;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
 
-class UpdateActionTest extends TestCase
+final class UpdateActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,9 +27,7 @@ class UpdateActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function documents_serviceのupdate_documentが呼び出される()
     {
         Permission::create(['name' => 'staff.documents.edit']);
@@ -37,9 +37,7 @@ class UpdateActionTest extends TestCase
 
         $this->mock(DocumentsService::class, function ($mock) use ($document) {
             $mock->shouldReceive('updateDocument')->once()->with(
-                Mockery::on(function ($arg) use ($document) {
-                    return $document->id === $arg->id;
-                }),
+                Mockery::on(fn($arg) => $document->id === $arg->id),
                 'document name',
                 'document description',
                 null,
@@ -65,9 +63,7 @@ class UpdateActionTest extends TestCase
         $response->assertRedirect(route('staff.documents.edit', ['document' => $document]));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は配布資料を更新できない()
     {
         $document = Document::factory()->create();

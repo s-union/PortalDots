@@ -44,9 +44,9 @@ class ParticipationType extends Model
 
     protected $appends = ['form_name'];
 
-    public function getFormNameAttribute(): string
+    protected function formName(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return '企画参加登録';
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => '企画参加登録');
     }
 
     public function form()
@@ -64,14 +64,14 @@ class ParticipationType extends Model
         return $this->belongsToMany(Tag::class);
     }
 
-    public function scopeOpen(Builder $query)
+    protected function scopeOpen(Builder $query)
     {
         return $query->whereHas('form', function (Builder $query) {
             $query->open();
         });
     }
 
-    public function scopePublic(Builder $query)
+    protected function scopePublic(Builder $query)
     {
         return $query->whereHas('form', function (Builder $query) {
             $query->public();

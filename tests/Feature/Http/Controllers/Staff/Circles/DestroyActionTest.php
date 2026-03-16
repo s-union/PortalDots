@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Circles;
 
 use App\Eloquents\Answer;
@@ -12,30 +14,18 @@ use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class DestroyActionTest extends TestCase
+final class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
     /** @var User */
     private $staff;
 
-    /** @var User */
-    private $user;
-
     /** @var Circle */
     private $circle;
 
-    /** @var Place */
-    private $place;
-
     /** @var Form */
     private $form;
-
-    /** @var Answer */
-    private $answer;
-
-    /** @var Tag */
-    private $tag;
 
     protected function setUp(): void
     {
@@ -43,27 +33,25 @@ class DestroyActionTest extends TestCase
 
         $this->staff = User::factory()->staff()->create();
 
-        $this->user = User::factory()->create();
+        $user = User::factory()->create();
         $this->circle = Circle::factory()->create();
 
-        $this->place = Place::factory()->create();
+        $place = Place::factory()->create();
 
         $this->form = Form::factory()->create();
-        $this->answer = Answer::factory()->create([
+        $answer = Answer::factory()->create([
             'form_id' => $this->form->id,
             'circle_id' => $this->circle->id,
         ]);
 
-        $this->tag = Tag::factory()->create();
+        $tag = Tag::factory()->create();
 
-        $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
-        $this->circle->places()->attach($this->place->id);
-        $this->circle->tags()->attach($this->tag->id);
+        $user->circles()->attach($this->circle->id, ['is_leader' => true]);
+        $this->circle->places()->attach($place->id);
+        $this->circle->tags()->attach($tag->id);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 企画を削除すると関連する情報も削除される()
     {
         Permission::create(['name' => 'staff.circles.delete']);
@@ -83,9 +71,7 @@ class DestroyActionTest extends TestCase
         $this->assertDatabaseMissing('booths', ['circle_id' => $this->circle->id]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は企画を削除できない()
     {
         $responce = $this->actingAs($this->staff)

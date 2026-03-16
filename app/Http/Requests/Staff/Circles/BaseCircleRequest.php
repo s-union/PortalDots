@@ -80,7 +80,7 @@ class BaseCircleRequest extends FormRequest
 
         $non_registered_member_ids = str_replace(["\r\n", "\r", "\n"], "\n", $this->members);
         $non_registered_member_ids = explode("\n", $non_registered_member_ids);
-        $non_registered_member_ids = array_filter($non_registered_member_ids, 'strlen');
+        $non_registered_member_ids = array_filter($non_registered_member_ids, strlen(...));
 
         $members = $this->user->getByStudentIdIn($non_registered_member_ids);
 

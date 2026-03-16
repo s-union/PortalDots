@@ -11,14 +11,8 @@ use Illuminate\Http\Request;
  */
 class DenyIfInstalled
 {
-    /**
-     * @var DotenvService
-     */
-    private $dotenvService;
-
-    public function __construct(DotenvService $dotenvService)
+    public function __construct(private readonly DotenvService $dotenvService)
     {
-        $this->dotenvService = $dotenvService;
     }
 
     /**

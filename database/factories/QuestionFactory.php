@@ -8,6 +8,9 @@ use App\Eloquents\Form;
 use App\Eloquents\Question;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Question>
+ */
 class QuestionFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Question::class;
@@ -23,7 +26,7 @@ Other
 EOL;
 
         static $priority = 0;
-        $type = $this->faker->randomElement([
+        $type = fake()->randomElement([
             'heading',
             'text',
             'textarea',
@@ -35,13 +38,11 @@ EOL;
         ]);
 
         return [
-            'form_id' => function () {
-                return Form::factory()->create()->id;
-            },
-            'name' => $this->faker->name,
-            'description' => $this->faker->text,
+            'form_id' => fn() => Form::factory()->create()->id,
+            'name' => fake()->name,
+            'description' => fake()->text,
             'type' => $type,
-            'is_required' => $this->faker->boolean,
+            'is_required' => fake()->boolean,
             'number_min' => mt_rand(0, 40),
             'number_max' => mt_rand(50, 100),
             'allowed_types' => ($type === 'upload' ? 'png|jpg|jpeg|gif' : null),

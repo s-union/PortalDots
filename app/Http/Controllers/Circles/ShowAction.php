@@ -9,15 +9,8 @@ use Carbon\CarbonImmutable;
 
 class ShowAction extends Controller
 {
-    /**
-     * @var AnswerDetailsService
-     */
-    private $answerDetailsService;
-
-    public function __construct(
-        AnswerDetailsService $answerDetailsService
-    ) {
-        $this->answerDetailsService = $answerDetailsService;
+    public function __construct(private readonly AnswerDetailsService $answerDetailsService)
+    {
     }
 
     public function __invoke(Circle $circle)
@@ -45,7 +38,6 @@ class ShowAction extends Controller
                     ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : []);
         }
 
-        return redirect()
-            ->route('circles.auth', ['circle' => $circle]);
+        return to_route('circles.auth', ['circle' => $circle]);
     }
 }

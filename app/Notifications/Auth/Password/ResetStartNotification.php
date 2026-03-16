@@ -12,29 +12,22 @@ class ResetStartNotification extends Notification
     use Queueable;
 
     /**
-     * 受信者
-     *
-     * @var User
-     */
-    private $user;
-
-    /**
-     * パスワード再設定手続きを進めるための URL
-     *
-     * @var string
-     */
-    private $reset_url;
-
-    /**
      * Create a new notification instance.
      *
      * @param  User  $user  受信者
      * @return void
      */
-    public function __construct(User $user, string $reset_url)
+    public function __construct(
+        /**
+         * 受信者
+         */
+        private User $user,
+        /**
+         * パスワード再設定手続きを進めるための URL
+         */
+        private string $reset_url
+    )
     {
-        $this->user = $user;
-        $this->reset_url = $reset_url;
     }
 
     /**

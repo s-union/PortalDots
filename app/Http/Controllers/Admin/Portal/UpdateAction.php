@@ -25,8 +25,7 @@ class UpdateAction extends Controller
             ? 'true' : 'false';
         $this->portalService->updateInfo($info);
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', '変更を保存しました');
     }
 }

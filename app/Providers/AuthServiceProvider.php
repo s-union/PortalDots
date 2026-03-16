@@ -41,32 +41,22 @@ class AuthServiceProvider extends ServiceProvider
                 session()->get('staff_authorized') ? true : null;
         });
 
-        Gate::guessPolicyNamesUsing(function ($modelClass) {
-            return 'App\\Policies\\'.class_basename($modelClass).'Policy';
-        });
+        Gate::guessPolicyNamesUsing(fn($modelClass) => 'App\\Policies\\'.class_basename($modelClass).'Policy');
 
-        Auth::provider('app', function (Application $app, array $config) {
-            return new AppUserProvider($app['hash'], $config['model']);
-        });
+        Auth::provider('app', fn(Application $app, array $config) => new AppUserProvider($app['hash'], $config['model']));
 
         // メール認証が完了している場合のみ使える機能
-        Gate::define('use-all-features', function (User $user) {
-            return $user->areBothEmailsVerified();
-        });
+        Gate::define('use-all-features', fn(User $user) => $user->areBothEmailsVerified());
 
         // スタッフ
-        Gate::define('staff', function (User $user) {
-            return $user->is_staff === true;
-        });
+        Gate::define('staff', fn(User $user) => $user->is_staff === true);
 
         // 管理者
-        Gate::define('admin', function (User $user) {
-            return $user->is_admin === true;
-        });
+        Gate::define('admin', fn(User $user) => $user->is_admin === true);
 
-        Gate::define('circle.belongsTo', 'App\Policies\Circle\BelongsPolicy');
-        Gate::define('circle.update', 'App\Policies\Circle\UpdatePolicy');
-        Gate::define('circle.create', 'App\Policies\Circle\CreatePolicy');
-        Gate::define('circle.updateGroupName', 'App\Policies\Circle\UpdateGroupNamePolicy');
+        Gate::define('circle.belongsTo', \App\Policies\Circle\BelongsPolicy::class);
+        Gate::define('circle.update', \App\Policies\Circle\UpdatePolicy::class);
+        Gate::define('circle.create', \App\Policies\Circle\CreatePolicy::class);
+        Gate::define('circle.updateGroupName', \App\Policies\Circle\UpdateGroupNamePolicy::class);
     }
 }

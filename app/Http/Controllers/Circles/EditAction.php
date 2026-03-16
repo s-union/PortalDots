@@ -9,12 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class EditAction extends Controller
 {
-    private $answerDetailsService;
-
-    public function __construct(
-        AnswerDetailsService $answerDetailsService
-    ) {
-        $this->answerDetailsService = $answerDetailsService;
+    public function __construct(private readonly AnswerDetailsService $answerDetailsService)
+    {
     }
 
     public function __invoke(Circle $circle)

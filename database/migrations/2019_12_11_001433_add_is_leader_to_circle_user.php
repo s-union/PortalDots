@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddIsLeaderToCircleUser extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,7 +17,6 @@ class AddIsLeaderToCircleUser extends Migration
             $table->boolean('is_leader')->default(false)->after('user_id');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -29,4 +28,4 @@ class AddIsLeaderToCircleUser extends Migration
             $table->dropColumn('is_leader');
         });
     }
-}
+};

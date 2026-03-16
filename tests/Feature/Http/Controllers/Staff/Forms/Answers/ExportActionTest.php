@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Answers;
 
 use App\Eloquents\Answer;
@@ -16,7 +18,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
-class ExportActionTest extends TestCase
+final class ExportActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -36,16 +38,6 @@ class ExportActionTest extends TestCase
     private $form;
 
     /**
-     * @var Question
-     */
-    private $question;
-
-    /**
-     * @var Answer
-     */
-    private $answer;
-
-    /**
      * @var detail
      */
     private $detail;
@@ -53,7 +45,7 @@ class ExportActionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
 
         $this->staff = User::factory()->staff()->create();
@@ -63,21 +55,19 @@ class ExportActionTest extends TestCase
         $this->form = Form::factory()->create([
             'name' => '備品貸出',
         ]);
-        $this->question = Question::factory()->create([
+        $question = Question::factory()->create([
             'form_id' => $this->form->id,
         ]);
-        $this->answer = Answer::factory()->create([
+        $answer = Answer::factory()->create([
             'form_id' => $this->form->id,
             'circle_id' => $this->circle->id,
         ]);
         $this->detail = AnswerDetail::factory()->create([
-            'answer_id' => $this->answer->id,
+            'answer_id' => $answer->id,
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 回答を_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
@@ -88,17 +78,13 @@ class ExportActionTest extends TestCase
             ->withSession(['staff_authorized' => true])
             ->get(route('staff.forms.answers.export', ['form' => $this->form]));
 
-        $now = Carbon::now()->format('Y-m-d_H-i-s');
+        $now = \Illuminate\Support\Facades\Date::now()->format('Y-m-d_H-i-s');
 
-        Excel::assertDownloaded("備品貸出_回答一覧_{$now}.csv", function (AnswersExport $export) {
-            return $export->collection()->first()->circle->name === $this->circle->name
-                && $export->collection()->first()->details->contains('answer', $this->detail->answer);
-        });
+        Excel::assertDownloaded("備品貸出_回答一覧_{$now}.csv", fn(AnswersExport $export) => $export->collection()->first()->circle->name === $this->circle->name
+            && $export->collection()->first()->details->contains('answer', $this->detail->answer));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)

@@ -89,8 +89,8 @@ class ActivityLogGridMaker implements GridMakable
      */
     public function filterableKeys(): FilterableKeysDict
     {
-        $log_names = array_keys($this->getAllLogNames());
-        $descriptions = array_keys($this->getAllDescriptions());
+        $log_names = array_keys(static::getAllLogNames());
+        $descriptions = array_keys(static::getAllDescriptions());
 
         return new FilterableKeysDict([
             'id' => FilterableKey::number(),
@@ -140,8 +140,8 @@ class ActivityLogGridMaker implements GridMakable
     {
         $item = [];
 
-        $log_names_dict = $this->getAllLogNames();
-        $descriptions_dict = $this->getAllDescriptions();
+        $log_names_dict = static::getAllLogNames();
+        $descriptions_dict = static::getAllDescriptions();
 
         foreach ($this->keys() as $key) {
             switch ($key) {

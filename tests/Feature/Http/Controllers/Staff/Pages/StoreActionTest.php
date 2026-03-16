@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Pages;
 
 use App\Eloquents\Document;
@@ -11,7 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
 
-class StoreActionTest extends TestCase
+final class StoreActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -32,9 +34,7 @@ class StoreActionTest extends TestCase
         $this->document = Document::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function お知らせを作成できる()
     {
         Permission::create(['name' => 'staff.pages.edit']);
@@ -44,9 +44,7 @@ class StoreActionTest extends TestCase
             $mock->shouldReceive('createPage')->once()->with(
                 'お知らせのタイトル',
                 "本文です\n\n# 見出し\n- リストです\n- リストです",
-                Mockery::on(function ($arg) {
-                    return $this->staff->id === $arg->id && $this->staff->name === $arg->name;
-                }),
+                Mockery::on(fn($arg) => $this->staff->id === $arg->id && $this->staff->name === $arg->name),
                 'スタッフ用メモです！123',
                 ['Cブース', '屋外模擬店'],
                 [$this->document->id],
@@ -71,9 +69,7 @@ class StoreActionTest extends TestCase
         $response->assertRedirect(route('staff.pages.create'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はお知らせを作成できない()
     {
         $response = $this->actingAs($this->staff)
@@ -92,9 +88,7 @@ class StoreActionTest extends TestCase
         $response->assertForbidden();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function タイトルと本文が未入力だとエラーが発生する()
     {
         Permission::create(['name' => 'staff.pages.edit']);
@@ -109,9 +103,7 @@ class StoreActionTest extends TestCase
         $response->assertSessionHasErrors(['title', 'body']);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 一斉配信予約ができる()
     {
         Permission::create(['name' => 'staff.pages.edit']);
@@ -126,9 +118,7 @@ class StoreActionTest extends TestCase
             $mock->shouldReceive('createPage')->once()->with(
                 $page->title,
                 "本文です\n\n# 見出し\n- リストです\n- リストです",
-                Mockery::on(function ($arg) {
-                    return $this->staff->id === $arg->id && $this->staff->name === $arg->name;
-                }),
+                Mockery::on(fn($arg) => $this->staff->id === $arg->id && $this->staff->name === $arg->name),
                 'スタッフ用メモです！123',
                 ['Cブース', '屋外模擬店'],
                 [],
@@ -138,9 +128,7 @@ class StoreActionTest extends TestCase
             )->andReturn($page);
 
             $mock->shouldReceive('sendEmailsByPage')->once()->with(
-                Mockery::on(function ($arg) use ($page) {
-                    return $page->title === $arg->title;
-                }),
+                Mockery::on(fn($arg) => $page->title === $arg->title),
             );
         });
 

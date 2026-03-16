@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
 use App\Eloquents\Answer;
@@ -9,15 +11,13 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class UpdateActionTest extends BaseTestCase
+final class UpdateActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private $user;
 
     private $circle;
-
-    private $answer;
 
     protected function setUp(): void
     {
@@ -27,7 +27,7 @@ class UpdateActionTest extends BaseTestCase
         $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id,
         ]);
-        $this->answer = Answer::factory()->create([
+        $answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
@@ -35,13 +35,11 @@ class UpdateActionTest extends BaseTestCase
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 責任者は企画の情報を更新できる()
     {
         $this->assertDatabaseHas('circles', [
@@ -74,9 +72,7 @@ class UpdateActionTest extends BaseTestCase
         $response->assertRedirect(route('circles.users.index', ['circle' => $this->circle]));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 副責任者は企画の情報を更新できない()
     {
         $member = User::factory()->create();
@@ -106,9 +102,7 @@ class UpdateActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 部外者は企画の情報を更新できない()
     {
         $anotherUser = User::factory()->create();
@@ -137,9 +131,7 @@ class UpdateActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 提出済みの企画の情報は更新できない()
     {
         $this->circle->submitted_at = now();

@@ -13,14 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var PagesService
-     */
-    private $pagesService;
-
-    public function __construct(PagesService $pagesService)
+    public function __construct(private readonly PagesService $pagesService)
     {
-        $this->pagesService = $pagesService;
     }
 
     public function __invoke(PageRequest $request, Page $page)
@@ -46,8 +40,7 @@ class UpdateAction extends Controller
             }
         });
 
-        return redirect()
-            ->route('staff.pages.edit', ['page' => $page])
+        return to_route('staff.pages.edit', ['page' => $page])
             ->with('topAlert.title', 'お知らせを更新しました')
             ->with('topAlert.body', ($values['send_emails'] ?? false)
                 ? 'また、このお知らせの一斉送信を予約しました'

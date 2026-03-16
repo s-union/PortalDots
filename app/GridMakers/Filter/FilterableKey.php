@@ -40,7 +40,7 @@ class FilterableKey implements JsonSerializable
         self::TYPE_ENUM,
     ];
 
-    private string $type;
+    private readonly string $type;
 
     private ?FilterableKeyBelongsToOptions $belongsToOptions;
 
@@ -221,18 +221,13 @@ class FilterableKey implements JsonSerializable
             'type' => $this->type,
         ];
 
-        switch ($this->type) {
-            case self::TYPE_BELONGS_TO:
-                return array_merge($base_array, $this->belongsToOptions->jsonSerialize());
-            case self::TYPE_BELONGS_TO_MANY:
-                return array_merge($base_array, $this->belongsToManyOptions->jsonSerialize());
-            case self::TYPE_BELONGS_TO_MANY_WITHOUT_CHOICES:
-                return array_merge($base_array, $this->belongsToManyWithoutChoicesOptions->jsonSerialize());
-            case self::TYPE_ENUM:
-                return array_merge($base_array, ['choices' => $this->enumChoices]);
-            default:
-                return $base_array;
-        }
+        return match ($this->type) {
+            self::TYPE_BELONGS_TO => array_merge($base_array, $this->belongsToOptions->jsonSerialize()),
+            self::TYPE_BELONGS_TO_MANY => array_merge($base_array, $this->belongsToManyOptions->jsonSerialize()),
+            self::TYPE_BELONGS_TO_MANY_WITHOUT_CHOICES => array_merge($base_array, $this->belongsToManyWithoutChoicesOptions->jsonSerialize()),
+            self::TYPE_ENUM => array_merge($base_array, ['choices' => $this->enumChoices]),
+            default => $base_array,
+        };
     }
 
     public function getBelongsToOptions(): FilterableKeyBelongsToOptions

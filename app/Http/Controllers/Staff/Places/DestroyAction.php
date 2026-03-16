@@ -11,8 +11,7 @@ class DestroyAction extends Controller
     {
         $place->delete();
 
-        return redirect()
-            ->route('staff.places.index')
+        return to_route('staff.places.index')
             ->with('topAlert.title', '場所を削除しました');
     }
 }

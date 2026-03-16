@@ -8,20 +8,14 @@ use Illuminate\Support\Facades\Auth;
 
 class IndexAction extends Controller
 {
-    /**
-     * @var StaffAuthService
-     */
-    private $staffAuthService;
-
-    public function __construct(StaffAuthService $staffAuthService)
+    public function __construct(private readonly StaffAuthService $staffAuthService)
     {
-        $this->staffAuthService = $staffAuthService;
     }
 
     public function __invoke()
     {
         if (config('portal.enable_demo_mode')) {
-            return redirect()->route('staff.index');
+            return to_route('staff.index');
         }
 
         $this->staffAuthService->send(Auth::user());

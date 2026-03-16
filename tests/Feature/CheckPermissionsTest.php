@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Eloquents\Permission;
@@ -7,7 +9,7 @@ use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class CheckPermissionsTest extends TestCase
+final class CheckPermissionsTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -104,9 +106,7 @@ class CheckPermissionsTest extends TestCase
         }, []);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function permissionsに全ての権限が含まれているか()
     {
         $defined_permissions = array_keys(Permission::getDefinedPermissions());
@@ -118,9 +118,7 @@ class CheckPermissionsTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限があれば各機能のトップページにアクセスできる()
     {
         foreach ($this->getRouteNamePrefixesByPermissions() as $route_name_prefix => $permissions) {
@@ -146,9 +144,7 @@ class CheckPermissionsTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がなければ各機能のトップページにアクセスできない()
     {
         foreach ($this->getRouteNamePrefixesByPermissions() as $route_name_prefix => $permissions) {

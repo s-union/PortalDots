@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles\Users;
 
 use App\Eloquents\Answer;
@@ -10,15 +12,13 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Http\Controllers\Circles\BaseTestCase;
 
-class DestroyActionTest extends BaseTestCase
+final class DestroyActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private $user;
 
     private $circle;
-
-    private $answer;
 
     private $nonLeader;
 
@@ -30,7 +30,7 @@ class DestroyActionTest extends BaseTestCase
         $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id,
         ]);
-        $this->answer = Answer::factory()->create([
+        $answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
@@ -38,7 +38,7 @@ class DestroyActionTest extends BaseTestCase
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         // メンバー
@@ -46,9 +46,7 @@ class DestroyActionTest extends BaseTestCase
         $this->nonLeader->circles()->attach($this->circle->id, ['is_leader' => false]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function リーダーではないメンバーが自分自身を削除することができる()
     {
         $this->assertDatabaseHas('circle_user', [
@@ -74,9 +72,7 @@ class DestroyActionTest extends BaseTestCase
         $response->assertRedirect(route('home'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function リーダーが別のメンバーを削除する()
     {
         $this->assertDatabaseHas('circle_user', [
@@ -102,9 +98,7 @@ class DestroyActionTest extends BaseTestCase
         $response->assertRedirect(route('circles.users.index', ['circle' => $this->circle]));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function リーダーは自分自身を削除できない()
     {
         $response = $this
@@ -126,9 +120,7 @@ class DestroyActionTest extends BaseTestCase
         $response->assertRedirect(route('circles.users.index', ['circle' => $this->circle]));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 部外者は企画のメンバーを削除できない()
     {
         $anotherUser = User::factory()->create();
@@ -150,9 +142,7 @@ class DestroyActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 提出済みの企画のメンバーは削除できない()
     {
         $this->circle->submitted_at = now();

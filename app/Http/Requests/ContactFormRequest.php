@@ -32,8 +32,8 @@ class ContactFormRequest extends FormRequest
     public function rules()
     {
         return [
-            'circle_id' => 'filled',
-            'contact_body' => 'required',
+            'circle_id' => ['filled'],
+            'contact_body' => ['required'],
         ];
     }
 

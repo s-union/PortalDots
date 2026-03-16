@@ -34,7 +34,7 @@ class FilterQueries implements IteratorAggregate
                     if (! empty($query['key_name']) && ! empty($query['operator'])) {
                         $carry[] = new FilterQueryItem($query['key_name'], $query['operator'], $query['value'] ?? '');
                     }
-                } catch (InvalidArgumentException $e) {
+                } catch (InvalidArgumentException) {
                     // バリデーションに引っかかるクエリは無視する
                 }
 

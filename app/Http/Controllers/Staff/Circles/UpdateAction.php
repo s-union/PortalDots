@@ -13,20 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var User
-     */
-    private $user;
-
-    /**
-     * @var CirclesService
-     */
-    private $circlesService;
-
-    public function __construct(User $user, CirclesService $circlesService)
+    public function __construct(private readonly User $user, private readonly CirclesService $circlesService)
     {
-        $this->user = $user;
-        $this->circlesService = $circlesService;
     }
 
     public function __invoke(Circle $circle, UpdateCircleRequest $request)
@@ -40,7 +28,7 @@ class UpdateAction extends Controller
 
         $member_ids = str_replace(["\r\n", "\r", "\n"], "\n", $request->members);
         $member_ids = explode("\n", $member_ids);
-        $member_ids = array_unique(array_filter($member_ids, 'strlen'));
+        $member_ids = array_unique(array_filter($member_ids, strlen(...)));
 
         $leader = $this->user->firstByStudentId($request->leader);
         if (! empty($leader)) {
@@ -109,8 +97,7 @@ class UpdateAction extends Controller
         } catch (DenyCreateTagsException $e) {
             DB::rollBack();
 
-            return redirect()
-                ->route('staff.circles.edit', $circle)
+            return to_route('staff.circles.edit', $circle)
                 ->withInput()
                 ->withErrors(['tags' => $e->getMessage()]);
         }
@@ -130,8 +117,7 @@ class UpdateAction extends Controller
 
         DB::commit();
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', '企画情報を更新しました');
     }
 }

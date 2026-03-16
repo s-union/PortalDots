@@ -14,7 +14,6 @@ class PostAction extends Controller
 
         session(['user_reauthorized_at' => now()]);
 
-        return redirect()
-            ->route('circles.show', ['circle' => $circle]);
+        return to_route('circles.show', ['circle' => $circle]);
     }
 }

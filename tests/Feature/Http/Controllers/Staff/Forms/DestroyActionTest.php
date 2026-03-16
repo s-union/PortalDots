@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms;
 
 use App\Eloquents\Answer;
@@ -12,17 +14,11 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class DestroyActionTest extends TestCase
+final class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private ?Form $form;
-
-    private ?Collection $questions;
-
-    private ?Collection $answers;
-
-    private array $answerDetails;
 
     private ?User $staff;
 
@@ -32,32 +28,30 @@ class DestroyActionTest extends TestCase
         $this->form = Form::factory()->create([
             'name' => '削除対象のフォーム',
         ]);
-        $this->questions = Question::factory(2)->create([
+        $questions = Question::factory(2)->create([
             'form_id' => $this->form->id,
             'is_required' => false,
             'type' => 'text',
         ]);
-        $this->answers = Answer::factory(2)->create([
+        $answers = Answer::factory(2)->create([
             'form_id' => $this->form->id,
         ]);
-        foreach ($this->answers as $answer) {
-            $this->answerDetails[] = AnswerDetail::factory()->create([
+        foreach ($answers as $answer) {
+            $answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
-                'question_id' => $this->questions[0]->id,
+                'question_id' => $questions[0]->id,
                 'answer' => '回答 １',
             ]);
-            $this->answerDetails[] = AnswerDetail::factory()->create([
+            $answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
-                'question_id' => $this->questions[1]->id,
+                'question_id' => $questions[1]->id,
                 'answer' => '回答 ２',
             ]);
         }
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function フォームを削除できる()
     {
         Permission::create(['name' => 'staff.forms.delete']);
@@ -84,9 +78,7 @@ class DestroyActionTest extends TestCase
         $this->assertDatabaseCount('answer_details', 0);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はフォームを削除できない()
     {
         $response = $this->actingAs($this->staff)

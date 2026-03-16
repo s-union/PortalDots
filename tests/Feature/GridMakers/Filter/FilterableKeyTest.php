@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers\Filter;
 
 use App\GridMakers\Filter\FilterableKey;
@@ -9,24 +11,19 @@ use App\GridMakers\Filter\FilterableKeysDict;
 use BadMethodCallException;
 use Tests\TestCase;
 
-class FilterableKeyTest extends TestCase
+final class FilterableKeyTest extends TestCase
 {
-    public static function typesWithNoOptionsProvider()
+    public static function typesWithNoOptionsProvider(): \Iterator
     {
-        return [
-            ['string'],
-            ['number'],
-            ['datetime'],
-            ['bool'],
-            ['isNull'],
-        ];
+        yield ['string'];
+        yield ['number'];
+        yield ['datetime'];
+        yield ['bool'];
+        yield ['isNull'];
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider typesWithNoOptionsProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('typesWithNoOptionsProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function オプションなしでインスタンス化できる(string $type)
     {
         $obj = FilterableKey::$type();
@@ -34,11 +31,8 @@ class FilterableKeyTest extends TestCase
         $this->assertEquals($type, $obj->getType());
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider typesWithNoOptionsProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('typesWithNoOptionsProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize_オプションなしtypeのオブジェクトをシリアライズできる(string $type)
     {
         $expected = json_encode(['type' => $type]);
@@ -46,42 +40,31 @@ class FilterableKeyTest extends TestCase
         $this->assertJsonStringEqualsJsonString($expected, $actual);
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider typesWithNoOptionsProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('typesWithNoOptionsProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_belongs_to_options_オプションなしtypeの場合は例外発生する(string $type)
     {
         $this->expectException(BadMethodCallException::class);
         FilterableKey::$type()->getBelongsToOptions();
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider typesWithNoOptionsProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('typesWithNoOptionsProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_belongs_to_many_options_オプションなしtypeの場合は例外発生する(string $type)
     {
         $this->expectException(BadMethodCallException::class);
         FilterableKey::$type()->getBelongsToManyOptions();
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider typesWithNoOptionsProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('typesWithNoOptionsProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_enum_choices_オプションなしtypeの場合は例外発生する(string $type)
     {
         $this->expectException(BadMethodCallException::class);
         FilterableKey::$type()->getEnumChoices();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function belongs_to_引数を渡せばインスタンス化できる()
     {
         $obj = FilterableKey::belongsTo('this_is_related_table_name', new FilterableKeysDict([
@@ -102,9 +85,7 @@ class FilterableKeyTest extends TestCase
         $this->assertEquals('datetime', $obj->getBelongsToOptions()->getKeys()->getByKey('updated_at')->getType());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize_typeがbelongs_toのオブジェクトをシリアライズできる()
     {
         $expected = json_encode([
@@ -136,9 +117,7 @@ class FilterableKeyTest extends TestCase
         $this->assertJsonStringEqualsJsonString($expected, json_encode($obj));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function belongs_to_many_引数を渡せばインスタンス化できる()
     {
         // class_student は架空のテーブル名
@@ -150,9 +129,7 @@ class FilterableKeyTest extends TestCase
         $this->assertInstanceOf(FilterableKeyBelongsToManyOptions::class, $obj->getBelongsToManyOptions());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize_typeがbelongs_to_manyのオブジェクトをシリアライズできる()
     {
         $expected = json_encode([
@@ -176,9 +153,7 @@ class FilterableKeyTest extends TestCase
         $this->assertJsonStringEqualsJsonString($expected, json_encode($obj));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function enum_引数を渡せばインスタンス化できる()
     {
         $obj = FilterableKey::enum(['rejected', 'approved', 'NULL']);
@@ -187,9 +162,7 @@ class FilterableKeyTest extends TestCase
         $this->assertEquals(['rejected', 'approved', 'NULL'], $obj->getEnumChoices());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function json_serialize_typeがenumのオブジェクトをシリアライズできる()
     {
         $expected = json_encode([

@@ -23,8 +23,8 @@ use Illuminate\Support\Facades\Mail;
 class CirclesService
 {
     public function __construct(
-        private ActivityLogService $activityLogService,
-        private TagsService $tagsService
+        private readonly ActivityLogService $activityLogService,
+        private readonly TagsService $tagsService
     ) {}
 
     /**
@@ -141,12 +141,10 @@ class CirclesService
             $exist_places = Place::whereIn('id', $place_ids)->get();
             $circle->places()->sync($exist_places->pluck('id')->all());
 
-            $map_function = function ($place) {
-                return [
-                    'id' => $place->id,
-                    'name' => $place->name,
-                ];
-            };
+            $map_function = (fn($place) => [
+                'id' => $place->id,
+                'name' => $place->name,
+            ]);
 
             $this->activityLogService->logOnlyAttributesChanged(
                 'booth',
@@ -177,12 +175,10 @@ class CirclesService
             $circle->tags()->sync($tags_on_db->pluck('id')->all());
 
             // ログに残す
-            $map_function = function ($tag) {
-                return [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                ];
-            };
+            $map_function = (fn($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+            ]);
 
             $this->activityLogService->logOnlyAttributesChanged(
                 'circle_tag',

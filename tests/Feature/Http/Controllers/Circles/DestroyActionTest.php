@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
 use App\Eloquents\Answer;
@@ -9,15 +11,13 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class DestroyActionTest extends BaseTestCase
+final class DestroyActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private $user;
 
     private $circle;
-
-    private $answer;
 
     private $nonLeader;
 
@@ -31,7 +31,7 @@ class DestroyActionTest extends BaseTestCase
         $this->circle = Circle::factory()->notSubmitted()->create([
             'participation_type_id' => $this->participationType->id,
         ]);
-        $this->answer = Answer::factory()->create([
+        $answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
@@ -39,7 +39,7 @@ class DestroyActionTest extends BaseTestCase
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         // メンバー
@@ -50,9 +50,7 @@ class DestroyActionTest extends BaseTestCase
         $this->anotherUser = User::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 参加登録未提出の企画を削除できる()
     {
         $this->assertDatabaseHas('circles', [
@@ -104,9 +102,7 @@ class DestroyActionTest extends BaseTestCase
         $response->assertRedirect(route('home'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function リーダー以外のメンバーは企画を削除できない()
     {
         $response = $this->actingAs($this->nonLeader)
@@ -133,9 +129,7 @@ class DestroyActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 部外者は企画を削除できない()
     {
         $response = $this->actingAs($this->anotherUser)
@@ -162,9 +156,7 @@ class DestroyActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 提出済みの企画は削除できない()
     {
         $this->circle->submitted_at = now();

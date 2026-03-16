@@ -10,14 +10,8 @@ use Request;
 
 class CheckSelectedCircle
 {
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    public function __construct(SelectorService $selectorService)
+    public function __construct(private readonly SelectorService $selectorService)
     {
-        $this->selectorService = $selectorService;
     }
 
     /**
@@ -45,8 +39,7 @@ class CheckSelectedCircle
             if ($circles_count >= 2) {
                 $request->session()->reflash();
 
-                return redirect()
-                    ->route('circles.selector.show', ['redirect_to' => Request::path()]);
+                return to_route('circles.selector.show', ['redirect_to' => Request::path()]);
             }
 
             $this->selectorService->setCircle(Auth::user()->circles()->approved()->first());

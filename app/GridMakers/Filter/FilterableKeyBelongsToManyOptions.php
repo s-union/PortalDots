@@ -8,43 +8,8 @@ use JsonSerializable;
 
 class FilterableKeyBelongsToManyOptions implements JsonSerializable
 {
-    /**
-     * @var string
-     */
-    private $pivot;
-
-    /**
-     * @var string
-     */
-    private $foreign_key;
-
-    /**
-     * @var string
-     */
-    private $related_key;
-
-    /**
-     * @var array
-     */
-    private $choices;
-
-    /**
-     * @var string
-     */
-    private $choices_name;
-
-    public function __construct(
-        string $pivot,
-        string $foreign_key,
-        string $related_key,
-        array $choices,
-        string $choices_name
-    ) {
-        $this->pivot = $pivot;
-        $this->foreign_key = $foreign_key;
-        $this->related_key = $related_key;
-        $this->choices = $choices;
-        $this->choices_name = $choices_name;
+    public function __construct(private readonly string $pivot, private readonly string $foreign_key, private readonly string $related_key, private readonly array $choices, private readonly string $choices_name)
+    {
     }
 
     public function getPivot(): string

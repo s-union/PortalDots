@@ -19,11 +19,6 @@ class AnswersGridMaker implements GridMakable
     use UseEloquent;
 
     /**
-     * @var FormatTextService
-     */
-    private $formatTextService;
-
-    /**
      * @var Form
      */
     private $form;
@@ -32,9 +27,8 @@ class AnswersGridMaker implements GridMakable
 
     public const CHECKBOX_GROUP_CONCAT_SEPARATOR = "\n";
 
-    public function __construct(FormatTextService $formatTextService)
+    public function __construct(private FormatTextService $formatTextService)
     {
-        $this->formatTextService = $formatTextService;
     }
 
     /**
@@ -162,28 +156,19 @@ class AnswersGridMaker implements GridMakable
         // カスタムフォームへの回答以外の項目
         $itemsExceptForms = [];
 
-        $keysExceptForms = array_filter($this->keys(), function ($key) {
-            return strpos($key, self::FORM_QUESTIONS_KEY_PREFIX) !== 0;
-        });
+        $keysExceptForms = array_filter($this->keys(), fn($key) => !str_starts_with((string) $key, self::FORM_QUESTIONS_KEY_PREFIX));
 
         foreach ($keysExceptForms as $key) {
-            switch ($key) {
-                case 'circle_id':
-                    $itemsExceptForms[$key] = $record->circle->only([
-                        'id', 'name', 'name_yomi', 'group_name', 'group_name_yomi',
-                    ]);
-                    break;
-                case 'created_at':
-                    $itemsExceptForms[$key] = ! empty($record->created_at)
-                        ? $record->created_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'updated_at':
-                    $itemsExceptForms[$key] = ! empty($record->updated_at)
-                        ? $record->updated_at->format('Y/m/d H:i:s') : null;
-                    break;
-                default:
-                    $itemsExceptForms[$key] = $record->$key;
-            }
+            $itemsExceptForms[$key] = match ($key) {
+                'circle_id' => $record->circle->only([
+                    'id', 'name', 'name_yomi', 'group_name', 'group_name_yomi',
+                ]),
+                'created_at' => ! empty($record->created_at)
+                    ? $record->created_at->format('Y/m/d H:i:s') : null,
+                'updated_at' => ! empty($record->updated_at)
+                    ? $record->updated_at->format('Y/m/d H:i:s') : null,
+                default => $record->$key,
+            };
         }
 
         return array_merge($itemsExceptForms, $itemsOfAnswerDetails);

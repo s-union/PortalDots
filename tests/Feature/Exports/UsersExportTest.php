@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\User;
@@ -8,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class UsersExportTest extends TestCase
+final class UsersExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -35,9 +37,7 @@ class UsersExportTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_ユーザー情報のフォーマットが正常に行われる()
     {
         $this->assertEquals(

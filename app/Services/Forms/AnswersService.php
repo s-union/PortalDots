@@ -16,14 +16,8 @@ use Illuminate\Support\Facades\Mail;
 
 class AnswersService
 {
-    /**
-     * @var AnswerDetailsService
-     */
-    private $answerDetailsService;
-
-    public function __construct(AnswerDetailsService $answerDetailsService)
+    public function __construct(private readonly AnswerDetailsService $answerDetailsService)
     {
-        $this->answerDetailsService = $answerDetailsService;
     }
 
     /**

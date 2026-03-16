@@ -18,8 +18,7 @@ class StoreAction extends Controller
             'notes' => $validated['notes'],
         ]);
 
-        return redirect()
-            ->route('staff.places.create')
+        return to_route('staff.places.create')
             ->with('topAlert.title', '場所を作成しました');
     }
 }

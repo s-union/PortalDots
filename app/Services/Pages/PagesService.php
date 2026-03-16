@@ -15,36 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 class PagesService
 {
-    /**
-     * @var SendEmailService
-     */
-    private $sendEmailService;
-
-    /**
-     * @var ReadsService
-     */
-    private $readsService;
-
-    /**
-     * @var ActivityLogService
-     */
-    private $activityLogService;
-
-    /**
-     * @var FormatTextService
-     */
-    private $formatTextService;
-
-    public function __construct(
-        SendEmailService $sendEmailService,
-        ReadsService $readsService,
-        ActivityLogService $activityLogService,
-        FormatTextService $formatTextService
-    ) {
-        $this->sendEmailService = $sendEmailService;
-        $this->readsService = $readsService;
-        $this->activityLogService = $activityLogService;
-        $this->formatTextService = $formatTextService;
+    public function __construct(private readonly SendEmailService $sendEmailService, private readonly ReadsService $readsService, private readonly ActivityLogService $activityLogService, private readonly FormatTextService $formatTextService)
+    {
     }
 
     /**
@@ -102,12 +74,10 @@ class PagesService
                 $page,
                 [],
                 $exist_tags
-                    ->map(function ($tag) {
-                        return [
-                            'id' => $tag->id,
-                            'name' => $tag->name,
-                        ];
-                    })
+                    ->map(fn($tag) => [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                    ])
                     ->toArray()
             );
 
@@ -125,12 +95,10 @@ class PagesService
                 $page,
                 [],
                 $exist_documents
-                    ->map(function ($document) {
-                        return [
-                            'id' => $document->id,
-                            'name' => $document->name,
-                        ];
-                    })
+                    ->map(fn($document) => [
+                        'id' => $document->id,
+                        'name' => $document->name,
+                    ])
                     ->toArray()
             );
 
@@ -203,12 +171,10 @@ class PagesService
             $page->viewableTags()->sync($exist_tags->pluck('id')->all());
 
             // タグの変更をログに残す
-            $tags_map_function = function ($tag) {
-                return [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                ];
-            };
+            $tags_map_function = (fn($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+            ]);
             $this->activityLogService->logOnlyAttributesChanged(
                 'page_viewable_tag',
                 $updated_by,
@@ -225,12 +191,10 @@ class PagesService
             $page->documents()->sync($exist_documents->pluck('id')->all());
 
             // 関連する配布資料の変更をログに残す
-            $documents_map_function = function ($document) {
-                return [
-                    'id' => $document->id,
-                    'name' => $document->name,
-                ];
-            };
+            $documents_map_function = (fn($document) => [
+                'id' => $document->id,
+                'name' => $document->name,
+            ]);
             $this->activityLogService->logOnlyAttributesChanged(
                 'page_document',
                 $updated_by,

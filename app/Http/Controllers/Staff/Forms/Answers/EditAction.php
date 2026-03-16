@@ -10,16 +10,8 @@ use App\Services\Forms\AnswersService;
 
 class EditAction extends Controller
 {
-    private $answersService;
-
-    private $answerDetailsService;
-
-    public function __construct(
-        AnswersService $answersService,
-        AnswerDetailsService $answerDetailsService
-    ) {
-        $this->answersService = $answersService;
-        $this->answerDetailsService = $answerDetailsService;
+    public function __construct(private readonly AnswersService $answersService, private readonly AnswerDetailsService $answerDetailsService)
+    {
     }
 
     public function __invoke(Form $form, Answer $answer)

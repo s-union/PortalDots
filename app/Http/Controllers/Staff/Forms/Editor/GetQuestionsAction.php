@@ -11,22 +11,20 @@ class GetQuestionsAction extends Controller
     public function __invoke(Form $form)
     {
         $questions = $form->questions()->get();
-        $questions_on_db = $questions->map(function (Question $question) {
-            return [
-                'id' => $question->id,
-                'name' => $question->name,
-                'description' => $question->description,
-                'type' => $question->type,
-                'is_required' => $question->is_required,
-                'number_min' => $question->number_min,
-                'number_max' => $question->number_max,
-                'allowed_types' => $question->allowed_types,
-                'options' => $question->options,
-                'priority' => $question->priority,
-                'created_at' => $question->created_at,
-                'updated_at' => $question->updated_at,
-            ];
-        })->toArray();
+        $questions_on_db = $questions->map(fn(Question $question) => [
+            'id' => $question->id,
+            'name' => $question->name,
+            'description' => $question->description,
+            'type' => $question->type,
+            'is_required' => $question->is_required,
+            'number_min' => $question->number_min,
+            'number_max' => $question->number_max,
+            'allowed_types' => $question->allowed_types,
+            'options' => $question->options,
+            'priority' => $question->priority,
+            'created_at' => $question->created_at,
+            'updated_at' => $question->updated_at,
+        ])->toArray();
 
         $permanent_questions = [];
         if (isset($form->participationType)) {

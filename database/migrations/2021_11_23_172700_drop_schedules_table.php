@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class DropSchedulesTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -15,7 +15,6 @@ class DropSchedulesTable extends Migration
     {
         Schema::dropIfExists('schedules');
     }
-
     /**
      * Reverse the migrations.
      *
@@ -33,4 +32,4 @@ class DropSchedulesTable extends Migration
             $table->timestamps();
         });
     }
-}
+};

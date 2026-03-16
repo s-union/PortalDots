@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Circle;
@@ -9,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class PlacesExportTest extends TestCase
+final class PlacesExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -60,9 +62,7 @@ class PlacesExportTest extends TestCase
         $this->place->circles()->attach($this->anotherCircle->id);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_ブース情報のフォーマットが正常に行われる()
     {
         $this->assertEquals(

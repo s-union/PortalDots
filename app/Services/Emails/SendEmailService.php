@@ -28,15 +28,13 @@ class SendEmailService
     public static function bulkEnqueue(string $subject, string $body, Collection $users_email_to)
     {
         $created_at = now();
-        Email::insert($users_email_to->map(function (User $user) use ($subject, $body, $created_at) {
-            return [
-                'subject' => $subject,
-                'body' => $body,
-                'email_to' => $user->email,
-                'email_to_name' => $user->name,
-                'created_at' => $created_at,
-            ];
-        })->toArray());
+        Email::insert($users_email_to->map(fn(User $user) => [
+            'subject' => $subject,
+            'body' => $body,
+            'email_to' => $user->email,
+            'email_to_name' => $user->name,
+            'created_at' => $created_at,
+        ])->toArray());
     }
 
     public static function runJob()
@@ -72,7 +70,7 @@ class SendEmailService
                 $email->sent_at = $now;
                 $email->locked_at = null;
                 $email->save();
-            } catch (Exception $e) {
+            } catch (Exception) {
                 // 送信失敗したので失敗カウントを1つ追加
                 $email->count_failed++;
                 $count_failed_now++;
@@ -101,7 +99,7 @@ class SendEmailService
             }
 
             // スリープ
-            sleep(self::SEND_INTERVAL_SEC);
+            \Illuminate\Support\Sleep::sleep(self::SEND_INTERVAL_SEC);
         }
     }
 

@@ -20,8 +20,7 @@ class EnsureEmailIsVerified
         $user = $request->user();
 
         if (! $user || ! $user->areBothEmailsVerified()) {
-            return redirect()
-                ->route('verification.notice')
+            return to_route('verification.notice')
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.title', 'このページにアクセスするには、メール認証を完了してください');
         }

@@ -7,6 +7,9 @@ namespace Database\Factories;
 use App\Eloquents\Form;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Form>
+ */
 class FormFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Form::class;
@@ -14,10 +17,10 @@ class FormFactory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
-            'description' => $this->faker->text,
-            'open_at' => now()->subMonth(1),
-            'close_at' => now()->addMonth(1),
+            'name' => fake()->name,
+            'description' => fake()->text,
+            'open_at' => now()->subMonth(),
+            'close_at' => now()->addMonth(),
             'type' => 'circle',
             'max_answers' => 1,
             'is_public' => true,

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDocumentPageTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -31,7 +31,6 @@ class CreateDocumentPageTable extends Migration
             $table->unique(['document_id', 'page_id']);
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -45,4 +44,4 @@ class CreateDocumentPageTable extends Migration
             $table->unsignedInteger('id', true)->length(11)->change();
         });
     }
-}
+};

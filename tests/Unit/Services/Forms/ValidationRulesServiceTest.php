@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Services\Forms;
 
 use App\Eloquents\Form;
@@ -8,11 +10,9 @@ use App\Services\Forms\ValidationRulesService;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
 
-class ValidationRulesServiceTest extends TestCase
+final class ValidationRulesServiceTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function markdown項目で最大文字数が未指定の場合に暗黙の最大文字数制限が適用されない(): void
     {
         // フォームと、最大文字数制限(number_max)を持たないMarkdown形式の設問を作成する
@@ -37,9 +37,7 @@ class ValidationRulesServiceTest extends TestCase
         $this->assertSame(['nullable', 'string'], $draft_rules['answers.'.$question->id]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function markdown項目で明示的に最大文字数を指定した場合_厳密なバリデーション時のみ最大文字数制限が適用される(): void
     {
         // フォームと、最大文字数を「1200」に明示的に設定したMarkdown形式の設問を作成する

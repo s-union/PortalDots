@@ -11,14 +11,8 @@ class TestMailMailable extends Mailable
     use Queueable;
     use SerializesModels;
 
-    private $from_address;
-
-    private $from_name;
-
-    public function __construct(string $from_address, string $from_name)
+    public function __construct(private string $from_address, private string $from_name)
     {
-        $this->from_address = $from_address;
-        $this->from_name = $from_name;
     }
 
     /**

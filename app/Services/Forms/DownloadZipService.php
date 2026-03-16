@@ -12,16 +12,13 @@ use ZipArchive;
 
 class DownloadZipService
 {
-    /**
-     * ZipArchive インスタンス
-     *
-     * @var ZipArchive
-     */
-    private $zip;
-
-    public function __construct(ZipArchive $zip)
+    public function __construct(
+        /**
+         * ZipArchive インスタンス
+         */
+        private readonly ZipArchive $zip
+    )
     {
-        $this->zip = $zip;
     }
 
     /**
@@ -42,7 +39,7 @@ class DownloadZipService
             if (empty($path)) {
                 return null;
             } elseif (
-                strpos($path, 'answer_details/') === 0 &&
+                str_starts_with($path, 'answer_details/') &&
                 file_exists($fullpath = Storage::path($path)) &&
                 is_file($fullpath)
             ) {

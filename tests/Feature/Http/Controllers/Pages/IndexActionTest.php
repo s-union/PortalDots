@@ -1,18 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Pages;
 
 use App\Eloquents\Page;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class IndexActionTest extends TestCase
+final class IndexActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 非公開と固定表示のお知らせは一覧に表示されない()
     {
         // 固定されたお知らせ

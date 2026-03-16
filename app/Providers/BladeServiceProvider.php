@@ -29,35 +29,23 @@ class BladeServiceProvider extends ServiceProvider
         // スタッフページかどうかを Blade 上で判断できるようにする
         // @staffpage 〜 @endstaffpage
         // の中は、スタッフページの場合のみ表示される
-        Blade::if('staffpage', function () {
-            return Request::is('staff*') || Request::is('admin*');
-        });
+        Blade::if('staffpage', fn() => Request::is('staff*') || Request::is('admin*'));
 
         // 渡された引数の文字列をMarkdownとして解釈し、
         // HTMLに変換した文字列を表示する
-        Blade::directive('markdown', function ($expression) {
-            return "<?php echo App\Services\Utils\ParseMarkdownService::render($expression); ?>";
-        });
+        Blade::directive('markdown', fn($expression) => "<?php echo App\Services\Utils\ParseMarkdownService::render($expression); ?>");
 
         // 渡された引数の文字列を先頭100文字のみのこし、
         // 残りを「...」で省略する
-        Blade::directive('summary', function ($expression) {
-            return "<?php echo e(App\Services\Utils\FormatTextService::summary($expression)); ?>";
-        });
+        Blade::directive('summary', fn($expression) => "<?php echo e(App\Services\Utils\FormatTextService::summary($expression)); ?>");
 
         // 渡された引数の日付文字列をY年n月d日(曜日) H:i 形式の日付文字列にする
-        Blade::directive('datetime', function ($expression) {
-            return "<?php echo e(App\Services\Utils\FormatTextService::datetime($expression)); ?>";
-        });
+        Blade::directive('datetime', fn($expression) => "<?php echo e(App\Services\Utils\FormatTextService::datetime($expression)); ?>");
 
         // 渡された引数の曜日番号を曜日文字列にする
-        Blade::directive('dayByDayId', function ($expression) {
-            return "<?php echo e(App\Services\Utils\FormatTextService::getDayByDayId((int)($expression), true)); ?>";
-        });
+        Blade::directive('dayByDayId', fn($expression) => "<?php echo e(App\Services\Utils\FormatTextService::getDayByDayId((int)($expression), true)); ?>");
 
         // 渡された引数のバイト数値からユーザーフレンドリーなファイルサイズ文字列にする
-        Blade::directive('filesize', function ($expression) {
-            return "<?php echo e(App\Services\Utils\FormatTextService::filesize((int)($expression))); ?>";
-        });
+        Blade::directive('filesize', fn($expression) => "<?php echo e(App\Services\Utils\FormatTextService::filesize((int)($expression))); ?>");
     }
 }

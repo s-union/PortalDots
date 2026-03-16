@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Documents;
 
 use App\Eloquents\User;
@@ -11,7 +13,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class DocumentsServiceTest extends TestCase
+final class DocumentsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -19,11 +21,6 @@ class DocumentsServiceTest extends TestCase
      * @var DocumentsService
      */
     private $documentsService;
-
-    /**
-     * @var User
-     */
-    private $staff;
 
     /**
      * @var FilesystemAdapter
@@ -36,12 +33,10 @@ class DocumentsServiceTest extends TestCase
         Storage::fake('local');
         $this->localDisk = Storage::disk('local');
         $this->documentsService = App::make(DocumentsService::class);
-        $this->staff = User::factory()->staff()->create();
+        $staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function create_document()
     {
         $filesize = 1;  // 単位 : KiB
@@ -70,9 +65,7 @@ class DocumentsServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function update_document_ファイルはアップデートせずに更新できる()
     {
         $document = $this->documentsService->createDocument(
@@ -103,9 +96,7 @@ class DocumentsServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function update_document_ファイルのアップデートができる()
     {
         $oldFile = UploadedFile::fake()->create('第２回.pdf', 1, 'application/pdf');
@@ -141,9 +132,7 @@ class DocumentsServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function delete_document_ファイルの削除ができる()
     {
         $file = UploadedFile::fake()->create('削除されちゃう.pdf', 1, 'application/pdf');

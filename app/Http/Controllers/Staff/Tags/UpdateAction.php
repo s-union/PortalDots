@@ -13,8 +13,7 @@ class UpdateAction extends Controller
         $tag->name = $request->validated()['name'];
         $tag->save();
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', 'タグを更新しました');
     }
 }

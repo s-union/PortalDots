@@ -9,6 +9,9 @@ use App\Eloquents\Read;
 use App\Eloquents\User;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Read>
+ */
 class ReadFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Read::class;
@@ -16,12 +19,8 @@ class ReadFactory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'page_id' => function () {
-                return Page::factory()->create()->id;
-            },
-            'user_id' => function () {
-                return User::factory()->create()->id;
-            },
+            'page_id' => fn() => Page::factory()->create()->id,
+            'user_id' => fn() => User::factory()->create()->id,
         ];
     }
 }

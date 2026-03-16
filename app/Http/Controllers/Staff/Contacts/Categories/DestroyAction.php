@@ -11,8 +11,7 @@ class DestroyAction extends Controller
     {
         $category->delete();
 
-        return redirect()
-            ->route('staff.contacts.categories.index')
+        return to_route('staff.contacts.categories.index')
             ->with('topAlert.title', 'メールアドレスを削除しました');
     }
 }

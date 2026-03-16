@@ -8,6 +8,9 @@ use App\Eloquents\Circle;
 use App\Eloquents\ParticipationType;
 use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Circle>
+ */
 class CircleFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Circle::class;
@@ -15,13 +18,11 @@ class CircleFactory extends \Illuminate\Database\Eloquent\Factories\Factory
     public function definition()
     {
         return [
-            'participation_type_id' => function () {
-                return ParticipationType::factory()->create()->id;
-            },
-            'name' => $this->faker->name,
-            'name_yomi' => $this->faker->kanaName,
-            'group_name' => $this->faker->name,
-            'group_name_yomi' => $this->faker->kanaName,
+            'participation_type_id' => fn() => ParticipationType::factory()->create()->id,
+            'name' => fake()->name,
+            'name_yomi' => fake()->kanaName,
+            'group_name' => fake()->name,
+            'group_name_yomi' => fake()->kanaName,
             'submitted_at' => now(),
             'status' => 'approved',
         ];

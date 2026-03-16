@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Auth;
 
 use App\Services\Auth\EmailService;
@@ -10,13 +12,11 @@ use Mockery\MockInterface;
 use Symfony\Component\Mime\Exception\RfcComplianceException;
 use Tests\TestCase;
 
-class RegisterControllerTest extends TestCase
+final class RegisterControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ユーザー登録画面が正しく表示されるか()
     {
         $response = $this->get(route('register'));

@@ -12,11 +12,7 @@ class EditAction extends Controller
     {
         return view('staff.circles.participation_types.edit')
             ->with('participation_type', $participationType)
-            ->with('default_tags', $participationType->tags->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson())
-            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson());
+            ->with('default_tags', $participationType->tags->pluck('name')->map(fn($item) => ['text' => $item])->toJson())
+            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(fn($item) => ['text' => $item])->toJson());
     }
 }

@@ -31,8 +31,7 @@ class InviteAction extends Controller
                 $redirect_to = 'circles.users.index';
             }
 
-            return redirect()
-                ->route($redirect_to, ['circle' => $circle])
+            return to_route($redirect_to, ['circle' => $circle])
                 ->with('topAlert.title', 'あなたは既にメンバーです');
         }
 

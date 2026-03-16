@@ -13,7 +13,7 @@ class VerifyNoticeAction extends Controller
         /** @var User $user */
         $user = Auth::user();
         if ($user->areBothEmailsVerified()) {
-            return redirect()->route('home');
+            return to_route('home');
         }
 
         return view('auth.verify');

@@ -8,14 +8,8 @@ use App\Services\Install\DatabaseService;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var DatabaseService
-     */
-    private $databaseService;
-
-    public function __construct(DatabaseService $databaseService)
+    public function __construct(private readonly DatabaseService $databaseService)
     {
-        $this->databaseService = $databaseService;
     }
 
     public function __invoke(DatabaseRequest $request)
@@ -27,8 +21,7 @@ class UpdateAction extends Controller
             $request->DB_USERNAME,
             $request->DB_PASSWORD
         )) {
-            return redirect()
-                ->back()
+            return back()
                 ->withInput()
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.keepVisible', true)
@@ -38,7 +31,6 @@ class UpdateAction extends Controller
 
         $this->databaseService->updateInfo($request->all());
 
-        return redirect()
-            ->route('install.mail.edit');
+        return to_route('install.mail.edit');
     }
 }

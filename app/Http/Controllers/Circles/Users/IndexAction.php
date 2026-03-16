@@ -20,8 +20,7 @@ class IndexAction extends Controller
         }
 
         if ($circle->participationType->users_count_max === 1) {
-            return redirect()
-                ->route('circles.confirm', ['circle' => $circle]);
+            return to_route('circles.confirm', ['circle' => $circle]);
         }
 
         $circle->load('users');
@@ -42,7 +41,7 @@ class IndexAction extends Controller
                 ->size(180)
                 ->backgroundColor(255, 255, 255, 0)
                 ->generate($invitation_url_for_blade);
-        } catch (RuntimeException $e) {
+        } catch (RuntimeException) {
             // libxml 拡張機能がサーバーにインストールされていない場合、
             // QRコードは表示しない
             $qrcode_html = '';

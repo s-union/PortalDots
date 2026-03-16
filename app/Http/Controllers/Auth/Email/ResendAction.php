@@ -8,22 +8,15 @@ use Illuminate\Support\Facades\Auth;
 
 class ResendAction extends Controller
 {
-    /**
-     * @var EmailService
-     */
-    private $emailService;
-
-    public function __construct(EmailService $emailService)
+    public function __construct(private readonly EmailService $emailService)
     {
-        $this->emailService = $emailService;
     }
 
     public function __invoke()
     {
         $this->emailService->sendAll(Auth::user());
 
-        return redirect()
-            ->route('verification.notice')
+        return to_route('verification.notice')
             ->with('topAlert.title', '確認メールを再送しました。');
     }
 }

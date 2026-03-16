@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Answers\Uploads;
 
 use App\Eloquents\Answer;
@@ -13,7 +15,7 @@ use Illuminate\Http\File;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class ShowActionTest extends TestCase
+final class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -59,9 +61,7 @@ class ShowActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできる()
     {
         Permission::create(['name' => 'staff.forms.answers.read']);
@@ -78,9 +78,7 @@ class ShowActionTest extends TestCase
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はダウンロードできない()
     {
         $response = $this->actingAs($this->staff)
@@ -94,9 +92,7 @@ class ShowActionTest extends TestCase
         $response->assertForbidden();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ以外はダウンロードできない()
     {
         $response = $this->actingAs(User::factory()->create())

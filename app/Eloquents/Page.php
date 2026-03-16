@@ -16,11 +16,6 @@ class Page extends Model
     use IsNewTrait;
     use LogsActivity;
 
-    protected $casts = [
-        'is_pinned' => 'bool',
-        'is_public' => 'bool',
-    ];
-
     protected $fillable = [
         'title',
         'body',
@@ -56,7 +51,7 @@ class Page extends Model
             // MySQL 5.7 以上の場合のみ対応
             $results = DB::select(DB::raw('select version()')->getValue(DB::connection()->getQueryGrammar()));
             $mysql_version = $results[0]->{'version()'};
-            if (strpos(strtolower($mysql_version), 'mariadb') !== false) {
+            if (str_contains(strtolower((string) $mysql_version), 'mariadb')) {
                 // MariaDB を利用している場合
                 return false;
             }
@@ -99,7 +94,7 @@ class Page extends Model
         parent::boot();
 
         static::addGlobalScope('updated_at', function (Builder $builder) {
-            $builder->orderBy('updated_at', 'desc');
+            $builder->latest('updated_at');
         });
     }
 
@@ -128,7 +123,7 @@ class Page extends Model
      * @param  Builder  $query
      * @return Builder
      */
-    public function scopePublic($query)
+    protected function scopePublic($query)
     {
         return $query->where('is_public', true);
     }
@@ -140,7 +135,7 @@ class Page extends Model
      * @param  bool  $is_pinned  固定されたお知らせ以外を取得する場合は false を指定する
      * @return Builder
      */
-    public function scopePinned($query, bool $is_pinned = true)
+    protected function scopePinned($query, bool $is_pinned = true)
     {
         return $query->where('is_pinned', $is_pinned);
     }
@@ -154,7 +149,7 @@ class Page extends Model
      * @param  Builder  $query
      * @return Builder
      */
-    public function scopeByCircle($query, ?Circle $circle = null)
+    protected function scopeByCircle($query, ?Circle $circle = null)
     {
         $query = self::selectRaw('`pages`.*, min(`page_viewable_tags`.`tag_id`)')
             ->leftJoin('page_viewable_tags', 'pages.id', '=', 'page_viewable_tags.page_id')
@@ -176,12 +171,19 @@ class Page extends Model
      * @param  Builder  $query
      * @return Builder
      */
-    public function scopeByKeywords($query, ?string $keywords = null)
+    protected function scopeByKeywords($query, ?string $keywords = null)
     {
         if (empty($keywords)) {
             return $query;
         }
 
         return $query->whereRaw('match(title,body) against (? IN BOOLEAN MODE)', [$keywords]);
+    }
+    protected function casts(): array
+    {
+        return [
+            'is_pinned' => 'bool',
+            'is_public' => 'bool',
+        ];
     }
 }

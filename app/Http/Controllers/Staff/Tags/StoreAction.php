@@ -14,8 +14,7 @@ class StoreAction extends Controller
             'name' => $request->validated()['name'],
         ]);
 
-        return redirect()
-            ->route('staff.tags.create')
+        return to_route('staff.tags.create')
             ->with('topAlert.title', 'タグを作成しました');
     }
 }

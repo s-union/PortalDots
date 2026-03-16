@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class UpdateCirclesTableForUserRegistration extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -27,7 +27,6 @@ class UpdateCirclesTableForUserRegistration extends Migration
             $table->dropColumn(['created_by', 'updated_by']);
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -52,4 +51,4 @@ class UpdateCirclesTableForUserRegistration extends Migration
             $table->unsignedInteger('updated_by')->after('updated_at');
         });
     }
-}
+};

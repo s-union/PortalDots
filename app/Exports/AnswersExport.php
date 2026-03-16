@@ -11,14 +11,8 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class AnswersExport implements FromCollection, WithHeadings, WithMapping
 {
-    /**
-     * @var Form
-     */
-    private $form;
-
-    public function __construct(Form $form)
+    public function __construct(private readonly Form $form)
     {
-        $this->form = $form;
     }
 
     /**

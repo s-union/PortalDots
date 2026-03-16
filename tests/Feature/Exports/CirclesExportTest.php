@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Answer;
@@ -15,11 +17,9 @@ use App\Exports\CirclesExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class CirclesExportTest extends TestCase
+final class CirclesExportTest extends TestCase
 {
     use RefreshDatabase;
-
-    private ?Form $participationForm;
 
     private ?ParticipationType $participationType;
 
@@ -33,29 +33,19 @@ class CirclesExportTest extends TestCase
 
     private ?User $anotherMember;
 
-    private ?Place $place;
-
-    private ?Tag $tag;
-
-    private ?Question $question;
-
-    private ?Answer $answer;
-
-    private ?AnswerDetail $answerDetail;
-
-    private ?CirclesExport $circlesExport;
+    private ?CirclesExport $circlesExport = null;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->participationForm = Form::factory()->create();
+        $participationForm = Form::factory()->create();
         $this->participationType = ParticipationType::factory()->create([
             'name' => '体験企画',
             'description' => '',
             'users_count_min' => 3,
             'users_count_max' => 3,
-            'form_id' => $this->participationForm->id,
+            'form_id' => $participationForm->id,
         ]);
         $this->staff = User::factory()->create([
             'name' => '企画 チェック',
@@ -82,32 +72,32 @@ class CirclesExportTest extends TestCase
             'name' => '企画 手伝い',
             'student_id' => '123123',
         ]);
-        $this->place = Place::factory()->create([
+        $place = Place::factory()->create([
             'name' => '近くの川',
         ]);
-        $this->tag = Tag::factory()->create([
+        $tag = Tag::factory()->create([
             'name' => '特殊な企画',
         ]);
         Question::factory()->create([
-            'form_id' => $this->participationForm->id,
+            'form_id' => $participationForm->id,
             'name' => '見出しですよ',
             'type' => 'heading',
             'priority' => 1,
         ]);
-        $this->question = Question::factory()->create([
-            'form_id' => $this->participationForm->id,
+        $question = Question::factory()->create([
+            'form_id' => $participationForm->id,
             'name' => 'どんなことをしますか',
             'type' => 'text',
             'priority' => 2,
         ]);
 
-        $this->answer = Answer::factory()->create([
-            'form_id' => $this->participationForm->id,
+        $answer = Answer::factory()->create([
+            'form_id' => $participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
-        $this->answerDetail = AnswerDetail::factory()->create([
-            'answer_id' => $this->answer->id,
-            'question_id' => $this->question->id,
+        $answerDetail = AnswerDetail::factory()->create([
+            'answer_id' => $answer->id,
+            'question_id' => $question->id,
             'answer' => '作った船で川を渡ります',
         ]);
 
@@ -115,13 +105,11 @@ class CirclesExportTest extends TestCase
         $this->member->circles()->attach($this->circle->id);
         $this->anotherMember->circles()->attach($this->circle->id);
 
-        $this->place->circles()->attach($this->circle->id);
-        $this->tag->circles()->attach($this->circle->id);
+        $place->circles()->attach($this->circle->id);
+        $tag->circles()->attach($this->circle->id);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_企画情報のフォーマットが正常に行われる()
     {
         $circlesExport = new CirclesExport;
@@ -150,9 +138,7 @@ class CirclesExportTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_参加種別を指定している場合はカスタムフォームの回答も出力される()
     {
         $circlesExport = new CirclesExport($this->participationType);
@@ -182,14 +168,12 @@ class CirclesExportTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function headings_ヘッダーが作成される()
     {
         $circlesExport = new CirclesExport;
 
-        $this->assertEquals(
+        $this->assertSame(
             [
                 '企画ID',
                 '参加種別',
@@ -213,14 +197,12 @@ class CirclesExportTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function headings_参加種別を指定している場合はカスタムフォームの設問も出力される()
     {
         $circlesExport = new CirclesExport($this->participationType);
 
-        $this->assertEquals(
+        $this->assertSame(
             [
                 '企画ID',
                 '参加種別',

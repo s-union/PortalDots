@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Forms;
 
 use App\Eloquents\Answer;
@@ -15,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
-class AnswersServiceTest extends TestCase
+final class AnswersServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -30,9 +32,7 @@ class AnswersServiceTest extends TestCase
         $this->answersSerivce = App::make(AnswersService::class);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function send_all()
     {
         /** @var Collection */
@@ -82,22 +82,14 @@ class AnswersServiceTest extends TestCase
         $this->answersSerivce->sendAll($answer, $circle_members[1], false);
 
         foreach ($circle_members as $recipient) {
-            Mail::assertSent(AnswerConfirmationMailable::class, function ($mail) use ($recipient) {
-                return $mail->hasTo($recipient->email);
-            });
+            Mail::assertSent(AnswerConfirmationMailable::class, fn($mail) => $mail->hasTo($recipient->email));
         }
 
         // フォーム作成者にもメールが届く
-        Mail::assertSent(AnswerConfirmationMailable::class, function ($mail) use ($form_creator) {
-            return $mail->hasTo($form_creator->email);
-        });
+        Mail::assertSent(AnswerConfirmationMailable::class, fn($mail) => $mail->hasTo($form_creator->email));
 
         // フォームを編集したユーザーにはメールが届かない
-        Mail::assertNotSent(AnswerConfirmationMailable::class, function ($mail) use ($staff) {
-            return $mail->hasTo($staff[0]->email);
-        });
-        Mail::assertNotSent(AnswerConfirmationMailable::class, function ($mail) use ($staff) {
-            return $mail->hasTo($staff[2]->email);
-        });
+        Mail::assertNotSent(AnswerConfirmationMailable::class, fn($mail) => $mail->hasTo($staff[0]->email));
+        Mail::assertNotSent(AnswerConfirmationMailable::class, fn($mail) => $mail->hasTo($staff[2]->email));
     }
 }

@@ -9,14 +9,8 @@ use App\Services\Users\ChangePasswordService;
 
 class PostResetPasswordAction extends Controller
 {
-    /**
-     * @var ChangePasswordService
-     */
-    private $changePasswordService;
-
-    public function __construct(ChangePasswordService $changePasswordService)
+    public function __construct(private readonly ChangePasswordService $changePasswordService)
     {
-        $this->changePasswordService = $changePasswordService;
     }
 
     public function __invoke(ResetPasswordRequest $request, User $user)
@@ -24,7 +18,7 @@ class PostResetPasswordAction extends Controller
         // signedミドルウェアが設定されていれば、$user は信頼できる
         $this->changePasswordService->changePassword($user, $request->new_password);
 
-        return redirect()->route('login')
+        return to_route('login')
             ->with('topAlert.title', 'パスワードを変更しました。');
     }
 }

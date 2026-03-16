@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class DropExtraColumnsFromBoothsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -21,7 +21,6 @@ class DropExtraColumnsFromBoothsTable extends Migration
             $table->dropColumn('notes');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -37,4 +36,4 @@ class DropExtraColumnsFromBoothsTable extends Migration
             $table->text('notes')->nullable()->after('updated_by');
         });
     }
-}
+};

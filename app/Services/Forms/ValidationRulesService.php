@@ -89,8 +89,6 @@ class ValidationRulesService
 
     public function getAttributesFromForm(Form $form)
     {
-        return $form->questions->mapWithKeys(function ($question) {
-            return ['answers.'.$question->id => $question->name];
-        });
+        return $form->questions->mapWithKeys(fn($question) => ['answers.'.$question->id => $question->name]);
     }
 }

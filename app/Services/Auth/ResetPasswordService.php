@@ -40,7 +40,7 @@ class ResetPasswordService
     {
         return URL::temporarySignedRoute(
             'password.reset',
-            Carbon::now()->addMinutes(5),
+            \Illuminate\Support\Facades\Date::now()->addMinutes(5),
             [
                 'user' => $user->id,
             ]

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Emails;
 
 use App\Eloquents\Email;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class SendEmailsServiceTest extends TestCase
+final class SendEmailsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -24,21 +26,17 @@ class SendEmailsServiceTest extends TestCase
         parent::setUp();
 
         $this->sendEmailService = App::make(SendEmailService::class);
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-02 20:20:20'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-02 20:20:20'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-02 20:20:20'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function is_service_operational_配信予約がない場合はtrueを返す()
     {
         $this->assertTrue($this->sendEmailService->isServiceOperational());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function is_service_operational_配信予約されたメールが配信されているときはtrueを返す()
     {
         // 送信済みメール
@@ -51,9 +49,7 @@ class SendEmailsServiceTest extends TestCase
         $this->assertTrue($this->sendEmailService->isServiceOperational());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function is_service_operational_配信予約から24時間以上経過してもメールが送信されていないときにfalseを返す()
     {
         // 送信済みメール

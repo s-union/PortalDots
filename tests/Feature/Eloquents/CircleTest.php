@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Eloquents;
 
 use App\Eloquents\Answer;
@@ -11,13 +13,11 @@ use App\Eloquents\Question;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class CircleTest extends TestCase
+final class CircleTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_participation_form_answer()
     {
         // 準備

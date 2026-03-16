@@ -37,34 +37,16 @@ class RegisterController extends Controller
     protected $redirectTo = '/';
 
     /**
-     * @var RegisterService
-     */
-    private $registerService;
-
-    /**
-     * @var EmailService
-     */
-    private $emailService;
-
-    /**
-     * @var VerifyService
-     */
-    private $verifyService;
-
-    /**
      * Create a new controller instance.
      *
      * @return void
      */
     public function __construct(
-        RegisterService $registerService,
-        EmailService $emailService,
-        VerifyService $verifyService
+        private RegisterService $registerService,
+        private EmailService $emailService,
+        private VerifyService $verifyService
     ) {
         $this->middleware('guest');
-        $this->registerService = $registerService;
-        $this->emailService = $emailService;
-        $this->verifyService = $verifyService;
     }
 
     public function showRegistrationForm()
@@ -100,11 +82,10 @@ class RegisterController extends Controller
                 $this->verifyService->markEmailAsVerified($user, $user->email);
             }
             $this->emailService->sendAll($user);
-        } catch (RfcComplianceException $e) {
+        } catch (RfcComplianceException) {
             DB::rollBack();
 
-            return redirect()
-                ->route('register')
+            return to_route('register')
                 ->withInput()
                 ->withErrors(['student_id' => config('portal.student_id_name').'を正しく入力してください']);
         }
@@ -115,7 +96,6 @@ class RegisterController extends Controller
 
         // return $this->registered($request, $user)
         //     ?: redirect($this->redirectPath());
-        return redirect()
-            ->route('verification.notice');
+        return to_route('verification.notice');
     }
 }

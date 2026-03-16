@@ -9,22 +9,8 @@ use Illuminate\Http\Request;
 
 class ApiAction extends Controller
 {
-    /**
-     * @var GridResponder
-     */
-    private $gridResponder;
-
-    /**
-     * @var DocumentsGridMaker
-     */
-    private $documentsGridMaker;
-
-    public function __construct(
-        GridResponder $gridResponder,
-        DocumentsGridMaker $documentsGridMaker
-    ) {
-        $this->gridResponder = $gridResponder;
-        $this->documentsGridMaker = $documentsGridMaker;
+    public function __construct(private readonly GridResponder $gridResponder, private readonly DocumentsGridMaker $documentsGridMaker)
+    {
     }
 
     public function __invoke(Request $request)

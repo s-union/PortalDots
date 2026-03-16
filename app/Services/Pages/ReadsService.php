@@ -16,14 +16,8 @@ class ReadsService
      */
     private $unreadsCountOnSelectedCircle = 0;
 
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    public function __construct(SelectorService $selectorService)
+    public function __construct(private readonly SelectorService $selectorService)
     {
-        $this->selectorService = $selectorService;
     }
 
     /**

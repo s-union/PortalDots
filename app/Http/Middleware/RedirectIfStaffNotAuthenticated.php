@@ -8,14 +8,8 @@ use Illuminate\Http\Request;
 
 class RedirectIfStaffNotAuthenticated
 {
-    /**
-     * @var StaffAuthService
-     */
-    private $staffAuthService;
-
-    public function __construct(StaffAuthService $staffAuthService)
+    public function __construct(private readonly StaffAuthService $staffAuthService)
     {
-        $this->staffAuthService = $staffAuthService;
     }
 
     /**
@@ -29,8 +23,7 @@ class RedirectIfStaffNotAuthenticated
         if (! $request->session()->get('staff_authorized') && ! config('portal.enable_demo_mode')) {
             $this->staffAuthService->setPreviousUrl($request->url());
 
-            return redirect()
-                ->route('staff.verify.index');
+            return to_route('staff.verify.index');
         }
 
         return $next($request);

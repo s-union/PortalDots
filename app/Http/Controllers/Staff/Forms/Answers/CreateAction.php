@@ -10,14 +10,8 @@ use Illuminate\Http\Request;
 
 class CreateAction extends Controller
 {
-    /**
-     * @var AnswersService
-     */
-    private $answersService;
-
-    public function __construct(AnswersService $answersService)
+    public function __construct(private readonly AnswersService $answersService)
     {
-        $this->answersService = $answersService;
     }
 
     public function __invoke(Form $form, Request $request)
@@ -40,8 +34,7 @@ class CreateAction extends Controller
         if (isset($form->participationType) && count($answers) === 0) {
             $answer = $this->answersService->createAnswer($form, $circle);
 
-            return redirect()
-                ->route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answer]);
+            return to_route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answer]);
         }
 
         // すでに回答済だった場合
@@ -49,8 +42,7 @@ class CreateAction extends Controller
             // 最大回答回数 1 かつ 現時点での回答数が 1 の場合に限り、
             // 編集画面へリダイレクトする。
             // （それ以外の場合、View にて、回答編集も可能な旨を表示する）
-            return redirect()
-                ->route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answers[0]]);
+            return to_route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answers[0]]);
         }
 
         return view('staff.forms.answers.form')

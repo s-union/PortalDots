@@ -17,11 +17,7 @@ class EditAction extends Controller
 
         return view('staff.forms.form')
             ->with('form', $form)
-            ->with('default_tags', $form->answerableTags->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson())
-            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson());
+            ->with('default_tags', $form->answerableTags->pluck('name')->map(fn($item) => ['text' => $item])->toJson())
+            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(fn($item) => ['text' => $item])->toJson());
     }
 }

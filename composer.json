@@ -24,6 +24,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.7",
+        "driftingly/rector-laravel": "^2.1",
         "fakerphp/faker": "^1.20.0",
         "laravel/pint": "^1.2",
         "laravel/sail": "^1.26",
@@ -31,6 +32,7 @@
         "nunomaduro/collision": "^8.1",
         "phpmd/phpmd": "*",
         "phpunit/phpunit": "^11.0",
+        "rector/rector": "^2.3",
         "spatie/laravel-ignition": "^2.4",
         "squizlabs/php_codesniffer": "^3.5"
     },

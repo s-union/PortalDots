@@ -9,14 +9,8 @@ use App\Services\Documents\DocumentsService;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var DocumentsService
-     */
-    private $documentsService;
-
-    public function __construct(DocumentsService $documentsService)
+    public function __construct(private readonly DocumentsService $documentsService)
     {
-        $this->documentsService = $documentsService;
     }
 
     public function __invoke(UpdateDocumentRequest $request, Document $document)
@@ -33,8 +27,7 @@ class UpdateAction extends Controller
             $validated['notes']
         );
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', '配布資料を更新しました');
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Forms\Answers;
 
 use App\Eloquents\Circle;
@@ -14,7 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class StoreActionTest extends TestCase
+final class StoreActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -45,16 +47,13 @@ class StoreActionTest extends TestCase
         $this->selectorService = App::make(SelectorService::class);
     }
 
-    /**
-     * @test
-     *
-     * @dataProvider 受付期間中かどうかに応じてリクエストを許可する_provider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('受付期間中かどうかに応じてリクエストを許可する_provider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 受付期間中かどうかに応じてリクエストを許可する(
         CarbonImmutable $today,
         bool $is_answerable
     ) {
-        Carbon::setTestNowAndTimezone($today);
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone($today);
         CarbonImmutable::setTestNowAndTimezone($today);
 
         $response = $this
@@ -84,25 +83,21 @@ class StoreActionTest extends TestCase
         }
     }
 
-    public static function 受付期間中かどうかに応じてリクエストを許可する_provider()
+    public static function 受付期間中かどうかに応じてリクエストを許可する_provider(): \Iterator
     {
-        return [
-            '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false],
-            '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false],
-            '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true],
-            '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true],
-            '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true],
-            '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false],
-            '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false],
-        ];
+        yield '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false];
+        yield '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false];
+        yield '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true];
+        yield '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true];
+        yield '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true];
+        yield '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false];
+        yield '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false];
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 参加登録フォームとして登録されているフォームには回答できない()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $participationForm = Form::factory()->create([
@@ -132,12 +127,10 @@ class StoreActionTest extends TestCase
         $response->assertStatus(404);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 非公開のフォームには回答できない()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $privateForm = Form::factory()->private()->create();
@@ -161,12 +154,10 @@ class StoreActionTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 他企画に成り済ました回答はできない()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $anotherCircle = Circle::factory()->create();
@@ -190,12 +181,10 @@ class StoreActionTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 参加登録が不受理となった企画は回答できない()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $rejectedCircle = Circle::factory()->rejected()->create();
@@ -220,12 +209,10 @@ class StoreActionTest extends TestCase
         $response->assertStatus(404);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 回答可能なタグを持つ企画に所属している場合回答できる()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $tag = Tag::factory()->create();
@@ -262,12 +249,10 @@ class StoreActionTest extends TestCase
         $response->assertStatus(302);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 回答可能なタグを持つ企画に所属していない場合回答できない()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $tag = Tag::factory()->create();

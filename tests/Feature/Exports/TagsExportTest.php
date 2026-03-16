@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Circle;
@@ -9,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class TagsExportTest extends TestCase
+final class TagsExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -60,9 +62,7 @@ class TagsExportTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_タグ情報のフォーマットが正常に行われる()
     {
         $this->assertEquals(

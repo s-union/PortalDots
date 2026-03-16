@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff;
 
 use App\Eloquents\User;
@@ -7,13 +9,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
-class HomeActionTest extends TestCase
+final class HomeActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ認証が完了していない場合は認証ページへリダイレクトされる()
     {
         /** @var User */
@@ -25,9 +25,7 @@ class HomeActionTest extends TestCase
         $response->assertRedirect(route('staff.verify.index'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ認証が完了している場合はスタッフモードホームが表示される()
     {
         /** @var User */
@@ -40,9 +38,7 @@ class HomeActionTest extends TestCase
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function デモモードの場合はスタッフ認証をしていなくてもスタッフモードホームが表示される()
     {
         Config::set('portal.enable_demo_mode', true);

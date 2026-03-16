@@ -11,11 +11,8 @@ use Auth;
 
 class UpdateAction extends Controller
 {
-    private $answersService;
-
-    public function __construct(AnswersService $answersService)
+    public function __construct(private readonly AnswersService $answersService)
     {
-        $this->answersService = $answersService;
     }
 
     public function __invoke(Form $form, Answer $answer, AnswerRequest $request)

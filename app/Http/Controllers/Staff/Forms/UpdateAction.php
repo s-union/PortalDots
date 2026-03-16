@@ -14,14 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var FormsService
-     */
-    private $formsService;
-
-    public function __construct(FormsService $formsService)
+    public function __construct(private readonly FormsService $formsService)
     {
-        $this->formsService = $formsService;
     }
 
     public function __invoke(FormRequest $request, Form $form)
@@ -48,8 +42,7 @@ class UpdateAction extends Controller
             );
         });
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', 'フォームを更新しました');
     }
 }

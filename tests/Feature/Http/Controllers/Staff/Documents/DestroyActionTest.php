@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Documents;
 
 use App\Eloquents\Document;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
 
-class DestroyActionTest extends TestCase
+final class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -32,9 +34,7 @@ class DestroyActionTest extends TestCase
         $this->document = Document::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function documents_serviceのdelete_documentが呼び出される()
     {
         Permission::create(['name' => 'staff.documents.delete']);
@@ -42,9 +42,7 @@ class DestroyActionTest extends TestCase
 
         $this->mock(DocumentsService::class, function ($mock) {
             $mock->shouldReceive('deleteDocument')->once()->with(
-                Mockery::on(function ($arg) {
-                    return $arg->id === $this->document->id;
-                })
+                Mockery::on(fn($arg) => $arg->id === $this->document->id)
             )->andReturn(true);
         });
 
@@ -56,9 +54,7 @@ class DestroyActionTest extends TestCase
         $response->assertRedirect(route('staff.documents.index'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は配布資料を削除できない()
     {
         $response = $this->actingAs($this->staff)

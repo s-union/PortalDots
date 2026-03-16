@@ -17,8 +17,7 @@ class UpdateAction extends Controller
         $place->notes = $validated['notes'];
         $place->save();
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', '場所を更新しました');
     }
 }

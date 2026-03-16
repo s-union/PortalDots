@@ -10,11 +10,8 @@ use DB;
 
 class QuestionsService
 {
-    private $answerDetailsService;
-
-    public function __construct(AnswerDetailsService $answerDetailsService)
+    public function __construct(private readonly AnswerDetailsService $answerDetailsService)
     {
-        $this->answerDetailsService = $answerDetailsService;
     }
 
     /**
@@ -71,8 +68,8 @@ class QuestionsService
         if (! empty($question['options'])) {
             $options = array_unique(
                 array_map(
-                    'trim',
-                    explode("\n", $question['options'])
+                    trim(...),
+                    explode("\n", (string) $question['options'])
                 )
             );
             $question['options'] = implode("\n", $options);

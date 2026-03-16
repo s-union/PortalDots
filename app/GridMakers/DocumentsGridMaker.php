@@ -88,19 +88,12 @@ class DocumentsGridMaker implements GridMakable
     {
         $item = [];
         foreach ($this->keys() as $key) {
-            switch ($key) {
-                case 'extension':
-                    $item[$key] = mb_strtoupper($record->extension);
-                    break;
-                case 'created_at':
-                    $item[$key] = ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'updated_at':
-                    $item[$key] = ! empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null;
-                    break;
-                default:
-                    $item[$key] = $record->$key;
-            }
+            $item[$key] = match ($key) {
+                'extension' => mb_strtoupper((string) $record->extension),
+                'created_at' => ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null,
+                'updated_at' => ! empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null,
+                default => $record->$key,
+            };
         }
 
         return $item;

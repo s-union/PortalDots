@@ -25,8 +25,7 @@ class UpdateAppearanceAction extends Controller
             $this->uiThemeService->setCurrentTheme($newTheme);
         }
 
-        return redirect()
-            ->route('user.appearance')
+        return to_route('user.appearance')
             ->with('topAlert.title', '変更を保存しました');
     }
 }

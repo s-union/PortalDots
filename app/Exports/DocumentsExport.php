@@ -26,7 +26,7 @@ class DocumentsExport implements FromCollection, WithHeadings, WithMapping
         return [
             $document->id,
             $document->name,
-            preg_replace('/^documents\//', '', $document->path),
+            preg_replace('/^documents\//', '', (string) $document->path),
             $document->size,
             $document->extension,
             $document->description,

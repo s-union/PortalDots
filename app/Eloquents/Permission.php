@@ -17,13 +17,14 @@ class Permission extends SpatiePermission
      */
     protected $appends = ['display_name'];
 
-    public function getDisplayNameAttribute(): string
+    protected function displayName(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        if (isset($this->getDefinedPermissions()[$this->name])) {
-            return $this->getDefinedPermissions()[$this->name]->getDisplayName();
-        }
-
-        return $this->name;
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: function () {
+            if (isset(static::getDefinedPermissions()[$this->name])) {
+                return static::getDefinedPermissions()[$this->name]->getDisplayName();
+            }
+            return $this->name;
+        });
     }
 
     public static function getDefinedPermissions()

@@ -95,7 +95,7 @@ Route::prefix('/password')
 
 // ログインさえされていればアクセスできるルート
 Route::middleware(['auth'])->group(function () {
-    Route::get('/logout', "Auth\LoginController@showLogout");
+    Route::get('/logout', [\App\Http\Controllers\Auth\LoginController::class, 'showLogout']);
     Route::get('/user/edit', "Users\EditInfoAction")->name('user.edit');
     Route::patch('/user/update', "Users\UpdateInfoAction")->name('user.update');
     Route::get('/user/password', "Users\ChangePasswordAction")->name(

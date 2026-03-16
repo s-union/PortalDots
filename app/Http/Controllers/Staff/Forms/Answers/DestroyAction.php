@@ -12,8 +12,7 @@ class DestroyAction extends Controller
     {
         $answer->delete();
 
-        return redirect()
-            ->route('staff.forms.answers.index', ['form' => $form])
+        return to_route('staff.forms.answers.index', ['form' => $form])
             ->with('topAlert.title', '回答を削除しました');
     }
 }

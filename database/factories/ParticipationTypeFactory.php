@@ -21,16 +21,14 @@ class ParticipationTypeFactory extends Factory
      */
     public function definition()
     {
-        $usersCountMin = $this->faker->numberBetween(1, 100);
+        $usersCountMin = fake()->numberBetween(1, 100);
 
         return [
-            'name' => $this->faker->name(),
-            'description' => $this->faker->paragraph(),
+            'name' => fake()->name(),
+            'description' => fake()->paragraph(),
             'users_count_min' => $usersCountMin,
-            'users_count_max' => $this->faker->numberBetween($usersCountMin, 100),
-            'form_id' => function () {
-                return Form::factory()->create()->id;
-            },
+            'users_count_max' => fake()->numberBetween($usersCountMin, 100),
+            'form_id' => fn() => Form::factory()->create()->id,
         ];
     }
 }

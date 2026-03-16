@@ -9,14 +9,8 @@ use Illuminate\Http\Request;
 
 class ClosedAction extends Controller
 {
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    public function __construct(SelectorService $selectorService)
+    public function __construct(private readonly SelectorService $selectorService)
     {
-        $this->selectorService = $selectorService;
     }
 
     public function __invoke(Request $request)
@@ -27,8 +21,7 @@ class ClosedAction extends Controller
 
         if (empty($this->selectorService->getCircle())) {
             // TODO: もうちょっとまともなエラー表示にする
-            return redirect()
-                ->route('home')
+            return to_route('home')
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.title', '企画に所属していないため、このページにアクセスできません');
         }

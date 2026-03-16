@@ -42,7 +42,7 @@ class DemoMode
             if ($request->ajax()) {
                 return response()->json(['message' => 'デモサイトではこの機能は利用できません', 'demo_mode' => true], 403);
             } else {
-                return redirect()->back()->with('topAlert.title', 'デモサイトではこの機能は利用できません');
+                return back()->with('topAlert.title', 'デモサイトではこの機能は利用できません');
             }
         }
 

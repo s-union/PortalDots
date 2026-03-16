@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddForeignKeysInReads extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -23,7 +23,6 @@ class AddForeignKeysInReads extends Migration
                 ->onDelete('cascade');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -35,4 +34,4 @@ class AddForeignKeysInReads extends Migration
             $table->dropForeign(['page_id', 'user_id']);
         });
     }
-}
+};
