@@ -45,8 +45,9 @@
       "id": "6",
       "title": "staff forms preview と uploads の回帰テストを補う",
       "description": "未テストの preview / answers uploads 画面を固定して、staff forms sibling の回帰耐性を上げる",
-      "status": "pending",
-      "addedAt": "2026-03-16T09:29:54Z"
+      "status": "done",
+      "addedAt": "2026-03-16T09:29:54Z",
+      "completedAt": "2026-03-16T09:49:50Z"
     },
     {
       "id": "7",
