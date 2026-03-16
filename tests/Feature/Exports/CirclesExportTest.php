@@ -13,7 +13,6 @@ use App\Eloquents\Tag;
 use App\Eloquents\User;
 use App\Exports\CirclesExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
 class CirclesExportTest extends TestCase
@@ -21,20 +20,32 @@ class CirclesExportTest extends TestCase
     use RefreshDatabase;
 
     private ?Form $participationForm;
+
     private ?ParticipationType $participationType;
+
     private ?User $staff;
+
     private ?Circle $circle;
+
     private ?User $user;
+
     private ?User $member;
+
     private ?User $anotherMember;
+
     private ?Place $place;
+
     private ?Tag $tag;
+
     private ?Question $question;
+
     private ?Answer $answer;
+
     private ?AnswerDetail $answerDetail;
+
     private ?CirclesExport $circlesExport;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -75,7 +86,7 @@ class CirclesExportTest extends TestCase
             'name' => '近くの川',
         ]);
         $this->tag = Tag::factory()->create([
-            'name' => '特殊な企画'
+            'name' => '特殊な企画',
         ]);
         Question::factory()->create([
             'form_id' => $this->participationForm->id,
@@ -113,7 +124,7 @@ class CirclesExportTest extends TestCase
      */
     public function map_企画情報のフォーマットが正常に行われる()
     {
-        $circlesExport = new CirclesExport();
+        $circlesExport = new CirclesExport;
 
         $this->assertEquals(
             [
@@ -176,7 +187,7 @@ class CirclesExportTest extends TestCase
      */
     public function headings_ヘッダーが作成される()
     {
-        $circlesExport = new CirclesExport();
+        $circlesExport = new CirclesExport;
 
         $this->assertEquals(
             [

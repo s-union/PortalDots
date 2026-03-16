@@ -2,30 +2,34 @@
 
 namespace Tests\Feature\Http\Controllers\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Eloquents\Answer;
+use App\Eloquents\Circle;
+use App\Eloquents\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
-use App\Eloquents\User;
-use App\Eloquents\Circle;
-use App\Eloquents\Answer;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class DestroyActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
+
     private $answer;
+
     private $nonLeader;
+
     private $anotherUser;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = User::factory()->create();
         $this->circle = Circle::factory()->notSubmitted()->create([
-            'participation_type_id' => $this->participationType->id
+            'participation_type_id' => $this->participationType->id,
         ]);
         $this->answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,

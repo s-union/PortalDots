@@ -7,8 +7,8 @@ use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Forms\FormsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Mockery;
+use Tests\TestCase;
 
 class CopyActionTest extends TestCase
 {
@@ -23,7 +23,7 @@ class CopyActionTest extends TestCase
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create();
@@ -34,7 +34,7 @@ class CopyActionTest extends TestCase
     /**
      * @test
      */
-    public function FormsServiceのcopyFormが呼び出される()
+    public function forms_serviceのcopy_formが呼び出される()
     {
         Permission::create(['name' => 'staff.forms.duplicate']);
         $this->staff->syncPermissions(['staff.forms.duplicate']);

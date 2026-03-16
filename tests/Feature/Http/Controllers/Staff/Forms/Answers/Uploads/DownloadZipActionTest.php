@@ -2,16 +2,16 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Answers\Uploads;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\File;
-use Illuminate\Support\Facades\Storage;
 use App\Eloquents\Form;
 use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Forms\DownloadZipService;
 use App\Services\Forms\Exceptions\NoDownloadFileExistException;
 use App\Services\Forms\Exceptions\ZipArchiveNotSupportedException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\File;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
 
 class DownloadZipActionTest extends TestCase
 {
@@ -27,7 +27,7 @@ class DownloadZipActionTest extends TestCase
      */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create();
@@ -49,7 +49,7 @@ class DownloadZipActionTest extends TestCase
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
                 ->once()
-                ->andReturn(storage_path("app/answer_details_zip/TestFile.png"));
+                ->andReturn(storage_path('app/answer_details_zip/TestFile.png'));
         });
 
         $response = $this->actingAs($this->staff)
@@ -69,8 +69,8 @@ class DownloadZipActionTest extends TestCase
 
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
-            ->once()
-            ->andThrow(new NoDownloadFileExistException());
+                ->once()
+                ->andThrow(new NoDownloadFileExistException);
         });
 
         $response = $this->actingAs($this->staff)
@@ -83,15 +83,15 @@ class DownloadZipActionTest extends TestCase
     /**
      * @test
      */
-    public function ZipArchive非対応時に適切にエラー表示される()
+    public function zip_archive非対応時に適切にエラー表示される()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
         $this->staff->syncPermissions(['staff.forms.answers.export']);
 
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
-            ->once()
-            ->andThrow(new ZipArchiveNotSupportedException());
+                ->once()
+                ->andThrow(new ZipArchiveNotSupportedException);
         });
 
         $response = $this->actingAs($this->staff)

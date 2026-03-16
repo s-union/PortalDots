@@ -2,15 +2,15 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Circles;
 
-use App\Exports\CirclesExport;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Permission;
+use App\Eloquents\User;
+use App\Exports\CirclesExport;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
+use Tests\TestCase;
 
 class ExportActionTest extends TestCase
 {
@@ -28,7 +28,7 @@ class ExportActionTest extends TestCase
     /** @var Circle */
     private $circle_not_submitted;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2019-08-21 14:52:38'));
@@ -46,7 +46,7 @@ class ExportActionTest extends TestCase
     /**
      * @test
      */
-    public function 企画情報をCSVでダウンロードできる()
+    public function 企画情報を_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.circles.export']);
         $this->staff->syncPermissions(['staff.circles.export']);
@@ -67,7 +67,7 @@ class ExportActionTest extends TestCase
     /**
      * @test
      */
-    public function 権限がない場合はCSVをダウンロードできない()
+    public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

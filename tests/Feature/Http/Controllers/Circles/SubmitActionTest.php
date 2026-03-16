@@ -2,23 +2,23 @@
 
 namespace Tests\Feature\Http\Controllers\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\Feature\Http\Controllers\Circles\BaseTestCase;
+use App\Eloquents\Circle;
+use App\Eloquents\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
-use App\Eloquents\User;
-use App\Eloquents\Circle;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class SubmitActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
 
     private const CIRCLE_LAST_UPDATED_TIMESTAMP = 1672531200;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -41,6 +41,7 @@ class SubmitActionTest extends BaseTestCase
 
     /**
      * @test
+     *
      * @dataProvider 受付期間中かどうかに応じてリクエストを許可する_provider
      */
     public function 受付期間中かどうかに応じてリクエストを許可する(
@@ -57,10 +58,9 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)self::CIRCLE_LAST_UPDATED_TIMESTAMP,
+                    'last_updated_timestamp' => (string) self::CIRCLE_LAST_UPDATED_TIMESTAMP,
                 ]
             );
-
 
         $this->circle->refresh();
 
@@ -110,7 +110,7 @@ class SubmitActionTest extends BaseTestCase
                 ]),
                 [
                     // FIXME: このテストを実行するときだけSubmitActionのCircleのupdated_atのタイムゾーンがGMT+9になる（原因不明）ため、UTCの時間にする
-                    'last_updated_timestamp' => (string)($this->circle->updated_at->timestamp - 60 * 60 * 9),
+                    'last_updated_timestamp' => (string) ($this->circle->updated_at->timestamp - 60 * 60 * 9),
                 ]
             );
 
@@ -139,8 +139,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' =>
-                    (string)(self::CIRCLE_LAST_UPDATED_TIMESTAMP + 15),
+                    'last_updated_timestamp' => (string) (self::CIRCLE_LAST_UPDATED_TIMESTAMP + 15),
                 ]
             );
 
@@ -171,7 +170,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)self::CIRCLE_LAST_UPDATED_TIMESTAMP,
+                    'last_updated_timestamp' => (string) self::CIRCLE_LAST_UPDATED_TIMESTAMP,
                 ]
             );
 
@@ -190,7 +189,7 @@ class SubmitActionTest extends BaseTestCase
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $anotherCircle = Circle::factory()->notSubmitted()->create([
-            'participation_type_id' => $this->participationType->id
+            'participation_type_id' => $this->participationType->id,
         ]);
 
         $response = $this
@@ -200,7 +199,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $anotherCircle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)$anotherCircle->updated_at->timestamp,
+                    'last_updated_timestamp' => (string) $anotherCircle->updated_at->timestamp,
                 ]
             );
 
@@ -229,7 +228,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)self::CIRCLE_LAST_UPDATED_TIMESTAMP,
+                    'last_updated_timestamp' => (string) self::CIRCLE_LAST_UPDATED_TIMESTAMP,
                 ]
             );
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin\Portal;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Services\Install\PortalService;
 
 class EditAction extends Controller

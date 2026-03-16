@@ -33,6 +33,7 @@ abstract class AbstractService
             // セキュリティのため値を取得しない
             if (strpos($key, 'PASSWORD') !== false) {
                 $result[$key] = '';
+
                 continue;
             }
             $result[$key] = $this->dotenvService->getValue($key);
@@ -45,8 +46,9 @@ abstract class AbstractService
     {
         $save_keys = [];
         foreach ($this->getEnvKeys() as $key) {
-            if (!isset($info[$key])) {
-                $save_keys[$key] = "";
+            if (! isset($info[$key])) {
+                $save_keys[$key] = '';
+
                 continue;
             }
             $save_keys[$key] = $info[$key];

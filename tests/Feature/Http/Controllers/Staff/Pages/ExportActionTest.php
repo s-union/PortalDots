@@ -26,7 +26,7 @@ class ExportActionTest extends TestCase
      */
     private $pages;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
@@ -40,7 +40,7 @@ class ExportActionTest extends TestCase
     /**
      * @test
      */
-    public function お知らせをCSVでダウンロードできる()
+    public function お知らせを_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.pages.export']);
         $this->staff->syncPermissions(['staff.pages.export']);
@@ -54,6 +54,7 @@ class ExportActionTest extends TestCase
 
         Excel::assertDownloaded("お知らせ一覧_{$now}.csv", function (PagesExport $export) {
             $titles = $this->pages->pluck('title');
+
             return $export->collection()->contains('title', $titles[0])
                 && $export->collection()->contains('title', $titles[1]);
         });
@@ -62,7 +63,7 @@ class ExportActionTest extends TestCase
     /**
      * @test
      */
-    public function 権限がない場合はCSVをダウンロードできない()
+    public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

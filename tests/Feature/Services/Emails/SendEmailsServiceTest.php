@@ -7,7 +7,6 @@ use App\Services\Emails\SendEmailService;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
@@ -20,7 +19,7 @@ class SendEmailsServiceTest extends TestCase
      */
     private $sendEmailService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -32,7 +31,7 @@ class SendEmailsServiceTest extends TestCase
     /**
      * @test
      */
-    public function isServiceOperational_配信予約がない場合はtrueを返す()
+    public function is_service_operational_配信予約がない場合はtrueを返す()
     {
         $this->assertTrue($this->sendEmailService->isServiceOperational());
     }
@@ -40,7 +39,7 @@ class SendEmailsServiceTest extends TestCase
     /**
      * @test
      */
-    public function isServiceOperational_配信予約されたメールが配信されているときはtrueを返す()
+    public function is_service_operational_配信予約されたメールが配信されているときはtrueを返す()
     {
         // 送信済みメール
         Email::factory()->create([
@@ -55,7 +54,7 @@ class SendEmailsServiceTest extends TestCase
     /**
      * @test
      */
-    public function isServiceOperational_配信予約から24時間以上経過してもメールが送信されていないときにfalseを返す()
+    public function is_service_operational_配信予約から24時間以上経過してもメールが送信されていないときにfalseを返す()
     {
         // 送信済みメール
         Email::factory()->create([

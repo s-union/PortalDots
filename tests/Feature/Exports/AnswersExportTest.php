@@ -9,7 +9,6 @@ use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\Exports\AnswersExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
@@ -67,7 +66,7 @@ class AnswersExportTest extends TestCase
      */
     private $upload_detail;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

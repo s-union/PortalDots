@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Documents;
 
-use Storage;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Eloquents\Document;
+use App\Http\Controllers\Controller;
+use Storage;
 
 class ShowAction extends Controller
 {

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Staff\Circles;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Place;
 use App\Eloquents\Tag;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class CreateAction extends Controller
@@ -17,7 +17,7 @@ class CreateAction extends Controller
             : ParticipationType::find($request->participation_type);
 
         $defaultTags = \json_encode([]);
-        if (!empty($defaultParticipationType)) {
+        if (! empty($defaultParticipationType)) {
             $defaultTags = $defaultParticipationType->tags()->pluck('name')->map(function ($item) {
                 return ['text' => $item];
             })->toJson();

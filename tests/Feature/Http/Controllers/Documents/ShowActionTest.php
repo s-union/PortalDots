@@ -2,22 +2,22 @@
 
 namespace Tests\Feature\Http\Controllers\Documents;
 
+use App\Eloquents\Document;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use App\Eloquents\Document;
-use App\Eloquents\User;
 
 class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $document;
+
     private $user;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -42,7 +42,7 @@ class ShowActionTest extends TestCase
     {
         $response = $this->actingAs($this->user)
             ->get(route('documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertOk();
@@ -58,7 +58,7 @@ class ShowActionTest extends TestCase
 
         $response = $this->actingAs($this->user)
             ->get(route('documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertStatus(404);

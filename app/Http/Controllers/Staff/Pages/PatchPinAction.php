@@ -24,7 +24,7 @@ class PatchPinAction extends Controller
     public function __invoke(PatchPinRequest $request, Page $page)
     {
         $values = $request->validated();
-        $isPinned = (bool)$values['is_pinned'];
+        $isPinned = (bool) $values['is_pinned'];
 
         $this->pagesService->setPinStatusForPage($page, $isPinned);
 

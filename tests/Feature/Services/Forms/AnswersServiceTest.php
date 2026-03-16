@@ -13,7 +13,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 class AnswersServiceTest extends TestCase
@@ -25,7 +24,7 @@ class AnswersServiceTest extends TestCase
      */
     private $answersSerivce;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->answersSerivce = App::make(AnswersService::class);
@@ -34,7 +33,7 @@ class AnswersServiceTest extends TestCase
     /**
      * @test
      */
-    public function sendAll()
+    public function send_all()
     {
         /** @var Collection */
         $staff = User::factory(3)->staff()->create();
@@ -66,7 +65,7 @@ class AnswersServiceTest extends TestCase
         /** @var Illuminate\Database\Eloquent\Collection */
         $questions = Question::factory(5)->create([
             'form_id' => $form->id,
-            'is_required' => false
+            'is_required' => false,
         ]);
 
         $circle->users()->saveMany($circle_members);
@@ -76,7 +75,7 @@ class AnswersServiceTest extends TestCase
         /** @var Answer */
         $answer = Answer::factory()->create([
             'form_id' => $form->id,
-            'circle_id' => $circle->id
+            'circle_id' => $circle->id,
         ]);
 
         Mail::fake();

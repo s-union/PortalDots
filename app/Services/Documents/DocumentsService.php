@@ -13,13 +13,9 @@ class DocumentsService
     /**
      * 配布資料を作成する
      *
-     * @param string $name
-     * @param string|null $description
-     * @param UploadedFile $file
-     * @param boolean $is_public 公開するかどうか
-     * @param boolean $is_important 重要かどうか
-     * @param string|null $notes スタッフ用メモ
-     * @return Document
+     * @param  bool  $is_public  公開するかどうか
+     * @param  bool  $is_important  重要かどうか
+     * @param  string|null  $notes  スタッフ用メモ
      */
     public function createDocument(
         string $name,
@@ -47,14 +43,10 @@ class DocumentsService
      * 配布資料を更新する
      *
      *
-     * @param Document $document 更新対象の配布資料
-     * @param string $name
-     * @param string|null $description
-     * @param UploadedFile|null $file
-     * @param boolean $is_public 公開するかどうか
-     * @param boolean $is_important 重要かどうか
-     * @param string|null $notes スタッフ用メモ
-     * @return bool
+     * @param  Document  $document  更新対象の配布資料
+     * @param  bool  $is_public  公開するかどうか
+     * @param  bool  $is_important  重要かどうか
+     * @param  string|null  $notes  スタッフ用メモ
      */
     public function updateDocument(
         Document $document,
@@ -65,7 +57,7 @@ class DocumentsService
         bool $is_important,
         ?string $notes
     ): bool {
-        if (!empty($file)) {
+        if (! empty($file)) {
             Storage::delete($document->path);
         }
 
@@ -83,14 +75,11 @@ class DocumentsService
 
     /**
      * 配布資料を削除する
-     *
-     * @param Document $document
-     *
-     * @return bool
      */
     public function deleteDocument(Document $document): bool
     {
         Storage::delete($document->path);
+
         return $document->delete();
     }
 }

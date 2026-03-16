@@ -25,6 +25,7 @@ class IndexAction extends Controller
         }
 
         $this->staffAuthService->send(Auth::user());
+
         return view('staff.verify.index');
     }
 }

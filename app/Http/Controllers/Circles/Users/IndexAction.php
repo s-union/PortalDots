@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Circles\Users;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
 use BaconQrCode\Exception\RuntimeException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -15,7 +15,7 @@ class IndexAction extends Controller
     {
         $this->authorize('circle.update', $circle);
 
-        if (!Auth::user()->isLeaderInCircle($circle)) {
+        if (! Auth::user()->isLeaderInCircle($circle)) {
             abort(403);
         }
 
@@ -30,7 +30,7 @@ class IndexAction extends Controller
         // 正常に表示されるので問題がない
         $invitation_url = route('circles.users.invite', [
             'circle' => $circle,
-            'token' => $circle->invitation_token
+            'token' => $circle->invitation_token,
         ]);
 
         $invitation_url_for_blade = str_replace('"', '', \json_encode($invitation_url, JSON_UNESCAPED_SLASHES));

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Circles;
 
 use App\Eloquents\Circle;
+use App\Eloquents\ParticipationType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Eloquents\ParticipationType;
 use Illuminate\Support\Facades\Auth;
 
 class CreateAction extends Controller
@@ -23,13 +23,14 @@ class CreateAction extends Controller
         if (Auth::user()->circles->count() > 0) {
             /** @var Circle $circle */
             $circle = Auth::user()->circles->first();
+
             return view('circles.form')
                 ->with('participation_type', $participationType)
                 ->with('form', $participationType->form)
                 ->with('questions', $participationType->form->questions()->get())
                 ->with('default_group', [
                     'group_name' => $circle->group_name,
-                    'group_name_yomi' => $circle->group_name_yomi
+                    'group_name_yomi' => $circle->group_name_yomi,
                 ]);
         } else {
             return view('circles.form')

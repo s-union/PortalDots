@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\Auth\Password;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\Password\ResetStartRequest;
 use App\Services\Auth\ResetPasswordService;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 
 class PostResetStartAction extends Controller
 {

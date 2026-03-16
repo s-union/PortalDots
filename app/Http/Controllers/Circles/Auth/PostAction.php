@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Circles\Auth;
 use App\Eloquents\Circle;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Circles\AuthRequest;
-use Illuminate\Http\Request;
 
 class PostAction extends Controller
 {
@@ -14,6 +13,7 @@ class PostAction extends Controller
         $this->authorize('circle.belongsTo', $circle);
 
         session(['user_reauthorized_at' => now()]);
+
         return redirect()
             ->route('circles.show', ['circle' => $circle]);
     }

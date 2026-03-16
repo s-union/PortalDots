@@ -9,6 +9,7 @@ use DateTime;
 class FormatTextService
 {
     private const DAYS = ['日', '月', '火', '水', '木', '金', '土'];
+
     private const DAYS_FULL = [
         '日曜日',
         '月曜日',
@@ -43,8 +44,8 @@ class FormatTextService
     /**
      * Y年n月d日(曜日) H:i 形式の日付文字列を作成する
      *
-     * @param  string $datetime     PHPにおいて日付として認識される文字列。
-     * @return string               整形された日付文字列。
+     * @param  string  $datetime  PHPにおいて日付として認識される文字列。
+     * @return string 整形された日付文字列。
      */
     public static function datetime(string $datetime): string
     {
@@ -53,6 +54,7 @@ class FormatTextService
         $dayId = (int) (new DateTime($datetime))->format('w');
         $day = self::getDayByDayId($dayId);
         $time = (new DateTime($datetime))->format('H:i');
+
         return "{$date}({$day}) {$time}";
     }
 
@@ -64,6 +66,7 @@ class FormatTextService
         if ($full) {
             return self::DAYS_FULL[$dayId];
         }
+
         return self::DAYS[$dayId];
     }
 
@@ -119,6 +122,7 @@ class FormatTextService
         $escaped_special_chars = array_map(function ($char) {
             return "\\{$char}";
         }, $special_chars);
+
         return str_replace($special_chars, $escaped_special_chars, $text);
     }
 }

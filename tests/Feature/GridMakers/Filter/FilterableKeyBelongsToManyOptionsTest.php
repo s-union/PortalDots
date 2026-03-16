@@ -34,7 +34,7 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
     /**
      * @test
      */
-    public function getPivot()
+    public function get_pivot()
     {
         $obj = $this->instantiate();
         $this->assertEquals('circle_user', $obj->getPivot());
@@ -43,7 +43,7 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
     /**
      * @test
      */
-    public function getForeignKey()
+    public function get_foreign_key()
     {
         $obj = $this->instantiate();
         $this->assertEquals('circle_id', $obj->getForeignKey());
@@ -52,7 +52,7 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
     /**
      * @test
      */
-    public function getRelatedKey()
+    public function get_related_key()
     {
         $obj = $this->instantiate();
         $this->assertEquals('user_id', $obj->getRelatedKey());
@@ -61,20 +61,20 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
     /**
      * @test
      */
-    public function getChoices()
+    public function get_choices()
     {
         $obj = $this->instantiate();
         $this->assertEquals([
-                'id' => 1, 'name' => 'Aさん',
-                'id' => 2, 'name' => 'Bさん',
-                'id' => 3, 'name' => 'Cさん',
-            ], $obj->getChoices());
+            'id' => 1, 'name' => 'Aさん',
+            'id' => 2, 'name' => 'Bさん',
+            'id' => 3, 'name' => 'Cさん',
+        ], $obj->getChoices());
     }
 
     /**
      * @test
      */
-    public function getChoicesName()
+    public function get_choices_name()
     {
         $obj = $this->instantiate();
         $this->assertEquals('name', $obj->getChoicesName());
@@ -83,7 +83,7 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
     /**
      * @test
      */
-    public function jsonSerialize()
+    public function json_serialize()
     {
         $obj = $this->instantiate();
         $expected = json_encode([
@@ -95,7 +95,7 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
                 'id' => 2, 'name' => 'Bさん',
                 'id' => 3, 'name' => 'Cさん',
             ],
-            'choices_name' => 'name'
+            'choices_name' => 'name',
         ]);
 
         $this->assertJsonStringEqualsJsonString($expected, json_encode($obj));

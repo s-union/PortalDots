@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Pages;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
-use App\Eloquents\Page;
 use App\Eloquents\Document;
+use App\Eloquents\Page;
 use App\Eloquents\Permission;
+use App\Eloquents\User;
 use App\Services\Pages\PagesService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use Tests\TestCase;
 
 class StoreActionTest extends TestCase
 {
@@ -25,7 +25,7 @@ class StoreActionTest extends TestCase
      */
     private $document;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
@@ -52,7 +52,7 @@ class StoreActionTest extends TestCase
                 [$this->document->id],
                 false,
                 false
-            )->andReturn(new Page());
+            )->andReturn(new Page);
         });
 
         $response = $this->actingAs($this->staff)
@@ -61,7 +61,7 @@ class StoreActionTest extends TestCase
                 'title' => 'お知らせのタイトル',
                 'body' => "本文です\n\n# 見出し\n- リストです\n- リストです",
                 'viewable_tags' => ['Cブース', '屋外模擬店'],
-                'documents' => [(string)$this->document->id],
+                'documents' => [(string) $this->document->id],
                 'is_public' => '0',
                 'is_pinned' => null,
                 'send_emails' => '0',
@@ -82,7 +82,7 @@ class StoreActionTest extends TestCase
                 'title' => 'お知らせのタイトル',
                 'body' => "本文です\n\n# 見出し\n- リストです\n- リストです",
                 'viewable_tags' => ['Cブース', '屋外模擬店'],
-                'documents' => [(string)$this->document->id],
+                'documents' => [(string) $this->document->id],
                 'is_public' => '0',
                 'is_pinned' => null,
                 'send_emails' => '0',
@@ -119,8 +119,8 @@ class StoreActionTest extends TestCase
         $this->staff->syncPermissions(['staff.pages.edit', 'staff.pages.send_emails']);
 
         $page = new Page([
-                'title' => '一斉配信するお知らせのタイトル',
-            ]);
+            'title' => '一斉配信するお知らせのタイトル',
+        ]);
 
         $this->mock(PagesService::class, function ($mock) use ($page) {
             $mock->shouldReceive('createPage')->once()->with(

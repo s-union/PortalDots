@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Pages;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Page;
+use App\Http\Controllers\Controller;
 use App\Services\Circles\SelectorService;
 use App\Services\Pages\ReadsService;
+use Illuminate\Support\Facades\Auth;
 
 class ShowAction extends Controller
 {

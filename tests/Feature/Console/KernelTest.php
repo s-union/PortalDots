@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Console;
 
+use App\Console\Kernel;
 use Illuminate\Console\Scheduling\Schedule;
 use Tests\TestCase;
-use App\Console\Kernel;
 
 class KernelTest extends TestCase
 {

@@ -28,6 +28,7 @@ class FilterQueryItemTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider operatorsProvider
      */
     public function constructor_正常(string $operator)
@@ -60,7 +61,7 @@ class FilterQueryItemTest extends TestCase
     /**
      * @test
      */
-    public function getFullKeyName()
+    public function get_full_key_name()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 
@@ -70,7 +71,7 @@ class FilterQueryItemTest extends TestCase
     /**
      * @test
      */
-    public function getMainKeyName()
+    public function get_main_key_name()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 
@@ -80,7 +81,7 @@ class FilterQueryItemTest extends TestCase
     /**
      * @test
      */
-    public function getSubKeyName()
+    public function get_sub_key_name()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 
@@ -89,9 +90,10 @@ class FilterQueryItemTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider operatorsProvider
      */
-    public function getOperator(string $input, string $output)
+    public function get_operator(string $input, string $output)
     {
         $obj = new FilterQueryItem('this_is_key.sub', $input, 'hogehoge');
 
@@ -101,7 +103,7 @@ class FilterQueryItemTest extends TestCase
     /**
      * @test
      */
-    public function getValue()
+    public function get_value()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 

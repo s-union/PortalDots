@@ -17,19 +17,23 @@ class DestroyActionTest extends TestCase
     use RefreshDatabase;
 
     private ?Form $form;
+
     private ?Collection $questions;
+
     private ?Collection $answers;
+
     private array $answerDetails;
+
     private ?User $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create();
         $this->questions = Question::factory(2)->create([
             'form_id' => $this->form->id,
             'is_required' => false,
-            'type' => 'text'
+            'type' => 'text',
         ]);
         $this->answers = Answer::factory(2)->create([
             'form_id' => $this->form->id,
@@ -38,12 +42,12 @@ class DestroyActionTest extends TestCase
             $this->answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
                 'question_id' => $this->questions[0]->id,
-                'answer' => '回答 １'
+                'answer' => '回答 １',
             ]);
             $this->answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
                 'question_id' => $this->questions[1]->id,
-                'answer' => '回答 ２'
+                'answer' => '回答 ２',
             ]);
         }
         $this->staff = User::factory()->staff()->create();
@@ -64,7 +68,7 @@ class DestroyActionTest extends TestCase
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
             ->delete(route('staff.forms.answers.destroy', [
-                'form' => $this->form, 'answer' => $this->answers[0]
+                'form' => $this->form, 'answer' => $this->answers[0],
             ]));
 
         $response->assertRedirect(route('staff.forms.answers.index', ['form' => $this->form]));
@@ -82,7 +86,7 @@ class DestroyActionTest extends TestCase
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
             ->delete(route('staff.forms.answers.destroy', [
-                'form' => $this->form, 'answer' => $this->answers[0]
+                'form' => $this->form, 'answer' => $this->answers[0],
             ]));
 
         $response->assertForbidden();

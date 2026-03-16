@@ -19,7 +19,7 @@ class ReadsServiceTest extends TestCase
      */
     private $readsService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->readsService = App::make(ReadsService::class);
@@ -28,7 +28,7 @@ class ReadsServiceTest extends TestCase
     /**
      * @test
      */
-    public function markAsRead()
+    public function mark_as_read()
     {
         /** @var Page */
         $page = Page::factory()->create();
@@ -52,7 +52,7 @@ class ReadsServiceTest extends TestCase
     /**
      * @test
      */
-    public function deleteAllReadsByPage()
+    public function delete_all_reads_by_page()
     {
         /** @var Illuminate\Database\Eloquent\Collection */
         $pages = Page::factory(5)->create();

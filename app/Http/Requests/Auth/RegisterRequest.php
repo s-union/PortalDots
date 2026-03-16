@@ -35,6 +35,7 @@ class RegisterRequest extends FormRequest
     public function rules()
     {
         $rules = User::getValidationRules();
+
         return [
             'student_id' => array_merge($rules['student_id'], ['unique:users']),
             'name' => $rules['name'],
@@ -72,7 +73,7 @@ class RegisterRequest extends FormRequest
     public function messages()
     {
         return [
-            'student_id.unique' => '入力された' . config('portal.student_id_name') . 'はすでに登録されています',
+            'student_id.unique' => '入力された'.config('portal.student_id_name').'はすでに登録されています',
             'email.unique' => '入力されたメールアドレスはすでに登録されています',
             'name.regex' => '姓と名の間にはスペースを入れてください',
             'name_yomi.regex' => '姓と名の間にはスペースを入れてください。また、ひらがなで記入してください',
@@ -84,7 +85,7 @@ class RegisterRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             if (
-                !User::isValidUnivemailByLocalPartAndDomainPart(
+                ! User::isValidUnivemailByLocalPartAndDomainPart(
                     $this->univemail_local_part,
                     $this->univemail_domain_part
                 )

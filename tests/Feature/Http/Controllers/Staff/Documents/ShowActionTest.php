@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Documents;
 
+use App\Eloquents\Document;
+use App\Eloquents\Permission;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use App\Eloquents\Document;
-use App\Eloquents\Permission;
-use App\Eloquents\User;
 
 class ShowActionTest extends TestCase
 {
@@ -20,7 +20,7 @@ class ShowActionTest extends TestCase
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -49,7 +49,7 @@ class ShowActionTest extends TestCase
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
             ->get(route('staff.documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertOk();
@@ -62,7 +62,7 @@ class ShowActionTest extends TestCase
     {
         $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertForbidden();
@@ -75,7 +75,7 @@ class ShowActionTest extends TestCase
     {
         $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertForbidden();

@@ -2,24 +2,26 @@
 
 namespace Tests\Feature\Http\Controllers\Forms\Answers;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\App;
-use Carbon\Carbon;
-use Carbon\CarbonImmutable;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Form;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Tag;
+use App\Eloquents\User;
 use App\Services\Circles\SelectorService;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\App;
+use Tests\TestCase;
 
 class StoreActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
+
     private $form;
 
     /**
@@ -27,7 +29,7 @@ class StoreActionTest extends TestCase
      */
     private $selectorService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -45,6 +47,7 @@ class StoreActionTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider 受付期間中かどうかに応じてリクエストを許可する_provider
      */
     public function 受付期間中かどうかに応じてリクエストを許可する(

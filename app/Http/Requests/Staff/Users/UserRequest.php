@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Staff\Users;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use App\Eloquents\User;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UserRequest extends FormRequest
 {
@@ -27,6 +27,7 @@ class UserRequest extends FormRequest
     public function rules()
     {
         $rules = User::getValidationRules();
+
         return [
             'student_id' => array_merge($rules['student_id'], [
                 Rule::unique('users')->ignore($this->route('user')),
@@ -60,15 +61,12 @@ class UserRequest extends FormRequest
     public function messages()
     {
         return [
-            'student_id.unique' =>
-                '入力された' .
-                config('portal.student_id_name') .
+            'student_id.unique' => '入力された'.
+                config('portal.student_id_name').
                 'はすでに登録されています',
-            'email.unique' =>
-                '入力されたメールアドレスはすでに登録されています',
+            'email.unique' => '入力されたメールアドレスはすでに登録されています',
             'name.regex' => '姓と名の間にはスペースを入れてください',
-            'name_yomi.regex' =>
-                '姓と名の間にはスペースを入れてください。また、ひらがなで記入してください',
+            'name_yomi.regex' => '姓と名の間にはスペースを入れてください。また、ひらがなで記入してください',
             // ひらがなもカタカナも入力可能だが，説明が面倒なので，エラー上ではひらがなでの記入を促す
         ];
     }
@@ -78,7 +76,7 @@ class UserRequest extends FormRequest
         $user = $this->route('user');
         $validator->after(function ($validator) use ($user) {
             if (
-                !User::isValidUnivemailByLocalPartAndDomainPart(
+                ! User::isValidUnivemailByLocalPartAndDomainPart(
                     $this->univemail_local_part,
                     $this->univemail_domain_part
                 )
@@ -88,7 +86,7 @@ class UserRequest extends FormRequest
                     ->add('univemail', '不正なメールアドレスです。');
             }
 
-            if (!empty($this->user_type)) {
+            if (! empty($this->user_type)) {
                 if (Auth::id() === $user->id) {
                     $validator
                         ->errors()
@@ -96,7 +94,7 @@ class UserRequest extends FormRequest
                             'user_type',
                             '自分自身の「ユーザー種別」を変更することはできません。'
                         );
-                } elseif (!Auth::user()->is_admin && $user->is_admin) {
+                } elseif (! Auth::user()->is_admin && $user->is_admin) {
                     $validator
                         ->errors()
                         ->add(
@@ -104,7 +102,7 @@ class UserRequest extends FormRequest
                             '「ユーザー種別」が「管理者」のユーザーを「スタッフ」または「一般ユーザー」に変更するには、あなた自身が「管理者」である必要があります。'
                         );
                 } elseif (
-                    !Auth::user()->is_admin &&
+                    ! Auth::user()->is_admin &&
                     $this->user_type === 'admin'
                 ) {
                     $validator
@@ -116,7 +114,7 @@ class UserRequest extends FormRequest
                 }
             } elseif (
                 Auth::id() !== $user->id &&
-                ((!Auth::user()->is_admin && !$user->is_admin) ||
+                ((! Auth::user()->is_admin && ! $user->is_admin) ||
                     Auth::user()->is_admin)
             ) {
                 // user_type が empty であることを許容しないのは、

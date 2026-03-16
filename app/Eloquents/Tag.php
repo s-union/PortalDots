@@ -10,11 +10,10 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Tag extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     protected $fillable = [
-        'name'
+        'name',
     ];
 
     public function getActivitylogOptions(): LogOptions

@@ -17,11 +17,7 @@ class AnswerDetailsHelper
     /**
      * 与えられたクエリビルダーに、フォーム設問への回答(answer_details)の情報を取得する機能を追加する。
      *
-     * @param Builder $query
-     * @param Collection<Question> $questions
-     * @param string $questionsKeyPrefix
-     * @param string $checkboxGroupConcatSeparator
-     * @return Builder
+     * @param  Collection<Question>  $questions
      */
     public static function makeQueryWithAnswerDetails(
         Builder $query,
@@ -32,11 +28,11 @@ class AnswerDetailsHelper
         $questionColumns = $questions
             ->map(function (Question $question) use ($questionsKeyPrefix, $checkboxGroupConcatSeparator) {
                 $idInt = intval($question->id);
-                if ($idInt === 0 || !is_int($idInt)) {
+                if ($idInt === 0 || ! is_int($idInt)) {
                     return null;
                 }
                 // SQLインジェクションに注意。$idInt は整数であることを期待している。
-                $columnAlias = $questionsKeyPrefix . $idInt;
+                $columnAlias = $questionsKeyPrefix.$idInt;
 
                 switch ($question->type) {
                     case 'heading':
@@ -53,12 +49,13 @@ class AnswerDetailsHelper
                         return "MAX(CASE WHEN question_id = {$idInt} THEN answer ELSE NULL END) AS '{$columnAlias}'";
                     case 'checkbox':
                         $separator = $checkboxGroupConcatSeparator;
+
                         // phpcs:ignore
                         return "GROUP_CONCAT(CASE WHEN question_id = {$idInt} THEN answer ELSE NULL END SEPARATOR '{$separator}') AS '{$columnAlias}'";
                 }
             })
             ->filter(function ($column) {
-                return !is_null($column);
+                return ! is_null($column);
             });
 
         $answerDetailsSubQueryColumns = ['answer_id', ...$questionColumns];
@@ -73,7 +70,7 @@ class AnswerDetailsHelper
 
     public static function getFormQuestionKey(Question $question, string $questionsKeyPrefix): string
     {
-        return $questionsKeyPrefix . $question->id;
+        return $questionsKeyPrefix.$question->id;
     }
 
     public static function getFormQuestionsKeys(Collection $questions, string $questionsKeyPrefix): array
@@ -83,12 +80,13 @@ class AnswerDetailsHelper
                 if ($question->type === 'heading') {
                     return null;
                 }
+
                 return self::getFormQuestionKey($question, $questionsKeyPrefix);
             })
-            ->filter(function ($column) {
-                return !is_null($column);
-            })
-            ->all();
+                ->filter(function ($column) {
+                    return ! is_null($column);
+                })
+                ->all();
     }
 
     public static function makeFilterableKeysForAnswerDetails(Collection $questions, string $questionsKeyPrefix): array
@@ -115,6 +113,7 @@ class AnswerDetailsHelper
                     break;
             }
         }
+
         return $questionFilterableKeys;
     }
 
@@ -133,12 +132,12 @@ class AnswerDetailsHelper
             $answerValue = $record->$formKey;
 
             if ($question->type === 'upload') {
-                $item[$formKey] = !empty($answerValue) ? [
+                $item[$formKey] = ! empty($answerValue) ? [
                     'file_url' => route('staff.forms.answers.uploads.show', [
                         'form' => $form->id,
                         'answer' => $record->id,
                         'question' => $questionId,
-                    ])
+                    ]),
                 ] : [];
             } elseif ($question->type === 'checkbox') {
                 $item[$formKey] = isset($answerValue)

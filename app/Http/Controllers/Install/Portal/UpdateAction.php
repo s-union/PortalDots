@@ -24,6 +24,7 @@ class UpdateAction extends Controller
         $info['APP_FORCE_HTTPS'] = isset($info['APP_FORCE_HTTPS']) && $info['APP_FORCE_HTTPS'] === '1'
             ? 'true' : 'false';
         $this->portalService->updateInfo($info);
+
         return redirect()
             ->route('install.database.edit');
     }

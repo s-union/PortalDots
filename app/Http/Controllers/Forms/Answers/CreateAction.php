@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers\Forms\Answers;
 
-use Auth;
-use Gate;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
-use App\Eloquents\Circle;
-use App\Services\Forms\AnswersService;
+use App\Http\Controllers\Controller;
 use App\Services\Circles\SelectorService;
+use App\Services\Forms\AnswersService;
+use Auth;
 
 class CreateAction extends Controller
 {
@@ -33,7 +30,7 @@ class CreateAction extends Controller
 
     public function __invoke(Form $form)
     {
-        if (!$form->is_public || isset($form->participationType)) {
+        if (! $form->is_public || isset($form->participationType)) {
             abort(404);
         }
 

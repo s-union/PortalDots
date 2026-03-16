@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\Hash;
 final class StaffAuthService
 {
     private const SESSION_KEY_USER_ID = 'staff_auth_service__user_id';
+
     private const SESSION_KEY_VERIFY_CODE_HASH = 'staff_auth_service__verify_code_hash';
+
     private const SESSION_KEY_EXPIRED_AT = 'staff_auth_service__expired_at';
 
     public const SESSION_KEY_STAFF_AUTHORIZED = 'staff_authorized';
@@ -27,7 +29,6 @@ final class StaffAuthService
     /**
      * ユーザーへスタッフ認証のためのメールを送信
      *
-     * @param User $user
      * @return void
      */
     public function send(User $user)
@@ -39,25 +40,23 @@ final class StaffAuthService
     /**
      * スタッフ認証のコードを生成し、セッションに保存
      *
-     * @param User $user
      * @return string $verify_code 認証コード
      */
     private function setVerifyCode(User $user)
     {
-        $verify_code = (string)random_int(100000, 999999);
+        $verify_code = (string) random_int(100000, 999999);
         session([
             self::SESSION_KEY_USER_ID => $user->id,
             self::SESSION_KEY_VERIFY_CODE_HASH => Hash::make($verify_code),
             self::SESSION_KEY_EXPIRED_AT => Carbon::now()->addMinutes(5)->format('Y-m-d H:i:s'),
         ]);
+
         return $verify_code;
     }
 
     /**
      * スタッフ認証コードが正しければスタッフモードへのアクセスを許可
      *
-     * @param User $user
-     * @param string $verify_code
      * @return bool 認証結果
      */
     public function verifyAndAuthenticate(User $user, string $verify_code)
@@ -75,6 +74,7 @@ final class StaffAuthService
 
         if ($result) {
             session([self::SESSION_KEY_STAFF_AUTHORIZED => true]);
+
             return true;
         }
 
@@ -84,7 +84,6 @@ final class StaffAuthService
     /**
      * スタッフ認証画面にアクセスする前にアクセスしたURLをセッションに保存
      *
-     * @param string $url
      * @return void
      */
     public function setPreviousUrl(string $url)
@@ -94,14 +93,13 @@ final class StaffAuthService
 
     /**
      * スタッフ認証画面にアクセスする前にアクセスしたURLを取得
-     *
-     * @return string|null
      */
     public function getPreviousUrl(): ?string
     {
         $url = session(self::SESSION_KEY_PREVIOUS_URL, null);
         $filtered_url = filter_var($url, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED);
-        return !empty($filtered_url) ? $filtered_url : null;
+
+        return ! empty($filtered_url) ? $filtered_url : null;
     }
 
     /**

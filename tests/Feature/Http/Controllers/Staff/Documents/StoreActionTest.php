@@ -7,10 +7,10 @@ use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Documents\DocumentsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Mockery;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Mockery;
+use Tests\TestCase;
 
 class StoreActionTest extends TestCase
 {
@@ -21,7 +21,7 @@ class StoreActionTest extends TestCase
      */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
@@ -30,7 +30,7 @@ class StoreActionTest extends TestCase
     /**
      * @test
      */
-    public function DocumentsServiceのcreateDocumentが呼び出される()
+    public function documents_serviceのcreate_documentが呼び出される()
     {
         Permission::create(['name' => 'staff.documents.edit']);
         $this->staff->syncPermissions(['staff.documents.edit']);

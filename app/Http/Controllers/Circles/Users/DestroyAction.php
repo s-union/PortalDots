@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Circles\Users;
 
-use App\Http\Controllers\Controller;
-use App\Services\Circles\CirclesService;
 use App\Eloquents\Circle;
 use App\Eloquents\User;
+use App\Http\Controllers\Controller;
+use App\Services\Circles\CirclesService;
 use Illuminate\Support\Facades\Auth;
 
 class DestroyAction extends Controller
@@ -28,7 +28,7 @@ class DestroyAction extends Controller
                 ->with('topAlert.title', '責任者を削除することはできません');
         }
 
-        if (!Auth::user()->isLeaderInCircle($circle) && $user->id !== Auth::id()) {
+        if (! Auth::user()->isLeaderInCircle($circle) && $user->id !== Auth::id()) {
             return redirect()
                 ->route('circles.show', ['circle' => $circle])
                 ->with('topAlert.type', 'danger')
@@ -48,7 +48,7 @@ class DestroyAction extends Controller
         }
 
         return redirect()
-                ->route('circles.users.index', ['circle' => $circle])
-                ->with('topAlert.title', $message);
+            ->route('circles.users.index', ['circle' => $circle])
+            ->with('topAlert.title', $message);
     }
 }

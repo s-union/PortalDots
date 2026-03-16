@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Pages;
 
-use App\Http\Controllers\Controller;
-use App\Eloquents\Tag;
 use App\Eloquents\Document;
+use App\Eloquents\Tag;
+use App\Http\Controllers\Controller;
 
 class CreateAction extends Controller
 {

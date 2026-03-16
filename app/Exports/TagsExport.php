@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Eloquents\Tag;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -10,16 +11,15 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class TagsExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return Tag::with('circles')->get();
     }
 
     /**
-     * @param Tag $tag
-     * @return array
+     * @param  Tag  $tag
      */
     public function map($tag): array
     {
@@ -52,15 +52,12 @@ class TagsExport implements FromCollection, WithHeadings, WithMapping
                     $firstCircle->name_yomi ?? null,
                     $firstCircle->group_name ?? null,
                     $firstCircle->group_name_yomi ?? null,
-                ]
+                ],
             ],
             $circles
         );
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return [

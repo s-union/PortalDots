@@ -27,9 +27,6 @@ class SelectorService
 
     /**
      * ログイン先の企画を選択する画面において、ユーザーが選択可能な企画の一覧を取得
-     *
-     * @param User $user
-     * @return Collection
      */
     public function getSelectableCirclesList(User $user): Collection
     {
@@ -37,19 +34,19 @@ class SelectorService
             $this->selectableCircles[$user->id] = $user
                 ->circles()->approved()->with('participationType')->get();
         }
+
         return $this->selectableCircles[$user->id];
     }
 
     /**
      * CircleSelectorDropdown.vue コンポーネントの circles prop で利用可能な値を取得
      *
-     * @param User $user
-     * @param string $redirect_to 企画をセットしたあとにリダイレクトする先のURL
-     * @return string
+     * @param  string  $redirect_to  企画をセットしたあとにリダイレクトする先のURL
      */
     public function getJsonForCircleSelectorDropdown(User $user, string $redirect_to): string
     {
         $circles = $this->getSelectableCirclesList($user);
+
         return $circles->map(function (Circle $circle) use ($redirect_to) {
             return [
                 'id' => $circle->id,
@@ -77,6 +74,7 @@ class SelectorService
         if (empty($circle_id)) {
             // キャッシュを削除した上で null を返す
             $this->circle = null;
+
             return null;
         }
 
@@ -85,11 +83,12 @@ class SelectorService
 
             if (empty($this->circle)) {
                 $this->reset();
+
                 return null;
             }
         }
 
-        if (!$this->circle->hasApproved()) {
+        if (! $this->circle->hasApproved()) {
             // 企画にログイン後、スタッフによってステータスが「受理」以外に
             // 変更されることも想定される。そのため、ログイン中の企画の
             // ステータスが「受理」になっているかを確認し、

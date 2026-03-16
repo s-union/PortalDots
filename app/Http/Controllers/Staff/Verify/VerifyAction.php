@@ -24,14 +24,15 @@ class VerifyAction extends Controller
         $previous_url = $this->staffAuthService->getPreviousUrl();
         $result = $this->staffAuthService->verifyAndAuthenticate(Auth::user(), $request->verify_code);
 
-        if (!$result) {
+        if (! $result) {
             return redirect()->route('staff.verify.index')
                 ->withErrors(['verify_code' => '認証コードが間違っているか、期限切れです。再度お試しください。']);
         }
 
-        if (!empty($previous_url)) {
+        if (! empty($previous_url)) {
             return redirect($previous_url);
         }
+
         return redirect()->route('staff.index');
     }
 }

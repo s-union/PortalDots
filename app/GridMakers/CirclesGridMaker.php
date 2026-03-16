@@ -8,13 +8,13 @@ use App\Eloquents\Circle;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Place;
 use App\Eloquents\Tag;
-use Illuminate\Database\Eloquent\Builder;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
 use App\GridMakers\Helpers\AnswerDetailsHelper;
-use Illuminate\Database\Eloquent\Model;
 use App\Services\Utils\FormatTextService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +27,7 @@ class CirclesGridMaker implements GridMakable
     private ?ParticipationType $participationType = null;
 
     public const PARTICIPATION_FORM_QUESTIONS_KEY_PREFIX = 'participation_form_question_';
+
     public const CHECKBOX_GROUP_CONCAT_SEPARATOR = "\n";
 
     public function __construct(FormatTextService $formatTextService)
@@ -41,11 +42,12 @@ class CirclesGridMaker implements GridMakable
     {
         $this->participationType = $participationType;
         $this->participationType->loadMissing(['form', 'form.questions']);
+
         return $this;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -93,7 +95,7 @@ class CirclesGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -123,7 +125,7 @@ class CirclesGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
@@ -213,7 +215,7 @@ class CirclesGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -241,7 +243,7 @@ class CirclesGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
@@ -270,15 +272,15 @@ class CirclesGridMaker implements GridMakable
                     $itemsExpectForms[$key] = $record->statusSetBy;
                     break;
                 case 'status_set_at':
-                    $itemsExpectForms[$key] = !empty($record->status_set_at)
+                    $itemsExpectForms[$key] = ! empty($record->status_set_at)
                         ? $record->status_set_at->format('Y/m/d H:i:s') : null;
                     break;
                 case 'created_at':
-                    $itemsExpectForms[$key] = !empty($record->created_at)
+                    $itemsExpectForms[$key] = ! empty($record->created_at)
                         ? $record->created_at->format('Y/m/d H:i:s') : null;
                     break;
                 case 'updated_at':
-                    $itemsExpectForms[$key] = !empty($record->updated_at)
+                    $itemsExpectForms[$key] = ! empty($record->updated_at)
                         ? $record->updated_at->format('Y/m/d H:i:s') : null;
                     break;
                 default:
@@ -291,6 +293,6 @@ class CirclesGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Circle();
+        return new Circle;
     }
 }

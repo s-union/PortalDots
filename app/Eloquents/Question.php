@@ -2,9 +2,9 @@
 
 namespace App\Eloquents;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -28,7 +28,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Question extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     public const QUESTION_TYPES = [
@@ -113,6 +112,7 @@ class Question extends Model
         $options = array_map('trim', $options);
         $options = array_filter($options, 'strlen');
         $options = array_values($options);
+
         return $options;
     }
 }

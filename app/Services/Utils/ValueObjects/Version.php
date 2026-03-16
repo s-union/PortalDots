@@ -56,8 +56,6 @@ final class Version
 
     /**
      * バージョン文字列からバージョンオブジェクトを生成する
-     *
-     * @return self|null
      */
     public static function parse(string $version_string): ?self
     {
@@ -65,12 +63,13 @@ final class Version
         $version_string = preg_replace('/^v/', '', $version_string);
         preg_match(self::SEMVER_REGEX, $version_string, $matches);
         if (
-            !isset($matches['major']) ||
-            !isset($matches['minor']) ||
-            !isset($matches['patch'])
+            ! isset($matches['major']) ||
+            ! isset($matches['minor']) ||
+            ! isset($matches['patch'])
         ) {
             return null;
         }
+
         return new self(
             (int) $matches['major'],
             (int) $matches['minor'],
@@ -97,6 +96,7 @@ final class Version
                 $this->getPatch()
             );
         }
+
         return sprintf(
             '%d.%d.%d-%s',
             $this->getMajor(),

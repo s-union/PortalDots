@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Staff\Forms;
 
-use App\Eloquents\Form;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Forms\FormRequest;
 use App\Services\Forms\FormsService;
@@ -36,8 +35,8 @@ class StoreAction extends Controller
                 new Carbon($values['open_at']),
                 new Carbon($values['close_at']),
                 Auth::user(),
-                (int)$values['max_answers'] ?? 1,
-                isset($values['is_public']) && $values['is_public'] === "1",
+                (int) $values['max_answers'] ?? 1,
+                isset($values['is_public']) && $values['is_public'] === '1',
                 $values['answerable_tags'] ?? []
             );
 

@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Eloquents\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Services\Auth\RegisterService;
 use App\Services\Auth\EmailService;
+use App\Services\Auth\RegisterService;
 use App\Services\Auth\VerifyService;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Mime\Exception\RfcComplianceException;
 
@@ -57,9 +54,6 @@ class RegisterController extends Controller
     /**
      * Create a new controller instance.
      *
-     * @param  RegisterService  $registerService
-     * @param  EmailService  $emailService
-     * @param  VerifyService  $verifyService
      * @return void
      */
     public function __construct(
@@ -81,7 +75,6 @@ class RegisterController extends Controller
     /**
      * ユーザー登録を実行する
      *
-     * @param  RegisterRequest  $request
      * @return Response
      */
     public function register(RegisterRequest $request): RedirectResponse
@@ -109,10 +102,11 @@ class RegisterController extends Controller
             $this->emailService->sendAll($user);
         } catch (RfcComplianceException $e) {
             DB::rollBack();
+
             return redirect()
                 ->route('register')
                 ->withInput()
-                ->withErrors(['student_id' => config('portal.student_id_name') . 'を正しく入力してください']);
+                ->withErrors(['student_id' => config('portal.student_id_name').'を正しく入力してください']);
         }
 
         DB::commit();

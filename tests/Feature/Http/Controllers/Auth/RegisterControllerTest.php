@@ -2,14 +2,13 @@
 
 namespace Tests\Feature\Http\Controllers\Auth;
 
-use Tests\TestCase;
 use App\Services\Auth\EmailService;
-use App\Eloquents\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Auth\Events\Registered;
-use Symfony\Component\Mime\Exception\RfcComplianceException;
 use Mockery\MockInterface;
+use Symfony\Component\Mime\Exception\RfcComplianceException;
+use Tests\TestCase;
 
 class RegisterControllerTest extends TestCase
 {
@@ -25,8 +24,8 @@ class RegisterControllerTest extends TestCase
         $response->assertViewIs('users.register');
     }
 
-    //ユーザーが登録しようとした際に、入力されたメールアドレスがRFC（インターネット標準規格）に違反していてメール送信エラーが起きた場合
-    //正しく登録をキャンセルしてエラーメッセージと共に元の画面へ戻されるか
+    // ユーザーが登録しようとした際に、入力されたメールアドレスがRFC（インターネット標準規格）に違反していてメール送信エラーが起きた場合
+    // 正しく登録をキャンセルしてエラーメッセージと共に元の画面へ戻されるか
     public function 登録処理でRFC違反の例外を捕捉し、元の画面へリダイレクトする()
     {
         Event::fake([Registered::class]);

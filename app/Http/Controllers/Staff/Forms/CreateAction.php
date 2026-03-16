@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Forms;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Tag;
+use App\Http\Controllers\Controller;
 
 class CreateAction extends Controller
 {

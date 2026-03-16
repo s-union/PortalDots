@@ -12,8 +12,7 @@ class UpdateAction extends Controller
 {
     public function __construct(
         private FormEditorService $formEditorService
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         ParticipationType $participationType,

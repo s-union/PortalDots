@@ -23,6 +23,7 @@ class ShowActionTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider 非公開と固定表示のお知らせは表示できない_provider
      */
     public function 非公開と固定表示のお知らせは表示できない(bool $is_public, bool $is_pinned, bool $can_see)

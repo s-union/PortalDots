@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Staff\Forms\Editor;
 
 use App\Eloquents\Form;
-use App\Services\Forms\QuestionsService;
-use App\Http\Requests\Staff\Forms\Editor\AddQuestionRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\Forms\Editor\AddQuestionRequest;
+use App\Services\Forms\QuestionsService;
 use Carbon\Carbon;
 
 class AddQuestionAction extends Controller
@@ -30,12 +30,13 @@ class AddQuestionAction extends Controller
                 'number_max' => null,
                 'allowed_types' => '',
                 'priority' => 9999,
-                'created_at' => new Carbon(),
-                'updated_at' => new Carbon(),
+                'created_at' => new Carbon,
+                'updated_at' => new Carbon,
             ];
         }
 
         $question = $this->questionsService->addQuestion($form, $request->type);
+
         return [
             'id' => $question->id,
             'name' => $question->name,

@@ -43,19 +43,14 @@ class SubmittedMailable extends Mailable
     /**
      * Create a new message instance.
      *
-     * @param Circle $circle
-     * @param Form|null $participationForm
-     * @param Collection|null $questions
-     * @param Answer|null $answer
-     * @param array|null $answerDetails
      * @return void
      */
     public function __construct(
         Circle $circle,
-        Form $participationForm = null,
-        Collection $questions = null,
-        Answer $answer = null,
-        array $answerDetails = null
+        ?Form $participationForm = null,
+        ?Collection $questions = null,
+        ?Answer $answer = null,
+        ?array $answerDetails = null
     ) {
         $this->circle = $circle;
         $this->participation_form = $participationForm;

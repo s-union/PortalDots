@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Auth\Email;
 
 use App\Eloquents\User;
+use App\Http\Controllers\Controller;
 use App\Services\Auth\VerifyService;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
 class VerifyAction extends Controller
@@ -41,7 +41,7 @@ class VerifyAction extends Controller
         $response = redirect()
             ->route($user->areBothEmailsVerified() ? 'verification.completed' : 'verification.notice');
 
-        if ($user->areBothEmailsVerified() && !$user->is_signed_up) {
+        if ($user->areBothEmailsVerified() && ! $user->is_signed_up) {
             $user->setSignedUpAt();
         }
 

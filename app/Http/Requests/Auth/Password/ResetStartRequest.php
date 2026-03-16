@@ -39,7 +39,7 @@ class ResetStartRequest extends FormRequest
     public function attributes()
     {
         return [
-            'login_id' => config('portal.student_id_name') . '・連絡先メールアドレス',
+            'login_id' => config('portal.student_id_name').'・連絡先メールアドレス',
         ];
     }
 }

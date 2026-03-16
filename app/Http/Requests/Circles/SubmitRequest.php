@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Circles;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Http\Requests\Forms\AnswerRequestInterface;
+use Illuminate\Foundation\Http\FormRequest;
 
 class SubmitRequest extends FormRequest implements AnswerRequestInterface
 {

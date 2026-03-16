@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Admin\ActivityLog;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Http\Responders\Staff\GridResponder;
 use App\GridMakers\ActivityLogGridMaker;
+use App\Http\Controllers\Controller;
+use App\Http\Responders\Staff\GridResponder;
+use Illuminate\Http\Request;
 
 class ApiAction extends Controller
 {

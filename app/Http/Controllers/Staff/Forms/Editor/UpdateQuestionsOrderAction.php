@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Staff\Forms\Editor;
 
 use App\Eloquents\Form;
-use App\Services\Forms\QuestionsService;
-use App\Http\Requests\Staff\Forms\Editor\UpdateQuestionsOrderRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\Forms\Editor\UpdateQuestionsOrderRequest;
+use App\Services\Forms\QuestionsService;
 
 class UpdateQuestionsOrderAction extends Controller
 {

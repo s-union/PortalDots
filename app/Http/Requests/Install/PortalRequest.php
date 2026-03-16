@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Install;
 
-use Illuminate\Foundation\Http\FormRequest;
-use App\Services\Install\PortalService;
 use App;
+use App\Services\Install\PortalService;
+use Illuminate\Foundation\Http\FormRequest;
 
 class PortalRequest extends FormRequest
 {
@@ -31,6 +31,7 @@ class PortalRequest extends FormRequest
     public function attributes()
     {
         $portalService = App::make(PortalService::class);
+
         return $portalService->getFormLabels();
     }
 
@@ -38,8 +39,8 @@ class PortalRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             if (
-                !isset($this->PORTAL_PRIMARY_COLOR_H) ||
-                !isset($this->PORTAL_PRIMARY_COLOR_S) || !isset($this->PORTAL_PRIMARY_COLOR_L)
+                ! isset($this->PORTAL_PRIMARY_COLOR_H) ||
+                ! isset($this->PORTAL_PRIMARY_COLOR_S) || ! isset($this->PORTAL_PRIMARY_COLOR_L)
             ) {
                 return;
             }
@@ -51,9 +52,9 @@ class PortalRequest extends FormRequest
                 return;
             }
 
-            $h = (int)$this->PORTAL_PRIMARY_COLOR_H;
-            $s = (int)$this->PORTAL_PRIMARY_COLOR_S;
-            $l = (int)$this->PORTAL_PRIMARY_COLOR_L;
+            $h = (int) $this->PORTAL_PRIMARY_COLOR_H;
+            $s = (int) $this->PORTAL_PRIMARY_COLOR_S;
+            $l = (int) $this->PORTAL_PRIMARY_COLOR_L;
 
             if ($h < 0 || $h > 360 || $s < 0 || $s > 100 || $l < 0 || $l > 100) {
                 $validator->errors()->add('primary_color', 'アクセントカラーを選択してください');

@@ -4,10 +4,11 @@ namespace Database\Factories;
 
 use App\Eloquents\Form;
 use App\Eloquents\ParticipationType;
+use App\Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Model>
+ * @extends Factory<Model>
  */
 class ParticipationTypeFactory extends Factory
 {
@@ -21,6 +22,7 @@ class ParticipationTypeFactory extends Factory
     public function definition()
     {
         $usersCountMin = $this->faker->numberBetween(1, 100);
+
         return [
             'name' => $this->faker->name(),
             'description' => $this->faker->paragraph(),
@@ -28,7 +30,7 @@ class ParticipationTypeFactory extends Factory
             'users_count_max' => $this->faker->numberBetween($usersCountMin, 100),
             'form_id' => function () {
                 return Form::factory()->create()->id;
-            }
+            },
         ];
     }
 }

@@ -23,7 +23,7 @@ class FilterableKeysDictTest extends TestCase
     /**
      * @test
      */
-    public function jsonSerialize_空配列の場合()
+    public function json_serialize_空配列の場合()
     {
         $obj = new FilterableKeysDict([]);
 
@@ -40,7 +40,7 @@ class FilterableKeysDictTest extends TestCase
         new FilterableKeysDict([
             'id' => FilterableKey::number(),
             'name' => FilterableKey::string(),
-            'created_at' => ['type' => 'datetime']
+            'created_at' => ['type' => 'datetime'],
         ]);
     }
 
@@ -74,7 +74,7 @@ class FilterableKeysDictTest extends TestCase
     /**
      * @test
      */
-    public function getByKey_正常()
+    public function get_by_key_正常()
     {
         $obj = new FilterableKeysDict([
             'id' => FilterableKey::number(),
@@ -90,7 +90,7 @@ class FilterableKeysDictTest extends TestCase
     /**
      * @test
      */
-    public function getByKey_存在しないキーが指定された場合は例外発生する()
+    public function get_by_key_存在しないキーが指定された場合は例外発生する()
     {
         $this->expectException(Exception::class);
 
@@ -106,7 +106,7 @@ class FilterableKeysDictTest extends TestCase
     /**
      * @test
      */
-    public function jsonSerialize()
+    public function json_serialize()
     {
         $expected = json_encode([
             'id' => ['type' => 'number'],
@@ -117,8 +117,8 @@ class FilterableKeysDictTest extends TestCase
                     'rejected',
                     'approved',
                     'NULL',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $obj = new FilterableKeysDict([

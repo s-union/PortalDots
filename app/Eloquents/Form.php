@@ -2,9 +2,10 @@
 
 namespace App\Eloquents;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
@@ -26,7 +27,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Form extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     protected $fillable = [
@@ -75,9 +75,8 @@ class Form extends Model
      * $circle を省略した場合、回答できる企画が限られているフォームを
      * 除くフォームの一覧が取得される
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param Circle|null $circle
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeByCircle($query, ?Circle $circle = null)
     {
@@ -154,7 +153,8 @@ class Form extends Model
     public function answered(Circle $circle)
     {
         $answer = Answer::where('form_id', $this->id)->where('circle_id', $circle->id)->first();
-        return !empty($answer);
+
+        return ! empty($answer);
     }
 
     /**

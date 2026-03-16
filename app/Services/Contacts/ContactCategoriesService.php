@@ -12,8 +12,6 @@ class ContactCategoriesService
 {
     /**
      * ContactCategory の新規作成・アップデート時にメール送信を確認する
-     *
-     * @param ContactCategory $category
      */
     public function send(ContactCategory $category)
     {

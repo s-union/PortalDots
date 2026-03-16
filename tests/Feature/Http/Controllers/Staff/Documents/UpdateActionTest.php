@@ -7,8 +7,8 @@ use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Documents\DocumentsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Mockery;
+use Tests\TestCase;
 
 class UpdateActionTest extends TestCase
 {
@@ -19,7 +19,7 @@ class UpdateActionTest extends TestCase
      */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
@@ -28,7 +28,7 @@ class UpdateActionTest extends TestCase
     /**
      * @test
      */
-    public function DocumentsServiceのupdateDocumentが呼び出される()
+    public function documents_serviceのupdate_documentが呼び出される()
     {
         Permission::create(['name' => 'staff.documents.edit']);
         $this->staff->syncPermissions(['staff.documents.edit']);

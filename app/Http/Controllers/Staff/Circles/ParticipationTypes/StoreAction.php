@@ -38,7 +38,7 @@ class StoreAction extends Controller
 
             return redirect()
                 ->route('staff.circles.participation_types.edit', [
-                    'participation_type' => $participation_type
+                    'participation_type' => $participation_type,
                 ])
                 ->with('topAlert.title', '参加種別を作成しました');
         });

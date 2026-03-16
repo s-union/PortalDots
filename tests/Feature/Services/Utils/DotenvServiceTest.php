@@ -2,20 +2,18 @@
 
 namespace Tests\Feature\Services\Utils;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Services\Utils\DotenvService;
 use Illuminate\Support\Facades\App;
 use Jackiedo\DotenvEditor\DotenvEditor;
 use Jackiedo\DotenvEditor\Exceptions\KeyNotFoundException;
+use Tests\TestCase;
 
 class DotenvServiceTest extends TestCase
 {
     /**
      * @test
      */
-    public function getValue_値が存在すれば取得できる()
+    public function get_value_値が存在すれば取得できる()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
             $mock->shouldReceive('getValue')->once()->with('EXAMPLE_KEY')->andReturn('exampleValue');
@@ -29,13 +27,13 @@ class DotenvServiceTest extends TestCase
     /**
      * @test
      */
-    public function getValue_値が存在しなければデフォルト値を返す()
+    public function get_value_値が存在しなければデフォルト値を返す()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
             $mock->shouldReceive('getValue')
                 ->once()
                 ->with('EXAMPLE_KEY')
-                ->andThrow(new KeyNotFoundException());
+                ->andThrow(new KeyNotFoundException);
         });
 
         $dotenvService = App::make(DotenvService::class);
@@ -46,10 +44,10 @@ class DotenvServiceTest extends TestCase
     /**
      * @test
      */
-    public function getValue_値が存在せずデフォルト値も未設定の場合はnullを返す()
+    public function get_value_値が存在せずデフォルト値も未設定の場合はnullを返す()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
-            $mock->shouldReceive('getValue')->once()->with('EXAMPLE_KEY')->andThrow(new KeyNotFoundException());
+            $mock->shouldReceive('getValue')->once()->with('EXAMPLE_KEY')->andThrow(new KeyNotFoundException);
         });
 
         $dotenvService = App::make(DotenvService::class);
@@ -60,7 +58,7 @@ class DotenvServiceTest extends TestCase
     /**
      * @test
      */
-    public function saveKeys()
+    public function save_keys()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
             $mock->shouldReceive('setKey')->once()->with('EXAMPLE_KEY_1', 'value1');

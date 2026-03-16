@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Staff\Forms\Answers;
 
-use Auth;
-use Gate;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Eloquents\Form;
 use App\Eloquents\Circle;
+use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\AnswersService;
+use Illuminate\Http\Request;
 
 class CreateAction extends Controller
 {
@@ -27,6 +25,7 @@ class CreateAction extends Controller
         $circle = null;
         if (empty($request->circle)) {
             $circles = Circle::submitted()->get();
+
             return view('staff.circles.selector')
                 ->with('url', route('staff.forms.answers.create', ['form' => $form]))
                 ->with('circles', $circles);
@@ -40,6 +39,7 @@ class CreateAction extends Controller
         // 作成した上でUpdate画面へリダイレクト
         if (isset($form->participationType) && count($answers) === 0) {
             $answer = $this->answersService->createAnswer($form, $circle);
+
             return redirect()
                 ->route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answer]);
         }

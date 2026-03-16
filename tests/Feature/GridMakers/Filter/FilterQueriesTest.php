@@ -43,7 +43,7 @@ class FilterQueriesTest extends TestCase
     /**
      * @test
      */
-    public function fromArray()
+    public function from_array()
     {
         $obj = FilterQueries::fromArray([
             ['key_name' => 'id', 'operator' => '=', 'value' => '3'],
@@ -81,7 +81,7 @@ class FilterQueriesTest extends TestCase
     /**
      * @test
      */
-    public function fromJson()
+    public function from_json()
     {
         $obj = FilterQueries::fromJson(json_encode([
             ['key_name' => 'id', 'operator' => '=', 'value' => '3'],

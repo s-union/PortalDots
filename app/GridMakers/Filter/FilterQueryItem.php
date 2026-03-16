@@ -35,8 +35,7 @@ class FilterQueryItem
 
         $operator = strtolower($operator);
 
-
-        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>=', 'like', 'not like'], true)) {
+        if (! in_array($operator, ['=', '!=', '<', '>', '<=', '>=', 'like', 'not like'], true)) {
             throw new InvalidArgumentException('利用できない $operator が指定されました。');
         }
 

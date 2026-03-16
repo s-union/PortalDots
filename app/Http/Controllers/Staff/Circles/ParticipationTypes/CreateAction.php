@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Staff\Circles\ParticipationTypes;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 
 class CreateAction extends Controller
 {

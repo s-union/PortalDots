@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Staff\Forms\Editor;
 
-use App\Services\Forms\FormEditorService;
-use App\Http\Requests\Staff\Forms\Editor\UpdateFormRequest;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\Forms\Editor\UpdateFormRequest;
+use App\Services\Forms\FormEditorService;
 
 class UpdateFormAction extends Controller
 {

@@ -18,8 +18,8 @@ class FilterQueries implements IteratorAggregate
     public function __construct(array $queries)
     {
         foreach ($queries as $query) {
-            if (!$query instanceof FilterQueryItem) {
-                throw new InvalidArgumentException('引数 $queries は' . FilterQueryItem::class . 'オブジェクトの配列である必要があります。');
+            if (! $query instanceof FilterQueryItem) {
+                throw new InvalidArgumentException('引数 $queries は'.FilterQueryItem::class.'オブジェクトの配列である必要があります。');
             }
         }
 
@@ -31,7 +31,7 @@ class FilterQueries implements IteratorAggregate
         return new self(
             array_reduce($queries, function (array $carry, $query) {
                 try {
-                    if (!empty($query['key_name']) && !empty($query['operator'])) {
+                    if (! empty($query['key_name']) && ! empty($query['operator'])) {
                         $carry[] = new FilterQueryItem($query['key_name'], $query['operator'], $query['value'] ?? '');
                     }
                 } catch (InvalidArgumentException $e) {

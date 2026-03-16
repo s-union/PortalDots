@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Permission;
+use App\Eloquents\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class EditActionTest extends TestCase
 {
@@ -21,7 +21,7 @@ class EditActionTest extends TestCase
     /** @var Circle */
     private $circle;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

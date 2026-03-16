@@ -18,24 +18,24 @@ class CircleTest extends TestCase
     /**
      * @test
      */
-    public function getParticipationFormAnswer()
+    public function get_participation_form_answer()
     {
         // 準備
         $participationForm = Form::factory()->create();
         $participationType = ParticipationType::factory()->create([
-            'form_id' => $participationForm->id
+            'form_id' => $participationForm->id,
         ]);
         $question = Question::factory()->create([
             'form_id' => $participationForm->id,
             'name' => '設問です',
-            'type' => 'text'
+            'type' => 'text',
         ]);
 
         $otherCircles = Circle::factory(10)->create([
-            'participation_type_id' => $participationType->id
+            'participation_type_id' => $participationType->id,
         ]);
         $myCircle = Circle::factory()->create([
-            'participation_type_id' => $participationType->id
+            'participation_type_id' => $participationType->id,
         ]);
 
         $i = 0;

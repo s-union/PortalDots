@@ -2,16 +2,15 @@
 
 namespace Tests\Feature\Services\Contacts;
 
-use App\Mail\Contacts\ContactMailable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use App\Services\Contacts\ContactsService;
-use Illuminate\Support\Facades\Mail;
-use Tests\TestCase;
-use Illuminate\Support\Facades\App;
 use App\Eloquents\Circle;
 use App\Eloquents\ContactCategory;
 use App\Eloquents\User;
+use App\Mail\Contacts\ContactMailable;
+use App\Services\Contacts\ContactsService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Mail;
+use Tests\TestCase;
 
 class ContactsServeceTest extends TestCase
 {
@@ -22,7 +21,7 @@ class ContactsServeceTest extends TestCase
      */
     private $contactsService;
 
-        /**
+    /**
      * @var Circle
      */
     private $circle;
@@ -42,7 +41,7 @@ class ContactsServeceTest extends TestCase
      */
     private $contactCategory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->contactsService = App::make(ContactsService::class);
@@ -84,7 +83,7 @@ class ContactsServeceTest extends TestCase
     /**
      * @test
      */
-    public function sendToStaff_スタッフ用控えが送信できる()
+    public function send_to_staff_スタッフ用控えが送信できる()
     {
         $this->create();
 

@@ -13,6 +13,6 @@ class EncryptCookies extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        UIThemeService::COOKIE_KEY
+        UIThemeService::COOKIE_KEY,
     ];
 }

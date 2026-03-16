@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Circles\Selector;
 
-use Illuminate\Http\Request;
+use App\Eloquents\ParticipationType;
 use App\Http\Controllers\Controller;
+use App\Services\Circles\SelectorService;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
-use App\Services\Circles\SelectorService;
-use App\Eloquents\ParticipationType;
 
 class ShowAction extends Controller
 {

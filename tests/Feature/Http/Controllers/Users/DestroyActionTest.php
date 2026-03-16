@@ -2,20 +2,20 @@
 
 namespace Tests\Feature\Http\Controllers\Users;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
+use App\Eloquents\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

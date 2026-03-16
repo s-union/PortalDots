@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Install\Admin;
 
-use Illuminate\Auth\Events\Registered;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Install\AdminRequest;
-use App\Services\Auth\RegisterService;
 use App\Services\Auth\EmailService;
+use App\Services\Auth\RegisterService;
 use App\Services\Auth\VerifyService;
 use App\Services\Install\RunInstallService;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 
 class StoreAction extends Controller
@@ -57,7 +57,7 @@ class StoreAction extends Controller
                 ->withInput()
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.keepVisible', true)
-                ->with('topAlert.title', '不明なエラーが発生しました : ' . $e->getMessage());
+                ->with('topAlert.title', '不明なエラーが発生しました : '.$e->getMessage());
         }
 
         $user = $this->registerService->create(

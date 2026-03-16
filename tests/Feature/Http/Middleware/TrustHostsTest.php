@@ -3,7 +3,6 @@
 namespace Tests\Feature\Http\Middleware;
 
 use App\Http\Middleware\TrustHosts;
-use Illuminate\Http\Request;
 use Tests\TestCase;
 
 class TrustHostsTest extends TestCase
@@ -11,7 +10,7 @@ class TrustHostsTest extends TestCase
     /**
      * @test
      */
-    public function 信頼するホストとしてアプリケーションUrlとそのサブドメインが設定配列で返される()
+    public function 信頼するホストとしてアプリケーション_urlとそのサブドメインが設定配列で返される()
     {
         $middleware = app(TrustHosts::class);
         $hosts = $middleware->hosts();

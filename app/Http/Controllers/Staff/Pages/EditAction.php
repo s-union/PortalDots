@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Staff\Pages;
 
-use App\Http\Controllers\Controller;
+use App\Eloquents\Document;
 use App\Eloquents\Page;
 use App\Eloquents\Tag;
-use App\Eloquents\Document;
+use App\Http\Controllers\Controller;
 
 class EditAction extends Controller
 {

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Staff\Documents;
 
 use App\Http\Controllers\Controller;
-use App\Services\Documents\DocumentsService;
 use App\Http\Requests\Staff\Documents\CreateDocumentRequest;
+use App\Services\Documents\DocumentsService;
 
 class StoreAction extends Controller
 {
@@ -26,8 +26,8 @@ class StoreAction extends Controller
             $validated['name'],
             $validated['description'],
             $request->file('file'),
-            (bool)$validated['is_public'],
-            (bool)$validated['is_important'],
+            (bool) $validated['is_public'],
+            (bool) $validated['is_important'],
             $validated['notes']
         );
 

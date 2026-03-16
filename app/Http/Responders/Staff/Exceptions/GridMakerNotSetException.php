@@ -10,6 +10,4 @@ use Exception;
  * GridMaker オブジェクトをセットしないで GridResponder がレスポンス
  * を返そうとしたときに発生する例外
  */
-class GridMakerNotSetException extends Exception
-{
-}
+class GridMakerNotSetException extends Exception {}

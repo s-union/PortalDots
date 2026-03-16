@@ -22,8 +22,8 @@ class DotenvService
     /**
      * .env ファイルから値を取得する
      *
-     * @param mixed $key
-     * @param mixed $default
+     * @param  mixed  $key
+     * @param  mixed  $default
      * @return mixed
      */
     public function getValue($key, $default = null)
@@ -39,7 +39,6 @@ class DotenvService
     /**
      * .env ファイルに値を保存する
      *
-     * @param array $keys
      * @return void
      */
     public function saveKeys(array $keys)

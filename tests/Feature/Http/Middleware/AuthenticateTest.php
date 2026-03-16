@@ -11,7 +11,7 @@ class AuthenticateTest extends TestCase
     /**
      * @test
      */
-    public function jsonを要求するリクエストの場合はログイン画面へリダイレクトするためのURLを返さずnullを返す()
+    public function jsonを要求するリクエストの場合はログイン画面へリダイレクトするための_ur_lを返さずnullを返す()
     {
         $middleware = new Authenticate(app('auth'));
 

@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Forms\Answers\Uploads;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\DownloadZipService;
 use App\Services\Forms\Exceptions\NoDownloadFileExistException;
 use App\Services\Forms\Exceptions\ZipArchiveNotSupportedException;
@@ -31,7 +30,7 @@ class DownloadZipAction extends Controller
 
         $upload_question_ids = $form->questions->pluck('id')->all();
         $flatten_details = $form->answers->filter(function ($answer) {
-            return !empty($answer->circle->submitted_at);
+            return ! empty($answer->circle->submitted_at);
         })->pluck('details')->flatten();
 
         $uploaded_file_paths = [];
@@ -44,6 +43,7 @@ class DownloadZipAction extends Controller
 
         try {
             $zip_path = $this->downloadZipService->makeZip($form, $uploaded_file_paths);
+
             return response()->download($zip_path);
         } catch (NoDownloadFileExistException $e) {
             return back()

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Circles;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\AnswerDetailsService;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,11 +23,11 @@ class ConfirmAction extends Controller
     {
         $this->authorize('circle.update', $circle);
 
-        if (!Auth::user()->isLeaderInCircle($circle)) {
+        if (! Auth::user()->isLeaderInCircle($circle)) {
             abort(403);
         }
 
-        if (!$circle->canSubmit()) {
+        if (! $circle->canSubmit()) {
             return redirect()
                 ->route('circles.users.index', ['circle' => $circle])
                 ->with('topAlert.type', 'danger')
@@ -44,7 +44,7 @@ class ConfirmAction extends Controller
             ->with('form', $circle->participationType->form)
             ->with('questions', $circle->participationType->form->questions)
             ->with('answer', $answer)
-            ->with('answer_details', !empty($answer)
+            ->with('answer_details', ! empty($answer)
                 ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : []);
     }
 }

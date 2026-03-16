@@ -16,8 +16,7 @@ class UpdateAction extends Controller
     public function __construct(
         private FormEditorService $formEditorService,
         private ParticipationTypesService $participationTypesService
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         ParticipationType $participationType,
@@ -41,6 +40,7 @@ class UpdateAction extends Controller
                 );
             } catch (DenyCreateTagsException $e) {
                 DB::rollBack();
+
                 return redirect()
                     ->back()
                     ->withInput()

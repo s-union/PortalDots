@@ -33,7 +33,7 @@ class FilterableKeyBelongsToOptionsTest extends TestCase
     /**
      * @test
      */
-    public function getTo()
+    public function get_to()
     {
         $obj = $this->instantiate();
         $this->assertEquals('users', $obj->getTo());
@@ -42,7 +42,7 @@ class FilterableKeyBelongsToOptionsTest extends TestCase
     /**
      * @test
      */
-    public function getKeys()
+    public function get_keys()
     {
         $obj = $this->instantiate();
         $this->assertEquals(
@@ -58,7 +58,7 @@ class FilterableKeyBelongsToOptionsTest extends TestCase
     /**
      * @test
      */
-    public function jsonSerialize()
+    public function json_serialize()
     {
         $obj = $this->instantiate();
         $expected = json_encode([
@@ -67,7 +67,7 @@ class FilterableKeyBelongsToOptionsTest extends TestCase
                 'id' => ['type' => 'number'],
                 'name' => ['type' => 'string'],
                 'created_at' => ['type' => 'datetime'],
-            ]
+            ],
         ]);
 
         $this->assertJsonStringEqualsJsonString($expected, json_encode($obj));

@@ -13,6 +13,7 @@ class ExportAction extends Controller
     public function __invoke(ParticipationType $participationType)
     {
         $now = Carbon::now()->format('Y-m-d_H-i-s');
+
         return Excel::download(
             new CirclesExport($participationType),
             "企画一覧_{$participationType->name}_{$now}.csv"

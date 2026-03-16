@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
+use App\Services\Circles\SelectorService;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Request;
-use App\Services\Circles\SelectorService;
 
 class BladeServiceProvider extends ServiceProvider
 {

@@ -18,8 +18,9 @@ class ContactFormRequest extends FormRequest
     public function authorize()
     {
         if ($this->has('circle_id')) {
-            return !empty($this->circle_id) && Gate::allows('circle.belongsTo', Circle::find($this->circle_id));
+            return ! empty($this->circle_id) && Gate::allows('circle.belongsTo', Circle::find($this->circle_id));
         }
+
         return true;
     }
 
@@ -46,7 +47,7 @@ class ContactFormRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            if (!($this->category === '0' || ContactCategory::find($this->category))) {
+            if (! ($this->category === '0' || ContactCategory::find($this->category))) {
                 $validator->errors()->add('category', 'お問い合わせ項目を選択肢から選んでください');
             }
         });

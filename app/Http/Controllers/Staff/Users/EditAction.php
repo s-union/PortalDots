@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Users;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\User;
+use App\Http\Controllers\Controller;
 
 class EditAction extends Controller
 {

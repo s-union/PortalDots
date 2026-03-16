@@ -6,13 +6,13 @@ namespace App\GridMakers;
 
 use App\Eloquents\Answer;
 use App\Eloquents\Form;
-use Illuminate\Database\Eloquent\Builder;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
 use App\GridMakers\Helpers\AnswerDetailsHelper;
-use Illuminate\Database\Eloquent\Model;
 use App\Services\Utils\FormatTextService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class AnswersGridMaker implements GridMakable
 {
@@ -29,6 +29,7 @@ class AnswersGridMaker implements GridMakable
     private $form;
 
     public const FORM_QUESTIONS_KEY_PREFIX = 'form_question_';
+
     public const CHECKBOX_GROUP_CONCAT_SEPARATOR = "\n";
 
     public function __construct(FormatTextService $formatTextService)
@@ -39,7 +40,6 @@ class AnswersGridMaker implements GridMakable
     /**
      * 回答一覧を表示したいフォームをセット
      *
-     * @param Form $form
      * @return $this
      */
     public function withForm(Form $form)
@@ -48,11 +48,12 @@ class AnswersGridMaker implements GridMakable
         $this->form->loadMissing(['questions' => function ($query) {
             $query->where('type', '!=', 'heading');
         }]);
+
         return $this;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -71,7 +72,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -90,7 +91,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
@@ -126,7 +127,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -145,7 +146,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
@@ -169,15 +170,15 @@ class AnswersGridMaker implements GridMakable
             switch ($key) {
                 case 'circle_id':
                     $itemsExceptForms[$key] = $record->circle->only([
-                        'id', 'name', 'name_yomi', 'group_name', 'group_name_yomi'
+                        'id', 'name', 'name_yomi', 'group_name', 'group_name_yomi',
                     ]);
                     break;
                 case 'created_at':
-                    $itemsExceptForms[$key] = !empty($record->created_at)
+                    $itemsExceptForms[$key] = ! empty($record->created_at)
                         ? $record->created_at->format('Y/m/d H:i:s') : null;
                     break;
                 case 'updated_at':
-                    $itemsExceptForms[$key] = !empty($record->updated_at)
+                    $itemsExceptForms[$key] = ! empty($record->updated_at)
                         ? $record->updated_at->format('Y/m/d H:i:s') : null;
                     break;
                 default:
@@ -190,6 +191,6 @@ class AnswersGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Answer();
+        return new Answer;
     }
 }

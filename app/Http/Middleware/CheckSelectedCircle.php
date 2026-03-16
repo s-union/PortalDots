@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
+use App\Services\Circles\SelectorService;
 use Auth;
+use Closure;
 use Gate;
 use Request;
-use App\Services\Circles\SelectorService;
 
 class CheckSelectedCircle
 {
@@ -24,12 +24,11 @@ class CheckSelectedCircle
      * Handle an incoming request.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @return mixed
      */
     public function handle($request, Closure $next)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return $next($request);
         }
 
@@ -45,6 +44,7 @@ class CheckSelectedCircle
         if (empty($this->selectorService->getCircle())) {
             if ($circles_count >= 2) {
                 $request->session()->reflash();
+
                 return redirect()
                     ->route('circles.selector.show', ['redirect_to' => Request::path()]);
             }

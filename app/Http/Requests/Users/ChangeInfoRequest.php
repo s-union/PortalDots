@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Users;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use App\Eloquents\User;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class ChangeInfoRequest extends FormRequest
 {
@@ -27,6 +27,7 @@ class ChangeInfoRequest extends FormRequest
     public function rules()
     {
         $rules = User::getValidationRules();
+
         return [
             'student_id' => array_merge(
                 User::STUDENT_ID_RULES,
@@ -46,7 +47,7 @@ class ChangeInfoRequest extends FormRequest
                     if (! Auth::attempt(['login_id' => $user->email, 'password' => $value])) {
                         $fail('パスワードが違います。');
                     }
-                }
+                },
             ]),
         ];
     }
@@ -66,7 +67,7 @@ class ChangeInfoRequest extends FormRequest
     public function messages()
     {
         return [
-            'student_id.unique' => '入力された' . config('portal.student_id_name') . 'はすでに登録されています',
+            'student_id.unique' => '入力された'.config('portal.student_id_name').'はすでに登録されています',
             'email.unique' => '入力されたメールアドレスはすでに登録されています',
             'name.regex' => '姓と名の間にはスペースを入れてください',
             'name_yomi.regex' => '姓と名の間にはスペースを入れてください。また、ひらがなで記入してください',
@@ -82,7 +83,7 @@ class ChangeInfoRequest extends FormRequest
 
         $validator->after(function ($validator) use ($user, $circles) {
             if (
-                !User::isValidUnivemailByLocalPartAndDomainPart(
+                ! User::isValidUnivemailByLocalPartAndDomainPart(
                     $this->univemail_local_part,
                     $this->univemail_domain_part
                 )
@@ -90,16 +91,16 @@ class ChangeInfoRequest extends FormRequest
                 $validator->errors()->add('univemail', '不正なメールアドレスです。');
             }
 
-            if (!$circles->isEmpty()) {
-                if (!empty($this->name) && $this->name !== $user->name) {
+            if (! $circles->isEmpty()) {
+                if (! empty($this->name) && $this->name !== $user->name) {
                     $validator->errors()->add('name', '企画に所属しているため修正できません');
                 }
 
-                if (!empty($this->name_yomi) && $this->name_yomi !== $user->name_yomi) {
+                if (! empty($this->name_yomi) && $this->name_yomi !== $user->name_yomi) {
                     $validator->errors()->add('name_yomi', '企画に所属しているため修正できません');
                 }
 
-                if (!empty($this->student_id) && $this->student_id !== $user->student_id) {
+                if (! empty($this->student_id) && $this->student_id !== $user->student_id) {
                     $validator->errors()->add('student_id', '企画に所属しているため修正できません');
                 }
             }

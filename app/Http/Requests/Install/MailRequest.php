@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Install;
 
-use Illuminate\Foundation\Http\FormRequest;
-use App\Services\Install\MailService;
 use App;
+use App\Services\Install\MailService;
+use Illuminate\Foundation\Http\FormRequest;
 
 class MailRequest extends FormRequest
 {
@@ -31,6 +31,7 @@ class MailRequest extends FormRequest
     public function attributes()
     {
         $mailService = App::make(MailService::class);
+
         return $mailService->getFormLabels();
     }
 }

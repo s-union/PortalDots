@@ -116,7 +116,7 @@ Route::middleware(['auth', 'verified', 'can:staff', 'staffAuthed'])
                 Route::get('/preview', 'Staff\Forms\PreviewAction')->name('preview')->middleware(['can:staff.forms.read']);
 
                 // フォームの複製
-                Route::post('/copy', 'Staff\Forms\CopyAction')->name('copy')->middleware(['can:staff.forms.duplicate']);;
+                Route::post('/copy', 'Staff\Forms\CopyAction')->name('copy')->middleware(['can:staff.forms.duplicate']);
             });
 
         Route::prefix('/users')

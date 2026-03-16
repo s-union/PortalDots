@@ -2,13 +2,15 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
 use App\Eloquents\Form;
-use Faker\Generator as Faker;
+use Illuminate\Database\Eloquent\Factory;
+
 class FormFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Form::class;
+
     public function definition()
     {
         return [
@@ -21,6 +23,7 @@ class FormFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'is_public' => true,
         ];
     }
+
     public function private()
     {
         return $this->state([

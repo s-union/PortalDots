@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Circles;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Circles\SubmitRequest;
 use App\Services\Circles\CirclesService;
 use App\Services\Forms\AnswerDetailsService;
@@ -32,7 +32,7 @@ class SubmitAction extends Controller
     {
         $this->authorize('circle.update', $circle);
 
-        if (!Auth::user()->isLeaderInCircle($circle)) {
+        if (! Auth::user()->isLeaderInCircle($circle)) {
             abort(403);
         }
 
@@ -46,7 +46,7 @@ class SubmitAction extends Controller
                 ->with('topAlert.keepVisible', true);
         }
 
-        if (!$circle->canSubmit()) {
+        if (! $circle->canSubmit()) {
             return redirect()
                 ->route('circles.users.index', ['circle' => $circle])
                 ->with('topAlert.type', 'danger')
@@ -60,7 +60,7 @@ class SubmitAction extends Controller
 
         $answer = $circle->getParticipationFormAnswer();
         $questions = $circle->participationType->form->questions;
-        $answerDetails = !empty($answer)
+        $answerDetails = ! empty($answer)
             ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : [];
 
         foreach ($circle->users as $user) {

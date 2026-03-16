@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
-use App\Eloquents\Page;
 use App\Eloquents\Document;
 use App\Eloquents\Form;
+use App\Eloquents\Page;
 use App\Eloquents\ParticipationType;
 use App\Services\Circles\SelectorService;
+use Illuminate\Support\Facades\Auth;
 
 class HomeAction extends Controller
 {
@@ -42,9 +42,9 @@ class HomeAction extends Controller
                 'my_circles',
                 Auth::check()
                     ? Auth::user()
-                    ->circles()
-                    ->with(['participationType', 'participationType.form'])
-                    ->get()
+                        ->circles()
+                        ->with(['participationType', 'participationType.form'])
+                        ->get()
                     : collect([])
             )
             ->with('circle', $circle)
@@ -54,7 +54,7 @@ class HomeAction extends Controller
                     ->with([
                         'documents' => function ($query) {
                             $query->public();
-                        }
+                        },
                     ])
                     ->public()
                     ->pinned()

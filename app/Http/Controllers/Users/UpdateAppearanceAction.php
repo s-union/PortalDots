@@ -24,6 +24,7 @@ class UpdateAppearanceAction extends Controller
         if (in_array($newTheme, UIThemeService::AVAILABLE_THEMES, true)) {
             $this->uiThemeService->setCurrentTheme($newTheme);
         }
+
         return redirect()
             ->route('user.appearance')
             ->with('topAlert.title', '変更を保存しました');

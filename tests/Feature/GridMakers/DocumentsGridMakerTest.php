@@ -14,7 +14,7 @@ class DocumentsGridMakerTest extends TestCase
      */
     private $documentsGridMaker;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

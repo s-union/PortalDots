@@ -27,7 +27,7 @@ class ShowAction extends Controller
         $reauthorized_at = new CarbonImmutable(session()->get('user_reauthorized_at'));
 
         if (
-            !$circle->hasSubmitted()
+            ! $circle->hasSubmitted()
             || (session()->has('user_reauthorized_at') && $reauthorized_at->addHours(2)->gte(now()))
         ) {
             $circle->load('users', 'places', 'participationType', 'participationType.form');
@@ -41,9 +41,10 @@ class ShowAction extends Controller
                     ? $circle->participationType->form->questions
                     : null)
                 ->with('answer', $answer)
-                ->with('answer_details', !empty($answer)
+                ->with('answer_details', ! empty($answer)
                     ? $this->answerDetailsService->getAnswerDetailsByAnswer($answer) : []);
         }
+
         return redirect()
             ->route('circles.auth', ['circle' => $circle]);
     }

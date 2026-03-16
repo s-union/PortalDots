@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Forms;
 
 use App\Eloquents\Form;
-use App\Eloquents\User;
 use App\Eloquents\Tag;
+use App\Eloquents\User;
 use App\Services\Utils\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -26,15 +26,14 @@ class FormsService
     /**
      * フォームを作成する
      *
-     * @param string $name フォーム名
-     * @param string $description フォームの説明
-     * @param string $confirmationMessage フォーム回答者に表示するメッセージ
-     * @param Carbon $open_at フォームの受付開始日
-     * @param Carbon $close_at フォームの受付終了日
-     * @param int $max_answers 企画毎に回答可能とする回答数
-     * @param bool $is_public フォームを公開するか
-     * @param array|null $answerable_tags フォームを回答可能とする企画のタグ
-     * @return Form
+     * @param  string  $name  フォーム名
+     * @param  string  $description  フォームの説明
+     * @param  string  $confirmationMessage  フォーム回答者に表示するメッセージ
+     * @param  Carbon  $open_at  フォームの受付開始日
+     * @param  Carbon  $close_at  フォームの受付終了日
+     * @param  int  $max_answers  企画毎に回答可能とする回答数
+     * @param  bool  $is_public  フォームを公開するか
+     * @param  array|null  $answerable_tags  フォームを回答可能とする企画のタグ
      */
     public function createForm(
         string $name,
@@ -96,16 +95,15 @@ class FormsService
     /**
      * フォームを更新する
      *
-     * @param Form $form 更新するフォーム
-     * @param string $description フォームの説明
-     * @param string $confirmationMessage フォーム回答者に表示するメッセージ
-     * @param Carbon $open_at フォームの受付開始日
-     * @param Carbon $close_at フォームの受付終了日
-     * @param User $created_by 作成者
-     * @param int $max_answers 企画毎に回答可能とする回答数
-     * @param bool $is_public フォームを公開するか
-     * @param array|null $answerable_tags フォームを回答可能とする企画のタグ
-     * @return boolean
+     * @param  Form  $form  更新するフォーム
+     * @param  string  $description  フォームの説明
+     * @param  string  $confirmationMessage  フォーム回答者に表示するメッセージ
+     * @param  Carbon  $open_at  フォームの受付開始日
+     * @param  Carbon  $close_at  フォームの受付終了日
+     * @param  User  $created_by  作成者
+     * @param  int  $max_answers  企画毎に回答可能とする回答数
+     * @param  bool  $is_public  フォームを公開するか
+     * @param  array|null  $answerable_tags  フォームを回答可能とする企画のタグ
      */
     public function updateForm(
         Form $form,
@@ -172,6 +170,7 @@ class FormsService
     {
         return DB::transaction(function () use ($form) {
             $form->answerableTags()->detach();
+
             return $form->delete();
         });
     }
@@ -179,14 +178,13 @@ class FormsService
     /**
      * フォームを複製する
      *
-     * @param Form $form
      * @return Form|null
      */
     public function copyForm(Form $form)
     {
         return DB::transaction(function () use ($form) {
             $form_copy = $form->replicate()->fill([
-                'name' => $form->name . 'のコピー',
+                'name' => $form->name.'のコピー',
                 'is_public' => false,
             ]);
 
@@ -198,6 +196,7 @@ class FormsService
             });
 
             $form_copy->questions()->createMany($questions_copy->toArray());
+
             return $form_copy;
         });
 

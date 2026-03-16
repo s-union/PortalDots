@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Services\Utils\ValueObjects;
 
-use Tests\TestCase;
 use App\Services\Utils\ValueObjects\Version;
+use Tests\TestCase;
 
 class VersionTest extends TestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
     }
@@ -30,6 +30,7 @@ class VersionTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider versionProvider
      */
     public function parse(string $input, ?Version $expected)

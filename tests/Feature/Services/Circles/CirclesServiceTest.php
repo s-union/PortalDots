@@ -2,20 +2,20 @@
 
 namespace Tests\Feature\Services\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Form;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Tag;
-use App\Services\Circles\CirclesService;
+use App\Eloquents\User;
 use App\Mail\Circles\ApprovedMailable;
 use App\Mail\Circles\RejectedMailable;
 use App\Mail\Circles\SubmittedMailable;
+use App\Services\Circles\CirclesService;
 use App\Services\Tags\Exceptions\DenyCreateTagsException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
+use Tests\TestCase;
 
 class CirclesServiceTest extends TestCase
 {
@@ -25,7 +25,7 @@ class CirclesServiceTest extends TestCase
 
     private ?CirclesService $circlesService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->circlesService = App::make(CirclesService::class);
@@ -35,7 +35,7 @@ class CirclesServiceTest extends TestCase
     {
         $participationForm = Form::factory()->create();
         $participationType = ParticipationType::factory()->create([
-            'form_id' => $participationForm->id
+            'form_id' => $participationForm->id,
         ]);
         $tags = Tag::factory(self::PARTICIPATION_TYPE_TAGS_COUNT)->create();
         $participationType->tags()->attach($tags->pluck('id'));
@@ -126,7 +126,7 @@ class CirclesServiceTest extends TestCase
     /**
      * @test
      */
-    public function regenerateInvitationToken()
+    public function regenerate_invitation_token()
     {
         [
             $circle,
@@ -151,7 +151,7 @@ class CirclesServiceTest extends TestCase
     /**
      * @test
      */
-    public function addMember()
+    public function add_member()
     {
         [
             $circle,
@@ -201,11 +201,11 @@ class CirclesServiceTest extends TestCase
     /**
      * @test
      */
-    public function saveTags()
+    public function save_tags()
     {
         // 予め tag テーブルに登録されているタグ
         Tag::create([
-            'name' => '登録済みタグ'
+            'name' => '登録済みタグ',
         ]);
 
         [
@@ -242,13 +242,13 @@ class CirclesServiceTest extends TestCase
     /**
      * @test
      */
-    public function saveTags_タグの新規作成が許可されていない場合は例外が発生する()
+    public function save_tags_タグの新規作成が許可されていない場合は例外が発生する()
     {
         $this->expectException(DenyCreateTagsException::class);
 
         // 予め tag テーブルに登録されているタグ
         Tag::create([
-            'name' => '登録済みタグ'
+            'name' => '登録済みタグ',
         ]);
 
         [
@@ -270,7 +270,7 @@ class CirclesServiceTest extends TestCase
     /**
      * @test
      */
-    public function sendSubmitedEmail()
+    public function send_submited_email()
     {
         $leader = User::factory()->create();
         $circle = Circle::factory()->create();
@@ -288,7 +288,7 @@ class CirclesServiceTest extends TestCase
     /**
      * @test
      */
-    public function sendApprovedEmail()
+    public function send_approved_email()
     {
         $leader = User::factory()->create();
         $circle = Circle::factory()->create();
@@ -306,7 +306,7 @@ class CirclesServiceTest extends TestCase
     /**
      * @test
      */
-    public function sendRejectedEmail()
+    public function send_rejected_email()
     {
         $leader = User::factory()->create();
         $circle = Circle::factory()->create();

@@ -5,7 +5,6 @@ namespace Tests\Feature\Exports;
 use App\Eloquents\User;
 use App\Exports\UsersExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
@@ -23,7 +22,7 @@ class UsersExportTest extends TestCase
      */
     private $user;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->usersExport = App::make(UsersExport::class);
@@ -32,7 +31,7 @@ class UsersExportTest extends TestCase
             'univemail_local_part' => 'this-is-local-part-12345',
             'univemail_domain_part' => 's.example.ac.jp',
             'tel' => '09012345678',
-            'notes' => '"こんにちは,'
+            'notes' => '"こんにちは,',
         ]);
     }
 

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Tags;
 
+use App\Eloquents\Tag;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Tags\TagRequest;
-use App\Eloquents\Tag;
 
 class StoreAction extends Controller
 {

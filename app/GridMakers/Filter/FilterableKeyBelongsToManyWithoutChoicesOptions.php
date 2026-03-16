@@ -9,12 +9,7 @@ use JsonSerializable;
 class FilterableKeyBelongsToManyWithoutChoicesOptions implements JsonSerializable
 {
     /**
-     * @param string $to
-     * @param string $pivot
-     * @param string $foreignPivotKey
-     * @param string $relatedPivotKey
-     * @param string $parentKey 主キー
-     * @param FilterableKeysDict $parentKeys
+     * @param  string  $parentKey  主キー
      */
     public function __construct(
         private string $to,
@@ -23,8 +18,7 @@ class FilterableKeyBelongsToManyWithoutChoicesOptions implements JsonSerializabl
         private string $relatedPivotKey,
         private string $parentKey,
         private FilterableKeysDict $parentKeys
-    ) {
-    }
+    ) {}
 
     public function getTo(): string
     {

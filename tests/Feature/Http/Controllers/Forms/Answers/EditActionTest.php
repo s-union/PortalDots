@@ -2,26 +2,28 @@
 
 namespace Tests\Feature\Http\Controllers\Forms\Answers;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Carbon\Carbon;
-use Carbon\CarbonImmutable;
-use App\Eloquents\User;
+use App\Eloquents\Answer;
 use App\Eloquents\Circle;
 use App\Eloquents\Form;
-use App\Eloquents\Answer;
+use App\Eloquents\User;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class EditActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
+
     private $form;
+
     private $answer;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -41,6 +43,7 @@ class EditActionTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider 受付期間中かどうかに応じて表示が切り替わる_provider
      */
     public function 受付期間中かどうかに応じて表示が切り替わる(
@@ -51,13 +54,13 @@ class EditActionTest extends TestCase
         CarbonImmutable::setTestNowAndTimezone($today);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.edit', [
-                            'form' => $this->form,
-                            'answer' => $this->answer
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.edit', [
+                    'form' => $this->form,
+                    'answer' => $this->answer,
+                ])
+            );
 
         $response->assertStatus(200);
 
@@ -91,13 +94,13 @@ class EditActionTest extends TestCase
         $anotherUser->circles()->attach($anotherCircle->id, ['is_leader' => true]);
 
         $response = $this
-                    ->actingAs($anotherUser)
-                    ->get(
-                        route('forms.answers.edit', [
-                            'form' => $this->form,
-                            'answer' => $this->answer
-                        ])
-                    );
+            ->actingAs($anotherUser)
+            ->get(
+                route('forms.answers.edit', [
+                    'form' => $this->form,
+                    'answer' => $this->answer,
+                ])
+            );
 
         $response->assertStatus(403);
     }
@@ -114,13 +117,13 @@ class EditActionTest extends TestCase
         ]);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.edit', [
-                            'form' => $privateForm,
-                            'answer' => $answerOfPrivateForm,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.edit', [
+                    'form' => $privateForm,
+                    'answer' => $answerOfPrivateForm,
+                ])
+            );
 
         $response->assertStatus(404);
     }

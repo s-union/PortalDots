@@ -2,23 +2,25 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Editor;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Eloquents\User;
 use App\Eloquents\Form;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Permission;
 use App\Eloquents\Question;
+use App\Eloquents\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class GetQuestionsActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private ?Form $form;
+
     private ?array $questions;
+
     private ?User $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -42,7 +44,7 @@ class GetQuestionsActionTest extends TestCase
 
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
-            ->get(route('staff.forms.editor.api', ['form' => $this->form]) . '/get_questions');
+            ->get(route('staff.forms.editor.api', ['form' => $this->form]).'/get_questions');
 
         $response->assertStatus(200);
         $this->assertSame(1, $response[0]['priority']);
@@ -62,12 +64,12 @@ class GetQuestionsActionTest extends TestCase
         $this->staff->syncPermissions(['staff.forms.edit']);
 
         ParticipationType::factory()->create([
-            'form_id' => $this->form->id
+            'form_id' => $this->form->id,
         ]);
 
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
-            ->get(route('staff.forms.editor.api', ['form' => $this->form]) . '/get_questions');
+            ->get(route('staff.forms.editor.api', ['form' => $this->form]).'/get_questions');
 
         $response->assertStatus(200);
         $this->assertTrue($response[0]['is_permanent']);

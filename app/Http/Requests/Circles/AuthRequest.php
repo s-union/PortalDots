@@ -26,10 +26,10 @@ class AuthRequest extends FormRequest
     {
         return [
             'password' => [function ($attribute, $value, $fail) {
-                if (!Auth::attempt(['login_id' => Auth::user()->email, 'password' => $value])) {
+                if (! Auth::attempt(['login_id' => Auth::user()->email, 'password' => $value])) {
                     return $fail('パスワードが違います。');
                 }
-            }]
+            }],
         ];
     }
 }

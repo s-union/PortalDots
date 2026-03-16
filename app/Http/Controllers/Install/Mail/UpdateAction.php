@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Install\Mail;
 
-use Exception;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Install\MailRequest;
 use App\Services\Install\MailService;
+use Exception;
 
 class UpdateAction extends Controller
 {
@@ -44,7 +44,7 @@ class UpdateAction extends Controller
         } catch (Exception $e) {
             // エラー内容をJSONで返す
             return response()->json([
-                'message' => 'メール配信の設定を保存できませんでした。 : ' . $e->getMessage(),
+                'message' => 'メール配信の設定を保存できませんでした。 : '.$e->getMessage(),
             ], 500);
         }
     }

@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Eloquents\User;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -10,16 +11,15 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class UsersExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return User::all();
     }
 
     /**
-     * @param User $user
-     * @return array
+     * @param  User  $user
      */
     public function map($user): array
     {
@@ -42,9 +42,6 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping
         ];
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return [

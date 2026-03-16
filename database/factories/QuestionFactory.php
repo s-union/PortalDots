@@ -2,18 +2,19 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
-use App\Eloquents\Question;
 use App\Eloquents\Form;
-use Faker\Generator as Faker;
+use App\Eloquents\Question;
+use Illuminate\Database\Eloquent\Factory;
 
 class QuestionFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Question::class;
+
     public function definition()
     {
-        $options = <<< EOL
+        $options = <<< 'EOL'
 Option A
 Option B
 Option C
@@ -23,17 +24,18 @@ EOL;
 
         static $priority = 0;
         $type = $this->faker->randomElement([
-                    'heading',
-                    'text',
-                    'textarea',
-                    'number',
-                    'radio',
-                    'select',
-                    'checkbox',
-                    'upload',
-                ]);
+            'heading',
+            'text',
+            'textarea',
+            'number',
+            'radio',
+            'select',
+            'checkbox',
+            'upload',
+        ]);
+
         return [
-            'form_id' => function() {
+            'form_id' => function () {
                 return Form::factory()->create()->id;
             },
             'name' => $this->faker->name,

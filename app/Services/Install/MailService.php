@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Install;
 
-use Symfony\Component\Mailer\Transport\TransportInterface;
+use App\Mail\Install\TestMailMailable;
 use Illuminate\Mail\Mailer;
 use Illuminate\Support\Facades\App;
-use App\Mail\Install\TestMailMailable;
 
 class MailService extends AbstractService
 {

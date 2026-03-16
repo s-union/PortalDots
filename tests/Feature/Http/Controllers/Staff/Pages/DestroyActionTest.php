@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Pages;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
-use App\Eloquents\Tag;
 use App\Eloquents\Page;
 use App\Eloquents\Permission;
 use App\Eloquents\Read;
+use App\Eloquents\Tag;
+use App\Eloquents\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class DestroyActionTest extends TestCase
 {
@@ -26,7 +26,7 @@ class DestroyActionTest extends TestCase
     /** @var Read */
     private $read;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
-use Artisan;
 use App\Services\Utils\DotenvService;
+use Closure;
+use Illuminate\Http\Request;
 
 /**
  * 設定ファイルが存在しない場合、PortalDots のセットアップ方法を案内する
@@ -24,8 +24,7 @@ class CheckEnv
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
      * @return mixed
      */
     public function handle($request, Closure $next)
@@ -34,6 +33,7 @@ class CheckEnv
             return redirect()
                 ->route('install.index');
         }
+
         return $next($request);
     }
 }

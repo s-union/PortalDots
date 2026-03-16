@@ -2,6 +2,7 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Contracts\Activity;
@@ -11,7 +12,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Circle extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     public function getActivitylogOptions(): LogOptions
@@ -40,7 +40,7 @@ class Circle extends Model
 
         if (
             $eventName !== 'created' &&
-            !empty($activityArray['attributes']['submitted_at']) &&
+            ! empty($activityArray['attributes']['submitted_at']) &&
             empty($activityArray['old']['submitted_at'])
         ) {
             // 企画参加登録を提出した場合、 description を submitted にする。
@@ -54,9 +54,13 @@ class Circle extends Model
      * バリデーションルール
      */
     public const NAME_RULES = ['required', 'string', 'max:255'];
+
     public const NAME_YOMI_RULES = ['required', 'string', 'max:255', 'regex:/^([ぁ-んァ-ヶー]+)$/u'];
+
     public const GROUP_NAME_RULES = ['required', 'string', 'max:255'];
+
     public const GROUP_NAME_YOMI_RULES = ['required', 'string', 'max:255', 'regex:/^([ぁ-んァ-ヶー]+)$/u'];
+
     public const STATUS_RULES = ['required', 'in:pending,approved,rejected'];
 
     /**
@@ -64,8 +68,10 @@ class Circle extends Model
      */
     // 確認中（DBには pending という値を入れず、null にする）
     public const STATUS_PENDING = 'pending';
+
     // 受理
     public const STATUS_APPROVED = 'approved';
+
     // 不受理
     public const STATUS_REJECTED = 'rejected';
 
@@ -127,7 +133,7 @@ class Circle extends Model
     /**
      * メンバーが参加登録に必要な人数だけ集まっており、参加登録の提出が可能かどうか
      *
-     * @return boolean
+     * @return bool
      */
     public function canSubmit()
     {
@@ -138,8 +144,8 @@ class Circle extends Model
     /**
      * 参加登録が未提出の企画だけに限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeNotSubmitted($query)
     {
@@ -198,7 +204,7 @@ class Circle extends Model
     /**
      * 企画名(よみ)をひらがなにして保存する
      *
-     * @param string $value
+     * @param  string  $value
      */
     public function setNameYomiAttribute($value)
     {
@@ -209,7 +215,7 @@ class Circle extends Model
     /**
      * 企画を出店する団体の名称(よみ)をひらがなにして保存する
      *
-     * @param string $value
+     * @param  string  $value
      */
     public function setGroupNameYomiAttribute($value)
     {

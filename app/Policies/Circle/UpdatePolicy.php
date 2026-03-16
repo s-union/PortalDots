@@ -16,9 +16,7 @@ class UpdatePolicy
      *
      * @return void
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function __invoke(User $user, Circle $circle)
     {
@@ -27,10 +25,11 @@ class UpdatePolicy
         }
 
         $participationForm = $circle->participationType->form;
+
         return isset($participationForm)
             && $participationForm->is_public
             && $participationForm->isOpen()
             && Gate::forUser($user)->allows('circle.belongsTo', $circle)
-            && !$circle->hasSubmitted();
+            && ! $circle->hasSubmitted();
     }
 }

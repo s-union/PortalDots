@@ -12,16 +12,16 @@ class RegisterService
     /**
      * ユーザーを作成する
      *
-     * @param string $student_id ユーザーのstudent_id
-     * @param string $name ユーザーの名前。姓名の間にはスペースを1個以上入れること
-     * @param string $name_yomi ユーザーの名前の読み。姓名の間にはスペースを1個以上入れること
-     * @param string $email ユーザーの連絡先メールアドレス
-     * @param string $univemail_local_part 学校提供メールアドレスのローカルパート
-     * @param string $univemail_domain_part 学校提供メールアドレスのドメインパート
-     * @param string $tel ユーザーの電話番号
-     * @param string $plain_password ハッシュ化していないパスワード
-     * @param bool $is_staff スタッフとして登録するか
-     * @param bool $is_admin 管理者ユーザーとして登録するか
+     * @param  string  $student_id  ユーザーのstudent_id
+     * @param  string  $name  ユーザーの名前。姓名の間にはスペースを1個以上入れること
+     * @param  string  $name_yomi  ユーザーの名前の読み。姓名の間にはスペースを1個以上入れること
+     * @param  string  $email  ユーザーの連絡先メールアドレス
+     * @param  string  $univemail_local_part  学校提供メールアドレスのローカルパート
+     * @param  string  $univemail_domain_part  学校提供メールアドレスのドメインパート
+     * @param  string  $tel  ユーザーの電話番号
+     * @param  string  $plain_password  ハッシュ化していないパスワード
+     * @param  bool  $is_staff  スタッフとして登録するか
+     * @param  bool  $is_admin  管理者ユーザーとして登録するか
      * @return User
      */
     public function create(
@@ -46,7 +46,7 @@ class RegisterService
             'tel' => $tel,
             'password' => Hash::make($plain_password),
             'is_staff' => $is_staff,
-            'is_admin' => $is_admin
+            'is_admin' => $is_admin,
         ]);
     }
 }

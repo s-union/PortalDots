@@ -6,7 +6,6 @@ namespace App\Auth;
 
 use App\Eloquents\User;
 use Illuminate\Auth\EloquentUserProvider;
-use Illuminate\Contracts\Auth\Authenticatable;
 
 class AppUserProvider extends EloquentUserProvider
 {
@@ -16,6 +15,6 @@ class AppUserProvider extends EloquentUserProvider
             return null;
         }
 
-        return (new User())->firstByLoginId($credentials['login_id']);
+        return (new User)->firstByLoginId($credentials['login_id']);
     }
 }

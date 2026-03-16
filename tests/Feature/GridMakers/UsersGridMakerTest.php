@@ -16,7 +16,7 @@ class UsersGridMakerTest extends TestCase
      */
     private $usersGridMaker;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -49,15 +49,16 @@ class UsersGridMakerTest extends TestCase
             [new CarbonImmutable('2020-02-07 23:23:23'), '1時間以内'],
             [new CarbonImmutable('2020-02-01 01:23:45'), '6日前'],
             [new CarbonImmutable('2019-10-31 19:10:31'), '3ヶ月前'],
-            [new CarbonImmutable('2012-05-22 09:30:00'), '1年以上前']
+            [new CarbonImmutable('2012-05-22 09:30:00'), '1年以上前'],
         ];
     }
 
     /**
      * @test
+     *
      * @dataProvider formatLastAccessedAt_provider
      */
-    public function formatLastAccessedAt(CarbonImmutable $last_accessed_at, string $expected)
+    public function format_last_accessed_at(CarbonImmutable $last_accessed_at, string $expected)
     {
         $user = User::factory()->make([
             'last_accessed_at' => $last_accessed_at,

@@ -7,32 +7,32 @@ use App\Eloquents\Place;
 use App\Eloquents\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
-use Tests\Feature\Http\Controllers\Circles\BaseTestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 
 class ShowActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private ?User $user;
+
     private ?User $member;
+
     private ?Circle $circle;
+
     private ?Circle $notSubmittedCircle;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = User::factory()->create();
         $this->member = User::factory()->create();
         $this->circle = Circle::factory()->create([
-            'participation_type_id' => $this->participationType->id
+            'participation_type_id' => $this->participationType->id,
         ]);
 
         $this->notSubmittedCircle = Circle::factory()->notSubmitted()->create([
-            'participation_type_id' => $this->participationType->id
+            'participation_type_id' => $this->participationType->id,
         ]);
 
         $this->circle->users()->attach([
@@ -65,7 +65,7 @@ class ShowActionTest extends BaseTestCase
         $response->assertStatus(302);
         $response->assertRedirect(
             route('circles.auth', [
-                'circle' => $this->circle
+                'circle' => $this->circle,
             ])
         );
     }

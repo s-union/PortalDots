@@ -6,7 +6,6 @@ use App\Eloquents\ContactCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Contacts\Categories\CategoryRequest;
 use App\Services\Contacts\ContactCategoriesService;
-use Illuminate\Http\Request;
 
 class StoreAction extends Controller
 {

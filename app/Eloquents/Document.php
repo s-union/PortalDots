@@ -2,17 +2,16 @@
 
 namespace App\Eloquents;
 
+use App\Eloquents\Concerns\IsNewTrait;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use App\Eloquents\Concerns\IsNewTrait;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Document extends Model
 {
     use HasFactory;
-
     use IsNewTrait;
     use LogsActivity;
 
@@ -72,8 +71,8 @@ class Document extends Model
     /**
      * 公開されている配布資料に限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopePublic($query)
     {

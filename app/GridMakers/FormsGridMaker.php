@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\GridMakers;
 
-use App\Eloquents\Tag;
-use Illuminate\Database\Eloquent\Builder;
 use App\Eloquents\Form;
+use App\Eloquents\Tag;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
-use Illuminate\Database\Eloquent\Model;
 use App\Services\Utils\FormatTextService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class FormsGridMaker implements GridMakable
 {
@@ -28,7 +28,7 @@ class FormsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -45,7 +45,7 @@ class FormsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -63,7 +63,7 @@ class FormsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
@@ -93,7 +93,7 @@ class FormsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -110,7 +110,7 @@ class FormsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
@@ -123,26 +123,27 @@ class FormsGridMaker implements GridMakable
                     );
                     break;
                 case 'open_at':
-                    $item[$key] = !empty($record->open_at) ? $record->open_at->format('Y/m/d H:i:s') : null;
+                    $item[$key] = ! empty($record->open_at) ? $record->open_at->format('Y/m/d H:i:s') : null;
                     break;
                 case 'close_at':
-                    $item[$key] = !empty($record->close_at) ? $record->close_at->format('Y/m/d H:i:s') : null;
+                    $item[$key] = ! empty($record->close_at) ? $record->close_at->format('Y/m/d H:i:s') : null;
                     break;
                 case 'created_at':
-                    $item[$key] = !empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
+                    $item[$key] = ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
                     break;
                 case 'updated_at':
-                    $item[$key] = !empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null;
+                    $item[$key] = ! empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null;
                     break;
                 default:
                     $item[$key] = $record->$key;
             }
         }
+
         return $item;
     }
 
     protected function model(): Model
     {
-        return new Form();
+        return new Form;
     }
 }

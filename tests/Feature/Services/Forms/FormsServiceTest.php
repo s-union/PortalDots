@@ -2,19 +2,19 @@
 
 namespace Tests\Feature\Services\Forms;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\Eloquents\User;
 use App\Services\Forms\FormsService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
+use Tests\TestCase;
 
 class FormsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->formsService = App::make(FormsService::class);
@@ -31,7 +31,7 @@ class FormsServiceTest extends TestCase
     /**
      * @test
      */
-    public function copyForm_申請の複製ができる()
+    public function copy_form_申請の複製ができる()
     {
         $form = $this->formsService->copyForm($this->form);
 

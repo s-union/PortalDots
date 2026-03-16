@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Eloquents\Place;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -10,16 +11,15 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class PlacesExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return Place::with('circles')->get();
     }
 
     /**
-     * @param Place $place
-     * @return array
+     * @param  Place  $place
      */
     public function map($place): array
     {
@@ -66,9 +66,6 @@ class PlacesExport implements FromCollection, WithHeadings, WithMapping
         );
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return [

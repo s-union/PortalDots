@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Tags;
 
+use App\Eloquents\Circle;
+use App\Eloquents\Form;
+use App\Eloquents\Page;
+use App\Eloquents\Permission;
+use App\Eloquents\Tag;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use App\Eloquents\User;
-use App\Eloquents\Circle;
-use App\Eloquents\Tag;
-use App\Eloquents\Page;
-use App\Eloquents\Form;
-use App\Eloquents\Permission;
 
 class DestroyActionTest extends TestCase
 {
@@ -30,7 +30,7 @@ class DestroyActionTest extends TestCase
     /** @var Form */
     private $form;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Install;
 
-use mysqli;
 use Exception;
+use mysqli;
 
 class DatabaseService extends AbstractService
 {
@@ -38,7 +38,7 @@ class DatabaseService extends AbstractService
             'DB_PORT' => 'ポート番号',
             'DB_DATABASE' => 'データベース名',
             'DB_USERNAME' => 'データベースユーザー名',
-            'DB_PASSWORD' => 'データベースパスワード'
+            'DB_PASSWORD' => 'データベースパスワード',
         ];
     }
 
@@ -47,6 +47,7 @@ class DatabaseService extends AbstractService
         try {
             $mysqli = new mysqli($host, $username, $password, $database, $port);
             $result = empty($mysqli->connect_error);
+
             return $result;
         } catch (Exception $e) {
             return false;

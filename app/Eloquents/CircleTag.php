@@ -4,7 +4,6 @@ namespace App\Eloquents;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Pivot;
-use Spatie\Activitylog\Traits\LogsActivity;
 
 class CircleTag extends Pivot
 {

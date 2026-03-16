@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Forms;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\FormsService;
 
 class CopyAction extends Controller

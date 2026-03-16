@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 use Session;
 
 /**
@@ -16,23 +17,22 @@ class Turbolinks
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
      * @return mixed
      */
     public function handle($request, Closure $next)
     {
         $response = $next($request);
 
-        if (!empty($location = Session::get(self::LOCATION_SESSION_NAME))) {
+        if (! empty($location = Session::get(self::LOCATION_SESSION_NAME))) {
             $response->headers->set('Turbolinks-Location', $location);
         }
 
-        if (!empty($location = $response->headers->get('location'))) {
+        if (! empty($location = $response->headers->get('location'))) {
             $parsed_location = parse_url($location);
             $turbolinks_location = $parsed_location['path'] ?? '/';
-            if (!empty($parsed_location['query'])) {
-                $turbolinks_location .= '?' . $parsed_location['query'];
+            if (! empty($parsed_location['query'])) {
+                $turbolinks_location .= '?'.$parsed_location['query'];
             }
             Session::flash(self::LOCATION_SESSION_NAME, $turbolinks_location);
         }

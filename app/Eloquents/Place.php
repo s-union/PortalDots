@@ -10,7 +10,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Place extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     protected $fillable = [

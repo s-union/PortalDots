@@ -6,7 +6,6 @@ use App\Eloquents\Circle;
 use App\Eloquents\Place;
 use App\Exports\PlacesExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
@@ -34,7 +33,7 @@ class PlacesExportTest extends TestCase
      */
     private $anotherCircle;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -89,7 +88,7 @@ class PlacesExportTest extends TestCase
                     'びひんとりかえしたい',
                     '備品ほしい団体',
                     'びひんほしいだんたい',
-                ]
+                ],
             ],
             $this->placesExport->map($this->place->load('circles'))
         );

@@ -18,11 +18,14 @@ class ExportActionTest extends TestCase
     use RefreshDatabase;
 
     private ?User $staff;
+
     private ?Form $form;
+
     private ?Form $anotherForm;
+
     private ?Form $participationForm;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
@@ -41,14 +44,14 @@ class ExportActionTest extends TestCase
         $this->participationForm = Form::factory()->create();
 
         ParticipationType::factory()->create([
-            'form_id' => $this->participationForm->id
+            'form_id' => $this->participationForm->id,
         ]);
     }
 
     /**
      * @test
      */
-    public function フォーム情報がCSVでダウンロードできる()
+    public function フォーム情報が_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.forms.export']);
         $this->staff->syncPermissions(['staff.forms.export']);
@@ -64,14 +67,14 @@ class ExportActionTest extends TestCase
         Excel::assertDownloaded("申請一覧_{$now}.csv", function (FormsExport $export) {
             return $export->collection()->contains('name', '場所登録申請')
                 && $export->collection()->contains('name', 'パンフレット掲載内容')
-                && !$export->collection()->contains('name', $this->participationForm->name);
+                && ! $export->collection()->contains('name', $this->participationForm->name);
         });
     }
 
     /**
      * @test
      */
-    public function 権限がない場合はCSVをダウンロードできない()
+    public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

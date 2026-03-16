@@ -3,8 +3,6 @@
 namespace App\Http\Requests\Staff\Documents;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App;
-use Illuminate\Support\Arr;
 
 class UpdateDocumentRequest extends FormRequest
 {

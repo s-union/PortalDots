@@ -2,14 +2,16 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
 use App\Eloquents\Circle;
 use App\Eloquents\ParticipationType;
-use Faker\Generator as Faker;
+use Illuminate\Database\Eloquent\Factory;
+
 class CircleFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Circle::class;
+
     public function definition()
     {
         return [
@@ -21,15 +23,17 @@ class CircleFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'group_name' => $this->faker->name,
             'group_name_yomi' => $this->faker->kanaName,
             'submitted_at' => now(),
-            'status' => 'approved'
+            'status' => 'approved',
         ];
     }
+
     public function rejected()
     {
         return $this->state([
             'status' => 'rejected',
         ]);
     }
+
     public function notSubmitted()
     {
         return $this->state([

@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Forms\Answers;
 
-use Auth;
-use App\Http\Controllers\Controller;
-use App\Eloquents\Form;
-use App\Eloquents\Circle;
 use App\Eloquents\Answer;
+use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Forms\UpdateAnswerRequest;
 use App\Services\Forms\AnswersService;
+use Auth;
 
 class UpdateAction extends Controller
 {
@@ -27,6 +26,7 @@ class UpdateAction extends Controller
 
         $this->answersService->updateAnswer($form, $answer, $request);
         $this->answersService->sendAll($answer, Auth::user());
+
         return back()
             ->with('topAlert.title', '回答を更新しました');
 

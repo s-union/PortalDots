@@ -2,16 +2,16 @@
 
 namespace Tests\Feature\Services\Pages;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Services\Pages\PagesService;
-use App\Eloquents\Tag;
 use App\Eloquents\Circle;
-use App\Eloquents\User;
-use App\Eloquents\Page;
 use App\Eloquents\Email;
+use App\Eloquents\Page;
+use App\Eloquents\Tag;
+use App\Eloquents\User;
+use App\Services\Pages\PagesService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 
 class PagesServiceTest extends TestCase
 {
@@ -31,10 +31,10 @@ class PagesServiceTest extends TestCase
         'title' => 'お知らせ作成テスト123',
         'is_pinned' => true,
         'is_public' => false,
-        'body' => "これはお知らせです。\n\n# 見出しです。\n- リストです\n- リストです\n    - リストです"
+        'body' => "これはお知らせです。\n\n# 見出しです。\n- リストです\n- リストです\n    - リストです",
     ];
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -46,7 +46,7 @@ class PagesServiceTest extends TestCase
     /**
      * @test
      */
-    public function createPage_お知らせを保存する()
+    public function create_page_お知らせを保存する()
     {
         $this->assertSame(0, Page::count());
 
@@ -69,7 +69,7 @@ class PagesServiceTest extends TestCase
     /**
      * @test
      */
-    public function setPinStatusForPage_お知らせを固定表示できる()
+    public function set_pin_status_for_page_お知らせを固定表示できる()
     {
         $page = $this->pagesService->createPage(
             $this->content['title'],
@@ -95,7 +95,7 @@ class PagesServiceTest extends TestCase
     /**
      * @test
      */
-    public function setPinStatusForPage_お知らせを固定解除できる()
+    public function set_pin_status_for_page_お知らせを固定解除できる()
     {
         $page = $this->pagesService->createPage(
             $this->content['title'],
@@ -121,7 +121,7 @@ class PagesServiceTest extends TestCase
     /**
      * @test
      */
-    public function updatePage()
+    public function update_page()
     {
         $this->assertSame(0, Page::count());
 
@@ -139,7 +139,7 @@ class PagesServiceTest extends TestCase
         $this->pagesService->updatePage(
             $page,
             $this->content['title'],
-            "更新した本文",
+            '更新した本文',
             $this->staff,
             '',
             [],
@@ -149,7 +149,7 @@ class PagesServiceTest extends TestCase
         );
 
         $content_on_db = $this->content;
-        $content_on_db['body'] = "更新した本文";
+        $content_on_db['body'] = '更新した本文';
         $content_on_db['is_public'] = true;
         $content_on_db['is_pinned'] = true;
 
@@ -160,7 +160,7 @@ class PagesServiceTest extends TestCase
     /**
      * @test
      */
-    public function sendEmailsByPage_全ユーザーに対し一斉送信予約する()
+    public function send_emails_by_page_全ユーザーに対し一斉送信予約する()
     {
         $this->assertSame(0, Page::count());
 
@@ -188,7 +188,7 @@ class PagesServiceTest extends TestCase
     /**
      * @test
      */
-    public function createPage_お知らせを保存する際にアクセス可能な企画タグを指定する()
+    public function create_page_お知らせを保存する際にアクセス可能な企画タグを指定する()
     {
         $tags_count = 4;
         $tags = Tag::factory($tags_count)->create();
@@ -198,7 +198,7 @@ class PagesServiceTest extends TestCase
         $circles = Circle::factory(40)->create();
         $tags = Tag::factory(10)->create();
 
-        for ($i = 0; $i < count($circles); ++$i) {
+        for ($i = 0; $i < count($circles); $i++) {
             $circles[$i]->tags()->attach($tags[$i % 10]);
             $circles[$i]->users()->attach($users[$i & 40]);
         }
@@ -232,7 +232,7 @@ class PagesServiceTest extends TestCase
     /**
      * @test
      */
-    public function createPage_未作成のタグを指定した場合は無視される()
+    public function create_page_未作成のタグを指定した場合は無視される()
     {
         $tag = Tag::factory()->create();
 

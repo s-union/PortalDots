@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Staff\Users;
 
 use App\Eloquents\User;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 
 class VerifiedAction extends Controller
 {
@@ -26,7 +25,7 @@ class VerifiedAction extends Controller
         }
 
         return redirect()->back()
-                ->with('topAlert.title', '保存に失敗しました')
-                ->with('topAlert.type', 'danger');
+            ->with('topAlert.title', '保存に失敗しました')
+            ->with('topAlert.type', 'danger');
     }
 }

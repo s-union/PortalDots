@@ -2,10 +2,9 @@
 
 namespace App\Policies\Circle;
 
-use App\Eloquents\User;
 use App\Eloquents\ParticipationType;
+use App\Eloquents\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Gate;
 
 class CreatePolicy
 {
@@ -16,9 +15,7 @@ class CreatePolicy
      *
      * @return void
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function __invoke(?User $user, ?ParticipationType $participationType = null)
     {

@@ -3,12 +3,9 @@
 namespace App\Http\Requests\Forms;
 
 use App;
-use Gate;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\UploadedFile;
 use App\Services\Forms\ValidationRulesService;
-use App\Eloquents\Circle;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 
 abstract class BaseAnswerRequest extends FormRequest implements AnswerRequestInterface
 {
@@ -37,6 +34,7 @@ abstract class BaseAnswerRequest extends FormRequest implements AnswerRequestInt
                     // 配列とファイルは処理しない
                     return $item;
                 }
+
                 return str_replace("\r\n", "\n", $item);
             }, $all['answers']);
         }
@@ -57,6 +55,7 @@ abstract class BaseAnswerRequest extends FormRequest implements AnswerRequestInt
     public function attributes()
     {
         $validationRulesService = App::make(ValidationRulesService::class);
+
         return $validationRulesService->getAttributesFromForm($this->route('form'))->toArray();
     }
 }

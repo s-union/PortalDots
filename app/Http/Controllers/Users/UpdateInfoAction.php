@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Users;
 
-use Illuminate\Http\Request;
+use App\Eloquents\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Users\ChangeInfoRequest;
 use App\Services\Auth\EmailService;
 use App\Services\Auth\VerifyService;
 use Illuminate\Support\Facades\Auth;
-use App\Eloquents\User;
 use Symfony\Component\Mime\Exception\RfcComplianceException;
 
 class UpdateInfoAction extends Controller
 {
     private EmailService $emailService;
+
     private VerifyService $verifyService;
 
     public function __construct(EmailService $emailService, VerifyService $verifyService)
@@ -32,7 +32,7 @@ class UpdateInfoAction extends Controller
             $user->email_verified_at = null;
             $changed_email = true;
         }
-        if (!empty($request->univemail_local_part) || !empty($request->univemail_domain_part)) {
+        if (! empty($request->univemail_local_part) || ! empty($request->univemail_domain_part)) {
             if (
                 $user->univemail_local_part !== $request->univemail_local_part ||
                 $user->univemail_domain_part !== $request->univemail_domain_part
@@ -45,17 +45,17 @@ class UpdateInfoAction extends Controller
             }
         }
 
-        if (!empty($request->name)) {
+        if (! empty($request->name)) {
             $user->name = $request->name;
         }
 
-        if (!empty($request->name_yomi)) {
+        if (! empty($request->name_yomi)) {
             $user->name_yomi = $request->name_yomi;
         }
 
         $user->tel = $request->tel;
 
-        if ($user->univemail === $user->email && !$user->is_verified_by_staff) {
+        if ($user->univemail === $user->email && ! $user->is_verified_by_staff) {
             $this->verifyService->markEmailAsVerified($user, $user->email);
         }
 
@@ -71,10 +71,10 @@ class UpdateInfoAction extends Controller
             return redirect()
                 ->route('user.edit')
                 ->withInput()
-                ->withErrors(['student_id' => config('portal.student_id_name') . 'を正しく入力してください']);
+                ->withErrors(['student_id' => config('portal.student_id_name').'を正しく入力してください']);
         }
 
-        if (!$user->save()) {
+        if (! $user->save()) {
             return redirect()
                 ->route('user.edit')
                 ->with('topAlert.type', 'danger')

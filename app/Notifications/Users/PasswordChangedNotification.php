@@ -4,9 +4,8 @@ namespace App\Notifications\Users;
 
 use App\Eloquents\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class PasswordChangedNotification extends Notification
 {
@@ -45,16 +44,16 @@ class PasswordChangedNotification extends Notification
      * Get the mail representation of the notification.
      *
      * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @return MailMessage
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage())
-                    ->subject('パスワードが変更されました')
-                    ->greeting('パスワードが変更されました')
-                    ->line($this->user->name . ' 様')
-                    ->line('最近、' . config('app.name') . 'にログインするためのパスワードが変更されました。この変更がご自身によるものである場合、このメールは無視してください。')
-                    ->line('もし、このパスワード変更に心当たりがない場合、第三者が不正にパスワードを変更した可能性があります。
+        return (new MailMessage)
+            ->subject('パスワードが変更されました')
+            ->greeting('パスワードが変更されました')
+            ->line($this->user->name.' 様')
+            ->line('最近、'.config('app.name').'にログインするためのパスワードが変更されました。この変更がご自身によるものである場合、このメールは無視してください。')
+            ->line('もし、このパスワード変更に心当たりがない場合、第三者が不正にパスワードを変更した可能性があります。
                         その場合、ログイン画面にある「パスワードを忘れた場合」からパスワードのリセットをお願いします。');
     }
 

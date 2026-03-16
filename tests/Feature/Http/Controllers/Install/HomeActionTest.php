@@ -2,10 +2,9 @@
 
 namespace Tests\Feature\Http\Controllers\Install;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Services\Utils\DotenvService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class HomeActionTest extends TestCase
 {

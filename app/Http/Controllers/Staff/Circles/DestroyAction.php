@@ -11,8 +11,9 @@ class DestroyAction extends Controller
     {
         $participationType = $circle->participationType;
         $circle->delete();
+
         return redirect(route('staff.circles.participation_types.index', [
-            'participation_type' => $participationType
+            'participation_type' => $participationType,
         ]));
     }
 }

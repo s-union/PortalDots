@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Circles\Users;
 
-use Auth;
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Services\Circles\CirclesService;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
+use App\Services\Circles\CirclesService;
+use Auth;
 
 class RegenerateTokenAction extends Controller
 {
@@ -24,7 +23,7 @@ class RegenerateTokenAction extends Controller
     {
         $this->authorize('circle.update', $circle);
 
-        if (!Auth::user()->isLeaderInCircle($circle)) {
+        if (! Auth::user()->isLeaderInCircle($circle)) {
             abort(403);
         }
 

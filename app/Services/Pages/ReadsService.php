@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Pages;
 
-use Illuminate\Support\Facades\Auth;
 use App\Eloquents\Page;
 use App\Eloquents\User;
 use App\Services\Circles\SelectorService;
+use Illuminate\Support\Facades\Auth;
 
 class ReadsService
 {
@@ -34,12 +34,13 @@ class ReadsService
      */
     public function getUnreadsCountOnSelectedCircle()
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             $this->unreadsCountOnSelectedCircle = 0;
+
             return $this->unreadsCountOnSelectedCircle;
         }
 
-        if (!empty($this->unreadsCountOnSelectedCircle)) {
+        if (! empty($this->unreadsCountOnSelectedCircle)) {
             return $this->unreadsCountOnSelectedCircle;
         }
 
@@ -51,6 +52,7 @@ class ReadsService
             if ($page->usersWhoRead->isEmpty()) {
                 return $carry + 1;
             }
+
             return $carry;
         }, 0);
 
@@ -60,8 +62,8 @@ class ReadsService
     /**
      * 既読としてマークする
      *
-     * @param Page $page 既読としてマークする対象のお知らせ
-     * @param User $user 既読したユーザー
+     * @param  Page  $page  既読としてマークする対象のお知らせ
+     * @param  User  $user  既読したユーザー
      * @return void
      */
     public function markAsRead(Page $page, User $user)
@@ -74,7 +76,6 @@ class ReadsService
     /**
      * 指定されたお知らせの既読情報を全て削除する
      *
-     * @param Page $page
      * @return void
      */
     public function deleteAllReadsByPage(Page $page)

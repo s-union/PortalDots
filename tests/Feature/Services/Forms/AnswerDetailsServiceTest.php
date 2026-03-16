@@ -32,7 +32,7 @@ class AnswerDetailsServiceTest extends TestCase
     /** @var FilesystemAdapter */
     private $localDisk;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         Storage::fake('local');
@@ -49,18 +49,18 @@ class AnswerDetailsServiceTest extends TestCase
     /**
      * @test
      */
-    public function updateAnswerDetails_ファイルの更新した時に古いファイルが削除される()
+    public function update_answer_details_ファイルの更新した時に古いファイルが削除される()
     {
         $form = Form::factory()->create();
 
         $file_upload = Question::factory()->create([
             'form_id' => $form->id,
-            'type' => 'upload'
+            'type' => 'upload',
         ]);
 
         $answer = Answer::factory()->create([
             'form_id' => $form->id,
-            'circle_id' => $this->circle->id
+            'circle_id' => $this->circle->id,
         ]);
 
         Auth::login($this->user);
@@ -83,18 +83,18 @@ class AnswerDetailsServiceTest extends TestCase
     /**
      * @test
      */
-    public function updateAnswerDetails_ファイルの削除した時に古いファイルが削除される()
+    public function update_answer_details_ファイルの削除した時に古いファイルが削除される()
     {
         $form = Form::factory()->create();
 
         $file_upload = Question::factory()->create([
             'form_id' => $form->id,
-            'type' => 'upload'
+            'type' => 'upload',
         ]);
 
         $answer = Answer::factory()->create([
             'form_id' => $form->id,
-            'circle_id' => $this->circle->id
+            'circle_id' => $this->circle->id,
         ]);
 
         Auth::login($this->user);
@@ -114,18 +114,18 @@ class AnswerDetailsServiceTest extends TestCase
     /**
      * @test
      */
-    public function updateAnswerDetails_ファイルの更新をしていない時はアップロードされたファイルを削除しない()
+    public function update_answer_details_ファイルの更新をしていない時はアップロードされたファイルを削除しない()
     {
         $form = Form::factory()->create();
 
         $file_upload = Question::factory()->create([
             'form_id' => $form->id,
-            'type' => 'upload'
+            'type' => 'upload',
         ]);
 
         $answer = Answer::factory()->create([
             'form_id' => $form->id,
-            'circle_id' => $this->circle->id
+            'circle_id' => $this->circle->id,
         ]);
 
         Auth::login($this->user);

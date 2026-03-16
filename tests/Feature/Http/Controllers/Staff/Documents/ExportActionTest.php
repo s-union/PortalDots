@@ -31,7 +31,7 @@ class ExportActionTest extends TestCase
      */
     private $anotherDocument;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
@@ -51,7 +51,7 @@ class ExportActionTest extends TestCase
     /**
      * @test
      */
-    public function 配布資料の情報がCSVでダウンロードできる()
+    public function 配布資料の情報が_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.documents.export']);
         $this->staff->syncPermissions(['staff.documents.export']);
@@ -73,7 +73,7 @@ class ExportActionTest extends TestCase
     /**
      * @test
      */
-    public function 権限がない場合はCSVをダウンロードできない()
+    public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

@@ -2,8 +2,10 @@
 
 namespace App\Exceptions;
 
-use PDOException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Request;
+use PDOException;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -22,15 +24,14 @@ class Handler extends ExceptionHandler
     /**
      * Render an exception into an HTTP response.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Throwable  $exception
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @param  Request  $request
+     * @return Response
      *
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function render($request, Throwable $exception)
     {
-        if ($exception instanceof PDOException && !config('app.debug')) {
+        if ($exception instanceof PDOException && ! config('app.debug')) {
             // データベース接続エラー
             //
             // そのまま Blade ファイルによるエラーページを表示してしまうと、
@@ -44,6 +45,7 @@ class Handler extends ExceptionHandler
             //     →データベース内のデータを全削除した上でテーブルを作り直す
             //       コマンド : php artisan migrate:refresh
             $app_name = config('app.name');
+
             return response("
                 <!doctype html>
                 <meta charset=\"utf-8\">
@@ -62,7 +64,7 @@ class Handler extends ExceptionHandler
         // ステータスコードがエラーとなるページへのアクセスは Turbolinks に
         // 対応していないので、200 を返す
         if (
-            !empty($request->headers->get('Turbolinks-Referrer'))
+            ! empty($request->headers->get('Turbolinks-Referrer'))
             && in_array($response->getStatusCode(), [403, 404, 500, 503], true)
         ) {
             $response->setStatusCode(200);

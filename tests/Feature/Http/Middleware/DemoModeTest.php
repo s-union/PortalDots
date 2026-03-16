@@ -19,7 +19,7 @@ class DemoModeTest extends TestCase
      */
     private $demoMode;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->demoMode = App::make(DemoMode::class);
@@ -28,7 +28,7 @@ class DemoModeTest extends TestCase
     /**
      * @test
      */
-    public function handle_デモモードではない場合はGET以外のリクエストも許可する()
+    public function handle_デモモードではない場合は_ge_t以外のリクエストも許可する()
     {
         /** @var User */
         $user = User::factory()->create();
@@ -47,7 +47,7 @@ class DemoModeTest extends TestCase
     /**
      * @test
      */
-    public function handle_デモモードの場合はGET以外のリクエストを拒否()
+    public function handle_デモモードの場合は_ge_t以外のリクエストを拒否()
     {
         Config::set('portal.enable_demo_mode', true);
 
@@ -58,8 +58,7 @@ class DemoModeTest extends TestCase
 
         $request = Request::create(route('contacts.post'), 'POST');
 
-        $response = $this->demoMode->handle($request, function () {
-        });
+        $response = $this->demoMode->handle($request, function () {});
 
         $testResponse = $this->createTestResponse($response);
 

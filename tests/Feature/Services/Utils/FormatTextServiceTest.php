@@ -2,11 +2,9 @@
 
 namespace Tests\Feature\Services\Utils;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Services\Utils\FormatTextService;
 use Illuminate\Support\Facades\App;
+use Tests\TestCase;
 
 class FormatTextServiceTest extends TestCase
 {
@@ -15,7 +13,7 @@ class FormatTextServiceTest extends TestCase
      */
     private $formatTextService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->formatTextService = App::make(FormatTextService::class);
@@ -32,6 +30,7 @@ class FormatTextServiceTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider filesizeProvider
      */
     public function filesize($arg, $result)
@@ -60,9 +59,10 @@ class FormatTextServiceTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider escapeMarkdownProvider
      */
-    public function escapeMarkdown($arg, $result)
+    public function escape_markdown($arg, $result)
     {
         $this->assertSame($result, $this->formatTextService->escapeMarkdown($arg));
     }

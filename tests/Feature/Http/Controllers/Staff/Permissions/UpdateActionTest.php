@@ -14,7 +14,7 @@ class UpdateActionTest extends TestCase
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
@@ -37,7 +37,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this
@@ -75,7 +75,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this
@@ -115,7 +115,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this
@@ -151,7 +151,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'this.permission.is.not.defined',
-            ]
+            ],
         ];
 
         $response = $this
@@ -184,7 +184,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this

@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Eloquents\Circle;
 use App\Eloquents\ParticipationType;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -27,7 +28,7 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
     }
 
     /**
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     public function collection()
     {
@@ -41,7 +42,7 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
     }
 
     /**
-     * @param Circle $circle
+     * @param  Circle  $circle
      */
     public function map($circle): array
     {
@@ -69,7 +70,7 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
                 $circle->id,
                 isset($circle->participationType)
                     ? "{$circle->participationType->name}(ID:{$circle->participationType->id})"
-                    : "",
+                    : '',
                 $circle->name,
                 $circle->name_yomi,
                 $circle->group_name,
@@ -92,9 +93,6 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
         );
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return array_merge(
@@ -119,7 +117,7 @@ class CirclesExport implements FromCollection, WithHeadings, WithMapping
             ],
             isset($this->participationType)
                 ? $this->participationType->form->questions
-                ->where('type', '!==', 'heading')->pluck('name')->toArray()
+                    ->where('type', '!==', 'heading')->pluck('name')->toArray()
                 : [],
         );
     }

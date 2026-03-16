@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Install\Mail;
 
-use Exception;
 use App\Http\Controllers\Controller;
 use App\Services\Install\MailService;
+use Exception;
 
 class SendTestAction extends Controller
 {
@@ -29,7 +29,7 @@ class SendTestAction extends Controller
         } catch (Exception $e) {
             // エラー内容をJSONで返す
             return response()->json([
-                'message' => 'テストメールを送信できませんでした。入力内容が正しいかご確認ください。 : ' . $e->getMessage(),
+                'message' => 'テストメールを送信できませんでした。入力内容が正しいかご確認ください。 : '.$e->getMessage(),
             ], 500);
         }
     }

@@ -2,10 +2,10 @@
 
 namespace App\Eloquents;
 
+use App\Eloquents\Concerns\IsNewTrait;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use App\Eloquents\Concerns\IsNewTrait;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -13,7 +13,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Page extends Model
 {
     use HasFactory;
-
     use IsNewTrait;
     use LogsActivity;
 
@@ -48,28 +47,29 @@ class Page extends Model
     /**
      * データベースが MySQL の FULLTEXT INDEX に対応しているかどうかを調べる
      *
-     * @return boolean
+     * @return bool
      */
     public static function isMySqlFulltextIndexSupported()
     {
         static $result = null;
         if ($result === null) {
             // MySQL 5.7 以上の場合のみ対応
-            $results = DB::select(DB::raw("select version()")->getValue(DB::connection()->getQueryGrammar()));
-            $mysql_version =  $results[0]->{'version()'};
+            $results = DB::select(DB::raw('select version()')->getValue(DB::connection()->getQueryGrammar()));
+            $mysql_version = $results[0]->{'version()'};
             if (strpos(strtolower($mysql_version), 'mariadb') !== false) {
                 // MariaDB を利用している場合
                 return false;
             }
             $result = version_compare($mysql_version, '5.7.6', '>=');
         }
+
         return $result;
     }
 
     /**
      * データベースが MariaDB の FULLTEXT INDEX に対応しているかどうかを調べる
      *
-     * @return boolean
+     * @return bool
      */
     public static function isMariaDbFulltextIndexSupported()
     {
@@ -125,8 +125,8 @@ class Page extends Model
     /**
      * 公開されているお知らせに限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopePublic($query)
     {
@@ -136,9 +136,9 @@ class Page extends Model
     /**
      * 固定されたお知らせに限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param bool $is_pinned 固定されたお知らせ以外を取得する場合は false を指定する
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @param  bool  $is_pinned  固定されたお知らせ以外を取得する場合は false を指定する
+     * @return Builder
      */
     public function scopePinned($query, bool $is_pinned = true)
     {
@@ -151,9 +151,8 @@ class Page extends Model
      * $circle を省略した場合、閲覧できる企画が限られているお知らせを
      * 除くお知らせの一覧が取得される
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param Circle|null $circle
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeByCircle($query, ?Circle $circle = null)
     {
@@ -174,15 +173,15 @@ class Page extends Model
     /**
      * フルテキストインデックスを使った検索
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string|null $keywords
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeByKeywords($query, ?string $keywords = null)
     {
         if (empty($keywords)) {
             return $query;
         }
-        return $query->whereRaw("match(title,body) against (? IN BOOLEAN MODE)", [$keywords]);
+
+        return $query->whereRaw('match(title,body) against (? IN BOOLEAN MODE)', [$keywords]);
     }
 }

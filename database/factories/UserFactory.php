@@ -2,15 +2,17 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
 use App\Eloquents\User;
-use Faker\Generator as Faker;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factory;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
 class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = User::class;
+
     public function definition()
     {
         return [
@@ -31,6 +33,7 @@ class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'remember_token' => Str::random(10),
         ];
     }
+
     public function staff()
     {
         return $this->state([
@@ -38,6 +41,7 @@ class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'is_admin' => false,
         ]);
     }
+
     public function admin()
     {
         return $this->state([
@@ -45,6 +49,7 @@ class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'is_admin' => true,
         ]);
     }
+
     public function not_verified()
     {
         return $this->state([

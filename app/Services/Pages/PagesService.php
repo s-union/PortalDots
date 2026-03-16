@@ -6,8 +6,8 @@ namespace App\Services\Pages;
 
 use App\Eloquents\Document;
 use App\Eloquents\Page;
-use App\Eloquents\User;
 use App\Eloquents\Tag;
+use App\Eloquents\User;
 use App\Services\Emails\SendEmailService;
 use App\Services\Utils\ActivityLogService;
 use App\Services\Utils\FormatTextService;
@@ -50,15 +50,14 @@ class PagesService
     /**
      * お知らせを作成する
      *
-     * @param string $title タイトル
-     * @param string $body 本文
-     * @param User $created_by 作成者
-     * @param string $notes スタッフ用メモ
-     * @param array $viewable_tags お知らせを閲覧可能な企画のタグ
-     * @param array $documents お知らせに関連する配布資料のID
-     * @param bool $is_public お知らせを公開するか
-     * @param bool $is_pinned お知らせを固定表示するか
-     * @return Page
+     * @param  string  $title  タイトル
+     * @param  string  $body  本文
+     * @param  User  $created_by  作成者
+     * @param  string  $notes  スタッフ用メモ
+     * @param  array  $viewable_tags  お知らせを閲覧可能な企画のタグ
+     * @param  array  $documents  お知らせに関連する配布資料のID
+     * @param  bool  $is_public  お知らせを公開するか
+     * @param  bool  $is_pinned  お知らせを固定表示するか
      */
     public function createPage(
         string $title,
@@ -142,16 +141,15 @@ class PagesService
     /**
      * お知らせを更新する
      *
-     * @param Page $page 更新するお知らせ
-     * @param string $title タイトル
-     * @param string $body 本文
-     * @param User $updated_by 更新者
-     * @param string $notes スタッフ用メモ
-     * @param array $viewable_tags お知らせを閲覧可能な企画のタグ
-     * @param array $documents お知らせに関連する配布資料のID
-     * @param bool $is_public お知らせを公開するか
-     * @param bool $is_pinned お知らせを固定表示するか
-     * @return bool
+     * @param  Page  $page  更新するお知らせ
+     * @param  string  $title  タイトル
+     * @param  string  $body  本文
+     * @param  User  $updated_by  更新者
+     * @param  string  $notes  スタッフ用メモ
+     * @param  array  $viewable_tags  お知らせを閲覧可能な企画のタグ
+     * @param  array  $documents  お知らせに関連する配布資料のID
+     * @param  bool  $is_public  お知らせを公開するか
+     * @param  bool  $is_pinned  お知らせを固定表示するか
      */
     public function updatePage(
         Page $page,
@@ -250,6 +248,7 @@ class PagesService
         return DB::transaction(function () use ($page, $is_pinned) {
             $page->is_pinned = $is_pinned;
             $page->timestamps = false;
+
             return $page->save();
         });
     }
@@ -258,6 +257,7 @@ class PagesService
     {
         return DB::transaction(function () use ($page) {
             $page->viewableTags()->detach();
+
             return $page->delete();
         });
     }
@@ -265,8 +265,6 @@ class PagesService
     /**
      * お知らせにおいて指定されているタグに所属している企画のユーザーへ、
      * メール送信予約を行う
-     *
-     * @param Page $page
      */
     public function sendEmailsByPage(Page $page)
     {
@@ -295,7 +293,7 @@ class PagesService
                     );
                     $url = route('documents.show', ['document' => $document]);
                     $list_item = "- [**{$escaped_name}**]({$url})";
-                    if (!empty($document->description)) {
+                    if (! empty($document->description)) {
                         $escaped_description = $this->formatTextService->escapeMarkdown(
                             e($document->description)
                         );
@@ -306,6 +304,7 @@ class PagesService
                         );
                         $list_item .= "\n   - {$escaped_description}";
                     }
+
                     return $list_item;
                 })
                 ->join("\n");

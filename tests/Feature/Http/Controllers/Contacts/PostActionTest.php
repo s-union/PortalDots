@@ -7,8 +7,6 @@ use App\Eloquents\ContactCategory;
 use App\Eloquents\User;
 use App\Services\Contacts\ContactsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
 class PostActionTest extends TestCase
@@ -30,7 +28,7 @@ class PostActionTest extends TestCase
      */
     private $ContactCategory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -45,7 +43,7 @@ class PostActionTest extends TestCase
     /**
      * @test
      */
-    public function ContactsServiceのcreateが呼び出される()
+    public function contacts_serviceのcreateが呼び出される()
     {
         $this->mock(ContactsService::class, function ($mock) {
             $mock->shouldReceive('create')->once()->andReturn(true);

@@ -2,36 +2,40 @@
 
 namespace Tests\Feature\Services\Forms;
 
-use ZipArchive;
-use Mockery;
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\File;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\App;
-use App\Eloquents\Form;
-use App\Eloquents\Question;
 use App\Eloquents\Answer;
 use App\Eloquents\AnswerDetail;
+use App\Eloquents\Form;
+use App\Eloquents\Question;
 use App\Services\Forms\DownloadZipService;
 use App\Services\Forms\Exceptions\NoDownloadFileExistException;
 use App\Services\Forms\Exceptions\ZipArchiveNotSupportedException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\File;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Storage;
+use Mockery;
+use Tests\TestCase;
+use ZipArchive;
 
 class DownloadZipServiceTest extends TestCase
 {
     use RefreshDatabase;
 
     private $form;
+
     private $questions;
+
     private $answer;
+
     private $answer_details = [];
+
     private $another_answer;
+
     private $another_answer_details = [];
 
     private const UPLOADS_NUMBER = 7;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create();
@@ -57,11 +61,11 @@ class DownloadZipServiceTest extends TestCase
 
         $count = 0;
         foreach ($this->questions as $question) {
-            $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
+            $filename = 'testfile_'.sha1($this->answer->id.'_'.$question->id).'.png';
             $this->answer_details[] = AnswerDetail::factory()->create([
                 'answer_id' => $this->answer->id,
                 'question_id' => $question->id,
-                'answer' => 'answer_details/' . $filename,
+                'answer' => 'answer_details/'.$filename,
             ]);
             Storage::putFileAs('answer_details', $example_file, $filename);
 
@@ -76,24 +80,24 @@ class DownloadZipServiceTest extends TestCase
         ]);
 
         foreach ($this->questions as $question) {
-            $filename = 'testfile_' . sha1($this->another_answer->id . '_' . $question->id) . '.png';
+            $filename = 'testfile_'.sha1($this->another_answer->id.'_'.$question->id).'.png';
             $this->another_answer_details[] = AnswerDetail::factory()->create([
                 'answer_id' => $this->another_answer->id,
                 'question_id' => $question->id,
-                'answer' => 'answer_details/' . $filename,
+                'answer' => 'answer_details/'.$filename,
             ]);
             Storage::putFileAs('answer_details', $example_file, $filename);
         }
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         foreach ($this->questions as $question) {
-            $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
-            $another_filename = 'testfile_' . sha1($this->another_answer->id . '_' . $question->id) . '.png';
+            $filename = 'testfile_'.sha1($this->answer->id.'_'.$question->id).'.png';
+            $another_filename = 'testfile_'.sha1($this->another_answer->id.'_'.$question->id).'.png';
 
-            Storage::delete('answer_details/' . $filename);
-            Storage::delete('answer_details/' . $another_filename);
+            Storage::delete('answer_details/'.$filename);
+            Storage::delete('answer_details/'.$another_filename);
         }
 
         parent::tearDown();
@@ -103,7 +107,7 @@ class DownloadZipServiceTest extends TestCase
     /**
      * @test
      */
-    public function makeZip_アップロードされたファイルが全てZIPファイルに含まれるか()
+    public function make_zip_アップロードされたファイルが全て_zi_pファイルに含まれるか()
     {
         $this->mock(ZipArchive::class, function ($mock) {
             $mock->shouldReceive('open')
@@ -114,7 +118,7 @@ class DownloadZipServiceTest extends TestCase
 
             $count = 0;
             foreach ($this->questions as $question) {
-                $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
+                $filename = 'testfile_'.sha1($this->answer->id.'_'.$question->id).'.png';
 
                 $mock->shouldReceive('addFile')
                     ->ordered()
@@ -128,7 +132,7 @@ class DownloadZipServiceTest extends TestCase
             }
 
             foreach ($this->questions as $question) {
-                $filename = 'testfile_' . sha1($this->another_answer->id . '_' . $question->id) . '.png';
+                $filename = 'testfile_'.sha1($this->another_answer->id.'_'.$question->id).'.png';
 
                 $mock->shouldReceive('addFile')
                     ->ordered()
@@ -167,16 +171,16 @@ class DownloadZipServiceTest extends TestCase
     /**
      * @test
      */
-    public function makeZip_ZipArchiveがエラーの時に適切な例外が発生する()
+    public function make_zip_zip_archiveがエラーの時に適切な例外が発生する()
     {
         $this->expectException(ZipArchiveNotSupportedException::class);
 
         $this->mock(ZipArchive::class, function ($mock) {
             $mock->shouldReceive('open')
-                        ->ordered()
-                        ->with(Mockery::any(), ZipArchive::CREATE)
-                        ->once()
-                        ->andReturn(false);
+                ->ordered()
+                ->with(Mockery::any(), ZipArchive::CREATE)
+                ->once()
+                ->andReturn(false);
         });
 
         $uploaded_file_paths = array_map(function ($answer_detail) {
@@ -189,7 +193,7 @@ class DownloadZipServiceTest extends TestCase
     /**
      * @test
      */
-    public function makeZip_第二引数が空の時に適切な例外が発生する()
+    public function make_zip_第二引数が空の時に適切な例外が発生する()
     {
         $this->expectException(NoDownloadFileExistException::class);
 

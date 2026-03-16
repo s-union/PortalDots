@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Auth\AppUserProvider;
+use App\Eloquents\Page;
 use App\Eloquents\User;
+use App\Policies\PagePolicy;
 use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -19,7 +21,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        \App\Eloquents\Page::class => \App\Policies\PagePolicy::class,
+        Page::class => PagePolicy::class,
     ];
 
     /**
@@ -39,9 +41,8 @@ class AuthServiceProvider extends ServiceProvider
                 session()->get('staff_authorized') ? true : null;
         });
 
-
         Gate::guessPolicyNamesUsing(function ($modelClass) {
-            return 'App\\Policies\\' . class_basename($modelClass) . 'Policy';
+            return 'App\\Policies\\'.class_basename($modelClass).'Policy';
         });
 
         Auth::provider('app', function (Application $app, array $config) {

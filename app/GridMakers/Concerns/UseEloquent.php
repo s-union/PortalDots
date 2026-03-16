@@ -8,44 +8,35 @@ use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
 use App\GridMakers\Filter\FilterQueries;
 use App\GridMakers\Filter\FilterQueryItem;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 use InvalidArgumentException;
 
 trait UseEloquent
 {
     /**
      * 表示に利用する Eloquent Model
-     *
-     * @return Model
      */
     abstract protected function model(): Model;
 
     /**
      * 表示に利用する Eloquent のクエリビルダオブジェクト
-     *
-     * @return Builder
      */
     abstract protected function baseEloquentQuery(): Builder;
 
     /**
      * 1レコードの配列を生成して返す
-     *
-     * @param $record
-     * @return array
      */
     abstract protected function map($record): array;
 
     /**
      * フィルタ可能なキー
-     *
-     * @return FilterableKeysDict
      */
     abstract public function filterableKeys(): FilterableKeysDict;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function defaultOrderBy(): string
     {
@@ -53,7 +44,7 @@ trait UseEloquent
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function defaultDirection(): string
     {
@@ -63,14 +54,11 @@ trait UseEloquent
     /**
      * フィルタクエリ配列等をもとに、フィルタ適用済みのクエリビルダオブジェクトを生成する
      *
-     * @param Builder $query
-     * @param FilterQueries $filter_queries
-     * @param string $filter_mode
      * @return Builder
      */
     protected function makeFilterAppliedQuery(Builder $query, FilterQueries $filter_queries, string $filter_mode)
     {
-        if (!in_array($filter_mode, ['and', 'or'], true)) {
+        if (! in_array($filter_mode, ['and', 'or'], true)) {
             throw new InvalidArgumentException('$filter_mode は and か or のどちらかで指定してください。');
         }
 
@@ -93,11 +81,11 @@ trait UseEloquent
 
                             $sub_query->from($pivot)
                                 ->select("{$pivot}.{$foreign_key}")
-                                ->where($options->getRelatedKey(), (int)$filter_query->getValue());
+                                ->where($options->getRelatedKey(), (int) $filter_query->getValue());
                         };
 
                         $db_query->whereIn(
-                            $this->model()->getTable() . '.' . $this->model()->getKeyName(),
+                            $this->model()->getTable().'.'.$this->model()->getKeyName(),
                             $sub_query_function,
                             $filter_mode
                         );
@@ -134,13 +122,13 @@ trait UseEloquent
                             $pivot_sub_query->from($pivot)
                                 ->select("{$pivot}.{$foreign_key}")
                                 ->whereIn(
-                                    $pivot . '.' . $options->getRelatedPivotKey(),
+                                    $pivot.'.'.$options->getRelatedPivotKey(),
                                     $related_sub_query_function
                                 );
                         };
 
                         $db_query->whereIn(
-                            $this->model()->getTable() . '.' . $this->model()->getKeyName(),
+                            $this->model()->getTable().'.'.$this->model()->getKeyName(),
                             $sub_query_function,
                             $filter_mode
                         );
@@ -171,7 +159,7 @@ trait UseEloquent
                         };
 
                         $db_query->whereIn(
-                            $this->model()->getTable() . '.' . $key_name,
+                            $this->model()->getTable().'.'.$key_name,
                             $sub_query_function,
                             $filter_mode
                         );
@@ -195,42 +183,42 @@ trait UseEloquent
         $query_value_for_sql = $filter_query->getValue();
 
         if (in_array($filter_query->getOperator(), ['like', 'not like'], true)) {
-            $query_value_for_sql = '%' . $filter_query->getValue() . '%';
+            $query_value_for_sql = '%'.$filter_query->getValue().'%';
         }
 
         switch ($type) {
             case FilterableKey::TYPE_STRING:
-                if (!in_array($filter_query->getOperator(), ['=', '!=', 'like', 'not like'], true)) {
+                if (! in_array($filter_query->getOperator(), ['=', '!=', 'like', 'not like'], true)) {
                     return;
                 }
                 break;
             case FilterableKey::TYPE_NUMBER:
-                if (!in_array($filter_query->getOperator(), ['=', '!=', '<', '>', '<=', '>='], true)) {
+                if (! in_array($filter_query->getOperator(), ['=', '!=', '<', '>', '<=', '>='], true)) {
                     return;
                 }
-                $query_value_for_sql = (float)$filter_query->getValue();
+                $query_value_for_sql = (float) $filter_query->getValue();
                 break;
             case FilterableKey::TYPE_DATETIME:
-                if (!in_array($filter_query->getOperator(), ['=', '!=', '<', '>', '<=', '>='], true)) {
+                if (! in_array($filter_query->getOperator(), ['=', '!=', '<', '>', '<=', '>='], true)) {
                     return;
                 }
                 $query_key_name_for_sql = "date_format(`{$filter_query->getFullKeyName()}`, '%Y-%m-%d %H:%i')";
                 $query_value_for_sql = (new Carbon($filter_query->getValue()))->format('Y-m-d H:i');
                 break;
             case FilterableKey::TYPE_BOOL:
-                if (!in_array($filter_query->getOperator(), ['='], true)) {
+                if (! in_array($filter_query->getOperator(), ['='], true)) {
                     return;
                 }
-                $query_value_for_sql = (int)$filter_query->getValue() === 0 ? 0 : 1;
+                $query_value_for_sql = (int) $filter_query->getValue() === 0 ? 0 : 1;
                 break;
             case FilterableKey::TYPE_IS_NULL:
-                $query_value_for_sql = (int)$filter_query->getValue() === 0 ? false : true;
+                $query_value_for_sql = (int) $filter_query->getValue() === 0 ? false : true;
                 break;
             case FilterableKey::TYPE_ENUM:
                 $choices = $this->filterableKeys()->getByKey($filter_query->getFullKeyName())->getEnumChoices();
 
                 if (
-                    !in_array(
+                    ! in_array(
                         $filter_query->getValue(),
                         $choices,
                         true
@@ -268,7 +256,7 @@ trait UseEloquent
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getArray(
         string $order_by,
@@ -278,11 +266,11 @@ trait UseEloquent
         int $offset,
         int $limit
     ): array {
-        if (!in_array($order_by, $this->sortableKeys(), true)) {
+        if (! in_array($order_by, $this->sortableKeys(), true)) {
             $direction = 'id';
         }
 
-        if (!in_array($direction, ['asc', 'desc'], true)) {
+        if (! in_array($direction, ['asc', 'desc'], true)) {
             $direction = 'asc';
         }
 
@@ -296,7 +284,7 @@ trait UseEloquent
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getCount(
         FilterQueries $filter_queries,

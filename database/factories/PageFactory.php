@@ -2,14 +2,15 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
 use App\Eloquents\Page;
-use Faker\Generator as Faker;
+use Illuminate\Database\Eloquent\Factory;
 
 class PageFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Page::class;
+
     public function definition()
     {
         return [

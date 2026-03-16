@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Schema;
 use App\Services\Circles\SelectorService;
 use App\Services\Pages\ReadsService;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
             $namespace = 'Database\\Factories\\';
 
             // モデルのフルネーム（App\Eloquents\User など）からクラス名部分（User）だけを取り出し、末尾に "Factory" を付与して結合
-            return $namespace . class_basename($modelName) . 'Factory';
+            return $namespace.class_basename($modelName).'Factory';
         });
     }
 }

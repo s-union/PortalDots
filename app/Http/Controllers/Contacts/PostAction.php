@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers\Contacts;
 
-use Illuminate\Support\HtmlString;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 use App\Eloquents\Circle;
 use App\Eloquents\ContactCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ContactFormRequest;
 use App\Services\Contacts\ContactsService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 class PostAction extends Controller
 {
@@ -25,7 +23,7 @@ class PostAction extends Controller
     {
         // ユーザーが企画に所属しているかどうかの検証は
         // ContactFormRequest で行っている
-        $circle = !empty($request->circle_id) ? Circle::find($request->circle_id) : null;
+        $circle = ! empty($request->circle_id) ? Circle::find($request->circle_id) : null;
         $sender = Auth::user();
         $category =
             ContactCategory::find($request->category) ??

@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Eloquents\Page;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -10,16 +11,15 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class PagesExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return Page::with(['viewableTags'])->orderBy('id')->get();
     }
 
     /**
-     * @param Page $page
-     * @return array
+     * @param  Page  $page
      */
     public function map($page): array
     {
@@ -36,9 +36,6 @@ class PagesExport implements FromCollection, WithHeadings, WithMapping
         ];
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return [

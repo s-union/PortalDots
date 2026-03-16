@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Staff\Pages;
 
+use App\Eloquents\Page;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Pages\PageRequest;
 use App\Services\Pages\PagesService;
-use App\Eloquents\Page;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 

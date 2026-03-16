@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers\Forms\Answers;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Eloquents\Form;
-use App\Eloquents\Circle;
 use App\Eloquents\Answer;
-use App\Services\Forms\AnswersService;
+use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\AnswerDetailsService;
+use App\Services\Forms\AnswersService;
 
 class EditAction extends Controller
 {
     private $answersService;
+
     private $answerDetailsService;
 
     public function __construct(
@@ -28,12 +27,14 @@ class EditAction extends Controller
 
     public function __invoke(Form $form, Answer $answer)
     {
-        if (!$form->is_public || (int)$form->id !== (int)$answer->form_id || isset($form->participationType)) {
+        if (! $form->is_public || (int) $form->id !== (int) $answer->form_id || isset($form->participationType)) {
             abort(404);
+
             return;
         }
 
         $circle = $answer->circle()->approved()->firstOrFail();
+
         return view('forms.answers.form')
             ->with('circle', $circle)
             ->with('form', $form)

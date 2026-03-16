@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers\Circles;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class DoneAction extends Controller
 {
     public function __invoke(Request $request, Circle $circle)
     {
-        if (!$request->session()->has('done')) {
+        if (! $request->session()->has('done')) {
             return redirect()
                 ->route('home');
         }
 
         $circle->load('participationType.form');
 
-        $confirmationMessage = "";
+        $confirmationMessage = '';
         if (isset($circle->participationType->form->confirmation_message)) {
             $confirmationMessage = $circle->participationType->form->confirmation_message;
         }

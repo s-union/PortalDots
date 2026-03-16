@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers\Forms;
 
-use App\Eloquents\Circle;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
+use App\Http\Controllers\Controller;
 use App\Services\Circles\SelectorService;
+use Illuminate\Http\Request;
 
 class AllAction extends Controller
 {

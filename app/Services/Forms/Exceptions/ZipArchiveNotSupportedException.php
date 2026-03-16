@@ -9,6 +9,4 @@ use Exception;
 /**
  * ZipArchive クラスが利用できない時にスローされる例外
  */
-class ZipArchiveNotSupportedException extends Exception
-{
-}
+class ZipArchiveNotSupportedException extends Exception {}

@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Services\Utils\DotenvService;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Form;
 use App\Eloquents\Page;
 use App\Eloquents\ParticipationType;
+use App\Eloquents\User;
+use App\Services\Utils\DotenvService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class HomeActionTest extends TestCase
 {
@@ -118,15 +118,15 @@ class HomeActionTest extends TestCase
 
         // 参加登録フォームを作成
         $participationForm = Form::factory()->create([
-            'name' => $participationFormName
+            'name' => $participationFormName,
         ]);
         ParticipationType::factory()->create([
-            'form_id' => $participationForm->id
+            'form_id' => $participationForm->id,
         ]);
 
         // カスタムフォームではない通常のフォームも作成
         Form::factory()->create([
-            'name' => $normalFormName
+            'name' => $normalFormName,
         ]);
 
         $circle = Circle::factory()->create();

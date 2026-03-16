@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Staff\Documents;
 
 use App\Eloquents\Document;
-use App\Services\Documents\DocumentsService;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Services\Documents\DocumentsService;
 
 class DestroyAction extends Controller
 {

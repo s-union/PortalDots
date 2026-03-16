@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Circles\Auth;
 use App\Eloquents\Circle;
 use App\Http\Controllers\Controller;
 use Carbon\CarbonImmutable;
-use Illuminate\Http\Request;
 
 class ShowAction extends Controller
 {
@@ -19,6 +18,7 @@ class ShowAction extends Controller
             return redirect()
                 ->route('circles.show', ['circle' => $circle]);
         }
+
         return view('circles.auth')
             ->with('circle', $circle)
             ->with('booth', $circle->booth);

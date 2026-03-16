@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Circles\SendEmailsRequest;
 use App\Services\Emails\SendEmailService;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SendAction extends Controller
@@ -42,7 +41,7 @@ class SendAction extends Controller
         );
 
         $this->sendEmailService->bulkEnqueue(
-            '【スタッフ用控え】' . $request->subject,
+            '【スタッフ用控え】'.$request->subject,
             $request->body,
             new Collection([Auth::user()])
         );

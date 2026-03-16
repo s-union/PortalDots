@@ -24,6 +24,7 @@ class FilterableKeyTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider typesWithNoOptionsProvider
      */
     public function オプションなしでインスタンス化できる(string $type)
@@ -35,9 +36,10 @@ class FilterableKeyTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider typesWithNoOptionsProvider
      */
-    public function jsonSerialize_オプションなしtypeのオブジェクトをシリアライズできる(string $type)
+    public function json_serialize_オプションなしtypeのオブジェクトをシリアライズできる(string $type)
     {
         $expected = json_encode(['type' => $type]);
         $actual = json_encode(FilterableKey::$type());
@@ -46,9 +48,10 @@ class FilterableKeyTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider typesWithNoOptionsProvider
      */
-    public function getBelongsToOptions_オプションなしtypeの場合は例外発生する(string $type)
+    public function get_belongs_to_options_オプションなしtypeの場合は例外発生する(string $type)
     {
         $this->expectException(BadMethodCallException::class);
         FilterableKey::$type()->getBelongsToOptions();
@@ -56,9 +59,10 @@ class FilterableKeyTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider typesWithNoOptionsProvider
      */
-    public function getBelongsToManyOptions_オプションなしtypeの場合は例外発生する(string $type)
+    public function get_belongs_to_many_options_オプションなしtypeの場合は例外発生する(string $type)
     {
         $this->expectException(BadMethodCallException::class);
         FilterableKey::$type()->getBelongsToManyOptions();
@@ -66,9 +70,10 @@ class FilterableKeyTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider typesWithNoOptionsProvider
      */
-    public function getEnumChoices_オプションなしtypeの場合は例外発生する(string $type)
+    public function get_enum_choices_オプションなしtypeの場合は例外発生する(string $type)
     {
         $this->expectException(BadMethodCallException::class);
         FilterableKey::$type()->getEnumChoices();
@@ -77,7 +82,7 @@ class FilterableKeyTest extends TestCase
     /**
      * @test
      */
-    public function belongsTo_引数を渡せばインスタンス化できる()
+    public function belongs_to_引数を渡せばインスタンス化できる()
     {
         $obj = FilterableKey::belongsTo('this_is_related_table_name', new FilterableKeysDict([
             'id' => FilterableKey::number(),
@@ -100,7 +105,7 @@ class FilterableKeyTest extends TestCase
     /**
      * @test
      */
-    public function jsonSerialize_typeがbelongsToのオブジェクトをシリアライズできる()
+    public function json_serialize_typeがbelongs_toのオブジェクトをシリアライズできる()
     {
         $expected = json_encode([
             'type' => 'belongsTo',
@@ -118,7 +123,7 @@ class FilterableKeyTest extends TestCase
                 'updated_at' => [
                     'type' => 'datetime',
                 ],
-            ]
+            ],
         ]);
 
         $obj = FilterableKey::belongsTo('this_is_related_table_name', new FilterableKeysDict([
@@ -134,7 +139,7 @@ class FilterableKeyTest extends TestCase
     /**
      * @test
      */
-    public function belongsToMany_引数を渡せばインスタンス化できる()
+    public function belongs_to_many_引数を渡せばインスタンス化できる()
     {
         // class_student は架空のテーブル名
         $obj = FilterableKey::belongsToMany('class_student', 'class_id', 'student_id', [
@@ -148,7 +153,7 @@ class FilterableKeyTest extends TestCase
     /**
      * @test
      */
-    public function jsonSerialize_typeがbelongsToManyのオブジェクトをシリアライズできる()
+    public function json_serialize_typeがbelongs_to_manyのオブジェクトをシリアライズできる()
     {
         $expected = json_encode([
             'type' => 'belongsToMany',
@@ -185,7 +190,7 @@ class FilterableKeyTest extends TestCase
     /**
      * @test
      */
-    public function jsonSerialize_typeがenumのオブジェクトをシリアライズできる()
+    public function json_serialize_typeがenumのオブジェクトをシリアライズできる()
     {
         $expected = json_encode([
             'type' => 'enum',
@@ -193,7 +198,7 @@ class FilterableKeyTest extends TestCase
                 'rejected',
                 'approved',
                 'NULL',
-            ]
+            ],
         ]);
 
         $obj = FilterableKey::enum(['rejected', 'approved', 'NULL']);

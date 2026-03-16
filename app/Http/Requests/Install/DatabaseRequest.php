@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Install;
 
-use Illuminate\Foundation\Http\FormRequest;
-use App\Services\Install\DatabaseService;
 use App;
+use App\Services\Install\DatabaseService;
+use Illuminate\Foundation\Http\FormRequest;
 
 class DatabaseRequest extends FormRequest
 {
@@ -31,6 +31,7 @@ class DatabaseRequest extends FormRequest
     public function attributes()
     {
         $databaseService = App::make(DatabaseService::class);
+
         return $databaseService->getFormLabels();
     }
 }

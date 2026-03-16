@@ -7,7 +7,6 @@ use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Documents\DocumentsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Mockery;
 use Tests\TestCase;
 
@@ -25,7 +24,7 @@ class DestroyActionTest extends TestCase
      */
     private $document;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -36,7 +35,7 @@ class DestroyActionTest extends TestCase
     /**
      * @test
      */
-    public function DocumentsServiceのdeleteDocumentが呼び出される()
+    public function documents_serviceのdelete_documentが呼び出される()
     {
         Permission::create(['name' => 'staff.documents.delete']);
         $this->staff->syncPermissions(['staff.documents.delete']);
@@ -50,8 +49,8 @@ class DestroyActionTest extends TestCase
         });
 
         $response = $this->actingAs($this->staff)
-                        ->withSession(['staff_authorized' => true])
-                        ->delete(route('staff.documents.destroy', ['document' => $this->document]));
+            ->withSession(['staff_authorized' => true])
+            ->delete(route('staff.documents.destroy', ['document' => $this->document]));
 
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('staff.documents.index'));
@@ -63,8 +62,8 @@ class DestroyActionTest extends TestCase
     public function 権限がない場合は配布資料を削除できない()
     {
         $response = $this->actingAs($this->staff)
-                        ->withSession(['staff_authorized' => true])
-                        ->delete(route('staff.documents.destroy', ['document' => $this->document]));
+            ->withSession(['staff_authorized' => true])
+            ->delete(route('staff.documents.destroy', ['document' => $this->document]));
 
         $response->assertForbidden();
     }

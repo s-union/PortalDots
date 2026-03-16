@@ -17,21 +17,25 @@ class DestroyActionTest extends TestCase
     use RefreshDatabase;
 
     private ?Form $form;
+
     private ?Collection $questions;
+
     private ?Collection $answers;
+
     private array $answerDetails;
+
     private ?User $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create([
-            'name' => '削除対象のフォーム'
+            'name' => '削除対象のフォーム',
         ]);
         $this->questions = Question::factory(2)->create([
             'form_id' => $this->form->id,
             'is_required' => false,
-            'type' => 'text'
+            'type' => 'text',
         ]);
         $this->answers = Answer::factory(2)->create([
             'form_id' => $this->form->id,
@@ -40,12 +44,12 @@ class DestroyActionTest extends TestCase
             $this->answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
                 'question_id' => $this->questions[0]->id,
-                'answer' => '回答 １'
+                'answer' => '回答 １',
             ]);
             $this->answerDetails[] = AnswerDetail::factory()->create([
                 'answer_id' => $answer->id,
                 'question_id' => $this->questions[1]->id,
-                'answer' => '回答 ２'
+                'answer' => '回答 ２',
             ]);
         }
         $this->staff = User::factory()->staff()->create();
@@ -60,7 +64,7 @@ class DestroyActionTest extends TestCase
         $this->staff->syncPermissions(['staff.forms.delete']);
 
         $this->assertDatabaseHas('forms', [
-            'name' => '削除対象のフォーム'
+            'name' => '削除対象のフォーム',
         ]);
         $this->assertDatabaseCount('questions', 2);
         $this->assertDatabaseCount('answers', 2);
@@ -73,7 +77,7 @@ class DestroyActionTest extends TestCase
         $response->assertRedirect(route('staff.forms.index'));
 
         $this->assertDatabaseMissing('forms', [
-            'name' => '削除対象のフォーム'
+            'name' => '削除対象のフォーム',
         ]);
         $this->assertDatabaseCount('questions', 0);
         $this->assertDatabaseCount('answers', 0);

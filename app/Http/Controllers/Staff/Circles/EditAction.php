@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Staff\Circles;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Place;
 use App\Eloquents\Tag;
+use App\Http\Controllers\Controller;
 
 class EditAction extends Controller
 {
     public function __invoke(Circle $circle)
     {
-        if (!$circle->hasSubmitted()) {
+        if (! $circle->hasSubmitted()) {
             // 参加登録が未提出の企画の情報は閲覧・編集できない
             abort(404);
         }
@@ -21,10 +21,10 @@ class EditAction extends Controller
 
         $member_ids = '';
         $members = $circle->users->filter(function ($user) {
-            return !$user->pivot->is_leader;
+            return ! $user->pivot->is_leader;
         });
         foreach ($members as $member) {
-            $member_ids .= $member->student_id . "\r\n";
+            $member_ids .= $member->student_id."\r\n";
         }
 
         return view('staff.circles.form')

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Circles\Selector;
 
+use App\Eloquents\Circle;
 use App\Http\Controllers\Controller;
+use App\Services\Circles\SelectorService;
+use Gate;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
-use App\Services\Circles\SelectorService;
-use App\Eloquents\Circle;
-use Gate;
 
 class SetAction extends Controller
 {
@@ -51,6 +51,6 @@ class SetAction extends Controller
         // のため、先頭にスラッシュがついている場合は取り除く。
         //
         // 先頭のスラッシュを取り除いた上で、スラッシュを1つだけ先頭に追加する。
-        return '/' . str_replace("\n", '', preg_replace('/^\/+/', '', $url));
+        return '/'.str_replace("\n", '', preg_replace('/^\/+/', '', $url));
     }
 }

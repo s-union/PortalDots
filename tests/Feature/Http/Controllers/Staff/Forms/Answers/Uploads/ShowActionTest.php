@@ -2,16 +2,16 @@
 
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Answers\Uploads;
 
+use App\Eloquents\Answer;
+use App\Eloquents\AnswerDetail;
+use App\Eloquents\Form;
+use App\Eloquents\Permission;
+use App\Eloquents\Question;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use App\Eloquents\Form;
-use App\Eloquents\Question;
-use App\Eloquents\Answer;
-use App\Eloquents\AnswerDetail;
-use App\Eloquents\Permission;
-use App\Eloquents\User;
 
 class ShowActionTest extends TestCase
 {
@@ -29,7 +29,7 @@ class ShowActionTest extends TestCase
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -47,12 +47,12 @@ class ShowActionTest extends TestCase
         $this->answer = Answer::factory()->create();
 
         $example_file = new File(base_path('tests/TestFile.png'));
-        $filename = 'testfile_' . sha1($this->answer->id . '_' . $this->question->id) . '.png';
+        $filename = 'testfile_'.sha1($this->answer->id.'_'.$this->question->id).'.png';
         $this->answer_details[] = AnswerDetail::factory()->create([
-                'answer_id' => $this->answer->id,
-                'question_id' => $this->question->id,
-                'answer' => 'answer_details/' . $filename,
-            ]);
+            'answer_id' => $this->answer->id,
+            'question_id' => $this->question->id,
+            'answer' => 'answer_details/'.$filename,
+        ]);
         Storage::putFileAs('answer_details', $example_file, $filename);
 
         // スタッフ
@@ -72,7 +72,7 @@ class ShowActionTest extends TestCase
             ->get(route('staff.forms.answers.uploads.show', [
                 'form' => $this->form,
                 'answer' => $this->answer,
-                'question' => $this->question
+                'question' => $this->question,
             ]));
 
         $response->assertOk();
@@ -88,7 +88,7 @@ class ShowActionTest extends TestCase
             ->get(route('staff.forms.answers.uploads.show', [
                 'form' => $this->form,
                 'answer' => $this->answer,
-                'question' => $this->question
+                'question' => $this->question,
             ]));
 
         $response->assertForbidden();
@@ -103,7 +103,7 @@ class ShowActionTest extends TestCase
             ->get(route('staff.forms.answers.uploads.show', [
                 'form' => $this->form,
                 'answer' => $this->answer,
-                'question' => $this->question
+                'question' => $this->question,
             ]));
 
         $response->assertForbidden();

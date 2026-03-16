@@ -10,6 +10,7 @@ class Booth extends Pivot
     use HasFactory;
 
     public $incrementing = true;
+
     public $timestamps = false;
 
     public function place()

@@ -39,7 +39,7 @@ class ChangePasswordRequest extends FormRequest
                     if (! Auth::attempt(['login_id' => $user->email, 'password' => $value])) {
                         $fail('パスワードが違います。');
                     }
-                }
+                },
             ]),
             // 新しいパスワード
             'new_password' => array_merge(User::PASSWORD_RULES, ['confirmed']),

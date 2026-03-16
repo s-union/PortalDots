@@ -4,9 +4,8 @@ namespace App\Notifications\Auth\Password;
 
 use App\Eloquents\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ResetStartNotification extends Notification
 {
@@ -53,15 +52,15 @@ class ResetStartNotification extends Notification
      * Get the mail representation of the notification.
      *
      * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @return MailMessage
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage())
+        return (new MailMessage)
             ->subject('パスワードの再設定')
             ->greeting('パスワードの再設定')
-            ->line($this->user->name . ' 様')
-            ->line(config('app.name') . 'のパスワードを再設定するには、以下のボタンを選んでください。')
+            ->line($this->user->name.' 様')
+            ->line(config('app.name').'のパスワードを再設定するには、以下のボタンを選んでください。')
             ->action('パスワードを再設定する', $this->reset_url)
             ->line('このメールに心当たりがない場合、このメールはそのまま破棄してください。');
     }

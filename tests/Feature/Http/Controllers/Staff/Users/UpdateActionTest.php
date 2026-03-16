@@ -17,7 +17,7 @@ class UpdateActionTest extends TestCase
     /** @var User */
     private $admin;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();

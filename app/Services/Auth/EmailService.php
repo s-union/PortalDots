@@ -6,17 +6,15 @@ namespace App\Services\Auth;
 
 use App\Eloquents\User;
 use App\Mail\Auth\EmailVerificationMailable;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 class EmailService
 {
     /**
      * 連絡先メールアドレスと大学提供メールアドレスの両方に確認メールを送信する
-     *
-     * @param  User  $user
      */
     public function sendAll(User $user)
     {
@@ -26,8 +24,6 @@ class EmailService
 
     /**
      * 連絡先メールアドレス宛に登録確認メールを送信する
-     *
-     * @param  User  $user
      */
     public function sendToEmail(User $user)
     {
@@ -42,8 +38,6 @@ class EmailService
 
     /**
      * 大学提供メールアドレス宛に登録確認メールを送信する
-     *
-     * @param  User  $user
      */
     public function sendToUnivemail(User $user)
     {
@@ -58,25 +52,20 @@ class EmailService
 
     /**
      * メール送信共通処理
-     *
-     * @param  string  $email
-     * @param  string  $name
-     * @param  string  $verifyUrl
      */
     private function send(string $email, string $name, string $verifyUrl, bool $is_edit = false)
     {
-        $recipient = new \stdClass();
+        $recipient = new \stdClass;
         $recipient->email = $email;
         $recipient->name = $name;
 
         Mail::to($recipient)
-        ->send(new EmailVerificationMailable($verifyUrl, $name, $is_edit));
+            ->send(new EmailVerificationMailable($verifyUrl, $name, $is_edit));
     }
 
     /**
      * メール認証用URLを発行する
      *
-     * @param  User  $user
      * @param  string  $type  email か univemail
      * @return string
      */
@@ -88,7 +77,7 @@ class EmailService
             [
                 'type' => $type,
                 'user' => $user->id,
-                'email' => ($type === 'univemail' ? $user->univemail : $user->email )
+                'email' => ($type === 'univemail' ? $user->univemail : $user->email),
             ]
         );
     }

@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
-use Artisan;
 use App\Services\Utils\DotenvService;
+use Closure;
+use Illuminate\Http\Request;
 
 /**
  * PortalDots がインストール済の場合、トップページへリダイレクトする
@@ -24,8 +24,7 @@ class DenyIfInstalled
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
      * @return mixed
      */
     public function handle($request, Closure $next)
@@ -33,6 +32,7 @@ class DenyIfInstalled
         if ($this->dotenvService->getValue('APP_NOT_INSTALLED', 'false') !== 'true') {
             abort(404);
         }
+
         return $next($request);
     }
 }

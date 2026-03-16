@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Staff\SendEmails;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Email;
+use App\Http\Controllers\Controller;
 
 class DestroyAction extends Controller
 {

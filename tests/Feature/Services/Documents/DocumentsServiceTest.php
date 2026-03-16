@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Services\Documents;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Eloquents\User;
 use App\Services\Documents\DocumentsService;
-use Tests\TestCase;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Filesystem\FilesystemAdapter;
-use Illuminate\Http\UploadedFile;
-use App\Eloquents\User;
+use Tests\TestCase;
 
 class DocumentsServiceTest extends TestCase
 {
@@ -30,7 +30,7 @@ class DocumentsServiceTest extends TestCase
      */
     private $localDisk;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         Storage::fake('local');
@@ -42,7 +42,7 @@ class DocumentsServiceTest extends TestCase
     /**
      * @test
      */
-    public function createDocument()
+    public function create_document()
     {
         $filesize = 1;  // 単位 : KiB
         $file = UploadedFile::fake()->create('第２回.pdf', $filesize, 'application/pdf');
@@ -66,14 +66,14 @@ class DocumentsServiceTest extends TestCase
             'extension' => 'pdf',
             'is_public' => true,
             'is_important' => false,
-            'notes' => 'メモです'
+            'notes' => 'メモです',
         ]);
     }
 
     /**
      * @test
      */
-    public function updateDocument_ファイルはアップデートせずに更新できる()
+    public function update_document_ファイルはアップデートせずに更新できる()
     {
         $document = $this->documentsService->createDocument(
             '第２回会議資料',
@@ -99,14 +99,14 @@ class DocumentsServiceTest extends TestCase
             'description' => 'updated description',
             'is_public' => false,
             'is_important' => true,
-            'notes' => 'updated notes'
+            'notes' => 'updated notes',
         ]);
     }
 
     /**
      * @test
      */
-    public function updateDocument_ファイルのアップデートができる()
+    public function update_document_ファイルのアップデートができる()
     {
         $oldFile = UploadedFile::fake()->create('第２回.pdf', 1, 'application/pdf');
 
@@ -137,14 +137,14 @@ class DocumentsServiceTest extends TestCase
             'extension' => 'jpeg',
             'is_public' => false,
             'is_important' => true,
-            'notes' => 'updated notes'
+            'notes' => 'updated notes',
         ]);
     }
 
     /**
      * @test
      */
-    public function deleteDocument_ファイルの削除ができる()
+    public function delete_document_ファイルの削除ができる()
     {
         $file = UploadedFile::fake()->create('削除されちゃう.pdf', 1, 'application/pdf');
 
@@ -164,7 +164,7 @@ class DocumentsServiceTest extends TestCase
         $this->localDisk->assertMissing("documents/{$file->hashName()}");
         $this->assertDatabaseMissing('documents', [
             'id' => $document->id,
-            'name' => '削除される資料です'
+            'name' => '削除される資料です',
         ]);
     }
 }

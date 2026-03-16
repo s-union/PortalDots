@@ -2,24 +2,25 @@
 
 namespace Tests\Feature\Http\Controllers\Forms\Answers;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\App;
-use Carbon\Carbon;
-use Carbon\CarbonImmutable;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Form;
 use App\Eloquents\Tag;
+use App\Eloquents\User;
 use App\Services\Circles\SelectorService;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\App;
+use Tests\TestCase;
 
 class CreateActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
+
     private $form;
 
     /**
@@ -27,7 +28,7 @@ class CreateActionTest extends TestCase
      */
     private $selectorService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -45,6 +46,7 @@ class CreateActionTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider 受付期間中かどうかに応じて表示が切り替わる_provider
      */
     public function 受付期間中かどうかに応じて表示が切り替わる(
@@ -57,12 +59,12 @@ class CreateActionTest extends TestCase
         $this->selectorService->setCircle($this->circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $this->form,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $this->form,
+                ])
+            );
 
         $response->assertStatus(200);
 
@@ -96,12 +98,12 @@ class CreateActionTest extends TestCase
         $this->selectorService->setCircle($this->circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $privateForm,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $privateForm,
+                ])
+            );
 
         $response->assertStatus(404);
     }
@@ -124,12 +126,12 @@ class CreateActionTest extends TestCase
         $this->selectorService->setCircle($tagged_circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $tagged_form,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $tagged_form,
+                ])
+            );
 
         $response->assertStatus(200);
     }
@@ -154,12 +156,12 @@ class CreateActionTest extends TestCase
         $this->selectorService->setCircle($tagged_circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $tagged_form,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $tagged_form,
+                ])
+            );
 
         $response->assertStatus(403);
     }

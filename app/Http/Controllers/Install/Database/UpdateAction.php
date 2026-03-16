@@ -20,9 +20,9 @@ class UpdateAction extends Controller
 
     public function __invoke(DatabaseRequest $request)
     {
-        if (!$this->databaseService->canConnectDatabase(
+        if (! $this->databaseService->canConnectDatabase(
             $request->DB_HOST,
-            (int)$request->DB_PORT,
+            (int) $request->DB_PORT,
             $request->DB_DATABASE,
             $request->DB_USERNAME,
             $request->DB_PASSWORD

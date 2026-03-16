@@ -37,7 +37,7 @@ class DestroyActionTest extends TestCase
     /** @var Tag */
     private $tag;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -74,7 +74,7 @@ class DestroyActionTest extends TestCase
             ->delete(route('staff.circles.destroy', ['circle' => $this->circle]));
 
         $responce->assertRedirect(route('staff.circles.participation_types.index', [
-            'participation_type' => $this->circle->participationType
+            'participation_type' => $this->circle->participationType,
         ]));
 
         $this->assertDatabaseMissing('answers', ['form_id' => $this->form->id, 'circle_id' => $this->circle->id]);
