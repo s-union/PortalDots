@@ -53,8 +53,9 @@
       "id": "7",
       "title": "workspace contact の失敗系テストを補強する",
       "description": "カテゴリ取得失敗・送信失敗・履歴空などの重要ケースを追加し、legacy `/contacts` 救済先の信頼性を上げる",
-      "status": "pending",
-      "addedAt": "2026-03-16T09:29:54Z"
+      "status": "done",
+      "addedAt": "2026-03-16T09:29:54Z",
+      "completedAt": "2026-03-16T09:53:28Z"
     },
     {
       "id": "8",
