@@ -22,6 +22,8 @@ import StaffFormAnswerPreviewSection from "@/features/staff/forms/components/Sta
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
   allowedQuestionTypes,
+  buildCopyStaffFormConfirmMessage,
+  buildDeleteStaffFormConfirmMessage,
   useCopyStaffFormMutation,
   useDeleteStaffFormMutation,
   extractStaffFormValidationMessage,
@@ -261,6 +263,14 @@ function handleMaxAnswersInput(event: Event) {
 
 async function handleCopyForm() {
   errorMessage.value = "";
+  const currentFormName = formQuery.data.value?.name ?? "このフォーム";
+  if (
+    typeof window !== "undefined" &&
+    !window.confirm(buildCopyStaffFormConfirmMessage(currentFormName))
+  ) {
+    return;
+  }
+
   try {
     const copied = await copyFormMutation.mutateAsync(formId.value);
     await router.push(`/staff/forms/${encodeURIComponent(copied.id)}`);
@@ -271,6 +281,14 @@ async function handleCopyForm() {
 
 async function handleDeleteForm() {
   errorMessage.value = "";
+  const currentFormName = formQuery.data.value?.name ?? "このフォーム";
+  if (
+    typeof window !== "undefined" &&
+    !window.confirm(buildDeleteStaffFormConfirmMessage(currentFormName))
+  ) {
+    return;
+  }
+
   try {
     await deleteFormMutation.mutateAsync(formId.value);
     await router.push("/staff/forms");

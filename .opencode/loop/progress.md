@@ -25,3 +25,5 @@
 - 2026-03-16: legacy toolbar の補助導線は、一覧 page の `SurfaceHeader` actions に戻すのが最小差分で効く。`staff/pages/index.vue` なら `/staff/mails` CTA を 1 本足すだけで send_emails 相当の再発見性をかなり戻せる。
 - 2026-03-16: destructive action の legacy parity は専用 delete page を作り直さなくても `window.confirm` で十分回収できる。`staff/tags.vue` のように注意文を複数行メッセージへ寄せ、テストでは confirm 文面の要点だけを見ると保守しやすい。
 - 2026-03-16: `staff/forms/index.vue` の copy/delete も tags と同じ confirm パターンで安全に復元できる。confirm をキャンセルしたときに mutation が走らないことと、copy 後の詳細遷移だけを `index.test.ts` で押さえると一覧ページの destructive parity を軽く固定できる。
+- 2026-03-16: follow-up で changed symbol の caller を見ると `useCopyStaffFormMutation` / `useDeleteStaffFormMutation` は `/staff/forms/[formId]` でも使われていた。一覧だけ confirm 復元すると detail との体験差が残るので、sibling page まで同じ文面と回帰テストをそろえるのが次の最小タスク。
+- 2026-03-16: form detail 側も confirm 文面は一覧と共有 utility に寄せるとぶれない。follow-up で legacy `staff/places/index.blade.php` を見ると「削除時は企画自体ではなく使用場所設定だけ解除される」注意が未移植だったので、次は `staff/places.vue` の destructive parity を埋めるのが自然。

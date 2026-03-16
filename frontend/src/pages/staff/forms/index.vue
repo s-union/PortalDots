@@ -16,6 +16,8 @@ import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
+  buildCopyStaffFormConfirmMessage,
+  buildDeleteStaffFormConfirmMessage,
   buildStaffFormsExportUrl,
   createDefaultStaffFormPayload,
   extractStaffFormValidationMessage,
@@ -43,14 +45,6 @@ const deleteFormMutation = useDeleteStaffFormMutation();
 const form = useStaffFormForm();
 const errorMessage = ref("");
 const exportHref = computed(() => buildStaffFormsExportUrl());
-
-function buildCopyFormConfirmMessage(formName: string) {
-  return `フォーム「${formName}」を複製しますか？\n\n• 設問は全て複製されます\n• 「${formName}のコピー」という名前のフォームが作成されます\n• 「${formName}のコピー」は非公開です。後から必要に応じて設定を変更してください`;
-}
-
-function buildDeleteFormConfirmMessage(formName: string) {
-  return `フォーム「${formName}」を削除しますか？\n\n• 設問、回答は全て削除されます`;
-}
 
 function handleAnswerableTagsInput(event: Event) {
   const target = event.target;
@@ -84,7 +78,10 @@ async function handleCreateForm() {
 async function handleCopyForm(formId: string) {
   const formName =
     formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? "このフォーム";
-  if (typeof window !== "undefined" && !window.confirm(buildCopyFormConfirmMessage(formName))) {
+  if (
+    typeof window !== "undefined" &&
+    !window.confirm(buildCopyStaffFormConfirmMessage(formName))
+  ) {
     return;
   }
 
@@ -101,7 +98,10 @@ async function handleCopyForm(formId: string) {
 async function handleDeleteForm(formId: string) {
   const formName =
     formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? "このフォーム";
-  if (typeof window !== "undefined" && !window.confirm(buildDeleteFormConfirmMessage(formName))) {
+  if (
+    typeof window !== "undefined" &&
+    !window.confirm(buildDeleteStaffFormConfirmMessage(formName))
+  ) {
     return;
   }
 

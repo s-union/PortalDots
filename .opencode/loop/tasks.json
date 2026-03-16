@@ -160,6 +160,21 @@
       "status": "done",
       "addedAt": "2026-03-16T11:57:00Z",
       "completedAt": "2026-03-16T11:56:21Z"
+    },
+    {
+      "id": "21",
+      "title": "staff forms 詳細の copy/delete 確認をそろえる",
+      "description": "一覧で復元した confirm 文面を `/staff/forms/[formId]` にも適用し、sibling 間の destructive action parity を保つ",
+      "status": "done",
+      "addedAt": "2026-03-16T11:58:20Z",
+      "completedAt": "2026-03-16T12:12:30Z"
+    },
+    {
+      "id": "22",
+      "title": "staff places の削除確認を復元する",
+      "description": "legacy places 一覧にある削除 confirm 文面を migrated places 画面へ戻し、関連解除の注意を伝える",
+      "status": "in_progress",
+      "addedAt": "2026-03-16T12:12:30Z"
     }
   ]
 }

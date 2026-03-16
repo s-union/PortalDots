@@ -21,6 +21,7 @@ function createQueryPlugin() {
 
 describe("StaffFormDetailPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
@@ -257,6 +258,175 @@ describe("StaffFormDetailPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("参加日");
+    });
+
+    it("confirms before copying and deleting the current form", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-b",
+                name: "デモ企画B",
+            },
+            featureFlags: [],
+            roles: ["admin"],
+            user: {
+                id: "staff-user",
+                displayName: "Staff User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/staff/forms", component: { template: "<div>forms</div>" } },
+                { path: "/staff/forms/:formId", component: StaffFormDetailPage },
+                {
+                    path: "/staff/forms/:formId/answers",
+                    component: { template: "<div>answers</div>" },
+                },
+                {
+                    path: "/staff/forms/:formId/preview",
+                    component: { template: "<div>preview</div>" },
+                },
+            ],
+        });
+        await router.push("/staff/forms/form-circle-b-1");
+        await router.isReady();
+
+        const deleteRequests: string[] = [];
+        const confirmMock = vi
+            .fn<(message?: string) => boolean>()
+            .mockReturnValueOnce(false)
+            .mockReturnValueOnce(true)
+            .mockReturnValueOnce(false)
+            .mockReturnValueOnce(true);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/staff/status") && method === "GET") {
+                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+
+                if (url.endsWith("/staff/forms/form-circle-b-1") && method === "GET") {
+                    return new Response(
+                        JSON.stringify({
+                            id: "form-circle-b-1",
+                            name: "展示チェックフォーム",
+                            description: "展示レイアウトと機材使用申請を提出してください。",
+                            openAt: "2026-03-02T00:00:00Z",
+                            closeAt: "2026-03-22T23:59:59Z",
+                            maxAnswers: 2,
+                            answerableTags: ["展示"],
+                            confirmationMessage: "回答ありがとうございました。",
+                            isPublic: true,
+                            isOpen: true,
+                            questions: [],
+                            answer: null,
+                        }),
+                        {
+                            status: 200,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (url.endsWith("/staff/forms/form-circle-b-1/copy") && method === "POST") {
+                    return new Response(
+                        JSON.stringify({
+                            id: "form-circle-b-copy",
+                            name: "展示チェックフォームのコピー",
+                            openAt: "2026-03-02T00:00:00Z",
+                            closeAt: "2026-03-22T23:59:59Z",
+                            maxAnswers: 2,
+                            isPublic: false,
+                            isOpen: false,
+                        }),
+                        {
+                            status: 201,
+                            headers: { "Content-Type": "application/json" },
+                        },
+                    );
+                }
+
+                if (url.endsWith("/staff/forms/form-circle-b-1") && method === "DELETE") {
+                    deleteRequests.push(url);
+                    return new Response(null, { status: 204 });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(StaffFormDetailPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        const buttonLabels = ["複製", "削除"];
+        for (const [index, label] of buttonLabels.entries()) {
+            const button = wrapper
+                .findAll('button[type="button"]')
+                .find((candidate) => candidate.text().includes(label));
+            if (!button) {
+                throw new Error(`${label} button not found at step ${index}`);
+            }
+
+            await button.trigger("click");
+            await flushPromises();
+
+            if (label === "複製") {
+                expect(confirmMock).toHaveBeenNthCalledWith(
+                    1,
+                    expect.stringContaining("フォーム「展示チェックフォーム」を複製しますか？"),
+                );
+                expect(router.currentRoute.value.fullPath).toBe("/staff/forms/form-circle-b-1");
+
+                await button.trigger("click");
+                await flushPromises();
+                expect(confirmMock).toHaveBeenNthCalledWith(
+                    2,
+                    expect.stringContaining("非公開です。後から必要に応じて設定を変更してください"),
+                );
+                expect(router.currentRoute.value.fullPath).toBe("/staff/forms/form-circle-b-copy");
+
+                await router.push("/staff/forms/form-circle-b-1");
+                await flushPromises();
+            } else {
+                expect(confirmMock).toHaveBeenNthCalledWith(
+                    3,
+                    expect.stringContaining("フォーム「展示チェックフォーム」を削除しますか？"),
+                );
+                expect(deleteRequests).toHaveLength(0);
+
+                await button.trigger("click");
+                await flushPromises();
+                expect(confirmMock).toHaveBeenNthCalledWith(
+                    4,
+                    expect.stringContaining("設問、回答は全て削除されます"),
+                );
+                expect(deleteRequests).toHaveLength(1);
+                expect(router.currentRoute.value.fullPath).toBe("/staff/forms");
+            }
+        }
     });
 });
 

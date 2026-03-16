@@ -21,6 +21,7 @@ function createQueryPlugin() {
 
 describe("StaffFormsIndexPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
     });
 
@@ -217,7 +218,7 @@ describe("StaffFormsIndexPage", () => {
             .mockReturnValueOnce(true)
             .mockReturnValueOnce(false)
             .mockReturnValueOnce(true);
-        vi.stubGlobal("confirm", confirmMock);
+        vi.spyOn(window, "confirm").mockImplementation(confirmMock);
 
         vi.stubGlobal(
             "fetch",
