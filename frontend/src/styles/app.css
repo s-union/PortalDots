@@ -92,6 +92,16 @@ body {
     font-weight: 400;
 }
 
+body:not(.is-in-iframe, .has-content-fill) {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4.5rem);
+}
+
+@media screen and (min-width: 1001px) {
+    body:not(.is-in-iframe, .has-content-fill) {
+        padding-bottom: 0;
+    }
+}
+
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: rgb(0 0 0 / 0%);

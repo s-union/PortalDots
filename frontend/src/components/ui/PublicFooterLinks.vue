@@ -1,6 +1,18 @@
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    appName?: string;
+  }>(),
+  {
+    appName: undefined,
+  },
+);
+</script>
+
 <template>
   <div class="space-y-2 text-xs text-muted">
     <p>
+      <template v-if="appName">{{ appName }} • </template>
       Powered by
       <a
         class="font-semibold text-muted transition hover:text-body hover:underline"

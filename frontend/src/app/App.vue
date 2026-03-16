@@ -111,13 +111,43 @@ const generalLinks = computed(() => [
     label: "お問い合わせ",
     icon: "?",
     active: route.path.startsWith("/workspace/contact"),
-    hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null,
+    hidden: !sessionStore.isAuthenticated,
   },
   {
     to: "/workspace/settings",
     label: "ユーザー設定",
     icon: "S",
     active: route.path.startsWith("/workspace/settings"),
+    hidden: !sessionStore.isAuthenticated,
+  },
+]);
+
+const mobileTabs = computed(() => [
+  { to: "/", label: "ホーム", icon: "H", active: route.path === "/" },
+  {
+    to: "/workspace/pages",
+    label: "お知らせ",
+    icon: "P",
+    active: route.path.startsWith("/workspace/pages"),
+  },
+  {
+    to: "/workspace/documents",
+    label: "配布資料",
+    icon: "D",
+    active: route.path.startsWith("/workspace/documents"),
+  },
+  {
+    to: "/workspace/forms",
+    label: "申請",
+    icon: "F",
+    active: route.path.startsWith("/workspace/forms"),
+    hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null,
+  },
+  {
+    to: "/workspace/contact",
+    label: "お問い合わせ",
+    icon: "?",
+    active: route.path.startsWith("/workspace/contact"),
     hidden: !sessionStore.isAuthenticated,
   },
 ]);
@@ -216,11 +246,8 @@ const staffLinks = computed(() => [
   },
 ]);
 
-const mobileTabs = computed(() =>
-  generalLinks.value.filter((link) => link.hidden !== true).slice(0, 4),
-);
 const mobileTabsStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${Math.max(mobileTabs.value.length, 1)}, minmax(0, 1fr))`,
+  gridTemplateColumns: `repeat(${Math.max(mobileTabs.value.filter((link) => link.hidden !== true).length, 1)}, minmax(0, 1fr))`,
 }));
 const statusBadges = computed(() => {
   if (!sessionStore.isAuthenticated) {
@@ -246,6 +273,20 @@ const authLabel = computed(() => {
   return `${sessionStore.user?.displayName ?? "unknown"}としてログイン中`;
 });
 
+const pageTitle = computed(() => {
+  if (route.path === "/login") return "ログイン";
+  if (route.path === "/register") return "ユーザー登録";
+  if (route.path === "/support") return "推奨動作環境";
+  if (route.path === "/privacy_policy") return "プライバシーポリシー";
+  if (route.path === "/circles/select") return "企画を選択";
+  if (route.path === "/circles/new") return "新しい企画を作成";
+
+  const activeLink = [...(isStaffRoute.value ? staffLinks.value : generalLinks.value)].find(
+    (link) => link.active,
+  );
+  return activeLink?.label ?? "PortalDots";
+});
+
 async function handleLogout() {
   await logoutMutation.mutateAsync();
   await router.push("/login");
@@ -256,7 +297,7 @@ async function handleLogout() {
   <div class="min-h-screen bg-base text-body">
     <!-- Fixed Navbar: height 5rem (h-20), z-[9980] — matches $z-index-navbar -->
     <header
-      class="fixed inset-x-0 top-0 z-[9980] flex h-20 items-center justify-between border-b border-border bg-surface-2 px-6"
+      class="fixed inset-x-0 top-0 z-[9980] flex h-20 items-center gap-4 border-b border-border bg-surface-2 px-6"
     >
       <!-- Hamburger button: visible only at ≤1000px -->
       <button
@@ -268,60 +309,9 @@ async function handleLogout() {
         <span class="text-xl leading-none">☰</span>
       </button>
 
-      <div>
-        <p class="text-lg font-semibold text-body">PortalDots</p>
-        <div class="mt-1 flex flex-wrap items-center gap-2">
-          <p class="text-xs text-muted">{{ appModeLabel }}</p>
-          <span
-            v-if="sessionStore.currentCircle && !isStaffRoute"
-            class="rounded-full bg-surface-light px-2 py-0.5 text-[10px] font-semibold text-muted"
-          >
-            {{ sessionStore.currentCircle.name }}
-          </span>
-          <span
-            v-for="badge in statusBadges"
-            :key="badge"
-            class="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-semibold text-primary"
-          >
-            {{ badge }}
-          </span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <p class="hidden min-[1001px]:block text-sm text-muted">{{ authLabel }}</p>
-        <RouterLink
-          v-if="sessionStore.isAuthenticated && !isStaffRoute"
-          :class="
-            cn(
-              buttonVariants({ variant: 'secondary', size: 'md' }),
-              'hidden min-[1001px]:inline-flex',
-            )
-          "
-          to="/circles/select"
-        >
-          {{ circleActionLabel }}
-        </RouterLink>
-        <ModeSwitchLink
-          v-if="sessionStore.isAuthenticated && canAccessStaff && !isStaffRoute"
-          to="/staff"
-          label="スタッフモードへ"
-        />
-        <ModeSwitchLink
-          v-if="sessionStore.isAuthenticated && canAccessStaff && isStaffRoute"
-          to="/"
-          label="一般モードへ"
-        />
-        <ModeSwitchLink v-if="!sessionStore.isAuthenticated" to="/login" label="ログイン" />
-        <button
-          v-if="sessionStore.isAuthenticated"
-          :class="buttonVariants({ variant: 'secondary', size: 'md' })"
-          :disabled="logoutMutation.isPending.value"
-          type="button"
-          @click="handleLogout"
-        >
-          ログアウト
-        </button>
+      <div class="min-w-0">
+        <p class="truncate text-lg font-semibold text-body">{{ pageTitle }}</p>
+        <p class="mt-1 text-xs text-muted">{{ appModeLabel }}</p>
       </div>
     </header>
 
@@ -335,7 +325,7 @@ async function handleLogout() {
 
     <!-- Drawer: fixed 320px (280px at ≤1440px), slides off at ≤1000px — z-[9990] -->
     <aside
-      class="fixed left-0 top-0 z-[9990] h-full w-[320px] max-[1440px]:w-[280px] max-w-[80vw] overflow-y-auto border-r border-border bg-surface-2 transition-transform duration-300"
+      class="fixed left-0 top-0 z-[9990] h-full w-[320px] max-[1440px]:w-[280px] max-[1000px]:w-[320px] max-w-[80vw] overflow-y-auto border-r border-border bg-surface-2 transition-transform duration-300"
       :class="drawerTranslateClass"
     >
       <div class="flex h-full flex-col">
@@ -436,26 +426,24 @@ async function handleLogout() {
     </aside>
 
     <!-- Main Content: offset by navbar height (pt-20) and drawer width (pl-*) -->
-    <main
-      class="pt-20 pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0 max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]"
-    >
+    <main class="pt-20 pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0">
       <RouterView />
-      <footer v-if="isSmallScreen" class="border-t border-border px-6 py-8 text-center">
-        <PublicFooterLinks />
+      <footer class="mt-6 border-t border-border px-6 py-6 text-center">
+        <PublicFooterLinks app-name="PortalDots" />
       </footer>
     </main>
 
     <!-- Bottom Tabs: fixed, only visible at ≤1000px — z-[9980] matches $z-index-bottom-tabs -->
     <nav
       v-if="!isStaffRoute"
-      class="fixed inset-x-0 bottom-0 z-[9980] hidden max-[1000px]:block border-t border-border bg-surface-2"
+      class="fixed inset-x-0 bottom-0 z-[9980] hidden border-t border-border bg-surface-2 shadow-[0_-0.1rem_0.8rem_-0.6rem_var(--color-box-shadow)] max-[1000px]:block"
     >
       <div
         class="mx-auto grid w-full max-w-[600px] pb-[env(safe-area-inset-bottom)]"
         :style="mobileTabsStyle"
       >
         <BottomTabLink
-          v-for="tab in mobileTabs"
+          v-for="tab in mobileTabs.filter((link) => link.hidden !== true)"
           :key="tab.to"
           :to="tab.to"
           :label="tab.label"

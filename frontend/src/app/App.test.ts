@@ -30,6 +30,11 @@ describe("App", () => {
                 { path: "/login", component: { template: "<div>login</div>" } },
                 { path: "/support", component: { template: "<div>support</div>" } },
                 { path: "/privacy_policy", component: { template: "<div>privacy</div>" } },
+                { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
+                { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
+                { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
+                { path: "/workspace/contact", component: { template: "<div>contact</div>" } },
+                { path: "/workspace/settings", component: { template: "<div>settings</div>" } },
             ],
         });
         await router.push("/");
@@ -93,6 +98,8 @@ describe("App", () => {
             expect(wrapper.get('a[href="https://www.portaldots.com"]').text()).toContain(
                 "PortalDots",
             );
+            expect(wrapper.text()).toContain("PortalDots");
+            expect(wrapper.text()).toContain("Powered by");
             expect(wrapper.get('a[href="/support"]').text()).toContain("推奨動作環境");
             expect(wrapper.get('a[href="/privacy_policy"]').text()).toContain(
                 "プライバシーポリシー",
@@ -118,6 +125,11 @@ describe("App", () => {
                 { path: "/login", component: { template: "<div>login</div>" } },
                 { path: "/support", component: { template: "<div>support</div>" } },
                 { path: "/privacy_policy", component: { template: "<div>privacy</div>" } },
+                { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
+                { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
+                { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
+                { path: "/workspace/contact", component: { template: "<div>contact</div>" } },
+                { path: "/workspace/settings", component: { template: "<div>settings</div>" } },
             ],
         });
         await router.push("/");
@@ -187,6 +199,108 @@ describe("App", () => {
             expect(wrapper.get('main a[href="/privacy_policy"]').text()).toContain(
                 "プライバシーポリシー",
             );
+            expect(wrapper.findAllComponents({ name: "BottomTabLink" }).length).toBe(3);
+        } finally {
+            Object.defineProperty(window, "innerWidth", {
+                configurable: true,
+                value: originalInnerWidth,
+            });
+            Object.defineProperty(window, "matchMedia", {
+                configurable: true,
+                writable: true,
+                value: originalMatchMedia,
+            });
+            globalThis.fetch = originalFetch;
+        }
+    });
+
+    it("shows five bottom tabs for authenticated users", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/", component: { template: "<div>home</div>" } },
+                { path: "/login", component: { template: "<div>login</div>" } },
+                { path: "/support", component: { template: "<div>support</div>" } },
+                { path: "/privacy_policy", component: { template: "<div>privacy</div>" } },
+                { path: "/workspace/contact", component: { template: "<div>contact</div>" } },
+                { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
+                { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
+                { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
+                { path: "/workspace/settings", component: { template: "<div>settings</div>" } },
+            ],
+        });
+        await router.push("/");
+        await router.isReady();
+
+        const originalMatchMedia = window.matchMedia;
+        const originalInnerWidth = window.innerWidth;
+        Object.defineProperty(window, "innerWidth", {
+            configurable: true,
+            value: 900,
+        });
+        Object.defineProperty(window, "matchMedia", {
+            configurable: true,
+            writable: true,
+            value: () => ({
+                matches: true,
+                media: "(max-width: 1000px)",
+                onchange: null,
+                addEventListener() {},
+                removeEventListener() {},
+                addListener() {},
+                removeListener() {},
+                dispatchEvent() {
+                    return true;
+                },
+            }),
+        });
+
+        const originalFetch = globalThis.fetch;
+        globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url =
+                typeof input === "string"
+                    ? input
+                    : input instanceof URL
+                      ? input.toString()
+                      : input.url;
+            const method = init?.method ?? "GET";
+
+            if (url.endsWith("/session/bootstrap") && method === "GET") {
+                return new Response(
+                    JSON.stringify({
+                        csrfToken: "csrf-token",
+                        currentCircle: { id: "circle-1", name: "企画A" },
+                        featureFlags: [],
+                        roles: [],
+                        user: { id: "user-1", displayName: "Demo User", canDeleteAccount: false },
+                    }),
+                    {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    },
+                );
+            }
+
+            throw new Error(`Unexpected request: ${method} ${url}`);
+        }) as typeof fetch;
+
+        try {
+            const wrapper = mount(App, {
+                global: {
+                    plugins: [pinia, router, createQueryPlugin()],
+                },
+            });
+            await flushPromises();
+
+            const bottomNavText = wrapper.find("nav.fixed.inset-x-0.bottom-0").text();
+            expect(bottomNavText).toContain("ホーム");
+            expect(bottomNavText).toContain("お知らせ");
+            expect(bottomNavText).toContain("配布資料");
+            expect(bottomNavText).toContain("申請");
+            expect(bottomNavText).toContain("お問い合わせ");
         } finally {
             Object.defineProperty(window, "innerWidth", {
                 configurable: true,
