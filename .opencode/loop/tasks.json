@@ -142,6 +142,14 @@
       "status": "done",
       "addedAt": "2026-03-16T07:59:26Z",
       "completedAt": "2026-03-16T08:07:21Z"
+    },
+    {
+      "id": "19",
+      "title": "legacy forms GET 導線の rescue を拡張する",
+      "description": "`/forms` `/forms/closed` `/forms/all` と `/forms/{form}/answers/*` の legacy GET URL を migrated workspace forms 画面へ案内または遷移できるようにする",
+      "status": "done",
+      "addedAt": "2026-03-16T08:16:29Z",
+      "completedAt": "2026-03-16T08:19:36Z"
     }
   ]
 }

@@ -8,6 +8,8 @@ async function mountAt(path: string) {
         history: createMemoryHistory(),
         routes: [
             { path: "/", component: { template: "<div>home</div>" } },
+            { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
+            { path: "/workspace/forms/:formId", component: { template: "<div>form</div>" } },
             { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
             { path: "/workspace/pages/:pageId", component: { template: "<div>page</div>" } },
             { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
@@ -152,6 +154,64 @@ describe("NotFoundPage", () => {
 
         expect(wrapper.text()).toContain("legacy で指定されていた参加種別 pt-food を引き継ぎます");
         expect(primaryLink.text()).toContain("企画作成画面へ");
+    });
+
+    it("guides the legacy forms index route to the open forms tab", async () => {
+        const wrapper = await mountAt("/forms");
+        const primaryLink = wrapper.get('a[href="/workspace/forms"]');
+
+        expect(wrapper.text()).toContain("申請一覧の導線が移動しました");
+        expect(wrapper.text()).toContain("受付中タブを開きます");
+        expect(primaryLink.text()).toContain("申請一覧へ");
+    });
+
+    it("guides the legacy closed forms route to the closed forms tab", async () => {
+        const wrapper = await mountAt("/forms/closed");
+        const primaryLink = wrapper.get('a[href="/workspace/forms?status=closed"]');
+
+        expect(wrapper.text()).toContain("受付終了タブを開きます");
+        expect(primaryLink.text()).toContain("申請一覧へ");
+    });
+
+    it("guides the legacy all forms route to the all forms tab", async () => {
+        const wrapper = await mountAt("/forms/all");
+        const primaryLink = wrapper.get('a[href="/workspace/forms?status=all"]');
+
+        expect(wrapper.text()).toContain("全てタブを開きます");
+        expect(primaryLink.text()).toContain("申請一覧へ");
+    });
+
+    it("guides legacy form answer create to migrated form detail", async () => {
+        const wrapper = await mountAt("/forms/form-circle-a-1/answers/create");
+        const primaryLink = wrapper.get('a[href="/workspace/forms/form-circle-a-1"]');
+
+        expect(wrapper.text()).toContain("申請回答の導線が移動しました");
+        expect(wrapper.text()).toContain("/forms/:form/answers/create");
+        expect(primaryLink.text()).toContain("この申請を開く");
+    });
+
+    it("guides legacy form answer edit to migrated answer detail", async () => {
+        const wrapper = await mountAt("/forms/form-circle-a-1/answers/answer-2/edit");
+        const primaryLink = wrapper.get(
+            'a[href="/workspace/forms/form-circle-a-1?answer=answer-2"]',
+        );
+
+        expect(wrapper.text()).toContain("answer ID: answer-2");
+        expect(primaryLink.text()).toContain("この回答を開く");
+    });
+
+    it("offers direct download for legacy form upload routes", async () => {
+        const wrapper = await mountAt("/forms/form-circle-a-1/answers/answer-2/uploads/question-3");
+        const primaryLink = wrapper.get(
+            'a[href="/workspace/forms/form-circle-a-1?answer=answer-2"]',
+        );
+        const downloadLink = wrapper.get(
+            'a[href="http://127.0.0.1:8081/v1/forms/form-circle-a-1/answers/answer-2/uploads/question-3/file"]',
+        );
+
+        expect(wrapper.text()).toContain("question ID: question-3");
+        expect(primaryLink.text()).toContain("回答画面へ");
+        expect(downloadLink.text()).toContain("添付ファイルを直接開く");
     });
 
     it("guides the legacy email verification notice route", async () => {

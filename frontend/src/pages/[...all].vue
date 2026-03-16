@@ -47,6 +47,81 @@ const legacyDocumentDownloadUrl = computed(() =>
     ? buildApiUrl(`/documents/${encodePathSegment(legacyDocumentId.value)}`)
     : null,
 );
+const legacyFormsStatus = computed(() => {
+  if (normalizedPath.value === "/forms/closed") {
+    return "closed";
+  }
+
+  if (normalizedPath.value === "/forms/all") {
+    return "all";
+  }
+
+  if (normalizedPath.value === "/forms") {
+    return "open";
+  }
+
+  return null;
+});
+const legacyFormAnswerRoute = computed(() => {
+  const createMatch = normalizedPath.value.match(/^\/forms\/([^/]+)\/answers\/create$/);
+  if (createMatch?.[1]) {
+    const formId = decodeURIComponent(createMatch[1]);
+    return {
+      type: "create" as const,
+      formId,
+      target: `/workspace/forms/${encodeURIComponent(formId)}`,
+      targetLabel: "この申請を開く",
+    };
+  }
+
+  const editMatch = normalizedPath.value.match(/^\/forms\/([^/]+)\/answers\/([^/]+)\/edit$/);
+  if (editMatch?.[1] && editMatch[2]) {
+    const formId = decodeURIComponent(editMatch[1]);
+    const answerId = decodeURIComponent(editMatch[2]);
+    return {
+      type: "edit" as const,
+      formId,
+      answerId,
+      target: `/workspace/forms/${encodeURIComponent(formId)}?answer=${encodeURIComponent(answerId)}`,
+      targetLabel: "この回答を開く",
+    };
+  }
+
+  const uploadMatch = normalizedPath.value.match(
+    /^\/forms\/([^/]+)\/answers\/([^/]+)\/uploads\/([^/]+)$/,
+  );
+  if (uploadMatch?.[1] && uploadMatch[2] && uploadMatch[3]) {
+    const formId = decodeURIComponent(uploadMatch[1]);
+    const answerId = decodeURIComponent(uploadMatch[2]);
+    const questionId = decodeURIComponent(uploadMatch[3]);
+    return {
+      type: "upload" as const,
+      formId,
+      answerId,
+      questionId,
+      target: `/workspace/forms/${encodeURIComponent(formId)}?answer=${encodeURIComponent(answerId)}`,
+      downloadUrl: buildApiUrl(
+        `/forms/${encodePathSegment(formId)}/answers/${encodePathSegment(answerId)}/uploads/${encodePathSegment(questionId)}/file`,
+      ),
+      targetLabel: "回答画面へ",
+    };
+  }
+
+  return null;
+});
+const isLegacyFormsPath = computed(() => legacyFormsStatus.value !== null);
+const isLegacyFormAnswerRoutePath = computed(() => legacyFormAnswerRoute.value !== null);
+const workspaceFormsLink = computed(() => {
+  if (legacyFormsStatus.value === "closed") {
+    return "/workspace/forms?status=closed";
+  }
+
+  if (legacyFormsStatus.value === "all") {
+    return "/workspace/forms?status=all";
+  }
+
+  return "/workspace/forms";
+});
 
 const isLegacyRegisterPath = computed(() => normalizedPath.value === "/register");
 const isLegacyPasswordResetRequestPath = computed(() => normalizedPath.value === "/password/reset");
@@ -452,6 +527,87 @@ const isLegacyDocumentsPath = computed(
         </div>
         <p class="text-muted">
           ログイン済みかつ企画選択済みなら、直接ダウンロード導線もそのまま使えます。
+        </p>
+      </div>
+    </SurfaceCard>
+
+    <SurfaceCard v-else-if="isLegacyFormsPath">
+      <div class="border-b border-border px-6 py-5">
+        <p class="text-sm text-primary">Legacy Route</p>
+        <h2 class="mt-2 text-2xl font-semibold text-body">申請一覧の導線が移動しました</h2>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>旧 `/forms` 系 URL は、移行後はワークスペース配下の申請画面で確認します。</p>
+        <p>
+          {{
+            legacyFormsStatus === "closed"
+              ? "受付終了タブを開きます。"
+              : legacyFormsStatus === "all"
+                ? "全てタブを開きます。"
+                : "受付中タブを開きます。"
+          }}
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <RouterLink
+            :to="workspaceFormsLink"
+            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
+          >
+            申請一覧へ
+          </RouterLink>
+          <RouterLink
+            to="/workspace"
+            class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
+          >
+            ワークスペースへ
+          </RouterLink>
+        </div>
+      </div>
+    </SurfaceCard>
+
+    <SurfaceCard v-else-if="isLegacyFormAnswerRoutePath">
+      <div class="border-b border-border px-6 py-5">
+        <p class="text-sm text-primary">Legacy Route</p>
+        <h2 class="mt-2 text-2xl font-semibold text-body">申請回答の導線が移動しました</h2>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p v-if="legacyFormAnswerRoute?.type === 'create'">
+          旧 `/forms/:form/answers/create`
+          は、移行後は回答作成を含む申請詳細画面へ統合されています。
+        </p>
+        <p v-else-if="legacyFormAnswerRoute?.type === 'edit'">
+          旧 `/forms/:form/answers/:answer/edit` は、移行後は回答 ID
+          を指定した申請詳細画面で編集します。
+        </p>
+        <p v-else>
+          旧 `/forms/:form/answers/:answer/uploads/:question`
+          は、移行後も回答画面とアップロードファイル導線で確認できます。
+        </p>
+        <p>
+          form ID: {{ legacyFormAnswerRoute?.formId }}
+          <span v-if="legacyFormAnswerRoute?.type !== 'create'">
+            / answer ID: {{ legacyFormAnswerRoute?.answerId }}
+          </span>
+          <span v-if="legacyFormAnswerRoute?.type === 'upload'">
+            / question ID: {{ legacyFormAnswerRoute?.questionId }}
+          </span>
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <RouterLink
+            :to="legacyFormAnswerRoute?.target ?? '/workspace/forms'"
+            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
+          >
+            {{ legacyFormAnswerRoute?.targetLabel }}
+          </RouterLink>
+          <a
+            v-if="legacyFormAnswerRoute?.type === 'upload'"
+            :href="legacyFormAnswerRoute.downloadUrl"
+            class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"
+          >
+            添付ファイルを直接開く
+          </a>
+        </div>
+        <p class="text-muted">
+          ログイン済みかつ企画選択済みなら、そのまま migrated の申請画面で作業を続けられます。
         </p>
       </div>
     </SurfaceCard>
