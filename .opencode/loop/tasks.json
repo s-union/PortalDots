@@ -1,35 +1,25 @@
 {
-  "startedAt": "2026-03-16T03:12:00Z",
-  "description": "コードベースを再調査して今やるべき移行タスクを見直し、優先度順に自律実装・検証・コミットまで進める",
+  "startedAt": "2026-03-16T01:29:05Z",
+  "description": "LaravelからVueとGoへの未移行箇所と齟齬を調査し、高優先度の移行を自律的に進める",
   "tasks": [
     {
       "id": "1",
-      "title": "残タスクを再調査して新ループ計画を立てる",
-      "description": "frontend と backend、および legacy 実装を見直して今やるべき候補を再確認し、優先度付きで loop に落とし込む",
+      "title": "移行ギャップを棚卸しする",
+      "description": "Laravelの画面・APIとfrontend/backendの実装を比較し、未移行または齟齬のある高優先度項目を特定する",
       "status": "done",
-      "completedAt": "2026-03-16T03:15:00Z"
+      "completedAt": "2026-03-16T01:36:01Z"
     },
     {
       "id": "2",
-      "title": "一般ユーザー向け参加種別一覧を migrated API に追加する",
-      "description": "circle 作成画面が staff API へ依存しないよう、参加種別一覧を一般利用者が取得できる Go API と契約を追加する",
-      "status": "done",
-      "completedAt": "2026-03-16T10:00:00Z"
+      "title": "最優先のフロント移行ギャップを解消する",
+      "description": "調査で見つけた未移行または不整合のうち、Vue側で完結できる高優先度項目を実装する",
+      "status": "pending"
     },
     {
       "id": "3",
-      "title": "企画新規作成画面を public participation types に切り替える",
-      "description": "frontend の circles/new を新 API へ接続し、非 staff でも参加種別を選んで企画作成できるようにする",
-      "status": "done",
-      "completedAt": "2026-03-16T10:02:00Z"
-    },
-    {
-      "id": "4",
-      "title": "関連テストと移行メモを更新する",
-      "description": "参加種別導線の回帰テストと progress の知見を更新し、残課題を整理する",
-      "status": "done",
-      "completedAt": "2026-03-16T10:04:00Z"
+      "title": "必要なバックエンド齟齬を解消して検証する",
+      "description": "フロント移行に必要なGo APIや契約差分を補い、関連チェックを実行して結果を記録する",
+      "status": "pending"
     }
-  ],
-  "completedAt": "2026-03-16T10:04:00Z"
+  ]
 }
