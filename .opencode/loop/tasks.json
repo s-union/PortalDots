@@ -85,8 +85,9 @@
       "id": "11",
       "title": "staff participation-types 一覧の回帰テストを補う",
       "description": "一覧表示・作成導線・詳細遷移を固定して、移植済み管理画面の足場を強くする",
-      "status": "pending",
-      "addedAt": "2026-03-16T11:01:00Z"
+      "status": "done",
+      "addedAt": "2026-03-16T11:01:00Z",
+      "completedAt": "2026-03-16T11:20:00Z"
     }
   ]
 }

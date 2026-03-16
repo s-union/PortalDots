@@ -14,3 +14,4 @@
 - 2026-03-16: public auth の legacy 導線は、backend API が未移行でも file-based route を先に生やして `catch-all` から切り離せる。`publicOnly` と `requiresAuth` を URL ごとに分け、共通 notice component で legacy との差分だけ説明すると route guard とテストの見通しがよい。
 - 2026-03-16: auth の file-based route を追加した後は `frontend/src/pages/[...all].vue` 側の同名 legacy 分岐が死蔵しやすい。`[...all].test.ts` から重複ケースを外した上で、router guard 側に publicOnly/requiresAuth の到達確認を足す follow-up が必要。
 - 2026-03-16: `/support` と `/privacy_policy` のような public 静的ページは catch-all に残すより file-based route へ切り出した方が責務が明確。既存 markdown/raw import をそのまま専用 page に移し、legacy fallback テストから対応ケースを削ると 404 画面の条件分岐も軽くできる。
+- 2026-03-16: `staff/participation-types/index.vue` の回帰テストは `staff/circles/index.test.ts` と同じく `fetch` stub だけで十分書ける。`/staff/status` と一覧 GET/POST を最小限返し、作成後の再取得で追加行と詳細リンク href を確認すると一覧画面の主要導線を安く固定できる。
