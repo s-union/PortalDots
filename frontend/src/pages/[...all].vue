@@ -9,7 +9,6 @@ import {
 import BackLink from "@/components/ui/BackLink.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import { buildApiUrl, encodePathSegment } from "@/lib/api/client";
-import privacyPolicyMarkdown from "../../../resources/md/privacy_policy.md?raw";
 
 const route = useRoute("/[...all]");
 const router = useRouter();
@@ -18,13 +17,6 @@ const normalizedPath = computed(() => {
   const path = route.path.replace(/\/+$/, "");
   return path === "" ? "/" : path;
 });
-
-const supportBrowsers = [
-  "Microsoft Edge 最新版",
-  "Mozilla Firefox 最新版",
-  "Google Chrome 最新版",
-  "Safari 最新版",
-];
 
 const legacyPageId = computed(() => {
   const match = normalizedPath.value.match(/^\/pages\/([^/]+)$/);
@@ -362,8 +354,6 @@ const legacyPrivateRoutePrimaryLabel = computed(() => {
   return "ログイン画面へ";
 });
 
-const isSupportPath = computed(() => normalizedPath.value === "/support");
-const isPrivacyPolicyPath = computed(() => normalizedPath.value === "/privacy_policy");
 const isLegacyPagesPath = computed(
   () => normalizedPath.value === "/pages" || legacyPageId.value !== null,
 );
@@ -388,33 +378,7 @@ watch(
   <section class="space-y-6">
     <BackLink to="/"> ホームへ戻る </BackLink>
 
-    <SurfaceCard v-if="isSupportPath">
-      <div class="border-b border-border px-6 py-5">
-        <p class="text-sm text-primary">Legacy Route</p>
-        <h2 class="mt-2 text-2xl font-semibold text-body">ブラウザ環境について</h2>
-      </div>
-      <div class="space-y-5 px-6 py-6 text-sm leading-7 text-body">
-        <p>旧 `/support` 導線は移行中のため、この画面で推奨動作環境を案内しています。</p>
-        <ul class="list-disc space-y-2 pl-6">
-          <li v-for="browser in supportBrowsers" :key="browser">{{ browser }}</li>
-        </ul>
-        <p>
-          推奨環境以外で利用された場合や、ブラウザ設定によっては正しく表示されないことがあります。問題が起きる場合は最新版ブラウザへの更新をお試しください。
-        </p>
-      </div>
-    </SurfaceCard>
-
-    <SurfaceCard v-else-if="isPrivacyPolicyPath">
-      <div class="border-b border-border px-6 py-5">
-        <p class="text-sm text-primary">Legacy Route</p>
-        <h2 class="mt-2 text-2xl font-semibold text-body">プライバシーポリシー</h2>
-      </div>
-      <div class="px-6 py-6">
-        <p class="whitespace-pre-wrap text-sm leading-7 text-body">{{ privacyPolicyMarkdown }}</p>
-      </div>
-    </SurfaceCard>
-
-    <SurfaceCard v-else-if="isLegacyPagesPath">
+    <SurfaceCard v-if="isLegacyPagesPath">
       <div class="border-b border-border px-6 py-5">
         <p class="text-sm text-primary">Legacy Route</p>
         <h2 class="mt-2 text-2xl font-semibold text-body">お知らせの導線が移動しました</h2>

@@ -13,3 +13,4 @@
 - 2026-03-16: `workspace/contact` は categories/history の query が独立しているので、失敗系テストも UI 全体を壊さずに局所確認しやすい。カテゴリ取得失敗時は select がプレースホルダのみになること、422 送信失敗時は `extractContactValidationMessage()` 経由の文言だけを出すことを固定すると安心。
 - 2026-03-16: public auth の legacy 導線は、backend API が未移行でも file-based route を先に生やして `catch-all` から切り離せる。`publicOnly` と `requiresAuth` を URL ごとに分け、共通 notice component で legacy との差分だけ説明すると route guard とテストの見通しがよい。
 - 2026-03-16: auth の file-based route を追加した後は `frontend/src/pages/[...all].vue` 側の同名 legacy 分岐が死蔵しやすい。`[...all].test.ts` から重複ケースを外した上で、router guard 側に publicOnly/requiresAuth の到達確認を足す follow-up が必要。
+- 2026-03-16: `/support` と `/privacy_policy` のような public 静的ページは catch-all に残すより file-based route へ切り出した方が責務が明確。既存 markdown/raw import をそのまま専用 page に移し、legacy fallback テストから対応ケースを削ると 404 画面の条件分岐も軽くできる。

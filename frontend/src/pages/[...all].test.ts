@@ -59,20 +59,6 @@ async function mountAtWithRouter(path: string) {
 }
 
 describe("NotFoundPage", () => {
-    it("shows the support page guidance on the legacy support route", async () => {
-        const wrapper = await mountAt("/support");
-
-        expect(wrapper.text()).toContain("ブラウザ環境について");
-        expect(wrapper.text()).toContain("Microsoft Edge 最新版");
-    });
-
-    it("shows the privacy policy markdown on the legacy privacy route", async () => {
-        const wrapper = await mountAt("/privacy_policy");
-
-        expect(wrapper.text()).toContain("プライバシーポリシー");
-        expect(wrapper.text()).toContain("第５条　Cookieについて");
-    });
-
     it("guides legacy page detail URLs to the workspace page detail", async () => {
         const wrapper = await mountAt("/pages/page-circle-a-1");
         const pageLink = wrapper.get('a[href="/workspace/pages/page-circle-a-1"]');
