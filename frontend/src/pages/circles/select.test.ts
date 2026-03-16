@@ -239,4 +239,109 @@ describe("CircleSelectorPage", () => {
 
         expect(router.currentRoute.value.fullPath).toBe("/workspace/forms/form-1?answer=answer-1");
     });
+
+    it("auto-selects the requested circle for legacy selector-set redirects", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/circles/select", component: CircleSelectorPage },
+                { path: "/workspace/forms/:formId", component: { template: "<div>form</div>" } },
+            ],
+        });
+        await router.push(
+            "/circles/select?redirect=/workspace/forms/form-1%3Fanswer%3Danswer-1&circle=circle-b",
+        );
+        await router.isReady();
+
+        let selected = false;
+        const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+            await Promise.resolve();
+            const url =
+                typeof input === "string"
+                    ? input
+                    : input instanceof URL
+                      ? input.toString()
+                      : input.url;
+            const method = init?.method ?? "GET";
+
+            if (url.endsWith("/session/bootstrap") && method === "GET") {
+                return new Response(
+                    JSON.stringify({
+                        csrfToken: "csrf-token",
+                        currentCircle: selected
+                            ? {
+                                  id: "circle-b",
+                                  name: "デモ企画B",
+                              }
+                            : null,
+                        featureFlags: [],
+                        roles: ["participant"],
+                        user: {
+                            id: "demo-user",
+                            displayName: "Demo User",
+                        },
+                    }),
+                    {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    },
+                );
+            }
+
+            if (url.endsWith("/circles") && method === "GET") {
+                return new Response(
+                    JSON.stringify([
+                        {
+                            id: "circle-a",
+                            name: "デモ企画A",
+                            groupName: "Aブロック",
+                            participationTypeName: "模擬店",
+                        },
+                        {
+                            id: "circle-b",
+                            name: "デモ企画B",
+                            groupName: "Bブロック",
+                            participationTypeName: "展示",
+                        },
+                    ]),
+                    {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    },
+                );
+            }
+
+            if (url.endsWith("/circles/current") && method === "PUT") {
+                selected = true;
+                return new Response(null, { status: 204 });
+            }
+
+            throw new Error(`Unexpected request: ${method} ${url}`);
+        });
+
+        vi.stubGlobal("fetch", fetchMock);
+
+        mount(CircleSelectorPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        expect(router.currentRoute.value.fullPath).toBe("/workspace/forms/form-1?answer=answer-1");
+    });
 });

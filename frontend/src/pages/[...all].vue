@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import {
   buildCircleSelectorLocation,
+  sanitizeCircleSelectorCircleId,
   sanitizeCircleSelectorRedirect,
 } from "@/app/router/circleSelectorRedirect";
 import BackLink from "@/components/ui/BackLink.vue";
@@ -11,6 +12,7 @@ import { buildApiUrl, encodePathSegment } from "@/lib/api/client";
 import privacyPolicyMarkdown from "../../../resources/md/privacy_policy.md?raw";
 
 const route = useRoute("/[...all]");
+const router = useRouter();
 
 const normalizedPath = computed(() => {
   const path = route.path.replace(/\/+$/, "");
@@ -196,6 +198,10 @@ const legacyCircleSelectorRedirect = computed(() => {
 
   return null;
 });
+const legacyCircleSelectorCircleId = computed(() => {
+  const circle = route.query.circle;
+  return sanitizeCircleSelectorCircleId(typeof circle === "string" ? circle : undefined);
+});
 const isLegacyLogoutPath = computed(() => normalizedPath.value === "/logout");
 const isLegacyContactPath = computed(() => normalizedPath.value === "/contacts");
 const isLegacyCircleCreatePath = computed(() => normalizedPath.value === "/circles/create");
@@ -369,7 +375,9 @@ const legacyPrivateRouteBody = computed(() => {
 
   if (isLegacyCircleSelectorPath.value) {
     return legacyCircleSelectorRedirect.value
-      ? `企画を選び直すと、その後は ${legacyCircleSelectorRedirect.value} へ戻って作業を続けられます。`
+      ? legacyCircleSelectorCircleId.value
+        ? `企画を選び直すと、指定された企画 ${legacyCircleSelectorCircleId.value} を優先して ${legacyCircleSelectorRedirect.value} へ戻ります。`
+        : `企画を選び直すと、その後は ${legacyCircleSelectorRedirect.value} へ戻って作業を続けられます。`
       : "企画を選び直すと、その後の migrated 画面も選択した企画コンテキストで動作します。";
   }
 
@@ -407,6 +415,7 @@ const legacyPrivateRoutePrimaryLink = computed(() => {
   if (isLegacyCircleSelectorPath.value) {
     const selectorLocation = buildCircleSelectorLocation(
       legacyCircleSelectorRedirect.value ?? undefined,
+      legacyCircleSelectorCircleId.value ?? undefined,
     );
     return typeof selectorLocation === "string" ? selectorLocation : selectorLocation;
   }
@@ -453,6 +462,18 @@ const isLegacyPagesPath = computed(
 );
 const isLegacyDocumentsPath = computed(
   () => normalizedPath.value === "/documents" || legacyDocumentId.value !== null,
+);
+
+watch(
+  [normalizedPath, legacyCircleSelectorRedirect, legacyCircleSelectorCircleId],
+  async ([path, redirect, circleId]) => {
+    if (path !== "/selector/set") {
+      return;
+    }
+
+    await router.replace(buildCircleSelectorLocation(redirect ?? undefined, circleId ?? undefined));
+  },
+  { immediate: true },
 );
 </script>
 

@@ -150,6 +150,14 @@
       "status": "done",
       "addedAt": "2026-03-16T08:16:29Z",
       "completedAt": "2026-03-16T08:19:36Z"
+    },
+    {
+      "id": "20",
+      "title": "legacy selector set 直リンク互換を復元する",
+      "description": "`/selector/set?redirect_to=...&circle=...` を migrated selector で吸収し、指定企画を自動選択して元画面へ戻れるようにする",
+      "status": "done",
+      "addedAt": "2026-03-16T08:21:39Z",
+      "completedAt": "2026-03-16T08:26:17Z"
     }
   ]
 }

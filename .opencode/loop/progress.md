@@ -28,3 +28,4 @@
 - 2026-03-16: Vue Router の `RouterLink` は query 値の `/` や `?` を href で再エンコードしないことがあるため、selector redirect 互換のテストは `%2F...` 前提にせず、実際の `href` 文字列と遷移結果の両方を確認する方が安定する。
 - 2026-03-16: legacy `/circles/create?participation_type=...` は migrated `/circles/new` に query を引き継ぐだけでも十分実用的で、public participation types API の `id` をそのまま preselect に使える。初期選択は query と取得済み participation types の両方を watch し、既に手入力された選択がある場合は上書きしないと安全。
 - 2026-03-16: legacy `/forms` 系の GET 救済は、一覧タブ (`/forms`, `/forms/closed`, `/forms/all`) と回答系 (`/forms/:form/answers/create|:answer/edit|:answer/uploads/:question`) を分けて扱うと説明が整理しやすい。upload URL は migrated 詳細画面への導線に加えて API file URL 直リンクも出すと、メールや古いブックマーク由来のダウンロード需要をそのまま満たせる。
+- 2026-03-16: legacy `/selector/set` 互換は catch-all 画面を見せるより即 `router.replace()` で `/circles/select` へ正規化した方が自然。`circle` query は軽く sanitize して selector で auto-select を 1 回だけ試すと、旧直リンクと手動選択 UI の両立がしやすい。

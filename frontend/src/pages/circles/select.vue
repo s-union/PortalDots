@@ -5,10 +5,13 @@ definePage({
   },
 });
 
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ListPanel from "@/components/ui/ListPanel.vue";
-import { resolveCircleSelectorDestination } from "@/app/router/circleSelectorRedirect";
+import {
+  resolveCircleSelectorDestination,
+  sanitizeCircleSelectorCircleId,
+} from "@/app/router/circleSelectorRedirect";
 import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from "@/features/circles/api";
 import { useSessionStore } from "@/features/session/store";
 
@@ -23,11 +26,34 @@ const redirectDestination = computed(() => {
   const redirect = route.query.redirect;
   return resolveCircleSelectorDestination(typeof redirect === "string" ? redirect : undefined);
 });
+const requestedCircleId = computed(() => {
+  const circle = route.query.circle;
+  return sanitizeCircleSelectorCircleId(typeof circle === "string" ? circle : undefined);
+});
+const hasTriedAutoSelect = ref(false);
 
 async function handleSelectCircle(circleId: string) {
   await selectCircleMutation.mutateAsync(circleId);
   await router.push(redirectDestination.value);
 }
+
+watch(
+  [requestedCircleId, () => circlesQuery.data.value, () => circlesQuery.isPending.value],
+  async ([circleId, circles, isPending]) => {
+    if (hasTriedAutoSelect.value || !circleId || isPending) {
+      return;
+    }
+
+    hasTriedAutoSelect.value = true;
+
+    if (!(circles ?? []).some((circle) => circle.id === circleId)) {
+      return;
+    }
+
+    await handleSelectCircle(circleId);
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -37,7 +63,9 @@ async function handleSelectCircle(circleId: string) {
       :description="
         redirectDestination === '/workspace'
           ? 'legacy の circle selector と同じく、以後の画面はここで選んだ企画コンテキストで動きます。'
-          : '企画選択後は、元の画面へ戻ってそのまま作業を続けられます。'
+          : requestedCircleId
+            ? '指定された企画を確認できれば自動で選択し、元の画面へ戻ります。'
+            : '企画選択後は、元の画面へ戻ってそのまま作業を続けられます。'
       "
     >
       <div v-if="circlesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">

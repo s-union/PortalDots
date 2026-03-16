@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
 import NotFoundPage from "./[...all].vue";
 
@@ -10,6 +11,7 @@ async function mountAt(path: string) {
             { path: "/", component: { template: "<div>home</div>" } },
             { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
             { path: "/workspace/forms/:formId", component: { template: "<div>form</div>" } },
+            { path: "/circles/select", component: { template: "<div>selector</div>" } },
             { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
             { path: "/workspace/pages/:pageId", component: { template: "<div>page</div>" } },
             { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
@@ -25,6 +27,31 @@ async function mountAt(path: string) {
             plugins: [router],
         },
     });
+}
+
+async function mountAtWithRouter(path: string) {
+    const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [
+            { path: "/", component: { template: "<div>home</div>" } },
+            { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
+            { path: "/workspace/forms/:formId", component: { template: "<div>form</div>" } },
+            { path: "/circles/select", component: { template: "<div>selector</div>" } },
+            { path: "/:all(.*)", component: NotFoundPage },
+        ],
+    });
+
+    await router.push(path);
+    await router.isReady();
+
+    const wrapper = mount(NotFoundPage, {
+        global: {
+            plugins: [router],
+        },
+    });
+    await flushPromises();
+
+    return { wrapper, router };
 }
 
 describe("NotFoundPage", () => {
@@ -119,6 +146,34 @@ describe("NotFoundPage", () => {
             "/workspace/forms/form-1?answer=answer-1 へ戻って作業を続けられます",
         );
         expect(primaryLink.text()).toContain("企画選択画面へ");
+    });
+
+    it("preserves legacy selector circle query when linking to migrated selector", async () => {
+        const wrapper = await mountAt(
+            "/selector?redirect_to=%2Fworkspace%2Fforms%2Fform-1%3Fanswer%3Danswer-1&circle=circle-b",
+        );
+        const primaryLink = wrapper.findAll("a").find((link) => link.text() === "企画選択画面へ");
+
+        expect(primaryLink).toBeDefined();
+        if (!primaryLink) {
+            throw new Error("primary link was not rendered");
+        }
+
+        expect(wrapper.text()).toContain("指定された企画 circle-b を優先して");
+        expect(primaryLink.text()).toContain("企画選択画面へ");
+        expect(primaryLink.attributes("href")).toBe(
+            "/circles/select?redirect=/workspace/forms/form-1?answer=answer-1&circle=circle-b",
+        );
+    });
+
+    it("redirects legacy selector set links to migrated selector immediately", async () => {
+        const { router } = await mountAtWithRouter(
+            "/selector/set?redirect_to=%2Fworkspace%2Fforms%2Fform-1%3Fanswer%3Danswer-1&circle=circle-b",
+        );
+
+        expect(router.currentRoute.value.fullPath).toBe(
+            "/circles/select?redirect=/workspace/forms/form-1?answer=answer-1&circle=circle-b",
+        );
     });
 
     it("guides the legacy logout route to login", async () => {
