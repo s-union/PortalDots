@@ -16,3 +16,4 @@
 - 2026-03-16: `frontend-check` で残っていた `typed-router.d.ts` の format:check 失敗は、作業中の古い差分が残っていただけで、`nr format` 後は再現しなかった。生成物が dirty なときはまず formatter を再実行して差分有無を確認する。
 - 2026-03-16: `nr ci:check` 単体では通っても、直後の追加 `nr format:check` で `frontend/typed-router.d.ts` が再び dirty になることがある。vue-router の d.ts 生成タイミングに揺らぎがあるため、この生成物に依存する follow-up では最後に `nr format && nr ci:check` を再度まとめて走らせて安定状態を確認するとよい。
 - 2026-03-16: `frontend/src/pages/[...all].vue` で `/register` と `/password/reset` 系を catch-all 案内へ吸収すると、file-based route を増やさず login から辿れる legacy auth 404 を減らせる。署名付き `/password/reset/:user` は安全のため完了 UI を偽装せず、案内画面へ寄せるのが無難。
+- 2026-03-16: `vitest.config.ts` 側の `VueRouter()` も d.ts を書き換えるため、test 実行後に `typed-router.d.ts` が dirty になりうる。テスト環境では `VueRouter({ dts: false })` にして、型生成は Vite 本体だけに寄せると `mise run check` の二重 `ci:check` が安定する。
