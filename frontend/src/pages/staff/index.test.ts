@@ -91,23 +91,19 @@ describe("StaffDashboardPage", () => {
             },
         });
 
-        expect(wrapper.text()).toContain("スタッフ作業エリア");
-        expect(wrapper.text()).toContain("お知らせ管理へ");
-        expect(wrapper.text()).toContain("配布資料管理へ");
-        expect(wrapper.text()).toContain("タグ管理へ");
-        expect(wrapper.text()).toContain("場所管理へ");
-        expect(wrapper.text()).toContain("問い合わせカテゴリ管理へ");
-        expect(wrapper.text()).toContain("企画管理へ");
-        expect(wrapper.text()).toContain("参加種別管理へ");
-        expect(wrapper.text()).toContain("フォーム管理へ");
-        expect(wrapper.text()).toContain("PortalDots 設定へ");
-        expect(wrapper.text()).toContain("PortalDots について");
-        expect(wrapper.text()).toContain("Markdown ガイド");
-        expect(wrapper.text()).toContain("権限設定へ");
-        expect(wrapper.text()).toContain("ユーザー管理へ");
-        expect(wrapper.text()).toContain("CSV / ZIP 出力へ");
-        expect(wrapper.text()).toContain("活動ログへ");
-        expect(wrapper.text()).toContain("Portal 設定へ");
-        expect(wrapper.text()).toContain("メールキューへ");
+        expect(wrapper.text()).toContain("ユーザー情報管理");
+        expect(wrapper.text()).toContain("お知らせ管理");
+        expect(wrapper.text()).toContain("配布資料管理");
+        expect(wrapper.text()).toContain("企画タグ管理");
+        expect(wrapper.text()).toContain("場所情報管理");
+        expect(wrapper.text()).toContain("お問い合わせ受付設定");
+        expect(wrapper.text()).toContain("企画情報管理");
+        expect(wrapper.text()).toContain("参加種別管理");
+        expect(wrapper.text()).toContain("申請管理");
+        expect(wrapper.text()).toContain("スタッフの権限設定");
+        expect(wrapper.text()).toContain("CSV / ZIP 出力");
+        expect(wrapper.text()).toContain("アクティビティログ");
+        expect(wrapper.text()).toContain("PortalDots の設定");
+        expect(wrapper.text()).toContain("メールキュー");
     });
 });

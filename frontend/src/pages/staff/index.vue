@@ -9,8 +9,6 @@ definePage({
 
 import { computed } from "vue";
 import TabStrip from "@/components/ui/TabStrip.vue";
-import ListItemLink from "@/components/ui/ListItemLink.vue";
-import ListPanel from "@/components/ui/ListPanel.vue";
 import { buildHomeModeTabs } from "@/features/ui/tabStrip";
 import {
   canManageCircles,
@@ -74,82 +72,122 @@ const portalSettingsAvailable = computed(() =>
 
 const homeTabs = computed(() => buildHomeModeTabs(true));
 
-const sections = computed(() => [
+type StaffCard = {
+  to: string;
+  title: string;
+  iconClass: string;
+  description: string;
+  hidden?: boolean;
+  disabled?: boolean;
+  adminOnly?: boolean;
+};
+
+const staffCards = computed<StaffCard[]>(() => [
   {
-    title: "コンテンツ管理",
-    links: [
-      { to: "/staff/pages", label: "お知らせ管理へ", hidden: !pageAdminAvailable.value },
-      {
-        to: "/staff/documents",
-        label: "配布資料管理へ",
-        hidden: !documentAdminAvailable.value,
-      },
-      { to: "/staff/tags", label: "タグ管理へ", hidden: !tagAdminAvailable.value },
-      { to: "/staff/places", label: "場所管理へ", hidden: !placeAdminAvailable.value },
-      {
-        to: "/staff/contact-categories",
-        label: "問い合わせカテゴリ管理へ",
-        hidden: !contactCategoryAvailable.value,
-      },
-    ],
+    to: "/staff/users",
+    title: "ユーザー情報管理",
+    iconClass: "far fa-address-book fa-fw",
+    description: "PortalDotsに登録しているユーザーの情報を管理します",
+    hidden: !userAdminAvailable.value,
   },
   {
-    title: "企画・申請管理",
-    links: [
-      {
-        to: "/staff/circles",
-        label: circleAdminAvailable.value ? "企画管理へ" : "企画管理へ",
-        disabled: !circleAdminAvailable.value,
-        note: "staff.circles.read 系または circle_manager / admin が必要です。",
-      },
-      {
-        to: "/staff/participation-types",
-        label: "参加種別管理へ",
-        disabled: !participationTypeAvailable.value,
-        note: "staff.circles.participation_types または circle_manager / admin が必要です。",
-      },
-      {
-        to: "/staff/forms",
-        label: "フォーム管理へ",
-        hidden: !formsAdminAvailable.value,
-      },
-      { to: "/staff/settings", label: "PortalDots 設定へ" },
-      { to: "/staff/about", label: "PortalDots について" },
-      { to: "/staff/markdown-guide", label: "Markdown ガイド" },
-      {
-        to: "/staff/exports",
-        label: "CSV / ZIP 出力へ",
-        hidden: !exportAvailable.value,
-      },
-      {
-        to: "/staff/activity-logs",
-        label: "活動ログへ",
-        hidden: !activityLogAvailable.value,
-      },
-      {
-        to: "/staff/settings/portal",
-        label: "Portal 設定へ",
-        hidden: !portalSettingsAvailable.value,
-      },
-    ],
+    to: "/staff/circles",
+    title: "企画情報管理",
+    iconClass: "fas fa-star fa-fw",
+    description: "PortalDotsに登録している企画の情報の管理や、企画参加登録フォームの設定を行います",
+    hidden: !circleAdminAvailable.value,
   },
   {
-    title: "ユーザー・連絡",
-    links: [
-      {
-        to: "/staff/permissions",
-        label: "権限設定へ",
-        disabled: !permissionAdminAvailable.value,
-        note: "staff.permissions.read 系または admin が必要です。",
-      },
-      {
-        to: "/staff/users",
-        label: "ユーザー管理へ",
-        disabled: !userAdminAvailable.value,
-        note: "staff.users.read 系または user_manager / admin が必要です。",
-      },
-      { to: "/staff/mails", label: "メールキューへ", hidden: !mailQueueAvailable.value },
-    ],
+    to: "/staff/tags",
+    title: "企画タグ管理",
+    iconClass: "fas fa-tags fa-fw",
+    description: "企画を分類するためのタグを管理します",
+    hidden: !tagAdminAvailable.value,
+  },
+  {
+    to: "/staff/places",
+    title: "場所情報管理",
+    iconClass: "fas fa-store fa-fw",
+    description: "企画が利用できる場所の情報を管理します",
+    hidden: !placeAdminAvailable.value,
+  },
+  {
+    to: "/staff/pages",
+    title: "お知らせ管理",
+    iconClass: "fas fa-bullhorn fa-fw",
+    description: "PortalDots上に表示するお知らせを管理します。お知らせはメールで一斉配信できます",
+    hidden: !pageAdminAvailable.value,
+  },
+  {
+    to: "/staff/documents",
+    title: "配布資料管理",
+    iconClass: "far fa-file-alt fa-fw",
+    description: "PortalDots上で配布する資料(ファイル)を管理します",
+    hidden: !documentAdminAvailable.value,
+  },
+  {
+    to: "/staff/forms",
+    title: "申請管理",
+    iconClass: "far fa-edit fa-fw",
+    description: "各企画から受け付ける申請フォームの作成や、提出された申請の確認を行います",
+    hidden: !formsAdminAvailable.value,
+  },
+  {
+    to: "/staff/contact-categories",
+    title: "お問い合わせ受付設定",
+    iconClass: "fas fa-at fa-fw",
+    description: "PortalDotsのお問い合わせフォームの受付方法を設定します",
+    hidden: !contactCategoryAvailable.value,
+  },
+  {
+    to: "/staff/permissions",
+    title: "スタッフの権限設定",
+    iconClass: "fas fa-key fa-fw",
+    description: "スタッフモードで利用可能な機能を、スタッフごとに制限できます",
+    hidden: !permissionAdminAvailable.value,
+  },
+  {
+    to: "/staff/activity-logs",
+    title: "アクティビティログ",
+    iconClass: "fas fa-user-edit fa-fw",
+    description: "PortalDots内で行われた各種データ操作の履歴を確認します",
+    hidden: !activityLogAvailable.value,
+    adminOnly: true,
+  },
+  {
+    to: "/staff/settings/portal",
+    title: "PortalDots の設定",
+    iconClass: "fas fa-cog fa-fw",
+    description: "このウェブシステムの設定を変更します",
+    hidden: !portalSettingsAvailable.value,
+    adminOnly: true,
+  },
+  {
+    to: "/staff/about",
+    title: "PortalDots のアップデートの確認",
+    iconClass: "fa-solid fa-arrows-rotate fa-fw",
+    description: "セキュリティのため、定期的に PortalDots をアップデートしましょう",
+  },
+  {
+    to: "/staff/participation-types",
+    title: "参加種別管理",
+    iconClass: "fas fa-list fa-fw",
+    description: "企画参加登録に利用する参加種別を管理します",
+    hidden: !participationTypeAvailable.value,
+  },
+  {
+    to: "/staff/exports",
+    title: "CSV / ZIP 出力",
+    iconClass: "fas fa-file-export fa-fw",
+    description: "各種データのエクスポートを行います",
+    hidden: !exportAvailable.value,
+  },
+  {
+    to: "/staff/mails",
+    title: "メールキュー",
+    iconClass: "far fa-envelope fa-fw",
+    description: "メール配信の状態を確認します",
+    hidden: !mailQueueAvailable.value,
   },
 ]);
 </script>
@@ -158,66 +196,35 @@ const sections = computed(() => [
   <section class="space-y-6">
     <TabStrip :tabs="homeTabs" />
 
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
-        <h2 class="text-2xl font-semibold text-body">スタッフ作業エリア</h2>
-        <p class="mt-2 text-sm text-muted">
-          {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
+    <section class="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
+      <RouterLink
+        v-for="card in staffCards"
+        v-show="card.hidden !== true"
+        :key="card.to"
+        :to="card.to"
+        class="rounded border border-border bg-surface p-5 text-body no-underline shadow-lv1 transition hover:bg-form-control hover:no-underline"
+      >
+        <p class="flex items-center gap-2 text-base font-semibold">
+          <i :class="card.iconClass" aria-hidden="true" />
+          <span>{{ card.title }}</span>
+          <span
+            v-if="card.adminOnly"
+            class="rounded-full bg-danger-light px-2 py-0.5 text-[0.7rem] font-semibold text-danger"
+          >
+            管理者
+          </span>
         </p>
-      </div>
-
-      <div class="px-6 py-5 text-sm text-muted">
-        この画面は staff verify 完了後だけ表示します。staff pages / forms / users / mails
-        をここから操作します。
-      </div>
+        <p class="mt-2 text-sm leading-7 text-muted">
+          {{ card.description }}
+        </p>
+      </RouterLink>
     </section>
 
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
-        <h3 class="text-xl font-semibold text-body">モード切替</h3>
-      </div>
-      <div class="flex flex-wrap gap-3 px-6 py-5">
-        <RouterLink
-          class="rounded bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-hover"
-          to="/circles/select"
-        >
-          作業する企画を選ぶ
-        </RouterLink>
-        <RouterLink
-          class="rounded border border-border bg-surface px-4 py-3 text-sm text-body transition hover:bg-surface-light"
-          to="/workspace"
-        >
-          一般利用者画面へ戻る
-        </RouterLink>
-      </div>
-    </section>
-
-    <ListPanel
-      v-for="section in sections"
-      :key="section.title"
-      :title="section.title"
-      overflow-hidden
-    >
-      <div class="divide-y divide-border">
-        <template v-for="link in section.links" :key="link.to">
-          <ListItemLink v-if="link.hidden !== true && link.disabled !== true" :to="link.to">
-            <template #title>{{ link.label }}</template>
-          </ListItemLink>
-          <div v-else-if="link.hidden !== true" class="px-6 py-5 text-sm text-muted">
-            <p class="font-semibold">{{ link.label }}</p>
-            <p class="mt-2">{{ link.note }}</p>
-          </div>
-        </template>
-      </div>
-    </ListPanel>
-
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
-        <h3 class="text-xl font-semibold text-body">Mock Notes</h3>
-      </div>
-      <div class="px-6 py-5 text-sm text-muted">
-        現在は staff verify のメール送信をモックしています。認証コードは実メールではなく API
-        レスポンスと画面で確認する前提です。
+    <section v-if="staffCards.filter((card) => card.hidden !== true).length === 0">
+      <div
+        class="rounded border border-border bg-surface px-6 py-10 text-center text-muted shadow-lv1"
+      >
+        利用可能なスタッフ機能がありません。管理者にアクセス権の付与を依頼してください。
       </div>
     </section>
   </section>

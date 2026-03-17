@@ -11,3 +11,5 @@
 - public配布資料一覧は詳細ページ経由より直接ダウンロードURLへ `new-tab` で遷移させると、demo挙動に近い。
 - privacy policyは外部Markdownパーサー依存を増やさず、最小限の段落/見出し/箇条書き変換をVue内で実装して生テキスト表示を解消した。
 - support/privacyはBackLink付きの独自トーンから、legacyのlist-view相当のカード構造へ寄せると視覚差分が小さくなる。
+- staff homeは「セクションリスト」より「機能カードグリッド」に寄せるとdemoと視覚構造が近い。admin専用機能には明示バッジを付けると判読性が高い。
+- staff users一覧は見出しや操作列の文言をlegacy準拠にすると、DOM差分が小さくなり既存テストも調整しやすい。

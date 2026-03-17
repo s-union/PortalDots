@@ -34,7 +34,8 @@
       "id": "5",
       "title": "staffホーム/ユーザー管理画面の再構成",
       "description": "staff/indexとstaff/users/indexを実サイトDOM/導線に寄せる",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-17T17:36:28Z"
     },
     {
       "id": "6",

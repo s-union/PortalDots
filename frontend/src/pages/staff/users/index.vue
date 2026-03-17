@@ -9,9 +9,6 @@ definePage({
 });
 
 import { computed, ref } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import { buildStaffUsersExportUrl, useStaffUsersQuery } from "@/features/staff/users/api";
 import { useSessionStore } from "@/features/session/store";
@@ -43,32 +40,19 @@ function movePage(nextPage: number) {
 
 <template>
   <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Staff Users</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">ユーザー管理</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">
-          ログイン ID、本人確認、ロールを staff mode から管理します。
-        </p>
+    <section class="rounded border border-border bg-surface shadow-lv1">
+      <div class="border-b border-border px-6 py-5">
+        <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー情報管理</h2>
       </div>
-      <BackLink to="/staff"> Staff top へ戻る </BackLink>
-    </header>
-
-    <SurfaceCard overflow-hidden>
-      <SurfaceHeader>
-        <template #title>ユーザー一覧</template>
-        <template #description>
-          一覧から本人確認状態を確認し、詳細画面でユーザー情報と権限を更新できます。
-        </template>
-        <template #actions>
-          <a
-            :href="exportUrl"
-            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-          >
-            CSVで出力
-          </a>
-        </template>
-      </SurfaceHeader>
+      <div class="px-6 py-4">
+        <a
+          :href="exportUrl"
+          class="inline-flex items-center gap-2 rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
+        >
+          <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+          CSVで出力
+        </a>
+      </div>
 
       <div v-if="usersQuery.isPending.value" class="px-5 py-6 text-sm text-muted">
         読み込み中...
@@ -87,7 +71,7 @@ function movePage(nextPage: number) {
             <tr>
               <th class="px-5 py-3 font-medium">ユーザー</th>
               <th class="px-5 py-3 font-medium">ログイン ID</th>
-              <th class="px-5 py-3 font-medium">ロール</th>
+              <th class="px-5 py-3 font-medium">ユーザー種別</th>
               <th class="px-5 py-3 font-medium">本人確認</th>
               <th class="px-5 py-3 font-medium text-right">操作</th>
             </tr>
@@ -118,7 +102,7 @@ function movePage(nextPage: number) {
                   :class="
                     user.isVerified
                       ? 'bg-success-light text-success'
-                      : 'bg-surface-light text-muted-2'
+                      : 'bg-danger-light text-danger'
                   "
                 >
                   {{ user.isVerified ? "確認済み" : "未確認" }}
@@ -129,6 +113,7 @@ function movePage(nextPage: number) {
                   :to="`/staff/users/${user.id}`"
                   class="inline-flex rounded border border-border px-3 py-2 text-sm text-body transition hover:bg-surface-light"
                 >
+                  <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
                   編集
                 </RouterLink>
               </td>
@@ -136,7 +121,7 @@ function movePage(nextPage: number) {
           </tbody>
         </table>
       </div>
-    </SurfaceCard>
+    </section>
 
     <footer
       v-if="usersQuery.data.value && usersQuery.data.value.total > 0"
