@@ -18,6 +18,7 @@ final class UpdateInfoActionTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function ユーザー情報更新時にメールアドレスが_rf_c違反だった場合、元の画面にエラー付きでリダイレクトされる()
     {
+        /** @var User $user */
         $user = User::factory()->create([
             'email' => 'old@example.com',
             'univemail_domain_part' => config('portal.univemail_domain_part')[0] ?? 'ed.tus.ac.jp',

@@ -8,6 +8,7 @@ use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\Eloquents\User;
 use App\Services\Forms\FormsService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
@@ -15,6 +16,15 @@ use Tests\TestCase;
 final class FormsServiceTest extends TestCase
 {
     use RefreshDatabase;
+
+    private FormsService $formsService;
+
+    private User $user;
+
+    private Form $form;
+
+    /** @var Collection<int, Question> */
+    private Collection $questions;
 
     protected function setUp(): void
     {

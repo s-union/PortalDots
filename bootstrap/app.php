@@ -42,18 +42,22 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
         then: function (): void {
+            // 一般画面用ルート（ログイン前後で共通利用）
             \Illuminate\Support\Facades\Route::middleware(['web', 'checkEnv'])
                 ->namespace('App\\Http\\Controllers')
                 ->group(base_path('routes/web.php'));
 
+            // スタッフ画面用ルート
             \Illuminate\Support\Facades\Route::middleware(['web', 'checkEnv'])
                 ->namespace('App\\Http\\Controllers')
                 ->group(base_path('routes/staff.php'));
 
+            // 初期セットアップ画面用ルート（未インストール時のみ）
             \Illuminate\Support\Facades\Route::middleware(['web', 'install'])
                 ->namespace('App\\Http\\Controllers')
                 ->group(base_path('routes/install.php'));
 
+            // API ルート（/api プレフィックス + api ミドルウェア）
             \Illuminate\Support\Facades\Route::prefix('api')
                 ->middleware('api')
                 ->namespace('App\\Http\\Controllers')
@@ -61,6 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // 全リクエストに適用するグローバルミドルウェア
         $middleware->use([
             InvokeDeferredCallbacks::class,
             ForceHttps::class,
@@ -72,6 +77,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleCors::class,
         ]);
 
+        // ブラウザ画面向けミドルウェア（セッション・CSRF あり）
         $middleware->group('web', [
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
@@ -84,11 +90,13 @@ return Application::configure(basePath: dirname(__DIR__))
             UpdateLastAccessedAt::class,
         ]);
 
+        // API 向けミドルウェア（ステートレス運用を想定）
         $middleware->group('api', [
             'throttle:60,1',
             SubstituteBindings::class,
         ]);
 
+        // ルート定義で使うエイリアス（可読性向上のため短縮名を付与）
         $middleware->alias([
             'auth' => Authenticate::class,
             'auth.basic' => AuthenticateWithBasicAuth::class,
@@ -104,6 +112,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'circleSelected' => CheckSelectedCircle::class,
         ]);
 
+        // ミドルウェア実行順序（依存関係のあるものは順番を固定）
         $middleware->priority([
             CheckEnv::class,
             DenyIfInstalled::class,
