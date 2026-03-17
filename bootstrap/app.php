@@ -46,23 +46,19 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             // 一般画面用ルート（ログイン前後で共通利用）
             \Illuminate\Support\Facades\Route::middleware(['web', 'checkEnv'])
-                ->namespace('App\\Http\\Controllers')
                 ->group(base_path('routes/web.php'));
 
             // スタッフ画面用ルート
             \Illuminate\Support\Facades\Route::middleware(['web', 'checkEnv'])
-                ->namespace('App\\Http\\Controllers')
                 ->group(base_path('routes/staff.php'));
 
             // 初期セットアップ画面用ルート（未インストール時のみ）
             \Illuminate\Support\Facades\Route::middleware(['web', 'install'])
-                ->namespace('App\\Http\\Controllers')
                 ->group(base_path('routes/install.php'));
 
             // API ルート（/api プレフィックス + api ミドルウェア）
             \Illuminate\Support\Facades\Route::prefix('api')
                 ->middleware('api')
-                ->namespace('App\\Http\\Controllers')
                 ->group(base_path('routes/api.php'));
         }
     )
