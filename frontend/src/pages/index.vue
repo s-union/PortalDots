@@ -3,6 +3,7 @@ import { computed } from "vue";
 import ListItemLink from "@/components/ui/ListItemLink.vue";
 import ListPanel from "@/components/ui/ListPanel.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import TabStrip from "@/components/ui/TabStrip.vue";
 import { buildApiUrl } from "@/lib/api/client";
 import { formatFileSize } from "@/lib/format/fileSize";
 import { useDocumentsPageQuery } from "@/features/documents/api";
@@ -11,6 +12,7 @@ import { usePagesQuery } from "@/features/pages/api";
 import { hasStaffAccess } from "@/features/staff/access/capabilities";
 import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from "@/features/circles/api";
 import { useSessionStore } from "@/features/session/store";
+import { buildHomeModeTabs } from "@/features/ui/tabStrip";
 
 const sessionStore = useSessionStore();
 const circlesQuery = useSelectableCirclesQuery();
@@ -25,6 +27,7 @@ const documentsQuery = useDocumentsPageQuery(
 const formsQuery = useFormsQuery();
 
 const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions));
+const homeTabs = computed(() => buildHomeModeTabs(false));
 const hasSelectableCircles = computed(() => (circlesQuery.data.value?.length ?? 0) > 0);
 const isSelectingCircle = computed(() => selectCircleMutation.isPending.value);
 const selectedCircleSummary = computed(
@@ -46,6 +49,8 @@ async function handleSelectCircle(circleId: string) {
 
 <template>
   <section class="space-y-6">
+    <TabStrip v-if="sessionStore.isAuthenticated && canAccessStaff" :tabs="homeTabs" />
+
     <SurfaceCard tag="header">
       <h2 class="text-2xl font-semibold text-body">PortalDots へようこそ</h2>
       <div class="mt-4 flex flex-wrap gap-3">

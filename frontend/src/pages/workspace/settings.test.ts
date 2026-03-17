@@ -5,6 +5,9 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import { createPinia, setActivePinia } from "pinia";
 import { useSessionStore } from "@/features/session/store";
 import UserSettingsPage from "./settings.vue";
+import UserSettingsAppearancePage from "./settings/appearance.vue";
+import UserSettingsPasswordPage from "./settings/password.vue";
+import UserSettingsDeletePage from "./settings/delete.vue";
 
 function createQueryPlugin() {
     return [
@@ -26,7 +29,7 @@ describe("UserSettingsPage", () => {
         document.documentElement.classList.remove("theme-system", "theme-light", "theme-dark");
     });
 
-    it("updates the display name and password", async () => {
+    it("updates the display name", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
         const sessionStore = useSessionStore();
@@ -50,6 +53,9 @@ describe("UserSettingsPage", () => {
             routes: [
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
                 { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
             ],
         });
         await router.push("/workspace/settings");
@@ -72,10 +78,6 @@ describe("UserSettingsPage", () => {
                         id: "demo-user",
                         displayName: "Updated Demo User",
                     });
-                }
-
-                if (url.endsWith("/session/password") && method === "PUT") {
-                    return new Response(null, { status: 204 });
                 }
 
                 if (url.endsWith("/session/bootstrap") && method === "GET") {
@@ -112,14 +114,124 @@ describe("UserSettingsPage", () => {
 
         expect(wrapper.text()).toContain("表示名を更新しました。");
         expect(sessionStore.user?.displayName).toBe("Updated Demo User");
+    });
+
+    it("updates the password", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-a",
+                name: "デモ企画A",
+            },
+            featureFlags: [],
+            roles: ["participant"],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+                canDeleteAccount: false,
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/workspace", component: { template: "<div>workspace</div>" } },
+                { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
+            ],
+        });
+        await router.push("/workspace/settings/password");
+        await router.isReady();
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                await Promise.resolve();
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof URL
+                          ? input.toString()
+                          : input.url;
+                const method = init?.method ?? "GET";
+
+                if (url.endsWith("/session/password") && method === "PUT") {
+                    return new Response(null, { status: 204 });
+                }
+
+                throw new Error(`Unexpected request: ${method} ${url}`);
+            }),
+        );
+
+        const wrapper = mount(UserSettingsPasswordPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
 
         await wrapper.get('input[name="currentPassword"]').setValue("password");
         await wrapper.get('input[name="newPassword"]').setValue("new-password");
         await wrapper.get('input[name="confirmPassword"]').setValue("new-password");
-        await wrapper.findAll('button[type="button"]')[1]?.trigger("click");
+        await wrapper.find('button[type="button"]').trigger("click");
         await flushPromises();
 
         expect(wrapper.text()).toContain("パスワードを更新しました。");
+    });
+
+    it("renders links to the split settings pages", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+                canDeleteAccount: true,
+            },
+        });
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/workspace", component: { template: "<div>workspace</div>" } },
+                { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
+            ],
+        });
+        await router.push("/workspace/settings");
+        await router.isReady();
+
+        vi.stubGlobal("fetch", vi.fn());
+
+        const wrapper = mount(UserSettingsPage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        const tabLinks = wrapper.findAllComponents({ name: "RouterLink" });
+        expect(tabLinks.some((link) => link.props("to") === "/workspace/settings/appearance")).toBe(
+            true,
+        );
+        expect(tabLinks.some((link) => link.props("to") === "/workspace/settings/password")).toBe(
+            true,
+        );
+        expect(tabLinks.some((link) => link.props("to") === "/workspace/settings/delete")).toBe(
+            true,
+        );
     });
 
     it("updates theme preference immediately and stores it in cookie", async () => {
@@ -146,9 +258,12 @@ describe("UserSettingsPage", () => {
             routes: [
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
                 { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
             ],
         });
-        await router.push("/workspace/settings");
+        await router.push("/workspace/settings/appearance");
         await router.isReady();
 
         vi.stubGlobal(
@@ -184,7 +299,7 @@ describe("UserSettingsPage", () => {
             }),
         );
 
-        const wrapper = mount(UserSettingsPage, {
+        const wrapper = mount(UserSettingsAppearancePage, {
             global: {
                 plugins: [pinia, router, createQueryPlugin()],
             },
@@ -219,9 +334,12 @@ describe("UserSettingsPage", () => {
                 { path: "/", component: { template: "<div>home</div>" } },
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
                 { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
             ],
         });
-        await router.push("/workspace/settings");
+        await router.push("/workspace/settings/delete");
         await router.isReady();
 
         vi.stubGlobal(
@@ -246,7 +364,7 @@ describe("UserSettingsPage", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const wrapper = mount(UserSettingsPage, {
+        const wrapper = mount(UserSettingsDeletePage, {
             global: {
                 plugins: [pinia, router, createQueryPlugin()],
             },
@@ -300,14 +418,17 @@ describe("UserSettingsPage", () => {
             routes: [
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
                 { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
             ],
         });
-        await router.push("/workspace/settings");
+        await router.push("/workspace/settings/delete");
         await router.isReady();
 
         vi.stubGlobal("fetch", vi.fn());
 
-        const wrapper = mount(UserSettingsPage, {
+        const wrapper = mount(UserSettingsDeletePage, {
             global: {
                 plugins: [pinia, router, createQueryPlugin()],
             },
@@ -320,7 +441,9 @@ describe("UserSettingsPage", () => {
         if (!deleteButton) throw new Error("delete account button not found");
 
         expect(deleteButton.attributes("disabled")).toBeDefined();
-        expect(wrapper.text()).toContain("企画を離れるまでアカウント削除はできません。");
+        expect(wrapper.text()).toContain(
+            "企画に所属しているか、参加登録の途中のため、アカウント削除はできません。",
+        );
     });
 
     it("disables delete account when the server denies deletion", async () => {
@@ -344,14 +467,17 @@ describe("UserSettingsPage", () => {
             routes: [
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
                 { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
             ],
         });
-        await router.push("/workspace/settings");
+        await router.push("/workspace/settings/delete");
         await router.isReady();
 
         vi.stubGlobal("fetch", vi.fn());
 
-        const wrapper = mount(UserSettingsPage, {
+        const wrapper = mount(UserSettingsDeletePage, {
             global: {
                 plugins: [pinia, router, createQueryPlugin()],
             },
@@ -391,9 +517,12 @@ describe("UserSettingsPage", () => {
                 { path: "/", component: { template: "<div>home</div>" } },
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
                 { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
             ],
         });
-        await router.push("/workspace/settings");
+        await router.push("/workspace/settings/delete");
         await router.isReady();
 
         vi.stubGlobal(
@@ -428,7 +557,7 @@ describe("UserSettingsPage", () => {
             }),
         );
 
-        const wrapper = mount(UserSettingsPage, {
+        const wrapper = mount(UserSettingsDeletePage, {
             global: {
                 plugins: [pinia, router, createQueryPlugin()],
             },
@@ -444,7 +573,7 @@ describe("UserSettingsPage", () => {
 
         expect(wrapper.text()).toContain("企画に所属しているため、アカウント削除はできません");
         expect(sessionStore.isAuthenticated).toBe(true);
-        expect(router.currentRoute.value.path).toBe("/workspace/settings");
+        expect(router.currentRoute.value.path).toBe("/workspace/settings/delete");
     });
 });
 

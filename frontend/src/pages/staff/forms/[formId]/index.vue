@@ -38,6 +38,7 @@ import {
   type StaffFormQuestion,
 } from "@/features/staff/forms/api";
 import { useSessionStore } from "@/features/session/store";
+import { buildStaffFormTabs } from "@/features/ui/tabStrip";
 
 const route = useRoute("/staff/forms/[formId]/");
 const router = useRouter();
@@ -73,11 +74,15 @@ const editForm = ref({
 });
 
 const activeTabHref = computed(() => route.hash || "#settings-panel");
-const staffFormTabs = computed(() => [
-  { label: "設定", href: "#settings-panel", active: activeTabHref.value === "#settings-panel" },
-  { label: "エディター", href: "#editor-panel", active: activeTabHref.value === "#editor-panel" },
-  { label: "回答", href: "#answer-panel", active: activeTabHref.value === "#answer-panel" },
-]);
+const staffFormTabs = computed(() => {
+  if (activeTabHref.value === "#answer-panel") {
+    return buildStaffFormTabs(formId.value, "answers");
+  }
+  if (activeTabHref.value === "#editor-panel") {
+    return buildStaffFormTabs(formId.value, "editor");
+  }
+  return buildStaffFormTabs(formId.value, "settings");
+});
 const editableQuestions = computed(() =>
   (formQuery.data.value?.questions ?? [])
     .map((question) => ({

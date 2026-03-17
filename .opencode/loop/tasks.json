@@ -20,7 +20,8 @@
       "id": "3",
       "title": "未移植の tab strip 導線を Vue ページへ移植する",
       "description": "staff home、user settings、staff participation type / form まわりの tab strip を Laravel 互換で配置する",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-17T01:32:31Z"
     }
   ]
 }

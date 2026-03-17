@@ -15,9 +15,11 @@ import BackLink from "@/components/ui/BackLink.vue";
 import ListPanel from "@/components/ui/ListPanel.vue";
 import ListItemLink from "@/components/ui/ListItemLink.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import TabStrip from "@/components/ui/TabStrip.vue";
 import { useSessionStore } from "@/features/session/store";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import { useStaffFormAnswersIndexQuery } from "@/features/staff/forms/answers";
+import { buildStaffFormTabs } from "@/features/ui/tabStrip";
 
 const route = useRoute();
 const sessionStore = useSessionStore();
@@ -36,11 +38,14 @@ const answersQuery = useStaffFormAnswersIndexQuery(
     () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
 </script>
 
 <template>
   <section class="space-y-6">
     <BackLink :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
+
+    <TabStrip :tabs="staffFormTabs" />
 
     <div
       v-if="answersQuery.isPending.value"

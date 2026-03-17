@@ -4,6 +4,7 @@ import { surfaceVariants, type SurfaceVariantProps } from "@/lib/ui/variants";
 
 withDefaults(
   defineProps<{
+    id?: string;
     tag?: string;
     overflowHidden?: boolean;
     shadow?: SurfaceVariantProps["shadow"];
@@ -17,7 +18,7 @@ withDefaults(
 </script>
 
 <template>
-  <component :is="tag" :class="cn(surfaceVariants({ overflowHidden, shadow }))">
+  <component :is="tag" :id="id" :class="cn(surfaceVariants({ overflowHidden, shadow }))">
     <slot />
   </component>
 </template>

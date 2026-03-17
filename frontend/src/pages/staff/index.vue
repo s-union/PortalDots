@@ -8,8 +8,10 @@ definePage({
 });
 
 import { computed } from "vue";
+import TabStrip from "@/components/ui/TabStrip.vue";
 import ListItemLink from "@/components/ui/ListItemLink.vue";
 import ListPanel from "@/components/ui/ListPanel.vue";
+import { buildHomeModeTabs } from "@/features/ui/tabStrip";
 import {
   canManageCircles,
   canManageParticipationTypes,
@@ -69,6 +71,8 @@ const activityLogAvailable = computed(() =>
 const portalSettingsAvailable = computed(() =>
   canManagePortalSettings(sessionStore.roles, sessionStore.permissions),
 );
+
+const homeTabs = computed(() => buildHomeModeTabs(true));
 
 const sections = computed(() => [
   {
@@ -152,6 +156,8 @@ const sections = computed(() => [
 
 <template>
   <section class="space-y-6">
+    <TabStrip :tabs="homeTabs" />
+
     <section class="rounded border border-border bg-surface shadow-lv1">
       <div class="border-b border-border px-6 py-5">
         <h2 class="text-2xl font-semibold text-body">スタッフ作業エリア</h2>

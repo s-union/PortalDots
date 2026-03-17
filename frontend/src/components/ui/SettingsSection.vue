@@ -2,12 +2,13 @@
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 
 defineProps<{
+  id?: string;
   title: string;
 }>();
 </script>
 
 <template>
-  <SurfaceCard>
+  <SurfaceCard :id="id">
     <div class="border-b border-border px-6 py-4">
       <h3 class="text-lg font-semibold text-body">{{ title }}</h3>
     </div>

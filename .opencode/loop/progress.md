@@ -9,3 +9,6 @@
 - body の safe area 分の下 padding は main ではなく global 側で持たせると Laravel の `_bottom_tabs.scss` に近い挙動になる。
 - 共通ナビ部品は Font Awesome の CSS を `frontend/src/app/main.ts` で読み込み、リンク定義側で `iconClass` を持つ方式にすると Laravel の `fa-*` をそのまま再利用しやすい。
 - `TabStrip` は `href` だけでなく `to` と badge を受けられるようにしておくと、Laravel の blade include で使っていた複数パターンを 1 コンポーネントへ寄せやすい。
+- ユーザー設定は 1 画面集約のままだと Laravel の `user.edit` / `user.appearance` / `user.password` / `user.delete` と導線互換が取れないため、Vue 側も `frontend/src/pages/workspace/settings*.vue` を 4 画面へ分割した方が完全互換に近づく。
+- 分割後の共通処理は `frontend/src/features/session/settings.ts` に寄せると、tab strip と戻る導線、mutation 取得、削除条件文言を各画面で揃えやすい。
+- `TabStrip` の RouterLink は test 時に素の `<a>` になり `href` が出ないことがあるため、`props("to")` ベースの検証が安定する。

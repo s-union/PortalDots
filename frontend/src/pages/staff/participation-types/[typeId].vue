@@ -15,6 +15,7 @@ import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
+import TabStrip from "@/components/ui/TabStrip.vue";
 import { useAuthorizedStaffContext } from "@/features/staff/hooks/useAuthorizedStaffContext";
 import { calculateTotalPages } from "@/lib/pagination";
 import {
@@ -30,6 +31,7 @@ import {
   useStaffParticipationTypeDetailQuery,
   useUpdateStaffParticipationTypeMutation,
 } from "@/features/staff/participation-types/api";
+import { buildStaffParticipationTypeTabs } from "@/features/ui/tabStrip";
 
 const route = useRoute("/staff/participation-types/[typeId]");
 const router = useRouter();
@@ -79,6 +81,9 @@ const formEditorRoute = computed(() => {
   }
   return `/staff/forms/${encodeURIComponent(current.form.id)}`;
 });
+const participationTypeTabs = computed(() =>
+  buildStaffParticipationTypeTabs(typeId.value, route.hash, detailQuery.data.value?.form),
+);
 
 watch(
   () => detailQuery.data.value,
@@ -152,6 +157,8 @@ function moveCirclesPage(nextPage: number) {
   <section class="space-y-6">
     <BackLink to="/staff/participation-types"> 参加種別管理へ戻る </BackLink>
 
+    <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
+
     <div
       v-if="detailQuery.isPending.value"
       class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
@@ -182,7 +189,7 @@ function moveCirclesPage(nextPage: number) {
         </div>
       </SurfaceCard>
 
-      <SettingsSection title="参加種別設定">
+      <SettingsSection id="participation-type-section" title="参加種別設定">
         <SurfaceHeader>
           <template #title>{{ detailQuery.data.value.name }}</template>
           <template #description>
@@ -275,7 +282,7 @@ function moveCirclesPage(nextPage: number) {
         </SettingsRow>
       </SettingsSection>
 
-      <SettingsSection title="参加登録フォーム設定">
+      <SettingsSection id="form-settings-section" title="参加登録フォーム設定">
         <SurfaceHeader>
           <template #title>企画参加登録のカスタムフォーム</template>
           <template #description>
@@ -418,7 +425,7 @@ function moveCirclesPage(nextPage: number) {
         </template>
       </SettingsSection>
 
-      <SettingsSection title="この参加種別に紐づく企画">
+      <SettingsSection id="circles-section" title="この参加種別に紐づく企画">
         <SurfaceHeader>
           <template #title>企画一覧</template>
           <template #description>

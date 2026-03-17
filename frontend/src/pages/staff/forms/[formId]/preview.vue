@@ -12,9 +12,11 @@ definePage({
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import BackLink from "@/components/ui/BackLink.vue";
+import TabStrip from "@/components/ui/TabStrip.vue";
 import { useSessionStore } from "@/features/session/store";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import { useStaffFormPreviewQuery } from "@/features/staff/forms/api";
+import { buildStaffFormTabs } from "@/features/ui/tabStrip";
 
 const route = useRoute("/staff/forms/[formId]/preview");
 const sessionStore = useSessionStore();
@@ -26,11 +28,14 @@ const previewQuery = useStaffFormPreviewQuery(
     () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
   ),
 );
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "settings"));
 </script>
 
 <template>
   <section class="space-y-6">
     <BackLink :to="`/staff/forms/${formId}`"> フォーム詳細へ戻る </BackLink>
+
+    <TabStrip :tabs="staffFormTabs" />
 
     <div
       v-if="previewQuery.isPending.value"

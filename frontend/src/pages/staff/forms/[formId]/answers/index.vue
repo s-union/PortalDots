@@ -14,6 +14,7 @@ import { useRoute } from "vue-router";
 import BackLink from "@/components/ui/BackLink.vue";
 import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
+import TabStrip from "@/components/ui/TabStrip.vue";
 import { useSessionStore } from "@/features/session/store";
 import { useStaffStatusQuery } from "@/features/staff/status/api";
 import {
@@ -21,6 +22,7 @@ import {
   buildStaffFormAnswerUploadsZipUrl,
   useStaffFormAnswersIndexQuery,
 } from "@/features/staff/forms/answers";
+import { buildStaffFormTabs } from "@/features/ui/tabStrip";
 
 const route = useRoute("/staff/forms/[formId]/answers/");
 const sessionStore = useSessionStore();
@@ -35,11 +37,14 @@ const answersQuery = useStaffFormAnswersIndexQuery(
 
 const exportUrl = computed(() => buildStaffFormAnswersExportUrl(formId.value));
 const uploadsZipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.value));
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
 </script>
 
 <template>
   <section class="space-y-6">
     <BackLink :to="`/staff/forms/${formId}`"> フォーム詳細へ戻る </BackLink>
+
+    <TabStrip :tabs="staffFormTabs" />
 
     <div
       v-if="answersQuery.isPending.value"

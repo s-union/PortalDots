@@ -34,6 +34,10 @@ describe("StaffFormNotAnsweredPage", () => {
                     path: "/staff/forms/:formId/answers",
                     component: { template: "<div>answers</div>" },
                 },
+                {
+                    path: "/staff/forms/:formId",
+                    component: { template: "<div>form detail</div>" },
+                },
                 { path: "/staff/circles/:circleId", component: { template: "<div>circle</div>" } },
             ],
         });
@@ -114,10 +118,11 @@ describe("StaffFormNotAnsweredPage", () => {
         expect(wrapper.text()).toContain("未回答企画一覧");
         expect(wrapper.text()).toContain("展示チェックフォーム");
 
-        const links = wrapper.findAll("a");
-        expect(links[1]?.text()).toContain("企画ID: circle-a");
+        const links = wrapper.findAllComponents({ name: "RouterLink" });
+        const circleLink = links.find((link) => link.props("to") === "/staff/circles/circle-a");
+        expect(circleLink?.text()).toContain("企画ID: circle-a");
 
-        await links[1]?.trigger("click");
+        await circleLink?.trigger("click");
         await flushPromises();
 
         expect(router.currentRoute.value.path).toBe("/staff/circles/circle-a");

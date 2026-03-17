@@ -1,18 +1,10 @@
 <script setup lang="ts">
-import { RouterLink, type RouteLocationRaw } from "vue-router";
+import { RouterLink } from "vue-router";
 import { tabStripBadgeVariants, tabStripItemVariants } from "@/lib/ui/variants";
-
-type TabItem = {
-  label: string;
-  active?: boolean;
-  href?: string;
-  to?: RouteLocationRaw;
-  badge?: string;
-  badgeTone?: "primary" | "muted" | "danger";
-};
+import type { TabStripItem } from "@/features/ui/tabStrip";
 
 defineProps<{
-  tabs: TabItem[];
+  tabs: TabStripItem[];
 }>();
 </script>
 

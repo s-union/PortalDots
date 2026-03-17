@@ -12,6 +12,7 @@ definePage({
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import BackLink from "@/components/ui/BackLink.vue";
+import TabStrip from "@/components/ui/TabStrip.vue";
 import AnswerQuestionFields from "@/components/forms/AnswerQuestionFields.vue";
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
@@ -28,6 +29,7 @@ import {
   useUpdateStaffFormAnswerMutation,
   useUploadStaffFormAnswerFileMutation,
 } from "@/features/staff/forms/answers";
+import { buildStaffFormTabs } from "@/features/ui/tabStrip";
 
 const route = useRoute("/staff/forms/[formId]/answers/[answerId]/edit");
 const router = useRouter();
@@ -45,6 +47,7 @@ const draft = useFormAnswerEditorDraft(
 const errorMessage = ref("");
 const uploadErrorMessages = ref<Record<string, string>>({});
 const selectedFiles = ref<Record<string, File | null>>({});
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
 
 async function handleSaveAnswer() {
   if (!answerQuery.data.value) {
@@ -122,6 +125,8 @@ function handleFileChange(questionId: string, event: Event) {
 <template>
   <section class="space-y-6">
     <BackLink :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
+
+    <TabStrip :tabs="staffFormTabs" />
 
     <div
       v-if="answerQuery.isPending.value"

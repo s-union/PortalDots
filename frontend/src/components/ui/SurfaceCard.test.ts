@@ -40,4 +40,11 @@ describe("SurfaceCard", () => {
         });
         expect(wrapper.classes()).toContain("shadow-lv2");
     });
+
+    it("passes through the id prop", () => {
+        const wrapper = mount(SurfaceCard, {
+            props: { id: "section-id" },
+        });
+        expect(wrapper.attributes("id")).toBe("section-id");
+    });
 });
