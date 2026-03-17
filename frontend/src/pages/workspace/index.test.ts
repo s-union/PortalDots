@@ -24,7 +24,7 @@ describe("WorkspacePage", () => {
         vi.unstubAllGlobals();
     });
 
-    it("shows the current circle details when one is selected", async () => {
+    it("stays as compatibility route while preserving workspace content", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
         const sessionStore = useSessionStore();
