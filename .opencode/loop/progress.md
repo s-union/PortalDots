@@ -20,3 +20,5 @@
 - 影響範囲整理として、merge判断は `nr ci:check` 通過 + 変更ページの個別テスト通過を最低条件にし、全件テストは別改善ストリーム扱いが現実的。
 - workspace/pages と staff/users のテストはfetchモックより対象composableモックへ切替した方が、画面構造変更に対して壊れにくい。
 - login.test.ts の未使用import（`useSessionStore`）を除去することで `nr ci:check` のlint警告を0件にできる。
+- ルーター全体統合テスト（`src/app/router/index.test.ts`）は既存でも不安定なため、今回の `/workspace -> /` 互換リライトは `authGuard` 単体テストを追加して担保する方が安全。
+- `index.vue` のログイン後導線で `/workspace` を参照していた箇所を `/` に揃えると、共用トップ設計でもURLが分岐しない。

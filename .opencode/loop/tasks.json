@@ -75,7 +75,38 @@
       "status": "done",
       "addedAt": "2026-03-17T17:51:11Z",
       "completedAt": "2026-03-17T17:52:59Z"
+    },
+    {
+      "id": "11",
+      "title": "/workspace 互換リライト導入",
+      "description": "ログイン済みで /workspace へアクセスした場合に / へ正規化するルーティングを導入する",
+      "status": "done",
+      "addedAt": "2026-03-17T18:13:35Z",
+      "completedAt": "2026-03-17T18:15:06Z"
+    },
+    {
+      "id": "12",
+      "title": "ログイン後トップ導線のURL正規化",
+      "description": "ホーム内の /workspace 直リンクを / に寄せ、共用トップ運用へ統一する",
+      "status": "done",
+      "addedAt": "2026-03-17T18:13:35Z",
+      "completedAt": "2026-03-17T18:15:21Z"
+    },
+    {
+      "id": "13",
+      "title": "ルーティング互換テストの追加更新",
+      "description": "/workspace 互換リライトとホーム導線変更に追従するテストを更新する",
+      "status": "done",
+      "addedAt": "2026-03-17T18:13:35Z",
+      "completedAt": "2026-03-17T18:16:57Z"
+    },
+    {
+      "id": "14",
+      "title": "差分確認と回帰チェック",
+      "description": "変更箇所のチェックを実行し、loop progressへ知見を追記する",
+      "status": "done",
+      "addedAt": "2026-03-17T18:13:35Z",
+      "completedAt": "2026-03-17T18:23:39Z"
     }
-  ],
-  "completedAt": "2026-03-17T17:52:59Z"
+  ]
 }
