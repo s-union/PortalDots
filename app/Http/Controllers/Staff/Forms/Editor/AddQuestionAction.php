@@ -27,8 +27,8 @@ class AddQuestionAction extends Controller
                 'number_max' => null,
                 'allowed_types' => '',
                 'priority' => 9999,
-                'created_at' => new Carbon,
-                'updated_at' => new Carbon,
+                'created_at' => new Carbon(),
+                'updated_at' => new Carbon(),
             ];
         }
 

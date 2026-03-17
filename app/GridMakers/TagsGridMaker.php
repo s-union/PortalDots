@@ -91,6 +91,6 @@ class TagsGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Tag;
+        return new Tag();
     }
 }

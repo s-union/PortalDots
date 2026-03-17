@@ -122,7 +122,7 @@ class User extends Authenticatable
 
     public static function isValidUnivemailByLocalPartAndDomainPart(?string $localPart = '', ?string $domainPart = '')
     {
-        $univemail = $localPart.'@'.$domainPart;
+        $univemail = $localPart . '@' . $domainPart;
 
         return (bool) filter_var($univemail, FILTER_VALIDATE_EMAIL);
     }
@@ -232,6 +232,7 @@ class User extends Authenticatable
     {
         return $this->whereIn('student_id', $student_ids)->get();
     }
+
     /**
      * student_idのアルファベットを大文字に変換してセットする(セッター)
      *
@@ -241,6 +242,7 @@ class User extends Authenticatable
     {
         return \Illuminate\Database\Eloquent\Casts\Attribute::make(set: fn($value) => ['student_id' => mb_strtoupper((string) $value)]);
     }
+
     /**
      * フルネームを取得する
      *
@@ -254,6 +256,7 @@ class User extends Authenticatable
             return ['name_family' => $name_array[0], 'name_given' => $name_array[1]];
         });
     }
+
     /**
      * フルネーム(よみ)を取得する
      *
@@ -269,6 +272,7 @@ class User extends Authenticatable
             return ['name_family_yomi' => $name_array[0], 'name_given_yomi' => $name_array[1]];
         });
     }
+
     /**
      * 大学提供メールアドレスを取得する
      *
@@ -276,8 +280,8 @@ class User extends Authenticatable
      */
     protected function univemail(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => mb_strtolower($this->univemail_local_part).
-            '@'.
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => mb_strtolower($this->univemail_local_part) .
+            '@' .
             mb_strtolower($this->univemail_domain_part));
     }
 
@@ -390,6 +394,7 @@ class User extends Authenticatable
 
         return '1年以上前';
     }
+
     protected function casts(): array
     {
         return [

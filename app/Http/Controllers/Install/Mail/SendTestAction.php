@@ -23,7 +23,7 @@ class SendTestAction extends Controller
         } catch (Exception $e) {
             // エラー内容をJSONで返す
             return response()->json([
-                'message' => 'テストメールを送信できませんでした。入力内容が正しいかご確認ください。 : '.$e->getMessage(),
+                'message' => 'テストメールを送信できませんでした。入力内容が正しいかご確認ください。 : ' . $e->getMessage(),
             ], 500);
         }
     }

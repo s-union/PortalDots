@@ -18,7 +18,8 @@ class FilterableKeyBelongsToManyWithoutChoicesOptions implements JsonSerializabl
         private readonly string $relatedPivotKey,
         private readonly string $parentKey,
         private readonly FilterableKeysDict $parentKeys
-    ) {}
+    ) {
+    }
 
     public function getTo(): string
     {

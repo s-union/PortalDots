@@ -25,8 +25,7 @@ final readonly class PermissionInfo implements JsonSerializable
          * 権限の説明(HTML可)
          */
         private string $description_html
-    )
-    {
+    ) {
     }
 
     public function getIdentifier()

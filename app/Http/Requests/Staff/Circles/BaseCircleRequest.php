@@ -70,7 +70,7 @@ class BaseCircleRequest extends FormRequest
             'name_yomi.regex' => 'ひらがなで入力してください',
             'group_name_yomi.regex' => 'ひらがなで入力してください',
             // ひらがなもカタカナも入力可能だが，説明が面倒なので，エラー上ではひらがなでの入力を促す
-            'leader.exists' => 'この'.config('portal.student_id_name').'は登録されていません',
+            'leader.exists' => 'この' . config('portal.student_id_name') . 'は登録されていません',
         ];
     }
 
@@ -92,11 +92,11 @@ class BaseCircleRequest extends FormRequest
         }
         $validator->after(function ($validator) use ($non_registered_member_ids, $unverified_student_ids) {
             if (! empty($non_registered_member_ids)) {
-                $validator->errors()->add('members', '未登録 : '.implode(' ', $non_registered_member_ids));
+                $validator->errors()->add('members', '未登録 : ' . implode(' ', $non_registered_member_ids));
             }
 
             if (! empty($unverified_student_ids)) {
-                $validator->errors()->add('members', 'メール未認証 : '.implode(' ', $unverified_student_ids));
+                $validator->errors()->add('members', 'メール未認証 : ' . implode(' ', $unverified_student_ids));
             }
         });
     }

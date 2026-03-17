@@ -10,4 +10,6 @@ use Exception;
  * Request オブジェクトをセットしないで GridResponder がレスポンス
  * を返そうとしたときに発生する例外
  */
-class RequestNotSetException extends Exception {}
+class RequestNotSetException extends Exception
+{
+}

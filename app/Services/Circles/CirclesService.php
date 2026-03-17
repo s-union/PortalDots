@@ -25,7 +25,8 @@ class CirclesService
     public function __construct(
         private readonly ActivityLogService $activityLogService,
         private readonly TagsService $tagsService
-    ) {}
+    ) {
+    }
 
     /**
      * 企画を作成する

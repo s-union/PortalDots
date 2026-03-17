@@ -94,6 +94,6 @@ class PlacesGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Place;
+        return new Place();
     }
 }

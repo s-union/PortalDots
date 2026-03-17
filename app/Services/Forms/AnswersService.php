@@ -89,10 +89,10 @@ class AnswersService
         bool $isForStaff,
         bool $isEditedByStaff
     ) {
-        $subject = '申請「'.$form->name.'」を承りました';
+        $subject = '申請「' . $form->name . '」を承りました';
 
         if ($isForStaff) {
-            $subject = '【スタッフ用控え】'.$subject;
+            $subject = '【スタッフ用控え】' . $subject;
         }
 
         Mail::to($recipient)

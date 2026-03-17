@@ -8,4 +8,6 @@ namespace App\Http\Requests\Forms;
  * 申請フォームへの回答に関するリクエストのほか、カスタムフォームへの回答
  * を含むリクエストも、このインターフェースを実装する必要がある
  */
-interface AnswerRequestInterface {}
+interface AnswerRequestInterface
+{
+}

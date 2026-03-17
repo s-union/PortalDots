@@ -289,7 +289,7 @@ class Permission extends SpatiePermission
                     'staff.contacts',
                     'スタッフモード › お問い合わせ管理 › 全機能',
                     'お問い合わせ(全機能)',
-                    'お問い合わせ管理の全機能を利用可能。今後、受信したお問い合わせを管理する機能が実装された場合、'.
+                    'お問い合わせ管理の全機能を利用可能。今後、受信したお問い合わせを管理する機能が実装された場合、' .
                         'その機能の利用も可能になります。セキュリティのため、この権限を割り当てるユーザーは最小限にしてください。'
                 ),
                 'staff.contacts.categories.read,edit,delete' => new PermissionInfo(

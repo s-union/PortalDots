@@ -15,6 +15,6 @@ class AppUserProvider extends EloquentUserProvider
             return null;
         }
 
-        return (new User)->firstByLoginId($credentials['login_id']);
+        return (new User())->firstByLoginId($credentials['login_id']);
     }
 }

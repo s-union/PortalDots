@@ -13,6 +13,6 @@ class ExportAction extends Controller
     {
         $now = \Illuminate\Support\Facades\Date::now()->format('Y-m-d_H-i-s');
 
-        return Excel::download(new UsersExport, "ユーザー一覧_{$now}.csv");
+        return Excel::download(new UsersExport(), "ユーザー一覧_{$now}.csv");
     }
 }

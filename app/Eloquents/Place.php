@@ -35,6 +35,7 @@ class Place extends Model
     {
         return $this->belongsToMany(Circle::class, 'booths')->using(Booth::class);
     }
+
     protected function casts(): array
     {
         return [

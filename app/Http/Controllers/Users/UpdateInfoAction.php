@@ -64,7 +64,7 @@ class UpdateInfoAction extends Controller
         } catch (RfcComplianceException) {
             return to_route('user.edit')
                 ->withInput()
-                ->withErrors(['student_id' => config('portal.student_id_name').'を正しく入力してください']);
+                ->withErrors(['student_id' => config('portal.student_id_name') . 'を正しく入力してください']);
         }
 
         if (! $user->save()) {

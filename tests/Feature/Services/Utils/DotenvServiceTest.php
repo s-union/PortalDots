@@ -31,7 +31,7 @@ final class DotenvServiceTest extends TestCase
             $mock->shouldReceive('getValue')
                 ->once()
                 ->with('EXAMPLE_KEY')
-                ->andThrow(new KeyNotFoundException);
+                ->andThrow(new KeyNotFoundException());
         });
 
         $dotenvService = App::make(DotenvService::class);
@@ -43,7 +43,7 @@ final class DotenvServiceTest extends TestCase
     public function get_value_値が存在せずデフォルト値も未設定の場合はnullを返す()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
-            $mock->shouldReceive('getValue')->once()->with('EXAMPLE_KEY')->andThrow(new KeyNotFoundException);
+            $mock->shouldReceive('getValue')->once()->with('EXAMPLE_KEY')->andThrow(new KeyNotFoundException());
         });
 
         $dotenvService = App::make(DotenvService::class);

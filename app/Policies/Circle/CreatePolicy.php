@@ -15,7 +15,9 @@ class CreatePolicy
      *
      * @return void
      */
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 
     public function __invoke(?User $user, ?ParticipationType $participationType = null)
     {

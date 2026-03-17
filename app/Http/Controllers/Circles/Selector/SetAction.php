@@ -39,6 +39,6 @@ class SetAction extends Controller
         // のため、先頭にスラッシュがついている場合は取り除く。
         //
         // 先頭のスラッシュを取り除いた上で、スラッシュを1つだけ先頭に追加する。
-        return '/'.str_replace("\n", '', preg_replace('/^\/+/', '', (string) $url));
+        return '/' . str_replace("\n", '', preg_replace('/^\/+/', '', (string) $url));
     }
 }

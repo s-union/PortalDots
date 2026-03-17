@@ -41,7 +41,7 @@ class AuthServiceProvider extends ServiceProvider
                 session()->get('staff_authorized') ? true : null;
         });
 
-        Gate::guessPolicyNamesUsing(fn($modelClass) => 'App\\Policies\\'.class_basename($modelClass).'Policy');
+        Gate::guessPolicyNamesUsing(fn($modelClass) => 'App\\Policies\\' . class_basename($modelClass) . 'Policy');
 
         Auth::provider('app', fn(Application $app, array $config) => new AppUserProvider($app['hash'], $config['model']));
 

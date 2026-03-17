@@ -176,6 +176,6 @@ class AnswersGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Answer;
+        return new Answer();
     }
 }

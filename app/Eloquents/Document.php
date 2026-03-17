@@ -73,6 +73,7 @@ class Document extends Model
     {
         return $query->where('is_public', true);
     }
+
     protected function casts(): array
     {
         return [

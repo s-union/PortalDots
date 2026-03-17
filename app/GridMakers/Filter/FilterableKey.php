@@ -65,7 +65,7 @@ class FilterableKey implements JsonSerializable
             if ($options instanceof FilterableKeyBelongsToOptions) {
                 $this->belongsToOptions = $options;
             } else {
-                throw new InvalidArgumentException(FilterableKeyBelongsToOptions::class.'オブジェクトが指定されていません。');
+                throw new InvalidArgumentException(FilterableKeyBelongsToOptions::class . 'オブジェクトが指定されていません。');
             }
         }
 
@@ -73,7 +73,7 @@ class FilterableKey implements JsonSerializable
             if ($options instanceof FilterableKeyBelongsToManyOptions) {
                 $this->belongsToManyOptions = $options;
             } else {
-                throw new InvalidArgumentException(FilterableKeyBelongsToManyOptions::class.'オブジェクトが指定されていません。');
+                throw new InvalidArgumentException(FilterableKeyBelongsToManyOptions::class . 'オブジェクトが指定されていません。');
             }
         }
 
@@ -81,7 +81,7 @@ class FilterableKey implements JsonSerializable
             if ($options instanceof FilterableKeyBelongsToManyWithoutChoicesOptions) {
                 $this->belongsToManyWithoutChoicesOptions = $options;
             } else {
-                throw new InvalidArgumentException(FilterableKeyBelongsToManyWithoutChoicesOptions::class.
+                throw new InvalidArgumentException(FilterableKeyBelongsToManyWithoutChoicesOptions::class .
                     'オブジェクトが指定されていません。');
             }
         }

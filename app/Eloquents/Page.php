@@ -179,6 +179,7 @@ class Page extends Model
 
         return $query->whereRaw('match(title,body) against (? IN BOOLEAN MODE)', [$keywords]);
     }
+
     protected function casts(): array
     {
         return [

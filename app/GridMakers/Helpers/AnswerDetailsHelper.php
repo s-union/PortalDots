@@ -32,7 +32,7 @@ class AnswerDetailsHelper
                     return null;
                 }
                 // SQLインジェクションに注意。$idInt は整数であることを期待している。
-                $columnAlias = $questionsKeyPrefix.$idInt;
+                $columnAlias = $questionsKeyPrefix . $idInt;
 
                 switch ($question->type) {
                     case 'heading':
@@ -68,7 +68,7 @@ class AnswerDetailsHelper
 
     public static function getFormQuestionKey(Question $question, string $questionsKeyPrefix): string
     {
-        return $questionsKeyPrefix.$question->id;
+        return $questionsKeyPrefix . $question->id;
     }
 
     public static function getFormQuestionsKeys(Collection $questions, string $questionsKeyPrefix): array

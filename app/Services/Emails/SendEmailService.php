@@ -105,7 +105,7 @@ class SendEmailService
 
     private static function sendEmail(string $subject, string $body, string $email_to, string $email_to_name)
     {
-        $recipient = new \stdClass;
+        $recipient = new \stdClass();
         $recipient->email = $email_to;
         $recipient->name = $email_to_name;
         Mail::to($recipient)

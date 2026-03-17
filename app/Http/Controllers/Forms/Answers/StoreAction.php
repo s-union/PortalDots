@@ -31,7 +31,7 @@ class StoreAction extends Controller
             $this->answersService->sendAll($answer, Auth::user());
 
             return to_route('forms.answers.edit', ['form' => $form, 'answer' => $answer])
-                ->with('topAlert.title', '回答を作成しました — 回答ID : '.$answer->id)
+                ->with('topAlert.title', '回答を作成しました — 回答ID : ' . $answer->id)
                 ->with('topAlert.body', '以下のフォームより、回答を修正することもできます');
         }
 

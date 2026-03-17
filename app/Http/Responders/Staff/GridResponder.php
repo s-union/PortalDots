@@ -90,7 +90,7 @@ class GridResponder implements Respondable
             $per_page,
             $page,
             [
-                'path' => '/'.$this->request->path(),
+                'path' => '/' . $this->request->path(),
                 'query' => [
                     'per_page' => $per_page,
                 ],

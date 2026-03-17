@@ -40,7 +40,7 @@ class SendAction extends Controller
         );
 
         $this->sendEmailService->bulkEnqueue(
-            '【スタッフ用控え】'.$request->subject,
+            '【スタッフ用控え】' . $request->subject,
             $request->body,
             new Collection([Auth::user()])
         );

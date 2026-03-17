@@ -31,8 +31,7 @@ final readonly class Version
          * プレリリースバージョン
          */
         private string $prerelease = ''
-    )
-    {
+    ) {
     }
 
     /**

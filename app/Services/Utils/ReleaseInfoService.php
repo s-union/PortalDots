@@ -48,7 +48,7 @@ class ReleaseInfoService
 
         try {
             return $this->cache->remember(
-                'getReleaseOfLatestVersionWithinSameMajorVersion/'.$current_version_info->getFullVersion(),
+                'getReleaseOfLatestVersionWithinSameMajorVersion/' . $current_version_info->getFullVersion(),
                 120,
                 function () use ($current_version_info) {
                     $path = sprintf(

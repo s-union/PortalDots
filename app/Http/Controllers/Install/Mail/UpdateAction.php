@@ -38,7 +38,7 @@ class UpdateAction extends Controller
         } catch (Exception $e) {
             // エラー内容をJSONで返す
             return response()->json([
-                'message' => 'メール配信の設定を保存できませんでした。 : '.$e->getMessage(),
+                'message' => 'メール配信の設定を保存できませんでした。 : ' . $e->getMessage(),
             ], 500);
         }
     }

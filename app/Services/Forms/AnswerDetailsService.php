@@ -63,7 +63,7 @@ class AnswerDetailsService
         $form->loadMissing('questions');
         $answer_details = $request->validated()['answers'] ?? [];
         foreach ($form->questions as $question) {
-            $file = $request->file('answers.'.$question->id);
+            $file = $request->file('answers.' . $question->id);
             if ($question->type === 'upload' && isset($file)) {
                 $answer_details[$question->id] = $file->store('answer_details');
             }

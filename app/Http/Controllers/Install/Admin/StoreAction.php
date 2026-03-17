@@ -28,7 +28,7 @@ class StoreAction extends Controller
                 ->withInput()
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.keepVisible', true)
-                ->with('topAlert.title', '不明なエラーが発生しました : '.$e->getMessage());
+                ->with('topAlert.title', '不明なエラーが発生しました : ' . $e->getMessage());
         }
 
         $user = $this->registerService->create(

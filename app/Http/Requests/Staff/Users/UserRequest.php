@@ -61,8 +61,8 @@ class UserRequest extends FormRequest
     public function messages()
     {
         return [
-            'student_id.unique' => '入力された'.
-                config('portal.student_id_name').
+            'student_id.unique' => '入力された' .
+                config('portal.student_id_name') .
                 'はすでに登録されています',
             'email.unique' => '入力されたメールアドレスはすでに登録されています',
             'name.regex' => '姓と名の間にはスペースを入れてください',

@@ -19,7 +19,7 @@ class FilterQueries implements IteratorAggregate
     {
         foreach ($queries as $query) {
             if (! $query instanceof FilterQueryItem) {
-                throw new InvalidArgumentException('引数 $queries は'.FilterQueryItem::class.'オブジェクトの配列である必要があります。');
+                throw new InvalidArgumentException('引数 $queries は' . FilterQueryItem::class . 'オブジェクトの配列である必要があります。');
             }
         }
 

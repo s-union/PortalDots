@@ -127,6 +127,6 @@ class FormsGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Form;
+        return new Form();
     }
 }

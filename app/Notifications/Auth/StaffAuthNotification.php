@@ -28,8 +28,7 @@ class StaffAuthNotification extends Notification
          * スタッフ認証コード
          */
         private string $verify_code
-    )
-    {
+    ) {
     }
 
     /**
@@ -51,10 +50,10 @@ class StaffAuthNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('スタッフ認証 (認証コード : '.$this->verify_code.')')
+        return (new MailMessage())
+            ->subject('スタッフ認証 (認証コード : ' . $this->verify_code . ')')
             ->greeting('スタッフ認証')
-            ->line($this->user->name.' 様')
+            ->line($this->user->name . ' 様')
             ->line('スタッフモードにアクセスするには、以下の「認証コード」をスタッフ認証ページで入力してください。')
             ->line(new HtmlString("<div style='text-align: center; font-weight: bold;'>認証コード<br />
 <div style='font-size: 2em;'>{$this->verify_code}</div></div>"));

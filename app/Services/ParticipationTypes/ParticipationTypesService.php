@@ -15,7 +15,8 @@ class ParticipationTypesService
     public function __construct(
         private readonly ActivityLogService $activityLogService,
         private readonly TagsService $tagsService
-    ) {}
+    ) {
+    }
 
     /**
      * 指定された参加種別についてタグを保存する

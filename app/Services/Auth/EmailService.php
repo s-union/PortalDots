@@ -55,7 +55,7 @@ class EmailService
      */
     private function send(string $email, string $name, string $verifyUrl, bool $is_edit = false)
     {
-        $recipient = new \stdClass;
+        $recipient = new \stdClass();
         $recipient->email = $email;
         $recipient->name = $name;
 

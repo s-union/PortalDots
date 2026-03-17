@@ -227,6 +227,7 @@ class Circle extends Model
             ->where('circle_id', $this->id)
             ->first();
     }
+
     protected function casts(): array
     {
         return [

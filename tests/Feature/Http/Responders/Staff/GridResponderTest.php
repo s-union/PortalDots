@@ -23,8 +23,8 @@ final class GridResponderTest extends TestCase
     {
         $this->expectException(GridMakerNotSetException::class);
 
-        $obj = new GridResponder;
-        $obj->setRequest(new Request);
+        $obj = new GridResponder();
+        $obj->setRequest(new Request());
 
         $obj->response();
     }
@@ -34,7 +34,7 @@ final class GridResponderTest extends TestCase
     {
         $this->expectException(RequestNotSetException::class);
 
-        $obj = new GridResponder;
+        $obj = new GridResponder();
         $obj->setGridMaker(Mockery::mock(GridMakable::class));
 
         $obj->response();
@@ -55,11 +55,12 @@ final class GridResponderTest extends TestCase
             'mode' => 'or',
         ]);
 
-        $obj = new GridResponder;
+        $obj = new GridResponder();
 
         // モック
         $grid_maker = Mockery::mock(GridMakable::class);
         $filter_queries_argument = Mockery::on(function (FilterQueries $arg) {
+            /** @var \App\GridMakers\Filter\FilterQuery[] $array */
             $array = iterator_to_array($arg->getIterator());
 
             return $array[0]->getFullKeyName() === 'created_at'
@@ -109,7 +110,7 @@ final class GridResponderTest extends TestCase
             )
             ->andReturn(78);
 
-        /** @var MockedGridMaker $grid_maker */
+        /** @var \App\GridMakers\GridMakable&\Mockery\MockInterface $grid_maker */
         $obj->setGridMaker($grid_maker);
         $obj->setRequest($request);
 

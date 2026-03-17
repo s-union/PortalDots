@@ -54,7 +54,8 @@ final class DemoModeTest extends TestCase
 
         $request = Request::create(route('contacts.post'), 'POST');
 
-        $response = $this->demoMode->handle($request, function () {});
+        $response = $this->demoMode->handle($request, function () {
+        });
 
         $testResponse = $this->createTestResponse($response, $request);
 

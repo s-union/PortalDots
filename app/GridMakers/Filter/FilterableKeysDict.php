@@ -22,7 +22,7 @@ class FilterableKeysDict implements JsonSerializable
             }
 
             if (! $value instanceof FilterableKey) {
-                throw new InvalidArgumentException(FilterableKey::class.'オブジェクト配列を引数として渡してください。');
+                throw new InvalidArgumentException(FilterableKey::class . 'オブジェクト配列を引数として渡してください。');
             }
         }
 

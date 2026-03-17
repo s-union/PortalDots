@@ -137,6 +137,6 @@ class UsersGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new User;
+        return new User();
     }
 }

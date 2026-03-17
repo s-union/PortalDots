@@ -68,7 +68,7 @@ final class DownloadZipActionTest extends TestCase
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
                 ->once()
-                ->andThrow(new NoDownloadFileExistException);
+                ->andThrow(new NoDownloadFileExistException());
         });
 
         $response = $this->actingAs($this->staff)
@@ -87,7 +87,7 @@ final class DownloadZipActionTest extends TestCase
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
                 ->once()
-                ->andThrow(new ZipArchiveNotSupportedException);
+                ->andThrow(new ZipArchiveNotSupportedException());
         });
 
         $response = $this->actingAs($this->staff)

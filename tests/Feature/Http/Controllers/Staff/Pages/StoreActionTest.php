@@ -50,7 +50,7 @@ final class StoreActionTest extends TestCase
                 [$this->document->id],
                 false,
                 false
-            )->andReturn(new Page);
+            )->andReturn(new Page());
         });
 
         $response = $this->actingAs($this->staff)

@@ -174,7 +174,7 @@ class FormsService
     {
         return DB::transaction(function () use ($form) {
             $form_copy = $form->replicate()->fill([
-                'name' => $form->name.'のコピー',
+                'name' => $form->name . 'のコピー',
                 'is_public' => false,
             ]);
 

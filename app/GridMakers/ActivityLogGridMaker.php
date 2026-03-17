@@ -157,10 +157,10 @@ class ActivityLogGridMaker implements GridMakable
                     if (empty($record->causer_type)) {
                         $item[$key] = '非ログインユーザー';
                     } elseif (! isset($record->causer)) {
-                        $item[$key] = '削除済みユーザー(ID : '.$record->causer_id.')';
+                        $item[$key] = '削除済みユーザー(ID : ' . $record->causer_id . ')';
                     } else {
-                        $item[$key] = $record->causer->student_id.' - '.
-                            $record->causer->name.'(ID : '.$record->causer->id.')';
+                        $item[$key] = $record->causer->student_id . ' - ' .
+                            $record->causer->name . '(ID : ' . $record->causer->id . ')';
                     }
                     break;
                 case 'created_at':
@@ -176,6 +176,6 @@ class ActivityLogGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Activity;
+        return new Activity();
     }
 }

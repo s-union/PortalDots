@@ -277,6 +277,6 @@ class CirclesGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Circle;
+        return new Circle();
     }
 }

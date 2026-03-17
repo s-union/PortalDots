@@ -22,7 +22,7 @@ class EditAction extends Controller
         $member_ids = '';
         $members = $circle->users->filter(fn($user) => ! $user->pivot->is_leader);
         foreach ($members as $member) {
-            $member_ids .= $member->student_id."\r\n";
+            $member_ids .= $member->student_id . "\r\n";
         }
 
         return view('staff.circles.form')

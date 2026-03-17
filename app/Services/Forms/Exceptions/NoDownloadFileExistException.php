@@ -10,4 +10,6 @@ use Exception;
  * ZIPダウンロード機能において、ダウンロード対象となる
  * ZIPファイルがない場合にスローされる例外
  */
-class NoDownloadFileExistException extends Exception {}
+class NoDownloadFileExistException extends Exception
+{
+}

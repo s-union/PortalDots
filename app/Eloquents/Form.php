@@ -175,6 +175,7 @@ class Form extends Model
     {
         return $this->open_at->lte(now()) && $this->close_at->gte(now());
     }
+
     protected function casts(): array
     {
         return [

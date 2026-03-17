@@ -63,11 +63,11 @@ final class DownloadZipServiceTest extends TestCase
 
         $count = 0;
         foreach ($this->questions as $question) {
-            $filename = 'testfile_'.sha1($this->answer->id.'_'.$question->id).'.png';
+            $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
             $this->answer_details[] = AnswerDetail::factory()->create([
                 'answer_id' => $this->answer->id,
                 'question_id' => $question->id,
-                'answer' => 'answer_details/'.$filename,
+                'answer' => 'answer_details/' . $filename,
             ]);
             Storage::putFileAs('answer_details', $example_file, $filename);
 
@@ -82,11 +82,11 @@ final class DownloadZipServiceTest extends TestCase
         ]);
 
         foreach ($this->questions as $question) {
-            $filename = 'testfile_'.sha1($this->another_answer->id.'_'.$question->id).'.png';
+            $filename = 'testfile_' . sha1($this->another_answer->id . '_' . $question->id) . '.png';
             $this->another_answer_details[] = AnswerDetail::factory()->create([
                 'answer_id' => $this->another_answer->id,
                 'question_id' => $question->id,
-                'answer' => 'answer_details/'.$filename,
+                'answer' => 'answer_details/' . $filename,
             ]);
             Storage::putFileAs('answer_details', $example_file, $filename);
         }
@@ -95,11 +95,11 @@ final class DownloadZipServiceTest extends TestCase
     protected function tearDown(): void
     {
         foreach ($this->questions as $question) {
-            $filename = 'testfile_'.sha1($this->answer->id.'_'.$question->id).'.png';
-            $another_filename = 'testfile_'.sha1($this->another_answer->id.'_'.$question->id).'.png';
+            $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
+            $another_filename = 'testfile_' . sha1($this->another_answer->id . '_' . $question->id) . '.png';
 
-            Storage::delete('answer_details/'.$filename);
-            Storage::delete('answer_details/'.$another_filename);
+            Storage::delete('answer_details/' . $filename);
+            Storage::delete('answer_details/' . $another_filename);
         }
 
         parent::tearDown();
@@ -118,7 +118,7 @@ final class DownloadZipServiceTest extends TestCase
 
             $count = 0;
             foreach ($this->questions as $question) {
-                $filename = 'testfile_'.sha1($this->answer->id.'_'.$question->id).'.png';
+                $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
 
                 $mock->shouldReceive('addFile')
                     ->ordered()
@@ -132,7 +132,7 @@ final class DownloadZipServiceTest extends TestCase
             }
 
             foreach ($this->questions as $question) {
-                $filename = 'testfile_'.sha1($this->another_answer->id.'_'.$question->id).'.png';
+                $filename = 'testfile_' . sha1($this->another_answer->id . '_' . $question->id) . '.png';
 
                 $mock->shouldReceive('addFile')
                     ->ordered()

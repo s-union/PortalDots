@@ -139,6 +139,6 @@ class PagesGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Page;
+        return new Page();
     }
 }

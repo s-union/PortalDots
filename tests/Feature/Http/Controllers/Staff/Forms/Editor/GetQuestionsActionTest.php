@@ -44,7 +44,7 @@ final class GetQuestionsActionTest extends TestCase
 
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
-            ->get(route('staff.forms.editor.api', ['form' => $this->form]).'/get_questions');
+            ->get(route('staff.forms.editor.api', ['form' => $this->form]) . '/get_questions');
 
         $response->assertStatus(200);
         $this->assertSame(1, $response[0]['priority']);
@@ -67,7 +67,7 @@ final class GetQuestionsActionTest extends TestCase
 
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
-            ->get(route('staff.forms.editor.api', ['form' => $this->form]).'/get_questions');
+            ->get(route('staff.forms.editor.api', ['form' => $this->form]) . '/get_questions');
 
         $response->assertStatus(200);
         $this->assertTrue($response[0]['is_permanent']);

@@ -49,11 +49,11 @@ final class ShowActionTest extends TestCase
         $this->answer = Answer::factory()->create();
 
         $example_file = new File(base_path('tests/TestFile.png'));
-        $filename = 'testfile_'.sha1($this->answer->id.'_'.$this->question->id).'.png';
+        $filename = 'testfile_' . sha1($this->answer->id . '_' . $this->question->id) . '.png';
         $this->answer_details[] = AnswerDetail::factory()->create([
             'answer_id' => $this->answer->id,
             'question_id' => $this->question->id,
-            'answer' => 'answer_details/'.$filename,
+            'answer' => 'answer_details/' . $filename,
         ]);
         Storage::putFileAs('answer_details', $example_file, $filename);
 

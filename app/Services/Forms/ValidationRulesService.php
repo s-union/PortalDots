@@ -51,19 +51,19 @@ class ValidationRulesService
                 isset($question->number_min) && $isStrict
             ) {
                 // upload に対しては、最小ファイルサイズを検証しない
-                $rule[] = 'min:'.$question->number_min;
+                $rule[] = 'min:' . $question->number_min;
             }
 
             if (
                 in_array($question->type, ['text', 'textarea', 'markdown', 'number', 'checkbox', 'upload'], true) &&
                 isset($question->number_max) && $isStrict
             ) {
-                $rule[] = 'max:'.$question->number_max;
+                $rule[] = 'max:' . $question->number_max;
             }
 
             // ファイルの種類チェック
             if ($question->type === 'upload') {
-                $rule[] = 'mimes:'.\implode(',', $question->allowed_types_array);
+                $rule[] = 'mimes:' . \implode(',', $question->allowed_types_array);
             }
 
             // ファイルアップロード設問において、回答が "__KEEP__" だった場合、
@@ -76,11 +76,11 @@ class ValidationRulesService
                 $rule = ['required'];
             }
 
-            $rules['answers.'.$question->id] = $rule;
+            $rules['answers.' . $question->id] = $rule;
 
             // 用意された選択肢の中から選択されているか
             if (in_array($question->type, ['radio', 'select', 'checkbox'], true)) {
-                $rules['answers.'.$question->id.'.*'] = Rule::in($question->options_array);
+                $rules['answers.' . $question->id . '.*'] = Rule::in($question->options_array);
             }
         }
 
@@ -89,6 +89,6 @@ class ValidationRulesService
 
     public function getAttributesFromForm(Form $form)
     {
-        return $form->questions->mapWithKeys(fn($question) => ['answers.'.$question->id => $question->name]);
+        return $form->questions->mapWithKeys(fn($question) => ['answers.' . $question->id => $question->name]);
     }
 }

@@ -85,7 +85,7 @@ trait UseEloquent
                         };
 
                         $db_query->whereIn(
-                            $this->model()->getTable().'.'.$this->model()->getKeyName(),
+                            $this->model()->getTable() . '.' . $this->model()->getKeyName(),
                             $sub_query_function,
                             $filter_mode
                         );
@@ -122,13 +122,13 @@ trait UseEloquent
                             $pivot_sub_query->from($pivot)
                                 ->select("{$pivot}.{$foreign_key}")
                                 ->whereIn(
-                                    $pivot.'.'.$options->getRelatedPivotKey(),
+                                    $pivot . '.' . $options->getRelatedPivotKey(),
                                     $related_sub_query_function
                                 );
                         };
 
                         $db_query->whereIn(
-                            $this->model()->getTable().'.'.$this->model()->getKeyName(),
+                            $this->model()->getTable() . '.' . $this->model()->getKeyName(),
                             $sub_query_function,
                             $filter_mode
                         );
@@ -159,7 +159,7 @@ trait UseEloquent
                         };
 
                         $db_query->whereIn(
-                            $this->model()->getTable().'.'.$key_name,
+                            $this->model()->getTable() . '.' . $key_name,
                             $sub_query_function,
                             $filter_mode
                         );
@@ -183,7 +183,7 @@ trait UseEloquent
         $query_value_for_sql = $filter_query->getValue();
 
         if (in_array($filter_query->getOperator(), ['like', 'not like'], true)) {
-            $query_value_for_sql = '%'.$filter_query->getValue().'%';
+            $query_value_for_sql = '%' . $filter_query->getValue() . '%';
         }
 
         switch ($type) {

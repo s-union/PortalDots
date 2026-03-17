@@ -16,7 +16,9 @@ class UpdatePolicy
      *
      * @return void
      */
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 
     public function __invoke(User $user, Circle $circle)
     {

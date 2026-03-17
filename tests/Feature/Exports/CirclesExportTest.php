@@ -112,7 +112,7 @@ final class CirclesExportTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function map_企画情報のフォーマットが正常に行われる()
     {
-        $circlesExport = new CirclesExport;
+        $circlesExport = new CirclesExport();
 
         $this->assertEquals(
             [
@@ -171,7 +171,7 @@ final class CirclesExportTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function headings_ヘッダーが作成される()
     {
-        $circlesExport = new CirclesExport;
+        $circlesExport = new CirclesExport();
 
         $this->assertSame(
             [

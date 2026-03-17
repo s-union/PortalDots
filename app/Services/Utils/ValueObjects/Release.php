@@ -33,8 +33,7 @@ final readonly class Release
          * リリースノートテキスト(Markdownテキスト)
          */
         private string $body
-    )
-    {
+    ) {
     }
 
     public function getVersion(): Version

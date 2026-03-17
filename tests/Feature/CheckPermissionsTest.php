@@ -135,10 +135,10 @@ final class CheckPermissionsTest extends TestCase
                 $this->user->syncPermissions([$permission]);
                 $response = $this->actingAs($this->user)
                     ->withSession(['staff_authorized' => true])
-                    ->get(route($route_name_prefix.'.index'));
+                    ->get(route($route_name_prefix . '.index'));
                 $this->assertTrue(
                     $response->isOk(),
-                    '権限 '.$permission.' で '.$route_name_prefix.' にアクセスできません'
+                    '権限 ' . $permission . ' で ' . $route_name_prefix . ' にアクセスできません'
                 );
             }
         }
@@ -156,12 +156,12 @@ final class CheckPermissionsTest extends TestCase
 
                 $response = $this->actingAs($this->user)
                     ->withSession(['staff_authorized' => true])
-                    ->get(route($route_name_prefix.'.index'));
+                    ->get(route($route_name_prefix . '.index'));
                 $this->assertEquals(
                     403,
                     $response->getStatusCode(),
-                    '権限がない場合は '.$route_name_prefix.
-                        ' にアクセスできないようにする必要があります。権限 : '.
+                    '権限がない場合は ' . $route_name_prefix .
+                        ' にアクセスできないようにする必要があります。権限 : ' .
                         $permission
                 );
             }

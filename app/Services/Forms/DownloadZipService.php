@@ -17,8 +17,7 @@ class DownloadZipService
          * ZipArchive インスタンス
          */
         private readonly ZipArchive $zip
-    )
-    {
+    ) {
     }
 
     /**
@@ -52,14 +51,14 @@ class DownloadZipService
         $tuples = array_filter($tuples);
 
         if (! is_array($tuples) || count($tuples) === 0) {
-            throw new NoDownloadFileExistException;
+            throw new NoDownloadFileExistException();
         }
 
-        $zip_filename = 'uploads_'.$form->id.'_'.date('Y-m-d_H-i-s').'.zip';
+        $zip_filename = 'uploads_' . $form->id . '_' . date('Y-m-d_H-i-s') . '.zip';
         $zip_path = storage_path("app/answer_details_zip/{$zip_filename}");
 
         if ($this->zip->open($zip_path, ZipArchive::CREATE) !== true) {
-            throw new ZipArchiveNotSupportedException;
+            throw new ZipArchiveNotSupportedException();
         }
 
         foreach ($tuples as $tuple) {

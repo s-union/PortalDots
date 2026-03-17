@@ -101,6 +101,6 @@ class DocumentsGridMaker implements GridMakable
 
     protected function model(): Model
     {
-        return new Document;
+        return new Document();
     }
 }
