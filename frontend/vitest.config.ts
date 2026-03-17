@@ -4,7 +4,7 @@ import VueRouter from "vue-router/vite";
 import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
-    plugins: [VueRouter({ dts: false }), vue()],
+    plugins: [VueRouter(), vue()],
     resolve: {
         alias: {
             "@": fileURLToPath(new URL("./src", import.meta.url)),

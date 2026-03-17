@@ -71,16 +71,18 @@ describe("UserSettingsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/profile") && method === "PUT") {
+                if (url.includes("/session/profile") && method === "PUT") {
                     return jsonResponse({
                         id: "demo-user",
                         displayName: "Updated Demo User",
                     });
                 }
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                if (url.includes("/session/bootstrap") && method === "GET") {
                     return jsonResponse({
                         csrfToken: "csrf-token",
                         currentCircle: {
@@ -158,9 +160,11 @@ describe("UserSettingsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/password") && method === "PUT") {
+                if (url.includes("/session/password") && method === "PUT") {
                     return new Response(null, { status: 204 });
                 }
 
@@ -276,9 +280,11 @@ describe("UserSettingsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                if (url.includes("/session/bootstrap") && method === "GET") {
                     return jsonResponse({
                         csrfToken: "csrf-token",
                         currentCircle: {
@@ -310,6 +316,43 @@ describe("UserSettingsPage", () => {
 
         expect(document.documentElement.classList.contains("theme-dark")).toBe(true);
         expect(document.cookie).toContain("ui_theme=dark");
+    });
+
+    it("renders only the appearance tab for guests", async () => {
+        const pinia = createPinia();
+        setActivePinia(pinia);
+
+        const router = createRouter({
+            history: createMemoryHistory(),
+            routes: [
+                { path: "/", component: { template: "<div>home</div>" } },
+                { path: "/workspace/settings/appearance", component: UserSettingsAppearancePage },
+                { path: "/workspace/settings", component: UserSettingsPage },
+                { path: "/workspace/settings/password", component: UserSettingsPasswordPage },
+                { path: "/workspace/settings/delete", component: UserSettingsDeletePage },
+            ],
+        });
+        await router.push("/workspace/settings/appearance");
+        await router.isReady();
+
+        vi.stubGlobal("fetch", vi.fn());
+
+        const wrapper = mount(UserSettingsAppearancePage, {
+            global: {
+                plugins: [pinia, router, createQueryPlugin()],
+            },
+        });
+        await flushPromises();
+
+        const tabLinks = wrapper.findAllComponents({ name: "RouterLink" });
+        expect(tabLinks.some((link) => link.props("to") === "/workspace/settings/appearance")).toBe(
+            true,
+        );
+        expect(tabLinks.some((link) => link.props("to") === "/workspace/settings")).toBe(false);
+        expect(tabLinks.some((link) => link.props("to") === "/workspace/settings/password")).toBe(
+            false,
+        );
+        expect(wrapper.text()).toContain("ワークスペースへ戻る");
     });
 
     it("deletes the account and redirects to home when allowed", async () => {
@@ -354,9 +397,11 @@ describe("UserSettingsPage", () => {
                     : input instanceof URL
                       ? input.toString()
                       : input.url;
-            const method = init?.method ?? "GET";
+            const method = (
+                init?.method ?? (input instanceof Request ? input.method : "GET")
+            ).toUpperCase();
 
-            if (url.endsWith("/session/account") && method === "DELETE") {
+            if (url.includes("/session/account") && method === "DELETE") {
                 return new Response(null, { status: 204 });
             }
 
@@ -539,9 +584,11 @@ describe("UserSettingsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/account") && method === "DELETE") {
+                if (url.includes("/session/account") && method === "DELETE") {
                     return jsonResponse(
                         {
                             message: "validation_error",

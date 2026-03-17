@@ -26,7 +26,7 @@ export function useUserSettingsPage(activeTab: UserSettingsTab) {
     const deleteAccountMutation = useDeleteOwnAccountMutation();
     const { theme, setTheme } = useUiThemePreference();
 
-    const tabs = computed(() => buildUserSettingsTabs(activeTab));
+    const tabs = computed(() => buildUserSettingsTabs(activeTab, sessionStore.isAuthenticated));
     const hasPrivilegedRole = computed(() =>
         hasStaffAccess(sessionStore.roles, sessionStore.permissions),
     );
@@ -47,6 +47,9 @@ export function useUserSettingsPage(activeTab: UserSettingsTab) {
     });
     const forgotPasswordHref = computed(() => "/password/reset");
     const workspaceBackLink = computed(() => {
+        if (!sessionStore.isAuthenticated) {
+            return "/";
+        }
         if (route.path.startsWith("/workspace/settings")) {
             return "/workspace";
         }

@@ -68,85 +68,78 @@
    Base — matches resources/sass/v2/layout/_base.scss
    ======================================================================== */
 
-:root {
-    color-scheme: light;
-    font-family: var(--font-sans);
-    font-size: 15px;
-    line-height: 1.7;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    accent-color: var(--color-primary);
-    --font-weight-bold: 600;
-}
-
-html.theme-light,
-html.theme-system {
-    color-scheme: light;
-}
-
-body {
-    margin: 0;
-    min-width: 320px;
-    background: var(--color-base);
-    color: var(--color-body);
-    font-weight: 400;
-}
-
-body:not(.is-in-iframe, .has-content-fill) {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 4.5rem);
-}
-
-@media screen and (min-width: 1001px) {
-    body:not(.is-in-iframe, .has-content-fill) {
-        padding-bottom: 0;
-    }
-}
-
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: rgb(0 0 0 / 0%);
-}
-
-*:focus-visible {
-    outline: 3px solid var(--color-focus-primary);
-}
-
-a {
-    color: var(--color-primary);
-    text-decoration: none;
-}
-
-a:hover,
-a:focus {
-    text-decoration: underline;
-}
-
-strong,
-b {
-    font-weight: var(--font-weight-bold);
-}
-
-hr {
-    border: 0;
-    border-top: 1px solid var(--color-border);
-    margin: 1.5rem 0;
-    padding: 0;
-}
-
-p {
-    margin: 0 0 1rem;
-}
-
-p:first-child {
-    margin-top: 0;
-}
-p:last-child {
-    margin-bottom: 0;
-}
-
-@media screen and (max-width: 350px) {
+@layer base {
     :root {
-        font-size: 12px;
+        color-scheme: light;
+        font-family: var(--font-sans);
+        font-size: 15px;
+        line-height: 1.7;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        accent-color: var(--color-primary);
+        --font-weight-bold: 600;
+    }
+
+    html.theme-light,
+    html.theme-system {
+        color-scheme: light;
+    }
+
+    body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--color-base);
+        color: var(--color-body);
+        font-weight: 400;
+    }
+
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: rgb(0 0 0 / 0%);
+    }
+
+    *:focus-visible {
+        outline: 3px solid var(--color-focus-primary);
+    }
+
+    a {
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
+    a:hover,
+    a:focus {
+        text-decoration: underline;
+    }
+
+    strong,
+    b {
+        font-weight: var(--font-weight-bold);
+    }
+
+    hr {
+        border: 0;
+        border-top: 1px solid var(--color-border);
+        margin: 1.5rem 0;
+        padding: 0;
+    }
+
+    p {
+        margin: 0 0 1rem;
+    }
+
+    p:first-child {
+        margin-top: 0;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+
+    @media screen and (max-width: 350px) {
+        :root {
+            font-size: 12px;
+        }
     }
 }
 

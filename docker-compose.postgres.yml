@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17
     ports:
-      - "55432:5432"
+      - "127.0.0.1:55432:5432"
     environment:
       POSTGRES_DB: portaldots_rebuild
       POSTGRES_USER: portaldots

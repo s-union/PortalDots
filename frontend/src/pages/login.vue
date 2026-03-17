@@ -22,6 +22,11 @@ const form = reactive({
 
 const errorMessage = ref("");
 
+function fillExampleCredentials() {
+  form.loginId = "example@portaldots.com";
+  form.password = "password";
+}
+
 async function handleSubmit() {
   errorMessage.value = "";
 
@@ -95,15 +100,18 @@ async function handleSubmit() {
             <strong>{{ isSubmitting ? "ログイン中..." : "ログイン" }}</strong>
           </button>
 
-          <a
+          <button
             class="rounded border border-border bg-surface px-4 py-3 text-sm text-body transition hover:bg-surface-light"
-            href="/register"
+            type="button"
+            @click="fillExampleCredentials"
           >
-            はじめての方は新規ユーザー登録
-          </a>
+            開発用アカウントを入力
+          </button>
         </form>
 
         <p class="mt-6 text-sm leading-7 text-muted">
+          開発環境では <strong>example@portaldots.com</strong> /
+          <strong>password</strong> でログインできます。<br />
           なお、認証フロー内のメール送信は現在モックです。実メールが無くても検証を進められます。
         </p>
       </div>

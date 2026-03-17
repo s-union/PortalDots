@@ -83,11 +83,11 @@ func (h *workspaceHandlers) getPage(c echo.Context) error {
 		Title:       page.Title,
 		Body:        page.Body,
 		PublishedAt: page.PublishedAt,
-		Documents:   pageDocuments(h.documents, page.CircleID, page.DocumentIDs, false),
+		Documents:   pageDocuments(h.documents, page.CircleID, page.DocumentIDs, false, false),
 	})
 }
 
-func pageDocuments(docs document.Repository, circleID string, documentIDs []string, forStaff bool) []pageDocumentResponse {
+func pageDocuments(docs document.Repository, circleID string, documentIDs []string, forStaff bool, publicDownload bool) []pageDocumentResponse {
 	documents := make([]pageDocumentResponse, 0, len(documentIDs))
 	for _, documentID := range documentIDs {
 		var (
@@ -97,6 +97,10 @@ func pageDocuments(docs document.Repository, circleID string, documentIDs []stri
 
 		if forStaff {
 			if doc, found := docs.FindByCircleForStaff(circleID, documentID); found {
+				downloadURL := "/v1/documents/" + doc.ID
+				if publicDownload {
+					downloadURL = "/v1/public/documents/" + doc.ID
+				}
 				documentFound = true
 				documentValue = pageDocumentResponse{
 					ID:          doc.ID,
@@ -106,11 +110,15 @@ func pageDocuments(docs document.Repository, circleID string, documentIDs []stri
 					Extension:   doc.Extension,
 					SizeBytes:   doc.SizeBytes,
 					UpdatedAt:   doc.UpdatedAt,
-					DownloadURL: "/v1/documents/" + doc.ID,
+					DownloadURL: downloadURL,
 				}
 			}
 		} else {
 			if doc, found := docs.FindByCircle(circleID, documentID); found {
+				downloadURL := "/v1/documents/" + doc.ID
+				if publicDownload {
+					downloadURL = "/v1/public/documents/" + doc.ID
+				}
 				documentFound = true
 				documentValue = pageDocumentResponse{
 					ID:          doc.ID,
@@ -120,7 +128,7 @@ func pageDocuments(docs document.Repository, circleID string, documentIDs []stri
 					Extension:   doc.Extension,
 					SizeBytes:   doc.SizeBytes,
 					UpdatedAt:   doc.UpdatedAt,
-					DownloadURL: "/v1/documents/" + doc.ID,
+					DownloadURL: downloadURL,
 				}
 			}
 		}

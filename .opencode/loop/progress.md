@@ -13,3 +13,10 @@
 - 分割後の共通処理は `frontend/src/features/session/settings.ts` に寄せると、tab strip と戻る導線、mutation 取得、削除条件文言を各画面で揃えやすい。
 - `TabStrip` の RouterLink は test 時に素の `<a>` になり `href` が出ないことがあるため、`props("to")` ベースの検証が安定する。
 - Ralph Loop の finishing で `tasks.json` を更新するときは、既存の配列閉じ忘れで JSON を壊しやすいので、完了タスク追加時は root `completedAt` を入れる前に一度整形を確認する。
+- ゲストホームは `frontend/src/features/public-home/api.ts` で `/v1/public/home` を引き、ログイン方法・公開参加登録・公開お知らせ・公開配布資料を 1 payload で描画すると demo に寄せやすい。
+- ゲスト配布資料は認証必須の `/v1/documents/:id` を使えないため、`/v1/public/documents/:documentID` を別で生やし、フロントは `/public/documents/[documentId]` 経由でリダイレクトすると安全。
+- 未ログイン時のユーザー設定は Laravel と同じく外観だけ見せるのが自然で、`buildUserSettingsTabs()` を認証状態で分岐させると `appearance` のみ表示できる。
+- 今回の frontend unit test 失敗は主に各 test がローカル `QueryClient` を使う一方、router guard や一部 API フローが共有 `frontend/src/app/providers/queryClient.ts` を使っているズレが原因。mock を足すだけでは直らず、test helper 側の query client 注入や共有 client の reset が別タスクで必要。
+- `frontend/src/pages/index.test.ts` と `frontend/src/pages/public/*` の今回の component test は、`fetch` を直接 stub するより composable (`usePublicHomeQuery`, `usePublicPagesQuery`, `usePublicDocumentsQuery` など) を module mock した方が安定する。route guard / Vue Query の評価タイミング差分を切り離せるため、画面レンダリングの検証に集中できる。
+- localhost の `/v1/public/pages` と `/v1/public/documents` が 404 のときは、古い `go run` 生成バイナリが残っていることがある。`mise run backend-dev` 経由の残存 process を止めたうえで、`backend/` で `go run ./cmd/api` を直接再起動すると新ルートが反映された。
+- 今回の比較対象は UI/CSS 差分であり、demo の文言・fixture 内容そのものを localhost へ移植する方針は採らない。内容差分は既知の前提として扱い、レイアウト・余白・タイポグラフィ・色・ボーダー・影・表示密度を優先して揃える。

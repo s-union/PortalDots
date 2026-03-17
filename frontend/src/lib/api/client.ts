@@ -10,15 +10,10 @@ export const apiBaseUrl = String(
 ).replace(/\/$/, "");
 
 const fetchWithCredentials: typeof fetch = async (input, init) => {
-    const requestInit: RequestInit = {
+    return globalThis.fetch(input, {
         ...init,
-        body: init?.body ?? (input instanceof Request ? input.body : undefined),
         credentials: "include",
-        headers: init?.headers ?? (input instanceof Request ? input.headers : undefined),
-        method: init?.method ?? (input instanceof Request ? input.method : undefined),
-    };
-
-    return globalThis.fetch(input, requestInit);
+    });
 };
 
 export const apiClient = createApiClient({

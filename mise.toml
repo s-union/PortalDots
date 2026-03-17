@@ -9,10 +9,14 @@ prek = "latest"
 description = "Install dependencies for the new frontend workspace"
 run = "pnpm install"
 
+[tasks.dev]
+description = "Start db, backend, and frontend dev servers"
+run = "go run ./scripts/dev.go"
+
 [tasks.frontend-dev]
 description = "Start vue vite dev server"
 dir = "frontend"
-run = "pnpm run dev"
+run = "pnpm run dev -- --host 127.0.0.1"
 
 [tasks.frontend-check]
 description = "Run frontend static checks"
@@ -26,6 +30,18 @@ run = "pnpm format"
 description = "Start the new Go API"
 dir = "backend"
 run = "go run ./cmd/api"
+
+[tasks.db-up]
+description = "Start local PostgreSQL container"
+run = "docker compose -f docker-compose.postgres.yml up -d postgres"
+
+[tasks.db-down]
+description = "Stop local PostgreSQL container"
+run = "docker compose -f docker-compose.postgres.yml down"
+
+[tasks."db:delete"]
+description = "Stop local PostgreSQL container and delete its volume"
+run = "docker compose -f docker-compose.postgres.yml down -v"
 
 [tasks.backend-migrate]
 description = "Apply backend SQL migrations against PORTALDOTS_DATABASE_URL"

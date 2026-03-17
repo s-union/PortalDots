@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE IF NOT EXISTS user_permissions (
     user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     permission text NOT NULL,
@@ -7,3 +8,8 @@ CREATE TABLE IF NOT EXISTS user_permissions (
 
 CREATE INDEX IF NOT EXISTS user_permissions_permission_idx
     ON user_permissions (permission);
+
+-- +goose Down
+DROP INDEX IF EXISTS user_permissions_permission_idx;
+
+DROP TABLE IF EXISTS user_permissions;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    requiresAuth: true,
+    requiresAuth: false,
   },
 });
 
@@ -45,7 +45,7 @@ const themeOptions: Array<{
 
     <SettingsSection title="外観">
       <SettingsRow>
-        <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+        <div class="grid gap-4 min-[1001px]:grid-cols-[14rem_minmax(0,1fr)] min-[1001px]:gap-6">
           <div class="space-y-1">
             <p class="text-sm font-semibold text-body">テーマ</p>
             <p class="text-xs leading-6 text-muted">

@@ -248,6 +248,15 @@ func NewServerWithDependencies(
 		users:             users,
 	}
 
+	publicHomeH := &publicHomeHandlers{
+		circles:            circles,
+		documents:          documents,
+		forms:              forms,
+		pages:              pages,
+		participationTypes: participationTypes,
+		portal:             portal,
+	}
+
 	staffVerifyH := &staffVerifyHandlers{
 		sharedDeps:      shared,
 		staffVerifyCode: cfg.StaffVerifyCode,
@@ -346,7 +355,7 @@ func NewServerWithDependencies(
 	})
 
 	v1 := e.Group("/v1")
-	registerPublicRoutes(v1, authH, staffVerifyH)
+	registerPublicRoutes(v1, authH, publicHomeH, staffVerifyH)
 	registerStaffRoutes(v1, staffAdminH, staffCircleH, staffDocumentH, staffFormH, staffMastersH, staffPageH, staffPermissionH, staffUsersH)
 	registerWorkspaceRoutes(v1, workspaceH)
 

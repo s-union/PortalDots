@@ -37,6 +37,7 @@ coverage.xml
 .env
 .env.backup
 .env.production
+.env.local
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
@@ -44,3 +45,5 @@ auth.json
 npm-debug.log
 yarn-error.log
 pnpm-debug.log
+/frontend/.env
+/backend/.env

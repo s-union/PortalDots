@@ -93,16 +93,17 @@ const generalLinks = computed(() => [
     active: route.path === "/",
   },
   {
-    to: "/workspace/pages",
+    to: sessionStore.isAuthenticated ? "/workspace/pages" : "/public/pages",
     label: "お知らせ",
     iconClass: "fas fa-bullhorn fa-fw",
-    active: route.path.startsWith("/workspace/pages"),
+    active: route.path.startsWith("/workspace/pages") || route.path.startsWith("/public/pages"),
   },
   {
-    to: "/workspace/documents",
+    to: sessionStore.isAuthenticated ? "/workspace/documents" : "/public/documents",
     label: "配布資料",
     iconClass: "far fa-file-alt fa-fw",
-    active: route.path.startsWith("/workspace/documents"),
+    active:
+      route.path.startsWith("/workspace/documents") || route.path.startsWith("/public/documents"),
   },
   {
     to: "/workspace/forms",
@@ -119,11 +120,10 @@ const generalLinks = computed(() => [
     hidden: !sessionStore.isAuthenticated,
   },
   {
-    to: "/workspace/settings",
+    to: sessionStore.isAuthenticated ? "/workspace/settings" : "/workspace/settings/appearance",
     label: "ユーザー設定",
     iconClass: "fas fa-cog fa-fw",
     active: route.path.startsWith("/workspace/settings"),
-    hidden: !sessionStore.isAuthenticated,
   },
 ]);
 
@@ -135,17 +135,18 @@ const mobileTabs = computed(() => [
     active: route.path === "/",
   },
   {
-    to: "/workspace/pages",
+    to: sessionStore.isAuthenticated ? "/workspace/pages" : "/public/pages",
     label: "お知らせ",
     iconClass: "fas fa-bullhorn",
-    active: route.path.startsWith("/workspace/pages"),
+    active: route.path.startsWith("/workspace/pages") || route.path.startsWith("/public/pages"),
     showNotifier: false,
   },
   {
-    to: "/workspace/documents",
+    to: sessionStore.isAuthenticated ? "/workspace/documents" : "/public/documents",
     label: "配布資料",
     iconClass: "far fa-file-alt",
-    active: route.path.startsWith("/workspace/documents"),
+    active:
+      route.path.startsWith("/workspace/documents") || route.path.startsWith("/public/documents"),
   },
   {
     to: "/workspace/forms",
@@ -303,6 +304,13 @@ const pageTitle = computed(() => {
   return activeLink?.label ?? "PortalDots";
 });
 
+const mainContentClass = computed(() =>
+  cn(
+    "pt-20 pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0",
+    !isStaffRoute.value && "max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]",
+  ),
+);
+
 async function handleLogout() {
   await logoutMutation.mutateAsync();
   await router.push("/login");
@@ -442,7 +450,7 @@ async function handleLogout() {
     </aside>
 
     <!-- Main Content: offset by navbar height (pt-20) and drawer width (pl-*) -->
-    <main class="pt-20 pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0">
+    <main :class="mainContentClass">
       <RouterView />
       <footer class="mt-6 border-t border-border px-6 py-6 text-center">
         <PublicFooterLinks app-name="PortalDots" />

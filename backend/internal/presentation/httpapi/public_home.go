@@ -1,0 +1,355 @@
+package httpapi
+
+import (
+	"net/http"
+	"slices"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
+	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
+	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
+	"github.com/s-union/PortalDots/backend/internal/domain/page"
+	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
+	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
+)
+
+type publicHomeHandlers struct {
+	circles            circle.Catalog
+	documents          backenddocument.Repository
+	forms              backendform.Repository
+	pages              page.Repository
+	participationTypes participationtype.Repository
+	portal             portalsetting.Repository
+}
+
+type publicHomeResponse struct {
+	AppName            string                          `json:"appName"`
+	PortalDescription  string                          `json:"portalDescription"`
+	PortalAdminName    string                          `json:"portalAdminName"`
+	PortalContactEmail string                          `json:"portalContactEmail"`
+	LoginMethods       []publicHomeLoginMethodResponse `json:"loginMethods"`
+	PinnedPages        []publicPinnedPageResponse      `json:"pinnedPages"`
+	ParticipationTypes []participationTypeResponse     `json:"participationTypes"`
+	Pages              []publicHomePageResponse        `json:"pages"`
+	Documents          []publicHomeDocumentResponse    `json:"documents"`
+}
+
+type publicHomeLoginMethodResponse struct {
+	RoleLabel string `json:"roleLabel"`
+	LoginID   string `json:"loginId"`
+	Password  string `json:"password"`
+}
+
+type publicHomePageResponse struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	Summary     string `json:"summary"`
+	PublishedAt string `json:"publishedAt"`
+	IsLimited   bool   `json:"isLimited"`
+}
+
+type publicPinnedPageResponse struct {
+	ID          string                 `json:"id"`
+	Title       string                 `json:"title"`
+	Body        string                 `json:"body"`
+	PublishedAt string                 `json:"publishedAt"`
+	IsLimited   bool                   `json:"isLimited"`
+	Documents   []pageDocumentResponse `json:"documents"`
+}
+
+type publicHomeDocumentResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	IsImportant bool   `json:"isImportant"`
+	IsNew       bool   `json:"isNew"`
+	Extension   string `json:"extension"`
+	SizeBytes   int64  `json:"sizeBytes"`
+	UpdatedAt   string `json:"updatedAt"`
+	DownloadURL string `json:"downloadUrl"`
+}
+
+func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
+	settings, err := h.portal.Get()
+	if err != nil {
+		return internalError(c)
+	}
+
+	participationTypes, err := h.listPublicParticipationTypes()
+	if err != nil {
+		return internalError(c)
+	}
+
+	selectableCircles, err := h.circles.ListSelectable(nil)
+	if err != nil {
+		return internalError(c)
+	}
+
+	return c.JSON(http.StatusOK, publicHomeResponse{
+		AppName:            settings.AppName,
+		PortalDescription:  settings.PortalDescription,
+		PortalAdminName:    settings.PortalAdminName,
+		PortalContactEmail: settings.PortalContactEmail,
+		LoginMethods:       buildPublicHomeLoginMethods(),
+		PinnedPages:        h.collectPinnedPublicPages(selectableCircles),
+		ParticipationTypes: participationTypes,
+		Pages:              h.collectPublicPages(selectableCircles, 3),
+		Documents:          h.collectPublicDocuments(selectableCircles, 3),
+	})
+}
+
+func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
+	selectableCircles, err := h.circles.ListSelectable(nil)
+	if err != nil {
+		return internalError(c)
+	}
+
+	return c.JSON(http.StatusOK, h.collectPublicPages(selectableCircles, 0))
+}
+
+func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
+	pageID := c.Param("pageID")
+	selectableCircles, err := h.circles.ListSelectable(nil)
+	if err != nil {
+		return internalError(c)
+	}
+
+	for _, currentCircle := range selectableCircles {
+		pageValue, found := h.pages.FindByCircle(currentCircle.ID, currentCircle.Tags, pageID)
+		if !found {
+			continue
+		}
+
+		return c.JSON(http.StatusOK, pageDetailResponse{
+			ID:          pageValue.ID,
+			Title:       pageValue.Title,
+			Body:        pageValue.Body,
+			PublishedAt: pageValue.PublishedAt,
+			Documents:   pageDocuments(h.documents, pageValue.CircleID, pageValue.DocumentIDs, false, true),
+		})
+	}
+
+	return errorJSON(c, http.StatusNotFound, "page_not_found")
+}
+
+func (h *publicHomeHandlers) listPublicDocuments(c echo.Context) error {
+	selectableCircles, err := h.circles.ListSelectable(nil)
+	if err != nil {
+		return internalError(c)
+	}
+
+	return c.JSON(http.StatusOK, h.collectPublicDocuments(selectableCircles, 0))
+}
+
+func (h *publicHomeHandlers) getPublicDocument(c echo.Context) error {
+	documentID := c.Param("documentID")
+	selectableCircles, err := h.circles.ListSelectable(nil)
+	if err != nil {
+		return internalError(c)
+	}
+
+	for _, currentCircle := range selectableCircles {
+		documentValue, found := h.documents.FindByCircle(currentCircle.ID, documentID)
+		if !found {
+			continue
+		}
+
+		c.Response().Header().Set(echo.HeaderContentType, documentValue.MimeType)
+		return c.Blob(http.StatusOK, documentValue.MimeType, documentValue.Content)
+	}
+
+	return errorJSON(c, http.StatusNotFound, "document_not_found")
+}
+
+func (h *publicHomeHandlers) listPublicParticipationTypes() ([]participationTypeResponse, error) {
+	items, err := h.participationTypes.List()
+	if err != nil {
+		return nil, err
+	}
+
+	response := make([]participationTypeResponse, 0, len(items))
+	for _, item := range items {
+		formValue, found := h.forms.FindByIDForStaff(item.FormID)
+		if !found || !formValue.IsPublic || !formValue.IsOpen {
+			continue
+		}
+		response = append(response, mapParticipationType(item, formValue))
+	}
+
+	slices.SortFunc(response, func(left, right participationTypeResponse) int {
+		return strings.Compare(left.Name, right.Name)
+	})
+
+	return response, nil
+}
+
+func (h *publicHomeHandlers) collectPublicPages(circles []circle.Circle, limit int) []publicHomePageResponse {
+	pages := make([]publicHomePageResponse, 0)
+	seen := map[string]struct{}{}
+
+	for _, currentCircle := range circles {
+		visiblePages := h.pages.ListByCircle(currentCircle.ID, currentCircle.Tags, "")
+		for _, currentPage := range visiblePages {
+			if _, ok := seen[currentPage.ID]; ok {
+				continue
+			}
+			seen[currentPage.ID] = struct{}{}
+			pages = append(pages, publicHomePageResponse{
+				ID:          currentPage.ID,
+				Title:       currentPage.Title,
+				Summary:     summarizePublicHomeText(currentPage.Body, 120),
+				PublishedAt: currentPage.PublishedAt,
+				IsLimited:   len(currentPage.ViewableTags) > 0,
+			})
+		}
+	}
+
+	slices.SortFunc(pages, func(left, right publicHomePageResponse) int {
+		if left.PublishedAt == right.PublishedAt {
+			return strings.Compare(right.ID, left.ID)
+		}
+		return strings.Compare(right.PublishedAt, left.PublishedAt)
+	})
+
+	if limit > 0 && len(pages) > limit {
+		return slices.Clone(pages[:limit])
+	}
+
+	return pages
+}
+
+func (h *publicHomeHandlers) collectPinnedPublicPages(circles []circle.Circle) []publicPinnedPageResponse {
+	pages := make([]publicPinnedPageResponse, 0)
+	seen := map[string]struct{}{}
+
+	for _, currentCircle := range circles {
+		visiblePages := h.pages.ListByCircleForStaff(currentCircle.ID, "")
+		for _, currentPage := range visiblePages {
+			if _, ok := seen[currentPage.ID]; ok {
+				continue
+			}
+			if !currentPage.IsPinned || !currentPage.IsPublic || !hasVisibleTags(currentPage.ViewableTags, currentCircle.Tags) {
+				continue
+			}
+
+			seen[currentPage.ID] = struct{}{}
+			pages = append(pages, publicPinnedPageResponse{
+				ID:          currentPage.ID,
+				Title:       currentPage.Title,
+				Body:        currentPage.Body,
+				PublishedAt: currentPage.PublishedAt,
+				IsLimited:   len(currentPage.ViewableTags) > 0,
+				Documents:   pageDocuments(h.documents, currentPage.CircleID, currentPage.DocumentIDs, false, true),
+			})
+		}
+	}
+
+	slices.SortFunc(pages, func(left, right publicPinnedPageResponse) int {
+		if left.PublishedAt == right.PublishedAt {
+			return strings.Compare(right.ID, left.ID)
+		}
+		return strings.Compare(right.PublishedAt, left.PublishedAt)
+	})
+
+	return pages
+}
+
+func (h *publicHomeHandlers) collectPublicDocuments(circles []circle.Circle, limit int) []publicHomeDocumentResponse {
+	documents := make([]publicHomeDocumentResponse, 0)
+	seen := map[string]struct{}{}
+
+	for _, currentCircle := range circles {
+		visibleDocuments := h.documents.ListByCircle(currentCircle.ID)
+		for _, currentDocument := range visibleDocuments {
+			if _, ok := seen[currentDocument.ID]; ok {
+				continue
+			}
+			seen[currentDocument.ID] = struct{}{}
+			documents = append(documents, publicHomeDocumentResponse{
+				ID:          currentDocument.ID,
+				Name:        currentDocument.Name,
+				Description: currentDocument.Description,
+				IsImportant: currentDocument.IsImportant,
+				IsNew:       isDocumentNew(currentDocument),
+				Extension:   currentDocument.Extension,
+				SizeBytes:   currentDocument.SizeBytes,
+				UpdatedAt:   currentDocument.UpdatedAt,
+				DownloadURL: "/v1/public/documents/" + currentDocument.ID,
+			})
+		}
+	}
+
+	slices.SortFunc(documents, func(left, right publicHomeDocumentResponse) int {
+		if left.UpdatedAt == right.UpdatedAt {
+			return strings.Compare(right.ID, left.ID)
+		}
+		return strings.Compare(right.UpdatedAt, left.UpdatedAt)
+	})
+
+	if limit > 0 && len(documents) > limit {
+		return slices.Clone(documents[:limit])
+	}
+
+	return documents
+}
+
+func summarizePublicHomeText(value string, maxRunes int) string {
+	normalized := strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
+	if normalized == "" {
+		return ""
+	}
+	if utf8.RuneCountInString(normalized) <= maxRunes {
+		return normalized
+	}
+
+	runes := []rune(normalized)
+	return strings.TrimSpace(string(runes[:maxRunes])) + "..."
+}
+
+func hasVisibleTags(viewableTags []string, currentTags []string) bool {
+	if len(viewableTags) == 0 {
+		return true
+	}
+
+	for _, viewableTag := range viewableTags {
+		for _, currentTag := range currentTags {
+			if viewableTag == currentTag {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {
+	return []publicHomeLoginMethodResponse{
+		{
+			RoleLabel: "管理者",
+			LoginID:   "demo-admin",
+			Password:  "demo-admin",
+		},
+		{
+			RoleLabel: "スタッフ",
+			LoginID:   "demo-staff",
+			Password:  "demo-staff",
+		},
+		{
+			RoleLabel: "スタッフ",
+			LoginID:   "demo-staff-sub",
+			Password:  "demo-staff-sub",
+		},
+		{
+			RoleLabel: "一般ユーザー",
+			LoginID:   "demo-circle",
+			Password:  "demo-circle",
+		},
+		{
+			RoleLabel: "一般ユーザー",
+			LoginID:   "demo-circle-sub",
+			Password:  "demo-circle-sub",
+		},
+	}
+}

@@ -30,7 +30,30 @@
       "status": "done",
       "addedAt": "2026-03-17T01:34:04Z",
       "completedAt": "2026-03-17T01:35:28Z"
+    },
+    {
+      "id": "5",
+      "title": "ゲスト向けホームをデモサイト準拠に寄せる",
+      "description": "未ログイン時のホームを hero、ログイン案内、公開コンテンツ一覧つきの構成へ寄せ、drawer の導線も整える",
+      "status": "done",
+      "addedAt": "2026-03-17T09:58:57Z",
+      "completedAt": "2026-03-17T10:47:00Z"
+    },
+    {
+      "id": "6",
+      "title": "ゲストの外観設定導線を Laravel 互換へ直す",
+      "description": "未ログインでも appearance だけ開けるようにし、settings tab/back link を実態に合わせる",
+      "status": "done",
+      "addedAt": "2026-03-17T09:58:57Z",
+      "completedAt": "2026-03-17T10:47:00Z"
+    },
+    {
+      "id": "7",
+      "title": "ホーム差分のテストとブラウザー確認を完了する",
+      "description": "関連 unit test を更新し、ブラウザーで localhost と demo の見た目差分を再確認する",
+      "status": "in_progress",
+      "addedAt": "2026-03-17T09:58:57Z",
+      "completedAt": null
     }
-  ],
-  "completedAt": "2026-03-17T01:35:28Z"
+  ]
 }

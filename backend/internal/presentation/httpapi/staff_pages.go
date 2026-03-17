@@ -299,7 +299,7 @@ func mapStaffPageDetail(currentPage backendpage.Page) staffPageDetailResponse {
 }
 
 func (h *staffPageHandlers) pageDocuments(circleID string, documentIDs []string, forStaff bool) []pageDocumentResponse {
-	return pageDocuments(h.documents, circleID, documentIDs, forStaff)
+	return pageDocuments(h.documents, circleID, documentIDs, forStaff, false)
 }
 
 func normalizePageDocumentIDs(documentIDs []string) []string {

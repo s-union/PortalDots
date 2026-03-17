@@ -2,7 +2,12 @@ package httpapi
 
 import "github.com/labstack/echo/v4"
 
-func registerPublicRoutes(v1 *echo.Group, authH *authHandlers, staffVerifyH *staffVerifyHandlers) {
+func registerPublicRoutes(v1 *echo.Group, authH *authHandlers, publicHomeH *publicHomeHandlers, staffVerifyH *staffVerifyHandlers) {
+	v1.GET("/public/home", publicHomeH.getPublicHome)
+	v1.GET("/public/pages", publicHomeH.listPublicPages)
+	v1.GET("/public/pages/:pageID", publicHomeH.getPublicPage)
+	v1.GET("/public/documents", publicHomeH.listPublicDocuments)
+	v1.GET("/public/documents/:documentID", publicHomeH.getPublicDocument)
 	v1.GET("/session/bootstrap", authH.sessionBootstrap)
 	v1.PUT("/session/profile", authH.updateProfile)
 	v1.PUT("/session/password", authH.updatePassword)

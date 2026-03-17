@@ -518,6 +518,145 @@ func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 	}
 }
 
+func TestGetPublicHomeReturnsGuestContent(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/home", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response publicHomeResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal public home response: %v", err)
+	}
+
+	if response.AppName != "PortalDots" || response.PortalContactEmail != "contact@example.com" {
+		t.Fatalf("unexpected portal settings: %#v", response)
+	}
+	if len(response.LoginMethods) != 5 {
+		t.Fatalf("expected 5 login methods, got %#v", response.LoginMethods)
+	}
+	if len(response.PinnedPages) != 1 || response.PinnedPages[0].ID != "page-circle-a-pinned" {
+		t.Fatalf("expected pinned public page in default fixtures, got %#v", response.PinnedPages)
+	}
+	if len(response.ParticipationTypes) != 2 {
+		t.Fatalf("expected 2 public participation types, got %#v", response.ParticipationTypes)
+	}
+	if len(response.Pages) != 2 || response.Pages[0].ID != "page-circle-b-1" {
+		t.Fatalf("expected public pages sorted desc, got %#v", response.Pages)
+	}
+	if !response.Pages[0].IsLimited {
+		t.Fatalf("expected tagged public page to be marked limited, got %#v", response.Pages[0])
+	}
+	if len(response.Documents) != 2 || response.Documents[0].ID != "document-circle-b-1" {
+		t.Fatalf("expected public documents sorted desc, got %#v", response.Documents)
+	}
+	if response.Documents[0].DownloadURL != "/v1/public/documents/document-circle-b-1" {
+		t.Fatalf("unexpected public download url: %#v", response.Documents[0])
+	}
+	if strings.Contains(response.Pages[0].Summary, "\n") {
+		t.Fatalf("expected flattened page summary, got %q", response.Pages[0].Summary)
+	}
+}
+
+func TestListPublicPagesReturnsGuestPageCollection(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response []publicHomePageResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal public pages response: %v", err)
+	}
+
+	if len(response) != 2 {
+		t.Fatalf("expected 2 public pages, got %#v", response)
+	}
+	if response[0].ID != "page-circle-b-1" || response[1].ID != "page-circle-a-1" {
+		t.Fatalf("expected sorted public pages, got %#v", response)
+	}
+}
+
+func TestGetPublicPageReturnsGuestPageDetail(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/page-circle-a-1", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response pageDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal public page detail response: %v", err)
+	}
+
+	if response.ID != "page-circle-a-1" || response.Title != "搬入時間のお知らせ" {
+		t.Fatalf("unexpected public page detail: %#v", response)
+	}
+	if len(response.Documents) != 1 || response.Documents[0].DownloadURL != "/v1/public/documents/document-circle-a-1" {
+		t.Fatalf("expected public page document urls, got %#v", response.Documents)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/page-circle-a-pinned", nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestListPublicDocumentsReturnsGuestDocumentCollection(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response []publicHomeDocumentResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal public documents response: %v", err)
+	}
+
+	if len(response) != 2 || response[0].ID != "document-circle-b-1" {
+		t.Fatalf("expected public documents sorted desc, got %#v", response)
+	}
+}
+
+func TestGetPublicDocumentDownloadsGuestFile(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents/document-circle-a-1", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if recorder.Body.String() != "Aブロックの搬入は 9:00 から 9:30 です。" {
+		t.Fatalf("unexpected public document body: %s", recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents/document-circle-b-private", nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestSetCurrentCircleUpdatesBootstrap(t *testing.T) {
 	t.Parallel()
 

@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	if err := config.LoadDotEnv(".env"); err != nil {
+		log.Fatal(err)
+	}
+
 	cfg := config.FromEnv()
 
 	store, err := database.Open(context.Background(), cfg.DatabaseURL)

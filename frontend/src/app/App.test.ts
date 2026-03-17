@@ -1,8 +1,24 @@
-import { describe, expect, it } from "vitest";
+import { ref } from "vue";
+import { describe, expect, it, vi } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createPinia, setActivePinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
+import { useSessionStore } from "@/features/session/store";
+
+const appApiMocks = vi.hoisted(() => ({
+    useSessionBootstrapQuery: vi.fn(),
+    useLogoutMutation: vi.fn(),
+}));
+
+vi.mock("@/features/session/api", () => ({
+    useSessionBootstrapQuery: appApiMocks.useSessionBootstrapQuery,
+}));
+
+vi.mock("@/features/auth/api", () => ({
+    useLogoutMutation: appApiMocks.useLogoutMutation,
+}));
+
 import App from "./App.vue";
 
 function createQueryPlugin() {
@@ -22,6 +38,13 @@ describe("App", () => {
     it("shows support and privacy links in the drawer footer", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.reset();
+        appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) });
+        appApiMocks.useLogoutMutation.mockReturnValue({
+            mutateAsync: vi.fn(),
+            isPending: ref(false),
+        });
 
         const router = createRouter({
             history: createMemoryHistory(),
@@ -30,11 +53,20 @@ describe("App", () => {
                 { path: "/login", component: { template: "<div>login</div>" } },
                 { path: "/support", component: { template: "<div>support</div>" } },
                 { path: "/privacy_policy", component: { template: "<div>privacy</div>" } },
+                { path: "/public/pages", component: { template: "<div>public pages</div>" } },
+                {
+                    path: "/public/documents",
+                    component: { template: "<div>public documents</div>" },
+                },
                 { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
                 { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
                 { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
                 { path: "/workspace/contact", component: { template: "<div>contact</div>" } },
                 { path: "/workspace/settings", component: { template: "<div>settings</div>" } },
+                {
+                    path: "/workspace/settings/appearance",
+                    component: { template: "<div>appearance</div>" },
+                },
             ],
         });
         await router.push("/");
@@ -58,35 +90,6 @@ describe("App", () => {
             }),
         });
 
-        const originalFetch = globalThis.fetch;
-        globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-            const url =
-                typeof input === "string"
-                    ? input
-                    : input instanceof URL
-                      ? input.toString()
-                      : input.url;
-            const method = init?.method ?? "GET";
-
-            if (url.endsWith("/session/bootstrap") && method === "GET") {
-                return new Response(
-                    JSON.stringify({
-                        csrfToken: "csrf-token",
-                        currentCircle: null,
-                        featureFlags: [],
-                        roles: [],
-                        user: null,
-                    }),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            throw new Error(`Unexpected request: ${method} ${url}`);
-        }) as typeof fetch;
-
         try {
             const wrapper = mount(App, {
                 global: {
@@ -104,19 +107,32 @@ describe("App", () => {
             expect(wrapper.get('a[href="/privacy_policy"]').text()).toContain(
                 "プライバシーポリシー",
             );
+            expect(wrapper.findAll('a[href="/public/pages"]').at(0)?.text()).toContain("お知らせ");
+            expect(wrapper.findAll('a[href="/public/documents"]').at(0)?.text()).toContain(
+                "配布資料",
+            );
+            expect(
+                wrapper.findAll('a[href="/workspace/settings/appearance"]').at(0)?.text(),
+            ).toContain("ユーザー設定");
         } finally {
             Object.defineProperty(window, "matchMedia", {
                 configurable: true,
                 writable: true,
                 value: originalMatchMedia,
             });
-            globalThis.fetch = originalFetch;
         }
     });
 
     it("shows public footer links in main content on small screens", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.reset();
+        appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) });
+        appApiMocks.useLogoutMutation.mockReturnValue({
+            mutateAsync: vi.fn(),
+            isPending: ref(false),
+        });
 
         const router = createRouter({
             history: createMemoryHistory(),
@@ -125,11 +141,20 @@ describe("App", () => {
                 { path: "/login", component: { template: "<div>login</div>" } },
                 { path: "/support", component: { template: "<div>support</div>" } },
                 { path: "/privacy_policy", component: { template: "<div>privacy</div>" } },
+                { path: "/public/pages", component: { template: "<div>public pages</div>" } },
+                {
+                    path: "/public/documents",
+                    component: { template: "<div>public documents</div>" },
+                },
                 { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
                 { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
                 { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
                 { path: "/workspace/contact", component: { template: "<div>contact</div>" } },
                 { path: "/workspace/settings", component: { template: "<div>settings</div>" } },
+                {
+                    path: "/workspace/settings/appearance",
+                    component: { template: "<div>appearance</div>" },
+                },
             ],
         });
         await router.push("/");
@@ -157,35 +182,6 @@ describe("App", () => {
                 },
             }),
         });
-
-        const originalFetch = globalThis.fetch;
-        globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-            const url =
-                typeof input === "string"
-                    ? input
-                    : input instanceof URL
-                      ? input.toString()
-                      : input.url;
-            const method = init?.method ?? "GET";
-
-            if (url.endsWith("/session/bootstrap") && method === "GET") {
-                return new Response(
-                    JSON.stringify({
-                        csrfToken: "csrf-token",
-                        currentCircle: null,
-                        featureFlags: [],
-                        roles: [],
-                        user: null,
-                    }),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            throw new Error(`Unexpected request: ${method} ${url}`);
-        }) as typeof fetch;
 
         try {
             const wrapper = mount(App, {
@@ -199,6 +195,7 @@ describe("App", () => {
             expect(wrapper.get('main a[href="/privacy_policy"]').text()).toContain(
                 "プライバシーポリシー",
             );
+            expect(wrapper.get('a[href="/public/pages"]').text()).toContain("お知らせ");
             expect(wrapper.findAllComponents({ name: "BottomTabLink" }).length).toBe(3);
         } finally {
             Object.defineProperty(window, "innerWidth", {
@@ -210,13 +207,25 @@ describe("App", () => {
                 writable: true,
                 value: originalMatchMedia,
             });
-            globalThis.fetch = originalFetch;
         }
     });
 
     it("shows five bottom tabs for authenticated users", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
+        const sessionStore = useSessionStore();
+        sessionStore.hydrate({
+            csrfToken: "csrf-token",
+            currentCircle: { id: "circle-1", name: "企画A" },
+            featureFlags: [],
+            roles: [],
+            user: { id: "user-1", displayName: "Demo User", canDeleteAccount: false },
+        });
+        appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) });
+        appApiMocks.useLogoutMutation.mockReturnValue({
+            mutateAsync: vi.fn(),
+            isPending: ref(false),
+        });
 
         const router = createRouter({
             history: createMemoryHistory(),
@@ -225,11 +234,20 @@ describe("App", () => {
                 { path: "/login", component: { template: "<div>login</div>" } },
                 { path: "/support", component: { template: "<div>support</div>" } },
                 { path: "/privacy_policy", component: { template: "<div>privacy</div>" } },
+                { path: "/public/pages", component: { template: "<div>public pages</div>" } },
+                {
+                    path: "/public/documents",
+                    component: { template: "<div>public documents</div>" },
+                },
                 { path: "/workspace/contact", component: { template: "<div>contact</div>" } },
                 { path: "/workspace/forms", component: { template: "<div>forms</div>" } },
                 { path: "/workspace/documents", component: { template: "<div>documents</div>" } },
                 { path: "/workspace/pages", component: { template: "<div>pages</div>" } },
                 { path: "/workspace/settings", component: { template: "<div>settings</div>" } },
+                {
+                    path: "/workspace/settings/appearance",
+                    component: { template: "<div>appearance</div>" },
+                },
             ],
         });
         await router.push("/");
@@ -258,35 +276,6 @@ describe("App", () => {
             }),
         });
 
-        const originalFetch = globalThis.fetch;
-        globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-            const url =
-                typeof input === "string"
-                    ? input
-                    : input instanceof URL
-                      ? input.toString()
-                      : input.url;
-            const method = init?.method ?? "GET";
-
-            if (url.endsWith("/session/bootstrap") && method === "GET") {
-                return new Response(
-                    JSON.stringify({
-                        csrfToken: "csrf-token",
-                        currentCircle: { id: "circle-1", name: "企画A" },
-                        featureFlags: [],
-                        roles: [],
-                        user: { id: "user-1", displayName: "Demo User", canDeleteAccount: false },
-                    }),
-                    {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    },
-                );
-            }
-
-            throw new Error(`Unexpected request: ${method} ${url}`);
-        }) as typeof fetch;
-
         try {
             const wrapper = mount(App, {
                 global: {
@@ -294,6 +283,10 @@ describe("App", () => {
                 },
             });
             await flushPromises();
+
+            await expect
+                .poll(() => wrapper.find("nav.fixed.inset-x-0.bottom-0").text())
+                .toContain("申請");
 
             const bottomNavText = wrapper.find("nav.fixed.inset-x-0.bottom-0").text();
             expect(bottomNavText).toContain("ホーム");
@@ -311,7 +304,6 @@ describe("App", () => {
                 writable: true,
                 value: originalMatchMedia,
             });
-            globalThis.fetch = originalFetch;
         }
     });
 });

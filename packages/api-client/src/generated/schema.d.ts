@@ -1492,6 +1492,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/public/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the guest home payload */
+        get: operations["getPublicHome"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the guest page list */
+        get: operations["listPublicPages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/pages/{pageID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the guest page detail */
+        get: operations["getPublicPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the guest document list */
+        get: operations["listPublicDocuments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/documents/{documentID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a public guest document */
+        get: operations["getPublicDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/session/profile": {
         parameters: {
             query?: never;
@@ -8078,6 +8163,234 @@ export interface operations {
                         };
                     };
                 };
+            };
+        };
+    };
+    getPublicHome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public home payload */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        appName: string;
+                        portalDescription: string;
+                        portalAdminName: string;
+                        portalContactEmail: string;
+                        loginMethods: {
+                            roleLabel: string;
+                            loginId: string;
+                            password: string;
+                        }[];
+                        pinnedPages: {
+                            id: string;
+                            title: string;
+                            body: string;
+                            /** Format: date-time */
+                            publishedAt: string;
+                            isLimited: boolean;
+                            documents: {
+                                id: string;
+                                name: string;
+                                description: string;
+                                isImportant: boolean;
+                                extension: string;
+                                /** Format: int64 */
+                                sizeBytes: number;
+                                /** Format: date-time */
+                                updatedAt: string;
+                                downloadUrl: string;
+                            }[];
+                        }[];
+                        participationTypes: {
+                            id: string;
+                            name: string;
+                            description: string;
+                            usersCountMin: number;
+                            usersCountMax: number;
+                            tags: string[];
+                            form: {
+                                id: string;
+                                name: string;
+                                description: string;
+                                /** Format: date-time */
+                                openAt: string;
+                                /** Format: date-time */
+                                closeAt: string;
+                                isPublic: boolean;
+                                isOpen: boolean;
+                                maxAnswers: number;
+                                answerableTags: string[];
+                                confirmationMessage: string;
+                            };
+                        }[];
+                        pages: {
+                            id: string;
+                            title: string;
+                            summary: string;
+                            /** Format: date-time */
+                            publishedAt: string;
+                            isLimited: boolean;
+                        }[];
+                        documents: {
+                            id: string;
+                            name: string;
+                            description: string;
+                            isImportant: boolean;
+                            isNew: boolean;
+                            extension: string;
+                            /** Format: int64 */
+                            sizeBytes: number;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            downloadUrl: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    listPublicPages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public page list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        title: string;
+                        summary: string;
+                        /** Format: date-time */
+                        publishedAt: string;
+                        isLimited: boolean;
+                    }[];
+                };
+            };
+        };
+    };
+    getPublicPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pageID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public page detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        title: string;
+                        body: string;
+                        /** Format: date-time */
+                        publishedAt: string;
+                        documents: {
+                            id: string;
+                            name: string;
+                            description: string;
+                            isImportant: boolean;
+                            extension: string;
+                            /** Format: int64 */
+                            sizeBytes: number;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            downloadUrl: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Page not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listPublicDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public document list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        description: string;
+                        isImportant: boolean;
+                        isNew: boolean;
+                        extension: string;
+                        /** Format: int64 */
+                        sizeBytes: number;
+                        /** Format: date-time */
+                        updatedAt: string;
+                        downloadUrl: string;
+                    }[];
+                };
+            };
+        };
+    };
+    getPublicDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public document binary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description Document not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

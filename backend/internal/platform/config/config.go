@@ -19,6 +19,7 @@ type Config struct {
 	DatabaseURL               string
 	MigrationsDir             string
 	AllowInsecureDefaults     bool
+	SyncAuthUserOnStartup     bool
 	SessionCookieName         string
 	SessionCookieSecure       bool
 	SessionTTL                time.Duration
@@ -167,6 +168,7 @@ func FromEnv() Config {
 		DatabaseURL:               getenv("PORTALDOTS_DATABASE_URL", ""),
 		MigrationsDir:             getenv("PORTALDOTS_MIGRATIONS_DIR", "db/migrations"),
 		AllowInsecureDefaults:     getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true",
+		SyncAuthUserOnStartup:     getenv("PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP", "") == "true",
 		SessionCookieName:         getenv("PORTALDOTS_SESSION_COOKIE", "portaldots_session"),
 		SessionCookieSecure:       getenv("PORTALDOTS_SESSION_COOKIE_SECURE", "") == "true",
 		SessionTTL:                time.Duration(getenvInt("PORTALDOTS_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,

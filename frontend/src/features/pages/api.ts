@@ -7,6 +7,8 @@ export type PageSummary = {
     id: string;
     title: string;
     publishedAt: string;
+    summary?: string;
+    isLimited?: boolean;
 };
 
 export type PageDetail = PageSummary & {

@@ -66,6 +66,11 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 			store.Close()
 			return Dependencies{}, err
 		}
+	} else if cfg.SyncAuthUserOnStartup {
+		if err := SeedAuthUser(ctx, store.Pool(), cfg.AuthUser); err != nil {
+			store.Close()
+			return Dependencies{}, err
+		}
 	}
 
 	queries := store.Queries()

@@ -20,7 +20,20 @@ export function buildHomeModeTabs(isStaffPage: boolean): TabStripItem[] {
     ];
 }
 
-export function buildUserSettingsTabs(activeTab: UserSettingsTab): TabStripItem[] {
+export function buildUserSettingsTabs(
+    activeTab: UserSettingsTab,
+    isAuthenticated: boolean,
+): TabStripItem[] {
+    if (!isAuthenticated) {
+        return [
+            {
+                label: "外観",
+                to: "/workspace/settings/appearance",
+                active: activeTab === "appearance",
+            },
+        ];
+    }
+
     return [
         { label: "一般", to: "/workspace/settings", active: activeTab === "general" },
         { label: "外観", to: "/workspace/settings/appearance", active: activeTab === "appearance" },

@@ -5887,6 +5887,366 @@ paths:
                             type: string
                           canDeleteAccount:
                             type: boolean
+  /public/home:
+    get:
+      operationId: getPublicHome
+      summary: Return the guest home payload
+      responses:
+        "200":
+          description: Public home payload
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - appName
+                  - portalDescription
+                  - portalAdminName
+                  - portalContactEmail
+                  - loginMethods
+                  - pinnedPages
+                  - participationTypes
+                  - pages
+                  - documents
+                properties:
+                  appName:
+                    type: string
+                  portalDescription:
+                    type: string
+                  portalAdminName:
+                    type: string
+                  portalContactEmail:
+                    type: string
+                  loginMethods:
+                    type: array
+                    items:
+                      type: object
+                      required: [roleLabel, loginId, password]
+                      properties:
+                        roleLabel:
+                          type: string
+                        loginId:
+                          type: string
+                        password:
+                          type: string
+                  pinnedPages:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, title, body, publishedAt, isLimited, documents]
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        body:
+                          type: string
+                        publishedAt:
+                          type: string
+                          format: date-time
+                        isLimited:
+                          type: boolean
+                        documents:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - id
+                              - name
+                              - description
+                              - isImportant
+                              - extension
+                              - sizeBytes
+                              - updatedAt
+                              - downloadUrl
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                              description:
+                                type: string
+                              isImportant:
+                                type: boolean
+                              extension:
+                                type: string
+                              sizeBytes:
+                                type: integer
+                                format: int64
+                              updatedAt:
+                                type: string
+                                format: date-time
+                              downloadUrl:
+                                type: string
+                  participationTypes:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - name
+                        - description
+                        - usersCountMin
+                        - usersCountMax
+                        - tags
+                        - form
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        usersCountMin:
+                          type: integer
+                        usersCountMax:
+                          type: integer
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        form:
+                          type: object
+                          required:
+                            - id
+                            - name
+                            - description
+                            - openAt
+                            - closeAt
+                            - isPublic
+                            - isOpen
+                            - maxAnswers
+                            - answerableTags
+                            - confirmationMessage
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            description:
+                              type: string
+                            openAt:
+                              type: string
+                              format: date-time
+                            closeAt:
+                              type: string
+                              format: date-time
+                            isPublic:
+                              type: boolean
+                            isOpen:
+                              type: boolean
+                            maxAnswers:
+                              type: integer
+                            answerableTags:
+                              type: array
+                              items:
+                                type: string
+                            confirmationMessage:
+                              type: string
+                  pages:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, title, summary, publishedAt, isLimited]
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        summary:
+                          type: string
+                        publishedAt:
+                          type: string
+                          format: date-time
+                        isLimited:
+                          type: boolean
+                  documents:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - name
+                        - description
+                        - isImportant
+                        - isNew
+                        - extension
+                        - sizeBytes
+                        - updatedAt
+                        - downloadUrl
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        isImportant:
+                          type: boolean
+                        isNew:
+                          type: boolean
+                        extension:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          format: int64
+                        updatedAt:
+                          type: string
+                          format: date-time
+                        downloadUrl:
+                          type: string
+  /public/pages:
+    get:
+      operationId: listPublicPages
+      summary: Return the guest page list
+      responses:
+        "200":
+          description: Public page list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, title, summary, publishedAt, isLimited]
+                  properties:
+                    id:
+                      type: string
+                    title:
+                      type: string
+                    summary:
+                      type: string
+                    publishedAt:
+                      type: string
+                      format: date-time
+                    isLimited:
+                      type: boolean
+  /public/pages/{pageID}:
+    get:
+      operationId: getPublicPage
+      summary: Return the guest page detail
+      parameters:
+        - in: path
+          name: pageID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public page detail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, title, body, publishedAt, documents]
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  body:
+                    type: string
+                  publishedAt:
+                    type: string
+                    format: date-time
+                  documents:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - name
+                        - description
+                        - isImportant
+                        - extension
+                        - sizeBytes
+                        - updatedAt
+                        - downloadUrl
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        isImportant:
+                          type: boolean
+                        extension:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          format: int64
+                        updatedAt:
+                          type: string
+                          format: date-time
+                        downloadUrl:
+                          type: string
+        "404":
+          description: Page not found
+  /public/documents:
+    get:
+      operationId: listPublicDocuments
+      summary: Return the guest document list
+      responses:
+        "200":
+          description: Public document list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - description
+                    - isImportant
+                    - isNew
+                    - extension
+                    - sizeBytes
+                    - updatedAt
+                    - downloadUrl
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    isImportant:
+                      type: boolean
+                    isNew:
+                      type: boolean
+                    extension:
+                      type: string
+                    sizeBytes:
+                      type: integer
+                      format: int64
+                    updatedAt:
+                      type: string
+                      format: date-time
+                    downloadUrl:
+                      type: string
+  /public/documents/{documentID}:
+    get:
+      operationId: getPublicDocument
+      summary: Download a public guest document
+      parameters:
+        - in: path
+          name: documentID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public document binary
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Document not found
   /session/profile:
     put:
       operationId: putSessionProfile

@@ -34,6 +34,8 @@ export const pageSummarySchema = z.object({
     id: z.string(),
     title: z.string(),
     publishedAt: z.string(),
+    summary: z.string().optional(),
+    isLimited: z.boolean().optional(),
 });
 
 export const pageDocumentSchema = z.object({
@@ -455,6 +457,53 @@ export const participationTypeSchema = z.object({
     usersCountMax: z.number(),
     tags: stringArraySchema,
     form: participationTypeFormSchema,
+});
+
+export const publicHomeLoginMethodSchema = z.object({
+    roleLabel: z.string(),
+    loginId: z.string(),
+    password: z.string(),
+});
+
+export const publicHomePageSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    summary: z.string(),
+    publishedAt: z.string(),
+    isLimited: z.boolean(),
+});
+
+export const publicPinnedPageSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    body: z.string(),
+    publishedAt: z.string(),
+    isLimited: z.boolean(),
+    documents: z.array(pageDocumentSchema),
+});
+
+export const publicHomeDocumentSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    isImportant: z.boolean(),
+    isNew: z.boolean(),
+    extension: z.string(),
+    sizeBytes: z.number(),
+    updatedAt: z.string(),
+    downloadUrl: z.string(),
+});
+
+export const publicHomeSchema = z.object({
+    appName: z.string(),
+    portalDescription: z.string(),
+    portalAdminName: z.string(),
+    portalContactEmail: z.string(),
+    loginMethods: z.array(publicHomeLoginMethodSchema),
+    pinnedPages: z.array(publicPinnedPageSchema),
+    participationTypes: z.array(participationTypeSchema),
+    pages: z.array(publicHomePageSchema),
+    documents: z.array(publicHomeDocumentSchema),
 });
 
 export const staffParticipationTypeSchema = z.object({
