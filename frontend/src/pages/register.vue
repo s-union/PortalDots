@@ -2,6 +2,8 @@
 definePage({
   meta: {
     publicOnly: true,
+    noDrawer: true,
+    noBottomTabs: true,
   },
 });
 

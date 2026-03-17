@@ -2,6 +2,8 @@
 definePage({
   meta: {
     requiresAuth: true,
+    noDrawer: true,
+    noBottomTabs: true,
   },
 });
 

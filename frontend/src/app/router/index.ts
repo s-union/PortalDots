@@ -17,6 +17,9 @@ declare module "vue-router" {
         requiresStaffRole?: boolean;
         requiresStaffAuthorized?: boolean;
         staffCapability?: StaffCapability;
+        noDrawer?: boolean;
+        noFooter?: boolean;
+        noBottomTabs?: boolean;
     }
 }
 

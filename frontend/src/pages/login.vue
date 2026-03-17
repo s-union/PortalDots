@@ -2,12 +2,14 @@
 definePage({
   meta: {
     publicOnly: true,
+    noDrawer: true,
+    noFooter: true,
+    noBottomTabs: true,
   },
 });
 
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
 import { extractFirstErrorMessage, useLoginMutation } from "@/features/auth/api";
 
 const router = useRouter();
@@ -21,11 +23,6 @@ const form = reactive({
 });
 
 const errorMessage = ref("");
-
-function fillExampleCredentials() {
-  form.loginId = "example@portaldots.com";
-  form.password = "password";
-}
 
 async function handleSubmit() {
   errorMessage.value = "";
@@ -44,77 +41,71 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <section class="mx-auto max-w-2xl py-8">
-    <SurfaceCard tag="div">
-      <div class="border-b border-border px-8 py-8 text-center">
-        <h2 class="text-3xl font-semibold tracking-tight text-body">ログイン</h2>
-      </div>
+  <section class="flex min-h-[calc(100dvh-5rem)] flex-col justify-center bg-surface px-6 py-10">
+    <div class="mx-auto w-full max-w-[560px]">
+      <h1 class="mb-6 text-center text-[2rem] font-semibold text-body">ログイン</h1>
 
-      <div class="px-8 py-8">
-        <form class="grid gap-5" @submit.prevent="handleSubmit">
-          <p
-            v-if="errorMessage"
-            class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
+      <form class="space-y-5" @submit.prevent="handleSubmit">
+        <div v-if="errorMessage" class="space-y-2 text-danger">
+          <p>{{ errorMessage }}</p>
+        </div>
+
+        <div>
+          <label class="sr-only" for="login-id">学籍番号または連絡先メールアドレス</label>
+          <input
+            id="login-id"
+            v-model="form.loginId"
+            autocomplete="username"
+            name="loginId"
+            required
+            type="text"
+            placeholder="学籍番号または連絡先メールアドレス"
+          />
+        </div>
+
+        <div>
+          <label class="sr-only" for="password">パスワード</label>
+          <input
+            id="password"
+            v-model="form.password"
+            autocomplete="current-password"
+            name="password"
+            required
+            type="password"
+            placeholder="パスワード"
+          />
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm text-body">
+          <input v-model="form.remember" name="remember" type="checkbox" />
+          ログインしたままにする
+        </label>
+
+        <p>
+          <RouterLink class="text-primary" to="/password/reset"
+            >パスワードをお忘れの場合はこちら</RouterLink
           >
-            {{ errorMessage }}
-          </p>
+        </p>
 
-          <label class="grid gap-2 text-sm text-muted">
-            <span class="sr-only">学籍番号または連絡先メールアドレス</span>
-            <input
-              v-model="form.loginId"
-              autocomplete="username"
-              name="loginId"
-              required
-              type="text"
-              placeholder="学籍番号または連絡先メールアドレス"
-            />
-          </label>
-
-          <label class="grid gap-2 text-sm text-muted">
-            <span class="sr-only">パスワード</span>
-            <input
-              v-model="form.password"
-              autocomplete="current-password"
-              name="password"
-              required
-              type="password"
-              placeholder="パスワード"
-            />
-          </label>
-
-          <label class="flex items-center gap-3 text-sm text-body">
-            <input v-model="form.remember" name="remember" type="checkbox" />
-            ログインしたままにする
-          </label>
-
-          <p class="text-sm">
-            <a class="text-primary" href="/password/reset">パスワードをお忘れの場合はこちら</a>
-          </p>
-
+        <div>
           <button
-            class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            class="w-full rounded border border-primary bg-primary px-4 py-3 text-sm text-white transition hover:bg-primary-hover"
             :disabled="isSubmitting"
             type="submit"
           >
             <strong>{{ isSubmitting ? "ログイン中..." : "ログイン" }}</strong>
           </button>
+        </div>
 
-          <button
-            class="rounded border border-border bg-surface px-4 py-3 text-sm text-body transition hover:bg-surface-light"
-            type="button"
-            @click="fillExampleCredentials"
+        <p>
+          <RouterLink
+            class="block w-full rounded border border-border bg-surface px-4 py-3 text-center text-sm text-body transition hover:bg-surface-light hover:no-underline"
+            to="/register"
           >
-            開発用アカウントを入力
-          </button>
-        </form>
-
-        <p class="mt-6 text-sm leading-7 text-muted">
-          開発環境では <strong>example@portaldots.com</strong> /
-          <strong>password</strong> でログインできます。<br />
-          なお、認証フロー内のメール送信は現在モックです。実メールが無くても検証を進められます。
+            はじめての方は新規ユーザー登録
+          </RouterLink>
         </p>
-      </div>
-    </SurfaceCard>
+      </form>
+    </div>
   </section>
 </template>

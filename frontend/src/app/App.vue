@@ -80,6 +80,11 @@ const canAccessActivityLogs = computed(() =>
   canViewActivityLogs(sessionStore.roles, sessionStore.permissions),
 );
 const isStaffRoute = computed(() => route.path.startsWith("/staff"));
+const hasDrawer = computed(() => route.meta.noDrawer !== true);
+const showFooter = computed(() => route.meta.noFooter !== true);
+const showBottomTabs = computed(
+  () => !isStaffRoute.value && route.meta.noBottomTabs !== true && hasDrawer.value,
+);
 const appModeLabel = computed(() => (isStaffRoute.value ? "スタッフモード" : "一般モード"));
 const circleActionLabel = computed(() =>
   sessionStore.currentCircle === null ? "企画を選択" : "企画を切り替え",
@@ -306,8 +311,9 @@ const pageTitle = computed(() => {
 
 const mainContentClass = computed(() =>
   cn(
-    "pt-20 pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0",
-    !isStaffRoute.value && "max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]",
+    "pt-20",
+    hasDrawer.value && "pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0",
+    showBottomTabs.value && "max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]",
   ),
 );
 
@@ -325,6 +331,7 @@ async function handleLogout() {
     >
       <!-- Hamburger button: visible only at ≤1000px -->
       <button
+        v-if="hasDrawer"
         class="hidden max-[1000px]:flex items-center justify-center rounded p-2 text-body transition hover:bg-surface-light"
         type="button"
         aria-label="メニューを開く"
@@ -333,15 +340,23 @@ async function handleLogout() {
         <span class="text-xl leading-none">☰</span>
       </button>
 
-      <div class="min-w-0">
+      <div v-if="hasDrawer" class="min-w-0">
         <p class="truncate text-lg font-semibold text-body">{{ pageTitle }}</p>
         <p class="mt-1 text-xs text-muted">{{ appModeLabel }}</p>
       </div>
+
+      <RouterLink
+        v-else
+        class="text-lg font-semibold text-body no-underline hover:no-underline"
+        :to="isStaffRoute ? '/staff' : '/'"
+      >
+        PortalDots
+      </RouterLink>
     </header>
 
     <!-- Drawer Backdrop: visible on small screens when drawer is open -->
     <div
-      v-if="isSmallScreen"
+      v-if="hasDrawer && isSmallScreen"
       class="fixed inset-0 z-[9989] bg-drawer-backdrop transition-[opacity,visibility] duration-300"
       :class="isDrawerOpen ? 'opacity-100 visible' : 'invisible opacity-0'"
       @click="isDrawerOpen = false"
@@ -349,6 +364,7 @@ async function handleLogout() {
 
     <!-- Drawer: fixed 320px (280px at ≤1440px), slides off at ≤1000px — z-[9990] -->
     <aside
+      v-if="hasDrawer"
       class="fixed left-0 top-0 z-[9990] h-full w-[320px] max-[1440px]:w-[280px] max-[1000px]:w-[320px] max-w-[80vw] overflow-y-auto border-r border-border bg-surface-2 transition-transform duration-300"
       :class="drawerTranslateClass"
     >
@@ -452,14 +468,14 @@ async function handleLogout() {
     <!-- Main Content: offset by navbar height (pt-20) and drawer width (pl-*) -->
     <main :class="mainContentClass">
       <RouterView />
-      <footer class="mt-6 border-t border-border px-6 py-6 text-center">
+      <footer v-if="showFooter" class="mt-6 border-t border-border px-6 py-6 text-center">
         <PublicFooterLinks app-name="PortalDots" />
       </footer>
     </main>
 
     <!-- Bottom Tabs: fixed, only visible at ≤1000px — z-[9980] matches $z-index-bottom-tabs -->
     <nav
-      v-if="!isStaffRoute"
+      v-if="showBottomTabs"
       class="fixed inset-x-0 bottom-0 z-[9980] hidden border-t border-border bg-surface-2 shadow-[0_-0.1rem_0.8rem_-0.6rem_var(--color-box-shadow)] max-[1000px]:block"
     >
       <div
