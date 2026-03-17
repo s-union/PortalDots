@@ -3,7 +3,6 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createRouter, createMemoryHistory } from "vue-router";
-import { useSessionStore } from "@/features/session/store";
 import LoginPage from "./login.vue";
 
 function createTestRouter() {

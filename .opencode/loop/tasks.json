@@ -67,6 +67,15 @@
       "status": "done",
       "addedAt": "2026-03-17T17:46:44Z",
       "completedAt": "2026-03-17T17:48:13Z"
+    },
+    {
+      "id": "10",
+      "title": "loginテストのlint警告解消",
+      "description": "unused import警告を解消してチェックログをクリーンにする",
+      "status": "done",
+      "addedAt": "2026-03-17T17:51:11Z",
+      "completedAt": "2026-03-17T17:52:59Z"
     }
-  ]
+  ],
+  "completedAt": "2026-03-17T17:52:59Z"
 }
