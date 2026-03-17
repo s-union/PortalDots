@@ -4,6 +4,16 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createPinia, setActivePinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
+
+vi.mock("@/lib/api/client", async () => {
+    const actual = await vi.importActual<typeof import("@/lib/api/client")>("@/lib/api/client");
+
+    return {
+        ...actual,
+        buildApiUrl: (path: string) => `https://api.test${path}`,
+    };
+});
+
 const publicHomeApiMocks = vi.hoisted(() => ({
     usePublicDocumentsQuery: vi.fn(),
 }));
@@ -77,6 +87,9 @@ describe("PublicDocumentsIndexPage", () => {
             expect(wrapper.text()).toContain("サンプル配布資料");
             expect(wrapper.text()).toContain("PDFファイル");
             expect(wrapper.text()).toContain("NEW");
+            expect(
+                wrapper.get('a[href="https://api.test/v1/public/documents/document-1"]').exists(),
+            ).toBe(true);
         });
     });
 });

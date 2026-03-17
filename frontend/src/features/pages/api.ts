@@ -9,6 +9,7 @@ export type PageSummary = {
     publishedAt: string;
     summary?: string;
     isLimited?: boolean;
+    isNew?: boolean;
 };
 
 export type PageDetail = PageSummary & {

@@ -48,6 +48,13 @@ const pagesQuery = usePublicPagesQuery(true);
               {{ page.isLimited ? "限定公開" : "全員に公開" }}
             </span>
           </template>
+          <template v-if="page.isNew" #suffix>
+            <span
+              class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"
+            >
+              NEW
+            </span>
+          </template>
           <template #meta>{{ page.publishedAt }}</template>
           {{ page.summary }}
         </ListItemLink>

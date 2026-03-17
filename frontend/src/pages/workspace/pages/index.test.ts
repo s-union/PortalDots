@@ -98,6 +98,8 @@ describe("PagesIndexPage", () => {
                                 id: "page-circle-b-1",
                                 title: "展示レイアウト更新",
                                 publishedAt: "2026-03-03T09:00:00Z",
+                                isLimited: true,
+                                isNew: true,
                             },
                         ]),
                         {
@@ -120,6 +122,8 @@ describe("PagesIndexPage", () => {
 
         expect(wrapper.text()).toContain("展示レイアウト更新");
         expect(wrapper.text()).toContain("デモ企画B");
+        expect(wrapper.text()).toContain("限定公開");
+        expect(wrapper.text()).toContain("NEW");
     });
 
     it("searches pages with the query string", async () => {
@@ -188,6 +192,8 @@ describe("PagesIndexPage", () => {
                                 id: "page-circle-b-1",
                                 title: "展示レイアウト更新",
                                 publishedAt: "2026-03-03T09:00:00Z",
+                                isLimited: false,
+                                isNew: false,
                             },
                         ]),
                         {

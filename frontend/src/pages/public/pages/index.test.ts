@@ -44,6 +44,7 @@ describe("PublicPagesIndexPage", () => {
                     summary: "公開中のお知らせです。",
                     publishedAt: "2026-03-05T10:00:00Z",
                     isLimited: false,
+                    isNew: true,
                 },
             ]),
             isPending: ref(false),
@@ -69,6 +70,7 @@ describe("PublicPagesIndexPage", () => {
         await vi.waitFor(() => {
             expect(wrapper.text()).toContain("お知らせサンプル");
             expect(wrapper.text()).toContain("全員に公開");
+            expect(wrapper.text()).toContain("NEW");
             expect(wrapper.text()).toContain("公開中のお知らせです。");
         });
     });

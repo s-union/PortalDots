@@ -20,7 +20,8 @@
       "id": "3",
       "title": "public/workspace一覧UIの整合",
       "description": "pages/documentsの一覧でバッジ、NEW、検索/空状態、ページング、リンク構造を旧UIに合わせる",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-17T17:30:29Z"
     },
     {
       "id": "4",

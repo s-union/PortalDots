@@ -103,9 +103,20 @@ async function handleSearchReset() {
           <template #title>{{ page.title }}</template>
           <template #prefix>
             <span
-              class="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted"
+              :class="
+                page.isLimited
+                  ? 'rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary'
+                  : 'rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted'
+              "
             >
-              全員に公開
+              {{ page.isLimited ? "限定公開" : "全員に公開" }}
+            </span>
+          </template>
+          <template v-if="page.isNew" #suffix>
+            <span
+              class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"
+            >
+              NEW
             </span>
           </template>
           <template #meta>{{ page.publishedAt }}</template>

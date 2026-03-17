@@ -7,6 +7,7 @@ definePage({
 
 import ListItemLink from "@/components/ui/ListItemLink.vue";
 import ListPanel from "@/components/ui/ListPanel.vue";
+import { buildApiUrl } from "@/lib/api/client";
 import { formatFileSize } from "@/lib/format/fileSize";
 import { usePublicDocumentsQuery } from "@/features/public-home/api";
 
@@ -35,7 +36,8 @@ const documentsQuery = usePublicDocumentsQuery(true);
           v-for="document in documentsQuery.data.value"
           :key="document.id"
           legacy
-          :to="`/public/documents/${encodeURIComponent(document.id)}`"
+          :href="buildApiUrl(document.downloadUrl)"
+          new-tab
         >
           <template #title>
             <i

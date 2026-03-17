@@ -36,6 +36,7 @@ export const pageSummarySchema = z.object({
     publishedAt: z.string(),
     summary: z.string().optional(),
     isLimited: z.boolean().optional(),
+    isNew: z.boolean().optional(),
 });
 
 export const pageDocumentSchema = z.object({
@@ -471,6 +472,7 @@ export const publicHomePageSchema = z.object({
     summary: z.string(),
     publishedAt: z.string(),
     isLimited: z.boolean(),
+    isNew: z.boolean().optional(),
 });
 
 export const publicPinnedPageSchema = z.object({
