@@ -41,7 +41,7 @@ use Symfony\Component\HttpFoundation\Response;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
+        channels: __DIR__.'/../routes/channels.php', // 旧BroadcastServiceProvider.php
         health: '/up',
         then: function (): void {
             // 一般画面用ルート（ログイン前後で共通利用）
