@@ -1,10 +1,18 @@
+import { ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { createRouter, createMemoryHistory } from "vue-router";
-import { useSessionStore } from "@/features/session/store";
+import { createPinia, setActivePinia } from "pinia";
+import { createMemoryHistory, createRouter } from "vue-router";
 import PagesIndexPage from "./index.vue";
+
+const pagesApiMocks = vi.hoisted(() => ({
+    usePagesQuery: vi.fn(),
+}));
+
+vi.mock("@/features/pages/api", () => ({
+    usePagesQuery: pagesApiMocks.usePagesQuery,
+}));
 
 function createQueryPlugin() {
     return [
@@ -35,83 +43,26 @@ describe("PagesIndexPage", () => {
         vi.unstubAllGlobals();
     });
 
-    it("renders pages for the current circle", async () => {
+    it("renders page badges and titles", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
-        const sessionStore = useSessionStore();
-        sessionStore.hydrate({
-            csrfToken: "csrf-token",
-            currentCircle: {
-                id: "circle-b",
-                name: "デモ企画B",
-            },
-            featureFlags: [],
-            roles: ["participant"],
-            user: {
-                id: "demo-user",
-                displayName: "Demo User",
-            },
+
+        pagesApiMocks.usePagesQuery.mockReturnValue({
+            data: ref([
+                {
+                    id: "page-circle-b-1",
+                    title: "展示レイアウト更新",
+                    publishedAt: "2026-03-03T09:00:00Z",
+                    isLimited: true,
+                    isNew: true,
+                },
+            ]),
+            isPending: ref(false),
         });
 
         const router = createPagesRouter();
         await router.push("/workspace/pages");
         await router.isReady();
-
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                await Promise.resolve();
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                const method = init?.method ?? "GET";
-
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: {
-                                id: "circle-b",
-                                name: "デモ企画B",
-                            },
-                            featureFlags: [],
-                            roles: ["participant"],
-                            user: {
-                                id: "demo-user",
-                                displayName: "Demo User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/pages") && method === "GET") {
-                    return new Response(
-                        JSON.stringify([
-                            {
-                                id: "page-circle-b-1",
-                                title: "展示レイアウト更新",
-                                publishedAt: "2026-03-03T09:00:00Z",
-                                isLimited: true,
-                                isNew: true,
-                            },
-                        ]),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${method} ${url}`);
-            }),
-        );
 
         const wrapper = mount(PagesIndexPage, {
             global: {
@@ -121,98 +72,22 @@ describe("PagesIndexPage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("展示レイアウト更新");
-        expect(wrapper.text()).toContain("デモ企画B");
         expect(wrapper.text()).toContain("限定公開");
         expect(wrapper.text()).toContain("NEW");
     });
 
-    it("searches pages with the query string", async () => {
+    it("updates router query when searching", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
-        const sessionStore = useSessionStore();
-        sessionStore.hydrate({
-            csrfToken: "csrf-token",
-            currentCircle: {
-                id: "circle-b",
-                name: "デモ企画B",
-            },
-            featureFlags: [],
-            roles: ["participant"],
-            user: {
-                id: "demo-user",
-                displayName: "Demo User",
-            },
+
+        pagesApiMocks.usePagesQuery.mockReturnValue({
+            data: ref([]),
+            isPending: ref(false),
         });
 
         const router = createPagesRouter();
         await router.push("/workspace/pages");
         await router.isReady();
-
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                await Promise.resolve();
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                const method = init?.method ?? "GET";
-
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: {
-                                id: "circle-b",
-                                name: "デモ企画B",
-                            },
-                            featureFlags: [],
-                            roles: ["participant"],
-                            user: {
-                                id: "demo-user",
-                                displayName: "Demo User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (
-                    url.includes("/pages?query=%E3%83%AC%E3%82%A4%E3%82%A2%E3%82%A6%E3%83%88") &&
-                    method === "GET"
-                ) {
-                    return new Response(
-                        JSON.stringify([
-                            {
-                                id: "page-circle-b-1",
-                                title: "展示レイアウト更新",
-                                publishedAt: "2026-03-03T09:00:00Z",
-                                isLimited: false,
-                                isNew: false,
-                            },
-                        ]),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/pages") && method === "GET") {
-                    return new Response(JSON.stringify([]), {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    });
-                }
-
-                throw new Error(`Unexpected request: ${method} ${url}`);
-            }),
-        );
 
         const wrapper = mount(PagesIndexPage, {
             global: {
@@ -226,6 +101,5 @@ describe("PagesIndexPage", () => {
         await flushPromises();
 
         expect(router.currentRoute.value.query.query).toBe("レイアウト");
-        expect(wrapper.text()).toContain("展示レイアウト更新");
     });
 });

@@ -59,6 +59,14 @@
       "status": "done",
       "addedAt": "2026-03-17T17:42:56Z",
       "completedAt": "2026-03-17T17:45:07Z"
+    },
+    {
+      "id": "9",
+      "title": "変更ページ周辺テストの追従",
+      "description": "workspace/pages と staff/users のテスト期待値を今回の挙動に合わせて更新する",
+      "status": "done",
+      "addedAt": "2026-03-17T17:46:44Z",
+      "completedAt": "2026-03-17T17:48:13Z"
     }
   ]
 }

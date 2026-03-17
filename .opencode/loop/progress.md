@@ -18,3 +18,4 @@
 - login.test.ts はAPI統合シナリオ依存を減らし、UI構造と主要導線の存在確認中心へリライトすると変更耐性が上がる。
 - `nr test` の大半失敗は今回変更ファイル外（circles/workspace/staff form群）で再現し、基盤的な既存不安定が主因。今回変更に直接起因する失敗はlogin/specと一部router期待値のみ確認。
 - 影響範囲整理として、merge判断は `nr ci:check` 通過 + 変更ページの個別テスト通過を最低条件にし、全件テストは別改善ストリーム扱いが現実的。
+- workspace/pages と staff/users のテストはfetchモックより対象composableモックへ切替した方が、画面構造変更に対して壊れにくい。

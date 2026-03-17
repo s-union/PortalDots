@@ -1,10 +1,28 @@
+import { ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { createMemoryHistory, createRouter } from "vue-router";
-import { useSessionStore } from "@/features/session/store";
 import StaffUsersIndexPage from "./index.vue";
+
+const statusApiMocks = vi.hoisted(() => ({
+    useStaffStatusQuery: vi.fn(),
+}));
+
+const usersApiMocks = vi.hoisted(() => ({
+    useStaffUsersQuery: vi.fn(),
+    buildStaffUsersExportUrl: vi.fn(),
+}));
+
+vi.mock("@/features/staff/status/api", () => ({
+    useStaffStatusQuery: statusApiMocks.useStaffStatusQuery,
+}));
+
+vi.mock("@/features/staff/users/api", () => ({
+    useStaffUsersQuery: usersApiMocks.useStaffUsersQuery,
+    buildStaffUsersExportUrl: usersApiMocks.buildStaffUsersExportUrl,
+}));
 
 function createQueryPlugin() {
     return [
@@ -27,19 +45,36 @@ describe("StaffUsersIndexPage", () => {
     it("lists staff-manageable users", async () => {
         const pinia = createPinia();
         setActivePinia(pinia);
-        const sessionStore = useSessionStore();
-        sessionStore.hydrate({
-            csrfToken: "csrf-token",
-            currentCircle: {
-                id: "circle-b",
-                name: "デモ企画B",
-            },
-            featureFlags: [],
-            roles: ["admin"],
-            user: {
-                id: "staff-user",
-                displayName: "Staff User",
-            },
+
+        statusApiMocks.useStaffStatusQuery.mockReturnValue({
+            data: ref({ allowed: true, authorized: true }),
+        });
+        usersApiMocks.buildStaffUsersExportUrl.mockReturnValue(
+            "http://127.0.0.1:8081/v1/staff/users/export",
+        );
+        usersApiMocks.useStaffUsersQuery.mockReturnValue({
+            data: ref({
+                items: [
+                    {
+                        id: "staff-user",
+                        displayName: "Staff User",
+                        loginIds: ["staff@example.com"],
+                        roles: ["admin"],
+                        isVerified: true,
+                    },
+                    {
+                        id: "demo-user",
+                        displayName: "Demo User",
+                        loginIds: ["demo@example.com", "24a0000"],
+                        roles: ["participant"],
+                        isVerified: false,
+                    },
+                ],
+                page: 1,
+                pageSize: 10,
+                total: 2,
+            }),
+            isPending: ref(false),
         });
 
         const router = createRouter({
@@ -52,59 +87,6 @@ describe("StaffUsersIndexPage", () => {
         });
         await router.push("/staff/users");
         await router.isReady();
-
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                await Promise.resolve();
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                const method = init?.method ?? "GET";
-
-                if (url.endsWith("/staff/status") && method === "GET") {
-                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    });
-                }
-
-                if (url.includes("/staff/users") && method === "GET") {
-                    return new Response(
-                        JSON.stringify({
-                            items: [
-                                {
-                                    id: "staff-user",
-                                    displayName: "Staff User",
-                                    loginIds: ["staff@example.com"],
-                                    roles: ["admin"],
-                                    isVerified: true,
-                                },
-                                {
-                                    id: "demo-user",
-                                    displayName: "Demo User",
-                                    loginIds: ["demo@example.com", "24a0000"],
-                                    roles: ["participant"],
-                                    isVerified: false,
-                                },
-                            ],
-                            page: 1,
-                            pageSize: 10,
-                            total: 2,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${method} ${url}`);
-            }),
-        );
 
         const wrapper = mount(StaffUsersIndexPage, {
             global: {
