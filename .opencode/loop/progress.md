@@ -12,3 +12,4 @@
 - ユーザー設定は 1 画面集約のままだと Laravel の `user.edit` / `user.appearance` / `user.password` / `user.delete` と導線互換が取れないため、Vue 側も `frontend/src/pages/workspace/settings*.vue` を 4 画面へ分割した方が完全互換に近づく。
 - 分割後の共通処理は `frontend/src/features/session/settings.ts` に寄せると、tab strip と戻る導線、mutation 取得、削除条件文言を各画面で揃えやすい。
 - `TabStrip` の RouterLink は test 時に素の `<a>` になり `href` が出ないことがあるため、`props("to")` ベースの検証が安定する。
+- Ralph Loop の finishing で `tasks.json` を更新するときは、既存の配列閉じ忘れで JSON を壊しやすいので、完了タスク追加時は root `completedAt` を入れる前に一度整形を確認する。

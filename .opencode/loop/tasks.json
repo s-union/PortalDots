@@ -22,6 +22,15 @@
       "description": "staff home、user settings、staff participation type / form まわりの tab strip を Laravel 互換で配置する",
       "status": "done",
       "completedAt": "2026-03-17T01:32:31Z"
+    },
+    {
+      "id": "4",
+      "title": "ループ完了メタデータを整える",
+      "description": "follow-up checks 後の tasks.json を正しい JSON 形式へ戻し、完了状態を確定する",
+      "status": "done",
+      "addedAt": "2026-03-17T01:34:04Z",
+      "completedAt": "2026-03-17T01:35:28Z"
     }
-  ]
+  ],
+  "completedAt": "2026-03-17T01:35:28Z"
 }
