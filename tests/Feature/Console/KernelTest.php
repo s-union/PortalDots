@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 final class KernelTest extends TestCase
@@ -12,6 +13,8 @@ final class KernelTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function スケジュールがroutes_console_phpに適切に設定されていること()
     {
+        Artisan::call('schedule:list');
+
         $schedule = app()->make(Schedule::class);
 
         $events = $schedule->events();
