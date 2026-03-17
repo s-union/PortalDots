@@ -24,12 +24,11 @@ async function mountAtPasswordReset() {
 }
 
 describe("PasswordResetPage", () => {
-    it("shows reset guidance without email flow", async () => {
+    it("shows reset heading and login CTA", async () => {
         const wrapper = await mountAtPasswordReset();
 
-        expect(wrapper.text()).toContain("パスワード再設定");
-        expect(wrapper.text()).toContain("旧 Laravel URL は移植せず");
-        expect(wrapper.text()).toContain("本番メール送信は行いません");
+        expect(wrapper.text()).toContain("パスワードの再設定");
+        expect(wrapper.text()).toContain("旧フォームは未移植");
         expect(wrapper.get('a[href="/login"]').text()).toContain("ログイン画面へ");
     });
 });

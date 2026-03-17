@@ -6,32 +6,26 @@ definePage({
     noBottomTabs: true,
   },
 });
-
-import { computed } from "vue";
-import { useRoute } from "vue-router";
-import AuthRouteNotice from "@/components/auth/AuthRouteNotice.vue";
-
-const route = useRoute();
-const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>);
-const userId = computed(() => {
-  const value = routeParams.value.userId;
-  return typeof value === "string" ? value : "";
-});
-
-const actions = [
-  { label: "再設定方法の案内を見る", to: "/password/reset", variant: "primary" as const },
-  { label: "ログイン画面へ", to: "/login" },
-];
-
-const resetNotes = computed(() => [] as string[]);
 </script>
 
 <template>
-  <AuthRouteNotice
-    body="ログイン可能であればワークスペース設定からパスワードを変更できます。ログインできない場合は、運営へ再案内を依頼してください。署名付きメール経由の旧フローは移植していません。"
-    :actions="actions"
-    lead="この旧 Laravel URL は利用せず、現在はモック前提の案内のみ提供しています。"
-    :notes="resetNotes"
-    title="署名付きパスワード再設定リンクです"
-  />
+  <section class="mx-auto w-full max-w-[880px] space-y-6 px-6 py-8">
+    <section class="rounded border border-border bg-surface shadow-lv1">
+      <div class="border-b border-border px-6 py-5">
+        <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">パスワードの再設定</h1>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>署名付きパスワード再設定リンクの旧フローは未移植です。</p>
+        <p>再設定が必要な場合は、ログイン画面から運営へお問い合わせください。</p>
+      </div>
+    </section>
+    <div class="pt-2 text-center">
+      <RouterLink
+        class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline"
+        to="/password/reset"
+      >
+        再設定方法の案内を見る
+      </RouterLink>
+    </div>
+  </section>
 </template>

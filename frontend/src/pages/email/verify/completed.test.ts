@@ -40,12 +40,11 @@ async function mountAtCompleted() {
 }
 
 describe("EmailVerifyCompletedPage", () => {
-    it("shows the migrated completion guidance", async () => {
+    it("shows completion message and home CTA", async () => {
         const wrapper = await mountAtCompleted();
 
-        expect(wrapper.text()).toContain("メール認証の完了案内");
-        expect(wrapper.text()).toContain("旧 Laravel URL は移植せず");
-        expect(wrapper.text()).toContain("モック前提の案内として残しています");
-        expect(wrapper.get('a[href="/"]').text()).toContain("ホームへ戻る");
+        expect(wrapper.text()).toContain("メール認証完了");
+        expect(wrapper.text()).toContain("手続きが完了しました！");
+        expect(wrapper.get('a[href="/"]').text()).toContain("ホームにアクセス");
     });
 });

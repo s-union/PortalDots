@@ -40,12 +40,11 @@ async function mountAtVerify() {
 }
 
 describe("EmailVerifyPage", () => {
-    it("shows logged-in verification guidance", async () => {
+    it("shows verify placeholder sections", async () => {
         const wrapper = await mountAtVerify();
 
-        expect(wrapper.text()).toContain("メール認証");
-        expect(wrapper.text()).toContain("Demo User として確認しています。");
-        expect(wrapper.text()).toContain("旧 Laravel URL は移植せず");
-        expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain("ユーザー設定へ");
+        expect(wrapper.text()).toContain("まだユーザー登録は完了していません！");
+        expect(wrapper.text()).toContain("Demo Userとしてログイン中");
+        expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain("登録情報の変更");
     });
 });

@@ -6,23 +6,28 @@ definePage({
     noBottomTabs: true,
   },
 });
-
-import AuthRouteNotice from "@/components/auth/AuthRouteNotice.vue";
-
-const actions = [
-  { label: "ホームへ戻る", to: "/", variant: "primary" as const },
-  { label: "ワークスペースへ", to: "/workspace" },
-];
-
-const completedNotes: string[] = [];
 </script>
 
 <template>
-  <AuthRouteNotice
-    body="認証結果の最終確認は、ログイン後の画面から進めてください。メール設計は未確定のため、この完了画面もモック前提の案内として残しています。"
-    :actions="actions"
-    lead="メール認証完了の旧 Laravel URL は移植せず、現在はログイン後導線へ案内します。"
-    :notes="completedNotes"
-    title="メール認証の完了案内"
-  />
+  <section class="mx-auto w-full max-w-[880px] px-6 py-8">
+    <section class="rounded border border-border bg-surface shadow-lv1">
+      <div class="border-b border-border px-6 py-5">
+        <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">メール認証完了</h1>
+      </div>
+      <div class="space-y-5 px-6 py-6 text-center text-sm leading-7 text-body">
+        <p class="text-success">
+          <i class="fas fa-check-circle" aria-hidden="true" />
+          <strong>手続きが完了しました！</strong>
+        </p>
+        <p>
+          <RouterLink
+            class="inline-flex rounded border border-primary bg-primary px-6 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline"
+            to="/"
+          >
+            ホームにアクセス
+          </RouterLink>
+        </p>
+      </div>
+    </section>
+  </section>
 </template>

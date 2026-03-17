@@ -24,13 +24,13 @@ async function mountAtVerifyAction() {
 }
 
 describe("EmailVerifyActionPage", () => {
-    it("shows signed verification link details", async () => {
+    it("shows signed verification placeholder and params", async () => {
         const wrapper = await mountAtVerifyAction();
 
-        expect(wrapper.text()).toContain("署名付きメール認証リンクです");
+        expect(wrapper.text()).toContain("メール認証");
+        expect(wrapper.text()).toContain("署名付きメール認証リンクの旧フローは未移植");
         expect(wrapper.text()).toContain("認証種別: email");
         expect(wrapper.text()).toContain("対象ユーザー: user-123");
-        expect(wrapper.text()).toContain("この旧 Laravel URL は利用せず");
         expect(wrapper.get('a[href="/"]').text()).toContain("ホームへ戻る");
     });
 });

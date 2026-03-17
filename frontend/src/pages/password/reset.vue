@@ -6,23 +6,30 @@ definePage({
     noBottomTabs: true,
   },
 });
-
-import AuthRouteNotice from "@/components/auth/AuthRouteNotice.vue";
-
-const resetNotes: string[] = [];
-
-const actions = [
-  { label: "ログイン画面へ", to: "/login", variant: "primary" as const },
-  { label: "ホームへ戻る", to: "/" },
-];
 </script>
 
 <template>
-  <AuthRouteNotice
-    body="ログインできる場合は、ワークスペースの設定画面からパスワードを変更できます。ログインできない場合は、運営へ再設定案内の再送を依頼してください。メール設計は未確定のため、この画面から本番メール送信は行いません。"
-    :actions="actions"
-    lead="パスワード再設定の旧 Laravel URL は移植せず、現在はモック前提の案内だけを表示します。"
-    :notes="resetNotes"
-    title="パスワード再設定"
-  />
+  <section class="mx-auto w-full max-w-[880px] space-y-6 px-6 py-8">
+    <section class="rounded border border-border bg-surface shadow-lv1">
+      <div class="border-b border-border px-6 py-5">
+        <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">パスワードの再設定</h1>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>
+          PortalDotsへのログインに使用していた学籍番号または連絡先メールアドレスを入力する旧フォームは未移植です。
+        </p>
+        <p>
+          ログインできる場合はユーザー設定から変更してください。ログインできない場合は運営へお問い合わせください。
+        </p>
+      </div>
+    </section>
+    <div class="pt-2 text-center">
+      <RouterLink
+        class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline"
+        to="/login"
+      >
+        ログイン画面へ
+      </RouterLink>
+    </div>
+  </section>
 </template>

@@ -5,3 +5,5 @@
 
 - Appレイアウトは `route.meta` に `noDrawer` / `noFooter` / `noBottomTabs` を導入し、旧Laravelの `layouts.app` / `layouts.no_drawer` の切替方針を再現しやすくした。
 - noDrawer時のヘッダーはタイトル+モード表示ではなくブランドリンクに切替すると、ログイン等の旧構造に近づく。
+- auth系の一部（register/password/email verify）はAPI未移植のため完全機能一致は不可。UIトーンとDOM構造を旧画面寄りにしつつ、未移植である旨を画面内で明示する方針を採用。
+- 既存テストは「旧URL未移植ガイダンス」を前提にしていたため、文言変更時はページ単位テストを同時更新する必要がある。

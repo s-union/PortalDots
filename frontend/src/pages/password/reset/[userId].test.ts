@@ -24,12 +24,11 @@ async function mountAtSignedReset() {
 }
 
 describe("PasswordResetSignedPage", () => {
-    it("shows signed reset link guidance", async () => {
+    it("shows signed reset placeholder and fallback action", async () => {
         const wrapper = await mountAtSignedReset();
 
-        expect(wrapper.text()).toContain("署名付きパスワード再設定リンクです");
-        expect(wrapper.text()).toContain("この旧 Laravel URL は利用せず");
-        expect(wrapper.text()).toContain("署名付きメール経由の旧フローは移植していません");
+        expect(wrapper.text()).toContain("パスワードの再設定");
+        expect(wrapper.text()).toContain("署名付きパスワード再設定リンクの旧フローは未移植");
         expect(wrapper.get('a[href="/password/reset"]').text()).toContain("再設定方法の案内を見る");
     });
 });

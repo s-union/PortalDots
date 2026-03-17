@@ -9,7 +9,6 @@ definePage({
 
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import AuthRouteNotice from "@/components/auth/AuthRouteNotice.vue";
 
 const route = useRoute();
 const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>);
@@ -22,11 +21,6 @@ const userId = computed(() => {
   return typeof value === "string" ? value : "unknown";
 });
 
-const actions = [
-  { label: "ホームへ戻る", to: "/", variant: "primary" as const },
-  { label: "ログイン画面へ", to: "/login" },
-];
-
 const verifyNotes = computed(() => [
   `認証種別: ${verifyType.value}`,
   `対象ユーザー: ${userId.value}`,
@@ -34,11 +28,25 @@ const verifyNotes = computed(() => [
 </script>
 
 <template>
-  <AuthRouteNotice
-    body="ログインできる場合はログイン後の設定画面から状態を確認してください。ログインできない場合は、運営へ最新の認証案内を確認してください。署名付きメール経由の旧フローは移植していません。"
-    :actions="actions"
-    lead="この旧 Laravel URL は利用せず、現在はモック前提の案内のみ提供しています。"
-    :notes="verifyNotes"
-    title="署名付きメール認証リンクです"
-  />
+  <section class="mx-auto w-full max-w-[880px] space-y-6 px-6 py-8">
+    <section class="rounded border border-border bg-surface shadow-lv1">
+      <div class="border-b border-border px-6 py-5">
+        <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">メール認証</h1>
+      </div>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+        <p>署名付きメール認証リンクの旧フローは未移植です。</p>
+        <ul class="list-disc space-y-1 pl-6 text-muted">
+          <li v-for="note in verifyNotes" :key="note">{{ note }}</li>
+        </ul>
+      </div>
+    </section>
+    <div class="pt-2 text-center">
+      <RouterLink
+        class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline"
+        to="/"
+      >
+        ホームへ戻る
+      </RouterLink>
+    </div>
+  </section>
 </template>

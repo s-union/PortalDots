@@ -13,7 +13,8 @@
       "id": "2",
       "title": "auth系ページの旧UI準拠化",
       "description": "login/register/password reset/email verify系をAuthRouteNoticeから実フォーム/リスト構造へ戻し、文言とCTAをLaravel準拠にする",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-17T17:27:14Z"
     },
     {
       "id": "3",
