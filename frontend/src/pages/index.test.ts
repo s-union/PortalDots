@@ -331,6 +331,7 @@ describe("HomePage", () => {
             expect(wrapper.text()).toContain("NEW");
             expect(wrapper.text()).toContain("搬入確認フォーム");
             expect(wrapper.text()).toContain("1企画あたり 2 件まで");
+            expect(wrapper.get('a[href="/"]').text()).toContain("ワークスペースへ");
         });
     });
 });

@@ -328,7 +328,7 @@ async function handleSelectCircle(circleId: string) {
         </p>
         <RouterLink
           class="rounded border border-border px-4 py-3 text-sm text-body transition hover:bg-surface-light"
-          to="/workspace"
+          to="/"
         >
           ワークスペースへ
         </RouterLink>
@@ -409,7 +409,7 @@ async function handleSelectCircle(circleId: string) {
       description="現在選択中の企画コンテキストです。"
     >
       <div class="divide-y divide-border">
-        <ListItemLink to="/workspace">
+        <ListItemLink to="/">
           <template #title>
             {{ selectedCircleSummary?.name }}
             <span
@@ -430,7 +430,7 @@ async function handleSelectCircle(circleId: string) {
       </div>
       <RouterLink
         class="block border-t border-border px-6 py-4 text-sm text-primary transition hover:bg-form-control"
-        to="/workspace"
+        to="/"
       >
         より詳しい情報を見る
       </RouterLink>
