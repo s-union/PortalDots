@@ -56,8 +56,9 @@
       "id": "8",
       "title": "全テスト失敗の既存原因切り分け",
       "description": "今回変更と無関係の広範囲既存失敗を分類し、影響範囲をprogressに記録する",
-      "status": "pending",
-      "addedAt": "2026-03-17T17:42:56Z"
+      "status": "done",
+      "addedAt": "2026-03-17T17:42:56Z",
+      "completedAt": "2026-03-17T17:45:07Z"
     }
   ]
 }
