@@ -4,7 +4,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import PrivacyPolicyPage from "./privacy_policy.vue";
 
 describe("PrivacyPolicyPage", () => {
-    it("shows the privacy policy markdown", async () => {
+    it("renders the privacy policy content", async () => {
         const router = createRouter({
             history: createMemoryHistory(),
             routes: [
@@ -24,6 +24,5 @@ describe("PrivacyPolicyPage", () => {
         expect(wrapper.text()).toContain("プライバシーポリシー");
         expect(wrapper.text()).toContain("第５条　Cookieについて");
         expect(wrapper.text()).toContain("Googleアナリティクス");
-        expect(wrapper.get('a[href="/"]').text()).toContain("ホームへ戻る");
     });
 });

@@ -23,7 +23,8 @@ describe("SupportPage", () => {
 
         expect(wrapper.text()).toContain("ブラウザ環境について");
         expect(wrapper.text()).toContain("Microsoft Edge 最新版");
-        expect(wrapper.text()).toContain("PortalDots は以下の環境での利用を推奨しています。");
-        expect(wrapper.get('a[href="/"]').text()).toContain("ホームへ戻る");
+        expect(wrapper.text()).toContain(
+            "PortalDotsは以下の環境でご覧いただくことを推奨いたします。",
+        );
     });
 });

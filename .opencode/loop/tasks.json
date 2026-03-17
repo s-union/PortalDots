@@ -27,7 +27,8 @@
       "id": "4",
       "title": "ホーム/静的ページUI調整",
       "description": "index/support/privacy_policyの構造と文言トーンを旧UIへ寄せ、privacyはMarkdown整形表示にする",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-17T17:33:22Z"
     },
     {
       "id": "5",
