@@ -1,8 +1,6 @@
 <?php
 
 use App\Providers\AppServiceProvider;
-use App\Providers\BladeServiceProvider;
-use App\Providers\EventServiceProvider;
 use Illuminate\Auth\AuthServiceProvider;
 use Illuminate\Auth\Passwords\PasswordResetServiceProvider;
 use Illuminate\Broadcasting\BroadcastServiceProvider;
@@ -257,10 +255,7 @@ return [
          * Application Service Providers...
          */
         AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
-        BladeServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
-        EventServiceProvider::class,
 
     ],
 
