@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Emails\SendEmailService;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckEnv;
 use App\Http\Middleware\CheckSelectedCircle;
@@ -19,6 +20,7 @@ use App\Http\Middleware\ValidateSignature;
 use App\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -127,6 +129,12 @@ return Application::configure(basePath: dirname(__DIR__))
             Authorize::class,
             CheckSelectedCircle::class,
         ]);
+    })
+    ->withSchedule(function (Schedule $schedule): void {
+        // メール一斉送信は毎分実行し、送信対象の処理を順次進める
+        $schedule->call(function (): void {
+            SendEmailService::runJob();
+        })->cron('* * * * *');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash([
