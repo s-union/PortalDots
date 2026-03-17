@@ -41,7 +41,8 @@
       "id": "6",
       "title": "差分確認と回帰チェック",
       "description": "frontendチェック/テストを実行し、不足があれば追補修正して反映",
-      "status": "pending"
+      "status": "done",
+      "completedAt": "2026-03-17T17:40:32Z"
     }
   ]
 }

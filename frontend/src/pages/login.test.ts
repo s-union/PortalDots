@@ -12,6 +12,7 @@ function createTestRouter() {
         routes: [
             { path: "/", component: { template: "<div>home</div>" } },
             { path: "/login", component: LoginPage },
+            { path: "/register", component: { template: "<div>register</div>" } },
             { path: "/password/reset", component: { template: "<div>password reset</div>" } },
         ],
     });
@@ -193,14 +194,8 @@ describe("LoginPage", () => {
         expect(wrapper.get('a[href="/password/reset"]').text()).toContain(
             "パスワードをお忘れの場合はこちら",
         );
-        expect(wrapper.text()).toContain("example@portaldots.com");
-        expect(wrapper.text()).toContain("password");
-        await wrapper.get('button[type="button"]').trigger("click");
-        expect((wrapper.get('input[name="loginId"]').element as HTMLInputElement).value).toBe(
-            "example@portaldots.com",
-        );
-        expect((wrapper.get('input[name="password"]').element as HTMLInputElement).value).toBe(
-            "password",
+        expect(wrapper.get('a[href="/register"]').text()).toContain(
+            "はじめての方は新規ユーザー登録",
         );
     });
 });
