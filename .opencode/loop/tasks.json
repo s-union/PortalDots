@@ -107,6 +107,14 @@
       "status": "done",
       "addedAt": "2026-03-17T18:13:35Z",
       "completedAt": "2026-03-17T18:23:39Z"
+    },
+    {
+      "id": "15",
+      "title": "全体テストの既存失敗をログへ反映",
+      "description": "mandatory checkで再確認した全体テスト既存失敗の傾向をprogressに追記する",
+      "status": "done",
+      "addedAt": "2026-03-17T18:26:37Z",
+      "completedAt": "2026-03-17T18:27:02Z"
     }
   ]
 }

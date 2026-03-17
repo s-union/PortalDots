@@ -22,3 +22,5 @@
 - login.test.ts の未使用import（`useSessionStore`）を除去することで `nr ci:check` のlint警告を0件にできる。
 - ルーター全体統合テスト（`src/app/router/index.test.ts`）は既存でも不安定なため、今回の `/workspace -> /` 互換リライトは `authGuard` 単体テストを追加して担保する方が安全。
 - `index.vue` のログイン後導線で `/workspace` を参照していた箇所を `/` に揃えると、共用トップ設計でもURLが分岐しない。
+- mandatory checkで `nr test` を再実行した結果、今回変更外の既存失敗（staff/workspace/circles配下の多数spec）が継続しており、全件グリーン化は別ストリーム扱いが必要。
+- `src/app/router/index.test.ts` は現時点でも既存不安定のため、`authGuard` 単体テストで `/workspace -> /` 互換を担保し、統合テスト修復は後続タスクへ分離する。
