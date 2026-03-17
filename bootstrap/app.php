@@ -128,13 +128,37 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\PDOException $exception, Request $request) {
             if (! config('app.debug')) {
+                // データベース接続エラー
+                //
+                // そのまま Blade ファイルによるエラーページを表示してしまうと、
+                // Blade ファイル内からデータベース接続が行われ、エラーページを
+                // 正常に表示することができない。そのため、Blade ファイルを使わず
+                // にエラーを表示する。
+                //
+                // このエラーが表示される状況の例は以下の通り。
+                //  1. データベース設定が間違っている
+                //  2. 接続先のデータベースにPortalDotsで利用するテーブルがない
+                //     →データベース内のデータを全削除した上でテーブルを作り直す
+                //       コマンド : php artisan migrate:refresh
                 $appName = config('app.name');
 
-                return response("\n                <!doctype html>\n                <meta charset=\"utf-8\">\n                <title>データベース接続エラー</title>\n                <div style=\"text-align: center\">\n                    <h1>データベースと接続できません</h1>\n                    <hr>\n                    <p>設定ファイル(.env)内のデータベース設定が正しいかご確認ください。</p>\n                    <hr>\n                    <p>{$appName} • Powered by PortalDots</p>\n                </div>");
+                return response("
+                <!doctype html>
+                <meta charset=\"utf-8\">
+                <title>データベース接続エラー</title>
+                <div style=\"text-align: center\">
+                    <h1>データベースと接続できません</h1>
+                    <hr>
+                    <p>設定ファイル(.env)内のデータベース設定が正しいかご確認ください。</p>
+                    <hr>
+                    <p>{$appName} • Powered by PortalDots</p>
+                </div>");
             }
         });
 
         $exceptions->respond(function (Response $response, \Throwable $exception, Request $request): Response {
+            // ステータスコードがエラーとなるページへのアクセスは Turbolinks に
+            // 対応していないので、200 を返す
             if (
                 ! empty($request->headers->get('Turbolinks-Referrer'))
                 && in_array($response->getStatusCode(), [403, 404, 500, 503], true)
