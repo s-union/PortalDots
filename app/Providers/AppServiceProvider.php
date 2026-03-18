@@ -10,11 +10,8 @@ use App\Services\Circles\SelectorService;
 use App\Services\Pages\ReadsService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Application;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Schema;
@@ -47,10 +44,6 @@ class AppServiceProvider extends ServiceProvider
         // 旧AuthServiceProvider.php部分
         // ユーザーモデルとポリシーの対応を定義
         Gate::policy(Page::class, PagePolicy::class);
-
-        // ユーザー登録時にメール認証通知を送信
-        // ここでけ旧EventServiceProvider.phpの部分
-        Event::listen(Registered::class, SendEmailVerificationNotification::class);
 
         // 管理者で、メール認証やスタッフ認証が済んでいる場合、
         // auth()->user->can() や @can() などで true を返すようにする
