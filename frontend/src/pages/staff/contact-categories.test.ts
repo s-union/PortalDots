@@ -64,28 +64,32 @@ describe("StaffContactCategoriesPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/contact-categories") && method === "GET") {
+                if (pathname.endsWith("/staff/contact-categories") && method === "GET") {
                     return new Response(JSON.stringify(categories), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/contact-categories") && method === "POST") {
+                if (pathname.endsWith("/staff/contact-categories") && method === "POST") {
                     categories.push({ id: "category-3", name: "新規", email: "new@example.com" });
                     return new Response(JSON.stringify(categories[2]), {
                         status: 201,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/contact-categories/category-1") && method === "PUT") {
+                if (pathname.endsWith("/staff/contact-categories/category-1") && method === "PUT") {
                     categories[0] = {
                         id: "category-1",
                         name: "更新総合",
@@ -96,7 +100,10 @@ describe("StaffContactCategoriesPage", () => {
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/contact-categories/category-2") && method === "DELETE") {
+                if (
+                    pathname.endsWith("/staff/contact-categories/category-2") &&
+                    method === "DELETE"
+                ) {
                     categories.splice(1, 1);
                     return new Response(null, { status: 204 });
                 }
@@ -169,15 +176,19 @@ describe("StaffContactCategoriesPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/contact-categories") && method === "GET") {
+                if (pathname.endsWith("/staff/contact-categories") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             { id: "category-1", name: "総合", email: "general@example.com" },
@@ -189,7 +200,10 @@ describe("StaffContactCategoriesPage", () => {
                         },
                     );
                 }
-                if (url.endsWith("/staff/contact-categories/category-2") && method === "DELETE") {
+                if (
+                    pathname.endsWith("/staff/contact-categories/category-2") &&
+                    method === "DELETE"
+                ) {
                     deleteRequests.push(url);
                     return new Response(null, { status: 204 });
                 }

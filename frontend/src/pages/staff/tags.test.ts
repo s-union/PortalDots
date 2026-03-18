@@ -63,35 +63,39 @@ describe("StaffTagsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/tags") && method === "GET") {
+                if (pathname.endsWith("/staff/tags") && method === "GET") {
                     return new Response(JSON.stringify(tags), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/tags") && method === "POST") {
+                if (pathname.endsWith("/staff/tags") && method === "POST") {
                     tags.push({ id: "tag-3", name: "新規タグ" });
                     return new Response(JSON.stringify(tags[2]), {
                         status: 201,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/tags/tag-1") && method === "PUT") {
+                if (pathname.endsWith("/staff/tags/tag-1") && method === "PUT") {
                     tags[0] = { id: "tag-1", name: "更新タグ" };
                     return new Response(JSON.stringify(tags[0]), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/tags/tag-2") && method === "DELETE") {
+                if (pathname.endsWith("/staff/tags/tag-2") && method === "DELETE") {
                     tags.splice(1, 1);
                     return new Response(null, { status: 204 });
                 }

@@ -9,6 +9,46 @@ export const apiBaseUrl = String(
     import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8081/v1",
 ).replace(/\/$/, "");
 
+function resolveApiClientBaseUrl(baseUrl: string) {
+    if (/^https?:\/\//.test(baseUrl)) {
+        return baseUrl;
+    }
+
+    const normalizedPath = baseUrl.startsWith("/") ? baseUrl : `/${baseUrl}`;
+    const origin =
+        typeof globalThis.location?.origin === "string" &&
+        globalThis.location.origin !== "" &&
+        globalThis.location.origin !== "null"
+            ? globalThis.location.origin
+            : "http://localhost";
+
+    return new URL(normalizedPath, `${origin}/`).toString().replace(/\/$/, "");
+}
+
+function resolvePublicApiOrigin(baseUrl: string) {
+    if (/^https?:\/\//.test(baseUrl)) {
+        return new URL(baseUrl).origin;
+    }
+
+    const configuredProxyTarget = import.meta.env.VITE_API_PROXY_TARGET;
+    if (typeof configuredProxyTarget === "string" && /^https?:\/\//.test(configuredProxyTarget)) {
+        return configuredProxyTarget.replace(/\/$/, "");
+    }
+
+    if (
+        typeof globalThis.location?.origin === "string" &&
+        globalThis.location.origin !== "" &&
+        globalThis.location.origin !== "null"
+    ) {
+        return globalThis.location.origin;
+    }
+
+    return "http://127.0.0.1:8081";
+}
+
+const apiClientBaseUrl = resolveApiClientBaseUrl(apiBaseUrl);
+const publicApiOrigin = resolvePublicApiOrigin(apiBaseUrl);
+
 const fetchWithCredentials: typeof fetch = async (input, init) => {
     return globalThis.fetch(input, {
         ...init,
@@ -17,7 +57,7 @@ const fetchWithCredentials: typeof fetch = async (input, init) => {
 };
 
 export const apiClient = createApiClient({
-    baseUrl: apiBaseUrl,
+    baseUrl: apiClientBaseUrl,
     fetch: fetchWithCredentials,
 });
 
@@ -28,13 +68,9 @@ export function buildApiUrl(path: string) {
     if (/^https?:\/\//.test(apiBaseUrl)) {
         return new URL(normalizedPath, `${apiBaseUrl}/`).toString();
     }
-    if (typeof window !== "undefined") {
-        return new URL(
-            normalizedPath,
-            new URL(`${apiBaseUrl}/`, window.location.origin),
-        ).toString();
-    }
-    return `${apiBaseUrl}/${normalizedPath}`;
+
+    const normalizedBasePath = apiBaseUrl.startsWith("/") ? apiBaseUrl : `/${apiBaseUrl}`;
+    return new URL(normalizedPath, `${publicApiOrigin}${normalizedBasePath}/`).toString();
 }
 
 export function encodePathSegment(segment: string) {

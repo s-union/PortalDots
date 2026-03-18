@@ -71,16 +71,20 @@ describe("StaffCircleDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/participation-types") && method === "GET") {
+                if (pathname.endsWith("/staff/participation-types") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             {
@@ -131,7 +135,7 @@ describe("StaffCircleDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/circles/circle-b") && method === "GET") {
+                if (pathname.endsWith("/staff/circles/circle-b") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             id: "circle-b",
@@ -147,7 +151,7 @@ describe("StaffCircleDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/circles/circle-b/email") && method === "GET") {
+                if (pathname.endsWith("/staff/circles/circle-b/email") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             circle: {
@@ -177,7 +181,7 @@ describe("StaffCircleDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/circles/circle-b") && method === "PUT") {
+                if (pathname.endsWith("/staff/circles/circle-b") && method === "PUT") {
                     return new Response(
                         JSON.stringify({
                             id: "circle-b",
@@ -193,14 +197,14 @@ describe("StaffCircleDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/circles/circle-b/email") && method === "POST") {
+                if (pathname.endsWith("/staff/circles/circle-b/email") && method === "POST") {
                     return new Response("{}", {
                         status: 201,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             csrfToken: "csrf-token",
@@ -303,23 +307,27 @@ describe("StaffCircleDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/participation-types") && method === "GET") {
+                if (pathname.endsWith("/staff/participation-types") && method === "GET") {
                     return new Response(JSON.stringify([]), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/circles/circle-b") && method === "GET") {
+                if (pathname.endsWith("/staff/circles/circle-b") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             id: "circle-b",
@@ -335,7 +343,7 @@ describe("StaffCircleDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/circles/circle-b/email") && method === "GET") {
+                if (pathname.endsWith("/staff/circles/circle-b/email") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             circle: {

@@ -26,9 +26,14 @@ function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
         await Promise.resolve();
         const url =
             typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-        const method = init?.method ?? "GET";
+        const method = (
+            init?.method ?? (input instanceof Request ? input.method : "GET")
+        ).toUpperCase();
 
-        if (url.endsWith("/participation-types") && method === "GET") {
+        const pathname = new URL(url, "http://localhost").pathname;
+        console.log("new.test fetch", method, pathname);
+
+        if (pathname.endsWith("/participation-types") && method === "GET") {
             return new Response(
                 JSON.stringify([
                     {
@@ -76,7 +81,7 @@ function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
             );
         }
 
-        if (url.endsWith("/circles") && method === "POST") {
+        if (pathname.endsWith("/circles") && method === "POST") {
             if (!createShouldSucceed) {
                 return new Response(
                     JSON.stringify({ message: "Validation failed", errors: { name: ["必須"] } }),
@@ -100,7 +105,7 @@ function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
             );
         }
 
-        if (url.endsWith("/session/bootstrap") && method === "GET") {
+        if (pathname.endsWith("/session/bootstrap") && method === "GET") {
             return new Response(
                 JSON.stringify({
                     csrfToken: "csrf-token",
@@ -138,14 +143,11 @@ describe("CircleCreatePage", () => {
             history: createMemoryHistory(),
             routes: [
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
-                { path: "/workspace/circles/create", component: CircleCreatePage },
-                {
-                    path: "/workspace/circles/detail",
-                    component: { template: "<div>detail</div>" },
-                },
+                { path: "/circles/new", component: CircleCreatePage },
+                { path: "/workspace/circles/detail", component: { template: "<div>detail</div>" } },
             ],
         });
-        await router.push("/workspace/circles/create");
+        await router.push("/circles/new");
         await router.isReady();
 
         const fetchMock = buildFetchMock();
@@ -161,11 +163,17 @@ describe("CircleCreatePage", () => {
         expect(wrapper.text()).toContain("模擬店");
         expect(wrapper.text()).toContain("企画を作成する");
 
-        const requestedUrls = fetchMock.mock.calls.map(([input]) =>
-            typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
-        );
-        expect(requestedUrls).toContain("http://127.0.0.1:8081/v1/participation-types");
-        expect(requestedUrls).not.toContain("http://127.0.0.1:8081/v1/staff/participation-types");
+        const requestedPathnames = fetchMock.mock.calls.map(([input]) => {
+            const url =
+                typeof input === "string"
+                    ? input
+                    : input instanceof URL
+                      ? input.toString()
+                      : input.url;
+            return new URL(url, "http://localhost").pathname;
+        });
+        expect(requestedPathnames).toContain("/v1/participation-types");
+        expect(requestedPathnames).not.toContain("/v1/staff/participation-types");
     });
 
     it("preselects the participation type from the legacy query parameter", async () => {
@@ -217,14 +225,11 @@ describe("CircleCreatePage", () => {
             history: createMemoryHistory(),
             routes: [
                 { path: "/workspace", component: { template: "<div>workspace</div>" } },
-                { path: "/workspace/circles/create", component: CircleCreatePage },
-                {
-                    path: "/workspace/circles/detail",
-                    component: { template: "<div>detail</div>" },
-                },
+                { path: "/circles/new", component: CircleCreatePage },
+                { path: "/workspace/circles/detail", component: { template: "<div>detail</div>" } },
             ],
         });
-        await router.push("/workspace/circles/create");
+        await router.push("/circles/new");
         await router.isReady();
 
         vi.stubGlobal("fetch", buildFetchMock());
@@ -256,14 +261,11 @@ describe("CircleCreatePage", () => {
         const router = createRouter({
             history: createMemoryHistory(),
             routes: [
-                { path: "/workspace/circles/create", component: CircleCreatePage },
-                {
-                    path: "/workspace/circles/detail",
-                    component: { template: "<div>detail</div>" },
-                },
+                { path: "/circles/new", component: CircleCreatePage },
+                { path: "/workspace/circles/detail", component: { template: "<div>detail</div>" } },
             ],
         });
-        await router.push("/workspace/circles/create");
+        await router.push("/circles/new");
         await router.isReady();
 
         vi.stubGlobal("fetch", buildFetchMock({ createShouldSucceed: false }));
@@ -277,6 +279,6 @@ describe("CircleCreatePage", () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain("企画の作成に失敗しました");
-        expect(router.currentRoute.value.path).toBe("/workspace/circles/create");
+        expect(router.currentRoute.value.path).toBe("/circles/new");
     });
 });

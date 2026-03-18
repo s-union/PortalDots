@@ -62,9 +62,13 @@ describe("StaffActivityLogsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },

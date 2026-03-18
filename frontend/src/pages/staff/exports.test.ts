@@ -57,11 +57,7 @@ describe("StaffExportsPage", () => {
         expect(wrapper.text()).toContain("デモ企画B");
         expect(wrapper.text()).toContain("CSV をダウンロード");
         expect(wrapper.text()).toContain("ZIP をダウンロード");
-        const summaryLink = wrapper.get(
-            'a[href="http://127.0.0.1:8081/v1/staff/exports/summary.csv"]',
-        );
-        expect(summaryLink.attributes("href")).toBe(
-            "http://127.0.0.1:8081/v1/staff/exports/summary.csv",
-        );
+        const summaryLink = wrapper.get('a[href$="/v1/staff/exports/summary.csv"]');
+        expect(summaryLink.attributes("href")).toMatch(/\/v1\/staff\/exports\/summary\.csv$/);
     });
 });

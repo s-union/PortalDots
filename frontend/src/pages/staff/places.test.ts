@@ -64,35 +64,39 @@ describe("StaffPlacesPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/places") && method === "GET") {
+                if (pathname.endsWith("/staff/places") && method === "GET") {
                     return new Response(JSON.stringify(places), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/places") && method === "POST") {
+                if (pathname.endsWith("/staff/places") && method === "POST") {
                     places.push({ id: "place-3", name: "体育館", type: 3, notes: "特殊" });
                     return new Response(JSON.stringify(places[2]), {
                         status: 201,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/places/place-1") && method === "PUT") {
+                if (pathname.endsWith("/staff/places/place-1") && method === "PUT") {
                     places[0] = { id: "place-1", name: "更新後 1号館", type: 1, notes: "更新" };
                     return new Response(JSON.stringify(places[0]), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/places/place-2") && method === "DELETE") {
+                if (pathname.endsWith("/staff/places/place-2") && method === "DELETE") {
                     places.splice(1, 1);
                     return new Response(null, { status: 204 });
                 }
@@ -106,9 +110,9 @@ describe("StaffPlacesPage", () => {
         });
         await flushPromises();
 
-        expect(
-            wrapper.get('a[href="http://127.0.0.1:8081/v1/staff/places/export"]').text(),
-        ).toContain("CSVで出力(場所別企画一覧)");
+        expect(wrapper.get('a[href$="/v1/staff/places/export"]').text()).toContain(
+            "CSVで出力(場所別企画一覧)",
+        );
         expect(wrapper.text()).toContain("1号館");
 
         const createInputs = wrapper.findAll("input[name]");
@@ -171,15 +175,19 @@ describe("StaffPlacesPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
-                if (url.endsWith("/staff/places") && method === "GET") {
+                if (pathname.endsWith("/staff/places") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             { id: "place-1", name: "1号館", type: 1, notes: "屋内" },
@@ -191,7 +199,7 @@ describe("StaffPlacesPage", () => {
                         },
                     );
                 }
-                if (url.endsWith("/staff/places/place-2") && method === "DELETE") {
+                if (pathname.endsWith("/staff/places/place-2") && method === "DELETE") {
                     deleteRequests.push(url);
                     return new Response(null, { status: 204 });
                 }

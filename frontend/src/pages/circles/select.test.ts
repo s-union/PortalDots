@@ -27,9 +27,13 @@ function buildFetchMock() {
         await Promise.resolve();
         const url =
             typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-        const method = init?.method ?? "GET";
+        const method = (
+            init?.method ?? (input instanceof Request ? input.method : "GET")
+        ).toUpperCase();
 
-        if (url.endsWith("/session/bootstrap") && method === "GET") {
+        const pathname = new URL(url, "http://localhost").pathname;
+
+        if (pathname.endsWith("/session/bootstrap") && method === "GET") {
             return new Response(
                 JSON.stringify({
                     csrfToken: "csrf-token",
@@ -53,7 +57,7 @@ function buildFetchMock() {
             );
         }
 
-        if (url.endsWith("/circles") && method === "GET") {
+        if (pathname.endsWith("/circles") && method === "GET") {
             return new Response(
                 JSON.stringify([
                     {
@@ -76,7 +80,7 @@ function buildFetchMock() {
             );
         }
 
-        if (url.endsWith("/participation-types") && method === "GET") {
+        if (pathname.endsWith("/participation-types") && method === "GET") {
             return new Response(
                 JSON.stringify([
                     {
@@ -127,7 +131,7 @@ function buildFetchMock() {
             );
         }
 
-        if (url.endsWith("/circles/current") && method === "PUT") {
+        if (pathname.endsWith("/circles/current") && method === "PUT") {
             selected = true;
             return new Response(null, { status: 204 });
         }

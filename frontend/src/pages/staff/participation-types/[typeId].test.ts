@@ -80,9 +80,13 @@ describe("StaffParticipationTypeDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
                 }
 
@@ -107,7 +111,7 @@ describe("StaffParticipationTypeDetailPage", () => {
                 }
 
                 if (
-                    url.endsWith("/staff/participation-types/participation-type-food") &&
+                    pathname.endsWith("/staff/participation-types/participation-type-food") &&
                     method === "GET"
                 ) {
                     return jsonResponse({
@@ -134,7 +138,7 @@ describe("StaffParticipationTypeDetailPage", () => {
                 }
 
                 if (
-                    url.endsWith("/staff/participation-types/participation-type-food") &&
+                    pathname.endsWith("/staff/participation-types/participation-type-food") &&
                     method === "PUT"
                 ) {
                     if (input instanceof Request) {
@@ -167,7 +171,7 @@ describe("StaffParticipationTypeDetailPage", () => {
                 }
 
                 if (
-                    url.endsWith("/staff/participation-types/participation-type-food") &&
+                    pathname.endsWith("/staff/participation-types/participation-type-food") &&
                     method === "DELETE"
                 ) {
                     return new Response(null, { status: 204 });
@@ -284,9 +288,13 @@ describe("StaffParticipationTypeDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
                 }
 
@@ -303,7 +311,7 @@ describe("StaffParticipationTypeDetailPage", () => {
                 }
 
                 if (
-                    url.endsWith("/staff/participation-types/participation-type-food") &&
+                    pathname.endsWith("/staff/participation-types/participation-type-food") &&
                     method === "GET"
                 ) {
                     return jsonResponse({
@@ -330,7 +338,7 @@ describe("StaffParticipationTypeDetailPage", () => {
                 }
 
                 if (
-                    url.endsWith("/staff/participation-types/participation-type-food") &&
+                    pathname.endsWith("/staff/participation-types/participation-type-food") &&
                     method === "DELETE"
                 ) {
                     deleted = true;

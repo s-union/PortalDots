@@ -59,16 +59,20 @@ describe("StaffFormAnswerCreatePage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status")) {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status")) {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/forms/form-circle-b-1/answers") && method === "GET") {
+                if (pathname.endsWith("/staff/forms/form-circle-b-1/answers") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             form: {
@@ -112,7 +116,10 @@ describe("StaffFormAnswerCreatePage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/forms/form-circle-b-1/answers") && method === "POST") {
+                if (
+                    pathname.endsWith("/staff/forms/form-circle-b-1/answers") &&
+                    method === "POST"
+                ) {
                     return new Response(
                         JSON.stringify({
                             answer: {

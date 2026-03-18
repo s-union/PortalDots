@@ -54,23 +54,27 @@ function buildFetchMock(
         await Promise.resolve();
         const url =
             typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-        const method = init?.method ?? "GET";
+        const method = (
+            init?.method ?? (input instanceof Request ? input.method : "GET")
+        ).toUpperCase();
 
-        if (url.endsWith("/circles/current/detail") && method === "GET") {
+        const pathname = new URL(url, "http://localhost").pathname;
+
+        if (pathname.endsWith("/circles/current/detail") && method === "GET") {
             return new Response(JSON.stringify(circleDetailFixture), {
                 status: 200,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        if (url.endsWith("/circles/current/members") && method === "GET") {
+        if (pathname.endsWith("/circles/current/members") && method === "GET") {
             return new Response(JSON.stringify(members), {
                 status: 200,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        if (url.endsWith("/circles/current/members") && method === "POST") {
+        if (pathname.endsWith("/circles/current/members") && method === "POST") {
             if (!addShouldSucceed) {
                 return new Response(
                     JSON.stringify({

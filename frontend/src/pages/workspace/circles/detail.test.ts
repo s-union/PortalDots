@@ -47,16 +47,20 @@ function buildFetchMock(
         await Promise.resolve();
         const url =
             typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-        const method = init?.method ?? "GET";
+        const method = (
+            init?.method ?? (input instanceof Request ? input.method : "GET")
+        ).toUpperCase();
 
-        if (url.endsWith("/circles/current/detail") && method === "GET") {
+        const pathname = new URL(url, "http://localhost").pathname;
+
+        if (pathname.endsWith("/circles/current/detail") && method === "GET") {
             return new Response(JSON.stringify(detail), {
                 status: 200,
                 headers: { "Content-Type": "application/json" },
             });
         }
 
-        if (url.endsWith("/circles/current/detail") && method === "PUT") {
+        if (pathname.endsWith("/circles/current/detail") && method === "PUT") {
             if (!updateShouldSucceed) {
                 return new Response(JSON.stringify({ message: "Validation failed", errors: {} }), {
                     status: 422,
@@ -69,14 +73,14 @@ function buildFetchMock(
             });
         }
 
-        if (url.endsWith("/circles/current") && method === "DELETE") {
+        if (pathname.endsWith("/circles/current") && method === "DELETE") {
             if (!deleteShouldSucceed) {
                 return new Response(JSON.stringify({ message: "Forbidden" }), { status: 403 });
             }
             return new Response(null, { status: 204 });
         }
 
-        if (url.endsWith("/circles/current/submit") && method === "POST") {
+        if (pathname.endsWith("/circles/current/submit") && method === "POST") {
             return new Response(
                 JSON.stringify({ ...detail, submittedAt: "2026-03-15T00:00:00Z" }),
                 {
@@ -86,7 +90,7 @@ function buildFetchMock(
             );
         }
 
-        if (url.endsWith("/session/bootstrap") && method === "GET") {
+        if (pathname.endsWith("/session/bootstrap") && method === "GET") {
             return new Response(
                 JSON.stringify({
                     csrfToken: "csrf-token",

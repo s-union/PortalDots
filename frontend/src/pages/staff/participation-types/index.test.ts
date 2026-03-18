@@ -69,13 +69,17 @@ describe("StaffParticipationTypesIndexPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
                 }
 
-                if (url.endsWith("/staff/participation-types") && method === "GET") {
+                if (pathname.endsWith("/staff/participation-types") && method === "GET") {
                     return jsonResponse(
                         created
                             ? [
@@ -106,7 +110,7 @@ describe("StaffParticipationTypesIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/participation-types") && method === "POST") {
+                if (pathname.endsWith("/staff/participation-types") && method === "POST") {
                     if (input instanceof Request) {
                         createdRequestBody = await input.clone().text();
                     } else if (typeof init?.body === "string") {

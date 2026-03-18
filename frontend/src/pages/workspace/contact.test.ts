@@ -27,16 +27,16 @@ describe("ContactPage", () => {
     it("lists categories and submits a contact message", async () => {
         const { router, wrapper } = await mountContactPage(async (input, init) => {
             await Promise.resolve();
-            const { method, url } = getRequestMeta(input, init);
+            const { method, url, pathname } = getRequestMeta(input, init);
 
-            if (url.endsWith("/contact-categories") && method === "GET") {
+            if (pathname.endsWith("/contact-categories") && method === "GET") {
                 return jsonResponse([
                     { id: "contact-general", name: "総合窓口" },
                     { id: "contact-safety", name: "安全管理" },
                 ]);
             }
 
-            if (url.endsWith("/contact") && method === "GET") {
+            if (pathname.endsWith("/contact") && method === "GET") {
                 return jsonResponse([
                     {
                         id: "mail-job-0",
@@ -49,7 +49,7 @@ describe("ContactPage", () => {
                 ]);
             }
 
-            if (url.endsWith("/contact") && method === "POST") {
+            if (pathname.endsWith("/contact") && method === "POST") {
                 return jsonResponse(
                     {
                         id: "mail-job-1",
@@ -83,13 +83,13 @@ describe("ContactPage", () => {
     it("shows the empty history state when no contact has been sent", async () => {
         const { wrapper } = await mountContactPage(async (input, init) => {
             await Promise.resolve();
-            const { method, url } = getRequestMeta(input, init);
+            const { method, url, pathname } = getRequestMeta(input, init);
 
-            if (url.endsWith("/contact-categories") && method === "GET") {
+            if (pathname.endsWith("/contact-categories") && method === "GET") {
                 return jsonResponse([{ id: "contact-general", name: "総合窓口" }]);
             }
 
-            if (url.endsWith("/contact") && method === "GET") {
+            if (pathname.endsWith("/contact") && method === "GET") {
                 return jsonResponse([]);
             }
 
@@ -103,17 +103,17 @@ describe("ContactPage", () => {
     it("shows the validation message when contact submission fails", async () => {
         const { wrapper } = await mountContactPage(async (input, init) => {
             await Promise.resolve();
-            const { method, url } = getRequestMeta(input, init);
+            const { method, url, pathname } = getRequestMeta(input, init);
 
-            if (url.endsWith("/contact-categories") && method === "GET") {
+            if (pathname.endsWith("/contact-categories") && method === "GET") {
                 return jsonResponse([{ id: "contact-general", name: "総合窓口" }]);
             }
 
-            if (url.endsWith("/contact") && method === "GET") {
+            if (pathname.endsWith("/contact") && method === "GET") {
                 return jsonResponse([]);
             }
 
-            if (url.endsWith("/contact") && method === "POST") {
+            if (pathname.endsWith("/contact") && method === "POST") {
                 return jsonResponse(
                     {
                         message: "The given data was invalid.",
@@ -140,13 +140,13 @@ describe("ContactPage", () => {
     it("keeps the page usable when categories fetch fails", async () => {
         const { wrapper } = await mountContactPage(async (input, init) => {
             await Promise.resolve();
-            const { method, url } = getRequestMeta(input, init);
+            const { method, url, pathname } = getRequestMeta(input, init);
 
-            if (url.endsWith("/contact-categories") && method === "GET") {
+            if (pathname.endsWith("/contact-categories") && method === "GET") {
                 return jsonResponse({ message: "server error" }, 500);
             }
 
-            if (url.endsWith("/contact") && method === "GET") {
+            if (pathname.endsWith("/contact") && method === "GET") {
                 return jsonResponse([]);
             }
 
@@ -214,9 +214,13 @@ async function fillContactForm(wrapper: ReturnType<typeof mount>) {
 function getRequestMeta(input: RequestInfo | URL, init?: RequestInit) {
     const url =
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-    const method = init?.method ?? "GET";
+    const method = (
+        init?.method ?? (input instanceof Request ? input.method : "GET")
+    ).toUpperCase();
 
-    return { method, url };
+    const pathname = new URL(url, "http://localhost").pathname;
+
+    return { method, url, pathname };
 }
 
 function jsonResponse(body: unknown, status = 200) {

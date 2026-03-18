@@ -74,9 +74,13 @@ describe("FormDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return jsonResponse({
                         csrfToken: "csrf-token",
                         currentCircle: {
@@ -92,7 +96,7 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1") && method === "GET") {
+                if (pathname.endsWith("/forms/form-circle-a-1") && method === "GET") {
                     return jsonResponse({
                         id: "form-circle-a-1",
                         name: "搬入確認フォーム",
@@ -149,7 +153,7 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answers") && method === "GET") {
+                if (pathname.endsWith("/forms/form-circle-a-1/answers") && method === "GET") {
                     const hasAnswer =
                         Object.keys(savedDetails).length > 0 || savedUploads.length > 0;
                     return jsonResponse({
@@ -177,7 +181,10 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answers/answer-1") && method === "GET") {
+                if (
+                    pathname.endsWith("/forms/form-circle-a-1/answers/answer-1") &&
+                    method === "GET"
+                ) {
                     const hasAnswer =
                         Object.keys(savedDetails).length > 0 || savedUploads.length > 0;
                     return jsonResponse({
@@ -203,7 +210,7 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answer") && method === "GET") {
+                if (pathname.endsWith("/forms/form-circle-a-1/answer") && method === "GET") {
                     const hasAnswer =
                         Object.keys(savedDetails).length > 0 || savedUploads.length > 0;
                     return jsonResponse({
@@ -229,7 +236,7 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answer") && method === "PUT") {
+                if (pathname.endsWith("/forms/form-circle-a-1/answer") && method === "PUT") {
                     const parsedBody = await parseRequestBody(input, init?.body);
                     savedDetails = parsedBody.details ?? {};
                     return jsonResponse({
@@ -253,7 +260,10 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answers/answer-1") && method === "PUT") {
+                if (
+                    pathname.endsWith("/forms/form-circle-a-1/answers/answer-1") &&
+                    method === "PUT"
+                ) {
                     const parsedBody = await parseRequestBody(input, init?.body);
                     savedDetails = parsedBody.details ?? {};
                     return jsonResponse({
@@ -277,7 +287,10 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answer/uploads") && method === "POST") {
+                if (
+                    pathname.endsWith("/forms/form-circle-a-1/answer/uploads") &&
+                    method === "POST"
+                ) {
                     return jsonResponse(savedUploads[0], 201);
                 }
 
@@ -367,9 +380,13 @@ describe("FormDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return jsonResponse({
                         csrfToken: "csrf-token",
                         currentCircle: {
@@ -385,7 +402,7 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1") && method === "GET") {
+                if (pathname.endsWith("/forms/form-circle-a-1") && method === "GET") {
                     return jsonResponse({
                         id: "form-circle-a-1",
                         name: "搬入確認フォーム",
@@ -414,15 +431,15 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answers") && method === "GET") {
+                if (pathname.endsWith("/forms/form-circle-a-1/answers") && method === "GET") {
                     return jsonResponse({ answers: [] });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answer") && method === "GET") {
+                if (pathname.endsWith("/forms/form-circle-a-1/answer") && method === "GET") {
                     return jsonResponse({ answer: null });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answer") && method === "PUT") {
+                if (pathname.endsWith("/forms/form-circle-a-1/answer") && method === "PUT") {
                     return jsonResponse(
                         {
                             message: "validation_error",
@@ -494,9 +511,13 @@ describe("FormDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/forms/form-circle-a-1") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/forms/form-circle-a-1") && method === "GET") {
                     return jsonResponse({
                         id: "form-circle-a-1",
                         name: "搬入確認フォーム",
@@ -526,7 +547,7 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answers") && method === "GET") {
+                if (pathname.endsWith("/forms/form-circle-a-1/answers") && method === "GET") {
                     return jsonResponse({
                         answers: [
                             {
@@ -547,7 +568,10 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/forms/form-circle-a-1/answers/answer-2") && method === "GET") {
+                if (
+                    pathname.endsWith("/forms/form-circle-a-1/answers/answer-2") &&
+                    method === "GET"
+                ) {
                     return jsonResponse({
                         answer: {
                             id: "answer-2",
@@ -559,7 +583,7 @@ describe("FormDetailPage", () => {
                     });
                 }
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return jsonResponse({
                         csrfToken: "csrf-token",
                         currentCircle: {

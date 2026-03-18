@@ -66,16 +66,20 @@ describe("StaffFormsIndexPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/forms") && method === "GET") {
+                if (pathname.endsWith("/staff/forms") && method === "GET") {
                     return new Response(
                         JSON.stringify(
                             created
@@ -130,7 +134,7 @@ describe("StaffFormsIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/forms") && method === "POST") {
+                if (pathname.endsWith("/staff/forms") && method === "POST") {
                     created = true;
                     const request = await parseRequestBody(input, init?.body);
                     createdRequestBody = request;
@@ -234,16 +238,20 @@ describe("StaffFormsIndexPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/forms") && method === "GET") {
+                if (pathname.endsWith("/staff/forms") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             {
@@ -264,7 +272,7 @@ describe("StaffFormsIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/forms/form-circle-b-1/copy") && method === "POST") {
+                if (pathname.endsWith("/staff/forms/form-circle-b-1/copy") && method === "POST") {
                     return new Response(
                         JSON.stringify({
                             id: "form-circle-b-copy",
@@ -282,7 +290,7 @@ describe("StaffFormsIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/forms/form-circle-b-1") && method === "DELETE") {
+                if (pathname.endsWith("/staff/forms/form-circle-b-1") && method === "DELETE") {
                     deleteRequests.push(url);
                     return new Response(null, { status: 204 });
                 }

@@ -78,16 +78,20 @@ describe("StaffUserDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/users/demo-user") && method === "GET") {
+                if (pathname.endsWith("/staff/users/demo-user") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             id: "demo-user",
@@ -103,7 +107,7 @@ describe("StaffUserDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/users/demo-user") && method === "PUT") {
+                if (pathname.endsWith("/staff/users/demo-user") && method === "PUT") {
                     displayName = "Updated Demo User";
                     loginIds = ["updated@example.com", "24a9999"];
                     return new Response(
@@ -121,7 +125,7 @@ describe("StaffUserDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/users/demo-user/roles") && method === "PUT") {
+                if (pathname.endsWith("/staff/users/demo-user/roles") && method === "PUT") {
                     updatedRoles = ["participant", "forms_manager"];
                     return new Response(
                         JSON.stringify({
@@ -138,7 +142,7 @@ describe("StaffUserDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/users/demo-user/verify") && method === "PATCH") {
+                if (pathname.endsWith("/staff/users/demo-user/verify") && method === "PATCH") {
                     isVerified = true;
                     return new Response(
                         JSON.stringify({
@@ -155,7 +159,7 @@ describe("StaffUserDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             csrfToken: "csrf-token",

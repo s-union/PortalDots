@@ -66,9 +66,13 @@ describe("DocumentsIndexPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             csrfToken: "csrf-token",

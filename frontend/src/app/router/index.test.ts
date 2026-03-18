@@ -1,59 +1,72 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setActivePinia } from "pinia";
 import { pinia } from "@/app/providers/pinia";
 import { queryClient } from "@/app/providers/queryClient";
+
+const sessionApiMocks = vi.hoisted(() => ({
+    fetchSessionBootstrap: vi.fn(),
+}));
+
+const staffStatusApiMocks = vi.hoisted(() => ({
+    fetchStaffStatus: vi.fn(),
+}));
+
+vi.mock("@/features/session/api", async () => {
+    const actual =
+        await vi.importActual<typeof import("@/features/session/api")>("@/features/session/api");
+
+    return {
+        ...actual,
+        fetchSessionBootstrap: sessionApiMocks.fetchSessionBootstrap,
+    };
+});
+
+vi.mock("@/features/staff/status/api", async () => {
+    const actual = await vi.importActual<typeof import("@/features/staff/status/api")>(
+        "@/features/staff/status/api",
+    );
+
+    return {
+        ...actual,
+        fetchStaffStatus: staffStatusApiMocks.fetchStaffStatus,
+    };
+});
+
 import { router } from "./index";
 
 describe("app router guards", () => {
+    beforeEach(() => {
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "",
+            currentCircle: null,
+            featureFlags: [],
+            roles: [],
+            permissions: [],
+            user: null,
+        });
+        staffStatusApiMocks.fetchStaffStatus.mockResolvedValue({
+            allowed: true,
+            authorized: true,
+        });
+    });
+
     afterEach(async () => {
         vi.unstubAllGlobals();
+        vi.clearAllMocks();
         queryClient.clear();
         setActivePinia(pinia);
         await router.replace("/");
     });
 
     it("redirects unauthenticated workspace access to login", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "",
-                            currentCircle: null,
-                            featureFlags: [],
-                            roles: [],
-                            user: null,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(
-                        JSON.stringify({
-                            allowed: true,
-                            authorized: true,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "",
+            currentCircle: null,
+            featureFlags: [],
+            roles: [],
+            permissions: [],
+            user: null,
+        });
 
         await router.push("/workspace");
         await router.isReady();
@@ -61,102 +74,38 @@ describe("app router guards", () => {
         expect(router.currentRoute.value.fullPath).toBe("/login");
     });
 
-    it("redirects authenticated workspace access without circle to circle selector", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: null,
-                            featureFlags: [],
-                            roles: ["participant"],
-                            user: {
-                                id: "demo-user",
-                                displayName: "Demo User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(
-                        JSON.stringify({
-                            allowed: true,
-                            authorized: true,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+    it("rewrites authenticated workspace root access to home", async () => {
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            permissions: [],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+                canDeleteAccount: false,
+            },
+        });
 
         await router.push("/workspace");
 
-        expect(router.currentRoute.value.fullPath).toBe("/circles/select?redirect=/workspace");
+        expect(router.currentRoute.value.fullPath).toBe("/");
     });
 
     it("redirects authenticated register access to home via public-only guard", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: null,
-                            featureFlags: [],
-                            roles: ["participant"],
-                            user: {
-                                id: "demo-user",
-                                displayName: "Demo User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(
-                        JSON.stringify({
-                            allowed: true,
-                            authorized: true,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            permissions: [],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+                canDeleteAccount: false,
+            },
+        });
 
         await router.push("/register");
         await router.isReady();
@@ -165,47 +114,14 @@ describe("app router guards", () => {
     });
 
     it("redirects unauthenticated email verify access to login", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "",
-                            currentCircle: null,
-                            featureFlags: [],
-                            roles: [],
-                            user: null,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(
-                        JSON.stringify({
-                            allowed: true,
-                            authorized: true,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "",
+            currentCircle: null,
+            featureFlags: [],
+            roles: [],
+            permissions: [],
+            user: null,
+        });
 
         await router.push("/email/verify");
         await router.isReady();
@@ -214,44 +130,18 @@ describe("app router guards", () => {
     });
 
     it("redirects authenticated signed password reset links to home via public-only guard", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: null,
-                            featureFlags: [],
-                            roles: ["participant"],
-                            user: {
-                                id: "demo-user",
-                                displayName: "Demo User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    });
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            permissions: [],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+                canDeleteAccount: false,
+            },
+        });
 
         await router.push("/password/reset/user-123");
         await router.isReady();
@@ -260,44 +150,18 @@ describe("app router guards", () => {
     });
 
     it("redirects authenticated signed email verify links to home via public-only guard", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: null,
-                            featureFlags: [],
-                            roles: ["participant"],
-                            user: {
-                                id: "demo-user",
-                                displayName: "Demo User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    });
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "csrf-token",
+            currentCircle: null,
+            featureFlags: [],
+            roles: ["participant"],
+            permissions: [],
+            user: {
+                id: "demo-user",
+                displayName: "Demo User",
+                canDeleteAccount: false,
+            },
+        });
 
         await router.push("/email/verify/email/user-123");
         await router.isReady();
@@ -306,41 +170,14 @@ describe("app router guards", () => {
     });
 
     it("redirects unauthenticated email verify completed access to login", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "",
-                            currentCircle: null,
-                            featureFlags: [],
-                            roles: [],
-                            user: null,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-                        status: 200,
-                        headers: { "Content-Type": "application/json" },
-                    });
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "",
+            currentCircle: null,
+            featureFlags: [],
+            roles: [],
+            permissions: [],
+            user: null,
+        });
 
         await router.push("/email/verify/completed");
         await router.isReady();
@@ -349,54 +186,25 @@ describe("app router guards", () => {
     });
 
     it("redirects staff dashboard access to staff verify when not yet authorized", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: {
-                                id: "circle-a",
-                                name: "デモ企画A",
-                            },
-                            featureFlags: [],
-                            roles: ["admin"],
-                            user: {
-                                id: "staff-user",
-                                displayName: "Staff User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(
-                        JSON.stringify({
-                            allowed: true,
-                            authorized: false,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-a",
+                name: "デモ企画A",
+            },
+            featureFlags: [],
+            roles: ["admin"],
+            permissions: [],
+            user: {
+                id: "staff-user",
+                displayName: "Staff User",
+                canDeleteAccount: false,
+            },
+        });
+        staffStatusApiMocks.fetchStaffStatus.mockResolvedValue({
+            allowed: true,
+            authorized: false,
+        });
 
         await router.push("/staff");
 
@@ -404,54 +212,21 @@ describe("app router guards", () => {
     });
 
     it("redirects non-admin staff activity log access to staff top", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: {
-                                id: "circle-a",
-                                name: "デモ企画A",
-                            },
-                            featureFlags: [],
-                            roles: ["circle_manager"],
-                            user: {
-                                id: "circle-user",
-                                displayName: "Circle User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(
-                        JSON.stringify({
-                            allowed: true,
-                            authorized: true,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-a",
+                name: "デモ企画A",
+            },
+            featureFlags: [],
+            roles: ["circle_manager"],
+            permissions: [],
+            user: {
+                id: "circle-user",
+                displayName: "Circle User",
+                canDeleteAccount: false,
+            },
+        });
 
         await router.push("/staff/activity-logs");
 
@@ -459,54 +234,21 @@ describe("app router guards", () => {
     });
 
     it("redirects non-admin staff portal settings access to staff top", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-
-                if (url.endsWith("/session/bootstrap")) {
-                    return new Response(
-                        JSON.stringify({
-                            csrfToken: "csrf-token",
-                            currentCircle: {
-                                id: "circle-a",
-                                name: "デモ企画A",
-                            },
-                            featureFlags: [],
-                            roles: ["content_manager"],
-                            user: {
-                                id: "content-user",
-                                displayName: "Content User",
-                            },
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                if (url.endsWith("/staff/status")) {
-                    return new Response(
-                        JSON.stringify({
-                            allowed: true,
-                            authorized: true,
-                        }),
-                        {
-                            status: 200,
-                            headers: { "Content-Type": "application/json" },
-                        },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${url}`);
-            }),
-        );
+        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+            csrfToken: "csrf-token",
+            currentCircle: {
+                id: "circle-a",
+                name: "デモ企画A",
+            },
+            featureFlags: [],
+            roles: ["content_manager"],
+            permissions: [],
+            user: {
+                id: "content-user",
+                displayName: "Content User",
+                canDeleteAccount: false,
+            },
+        });
 
         await router.push("/staff/settings/portal");
 
@@ -521,28 +263,18 @@ describe("app router guards", () => {
     });
 
     it("opens the support page without session bootstrap", async () => {
-        const fetchMock = vi.fn(() => {
-            throw new Error("session bootstrap should not be fetched for /support");
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
         await router.push("/support");
         await router.isReady();
 
         expect(router.currentRoute.value.fullPath).toBe("/support");
-        expect(fetchMock).not.toHaveBeenCalled();
+        expect(sessionApiMocks.fetchSessionBootstrap).not.toHaveBeenCalled();
     });
 
     it("opens the privacy policy page without session bootstrap", async () => {
-        const fetchMock = vi.fn(() => {
-            throw new Error("session bootstrap should not be fetched for /privacy_policy");
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
         await router.push("/privacy_policy");
         await router.isReady();
 
         expect(router.currentRoute.value.fullPath).toBe("/privacy_policy");
-        expect(fetchMock).not.toHaveBeenCalled();
+        expect(sessionApiMocks.fetchSessionBootstrap).not.toHaveBeenCalled();
     });
 });

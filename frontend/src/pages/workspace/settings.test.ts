@@ -24,6 +24,7 @@ function createQueryPlugin() {
 
 describe("UserSettingsPage", () => {
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.unstubAllGlobals();
         document.cookie = "ui_theme=; Path=/; Max-Age=0; SameSite=Lax";
         document.documentElement.classList.remove("theme-system", "theme-light", "theme-dark");
@@ -385,10 +386,7 @@ describe("UserSettingsPage", () => {
         await router.push("/workspace/settings/delete");
         await router.isReady();
 
-        vi.stubGlobal(
-            "confirm",
-            vi.fn(() => true),
-        );
+        const confirmMock = vi.spyOn(window, "confirm").mockImplementation(() => true);
         const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
             await Promise.resolve();
             const url =
@@ -431,9 +429,13 @@ describe("UserSettingsPage", () => {
                     : input instanceof URL
                       ? input.toString()
                       : input.url;
-            return url.includes("/session/account") && init?.method === "DELETE";
+            const method = (
+                init?.method ?? (input instanceof Request ? input.method : "GET")
+            ).toUpperCase();
+            return url.includes("/session/account") && method === "DELETE";
         });
 
+        expect(confirmMock).toHaveBeenCalledWith("本当にアカウントを削除しますか？");
         expect(deleteCall).toBeDefined();
         expect(sessionStore.isAuthenticated).toBe(false);
         expect(router.currentRoute.value.path).toBe("/");
@@ -570,10 +572,7 @@ describe("UserSettingsPage", () => {
         await router.push("/workspace/settings/delete");
         await router.isReady();
 
-        vi.stubGlobal(
-            "confirm",
-            vi.fn(() => true),
-        );
+        const confirmMock = vi.spyOn(window, "confirm").mockImplementation(() => true);
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -618,6 +617,7 @@ describe("UserSettingsPage", () => {
         await deleteButton.trigger("click");
         await flushPromises();
 
+        expect(confirmMock).toHaveBeenCalledWith("本当にアカウントを削除しますか？");
         expect(wrapper.text()).toContain("企画に所属しているため、アカウント削除はできません");
         expect(sessionStore.isAuthenticated).toBe(true);
         expect(router.currentRoute.value.path).toBe("/workspace/settings/delete");

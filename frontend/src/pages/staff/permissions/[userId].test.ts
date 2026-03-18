@@ -63,17 +63,21 @@ describe("StaffPermissionDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
                 }
 
-                if (url.endsWith("/staff/permissions/content-user") && method === "GET") {
+                if (pathname.endsWith("/staff/permissions/content-user") && method === "GET") {
                     return jsonResponse(buildPermissionDetail("staff.pages.read"));
                 }
 
-                if (url.endsWith("/staff/permissions/content-user") && method === "PUT") {
+                if (pathname.endsWith("/staff/permissions/content-user") && method === "PUT") {
                     return jsonResponse(buildPermissionDetail("staff.forms.read"));
                 }
 

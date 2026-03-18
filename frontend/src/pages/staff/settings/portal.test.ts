@@ -61,9 +61,13 @@ describe("StaffPortalSettingsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return jsonResponse({
                         csrfToken: "csrf-token",
                         currentCircle: { id: "circle-b", name: "デモ企画B" },
@@ -78,11 +82,11 @@ describe("StaffPortalSettingsPage", () => {
                     });
                 }
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
                 }
 
-                if (url.endsWith("/staff/portal-settings") && method === "GET") {
+                if (pathname.endsWith("/staff/portal-settings") && method === "GET") {
                     return jsonResponse({
                         appName: "PortalDots",
                         portalDescription: "学園祭参加団体向けポータル",
@@ -100,7 +104,7 @@ describe("StaffPortalSettingsPage", () => {
                     });
                 }
 
-                if (url.endsWith("/staff/portal-settings") && method === "PUT") {
+                if (pathname.endsWith("/staff/portal-settings") && method === "PUT") {
                     if (input instanceof Request) {
                         updatedRequestBody = await input.clone().text();
                     } else if (typeof init?.body === "string") {
@@ -188,9 +192,13 @@ describe("StaffPortalSettingsPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return jsonResponse({
                         csrfToken: "csrf-token",
                         currentCircle: { id: "circle-b", name: "デモ企画B" },
@@ -205,11 +213,11 @@ describe("StaffPortalSettingsPage", () => {
                     });
                 }
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return jsonResponse({ allowed: true, authorized: true });
                 }
 
-                if (url.endsWith("/staff/portal-settings") && method === "GET") {
+                if (pathname.endsWith("/staff/portal-settings") && method === "GET") {
                     return jsonResponse({
                         appName: "PortalDots",
                         portalDescription: "学園祭参加団体向けポータル",
@@ -227,7 +235,7 @@ describe("StaffPortalSettingsPage", () => {
                     });
                 }
 
-                if (url.endsWith("/staff/portal-settings") && method === "PUT") {
+                if (pathname.endsWith("/staff/portal-settings") && method === "PUT") {
                     return jsonResponse(
                         {
                             message: "validation_error",

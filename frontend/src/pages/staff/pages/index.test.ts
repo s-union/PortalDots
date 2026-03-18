@@ -71,9 +71,13 @@ describe("StaffPagesIndexPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/session/bootstrap") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             csrfToken: "csrf-token",
@@ -95,7 +99,7 @@ describe("StaffPagesIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             allowed: true,
@@ -108,7 +112,7 @@ describe("StaffPagesIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/tags") && method === "GET") {
+                if (pathname.endsWith("/staff/tags") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             { id: "tag-exhibition", name: "展示" },
@@ -121,7 +125,7 @@ describe("StaffPagesIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/documents") && method === "GET") {
+                if (pathname.endsWith("/staff/documents") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             {
@@ -165,7 +169,7 @@ describe("StaffPagesIndexPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/pages") && method === "GET") {
+                if (pathname.endsWith("/staff/pages") && method === "GET") {
                     const pages =
                         createdTitle === ""
                             ? [
@@ -200,7 +204,7 @@ describe("StaffPagesIndexPage", () => {
                     });
                 }
 
-                if (url.endsWith("/staff/pages") && method === "POST") {
+                if (pathname.endsWith("/staff/pages") && method === "POST") {
                     createdTitle = "新着スタッフ連絡";
                     return new Response(
                         JSON.stringify({

@@ -69,16 +69,20 @@ describe("StaffPageDetailPage", () => {
                         : input instanceof URL
                           ? input.toString()
                           : input.url;
-                const method = init?.method ?? "GET";
+                const method = (
+                    init?.method ?? (input instanceof Request ? input.method : "GET")
+                ).toUpperCase();
 
-                if (url.endsWith("/staff/status") && method === "GET") {
+                const pathname = new URL(url, "http://localhost").pathname;
+
+                if (pathname.endsWith("/staff/status") && method === "GET") {
                     return new Response(JSON.stringify({ allowed: true, authorized: true }), {
                         status: 200,
                         headers: { "Content-Type": "application/json" },
                     });
                 }
 
-                if (url.endsWith("/staff/tags") && method === "GET") {
+                if (pathname.endsWith("/staff/tags") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             { id: "tag-exhibition", name: "展示" },
@@ -91,7 +95,7 @@ describe("StaffPageDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/documents") && method === "GET") {
+                if (pathname.endsWith("/staff/documents") && method === "GET") {
                     return new Response(
                         JSON.stringify([
                             {
@@ -117,7 +121,7 @@ describe("StaffPageDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/pages/page-circle-b-1") && method === "GET") {
+                if (pathname.endsWith("/staff/pages/page-circle-b-1") && method === "GET") {
                     return new Response(
                         JSON.stringify({
                             id: "page-circle-b-1",
@@ -144,7 +148,7 @@ describe("StaffPageDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/pages/page-circle-b-1") && method === "PUT") {
+                if (pathname.endsWith("/staff/pages/page-circle-b-1") && method === "PUT") {
                     return new Response(
                         JSON.stringify({
                             id: "page-circle-b-1",
@@ -160,7 +164,7 @@ describe("StaffPageDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/pages/page-circle-b-1/pin") && method === "PATCH") {
+                if (pathname.endsWith("/staff/pages/page-circle-b-1/pin") && method === "PATCH") {
                     currentPinned = true;
                     return new Response(
                         JSON.stringify({
@@ -177,7 +181,7 @@ describe("StaffPageDetailPage", () => {
                     );
                 }
 
-                if (url.endsWith("/staff/pages/page-circle-b-1") && method === "DELETE") {
+                if (pathname.endsWith("/staff/pages/page-circle-b-1") && method === "DELETE") {
                     deleted = true;
                     return new Response(null, { status: 204 });
                 }

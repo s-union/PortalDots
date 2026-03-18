@@ -104,7 +104,7 @@ describe("LoginPage", () => {
         await wrapper.get("form").trigger("submit.prevent");
         await flushPromises();
 
-        expect(wrapper.text()).toContain("ログインに失敗しました。");
+        expect(wrapper.text()).toContain("ログイン情報が正しくありません");
         expect(router.currentRoute.value.path).toBe("/login");
     });
 
