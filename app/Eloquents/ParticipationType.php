@@ -3,7 +3,7 @@
 namespace App\Eloquents;
 
 use Database\Factories\ParticipationTypeFactory;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
@@ -64,17 +64,18 @@ class ParticipationType extends Model
         return $this->belongsToMany(Tag::class);
     }
 
-    protected function scopeOpen(Builder $query)
+    public function scopeOpen(Builder $query)
     {
         return $query->whereHas('form', function (Builder $query) {
-            $query->open();
+            $query->where('open_at', '<=', now())
+                ->where('close_at', '>=', now());
         });
     }
 
-    protected function scopePublic(Builder $query)
+    public function scopePublic(Builder $query)
     {
         return $query->whereHas('form', function (Builder $query) {
-            $query->public();
+            $query->where('is_public', true);
         });
     }
 }

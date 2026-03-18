@@ -14,7 +14,7 @@ class FormPolicy
     /**
      * Determine whether the user can view the form.
      *
-     * @param  Circle|null  $form
+     * @param  Circle|null  $circle
      */
     public function view(?User $user, Form $form, ?Circle $circle): bool
     {
