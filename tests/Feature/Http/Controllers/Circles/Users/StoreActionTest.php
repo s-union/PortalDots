@@ -1,47 +1,46 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles\Users;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\Feature\Http\Controllers\Circles\BaseTestCase;
+use App\Eloquents\Answer;
+use App\Eloquents\Circle;
+use App\Eloquents\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
-use App\Eloquents\User;
-use App\Eloquents\Circle;
-use App\Eloquents\Answer;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Feature\Http\Controllers\Circles\BaseTestCase;
 
-class StoreActionTest extends BaseTestCase
+final class StoreActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
-    private ?User $user;
     private ?Circle $circle;
-    private ?Answer $answer;
-    private ?User $nonLeader;
 
-    public function setUp(): void
+    private ?User $nonLeader = null;
+
+    protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user = User::factory()->create();
+        $user = User::factory()->create();
         $this->circle = Circle::factory()->notSubmitted()->create([
-            'participation_type_id' => $this->participationType->id
+            'participation_type_id' => $this->participationType->id,
         ]);
-        $this->answer = Answer::factory()->create([
+        $answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
 
-        $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
+        $user->circles()->attach($this->circle->id, ['is_leader' => true]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 正しいトークンであれば招待を受け入れることができる()
     {
         $invitedUser = User::factory()->create();
@@ -72,9 +71,7 @@ class StoreActionTest extends BaseTestCase
         $response->assertRedirect(route('circles.show', ['circle' => $this->circle]));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 間違ったトークンでは企画のメンバーになれない()
     {
         $invitedUser = User::factory()->create();
@@ -98,9 +95,7 @@ class StoreActionTest extends BaseTestCase
         $response->assertStatus(404);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 提出済みの企画の招待は受け入れることができない()
     {
         $this->circle->submitted_at = now();

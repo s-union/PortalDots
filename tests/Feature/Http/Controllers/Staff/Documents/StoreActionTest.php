@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Documents;
 
 use App\Eloquents\Document;
@@ -7,12 +9,12 @@ use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Documents\DocumentsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Mockery;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Mockery;
+use Tests\TestCase;
 
-class StoreActionTest extends TestCase
+final class StoreActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -21,16 +23,14 @@ class StoreActionTest extends TestCase
      */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
-    public function DocumentsServiceのcreateDocumentが呼び出される()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function documents_serviceのcreate_documentが呼び出される()
     {
         Permission::create(['name' => 'staff.documents.edit']);
         $this->staff->syncPermissions(['staff.documents.edit']);
@@ -73,9 +73,7 @@ class StoreActionTest extends TestCase
         $response->assertRedirect(route('staff.documents.create'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は配布資料を保存できない()
     {
         $filesize = 1;  // 単位 : KiB

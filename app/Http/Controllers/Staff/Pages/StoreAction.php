@@ -12,14 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class StoreAction extends Controller
 {
-    /**
-     * @var PagesService
-     */
-    private $pagesService;
-
-    public function __construct(PagesService $pagesService)
+    public function __construct(private readonly PagesService $pagesService)
     {
-        $this->pagesService = $pagesService;
     }
 
     public function __invoke(PageRequest $request)
@@ -44,8 +38,7 @@ class StoreAction extends Controller
             }
         });
 
-        return redirect()
-            ->route('staff.pages.create')
+        return to_route('staff.pages.create')
             ->with('topAlert.title', 'お知らせを作成しました')
             ->with('topAlert.body', ($values['send_emails'] ?? false)
                 ? 'また、このお知らせの一斉送信を予約しました'

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Circles;
 
+use App\Eloquents\Circle;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Eloquents\Circle;
 
 class DestroyAction extends Controller
 {
@@ -14,7 +14,7 @@ class DestroyAction extends Controller
 
         $user = $circle->users()->wherePivot('user_id', Auth::id())->first();
 
-        if (empty($user) || !$user->pivot->is_leader) {
+        if (empty($user) || ! $user->pivot->is_leader) {
             // リーダー以外は参加登録の削除はできない
             abort(403);
         }
@@ -23,8 +23,7 @@ class DestroyAction extends Controller
 
         $circle->delete();
 
-        return redirect()
-            ->route('home')
+        return to_route('home')
             ->with('topAlert.title', '企画参加登録を削除しました');
     }
 }

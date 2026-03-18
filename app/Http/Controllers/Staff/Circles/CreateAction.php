@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Staff\Circles;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Place;
 use App\Eloquents\Tag;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class CreateAction extends Controller
@@ -17,22 +17,16 @@ class CreateAction extends Controller
             : ParticipationType::find($request->participation_type);
 
         $defaultTags = \json_encode([]);
-        if (!empty($defaultParticipationType)) {
-            $defaultTags = $defaultParticipationType->tags()->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson();
+        if (! empty($defaultParticipationType)) {
+            $defaultTags = $defaultParticipationType->tags()->pluck('name')->map(fn($item) => ['text' => $item])->toJson();
         }
 
         return view('staff.circles.form')
             ->with('participation_types', ParticipationType::all('id', 'name'))
             ->with('default_partipacion_type', $defaultParticipationType)
             ->with('default_places', \json_encode([]))
-            ->with('places_autocomplete_items', Place::get()->map(function ($item) {
-                return ['text' => $item->name, 'value' => $item->id];
-            })->toJson())
+            ->with('places_autocomplete_items', Place::get()->map(fn($item) => ['text' => $item->name, 'value' => $item->id])->toJson())
             ->with('default_tags', $defaultTags)
-            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson());
+            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(fn($item) => ['text' => $item])->toJson());
     }
 }

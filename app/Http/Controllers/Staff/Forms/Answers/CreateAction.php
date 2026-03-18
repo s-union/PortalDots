@@ -2,24 +2,16 @@
 
 namespace App\Http\Controllers\Staff\Forms\Answers;
 
-use Auth;
-use Gate;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Eloquents\Form;
 use App\Eloquents\Circle;
+use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\AnswersService;
+use Illuminate\Http\Request;
 
 class CreateAction extends Controller
 {
-    /**
-     * @var AnswersService
-     */
-    private $answersService;
-
-    public function __construct(AnswersService $answersService)
+    public function __construct(private readonly AnswersService $answersService)
     {
-        $this->answersService = $answersService;
     }
 
     public function __invoke(Form $form, Request $request)
@@ -27,6 +19,7 @@ class CreateAction extends Controller
         $circle = null;
         if (empty($request->circle)) {
             $circles = Circle::submitted()->get();
+
             return view('staff.circles.selector')
                 ->with('url', route('staff.forms.answers.create', ['form' => $form]))
                 ->with('circles', $circles);
@@ -40,8 +33,8 @@ class CreateAction extends Controller
         // 作成した上でUpdate画面へリダイレクト
         if (isset($form->participationType) && count($answers) === 0) {
             $answer = $this->answersService->createAnswer($form, $circle);
-            return redirect()
-                ->route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answer]);
+
+            return to_route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answer]);
         }
 
         // すでに回答済だった場合
@@ -49,8 +42,7 @@ class CreateAction extends Controller
             // 最大回答回数 1 かつ 現時点での回答数が 1 の場合に限り、
             // 編集画面へリダイレクトする。
             // （それ以外の場合、View にて、回答編集も可能な旨を表示する）
-            return redirect()
-                ->route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answers[0]]);
+            return to_route('staff.forms.answers.edit', ['form' => $form, 'answer' => $answers[0]]);
         }
 
         return view('staff.forms.answers.form')

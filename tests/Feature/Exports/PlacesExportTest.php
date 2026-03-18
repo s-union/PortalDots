@@ -1,16 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Circle;
 use App\Eloquents\Place;
 use App\Exports\PlacesExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class PlacesExportTest extends TestCase
+final class PlacesExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -34,7 +35,7 @@ class PlacesExportTest extends TestCase
      */
     private $anotherCircle;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -61,9 +62,7 @@ class PlacesExportTest extends TestCase
         $this->place->circles()->attach($this->anotherCircle->id);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_ブース情報のフォーマットが正常に行われる()
     {
         $this->assertEquals(
@@ -89,7 +88,7 @@ class PlacesExportTest extends TestCase
                     'びひんとりかえしたい',
                     '備品ほしい団体',
                     'びひんほしいだんたい',
-                ]
+                ],
             ],
             $this->placesExport->map($this->place->load('circles'))
         );

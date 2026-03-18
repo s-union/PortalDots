@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
 use App\Eloquents\Circle;
@@ -8,26 +10,24 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-/** @group hoge */
-class CreateActionTest extends BaseTestCase
+#[\PHPUnit\Framework\Attributes\Group('hoge')]
+final class CreateActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private $user;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 説明が設定されているときは説明を表示する()
     {
         $this->participationForm->description = '注意事項';
@@ -44,9 +44,7 @@ class CreateActionTest extends BaseTestCase
         $responce->assertSee('注意事項');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 説明が設定されていないときは説明を表示しない()
     {
         $this->participationForm->description = null;
@@ -62,7 +60,7 @@ class CreateActionTest extends BaseTestCase
         $responce->assertDontSee('必ずお読みください');
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 最初の提出の際には団体名を入力できる()
     {
         $response = $this
@@ -74,7 +72,7 @@ class CreateActionTest extends BaseTestCase
         $response->assertDontSee('理大祭実行委員会');
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 最初の提出では確認画面に遷移する表示とはならない()
     {
         $response = $this
@@ -86,7 +84,7 @@ class CreateActionTest extends BaseTestCase
         $response->assertDontSee('確認画面へ');
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ２回目以降の提出の際には先に提出した企画の団体名が入力されている()
     {
         $circle = Circle::factory()->create();
@@ -102,7 +100,7 @@ class CreateActionTest extends BaseTestCase
         $response->assertSee($circle->group_name_yomi);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ２回目以降の提出では確認画面に遷移する表示となる()
     {
         $circle = Circle::factory()->create();

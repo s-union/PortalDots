@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers;
 
 use App\Eloquents\Document;
@@ -7,23 +9,21 @@ use App\GridMakers\DocumentsGridMaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class DocumentsGridMakerTest extends TestCase
+final class DocumentsGridMakerTest extends TestCase
 {
     /**
      * @var DocumentsGridMaker
      */
     private $documentsGridMaker;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->documentsGridMaker = App::make(DocumentsGridMaker::class);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map()
     {
         $document = Document::factory()->make([

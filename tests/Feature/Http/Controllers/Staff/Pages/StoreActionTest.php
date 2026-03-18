@@ -1,17 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Pages;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
-use App\Eloquents\Page;
 use App\Eloquents\Document;
+use App\Eloquents\Page;
 use App\Eloquents\Permission;
+use App\Eloquents\User;
 use App\Services\Pages\PagesService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use Tests\TestCase;
 
-class StoreActionTest extends TestCase
+final class StoreActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,16 +27,14 @@ class StoreActionTest extends TestCase
      */
     private $document;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
         $this->document = Document::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function お知らせを作成できる()
     {
         Permission::create(['name' => 'staff.pages.edit']);
@@ -44,9 +44,7 @@ class StoreActionTest extends TestCase
             $mock->shouldReceive('createPage')->once()->with(
                 'お知らせのタイトル',
                 "本文です\n\n# 見出し\n- リストです\n- リストです",
-                Mockery::on(function ($arg) {
-                    return $this->staff->id === $arg->id && $this->staff->name === $arg->name;
-                }),
+                Mockery::on(fn($arg) => $this->staff->id === $arg->id && $this->staff->name === $arg->name),
                 'スタッフ用メモです！123',
                 ['Cブース', '屋外模擬店'],
                 [$this->document->id],
@@ -61,7 +59,7 @@ class StoreActionTest extends TestCase
                 'title' => 'お知らせのタイトル',
                 'body' => "本文です\n\n# 見出し\n- リストです\n- リストです",
                 'viewable_tags' => ['Cブース', '屋外模擬店'],
-                'documents' => [(string)$this->document->id],
+                'documents' => [(string) $this->document->id],
                 'is_public' => '0',
                 'is_pinned' => null,
                 'send_emails' => '0',
@@ -71,9 +69,7 @@ class StoreActionTest extends TestCase
         $response->assertRedirect(route('staff.pages.create'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はお知らせを作成できない()
     {
         $response = $this->actingAs($this->staff)
@@ -82,7 +78,7 @@ class StoreActionTest extends TestCase
                 'title' => 'お知らせのタイトル',
                 'body' => "本文です\n\n# 見出し\n- リストです\n- リストです",
                 'viewable_tags' => ['Cブース', '屋外模擬店'],
-                'documents' => [(string)$this->document->id],
+                'documents' => [(string) $this->document->id],
                 'is_public' => '0',
                 'is_pinned' => null,
                 'send_emails' => '0',
@@ -92,9 +88,7 @@ class StoreActionTest extends TestCase
         $response->assertForbidden();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function タイトルと本文が未入力だとエラーが発生する()
     {
         Permission::create(['name' => 'staff.pages.edit']);
@@ -109,9 +103,7 @@ class StoreActionTest extends TestCase
         $response->assertSessionHasErrors(['title', 'body']);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 一斉配信予約ができる()
     {
         Permission::create(['name' => 'staff.pages.edit']);
@@ -119,16 +111,14 @@ class StoreActionTest extends TestCase
         $this->staff->syncPermissions(['staff.pages.edit', 'staff.pages.send_emails']);
 
         $page = new Page([
-                'title' => '一斉配信するお知らせのタイトル',
-            ]);
+            'title' => '一斉配信するお知らせのタイトル',
+        ]);
 
         $this->mock(PagesService::class, function ($mock) use ($page) {
             $mock->shouldReceive('createPage')->once()->with(
                 $page->title,
                 "本文です\n\n# 見出し\n- リストです\n- リストです",
-                Mockery::on(function ($arg) {
-                    return $this->staff->id === $arg->id && $this->staff->name === $arg->name;
-                }),
+                Mockery::on(fn($arg) => $this->staff->id === $arg->id && $this->staff->name === $arg->name),
                 'スタッフ用メモです！123',
                 ['Cブース', '屋外模擬店'],
                 [],
@@ -138,9 +128,7 @@ class StoreActionTest extends TestCase
             )->andReturn($page);
 
             $mock->shouldReceive('sendEmailsByPage')->once()->with(
-                Mockery::on(function ($arg) use ($page) {
-                    return $page->title === $arg->title;
-                }),
+                Mockery::on(fn($arg) => $page->title === $arg->title),
             );
         });
 

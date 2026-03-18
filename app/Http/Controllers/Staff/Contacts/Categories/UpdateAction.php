@@ -6,18 +6,11 @@ use App\Eloquents\ContactCategory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Contacts\Categories\CategoryRequest;
 use App\Services\Contacts\ContactCategoriesService;
-use Illuminate\Http\Request;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var ContactCategoriesService
-     */
-    private $categoriesService;
-
-    public function __construct(ContactCategoriesService $categoriesService)
+    public function __construct(private readonly ContactCategoriesService $categoriesService)
     {
-        $this->categoriesService = $categoriesService;
     }
 
     public function __invoke(ContactCategory $category, CategoryRequest $request)
@@ -33,8 +26,7 @@ class UpdateAction extends Controller
             $this->categoriesService->send($category);
         }
 
-        return redirect()
-            ->route('staff.contacts.categories.index')
+        return to_route('staff.contacts.categories.index')
             ->with('topAlert.title', "「{$category->name}」を変更しました");
     }
 }

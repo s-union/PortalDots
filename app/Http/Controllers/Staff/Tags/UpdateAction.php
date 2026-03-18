@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Tags;
 
+use App\Eloquents\Tag;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Tags\TagRequest;
-use App\Eloquents\Tag;
 
 class UpdateAction extends Controller
 {
@@ -13,8 +13,7 @@ class UpdateAction extends Controller
         $tag->name = $request->validated()['name'];
         $tag->save();
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', 'タグを更新しました');
     }
 }

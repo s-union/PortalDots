@@ -1,23 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Documents;
 
+use App\Eloquents\Document;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use App\Eloquents\Document;
-use App\Eloquents\User;
 
-class ShowActionTest extends TestCase
+final class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $document;
+
     private $user;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -35,22 +37,18 @@ class ShowActionTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできる()
     {
         $response = $this->actingAs($this->user)
             ->get(route('documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 非公開の場合はダウンロードできない()
     {
         $this->document->is_public = false;
@@ -58,7 +56,7 @@ class ShowActionTest extends TestCase
 
         $response = $this->actingAs($this->user)
             ->get(route('documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertStatus(404);

@@ -16,12 +16,13 @@ class ActivityLogService
     /**
      * Eloquent で sync を使ったデータ保存をログに残す
      *
-     * @param string $logName ログの名前
-     * @param User $causedBy 実施者
-     * @param Model $performedOn 変更対象のモデル
-     * @param array $old 旧データ
-     * @param array $new 新データ
+     * @param  string  $logName  ログの名前
+     * @param  User  $causedBy  実施者
+     * @param  Model  $performedOn  変更対象のモデル
+     * @param  array  $old  旧データ
+     * @param  array  $new  新データ
      * @return void
+     *
      * @throws BindingResolutionException
      * @throws InvalidArgumentException
      * @throws CouldNotLogActivity

@@ -2,6 +2,7 @@
 
 namespace App\Eloquents;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Contracts\Activity;
@@ -11,7 +12,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Circle extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     public function getActivitylogOptions(): LogOptions
@@ -40,7 +40,7 @@ class Circle extends Model
 
         if (
             $eventName !== 'created' &&
-            !empty($activityArray['attributes']['submitted_at']) &&
+            ! empty($activityArray['attributes']['submitted_at']) &&
             empty($activityArray['old']['submitted_at'])
         ) {
             // 企画参加登録を提出した場合、 description を submitted にする。
@@ -54,9 +54,13 @@ class Circle extends Model
      * バリデーションルール
      */
     public const NAME_RULES = ['required', 'string', 'max:255'];
+
     public const NAME_YOMI_RULES = ['required', 'string', 'max:255', 'regex:/^([ぁ-んァ-ヶー]+)$/u'];
+
     public const GROUP_NAME_RULES = ['required', 'string', 'max:255'];
+
     public const GROUP_NAME_YOMI_RULES = ['required', 'string', 'max:255', 'regex:/^([ぁ-んァ-ヶー]+)$/u'];
+
     public const STATUS_RULES = ['required', 'in:pending,approved,rejected'];
 
     /**
@@ -64,8 +68,10 @@ class Circle extends Model
      */
     // 確認中（DBには pending という値を入れず、null にする）
     public const STATUS_PENDING = 'pending';
+
     // 受理
     public const STATUS_APPROVED = 'approved';
+
     // 不受理
     public const STATUS_REJECTED = 'rejected';
 
@@ -83,10 +89,6 @@ class Circle extends Model
         'status_set_at',
         'status_set_by',
         'notes',
-    ];
-
-    protected $casts = [
-        'status_set_at' => 'datetime',
     ];
 
     public function participationType()
@@ -127,7 +129,7 @@ class Circle extends Model
     /**
      * メンバーが参加登録に必要な人数だけ集まっており、参加登録の提出が可能かどうか
      *
-     * @return boolean
+     * @return bool
      */
     public function canSubmit()
     {
@@ -138,15 +140,15 @@ class Circle extends Model
     /**
      * 参加登録が未提出の企画だけに限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
-    public function scopeNotSubmitted($query)
+    protected function scopeNotSubmitted($query)
     {
         return $query->whereNull('submitted_at');
     }
 
-    public function scopeSubmitted($query)
+    protected function scopeSubmitted($query)
     {
         return $query->whereNotNull('submitted_at');
     }
@@ -159,7 +161,7 @@ class Circle extends Model
     /**
      * 参加登録は提出されているが、スタッフによるチェックがPendingな企画だけに限定するクエリスコープ
      */
-    public function scopePending($query)
+    protected function scopePending($query)
     {
         return $query->whereNotNull('submitted_at')->whereNull('status');
     }
@@ -172,7 +174,7 @@ class Circle extends Model
     /**
      * スタッフによるチェックがApprovedな企画だけに限定するクエリスコープ
      */
-    public function scopeApproved($query)
+    protected function scopeApproved($query)
     {
         return $query->whereNotNull('submitted_at')->where('status', 'approved');
     }
@@ -185,7 +187,7 @@ class Circle extends Model
     /**
      * スタッフによるチェックがRejectedな企画だけに限定するクエリスコープ
      */
-    public function scopeRejected($query)
+    protected function scopeRejected($query)
     {
         return $query->whereNotNull('submitted_at')->where('status', 'rejected');
     }
@@ -198,23 +200,21 @@ class Circle extends Model
     /**
      * 企画名(よみ)をひらがなにして保存する
      *
-     * @param string $value
+     * @param  string  $value
      */
-    public function setNameYomiAttribute($value)
+    protected function nameYomi(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
-        $this->attributes['name_yomi'] = mb_convert_kana($value, 'HVc');
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(set: fn($value) => ['name_yomi' => mb_convert_kana((string) $value, 'HVc')]);
     }
 
     /**
      * 企画を出店する団体の名称(よみ)をひらがなにして保存する
      *
-     * @param string $value
+     * @param  string  $value
      */
-    public function setGroupNameYomiAttribute($value)
+    protected function groupNameYomi(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
-        $this->attributes['group_name_yomi'] = mb_convert_kana($value, 'HVc');
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(set: fn($value) => ['group_name_yomi' => mb_convert_kana((string) $value, 'HVc')]);
     }
 
     public function getParticipationFormAnswer(): ?Answer
@@ -226,5 +226,12 @@ class Circle extends Model
         return Answer::where('form_id', $this->participationType->form->id)
             ->where('circle_id', $this->id)
             ->first();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'status_set_at' => 'datetime',
+        ];
     }
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Forms;
 
-use Illuminate\Validation\Rule;
-use Illuminate\Http\Request;
 use App\Eloquents\Form;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ValidationRulesService
 {
@@ -15,9 +15,7 @@ class ValidationRulesService
      *
      * 回答の下書き保存用の簡易バリデーションとしたい場合、$isStrict 引数の値を false にする
      *
-     * @param Form $form
-     * @param Request $request
-     * @param bool $isStrict 厳密なバリデーションルールにするか
+     * @param  bool  $isStrict  厳密なバリデーションルールにするか
      * @return void
      */
     public function getRulesFromForm(Form $form, Request $request, bool $isStrict = true)
@@ -91,8 +89,6 @@ class ValidationRulesService
 
     public function getAttributesFromForm(Form $form)
     {
-        return $form->questions->mapWithKeys(function ($question) {
-            return ['answers.' . $question->id => $question->name];
-        });
+        return $form->questions->mapWithKeys(fn($question) => ['answers.' . $question->id => $question->name]);
     }
 }

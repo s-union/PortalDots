@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Eloquents\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Services\Auth\RegisterService;
 use App\Services\Auth\EmailService;
+use App\Services\Auth\RegisterService;
 use App\Services\Auth\VerifyService;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Mime\Exception\RfcComplianceException;
 
@@ -40,37 +37,16 @@ class RegisterController extends Controller
     protected $redirectTo = '/';
 
     /**
-     * @var RegisterService
-     */
-    private $registerService;
-
-    /**
-     * @var EmailService
-     */
-    private $emailService;
-
-    /**
-     * @var VerifyService
-     */
-    private $verifyService;
-
-    /**
      * Create a new controller instance.
      *
-     * @param  RegisterService  $registerService
-     * @param  EmailService  $emailService
-     * @param  VerifyService  $verifyService
      * @return void
      */
     public function __construct(
-        RegisterService $registerService,
-        EmailService $emailService,
-        VerifyService $verifyService
+        private RegisterService $registerService,
+        private EmailService $emailService,
+        private VerifyService $verifyService
     ) {
         $this->middleware('guest');
-        $this->registerService = $registerService;
-        $this->emailService = $emailService;
-        $this->verifyService = $verifyService;
     }
 
     public function showRegistrationForm()
@@ -81,7 +57,6 @@ class RegisterController extends Controller
     /**
      * ユーザー登録を実行する
      *
-     * @param  RegisterRequest  $request
      * @return Response
      */
     public function register(RegisterRequest $request): RedirectResponse
@@ -107,10 +82,10 @@ class RegisterController extends Controller
                 $this->verifyService->markEmailAsVerified($user, $user->email);
             }
             $this->emailService->sendAll($user);
-        } catch (RfcComplianceException $e) {
+        } catch (RfcComplianceException) {
             DB::rollBack();
-            return redirect()
-                ->route('register')
+
+            return to_route('register')
                 ->withInput()
                 ->withErrors(['student_id' => config('portal.student_id_name') . 'を正しく入力してください']);
         }
@@ -121,7 +96,6 @@ class RegisterController extends Controller
 
         // return $this->registered($request, $user)
         //     ?: redirect($this->redirectPath());
-        return redirect()
-            ->route('verification.notice');
+        return to_route('verification.notice');
     }
 }

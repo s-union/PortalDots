@@ -1,30 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Users;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
+use App\Eloquents\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-class DestroyActionTest extends TestCase
+final class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $user;
-    private $circle;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = User::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function アカウント削除ができる()
     {
         $this->assertDatabaseHas('users', [
@@ -41,9 +39,7 @@ class DestroyActionTest extends TestCase
         $response->assertRedirect(route('home'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 管理者ユーザーは削除できない()
     {
         $this->user->is_admin = true;
@@ -63,9 +59,7 @@ class DestroyActionTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフユーザーは削除できない()
     {
         $this->user->is_staff = true;
@@ -85,9 +79,7 @@ class DestroyActionTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 企画に所属しているユーザーは削除できない()
     {
         $circle = Circle::factory()->create();

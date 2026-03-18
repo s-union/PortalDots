@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Forms;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
 use App\Eloquents\Tag;
+use App\Http\Controllers\Controller;
 
 class EditAction extends Controller
 {
@@ -14,13 +14,10 @@ class EditAction extends Controller
         if (isset($form->participationType)) {
             return abort(400);
         }
+
         return view('staff.forms.form')
             ->with('form', $form)
-            ->with('default_tags', $form->answerableTags->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson())
-            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson());
+            ->with('default_tags', $form->answerableTags->pluck('name')->map(fn($item) => ['text' => $item])->toJson())
+            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(fn($item) => ['text' => $item])->toJson());
     }
 }

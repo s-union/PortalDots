@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 class UpdateAction extends Controller
 {
     public function __construct(
-        private FormEditorService $formEditorService
+        private readonly FormEditorService $formEditorService
     ) {
     }
 
@@ -35,8 +35,7 @@ class UpdateAction extends Controller
                 'confirmation_message' => $validated['form_confirmation_message'],
             ]);
 
-            return redirect()
-                ->route('staff.circles.participation_types.form.edit', ['participation_type' => $participationType])
+            return to_route('staff.circles.participation_types.form.edit', ['participation_type' => $participationType])
                 ->with('topAlert.title', '変更を保存しました');
         });
     }

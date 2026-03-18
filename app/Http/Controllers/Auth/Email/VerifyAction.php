@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Auth\Email;
 
 use App\Eloquents\User;
+use App\Http\Controllers\Controller;
 use App\Services\Auth\VerifyService;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
 class VerifyAction extends Controller
 {
-    private $verifyService;
-
-    public function __construct(VerifyService $verifyService)
+    public function __construct(private readonly VerifyService $verifyService)
     {
-        $this->verifyService = $verifyService;
     }
 
     public function __invoke(Request $request, $type, User $user)
@@ -38,10 +35,9 @@ class VerifyAction extends Controller
 
         Auth::login($user);
 
-        $response = redirect()
-            ->route($user->areBothEmailsVerified() ? 'verification.completed' : 'verification.notice');
+        $response = to_route($user->areBothEmailsVerified() ? 'verification.completed' : 'verification.notice');
 
-        if ($user->areBothEmailsVerified() && !$user->is_signed_up) {
+        if ($user->areBothEmailsVerified() && ! $user->is_signed_up) {
             $user->setSignedUpAt();
         }
 

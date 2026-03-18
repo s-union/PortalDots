@@ -2,24 +2,15 @@
 
 namespace App\Http\Controllers\Forms;
 
-use App\Eloquents\Circle;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
+use App\Http\Controllers\Controller;
 use App\Services\Circles\SelectorService;
+use Illuminate\Http\Request;
 
 class AllAction extends Controller
 {
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    public function __construct(SelectorService $selectorService)
+    public function __construct(private readonly SelectorService $selectorService)
     {
-        $this->selectorService = $selectorService;
     }
 
     public function __invoke(Request $request)
@@ -30,8 +21,7 @@ class AllAction extends Controller
 
         if (empty($this->selectorService->getCircle())) {
             // TODO: もうちょっとまともなエラー表示にする
-            return redirect()
-                ->route('home')
+            return to_route('home')
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.title', '企画に所属していないため、このページにアクセスできません');
         }

@@ -3,7 +3,7 @@
 namespace App\Eloquents;
 
 use Database\Factories\ParticipationTypeFactory;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
@@ -44,9 +44,9 @@ class ParticipationType extends Model
 
     protected $appends = ['form_name'];
 
-    public function getFormNameAttribute(): string
+    protected function formName(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return '企画参加登録';
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => '企画参加登録');
     }
 
     public function form()
@@ -67,14 +67,15 @@ class ParticipationType extends Model
     public function scopeOpen(Builder $query)
     {
         return $query->whereHas('form', function (Builder $query) {
-            $query->open();
+            $query->where('open_at', '<=', now())
+                ->where('close_at', '>=', now());
         });
     }
 
     public function scopePublic(Builder $query)
     {
         return $query->whereHas('form', function (Builder $query) {
-            $query->public();
+            $query->where('is_public', true);
         });
     }
 }

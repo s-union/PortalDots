@@ -2,25 +2,30 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
 use App\Eloquents\User;
-use Faker\Generator as Faker;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factory;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\User>
+ */
 class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = User::class;
+
     public function definition()
     {
         return [
             'student_id' => Str::random(mt_rand(7, 20)),
-            'name' => $this->faker->name,
-            'name_yomi' => $this->faker->kanaName,
-            'email' => $this->faker->unique()->safeEmail,
-            'univemail_local_part' => $this->faker->slug,
-            'univemail_domain_part' => $this->faker->safeEmailDomain,
-            'tel' => $this->faker->phoneNumber,
+            'name' => fake()->name,
+            'name_yomi' => fake()->kanaName,
+            'email' => fake()->unique()->safeEmail,
+            'univemail_local_part' => fake()->slug,
+            'univemail_domain_part' => fake()->safeEmailDomain,
+            'tel' => fake()->phoneNumber,
             'is_staff' => false,
             'is_admin' => false,
             'email_verified_at' => now(),
@@ -31,6 +36,7 @@ class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'remember_token' => Str::random(10),
         ];
     }
+
     public function staff()
     {
         return $this->state([
@@ -38,6 +44,7 @@ class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'is_admin' => false,
         ]);
     }
+
     public function admin()
     {
         return $this->state([
@@ -45,6 +52,7 @@ class UserFactory extends \Illuminate\Database\Eloquent\Factories\Factory
             'is_admin' => true,
         ]);
     }
+
     public function not_verified()
     {
         return $this->state([

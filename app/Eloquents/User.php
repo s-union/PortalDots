@@ -2,17 +2,16 @@
 
 namespace App\Eloquents;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Spatie\Permission\Traits\HasRoles;
-use App\Eloquents\Circle;
-use App\Eloquents\CircleUser;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Validation\Rule;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property string $id
@@ -36,15 +35,15 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class User extends Authenticatable
 {
     use HasFactory;
-
-    use Notifiable;
     use HasRoles;
     use LogsActivity;
+    use Notifiable;
 
     /**
      * バリデーションルール
      */
     public const STUDENT_ID_RULES = ['required', 'string'];
+
     // ↓姓と名の間であれば，何個でもスペースを入れてもよしとする
     public const NAME_RULES = [
         'required',
@@ -52,6 +51,7 @@ class User extends Authenticatable
         'max:255',
         'regex:/^([^\s　]+)([\s　]+)([^\s　]+)$/u',
     ];
+
     // ↓姓と名の間であれば，何個でもスペースを入れてもよしとする
     public const NAME_YOMI_RULES = [
         'required',
@@ -59,8 +59,11 @@ class User extends Authenticatable
         'max:255',
         'regex:/^([ぁ-んァ-ヶー]+)([\s　]+)([ぁ-んァ-ヶー]+)$/u',
     ];
+
     public const EMAIL_RULES = ['required', 'string', 'email', 'max:255'];
+
     public const TEL_RULES = ['required', 'string', 'max:255'];
+
     public const PASSWORD_RULES = ['required', 'string', 'min:8'];
 
     public function getActivitylogOptions(): LogOptions
@@ -105,8 +108,7 @@ class User extends Authenticatable
             'name' => self::NAME_RULES,
             'name_yomi' => self::NAME_YOMI_RULES,
             'email' => self::EMAIL_RULES,
-            'univemail_local_part' =>
-            config('portal.univemail_local_part') === 'student_id'
+            'univemail_local_part' => config('portal.univemail_local_part') === 'student_id'
                 ? ['required', 'string', 'same:student_id']
                 : ['required', 'string'],
             'univemail_domain_part' => [
@@ -121,7 +123,8 @@ class User extends Authenticatable
     public static function isValidUnivemailByLocalPartAndDomainPart(?string $localPart = '', ?string $domainPart = '')
     {
         $univemail = $localPart . '@' . $domainPart;
-        return (bool)filter_var($univemail, FILTER_VALIDATE_EMAIL);
+
+        return (bool) filter_var($univemail, FILTER_VALIDATE_EMAIL);
     }
 
     /**
@@ -149,17 +152,6 @@ class User extends Authenticatable
      */
     protected $hidden = ['password', 'remember_token'];
 
-    protected $casts = [
-        'password' => 'hashed',
-        'is_staff' => 'bool',
-        'is_admin' => 'bool',
-        'is_verified_by_staff' => 'bool',
-        'email_verified_at' => 'datetime',
-        'univemail_verified_at' => 'datetime',
-        'signed_up_at' => 'datetime',
-        'last_accessed_at' => 'datetime',
-    ];
-
     public function circles()
     {
         return $this->belongsToMany(Circle::class)
@@ -178,11 +170,10 @@ class User extends Authenticatable
     /**
      * 指定したタグ（複数可）を持つ企画に所属するユーザーだけに限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param Collection|null $tags
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
-    public function scopeByTags($query, ?Collection $tags = null)
+    protected function scopeByTags($query, ?Collection $tags = null)
     {
         if (empty($tags) || $tags->isEmpty()) {
             return $query;
@@ -199,10 +190,10 @@ class User extends Authenticatable
     /**
      * メール認証が完了しているユーザーだけに限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
-    public function scopeVerified($query)
+    protected function scopeVerified($query)
     {
         return $query
             ->whereNotNull('email_verified_at')
@@ -212,10 +203,10 @@ class User extends Authenticatable
     /**
      * スタッフユーザーだけに限定するクエリスコープ
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
-    public function scopeStaff($query)
+    protected function scopeStaff($query)
     {
         return $query->where('is_staff', true);
     }
@@ -223,7 +214,6 @@ class User extends Authenticatable
     /**
      * ログイン ID から該当ユーザーを取得する
      *
-     * @param string $login_id
      * @return User
      */
     public function firstByLoginId(string $login_id)
@@ -246,41 +236,11 @@ class User extends Authenticatable
     /**
      * student_idのアルファベットを大文字に変換してセットする(セッター)
      *
-     * @param string $value
+     * @param  string  $value
      */
-    public function setStudentIdAttribute($value)
+    protected function studentId(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        $this->attributes['student_id'] = mb_strtoupper($value);
-    }
-
-    /**
-     * 名前を姓と名に分割する
-     *
-     * @param string $value
-     */
-    public function setNameAttribute($value)
-    {
-        // 姓と名を分割する
-        $name_array = preg_split('/[\s　]+/u', $value);
-        // 姓と名を別カラムへセットする
-        $this->attributes['name_family'] = $name_array[0];
-        $this->attributes['name_given'] = $name_array[1];
-    }
-
-    /**
-     * 名前(よみ)を性と名に分割する
-     *
-     * @param string $value
-     */
-    public function setNameYomiAttribute($value)
-    {
-        // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
-        $value = mb_convert_kana($value, 'HVc');
-        // 姓と名(よみ)を分割する
-        $name_array = preg_split('/[\s　]+/u', $value);
-        // 姓と名(よみ)を別カラムへセットする
-        $this->attributes['name_family_yomi'] = $name_array[0];
-        $this->attributes['name_given_yomi'] = $name_array[1];
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(set: fn($value) => ['student_id' => mb_strtoupper((string) $value)]);
     }
 
     /**
@@ -288,9 +248,13 @@ class User extends Authenticatable
      *
      * @return string
      */
-    public function getNameAttribute()
+    protected function name(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return "{$this->name_family} {$this->name_given}";
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => "{$this->name_family} {$this->name_given}", set: function ($value) {
+            // 姓と名を分割する
+            $name_array = preg_split('/[\s　]+/u', $value);
+            return ['name_family' => $name_array[0], 'name_given' => $name_array[1]];
+        });
     }
 
     /**
@@ -298,9 +262,15 @@ class User extends Authenticatable
      *
      * @return string
      */
-    public function getNameYomiAttribute()
+    protected function nameYomi(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return "{$this->name_family_yomi} {$this->name_given_yomi}";
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => "{$this->name_family_yomi} {$this->name_given_yomi}", set: function ($value) {
+            // 半角カタカナ・全角カタカナを，全角ひらがなに変換する
+            $value = mb_convert_kana($value, 'HVc');
+            // 姓と名(よみ)を分割する
+            $name_array = preg_split('/[\s　]+/u', $value);
+            return ['name_family_yomi' => $name_array[0], 'name_given_yomi' => $name_array[1]];
+        });
     }
 
     /**
@@ -308,11 +278,11 @@ class User extends Authenticatable
      *
      * @return string
      */
-    public function getUnivemailAttribute()
+    protected function univemail(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return mb_strtolower($this->univemail_local_part) .
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => mb_strtolower($this->univemail_local_part) .
             '@' .
-            mb_strtolower($this->univemail_domain_part);
+            mb_strtolower($this->univemail_domain_part));
     }
 
     /**
@@ -327,22 +297,18 @@ class User extends Authenticatable
 
     /**
      * 連絡先メールアドレスのメール認証が完了しているかどうか
-     *
-     * @return bool
      */
     public function hasVerifiedEmail(): bool
     {
-        return !empty($this->email_verified_at);
+        return ! empty($this->email_verified_at);
     }
 
     /**
      * 大学提供メールアドレスのメール認証が完了しているかどうか
-     *
-     * @return bool
      */
     public function hasVerifiedUnivemail(): bool
     {
-        return !empty($this->univemail_verified_at);
+        return ! empty($this->univemail_verified_at);
     }
 
     /**
@@ -372,12 +338,13 @@ class User extends Authenticatable
     public function setSignedUpAt()
     {
         $this->signed_up_at = now();
+
         return $this->save();
     }
 
-    public function getIsSignedUpAttribute()
+    protected function isSignedUp(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return !empty($this->signed_up_at);
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => ! empty($this->signed_up_at));
     }
 
     public function isLeaderInCircle(Circle $circle)
@@ -387,7 +354,8 @@ class User extends Authenticatable
 
     /**
      * 最終アクセスをいい感じに返す
-     * @return String
+     *
+     * @return string
      */
     public function formatLastAccessedAt()
     {
@@ -397,32 +365,47 @@ class User extends Authenticatable
         }
         if (
             now()
-            ->subHour()
-            ->lte($last_accessed_at)
+                ->subHour()
+                ->lte($last_accessed_at)
         ) {
             return '1時間以内';
         }
         if (
             now()
-            ->subDay()
-            ->lte($last_accessed_at)
+                ->subDay()
+                ->lte($last_accessed_at)
         ) {
-            return "{$last_accessed_at->diffInHours(now())}時間前";
+            return ((int) $last_accessed_at->diffInHours(now())) . '時間前';
         }
         if (
             now()
-            ->subMonth()
-            ->lte($last_accessed_at)
+                ->subMonth()
+                ->lte($last_accessed_at)
         ) {
-            return "{$last_accessed_at->diffInDays(now())}日前";
+            return ((int) $last_accessed_at->diffInDays(now())) . '日前';
         }
         if (
             now()
-            ->subYear()
-            ->lte($last_accessed_at)
+                ->subYear()
+                ->lte($last_accessed_at)
         ) {
-            return "{$last_accessed_at->diffInMonths(now())}ヶ月前";
+            return ((int) $last_accessed_at->diffInMonths(now())) . 'ヶ月前';
         }
+
         return '1年以上前';
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+            'is_staff' => 'bool',
+            'is_admin' => 'bool',
+            'is_verified_by_staff' => 'bool',
+            'email_verified_at' => 'datetime',
+            'univemail_verified_at' => 'datetime',
+            'signed_up_at' => 'datetime',
+            'last_accessed_at' => 'datetime',
+        ];
     }
 }

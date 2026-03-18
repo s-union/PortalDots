@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-class DropOldRoleTables extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,7 +17,6 @@ class DropOldRoleTables extends Migration
         Schema::dropIfExists('auth_staff_role');
         Schema::dropIfExists('roles');
     }
-
     /**
      * Reverse the migrations.
      *
@@ -58,4 +57,4 @@ class DropOldRoleTables extends Migration
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
         );
     }
-}
+};

@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Staff\Forms\Editor;
 
+use App\Eloquents\Question;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Eloquents\Question;
 
 class AddQuestionRequest extends FormRequest
 {

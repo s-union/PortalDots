@@ -4,14 +4,14 @@ namespace App\Http\Middleware;
 
 use App\Eloquents\User;
 use Closure;
+use Illuminate\Http\Request;
 
 class EnsureEmailIsVerified
 {
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
      * @return mixed
      */
     public function handle($request, Closure $next)
@@ -20,8 +20,7 @@ class EnsureEmailIsVerified
         $user = $request->user();
 
         if (! $user || ! $user->areBothEmailsVerified()) {
-            return redirect()
-                ->route('verification.notice')
+            return to_route('verification.notice')
                 ->with('topAlert.type', 'danger')
                 ->with('topAlert.title', 'このページにアクセスするには、メール認証を完了してください');
         }

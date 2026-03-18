@@ -2,9 +2,10 @@
 
 namespace App\Eloquents;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
@@ -26,7 +27,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Form extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     protected $fillable = [
@@ -38,13 +38,6 @@ class Form extends Model
         'type',
         'max_answers',
         'is_public',
-    ];
-
-    protected $casts = [
-        'max_answers' => 'int',
-        'is_public' => 'bool',
-        'open_at' => 'datetime',
-        'close_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -75,11 +68,10 @@ class Form extends Model
      * $circle を省略した場合、回答できる企画が限られているフォームを
      * 除くフォームの一覧が取得される
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param Circle|null $circle
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
-    public function scopeByCircle($query, ?Circle $circle = null)
+    protected function scopeByCircle($query, ?Circle $circle = null)
     {
         $query = self::selectRaw('forms.*, min(`form_answerable_tags`.`tag_id`)')
             ->leftJoin('form_answerable_tags', 'forms.id', '=', 'form_answerable_tags.form_id')
@@ -98,7 +90,7 @@ class Form extends Model
     /**
      * 企画参加登録フォームは含めない
      */
-    public function scopeWithoutParticipationForms($query)
+    protected function scopeWithoutParticipationForms($query)
     {
         return $query->doesntHave('participationType');
     }
@@ -106,7 +98,7 @@ class Form extends Model
     /**
      * 公開中のものを取得
      */
-    public function scopePublic($query)
+    protected function scopePublic($query)
     {
         return $query->where('is_public', true);
     }
@@ -114,7 +106,7 @@ class Form extends Model
     /**
      * 受付終了時刻の早い順で並び替え
      */
-    public function scopeCloseOrder($query, $direction = 'asc')
+    protected function scopeCloseOrder($query, $direction = 'asc')
     {
         return $query->orderBy('close_at', $direction);
     }
@@ -122,7 +114,7 @@ class Form extends Model
     /**
      * 現時点で受付中のもの
      */
-    public function scopeOpen($query)
+    protected function scopeOpen($query)
     {
         return $query->where('open_at', '<=', now())->where('close_at', '>=', now());
     }
@@ -130,7 +122,7 @@ class Form extends Model
     /**
      * 現時点で受付終了しているもの
      */
-    public function scopeClosed($query)
+    protected function scopeClosed($query)
     {
         return $query->where('close_at', '<', now());
     }
@@ -154,7 +146,8 @@ class Form extends Model
     public function answered(Circle $circle)
     {
         $answer = Answer::where('form_id', $this->id)->where('circle_id', $circle->id)->first();
-        return !empty($answer);
+
+        return ! empty($answer);
     }
 
     /**
@@ -181,5 +174,15 @@ class Form extends Model
     public function isOpen()
     {
         return $this->open_at->lte(now()) && $this->close_at->gte(now());
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'max_answers' => 'int',
+            'is_public' => 'bool',
+            'open_at' => 'datetime',
+            'close_at' => 'datetime',
+        ];
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Page;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class PagesExportTest extends TestCase
+final class PagesExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -20,41 +22,29 @@ class PagesExportTest extends TestCase
     private $pagesExport;
 
     /**
-     * @var User
-     */
-    private $staff;
-
-    /**
-     * @var Tag
-     */
-    private $tag;
-
-    /**
      * @var Page
      */
     private $page;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->pagesExport = App::make(PagesExport::class);
-        $this->staff = User::factory()->staff()->create([
+        $staff = User::factory()->staff()->create([
             'name' => '野田 一郎',
         ]);
-        $this->tag = Tag::factory()->create([
+        $tag = Tag::factory()->create([
             'name' => 'タグです',
         ]);
         $this->page = Page::factory()->create([
             'is_pinned' => false,
             'is_public' => true,
         ]);
-        $this->page->viewableTags()->attach($this->tag->id);
+        $this->page->viewableTags()->attach($tag->id);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_お知らせのフォーマットが正常に行われる()
     {
         $this->assertEquals(

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Forms;
 
-use App\Eloquents\Form;
-use App\Eloquents\Circle;
 use App\Eloquents\Answer;
+use App\Eloquents\Circle;
+use App\Eloquents\Form;
 use App\Eloquents\User;
-use App\Services\Forms\AnswerDetailsService;
 use App\Http\Requests\Forms\AnswerRequestInterface;
 use App\Mail\Forms\AnswerConfirmationMailable;
 use Illuminate\Database\Eloquent\Collection;
@@ -17,22 +16,14 @@ use Illuminate\Support\Facades\Mail;
 
 class AnswersService
 {
-    /**
-     * @var AnswerDetailsService
-     */
-    private $answerDetailsService;
-
-    public function __construct(AnswerDetailsService $answerDetailsService)
+    public function __construct(private readonly AnswerDetailsService $answerDetailsService)
     {
-        $this->answerDetailsService = $answerDetailsService;
     }
 
     /**
      * 企画所属者にメールを送信する
      *
-     * @param Answer $answer
-     * @param User $applicant
-     * @param boolean $isEditedByStaff 回答がスタッフによって修正された場合はtrue
+     * @param  bool  $isEditedByStaff  回答がスタッフによって修正された場合はtrue
      * @return void
      */
     public function sendAll(Answer $answer, User $applicant, bool $isEditedByStaff = false)
@@ -83,15 +74,8 @@ class AnswersService
     /**
      * ユーザーにメールを送信する
      *
-     * @param Form $form
-     * @param Collection $questions
-     * @param Circle $circle
-     * @param User $applicant
-     * @param Answer $answer
-     * @param array $answer_details
-     * @param User $recipient
-     * @param boolean $isForStaff スタッフ用控えとして送信する場合はtrue
-     * @param boolean $isEditedByStaff 回答がスタッフによって修正された場合はtrue
+     * @param  bool  $isForStaff  スタッフ用控えとして送信する場合はtrue
+     * @param  bool  $isEditedByStaff  回答がスタッフによって修正された場合はtrue
      * @return void
      */
     private function sendToUser(

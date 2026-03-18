@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddFileInfoColumnsToDocuments extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -18,7 +18,6 @@ class AddFileInfoColumnsToDocuments extends Migration
             $table->string('extension')->after('size');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -31,4 +30,4 @@ class AddFileInfoColumnsToDocuments extends Migration
             $table->dropColumn('extension');
         });
     }
-}
+};

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Eloquents\Permission;
@@ -7,7 +9,7 @@ use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class CheckPermissionsTest extends TestCase
+final class CheckPermissionsTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -16,7 +18,7 @@ class CheckPermissionsTest extends TestCase
      */
     private $user;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -94,17 +96,17 @@ class CheckPermissionsTest extends TestCase
                 return $carry;
             } elseif (isset($carry[$route_name_prefix])) {
                 $carry[$route_name_prefix][] = $identifier;
+
                 return $carry;
             } else {
                 $carry[$route_name_prefix] = [$identifier];
+
                 return $carry;
             }
         }, []);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function permissionsに全ての権限が含まれているか()
     {
         $defined_permissions = array_keys(Permission::getDefinedPermissions());
@@ -116,9 +118,7 @@ class CheckPermissionsTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限があれば各機能のトップページにアクセスできる()
     {
         foreach ($this->getRouteNamePrefixesByPermissions() as $route_name_prefix => $permissions) {
@@ -138,15 +138,13 @@ class CheckPermissionsTest extends TestCase
                     ->get(route($route_name_prefix . '.index'));
                 $this->assertTrue(
                     $response->isOk(),
-                    "権限 " . $permission . " で " . $route_name_prefix . " にアクセスできません"
+                    '権限 ' . $permission . ' で ' . $route_name_prefix . ' にアクセスできません'
                 );
             }
         }
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がなければ各機能のトップページにアクセスできない()
     {
         foreach ($this->getRouteNamePrefixesByPermissions() as $route_name_prefix => $permissions) {
@@ -162,8 +160,8 @@ class CheckPermissionsTest extends TestCase
                 $this->assertEquals(
                     403,
                     $response->getStatusCode(),
-                    "権限がない場合は " . $route_name_prefix .
-                        " にアクセスできないようにする必要があります。権限 : " .
+                    '権限がない場合は ' . $route_name_prefix .
+                        ' にアクセスできないようにする必要があります。権限 : ' .
                         $permission
                 );
             }

@@ -51,9 +51,9 @@ $app = require_once __DIR__.'/../bootstrap/app.php';
 /*
 .env ファイルが作成されていない場合は作成する
 */
-if (!file_exists($app->environmentPath() . '/.env')) {
+if (! file_exists($app->environmentPath().'/.env')) {
     $artisan = app(Illuminate\Contracts\Console\Kernel::class);
-    copy($app->environmentPath() . '/.env.production', $app->environmentPath() . '/.env');
+    copy($app->environmentPath().'/.env.production', $app->environmentPath().'/.env');
     $artisan->call('key:generate');
 }
 
@@ -69,10 +69,10 @@ if (!file_exists($app->environmentPath() . '/.env')) {
 |
 */
 
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+$kernel = $app->make(Kernel::class);
 
 $response = $kernel->handle(
-    $request = Illuminate\Http\Request::capture()
+    $request = Request::capture()
 );
 
 $response->send();

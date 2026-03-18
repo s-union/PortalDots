@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Documents;
 
 use App\Eloquents\Document;
@@ -7,11 +9,10 @@ use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Documents\DocumentsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Mockery;
 use Tests\TestCase;
 
-class DestroyActionTest extends TestCase
+final class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,7 +26,7 @@ class DestroyActionTest extends TestCase
      */
     private $document;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -33,38 +34,32 @@ class DestroyActionTest extends TestCase
         $this->document = Document::factory()->create();
     }
 
-    /**
-     * @test
-     */
-    public function DocumentsServiceのdeleteDocumentが呼び出される()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function documents_serviceのdelete_documentが呼び出される()
     {
         Permission::create(['name' => 'staff.documents.delete']);
         $this->staff->syncPermissions(['staff.documents.delete']);
 
         $this->mock(DocumentsService::class, function ($mock) {
             $mock->shouldReceive('deleteDocument')->once()->with(
-                Mockery::on(function ($arg) {
-                    return $arg->id === $this->document->id;
-                })
+                Mockery::on(fn($arg) => $arg->id === $this->document->id)
             )->andReturn(true);
         });
 
         $response = $this->actingAs($this->staff)
-                        ->withSession(['staff_authorized' => true])
-                        ->delete(route('staff.documents.destroy', ['document' => $this->document]));
+            ->withSession(['staff_authorized' => true])
+            ->delete(route('staff.documents.destroy', ['document' => $this->document]));
 
         $response->assertSessionHasNoErrors();
         $response->assertRedirect(route('staff.documents.index'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は配布資料を削除できない()
     {
         $response = $this->actingAs($this->staff)
-                        ->withSession(['staff_authorized' => true])
-                        ->delete(route('staff.documents.destroy', ['document' => $this->document]));
+            ->withSession(['staff_authorized' => true])
+            ->delete(route('staff.documents.destroy', ['document' => $this->document]));
 
         $response->assertForbidden();
     }

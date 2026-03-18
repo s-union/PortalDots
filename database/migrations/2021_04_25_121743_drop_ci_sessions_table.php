@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-class DropCiSessionsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -15,7 +15,6 @@ class DropCiSessionsTable extends Migration
     {
         Schema::dropIfExists('ci_sessions');
     }
-
     /**
      * Reverse the migrations.
      *
@@ -36,4 +35,4 @@ class DropCiSessionsTable extends Migration
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
         );
     }
-}
+};

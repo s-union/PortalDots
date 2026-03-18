@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Contacts;
 
-use App\Mail\Contacts\ContactMailable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use App\Services\Contacts\ContactsService;
-use Illuminate\Support\Facades\Mail;
-use Tests\TestCase;
-use Illuminate\Support\Facades\App;
 use App\Eloquents\Circle;
 use App\Eloquents\ContactCategory;
 use App\Eloquents\User;
+use App\Mail\Contacts\ContactMailable;
+use App\Services\Contacts\ContactsService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Mail;
+use Tests\TestCase;
 
-class ContactsServeceTest extends TestCase
+final class ContactsServeceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -22,7 +23,7 @@ class ContactsServeceTest extends TestCase
      */
     private $contactsService;
 
-        /**
+    /**
      * @var Circle
      */
     private $circle;
@@ -42,7 +43,7 @@ class ContactsServeceTest extends TestCase
      */
     private $contactCategory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->contactsService = App::make(ContactsService::class);
@@ -65,31 +66,21 @@ class ContactsServeceTest extends TestCase
         $this->contactsService->create($this->circle, $this->leader, "こんにちは。\nこれはてすとです。", $this->contactCategory);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function send_お問い合わせが企画のメンバーに送信できる()
     {
         $this->create();
 
-        Mail::assertSent(ContactMailable::class, function ($mail) {
-            return $mail->hasTo($this->leader->email);
-        });
+        Mail::assertSent(ContactMailable::class, fn($mail) => $mail->hasTo($this->leader->email));
 
-        Mail::assertSent(ContactMailable::class, function ($mail) {
-            return $mail->hasTo($this->member->email);
-        });
+        Mail::assertSent(ContactMailable::class, fn($mail) => $mail->hasTo($this->member->email));
     }
 
-    /**
-     * @test
-     */
-    public function sendToStaff_スタッフ用控えが送信できる()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function send_to_staff_スタッフ用控えが送信できる()
     {
         $this->create();
 
-        Mail::assertSent(ContactMailable::class, function ($mail) {
-            return $mail->hasTo($this->contactCategory->email);
-        });
+        Mail::assertSent(ContactMailable::class, fn($mail) => $mail->hasTo($this->contactCategory->email));
     }
 }

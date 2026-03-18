@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateReadsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -21,7 +21,6 @@ class CreateReadsTable extends Migration
             $table->index(['page_id', 'user_id'])->unique();
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -31,4 +30,4 @@ class CreateReadsTable extends Migration
     {
         Schema::dropIfExists('reads');
     }
-}
+};

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddUnivemailColumnsToUsers extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -18,7 +18,6 @@ class AddUnivemailColumnsToUsers extends Migration
             $table->string('univemail_domain_part')->default('')->after('univemail_local_part');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -31,4 +30,4 @@ class AddUnivemailColumnsToUsers extends Migration
             $table->dropColumn('univemail_domain_part');
         });
     }
-}
+};

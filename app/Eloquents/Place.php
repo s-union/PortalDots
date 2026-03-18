@@ -10,17 +10,12 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Place extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     protected $fillable = [
         'name',
         'type',
         'notes',
-    ];
-
-    protected $casts = [
-        'type' => 'int',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -39,5 +34,12 @@ class Place extends Model
     public function circles()
     {
         return $this->belongsToMany(Circle::class, 'booths')->using(Booth::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'type' => 'int',
+        ];
     }
 }

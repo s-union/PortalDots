@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Answer;
@@ -9,18 +11,12 @@ use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\Exports\AnswersExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class AnswersExportTest extends TestCase
+final class AnswersExportTest extends TestCase
 {
     use RefreshDatabase;
-
-    /**
-     * @var Form
-     */
-    private $form;
 
     /**
      * @var AnswersExport
@@ -33,26 +29,6 @@ class AnswersExportTest extends TestCase
     private $circle;
 
     /**
-     * @var Question
-     */
-    private $question;
-
-    /**
-     * @var Question
-     */
-    private $upload_question;
-
-    /**
-     * @var Question
-     */
-    private $checkbox_question;
-
-    /**
-     * @var Question
-     */
-    private $heading_question;
-
-    /**
      * @var Answer
      */
     private $answer;
@@ -62,18 +38,13 @@ class AnswersExportTest extends TestCase
      */
     private $detail;
 
-    /**
-     * @var AnswerDetail
-     */
-    private $upload_detail;
-
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
-        $this->form = Form::factory()->create();
+        $form = Form::factory()->create();
 
-        $this->answersExport = App::make(AnswersExport::class, ['form' => $this->form]);
+        $this->answersExport = App::make(AnswersExport::class, ['form' => $form]);
 
         $this->circle = Circle::factory()->create([
             'name' => '片付けチェック見守ります',
@@ -82,66 +53,64 @@ class AnswersExportTest extends TestCase
             'group_name_yomi' => 'おせわずきさーくる',
         ]);
 
-        $this->question = Question::factory()->create([
-            'form_id' => $this->form->id,
+        $question = Question::factory()->create([
+            'form_id' => $form->id,
             'priority' => 3,
             'name' => 'せつもん',
             'type' => 'text',
         ]);
 
-        $this->upload_question = Question::factory()->create([
-            'form_id' => $this->form->id,
+        $upload_question = Question::factory()->create([
+            'form_id' => $form->id,
             'priority' => 1,
             'name' => 'あっぷろーど',
             'type' => 'upload',
         ]);
 
-        $this->checkbox_question = Question::factory()->create([
-            'form_id' => $this->form->id,
+        $checkbox_question = Question::factory()->create([
+            'form_id' => $form->id,
             'priority' => 4,
             'name' => 'チェックボックス',
             'type' => 'checkbox',
         ]);
 
-        $this->heading_question = Question::factory()->create([
-            'form_id' => $this->form->id,
+        $heading_question = Question::factory()->create([
+            'form_id' => $form->id,
             'priority' => 2,
             'name' => '見出しです。',
             'type' => 'heading',
         ]);
 
         $this->answer = Answer::factory()->create([
-            'form_id' => $this->form->id,
+            'form_id' => $form->id,
             'circle_id' => $this->circle->id,
         ]);
 
         $this->detail = AnswerDetail::factory()->create([
             'answer_id' => $this->answer->id,
-            'question_id' => $this->question->id,
+            'question_id' => $question->id,
         ]);
 
-        $this->upload_detail = AnswerDetail::factory()->create([
+        $upload_detail = AnswerDetail::factory()->create([
             'answer_id' => $this->answer->id,
-            'question_id' => $this->upload_question->id,
+            'question_id' => $upload_question->id,
             'answer' => 'answer_details/TEST.png',
         ]);
 
         AnswerDetail::factory()->create([
             'answer_id' => $this->answer->id,
-            'question_id' => $this->checkbox_question->id,
+            'question_id' => $checkbox_question->id,
             'answer' => 'ひとつめ',
         ]);
 
         AnswerDetail::factory()->create([
             'answer_id' => $this->answer->id,
-            'question_id' => $this->checkbox_question->id,
+            'question_id' => $checkbox_question->id,
             'answer' => 'ふたつめ',
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_回答のフォーマットが正常に行われる()
     {
         $this->assertEquals(
@@ -160,9 +129,7 @@ class AnswersExportTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function headings_設問からヘッダーが作成される()
     {
         $this->assertEquals(

@@ -13,6 +13,7 @@ trait IsNewTrait
         }
 
         $added_time = $this->created_at->add('3days');
+
         return $added_time->gte(now());
     }
 }

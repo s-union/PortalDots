@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Staff\Circles;
 
-use Illuminate\Foundation\Http\FormRequest;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
+use App\Eloquents\User;
+use Illuminate\Foundation\Http\FormRequest;
 
 class BaseCircleRequest extends FormRequest
 {
@@ -37,9 +37,9 @@ class BaseCircleRequest extends FormRequest
             'group_name' => Circle::GROUP_NAME_RULES,
             'group_name_yomi' => Circle::GROUP_NAME_YOMI_RULES,
             'status' => Circle::STATUS_RULES,
-            'tags'    => ['nullable', 'array'],
-            'leader'    => ['nullable', 'exists:users,student_id'],
-            'members'   => ['nullable'],
+            'tags' => ['nullable', 'array'],
+            'leader' => ['nullable', 'exists:users,student_id'],
+            'members' => ['nullable'],
         ];
     }
 
@@ -80,22 +80,22 @@ class BaseCircleRequest extends FormRequest
 
         $non_registered_member_ids = str_replace(["\r\n", "\r", "\n"], "\n", $this->members);
         $non_registered_member_ids = explode("\n", $non_registered_member_ids);
-        $non_registered_member_ids = array_filter($non_registered_member_ids, "strlen");
+        $non_registered_member_ids = array_filter($non_registered_member_ids, strlen(...));
 
         $members = $this->user->getByStudentIdIn($non_registered_member_ids);
 
         foreach ($members as $member) {
             $non_registered_member_ids = array_diff($non_registered_member_ids, [$member->student_id]);
-            if (!$member->areBothEmailsVerified()) {
+            if (! $member->areBothEmailsVerified()) {
                 $unverified_student_ids[] = $member->student_id;
             }
         }
         $validator->after(function ($validator) use ($non_registered_member_ids, $unverified_student_ids) {
-            if (!empty($non_registered_member_ids)) {
+            if (! empty($non_registered_member_ids)) {
                 $validator->errors()->add('members', '未登録 : ' . implode(' ', $non_registered_member_ids));
             }
 
-            if (!empty($unverified_student_ids)) {
+            if (! empty($unverified_student_ids)) {
                 $validator->errors()->add('members', 'メール未認証 : ' . implode(' ', $unverified_student_ids));
             }
         });

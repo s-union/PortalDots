@@ -1,10 +1,10 @@
 <?php
 
+use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Migrations\Migration;
 
-class CreateFundamentalTables extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -154,7 +154,6 @@ class CreateFundamentalTables extends Migration
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
         );
     }
-
     /**
      * Reverse the migrations.
      *
@@ -174,4 +173,4 @@ class CreateFundamentalTables extends Migration
         Schema::dropIfExists('role_user');
         Schema::dropIfExists('roles');
     }
-}
+};

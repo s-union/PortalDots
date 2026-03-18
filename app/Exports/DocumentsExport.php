@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Eloquents\Document;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -10,23 +11,22 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class DocumentsExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return Document::get();
     }
 
     /**
-     * @param Document $document
-     * @return array
+     * @param  Document  $document
      */
     public function map($document): array
     {
         return [
             $document->id,
             $document->name,
-            preg_replace('/^documents\//', '', $document->path),
+            preg_replace('/^documents\//', '', (string) $document->path),
             $document->size,
             $document->extension,
             $document->description,
@@ -38,9 +38,6 @@ class DocumentsExport implements FromCollection, WithHeadings, WithMapping
         ];
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return [

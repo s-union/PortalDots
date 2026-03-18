@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Permission;
+use App\Eloquents\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-class EditActionTest extends TestCase
+final class EditActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -21,7 +23,7 @@ class EditActionTest extends TestCase
     /** @var Circle */
     private $circle;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -33,9 +35,7 @@ class EditActionTest extends TestCase
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 参加登録が未完了の企画情報は編集できない()
     {
         Permission::create(['name' => 'staff.circles.edit']);

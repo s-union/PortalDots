@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Permissions;
 
 use App\Eloquents\Permission;
@@ -7,22 +9,20 @@ use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class UpdateActionTest extends TestCase
+final class UpdateActionTest extends TestCase
 {
     use RefreshDatabase;
 
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限設定を更新できる()
     {
         Permission::create(['name' => 'staff.permissions.edit']);
@@ -37,7 +37,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this
@@ -60,9 +60,7 @@ class UpdateActionTest extends TestCase
         $this->assertTrue($target_user->can('staff.pages.export'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 自分自身の権限は更新できない()
     {
         Permission::create(['name' => 'staff.permissions.edit']);
@@ -75,7 +73,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this
@@ -98,9 +96,7 @@ class UpdateActionTest extends TestCase
         $this->assertFalse($this->staff->can('staff.pages.export'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 管理者の権限は更新できない()
     {
         /** @var User */
@@ -115,7 +111,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this
@@ -134,9 +130,7 @@ class UpdateActionTest extends TestCase
         $this->assertEquals(0, $target_user->permissions()->count());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 存在しない権限を指定するとエラーになる()
     {
         Permission::create(['name' => 'staff.permissions.edit']);
@@ -151,7 +145,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'this.permission.is.not.defined',
-            ]
+            ],
         ];
 
         $response = $this
@@ -170,9 +164,7 @@ class UpdateActionTest extends TestCase
         $this->assertEquals(0, $target_user->permissions()->count());
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は権限設定を更新できない()
     {
         /** @var User */
@@ -184,7 +176,7 @@ class UpdateActionTest extends TestCase
             'permissions' => [
                 'staff.users.read,edit',
                 'staff.pages.read,export',
-            ]
+            ],
         ];
 
         $response = $this

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Emails;
 
+use App\Eloquents\Email;
+use App\Eloquents\User;
+use App\Mail\Emails\SendEmailServiceMailable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Mail;
-use App\Eloquents\User;
-use App\Eloquents\Email;
-use App\Mail\Emails\SendEmailServiceMailable;
 
 /**
  * メールを一斉送信するためのサービスクラス
@@ -16,23 +16,25 @@ use App\Mail\Emails\SendEmailServiceMailable;
 class SendEmailService
 {
     private const NUMBERS_PER_EXECUTE = 60; // 1回の処理で取得するメールレコード数
+
     private const SEND_INTERVAL_SEC = 1; // メール送信間隔(秒)
+
     private const SEC_PER_JOB = 60; // プログラム強制終了まで
+
     private const NUM_RETRY_PER_EMAIL_ADDRESS = 3; // 送信失敗した場合，リトライする回数
+
     private const NUM_RETRY_PER_JOB = 10; // １回のジョブで繰り返す回数
 
     public static function bulkEnqueue(string $subject, string $body, Collection $users_email_to)
     {
         $created_at = now();
-        Email::insert($users_email_to->map(function (User $user) use ($subject, $body, $created_at) {
-            return [
-                'subject' => $subject,
-                'body' => $body,
-                'email_to' => $user->email,
-                'email_to_name' => $user->name,
-                'created_at' => $created_at,
-            ];
-        })->toArray());
+        Email::insert($users_email_to->map(fn(User $user) => [
+            'subject' => $subject,
+            'body' => $body,
+            'email_to' => $user->email,
+            'email_to_name' => $user->name,
+            'created_at' => $created_at,
+        ])->toArray());
     }
 
     public static function runJob()
@@ -44,11 +46,11 @@ class SendEmailService
         $count_failed_now = 0;
 
         $emails = Email::orderBy('id', 'ASC')
-                            ->whereNull('locked_at') // 排他ロックされていない
-                            ->whereNull('sent_at')   // かつ，未送信
-                            ->where('count_failed', '<', self::NUM_RETRY_PER_EMAIL_ADDRESS) // かつ，リトライ上限に達していないレコード
-                            ->take(self::NUMBERS_PER_EXECUTE)
-                            ->get();           // 最新 self::NUMBERS_PER_EXECUTE 件を取得
+            ->whereNull('locked_at') // 排他ロックされていない
+            ->whereNull('sent_at')   // かつ，未送信
+            ->where('count_failed', '<', self::NUM_RETRY_PER_EMAIL_ADDRESS) // かつ，リトライ上限に達していないレコード
+            ->take(self::NUMBERS_PER_EXECUTE)
+            ->get();           // 最新 self::NUMBERS_PER_EXECUTE 件を取得
         foreach ($emails as $email) {
             $now = now();
 
@@ -68,10 +70,10 @@ class SendEmailService
                 $email->sent_at = $now;
                 $email->locked_at = null;
                 $email->save();
-            } catch (Exception $e) {
+            } catch (\Throwable) {
                 // 送信失敗したので失敗カウントを1つ追加
-                ++$email->count_failed;
-                ++$count_failed_now;
+                $email->count_failed++;
+                $count_failed_now++;
 
                 // TODO: エラーの内容をログに残せたら良さそう
 
@@ -97,7 +99,7 @@ class SendEmailService
             }
 
             // スリープ
-            sleep(self::SEND_INTERVAL_SEC);
+            \Illuminate\Support\Sleep::sleep(self::SEND_INTERVAL_SEC);
         }
     }
 
@@ -117,18 +119,19 @@ class SendEmailService
      * count_failed や sent_at が
      * セットされていない場合に false を返す
      *
-     * @return boolean
+     * @return bool
      */
     public static function isServiceOperational()
     {
         $emails = Email::whereNull('sent_at')
-                    ->where('count_failed', '===', 0)
-                    ->where('created_at', '<', now()->subDay())
-                    ->get();
+            ->where('count_failed', '=', 0)
+            ->where('created_at', '<', now()->subDay())
+            ->get();
 
         if ($emails->isEmpty()) {
             return true;
         }
+
         return false;
     }
 }

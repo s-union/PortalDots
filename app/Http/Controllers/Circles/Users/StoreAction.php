@@ -2,19 +2,16 @@
 
 namespace App\Http\Controllers\Circles\Users;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
 use App\Services\Circles\CirclesService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class StoreAction extends Controller
 {
-    private $circlesService;
-
-    public function __construct(CirclesService $circlesService)
+    public function __construct(private readonly CirclesService $circlesService)
     {
-        $this->circlesService = $circlesService;
     }
 
     public function __invoke(Circle $circle, Request $request)
@@ -28,15 +25,14 @@ class StoreAction extends Controller
         $canJoin = isset($participationForm)
             && $participationForm->is_public
             && $participationForm->isOpen()
-            && !$circle->hasSubmitted();
+            && ! $circle->hasSubmitted();
 
-        if (!$canJoin) {
+        if (! $canJoin) {
             abort(404);
         }
 
         if ($circle->users->contains(Auth::user())) {
-            return redirect()
-                ->route('circles.show', ['circle' => $circle])
+            return to_route('circles.show', ['circle' => $circle])
                 ->with('topAlert.title', 'あなたは既にメンバーです');
         }
 
@@ -44,8 +40,7 @@ class StoreAction extends Controller
         $this->circlesService->addMember($circle, Auth::user());
         activity()->enableLogging();
 
-        return redirect()
-            ->route('circles.show', ['circle' => $circle])
+        return to_route('circles.show', ['circle' => $circle])
             ->with('topAlert.title', "「{$circle->name}」の学園祭係(副責任者)になりました");
     }
 }

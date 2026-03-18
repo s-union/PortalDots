@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-class ChangeIsSignedUp extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -18,7 +18,6 @@ class ChangeIsSignedUp extends Migration
             $table->timestampTz('signed_up_at')->nullable()->after('univemail_verified_at');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -31,4 +30,4 @@ class ChangeIsSignedUp extends Migration
             $table->dropColumn('signed_up_at');
         });
     }
-}
+};

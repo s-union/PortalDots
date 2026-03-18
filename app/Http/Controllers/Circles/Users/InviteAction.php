@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Circles\Users;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
 class InviteAction extends Controller
@@ -19,9 +19,9 @@ class InviteAction extends Controller
         $canJoin = isset($participationForm)
             && $participationForm->is_public
             && $participationForm->isOpen()
-            && !$circle->hasSubmitted();
+            && ! $circle->hasSubmitted();
 
-        if (!$canJoin) {
+        if (! $canJoin) {
             abort(404);
         }
 
@@ -30,8 +30,8 @@ class InviteAction extends Controller
             if (Auth::user()->isLeaderInCircle($circle)) {
                 $redirect_to = 'circles.users.index';
             }
-            return redirect()
-                ->route($redirect_to, ['circle' => $circle])
+
+            return to_route($redirect_to, ['circle' => $circle])
                 ->with('topAlert.title', 'あなたは既にメンバーです');
         }
 

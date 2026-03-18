@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Middleware;
 
 use App\Eloquents\User;
@@ -10,7 +12,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
-class DemoModeTest extends TestCase
+final class DemoModeTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -19,16 +21,14 @@ class DemoModeTest extends TestCase
      */
     private $demoMode;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->demoMode = App::make(DemoMode::class);
     }
 
-    /**
-     * @test
-     */
-    public function handle_デモモードではない場合はGET以外のリクエストも許可する()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function handle_デモモードではない場合は_ge_t以外のリクエストも許可する()
     {
         /** @var User */
         $user = User::factory()->create();
@@ -37,17 +37,13 @@ class DemoModeTest extends TestCase
 
         $request = Request::create(route('contacts.post'), 'POST');
 
-        $response = $this->demoMode->handle($request, function () {
-            return 'handled!';
-        });
+        $response = $this->demoMode->handle($request, fn() => 'handled!');
 
         $this->assertSame('handled!', $response);
     }
 
-    /**
-     * @test
-     */
-    public function handle_デモモードの場合はGET以外のリクエストを拒否()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function handle_デモモードの場合は_ge_t以外のリクエストを拒否()
     {
         Config::set('portal.enable_demo_mode', true);
 
@@ -61,7 +57,7 @@ class DemoModeTest extends TestCase
         $response = $this->demoMode->handle($request, function () {
         });
 
-        $testResponse = $this->createTestResponse($response);
+        $testResponse = $this->createTestResponse($response, $request);
 
         $testResponse->assertRedirect();
     }

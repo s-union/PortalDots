@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddIsVerifiedByStaffColumnToUsers extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,7 +17,6 @@ class AddIsVerifiedByStaffColumnToUsers extends Migration
             $table->boolean('is_verified_by_staff')->default(false)->after('univemail_verified_at');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -29,4 +28,4 @@ class AddIsVerifiedByStaffColumnToUsers extends Migration
             $table->dropColumn('is_verified_by_staff');
         });
     }
-}
+};

@@ -2,25 +2,16 @@
 
 namespace App\Http\Controllers\Auth;
 
-use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use App\Http\Controllers\Controller;
-use App\Services\Circles\SelectorService;
 use App\Services\Auth\StaffAuthService;
+use App\Services\Circles\SelectorService;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
-
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    /**
-     * @var StaffAuthService
-     */
-    private $staffAuthService;
 
     /*
     |--------------------------------------------------------------------------
@@ -50,18 +41,15 @@ class LoginController extends Controller
      *
      * @return void
      */
-    public function __construct(SelectorService $selectorService, StaffAuthService $staffAuthService)
+    public function __construct(private SelectorService $selectorService, private StaffAuthService $staffAuthService)
     {
         $this->middleware('guest')->except('logout', 'showLogout');
-
-        $this->selectorService = $selectorService;
-        $this->staffAuthService = $staffAuthService;
     }
 
     /**
      * ログインページに GET リクエストされた場合
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function showLoginForm()
     {
@@ -71,7 +59,7 @@ class LoginController extends Controller
     /**
      * ログアウトページに GET リクエストされた場合
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function showLogout()
     {
@@ -81,7 +69,6 @@ class LoginController extends Controller
     /**
      * The user has logged out of the application.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return mixed
      */
     protected function loggedOut(Request $request)

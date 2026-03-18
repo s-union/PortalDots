@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers;
 
 use App\Eloquents\User;
@@ -9,25 +11,23 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class UsersGridMakerTest extends TestCase
+final class UsersGridMakerTest extends TestCase
 {
     /**
      * @var UsersGridMaker
      */
     private $usersGridMaker;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->usersGridMaker = App::make(UsersGridMaker::class);
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-08 00:00:00'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-08 00:00:00'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-08 00:00:00'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map()
     {
         $user = User::factory()->make([
@@ -43,21 +43,17 @@ class UsersGridMakerTest extends TestCase
         $this->assertSame('2020/02/02 02:02:02', $result['updated_at']);
     }
 
-    public static function formatLastAccessedAt_provider()
+    public static function formatLastAccessedAt_provider(): \Iterator
     {
-        return [
-            [new CarbonImmutable('2020-02-07 23:23:23'), '1時間以内'],
-            [new CarbonImmutable('2020-02-01 01:23:45'), '6日前'],
-            [new CarbonImmutable('2019-10-31 19:10:31'), '3ヶ月前'],
-            [new CarbonImmutable('2012-05-22 09:30:00'), '1年以上前']
-        ];
+        yield [new CarbonImmutable('2020-02-07 23:23:23'), '1時間以内'];
+        yield [new CarbonImmutable('2020-02-01 01:23:45'), '6日前'];
+        yield [new CarbonImmutable('2019-10-31 19:10:31'), '3ヶ月前'];
+        yield [new CarbonImmutable('2012-05-22 09:30:00'), '1年以上前'];
     }
 
-    /**
-     * @test
-     * @dataProvider formatLastAccessedAt_provider
-     */
-    public function formatLastAccessedAt(CarbonImmutable $last_accessed_at, string $expected)
+    #[\PHPUnit\Framework\Attributes\DataProvider('formatLastAccessedAt_provider')]
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function format_last_accessed_at(CarbonImmutable $last_accessed_at, string $expected)
     {
         $user = User::factory()->make([
             'last_accessed_at' => $last_accessed_at,

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddForeignKeysInTags extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -29,7 +29,6 @@ class AddForeignKeysInTags extends Migration
                 ->onDelete('cascade');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -47,4 +46,4 @@ class AddForeignKeysInTags extends Migration
             $table->dropForeign(['tag_id']);
         });
     }
-}
+};

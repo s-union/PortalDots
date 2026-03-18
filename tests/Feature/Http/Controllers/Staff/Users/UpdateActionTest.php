@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Users;
 
 use App\Eloquents\Permission;
@@ -7,7 +9,7 @@ use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class UpdateActionTest extends TestCase
+final class UpdateActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -17,16 +19,14 @@ class UpdateActionTest extends TestCase
     /** @var User */
     private $admin;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
         $this->admin = User::factory()->admin()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ユーザー情報を更新できる()
     {
         Permission::create(['name' => 'staff.users.edit']);
@@ -76,9 +76,7 @@ class UpdateActionTest extends TestCase
         $this->assertFalse($target_user->is_admin);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はユーザー情報を更新できない()
     {
         /** @var User */
@@ -114,9 +112,7 @@ class UpdateActionTest extends TestCase
         $this->assertFalse($target_user->is_admin);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ自身のユーザー種別は変更できない()
     {
         Permission::create(['name' => 'staff.users.edit']);
@@ -150,9 +146,7 @@ class UpdateActionTest extends TestCase
         $this->assertTrue($this->staff->is_staff);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 管理者であっても自身のユーザー種別は変更できない()
     {
         Permission::create(['name' => 'staff.users.edit']);
@@ -186,9 +180,7 @@ class UpdateActionTest extends TestCase
         $this->assertTrue($this->admin->is_admin);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 管理者であれば他のユーザーを管理者にできる()
     {
         Permission::create(['name' => 'staff.users.edit']);
@@ -228,9 +220,7 @@ class UpdateActionTest extends TestCase
         $this->assertTrue($target_user->is_admin);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 管理者ではない場合は他のユーザーを管理者にできない()
     {
         Permission::create(['name' => 'staff.users.edit']);
@@ -269,9 +259,7 @@ class UpdateActionTest extends TestCase
         $this->assertFalse($target_user->is_admin);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 管理者ではない場合は他の管理者のユーザー種別を変更できない()
     {
         Permission::create(['name' => 'staff.users.edit']);
@@ -307,9 +295,7 @@ class UpdateActionTest extends TestCase
         $this->assertTrue($this->admin->is_admin);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 一般ユーザーはユーザー情報の更新はできない()
     {
         /** @var User */

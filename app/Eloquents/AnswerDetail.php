@@ -10,7 +10,6 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class AnswerDetail extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     public function getActivitylogOptions(): LogOptions

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePageViewableTagsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -20,7 +20,6 @@ class CreatePageViewableTagsTable extends Migration
             $table->unique(['page_id', 'tag_id']);
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -30,4 +29,4 @@ class CreatePageViewableTagsTable extends Migration
     {
         Schema::dropIfExists('page_viewable_tags');
     }
-}
+};

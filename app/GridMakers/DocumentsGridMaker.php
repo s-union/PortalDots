@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\GridMakers;
 
-use Illuminate\Database\Eloquent\Builder;
 use App\Eloquents\Document;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class DocumentsGridMaker implements GridMakable
@@ -16,7 +16,7 @@ class DocumentsGridMaker implements GridMakable
     use UseEloquent;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -24,7 +24,7 @@ class DocumentsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -44,7 +44,7 @@ class DocumentsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
@@ -63,7 +63,7 @@ class DocumentsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -82,26 +82,20 @@ class DocumentsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
         $item = [];
         foreach ($this->keys() as $key) {
-            switch ($key) {
-                case 'extension':
-                    $item[$key] = mb_strtoupper($record->extension);
-                    break;
-                case 'created_at':
-                    $item[$key] = !empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'updated_at':
-                    $item[$key] = !empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null;
-                    break;
-                default:
-                    $item[$key] = $record->$key;
-            }
+            $item[$key] = match ($key) {
+                'extension' => mb_strtoupper((string) $record->extension),
+                'created_at' => ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null,
+                'updated_at' => ! empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null,
+                default => $record->$key,
+            };
         }
+
         return $item;
     }
 

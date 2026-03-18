@@ -10,5 +10,6 @@ class Read extends Pivot
     use HasFactory;
 
     protected $table = 'reads';
+
     public $incrementing = true;
 }

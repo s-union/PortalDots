@@ -2,30 +2,18 @@
 
 namespace App\Http\Controllers\Circles;
 
+use App\Eloquents\ParticipationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Circles\CircleRequest;
 use App\Services\Circles\CirclesService;
 use App\Services\Forms\AnswersService;
-use App\Eloquents\ParticipationType;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class StoreAction extends Controller
 {
-    /**
-     * @var CirclesService
-     */
-    private $circlesService;
-
-    /**
-     * @var AnswersService
-     */
-    private $answersService;
-
-    public function __construct(CirclesService $circlesService, AnswersService $answersService)
+    public function __construct(private readonly CirclesService $circlesService, private readonly AnswersService $answersService)
     {
-        $this->circlesService = $circlesService;
-        $this->answersService = $answersService;
     }
 
     public function __invoke(CircleRequest $request)
@@ -58,16 +46,15 @@ class StoreAction extends Controller
                     ->circles()
                     ->first();
                 foreach ($prev_circle->users as $user) {
-                    if (!$user->pivot->is_leader) {
+                    if (! $user->pivot->is_leader) {
                         $circle->users()->save($user, ['is_leader' => false]);
                     }
                 }
-                return redirect()
-                    ->route('circles.confirm', ['circle' => $circle]);
+
+                return to_route('circles.confirm', ['circle' => $circle]);
             }
 
-            return redirect()
-                ->route('circles.users.index', ['circle' => $circle]);
+            return to_route('circles.users.index', ['circle' => $circle]);
         });
 
         activity()->enableLogging();

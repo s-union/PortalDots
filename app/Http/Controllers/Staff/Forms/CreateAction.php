@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Forms;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Tag;
+use App\Http\Controllers\Controller;
 
 class CreateAction extends Controller
 {
@@ -11,8 +11,6 @@ class CreateAction extends Controller
     {
         return view('staff.forms.form')
             ->with('default_tags', \json_encode([]))
-            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(function ($item) {
-                return ['text' => $item];
-            })->toJson());
+            ->with('tags_autocomplete_items', Tag::get()->pluck('name')->map(fn($item) => ['text' => $item])->toJson());
     }
 }

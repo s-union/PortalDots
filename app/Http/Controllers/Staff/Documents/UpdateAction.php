@@ -2,21 +2,15 @@
 
 namespace App\Http\Controllers\Staff\Documents;
 
-use App\Http\Controllers\Controller;
-use App\Services\Documents\DocumentsService;
-use App\Http\Requests\Staff\Documents\UpdateDocumentRequest;
 use App\Eloquents\Document;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\Documents\UpdateDocumentRequest;
+use App\Services\Documents\DocumentsService;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var DocumentsService
-     */
-    private $documentsService;
-
-    public function __construct(DocumentsService $documentsService)
+    public function __construct(private readonly DocumentsService $documentsService)
     {
-        $this->documentsService = $documentsService;
     }
 
     public function __invoke(UpdateDocumentRequest $request, Document $document)
@@ -28,13 +22,12 @@ class UpdateAction extends Controller
             $validated['name'],
             $validated['description'],
             $request->file('file'),
-            (bool)$validated['is_public'],
-            (bool)$validated['is_important'],
+            (bool) $validated['is_public'],
+            (bool) $validated['is_important'],
             $validated['notes']
         );
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', '配布資料を更新しました');
     }
 }

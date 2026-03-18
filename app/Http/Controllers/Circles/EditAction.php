@@ -2,36 +2,32 @@
 
 namespace App\Http\Controllers\Circles;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\AnswerDetailsService;
 use Illuminate\Support\Facades\Auth;
 
 class EditAction extends Controller
 {
-    private $answerDetailsService;
-
-    public function __construct(
-        AnswerDetailsService $answerDetailsService
-    ) {
-        $this->answerDetailsService = $answerDetailsService;
+    public function __construct(private readonly AnswerDetailsService $answerDetailsService)
+    {
     }
 
     public function __invoke(Circle $circle)
     {
         $this->authorize('circle.update', $circle);
 
-        if (!Auth::user()->isLeaderInCircle($circle)) {
+        if (! Auth::user()->isLeaderInCircle($circle)) {
             abort(403);
         }
 
         $answer = $circle->getParticipationFormAnswer();
 
         $default_group = null;
-        if (!$circle->can_change_group_name) {
+        if (! $circle->can_change_group_name) {
             $default_group = [
                 'group_name' => $circle->group_name,
-                'group_name_yomi' => $circle->group_name_yomi
+                'group_name_yomi' => $circle->group_name_yomi,
             ];
         }
 

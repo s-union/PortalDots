@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class RenameFilenameToPathAtDocuments extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,7 +17,6 @@ class RenameFilenameToPathAtDocuments extends Migration
             $table->renameColumn('filename', 'path');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -29,4 +28,4 @@ class RenameFilenameToPathAtDocuments extends Migration
             $table->renameColumn('path', 'filename');
         });
     }
-}
+};

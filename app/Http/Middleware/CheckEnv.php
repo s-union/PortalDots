@@ -2,38 +2,31 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
-use Artisan;
 use App\Services\Utils\DotenvService;
+use Closure;
+use Illuminate\Http\Request;
 
 /**
  * 設定ファイルが存在しない場合、PortalDots のセットアップ方法を案内する
  */
 class CheckEnv
 {
-    /**
-     * @var DotenvService
-     */
-    private $dotenvService;
-
-    public function __construct(DotenvService $dotenvService)
+    public function __construct(private readonly DotenvService $dotenvService)
     {
-        $this->dotenvService = $dotenvService;
     }
 
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
      * @return mixed
      */
     public function handle($request, Closure $next)
     {
         if ($this->dotenvService->getValue('APP_NOT_INSTALLED', 'false') === 'true') {
-            return redirect()
-                ->route('install.index');
+            return to_route('install.index');
         }
+
         return $next($request);
     }
 }

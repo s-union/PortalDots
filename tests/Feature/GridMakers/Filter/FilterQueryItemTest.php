@@ -1,35 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers\Filter;
 
 use App\GridMakers\Filter\FilterQueryItem;
 use InvalidArgumentException;
 use Tests\TestCase;
 
-class FilterQueryItemTest extends TestCase
+final class FilterQueryItemTest extends TestCase
 {
-    public static function operatorsProvider()
+    public static function operatorsProvider(): \Iterator
     {
-        return [
-            ['=', '='],
-            ['!=', '!='],
-            ['<', '<'],
-            ['>', '>'],
-            ['<=', '<='],
-            ['>=', '>='],
-            ['like', 'like'],
-            ['not like', 'not like'],
-            ['LIKE', 'like'],
-            ['NOT LIKE', 'not like'],
-            ['LiKe', 'like'],
-            ['NoT lIkE', 'not like'],
-        ];
+        yield ['=', '='];
+        yield ['!=', '!='];
+        yield ['<', '<'];
+        yield ['>', '>'];
+        yield ['<=', '<='];
+        yield ['>=', '>='];
+        yield ['like', 'like'];
+        yield ['not like', 'not like'];
+        yield ['LIKE', 'like'];
+        yield ['NOT LIKE', 'not like'];
+        yield ['LiKe', 'like'];
+        yield ['NoT lIkE', 'not like'];
     }
 
-    /**
-     * @test
-     * @dataProvider operatorsProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('operatorsProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_正常(string $operator)
     {
         $obj = new FilterQueryItem('this_is_key.sub', $operator, 'hogehoge');
@@ -37,9 +35,7 @@ class FilterQueryItemTest extends TestCase
         $this->assertInstanceOf(FilterQueryItem::class, $obj);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_必要な引数が空の場合は例外が発生する()
     {
         $this->expectException(InvalidArgumentException::class);
@@ -47,9 +43,7 @@ class FilterQueryItemTest extends TestCase
         new FilterQueryItem('', '', 'hogehoge');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor_存在しない演算子が指定されたら例外が発生する()
     {
         $this->expectException(InvalidArgumentException::class);
@@ -57,51 +51,41 @@ class FilterQueryItemTest extends TestCase
         new FilterQueryItem('this_is_key.sub', '<>', 'hogehoge');
     }
 
-    /**
-     * @test
-     */
-    public function getFullKeyName()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_full_key_name()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 
-        $this->assertEquals('this_is_key.sub', $obj->getFullKeyName());
+        $this->assertSame('this_is_key.sub', $obj->getFullKeyName());
     }
 
-    /**
-     * @test
-     */
-    public function getMainKeyName()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_main_key_name()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 
-        $this->assertEquals('this_is_key', $obj->getMainKeyName());
+        $this->assertSame('this_is_key', $obj->getMainKeyName());
     }
 
-    /**
-     * @test
-     */
-    public function getSubKeyName()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_sub_key_name()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 
-        $this->assertEquals('sub', $obj->getSubKeyName());
+        $this->assertSame('sub', $obj->getSubKeyName());
     }
 
-    /**
-     * @test
-     * @dataProvider operatorsProvider
-     */
-    public function getOperator(string $input, string $output)
+    #[\PHPUnit\Framework\Attributes\DataProvider('operatorsProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_operator(string $input, string $output)
     {
         $obj = new FilterQueryItem('this_is_key.sub', $input, 'hogehoge');
 
-        $this->assertEquals($output, $obj->getOperator());
+        $this->assertSame($output, $obj->getOperator());
     }
 
-    /**
-     * @test
-     */
-    public function getValue()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_value()
     {
         $obj = new FilterQueryItem('this_is_key.sub', '=', 'hogehoge');
 

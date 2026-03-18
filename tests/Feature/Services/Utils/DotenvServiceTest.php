@@ -1,21 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Utils;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Services\Utils\DotenvService;
 use Illuminate\Support\Facades\App;
 use Jackiedo\DotenvEditor\DotenvEditor;
 use Jackiedo\DotenvEditor\Exceptions\KeyNotFoundException;
+use Tests\TestCase;
 
-class DotenvServiceTest extends TestCase
+final class DotenvServiceTest extends TestCase
 {
-    /**
-     * @test
-     */
-    public function getValue_値が存在すれば取得できる()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_value_値が存在すれば取得できる()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
             $mock->shouldReceive('getValue')->once()->with('EXAMPLE_KEY')->andReturn('exampleValue');
@@ -26,10 +24,8 @@ class DotenvServiceTest extends TestCase
         $this->assertSame('exampleValue', $dotenvService->getValue('EXAMPLE_KEY'));
     }
 
-    /**
-     * @test
-     */
-    public function getValue_値が存在しなければデフォルト値を返す()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_value_値が存在しなければデフォルト値を返す()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
             $mock->shouldReceive('getValue')
@@ -43,10 +39,8 @@ class DotenvServiceTest extends TestCase
         $this->assertSame('defaultValue', $dotenvService->getValue('EXAMPLE_KEY', 'defaultValue'));
     }
 
-    /**
-     * @test
-     */
-    public function getValue_値が存在せずデフォルト値も未設定の場合はnullを返す()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_value_値が存在せずデフォルト値も未設定の場合はnullを返す()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
             $mock->shouldReceive('getValue')->once()->with('EXAMPLE_KEY')->andThrow(new KeyNotFoundException());
@@ -54,13 +48,11 @@ class DotenvServiceTest extends TestCase
 
         $dotenvService = App::make(DotenvService::class);
 
-        $this->assertSame(null, $dotenvService->getValue('EXAMPLE_KEY'));
+        $this->assertNull($dotenvService->getValue('EXAMPLE_KEY'));
     }
 
-    /**
-     * @test
-     */
-    public function saveKeys()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function save_keys()
     {
         $this->mock(DotenvEditor::class, function ($mock) {
             $mock->shouldReceive('setKey')->once()->with('EXAMPLE_KEY_1', 'value1');

@@ -15,10 +15,9 @@ class TagsService
      * 引数に渡されたタグの名前の配列から、データベースに保存されているタグの一覧を取得する。
      * データベースで未作成のタグについては作成する。
      *
-     * @param array $tags
-     * @param boolean $allow_create タグの新規作成を許可するかどうか
+     * @param  bool  $allow_create  タグの新規作成を許可するかどうか
+     *
      * @throws DenyCreateTagsException $allow_create が false なのに企画タグの新規作成が必要になった場合に発生する例外
-     * @return Collection
      */
     public function getOrCreateTags(array $tags, bool $allow_create): Collection
     {
@@ -30,7 +29,7 @@ class TagsService
             $diff = array_udiff($tags, $exist_tags->pluck('name')->all(), 'strcasecmp');
 
             foreach ($diff as $insert) {
-                if (!$allow_create) {
+                if (! $allow_create) {
                     throw new DenyCreateTagsException('企画タグの作成は許可されていません');
                 }
 

@@ -4,22 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services\Contacts;
 
-use Illuminate\Support\Facades\Mail;
 use App\Eloquents\Circle;
 use App\Eloquents\ContactCategory;
 use App\Eloquents\User;
 use App\Mail\Contacts\ContactMailable;
-use App\Mail\Contacts\EmailCategoryMailable;
+use Illuminate\Support\Facades\Mail;
 
 class ContactsService
 {
     /**
      * お問い合わせを作成する
      *
-     * @param Circle|null $circle お問い合わせ対象の企画
-     * @param User $sender お問い合わせを作成したユーザー
-     * @param string $contactBody お問い合わせ本文
-     * @param ContactCategory $category お問い合わせ項目
+     * @param  Circle|null  $circle  お問い合わせ対象の企画
+     * @param  User  $sender  お問い合わせを作成したユーザー
+     * @param  string  $contactBody  お問い合わせ本文
+     * @param  ContactCategory  $category  お問い合わせ項目
      * @return bool
      */
     public function create(?Circle $circle, User $sender, string $contactBody, ContactCategory $category)
@@ -40,10 +39,10 @@ class ContactsService
     /**
      * メールを送信する
      *
-     * @param User $recipient メールを送信する宛先
-     * @param Circle|null $circle お問い合わせ対象の企画
-     * @param User $sender お問い合わせを作成したユーザー
-     * @param string $contactBody お問い合わせ本文
+     * @param  User  $recipient  メールを送信する宛先
+     * @param  Circle|null  $circle  お問い合わせ対象の企画
+     * @param  User  $sender  お問い合わせを作成したユーザー
+     * @param  string  $contactBody  お問い合わせ本文
      * @return void
      */
     private function send(
@@ -64,10 +63,10 @@ class ContactsService
     /**
      * スタッフ用控えをスタッフに送信する
      *
-     * @param Circle|null $circle お問い合わせ対象の企画
-     * @param User $sender お問い合わせを作成したユーザー
-     * @param string $contactBody お問い合わせ本文
-     * @param ContactCategory $category お問い合わせ項目
+     * @param  Circle|null  $circle  お問い合わせ対象の企画
+     * @param  User  $sender  お問い合わせを作成したユーザー
+     * @param  string  $contactBody  お問い合わせ本文
+     * @param  ContactCategory  $category  お問い合わせ項目
      * @return void
      */
     private function sendToStaff(?Circle $circle, User $sender, string $contactBody, ContactCategory $category)

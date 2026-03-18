@@ -2,21 +2,15 @@
 
 namespace App\Http\Controllers\Staff\Forms\Editor;
 
-use App\Services\Forms\FormEditorService;
-use App\Http\Requests\Staff\Forms\Editor\UpdateFormRequest;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\Forms\Editor\UpdateFormRequest;
+use App\Services\Forms\FormEditorService;
 
 class UpdateFormAction extends Controller
 {
-    /**
-     * @var FormEditorService
-     */
-    private $formEditorService;
-
-    public function __construct(FormEditorService $formEditorService)
+    public function __construct(private readonly FormEditorService $formEditorService)
     {
-        $this->formEditorService = $formEditorService;
     }
 
     public function __invoke(int $form_id, UpdateFormRequest $request)

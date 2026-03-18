@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Documents;
 
 use App\Eloquents\Document;
@@ -12,7 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
-class ExportActionTest extends TestCase
+final class ExportActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -21,37 +23,25 @@ class ExportActionTest extends TestCase
      */
     private $staff;
 
-    /**
-     * @var Document
-     */
-    private $document;
-
-    /**
-     * @var Document
-     */
-    private $anotherDocument;
-
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
 
         $this->staff = User::factory()->staff()->create();
 
-        $this->document = Document::factory()->create([
+        $document = Document::factory()->create([
             'name' => '配布資料',
         ]);
 
-        $this->anotherDocument = Document::factory()->create([
+        $anotherDocument = Document::factory()->create([
             'name' => '見てほしい資料',
         ]);
     }
 
-    /**
-     * @test
-     */
-    public function 配布資料の情報がCSVでダウンロードできる()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 配布資料の情報が_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.documents.export']);
         $this->staff->syncPermissions(['staff.documents.export']);
@@ -62,18 +52,14 @@ class ExportActionTest extends TestCase
             ->withSession(['staff_authorized' => true])
             ->get(route('staff.documents.export'));
 
-        $now = Carbon::now()->format('Y-m-d_H-i-s');
+        $now = \Illuminate\Support\Facades\Date::now()->format('Y-m-d_H-i-s');
 
-        Excel::assertDownloaded("配布資料一覧_{$now}.csv", function (DocumentsExport $export) {
-            return $export->collection()->contains('name', '配布資料')
-                && $export->collection()->contains('name', '見てほしい資料');
-        });
+        Excel::assertDownloaded("配布資料一覧_{$now}.csv", fn(DocumentsExport $export) => $export->collection()->contains('name', '配布資料')
+            && $export->collection()->contains('name', '見てほしい資料'));
     }
 
-    /**
-     * @test
-     */
-    public function 権限がない場合はCSVをダウンロードできない()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Pages;
 
 use App\Eloquents\Document;
@@ -7,24 +9,20 @@ use App\Eloquents\Page;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ShowActionTest extends TestCase
+final class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public static function 非公開と固定表示のお知らせは表示できない_provider()
+    public static function 非公開と固定表示のお知らせは表示できない_provider(): \Iterator
     {
-        return [
-            '公開・非固定' => [true, false, true],
-            '非公開・非固定' => [false, false, false],
-            '非公開・固定' => [false, true, false],
-            '公開・固定' => [true, true, false],
-        ];
+        yield '公開・非固定' => [true, false, true];
+        yield '非公開・非固定' => [false, false, false];
+        yield '非公開・固定' => [false, true, false];
+        yield '公開・固定' => [true, true, false];
     }
 
-    /**
-     * @test
-     * @dataProvider 非公開と固定表示のお知らせは表示できない_provider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('非公開と固定表示のお知らせは表示できない_provider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 非公開と固定表示のお知らせは表示できない(bool $is_public, bool $is_pinned, bool $can_see)
     {
         $page_title = 'これはお知らせのタイトルです';
@@ -46,9 +44,7 @@ class ShowActionTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function お知らせに添付されている非公開の配布資料が一覧に表示されない()
     {
         /** @var Page */

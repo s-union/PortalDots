@@ -11,10 +11,6 @@ class CircleUser extends Pivot
 
     public $incrementing = true;
 
-    protected $casts = [
-        'is_leader' => 'bool',
-    ];
-
     /**
      * All of the relationships to be touched.
      *
@@ -30,5 +26,12 @@ class CircleUser extends Pivot
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_leader' => 'bool',
+        ];
     }
 }

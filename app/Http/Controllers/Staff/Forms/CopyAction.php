@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Forms;
 
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Services\Forms\FormsService;
 
 class CopyAction extends Controller
@@ -22,8 +22,7 @@ class CopyAction extends Controller
     {
         $this->formsService->copyForm($form);
 
-        return redirect()
-            ->route('staff.forms.index')
+        return to_route('staff.forms.index')
             ->with('topAlert.title', 'フォームを複製しました');
     }
 }

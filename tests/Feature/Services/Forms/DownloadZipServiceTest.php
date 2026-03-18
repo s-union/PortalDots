@@ -1,37 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Forms;
 
-use ZipArchive;
-use Mockery;
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\File;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\App;
-use App\Eloquents\Form;
-use App\Eloquents\Question;
 use App\Eloquents\Answer;
 use App\Eloquents\AnswerDetail;
+use App\Eloquents\Form;
+use App\Eloquents\Question;
 use App\Services\Forms\DownloadZipService;
 use App\Services\Forms\Exceptions\NoDownloadFileExistException;
 use App\Services\Forms\Exceptions\ZipArchiveNotSupportedException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\File;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Storage;
+use Mockery;
+use Tests\TestCase;
+use ZipArchive;
 
-class DownloadZipServiceTest extends TestCase
+final class DownloadZipServiceTest extends TestCase
 {
     use RefreshDatabase;
 
     private $form;
+
     private $questions;
+
     private $answer;
+
     private $answer_details = [];
+
     private $another_answer;
+
     private $another_answer_details = [];
 
     private const UPLOADS_NUMBER = 7;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create();
@@ -86,7 +92,7 @@ class DownloadZipServiceTest extends TestCase
         }
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         foreach ($this->questions as $question) {
             $filename = 'testfile_' . sha1($this->answer->id . '_' . $question->id) . '.png';
@@ -100,10 +106,8 @@ class DownloadZipServiceTest extends TestCase
         Mockery::close();
     }
 
-    /**
-     * @test
-     */
-    public function makeZip_アップロードされたファイルが全てZIPファイルに含まれるか()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function make_zip_アップロードされたファイルが全て_zi_pファイルに含まれるか()
     {
         $this->mock(ZipArchive::class, function ($mock) {
             $mock->shouldReceive('open')
@@ -143,13 +147,9 @@ class DownloadZipServiceTest extends TestCase
 
         $downloadZipService = App::make(DownloadZipService::class);
 
-        $uploaded_file_paths = array_map(function ($answer_detail) {
-            return $answer_detail->answer;
-        }, $this->answer_details);
+        $uploaded_file_paths = array_map(fn($answer_detail) => $answer_detail->answer, $this->answer_details);
 
-        $another_uploaded_file_paths = array_map(function ($answer_detail) {
-            return $answer_detail->answer;
-        }, $this->another_answer_details);
+        $another_uploaded_file_paths = array_map(fn($answer_detail) => $answer_detail->answer, $this->another_answer_details);
 
         // 存在しないファイルを途中に含めるテスト
         $no_exist_file_paths = [
@@ -164,32 +164,26 @@ class DownloadZipServiceTest extends TestCase
         ));
     }
 
-    /**
-     * @test
-     */
-    public function makeZip_ZipArchiveがエラーの時に適切な例外が発生する()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function make_zip_zip_archiveがエラーの時に適切な例外が発生する()
     {
         $this->expectException(ZipArchiveNotSupportedException::class);
 
         $this->mock(ZipArchive::class, function ($mock) {
             $mock->shouldReceive('open')
-                        ->ordered()
-                        ->with(Mockery::any(), ZipArchive::CREATE)
-                        ->once()
-                        ->andReturn(false);
+                ->ordered()
+                ->with(Mockery::any(), ZipArchive::CREATE)
+                ->once()
+                ->andReturn(false);
         });
 
-        $uploaded_file_paths = array_map(function ($answer_detail) {
-            return $answer_detail->answer;
-        }, $this->answer_details);
+        $uploaded_file_paths = array_map(fn($answer_detail) => $answer_detail->answer, $this->answer_details);
 
         App::make(DownloadZipService::class)->makeZip($this->form, $uploaded_file_paths);
     }
 
-    /**
-     * @test
-     */
-    public function makeZip_第二引数が空の時に適切な例外が発生する()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function make_zip_第二引数が空の時に適切な例外が発生する()
     {
         $this->expectException(NoDownloadFileExistException::class);
 

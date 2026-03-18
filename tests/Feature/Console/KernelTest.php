@@ -1,25 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
-use App\Console\Kernel;
 
-class KernelTest extends TestCase
+final class KernelTest extends TestCase
 {
-    /**
-     * @test
-     */
-    public function スケジュールが適切に設定されていること()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function スケジュールがroutes_console_phpに適切に設定されていること()
     {
-        $kernel = app()->make(Kernel::class);
-        $schedule = app()->make(Schedule::class);
+        Artisan::call('schedule:list');
 
-        // Kernelのschedule()を呼び出すためにリフレクションを使用
-        $method = new \ReflectionMethod(Kernel::class, 'schedule');
-        $method->setAccessible(true);
-        $method->invoke($kernel, $schedule);
+        $schedule = app()->make(Schedule::class);
 
         $events = $schedule->events();
 

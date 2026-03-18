@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms;
 
 use App\Eloquents\Form;
@@ -7,10 +9,10 @@ use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Forms\FormsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Mockery;
+use Tests\TestCase;
 
-class CopyActionTest extends TestCase
+final class CopyActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -23,7 +25,7 @@ class CopyActionTest extends TestCase
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create();
@@ -31,18 +33,14 @@ class CopyActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
-    public function FormsServiceのcopyFormが呼び出される()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function forms_serviceのcopy_formが呼び出される()
     {
         Permission::create(['name' => 'staff.forms.duplicate']);
         $this->staff->syncPermissions(['staff.forms.duplicate']);
 
         $this->mock(FormsService::class, function ($mock) {
-            $mock->shouldReceive('copyForm')->once()->with(Mockery::on(function ($arg) {
-                return $this->form->id === $arg->id && $this->form->name === $arg->name;
-            }))->andReturn($this->form_copy);
+            $mock->shouldReceive('copyForm')->once()->with(Mockery::on(fn($arg) => $this->form->id === $arg->id && $this->form->name === $arg->name))->andReturn($this->form_copy);
         });
 
         $response = $this->actingAs($this->staff)
@@ -52,9 +50,7 @@ class CopyActionTest extends TestCase
         $response->assertRedirect(route('staff.forms.index'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はフォームを複製できない()
     {
         $response = $this->actingAs($this->staff)

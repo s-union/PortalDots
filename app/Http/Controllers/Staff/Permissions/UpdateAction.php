@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Staff\Permissions;
 
 use App\Eloquents\Permission;
-use App\Http\Controllers\Controller;
 use App\Eloquents\User;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Permissions\PermissionRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,14 +13,12 @@ class UpdateAction extends Controller
     public function __invoke(PermissionRequest $request, User $user)
     {
         if (Auth::id() === $user->id) {
-            return redirect()
-                ->route('staff.permissions.edit', ['user' => $user])
+            return to_route('staff.permissions.edit', ['user' => $user])
                 ->withErrors(['permissions' => '自分自身の権限設定は変更できません']);
         }
 
         if ($user->is_admin) {
-            return redirect()
-                ->route('staff.permissions.edit', ['user' => $user])
+            return to_route('staff.permissions.edit', ['user' => $user])
                 ->withErrors(['permissions' => '管理者に対して権限を設定することはできません']);
         }
 
@@ -35,8 +33,7 @@ class UpdateAction extends Controller
 
         $user->syncPermissions($new_permissions);
 
-        return redirect()
-            ->route('staff.permissions.edit', ['user' => $user])
+        return to_route('staff.permissions.edit', ['user' => $user])
             ->with('topAlert.title', 'スタッフの権限を更新しました');
     }
 }

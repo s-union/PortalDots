@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Eloquents;
 
 use App\Eloquents\Answer;
@@ -11,31 +13,29 @@ use App\Eloquents\Question;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class CircleTest extends TestCase
+final class CircleTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @test
-     */
-    public function getParticipationFormAnswer()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_participation_form_answer()
     {
         // 準備
         $participationForm = Form::factory()->create();
         $participationType = ParticipationType::factory()->create([
-            'form_id' => $participationForm->id
+            'form_id' => $participationForm->id,
         ]);
         $question = Question::factory()->create([
             'form_id' => $participationForm->id,
             'name' => '設問です',
-            'type' => 'text'
+            'type' => 'text',
         ]);
 
         $otherCircles = Circle::factory(10)->create([
-            'participation_type_id' => $participationType->id
+            'participation_type_id' => $participationType->id,
         ]);
         $myCircle = Circle::factory()->create([
-            'participation_type_id' => $participationType->id
+            'participation_type_id' => $participationType->id,
         ]);
 
         $i = 0;

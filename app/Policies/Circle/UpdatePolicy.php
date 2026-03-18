@@ -27,10 +27,11 @@ class UpdatePolicy
         }
 
         $participationForm = $circle->participationType->form;
+
         return isset($participationForm)
             && $participationForm->is_public
             && $participationForm->isOpen()
             && Gate::forUser($user)->allows('circle.belongsTo', $circle)
-            && !$circle->hasSubmitted();
+            && ! $circle->hasSubmitted();
     }
 }

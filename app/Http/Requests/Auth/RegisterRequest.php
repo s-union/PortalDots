@@ -35,6 +35,7 @@ class RegisterRequest extends FormRequest
     public function rules()
     {
         $rules = User::getValidationRules();
+
         return [
             'student_id' => array_merge($rules['student_id'], ['unique:users']),
             'name' => $rules['name'],
@@ -84,7 +85,7 @@ class RegisterRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             if (
-                !User::isValidUnivemailByLocalPartAndDomainPart(
+                ! User::isValidUnivemailByLocalPartAndDomainPart(
                     $this->univemail_local_part,
                     $this->univemail_domain_part
                 )

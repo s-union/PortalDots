@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Places;
 
+use App\Eloquents\Place;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Places\PlaceRequest;
-use App\Eloquents\Place;
 
 class StoreAction extends Controller
 {
@@ -18,8 +18,7 @@ class StoreAction extends Controller
             'notes' => $validated['notes'],
         ]);
 
-        return redirect()
-            ->route('staff.places.create')
+        return to_route('staff.places.create')
             ->with('topAlert.title', '場所を作成しました');
     }
 }

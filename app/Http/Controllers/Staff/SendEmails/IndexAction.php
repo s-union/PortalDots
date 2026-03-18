@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Staff\SendEmails;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\Emails\SendEmailService;
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Forms;
 
-use App\Eloquents\Form;
 use App\Eloquents\Answer;
-use App\Eloquents\Question;
 use App\Eloquents\AnswerDetail;
+use App\Eloquents\Form;
+use App\Eloquents\Question;
 use App\Http\Requests\Forms\AnswerRequestInterface;
 use App\Services\Utils\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
@@ -15,20 +15,13 @@ use Illuminate\Support\Facades\Storage;
 
 class AnswerDetailsService
 {
-    /**
-     * @var ActivityLogService
-     */
-    private $activityLogService;
-
-    public function __construct(ActivityLogService $activityLogService)
+    public function __construct(private readonly ActivityLogService $activityLogService)
     {
-        $this->activityLogService = $activityLogService;
     }
 
     /**
      * $answer に紐づく、設問に対する回答を取得
      *
-     * @param Answer $answer
      * @return array
      */
     public function getAnswerDetailsByAnswer(Answer $answer)
@@ -42,7 +35,7 @@ class AnswerDetailsService
             $question = $answer->form->questions->firstWhere('id', $raw_detail->question_id);
 
             if ($question instanceof Question && $question->type === 'checkbox') {
-                if (empty($result[$raw_detail->question_id]) || !is_array($result[$raw_detail->question_id])) {
+                if (empty($result[$raw_detail->question_id]) || ! is_array($result[$raw_detail->question_id])) {
                     $result[$raw_detail->question_id] = [];
                 }
                 $result[$raw_detail->question_id][] = $raw_detail->answer;
@@ -59,8 +52,6 @@ class AnswerDetailsService
      * ファイルアップロードの設問については、アップロード済ファイルのパスに
      * 置き換えた $answer_details 配列を return する
      *
-     * @param Form $form
-     * @param AnswerRequestInterface|null $request
      * @return array
      */
     public function getAnswerDetailsWithFilePathFromRequest(Form $form, ?AnswerRequestInterface $request = null)
@@ -96,7 +87,7 @@ class AnswerDetailsService
                         $data[] = [
                             'answer_id' => $answer->id,
                             'question_id' => $question->id,
-                            'answer' => $value
+                            'answer' => $value,
                         ];
                     }
                 } elseif ($question->type === 'upload' && $answer_details[$question->id] === '__KEEP__') {
@@ -105,7 +96,7 @@ class AnswerDetailsService
                     $data[] = [
                         'answer_id' => $answer->id,
                         'question_id' => $question->id,
-                        'answer' => $answer_details_on_db[$question->id]
+                        'answer' => $answer_details_on_db[$question->id],
                     ];
                 } elseif ($question->type === 'upload') {
                     if (isset($answer_details_on_db[$question->id])) {
@@ -114,13 +105,13 @@ class AnswerDetailsService
                     $data[] = [
                         'answer_id' => $answer->id,
                         'question_id' => $question->id,
-                        'answer' => $answer_details[$question->id]
+                        'answer' => $answer_details[$question->id],
                     ];
                 } else {
                     $data[] = [
                         'answer_id' => $answer->id,
                         'question_id' => $question->id,
-                        'answer' => $answer_details[$question->id]
+                        'answer' => $answer_details[$question->id],
                     ];
                 }
             } else {
@@ -146,7 +137,7 @@ class AnswerDetailsService
     /**
      * 指定された設問IDに対する回答を削除する
      *
-     * @param int $question_id 設問ID
+     * @param  int  $question_id  設問ID
      */
     public function deleteAnswerDetailsByQuestionId(int $question_id)
     {

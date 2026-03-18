@@ -2,15 +2,14 @@
 
 namespace App\Mail\Forms;
 
+use App\Eloquents\Answer;
+use App\Eloquents\Circle;
+use App\Eloquents\Form;
+use App\Eloquents\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\Collection;
-use App\Eloquents\Form;
-use App\Eloquents\Circle;
-use App\Eloquents\User;
-use App\Eloquents\Answer;
 
 class AnswerConfirmationMailable extends Mailable
 {

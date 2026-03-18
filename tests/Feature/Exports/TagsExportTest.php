@@ -1,16 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Exports;
 
 use App\Eloquents\Circle;
 use App\Eloquents\Tag;
 use App\Exports\TagsExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class TagsExportTest extends TestCase
+final class TagsExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -34,7 +35,7 @@ class TagsExportTest extends TestCase
      */
     private $tag;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -61,9 +62,7 @@ class TagsExportTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map_タグ情報のフォーマットが正常に行われる()
     {
         $this->assertEquals(
@@ -89,7 +88,7 @@ class TagsExportTest extends TestCase
                     'たぐをつけられたきかく',
                     '企画タグつけてほしい団体',
                     'きかくたぐつけてほしいだんたい',
-                ]
+                ],
             ],
             $this->tagsExport->map($this->tag->load('circles'))
         );

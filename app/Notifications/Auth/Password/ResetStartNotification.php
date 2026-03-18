@@ -4,27 +4,12 @@ namespace App\Notifications\Auth\Password;
 
 use App\Eloquents\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ResetStartNotification extends Notification
 {
     use Queueable;
-
-    /**
-     * 受信者
-     *
-     * @var User
-     */
-    private $user;
-
-    /**
-     * パスワード再設定手続きを進めるための URL
-     *
-     * @var string
-     */
-    private $reset_url;
 
     /**
      * Create a new notification instance.
@@ -32,10 +17,16 @@ class ResetStartNotification extends Notification
      * @param  User  $user  受信者
      * @return void
      */
-    public function __construct(User $user, string $reset_url)
-    {
-        $this->user = $user;
-        $this->reset_url = $reset_url;
+    public function __construct(
+        /**
+         * 受信者
+         */
+        private User $user,
+        /**
+         * パスワード再設定手続きを進めるための URL
+         */
+        private string $reset_url
+    ) {
     }
 
     /**
@@ -53,7 +44,7 @@ class ResetStartNotification extends Notification
      * Get the mail representation of the notification.
      *
      * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @return MailMessage
      */
     public function toMail($notifiable)
     {

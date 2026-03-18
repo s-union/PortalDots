@@ -1,41 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Utils\ValueObjects;
 
-use Tests\TestCase;
 use App\Services\Utils\ValueObjects\Version;
+use Tests\TestCase;
 
-class VersionTest extends TestCase
+final class VersionTest extends TestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
     }
 
-    public static function versionProvider()
+    public static function versionProvider(): \Iterator
     {
-        return [
-            ['1.0.0', new Version(1, 0, 0)],
-            ['0.1.2', new Version(0, 1, 2)],
-            ['v2.2.4', new Version(2, 2, 4)],
-            ['1.0', null],
-            ['.0.', null],
-            ['..', null],
-            ['.', null],
-            ['12345', null],
-            ['4.0.0-beta.1', new Version(4, 0, 0, 'beta.1')],
-            ['v4.0.2-alpha.4', new Version(4, 0, 2, 'alpha.4')],
-        ];
+        yield ['1.0.0', new Version(1, 0, 0)];
+        yield ['0.1.2', new Version(0, 1, 2)];
+        yield ['v2.2.4', new Version(2, 2, 4)];
+        yield ['1.0', null];
+        yield ['.0.', null];
+        yield ['..', null];
+        yield ['.', null];
+        yield ['12345', null];
+        yield ['4.0.0-beta.1', new Version(4, 0, 0, 'beta.1')];
+        yield ['v4.0.2-alpha.4', new Version(4, 0, 2, 'alpha.4')];
     }
 
-    /**
-     * @test
-     * @dataProvider versionProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('versionProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function parse(string $input, ?Version $expected)
     {
         if ($expected === null) {
-            $this->assertNull(Version::parse($input));
+            $this->assertNotInstanceOf(\App\Services\Utils\ValueObjects\Version::class, Version::parse($input));
         } else {
             $this->assertTrue(
                 $expected->equals(Version::parse($input)),

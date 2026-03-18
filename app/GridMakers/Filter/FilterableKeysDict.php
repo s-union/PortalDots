@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\GridMakers\Filter;
 
-use JsonSerializable;
-use InvalidArgumentException;
 use Exception;
+use InvalidArgumentException;
+use JsonSerializable;
 
 class FilterableKeysDict implements JsonSerializable
 {
@@ -21,7 +21,7 @@ class FilterableKeysDict implements JsonSerializable
                 throw new InvalidArgumentException('引数は連想配列である必要があります。');
             }
 
-            if (!$value instanceof FilterableKey) {
+            if (! $value instanceof FilterableKey) {
                 throw new InvalidArgumentException(FilterableKey::class . 'オブジェクト配列を引数として渡してください。');
             }
         }

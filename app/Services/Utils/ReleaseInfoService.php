@@ -4,46 +4,29 @@ declare(strict_types=1);
 
 namespace App\Services\Utils;
 
-use GuzzleHttp\Client;
-use Illuminate\Contracts\Cache\Repository as Cache;
 use App\ReleaseInfo;
-use App\Services\Utils\ValueObjects\Version;
 use App\Services\Utils\ValueObjects\Release;
+use App\Services\Utils\ValueObjects\Version;
 use Carbon\CarbonImmutable;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use Illuminate\Contracts\Cache\Repository as Cache;
 
 class ReleaseInfoService
 {
-    /**
-     * @var Client
-     */
-    private $client;
-
-    /**
-     * @var Cache
-     */
-    private $cache;
-
-    /**
-     * @param Client $client
-     * @param Cache  $cache
-     */
-    public function __construct(Client $client, Cache $cache)
+    public function __construct(private readonly Client $client, private readonly Cache $cache)
     {
-        $this->client = $client;
-        $this->cache = $cache;
     }
 
     /**
      * この PortalDots のバージョン情報を配列で取得
-     *
-     * @return Version|null
      */
     public function getCurrentVersion(): ?Version
     {
         if (ReleaseInfo::VERSION === '###VERSION_PLACEHOLDER###') {
             return null;
         }
+
         return Version::parse(ReleaseInfo::VERSION);
     }
 
@@ -74,7 +57,7 @@ class ReleaseInfoService
                     );
                     $release = json_decode((string) $this->client->get($path)->getBody());
 
-                    if (!isset($release->version)) {
+                    if (! isset($release->version)) {
                         return null;
                     }
 
@@ -88,7 +71,7 @@ class ReleaseInfoService
                     );
                 }
             );
-        } catch (ClientException $e) {
+        } catch (ClientException) {
             return null;
         }
     }

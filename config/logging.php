@@ -114,7 +114,6 @@ return [
             'replace_placeholders' => true,
         ],
 
-
         'null' => [
             'driver' => 'monolog',
             'handler' => NullHandler::class,

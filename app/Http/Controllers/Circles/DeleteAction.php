@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\Circles;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use App\Eloquents\Circle;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class DeleteAction extends Controller
 {
@@ -16,7 +14,7 @@ class DeleteAction extends Controller
 
         $user = $circle->users()->wherePivot('user_id', Auth::id())->first();
 
-        if (empty($user) || !$user->pivot->is_leader) {
+        if (empty($user) || ! $user->pivot->is_leader) {
             // リーダー以外は参加登録の削除はできない
             abort(403);
         }

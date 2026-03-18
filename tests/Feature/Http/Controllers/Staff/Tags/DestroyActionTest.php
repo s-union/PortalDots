@@ -1,17 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Tags;
 
+use App\Eloquents\Circle;
+use App\Eloquents\Form;
+use App\Eloquents\Page;
+use App\Eloquents\Permission;
+use App\Eloquents\Tag;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use App\Eloquents\User;
-use App\Eloquents\Circle;
-use App\Eloquents\Tag;
-use App\Eloquents\Page;
-use App\Eloquents\Form;
-use App\Eloquents\Permission;
 
-class DestroyActionTest extends TestCase
+final class DestroyActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -30,7 +32,7 @@ class DestroyActionTest extends TestCase
     /** @var Form */
     private $form;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -42,9 +44,7 @@ class DestroyActionTest extends TestCase
         $this->form = Form::factory()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function tagテーブルから削除すると関連テーブルからも削除される()
     {
         Permission::create(['name' => 'staff.tags.delete']);
@@ -101,9 +101,7 @@ class DestroyActionTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はタグを削除できない()
     {
         $this->actingAs($this->staff)

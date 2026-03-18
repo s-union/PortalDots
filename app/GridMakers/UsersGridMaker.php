@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\GridMakers;
 
-use Illuminate\Database\Eloquent\Builder;
 use App\Eloquents\User;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class UsersGridMaker implements GridMakable
@@ -16,7 +16,7 @@ class UsersGridMaker implements GridMakable
     use UseEloquent;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -43,7 +43,7 @@ class UsersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -69,7 +69,7 @@ class UsersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
@@ -93,7 +93,7 @@ class UsersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -118,26 +118,20 @@ class UsersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
         $item = [];
         foreach ($this->keys() as $key) {
-            switch ($key) {
-                case 'last_accessed_at':
-                    $item[$key] = $record->formatLastAccessedAt();
-                    break;
-                case 'created_at':
-                    $item[$key] = !empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'updated_at':
-                    $item[$key] = !empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null;
-                    break;
-                default:
-                    $item[$key] = $record->$key;
-            }
+            $item[$key] = match ($key) {
+                'last_accessed_at' => $record->formatLastAccessedAt(),
+                'created_at' => ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null,
+                'updated_at' => ! empty($record->updated_at) ? $record->updated_at->format('Y/m/d H:i:s') : null,
+                default => $record->$key,
+            };
         }
+
         return $item;
     }
 

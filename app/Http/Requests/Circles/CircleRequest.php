@@ -4,9 +4,9 @@ namespace App\Http\Requests\Circles;
 
 use App\Eloquents\Circle;
 use App\Eloquents\ParticipationType;
-use Illuminate\Foundation\Http\FormRequest;
-use App\Services\Forms\ValidationRulesService;
 use App\Http\Requests\Forms\AnswerRequestInterface;
+use App\Services\Forms\ValidationRulesService;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\App;
 
 class CircleRequest extends FormRequest implements AnswerRequestInterface

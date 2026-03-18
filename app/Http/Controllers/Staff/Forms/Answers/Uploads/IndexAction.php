@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Staff\Forms\Answers\Uploads;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 
 class IndexAction extends Controller
 {

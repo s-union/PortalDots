@@ -2,19 +2,23 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
 use App\Eloquents\ContactCategory;
-use Faker\Generator as Faker;
+use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\ContactCategory>
+ */
 class ContactCategoryFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = ContactCategory::class;
+
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
-            'email' => $this->faker->email
+            'name' => fake()->name,
+            'email' => fake()->email,
         ];
     }
 }

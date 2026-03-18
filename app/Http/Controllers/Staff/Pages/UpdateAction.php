@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Staff\Pages;
 
+use App\Eloquents\Page;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Pages\PageRequest;
 use App\Services\Pages\PagesService;
-use App\Eloquents\Page;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var PagesService
-     */
-    private $pagesService;
-
-    public function __construct(PagesService $pagesService)
+    public function __construct(private readonly PagesService $pagesService)
     {
-        $this->pagesService = $pagesService;
     }
 
     public function __invoke(PageRequest $request, Page $page)
@@ -46,8 +40,7 @@ class UpdateAction extends Controller
             }
         });
 
-        return redirect()
-            ->route('staff.pages.edit', ['page' => $page])
+        return to_route('staff.pages.edit', ['page' => $page])
             ->with('topAlert.title', 'お知らせを更新しました')
             ->with('topAlert.body', ($values['send_emails'] ?? false)
                 ? 'また、このお知らせの一斉送信を予約しました'

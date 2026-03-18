@@ -6,22 +6,17 @@ namespace App\GridMakers;
 
 use App\Eloquents\Answer;
 use App\Eloquents\Form;
-use Illuminate\Database\Eloquent\Builder;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
 use App\GridMakers\Helpers\AnswerDetailsHelper;
-use Illuminate\Database\Eloquent\Model;
 use App\Services\Utils\FormatTextService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class AnswersGridMaker implements GridMakable
 {
     use UseEloquent;
-
-    /**
-     * @var FormatTextService
-     */
-    private $formatTextService;
 
     /**
      * @var Form
@@ -29,17 +24,16 @@ class AnswersGridMaker implements GridMakable
     private $form;
 
     public const FORM_QUESTIONS_KEY_PREFIX = 'form_question_';
+
     public const CHECKBOX_GROUP_CONCAT_SEPARATOR = "\n";
 
-    public function __construct(FormatTextService $formatTextService)
+    public function __construct(private FormatTextService $formatTextService)
     {
-        $this->formatTextService = $formatTextService;
     }
 
     /**
      * 回答一覧を表示したいフォームをセット
      *
-     * @param Form $form
      * @return $this
      */
     public function withForm(Form $form)
@@ -48,11 +42,12 @@ class AnswersGridMaker implements GridMakable
         $this->form->loadMissing(['questions' => function ($query) {
             $query->where('type', '!=', 'heading');
         }]);
+
         return $this;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -71,7 +66,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -90,7 +85,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
@@ -126,7 +121,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -145,7 +140,7 @@ class AnswersGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
@@ -161,28 +156,19 @@ class AnswersGridMaker implements GridMakable
         // カスタムフォームへの回答以外の項目
         $itemsExceptForms = [];
 
-        $keysExceptForms = array_filter($this->keys(), function ($key) {
-            return strpos($key, self::FORM_QUESTIONS_KEY_PREFIX) !== 0;
-        });
+        $keysExceptForms = array_filter($this->keys(), fn($key) => !str_starts_with((string) $key, self::FORM_QUESTIONS_KEY_PREFIX));
 
         foreach ($keysExceptForms as $key) {
-            switch ($key) {
-                case 'circle_id':
-                    $itemsExceptForms[$key] = $record->circle->only([
-                        'id', 'name', 'name_yomi', 'group_name', 'group_name_yomi'
-                    ]);
-                    break;
-                case 'created_at':
-                    $itemsExceptForms[$key] = !empty($record->created_at)
-                        ? $record->created_at->format('Y/m/d H:i:s') : null;
-                    break;
-                case 'updated_at':
-                    $itemsExceptForms[$key] = !empty($record->updated_at)
-                        ? $record->updated_at->format('Y/m/d H:i:s') : null;
-                    break;
-                default:
-                    $itemsExceptForms[$key] = $record->$key;
-            }
+            $itemsExceptForms[$key] = match ($key) {
+                'circle_id' => $record->circle->only([
+                    'id', 'name', 'name_yomi', 'group_name', 'group_name_yomi',
+                ]),
+                'created_at' => ! empty($record->created_at)
+                    ? $record->created_at->format('Y/m/d H:i:s') : null,
+                'updated_at' => ! empty($record->updated_at)
+                    ? $record->updated_at->format('Y/m/d H:i:s') : null,
+                default => $record->$key,
+            };
         }
 
         return array_merge($itemsExceptForms, $itemsOfAnswerDetails);

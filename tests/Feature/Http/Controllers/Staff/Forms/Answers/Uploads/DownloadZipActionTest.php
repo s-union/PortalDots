@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Answers\Uploads;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\File;
-use Illuminate\Support\Facades\Storage;
 use App\Eloquents\Form;
 use App\Eloquents\Permission;
 use App\Eloquents\User;
 use App\Services\Forms\DownloadZipService;
 use App\Services\Forms\Exceptions\NoDownloadFileExistException;
 use App\Services\Forms\Exceptions\ZipArchiveNotSupportedException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\File;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
 
-class DownloadZipActionTest extends TestCase
+final class DownloadZipActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -27,16 +29,14 @@ class DownloadZipActionTest extends TestCase
      */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->form = Form::factory()->create();
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできる()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
@@ -49,7 +49,7 @@ class DownloadZipActionTest extends TestCase
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
                 ->once()
-                ->andReturn(storage_path("app/answer_details_zip/TestFile.png"));
+                ->andReturn(storage_path('app/answer_details_zip/TestFile.png'));
         });
 
         $response = $this->actingAs($this->staff)
@@ -59,9 +59,7 @@ class DownloadZipActionTest extends TestCase
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできるファイルがない時に適切にエラー表示される()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
@@ -69,8 +67,8 @@ class DownloadZipActionTest extends TestCase
 
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
-            ->once()
-            ->andThrow(new NoDownloadFileExistException());
+                ->once()
+                ->andThrow(new NoDownloadFileExistException());
         });
 
         $response = $this->actingAs($this->staff)
@@ -80,18 +78,16 @@ class DownloadZipActionTest extends TestCase
         $response->assertSessionHas('topAlert.title');
     }
 
-    /**
-     * @test
-     */
-    public function ZipArchive非対応時に適切にエラー表示される()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function zip_archive非対応時に適切にエラー表示される()
     {
         Permission::create(['name' => 'staff.forms.answers.export']);
         $this->staff->syncPermissions(['staff.forms.answers.export']);
 
         $this->mock(DownloadZipService::class, function ($mock) {
             $mock->shouldReceive('makeZip')
-            ->once()
-            ->andThrow(new ZipArchiveNotSupportedException());
+                ->once()
+                ->andThrow(new ZipArchiveNotSupportedException());
         });
 
         $response = $this->actingAs($this->staff)
@@ -101,9 +97,7 @@ class DownloadZipActionTest extends TestCase
         $response->assertSessionHas('topAlert.title');
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はダウンロードできない()
     {
         $response = $this->actingAs($this->staff)
@@ -113,9 +107,7 @@ class DownloadZipActionTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ以外はダウンロードできない()
     {
         $response = $this->actingAs(User::factory()->create())

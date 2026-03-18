@@ -55,7 +55,7 @@ return [
             'prefix' => env('DB_PREFIX', ''),
             'prefix_indexes' => true,
             'strict' => true,
-            'modes'  => [
+            'modes' => [
                 // 'ONLY_FULL_GROUP_BY',
                 'STRICT_TRANS_TABLES',
                 'NO_ZERO_IN_DATE',
@@ -129,7 +129,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_',
+            'prefix' => Str::slug(env('APP_NAME', 'laravel'), '_').'_database_',
         ],
 
         'default' => [

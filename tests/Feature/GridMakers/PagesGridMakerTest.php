@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers;
 
 use App\Eloquents\Page;
@@ -7,23 +9,21 @@ use App\GridMakers\PagesGridMaker;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class PagesGridMakerTest extends TestCase
+final class PagesGridMakerTest extends TestCase
 {
     /**
      * @var PagesGridMaker
      */
     private $pagesGridMaker;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
         $this->pagesGridMaker = App::make(PagesGridMaker::class);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function map()
     {
         $page = Page::factory()->make([

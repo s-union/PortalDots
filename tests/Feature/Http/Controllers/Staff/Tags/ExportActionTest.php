@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Tags;
 
 use App\Eloquents\Permission;
@@ -12,7 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
-class ExportActionTest extends TestCase
+final class ExportActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -26,20 +28,18 @@ class ExportActionTest extends TestCase
      */
     private $tags;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2021-09-14 21:22:23'));
 
         $this->staff = User::factory()->staff()->create();
         $this->tags = Tag::factory(2)->create();
     }
 
-    /**
-     * @test
-     */
-    public function 企画タグのCSVがダウンロードできる()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 企画タグの_cs_vがダウンロードできる()
     {
         Permission::create(['name' => 'staff.tags.export']);
         $this->staff->syncPermissions(['staff.tags.export']);
@@ -49,19 +49,18 @@ class ExportActionTest extends TestCase
             ->withSession(['staff_authorized' => true])
             ->get(route('staff.tags.export'));
 
-        $now = Carbon::now()->format('Y-m-d_H-i-s');
+        $now = \Illuminate\Support\Facades\Date::now()->format('Y-m-d_H-i-s');
 
         Excel::assertDownloaded("企画タグ一覧_{$now}.csv", function (TagsExport $export) {
             $names = $this->tags->pluck('name');
+
             return $export->collection()->contains('name', $names[0])
                 && $export->collection()->contains('name', $names[1]);
         });
     }
 
-    /**
-     * @test
-     */
-    public function 権限がない場合はCSVをダウンロードできない()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

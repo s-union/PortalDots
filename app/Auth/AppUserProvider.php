@@ -6,7 +6,6 @@ namespace App\Auth;
 
 use App\Eloquents\User;
 use Illuminate\Auth\EloquentUserProvider;
-use Illuminate\Contracts\Auth\Authenticatable;
 
 class AppUserProvider extends EloquentUserProvider
 {

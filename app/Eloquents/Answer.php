@@ -8,17 +8,16 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
- * @property integer $id
+ * @property int $id
  */
 class Answer extends Model
 {
     use HasFactory;
-
     use LogsActivity;
 
     protected $fillable = [
         'form_id',
-        'circle_id'
+        'circle_id',
     ];
 
     public function getActivitylogOptions(): LogOptions

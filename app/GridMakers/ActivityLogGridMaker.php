@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\GridMakers;
 
-use Illuminate\Database\Eloquent\Builder;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Models\Activity;
 
@@ -16,7 +16,7 @@ class ActivityLogGridMaker implements GridMakable
     use UseEloquent;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -35,7 +35,7 @@ class ActivityLogGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -85,12 +85,12 @@ class ActivityLogGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
-        $log_names = array_keys($this->getAllLogNames());
-        $descriptions = array_keys($this->getAllDescriptions());
+        $log_names = array_keys(static::getAllLogNames());
+        $descriptions = array_keys(static::getAllDescriptions());
 
         return new FilterableKeysDict([
             'id' => FilterableKey::number(),
@@ -103,7 +103,7 @@ class ActivityLogGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -118,7 +118,7 @@ class ActivityLogGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function defaultOrderBy(): string
     {
@@ -126,7 +126,7 @@ class ActivityLogGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function defaultDirection(): string
     {
@@ -134,29 +134,29 @@ class ActivityLogGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
         $item = [];
 
-        $log_names_dict = $this->getAllLogNames();
-        $descriptions_dict = $this->getAllDescriptions();
+        $log_names_dict = static::getAllLogNames();
+        $descriptions_dict = static::getAllDescriptions();
 
         foreach ($this->keys() as $key) {
             switch ($key) {
                 case 'log_name':
-                    $item[$key] = !empty($record->log_name) && isset($log_names_dict[$record->log_name])
+                    $item[$key] = ! empty($record->log_name) && isset($log_names_dict[$record->log_name])
                         ? $log_names_dict[$record->log_name] : '不明';
                     break;
                 case 'description':
-                    $item[$key] = !empty($record->description) && isset($descriptions_dict[$record->description])
+                    $item[$key] = ! empty($record->description) && isset($descriptions_dict[$record->description])
                         ? $descriptions_dict[$record->description] : '不明';
                     break;
                 case 'causer_id':
                     if (empty($record->causer_type)) {
                         $item[$key] = '非ログインユーザー';
-                    } elseif (!isset($record->causer)) {
+                    } elseif (! isset($record->causer)) {
                         $item[$key] = '削除済みユーザー(ID : ' . $record->causer_id . ')';
                     } else {
                         $item[$key] = $record->causer->student_id . ' - ' .
@@ -164,12 +164,13 @@ class ActivityLogGridMaker implements GridMakable
                     }
                     break;
                 case 'created_at':
-                    $item[$key] = !empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
+                    $item[$key] = ! empty($record->created_at) ? $record->created_at->format('Y/m/d H:i:s') : null;
                     break;
                 default:
                     $item[$key] = $record->$key;
             }
         }
+
         return $item;
     }
 

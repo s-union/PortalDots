@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Pages;
 
 use App\Eloquents\Page;
@@ -10,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Tests\TestCase;
 
-class ReadsServiceTest extends TestCase
+final class ReadsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -19,16 +21,14 @@ class ReadsServiceTest extends TestCase
      */
     private $readsService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->readsService = App::make(ReadsService::class);
     }
 
-    /**
-     * @test
-     */
-    public function markAsRead()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function mark_as_read()
     {
         /** @var Page */
         $page = Page::factory()->create();
@@ -49,10 +49,8 @@ class ReadsServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
-    public function deleteAllReadsByPage()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function delete_all_reads_by_page()
     {
         /** @var Illuminate\Database\Eloquent\Collection */
         $pages = Page::factory(5)->create();

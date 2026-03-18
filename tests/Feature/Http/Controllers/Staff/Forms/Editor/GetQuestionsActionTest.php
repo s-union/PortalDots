@@ -1,24 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Editor;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Eloquents\User;
 use App\Eloquents\Form;
 use App\Eloquents\ParticipationType;
 use App\Eloquents\Permission;
 use App\Eloquents\Question;
+use App\Eloquents\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-class GetQuestionsActionTest extends TestCase
+final class GetQuestionsActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private ?Form $form;
+
     private ?array $questions;
+
     private ?User $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -32,9 +36,7 @@ class GetQuestionsActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function priority順の設問一覧が出力される()
     {
         Permission::create(['name' => 'staff.forms.edit']);
@@ -53,16 +55,14 @@ class GetQuestionsActionTest extends TestCase
         $this->assertSame($this->questions[1]->name, $response[0]['name']);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 参加登録フォームの場合は参加登録フォーム固有の設問も出力される()
     {
         Permission::create(['name' => 'staff.forms.edit']);
         $this->staff->syncPermissions(['staff.forms.edit']);
 
         ParticipationType::factory()->create([
-            'form_id' => $this->form->id
+            'form_id' => $this->form->id,
         ]);
 
         $response = $this->actingAs($this->staff)

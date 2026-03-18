@@ -1,20 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Forms;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Eloquents\Form;
 use App\Eloquents\Question;
 use App\Eloquents\User;
 use App\Services\Forms\FormsService;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
+use Tests\TestCase;
 
-class FormsServiceTest extends TestCase
+final class FormsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function setUp(): void
+    private FormsService $formsService;
+
+    private User $user;
+
+    private Form $form;
+
+    /** @var Collection<int, Question> */
+    private Collection $questions;
+
+    protected function setUp(): void
     {
         parent::setUp();
         $this->formsService = App::make(FormsService::class);
@@ -28,10 +40,8 @@ class FormsServiceTest extends TestCase
         ]);
     }
 
-    /**
-     * @test
-     */
-    public function copyForm_申請の複製ができる()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function copy_form_申請の複製ができる()
     {
         $form = $this->formsService->copyForm($this->form);
 

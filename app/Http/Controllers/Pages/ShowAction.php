@@ -2,31 +2,16 @@
 
 namespace App\Http\Controllers\Pages;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Page;
+use App\Http\Controllers\Controller;
 use App\Services\Circles\SelectorService;
 use App\Services\Pages\ReadsService;
+use Illuminate\Support\Facades\Auth;
 
 class ShowAction extends Controller
 {
-    /**
-     * @var SelectorService
-     */
-    private $selectorService;
-
-    /**
-     * @var ReadsService
-     */
-    private $readsService;
-
-    public function __construct(
-        SelectorService $selectorService,
-        ReadsService $readsService
-    ) {
-        $this->selectorService = $selectorService;
-        $this->readsService = $readsService;
+    public function __construct(private readonly SelectorService $selectorService, private readonly ReadsService $readsService)
+    {
     }
 
     public function __invoke(Page $page)

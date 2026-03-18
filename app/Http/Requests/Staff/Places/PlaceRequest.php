@@ -27,7 +27,7 @@ class PlaceRequest extends FormRequest
         return [
             'name' => '場所名',
             'type' => 'タイプ',
-            'notes' => 'スタッフ用メモ'
+            'notes' => 'スタッフ用メモ',
         ];
     }
 

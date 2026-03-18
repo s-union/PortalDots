@@ -2,21 +2,17 @@
 
 namespace App\Http\Controllers\Staff\Forms\Answers;
 
-use Auth;
-use App\Http\Controllers\Controller;
-use App\Eloquents\Form;
-use App\Eloquents\Circle;
 use App\Eloquents\Answer;
+use App\Eloquents\Form;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Forms\AnswerRequest;
 use App\Services\Forms\AnswersService;
+use Auth;
 
 class UpdateAction extends Controller
 {
-    private $answersService;
-
-    public function __construct(AnswersService $answersService)
+    public function __construct(private readonly AnswersService $answersService)
     {
-        $this->answersService = $answersService;
     }
 
     public function __invoke(Form $form, Answer $answer, AnswerRequest $request)
@@ -30,6 +26,7 @@ class UpdateAction extends Controller
             // ただし、参加登録フォームである場合は送信しない
             $this->answersService->sendAll($answer, Auth::user(), true);
         }
+
         return back()
             ->with('topAlert.title', '回答を更新しました');
 

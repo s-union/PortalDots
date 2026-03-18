@@ -9,20 +9,15 @@ use JsonSerializable;
 class FilterableKeyBelongsToManyWithoutChoicesOptions implements JsonSerializable
 {
     /**
-     * @param string $to
-     * @param string $pivot
-     * @param string $foreignPivotKey
-     * @param string $relatedPivotKey
-     * @param string $parentKey 主キー
-     * @param FilterableKeysDict $parentKeys
+     * @param  string  $parentKey  主キー
      */
     public function __construct(
-        private string $to,
-        private string $pivot,
-        private string $foreignPivotKey,
-        private string $relatedPivotKey,
-        private string $parentKey,
-        private FilterableKeysDict $parentKeys
+        private readonly string $to,
+        private readonly string $pivot,
+        private readonly string $foreignPivotKey,
+        private readonly string $relatedPivotKey,
+        private readonly string $parentKey,
+        private readonly FilterableKeysDict $parentKeys
     ) {
     }
 

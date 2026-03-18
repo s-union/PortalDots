@@ -10,9 +10,6 @@ class VerifyService
 {
     /**
      * 連絡先メールアドレスの認証を完了としてマークする
-     *
-     * @param  User  $user
-     * @return bool
      */
     public function markEmailAsVerified(User $user, $email): bool
     {
@@ -22,14 +19,12 @@ class VerifyService
         if ($user->email !== $email) {
             return false;
         }
+
         return $user->markEmailAsVerified();
     }
 
     /**
      * 大学提供メールアドレスの認証を完了としてマークする
-     *
-     * @param  User  $user
-     * @return bool
      */
     public function markUnivemailAsVerified(User $user, $email): bool
     {
@@ -39,6 +34,7 @@ class VerifyService
         if ($user->univemail !== $email) {
             return false;
         }
+
         return $user->markUnivemailAsVerified();
     }
 }

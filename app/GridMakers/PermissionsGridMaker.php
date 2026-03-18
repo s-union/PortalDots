@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\GridMakers;
 
 use App\Eloquents\Permission;
-use Illuminate\Database\Eloquent\Builder;
 use App\Eloquents\User;
 use App\Eloquents\ValueObjects\PermissionInfo;
 use App\GridMakers\Concerns\UseEloquent;
 use App\GridMakers\Filter\FilterableKey;
 use App\GridMakers\Filter\FilterableKeysDict;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class PermissionsGridMaker implements GridMakable
@@ -18,7 +18,7 @@ class PermissionsGridMaker implements GridMakable
     use UseEloquent;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected function baseEloquentQuery(): Builder
     {
@@ -34,7 +34,7 @@ class PermissionsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function keys(): array
     {
@@ -46,7 +46,7 @@ class PermissionsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function filterableKeys(): FilterableKeysDict
     {
@@ -75,7 +75,7 @@ class PermissionsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sortableKeys(): array
     {
@@ -86,7 +86,7 @@ class PermissionsGridMaker implements GridMakable
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function map($record): array
     {
@@ -99,22 +99,18 @@ class PermissionsGridMaker implements GridMakable
         ];
         $item = [];
         foreach ($keys as $key) {
-            switch ($key) {
-                case 'permissions':
-                    $item[$key] = $record->permissions->map(function ($permission) {
-                        return Permission::getDefinedPermissions()[$permission->name]
-                            ?? new PermissionInfo(
-                                $permission->name,
-                                $permission->name,
-                                '（不明）',
-                                '（不明）'
-                            );
-                    });
-                    break;
-                default:
-                    $item[$key] = $record->$key;
-            }
+            $item[$key] = match ($key) {
+                'permissions' => $record->permissions->map(fn($permission) => Permission::getDefinedPermissions()[$permission->name]
+                    ?? new PermissionInfo(
+                        $permission->name,
+                        $permission->name,
+                        '（不明）',
+                        '（不明）'
+                    )),
+                default => $record->$key,
+            };
         }
+
         return $item;
     }
 

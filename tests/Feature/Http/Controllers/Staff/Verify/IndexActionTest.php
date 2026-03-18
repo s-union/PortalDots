@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Verify;
 
 use App\Eloquents\User;
@@ -9,13 +11,11 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
-class IndexActionTest extends TestCase
+final class IndexActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ認証メールが送信される()
     {
         Notification::fake();
@@ -31,9 +31,7 @@ class IndexActionTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function デモモードの場合はスタッフモードホームへリダイレクトされる()
     {
         Config::set('portal.enable_demo_mode', true);

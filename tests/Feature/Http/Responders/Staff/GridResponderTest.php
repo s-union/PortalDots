@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Responders\Staff;
 
 use App\GridMakers\Filter\FilterableKey;
@@ -14,25 +16,21 @@ use Illuminate\Http\Response;
 use Mockery;
 use Tests\TestCase;
 
-class GridResponderTest extends TestCase
+final class GridResponderTest extends TestCase
 {
-    /**
-     * @test
-     */
-    public function response_setGridMakerされていない場合は例外発生()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function response_set_grid_makerされていない場合は例外発生()
     {
         $this->expectException(GridMakerNotSetException::class);
 
         $obj = new GridResponder();
-        $obj->setRequest(new request());
+        $obj->setRequest(new Request());
 
         $obj->response();
     }
 
-    /**
-     * @test
-     */
-    public function response_setRequestされていない場合は例外発生()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function response_set_requestされていない場合は例外発生()
     {
         $this->expectException(RequestNotSetException::class);
 
@@ -42,9 +40,7 @@ class GridResponderTest extends TestCase
         $obj->response();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function response()
     {
         $request = new Request([
@@ -56,7 +52,7 @@ class GridResponderTest extends TestCase
                 ['key_name' => 'created_at', 'operator' => '<', 'value' => '2020/12/31 11:11:11'],
                 ['key_name' => 'updated_at', 'operator' => '<', 'value' => '2021/12/31 11:11:11'],
             ]),
-            'mode' => 'or'
+            'mode' => 'or',
         ]);
 
         $obj = new GridResponder();
@@ -64,7 +60,9 @@ class GridResponderTest extends TestCase
         // モック
         $grid_maker = Mockery::mock(GridMakable::class);
         $filter_queries_argument = Mockery::on(function (FilterQueries $arg) {
+            /** @var \App\GridMakers\Filter\FilterQuery[] $array */
             $array = iterator_to_array($arg->getIterator());
+
             return $array[0]->getFullKeyName() === 'created_at'
                 && $array[0]->getOperator() === '<'
                 && $array[0]->getValue() === '2020/12/31 11:11:11'
@@ -112,8 +110,7 @@ class GridResponderTest extends TestCase
             )
             ->andReturn(78);
 
-
-        /** @var MockedGridMaker $grid_maker */
+        /** @var \App\GridMakers\GridMakable&\Mockery\MockInterface $grid_maker */
         $obj->setGridMaker($grid_maker);
         $obj->setRequest($request);
 
@@ -154,7 +151,7 @@ class GridResponderTest extends TestCase
                 'updated_at' => ['type' => 'datetime'],
             ],
             'order_by' => 'name',
-            'direction' => 'asc'
+            'direction' => 'asc',
         ]);
 
         $this->assertJsonStringEqualsJsonString($expected, $response->content());

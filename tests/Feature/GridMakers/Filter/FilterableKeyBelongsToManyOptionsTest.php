@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\GridMakers\Filter;
 
 use App\GridMakers\Filter\FilterableKeyBelongsToManyOptions;
 use Tests\TestCase;
 
-class FilterableKeyBelongsToManyOptionsTest extends TestCase
+final class FilterableKeyBelongsToManyOptionsTest extends TestCase
 {
     public function instantiate()
     {
@@ -22,68 +24,54 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function constructor()
     {
         $obj = $this->instantiate();
         $this->assertInstanceOf(FilterableKeyBelongsToManyOptions::class, $obj);
     }
 
-    /**
-     * @test
-     */
-    public function getPivot()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_pivot()
     {
         $obj = $this->instantiate();
         $this->assertEquals('circle_user', $obj->getPivot());
     }
 
-    /**
-     * @test
-     */
-    public function getForeignKey()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_foreign_key()
     {
         $obj = $this->instantiate();
         $this->assertEquals('circle_id', $obj->getForeignKey());
     }
 
-    /**
-     * @test
-     */
-    public function getRelatedKey()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_related_key()
     {
         $obj = $this->instantiate();
         $this->assertEquals('user_id', $obj->getRelatedKey());
     }
 
-    /**
-     * @test
-     */
-    public function getChoices()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_choices()
     {
         $obj = $this->instantiate();
         $this->assertEquals([
-                'id' => 1, 'name' => 'Aさん',
-                'id' => 2, 'name' => 'Bさん',
-                'id' => 3, 'name' => 'Cさん',
-            ], $obj->getChoices());
+            'id' => 1, 'name' => 'Aさん',
+            'id' => 2, 'name' => 'Bさん',
+            'id' => 3, 'name' => 'Cさん',
+        ], $obj->getChoices());
     }
 
-    /**
-     * @test
-     */
-    public function getChoicesName()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function get_choices_name()
     {
         $obj = $this->instantiate();
         $this->assertEquals('name', $obj->getChoicesName());
     }
 
-    /**
-     * @test
-     */
-    public function jsonSerialize()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function json_serialize()
     {
         $obj = $this->instantiate();
         $expected = json_encode([
@@ -95,7 +83,7 @@ class FilterableKeyBelongsToManyOptionsTest extends TestCase
                 'id' => 2, 'name' => 'Bさん',
                 'id' => 3, 'name' => 'Cさん',
             ],
-            'choices_name' => 'name'
+            'choices_name' => 'name',
         ]);
 
         $this->assertJsonStringEqualsJsonString($expected, json_encode($obj));

@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Forms\Answers\Uploads;
 
+use App\Eloquents\Answer;
+use App\Eloquents\AnswerDetail;
+use App\Eloquents\Form;
+use App\Eloquents\Permission;
+use App\Eloquents\Question;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use App\Eloquents\Form;
-use App\Eloquents\Question;
-use App\Eloquents\Answer;
-use App\Eloquents\AnswerDetail;
-use App\Eloquents\Permission;
-use App\Eloquents\User;
 
-class ShowActionTest extends TestCase
+final class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -29,7 +31,7 @@ class ShowActionTest extends TestCase
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -49,19 +51,17 @@ class ShowActionTest extends TestCase
         $example_file = new File(base_path('tests/TestFile.png'));
         $filename = 'testfile_' . sha1($this->answer->id . '_' . $this->question->id) . '.png';
         $this->answer_details[] = AnswerDetail::factory()->create([
-                'answer_id' => $this->answer->id,
-                'question_id' => $this->question->id,
-                'answer' => 'answer_details/' . $filename,
-            ]);
+            'answer_id' => $this->answer->id,
+            'question_id' => $this->question->id,
+            'answer' => 'answer_details/' . $filename,
+        ]);
         Storage::putFileAs('answer_details', $example_file, $filename);
 
         // スタッフ
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできる()
     {
         Permission::create(['name' => 'staff.forms.answers.read']);
@@ -72,15 +72,13 @@ class ShowActionTest extends TestCase
             ->get(route('staff.forms.answers.uploads.show', [
                 'form' => $this->form,
                 'answer' => $this->answer,
-                'question' => $this->question
+                'question' => $this->question,
             ]));
 
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はダウンロードできない()
     {
         $response = $this->actingAs($this->staff)
@@ -88,22 +86,20 @@ class ShowActionTest extends TestCase
             ->get(route('staff.forms.answers.uploads.show', [
                 'form' => $this->form,
                 'answer' => $this->answer,
-                'question' => $this->question
+                'question' => $this->question,
             ]));
 
         $response->assertForbidden();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ以外はダウンロードできない()
     {
         $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.forms.answers.uploads.show', [
                 'form' => $this->form,
                 'answer' => $this->answer,
-                'question' => $this->question
+                'question' => $this->question,
             ]));
 
         $response->assertForbidden();

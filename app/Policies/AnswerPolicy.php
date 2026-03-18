@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Eloquents\User;
 use App\Eloquents\Answer;
-use Illuminate\Auth\Access\HandlesAuthorization;
+use App\Eloquents\User;
 use Gate;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class AnswerPolicy
 {
@@ -14,7 +14,6 @@ class AnswerPolicy
     /**
      * Determine whether the user can view the answer.
      *
-     * @param  \App\Eloquents\User  $user
      * @param  \App\Answer  $answer
      * @return mixed
      */
@@ -26,7 +25,6 @@ class AnswerPolicy
     /**
      * Determine whether the user can update the answer.
      *
-     * @param  \App\Eloquents\User  $user
      * @param  \App\Answer  $answer
      * @return mixed
      */
@@ -38,7 +36,6 @@ class AnswerPolicy
     /**
      * Determine whether the user can delete the answer.
      *
-     * @param  \App\Eloquents\User  $user
      * @param  \App\Answer  $answer
      * @return mixed
      */

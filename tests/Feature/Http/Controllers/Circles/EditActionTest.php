@@ -1,27 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\Feature\Http\Controllers\Circles\BaseTestCase;
-use Carbon\Carbon;
-use Carbon\CarbonImmutable;
-use App\Eloquents\User;
-use App\Eloquents\Circle;
 use App\Eloquents\Answer;
 use App\Eloquents\AnswerDetail;
+use App\Eloquents\Circle;
 use App\Eloquents\Question;
+use App\Eloquents\User;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class EditActionTest extends BaseTestCase
+final class EditActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private ?User $user;
-    private ?Circle $circle;
-    private ?Question $question;
-    private ?Answer $answer;
 
-    public function setUp(): void
+    private ?Circle $circle;
+
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -30,7 +30,7 @@ class EditActionTest extends BaseTestCase
         $anotherUser = User::factory()->create();
         $anotherCircle =
             Circle::factory()->notSubmitted()->create([
-                'participation_type_id' => $this->participationType->id
+                'participation_type_id' => $this->participationType->id,
             ]);
         Answer::factory()->create([
             'form_id' => $this->participationForm->id,
@@ -41,33 +41,31 @@ class EditActionTest extends BaseTestCase
         // テストで利用する回答
         $this->user = User::factory()->create();
         $this->circle = Circle::factory()->notSubmitted()->create([
-            'participation_type_id' => $this->participationType->id
+            'participation_type_id' => $this->participationType->id,
         ]);
-        $this->answer = Answer::factory()->create([
+        $answer = Answer::factory()->create([
             'form_id' => $this->participationForm->id,
             'circle_id' => $this->circle->id,
         ]);
-        $this->question = Question::factory()->create([
+        $question = Question::factory()->create([
             'form_id' => $this->participationForm->id,
             'name' => '参加登録フォームの設問',
             'type' => 'text',
         ]);
         AnswerDetail::factory()->create([
-            'answer_id' => $this->answer->id,
-            'question_id' => $this->question->id,
-            'answer' => 'これが回答です'
+            'answer_id' => $answer->id,
+            'question_id' => $question->id,
+            'answer' => 'これが回答です',
         ]);
 
         $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 責任者は企画の情報を表示できる()
     {
         $this->withoutExceptionHandling();
@@ -84,9 +82,7 @@ class EditActionTest extends BaseTestCase
         $response->assertSee(json_encode('これが回答です'));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 副責任者は企画の情報を表示できない()
     {
         $member = User::factory()->create();
@@ -103,9 +99,7 @@ class EditActionTest extends BaseTestCase
         $responce->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 部外者は企画の情報を表示できない()
     {
         $anotherUser = User::factory()->create();
@@ -121,9 +115,7 @@ class EditActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 提出済みの企画の情報は表示できない()
     {
         $this->circle->submitted_at = now();

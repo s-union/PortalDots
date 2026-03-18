@@ -4,33 +4,27 @@ namespace App\Exports;
 
 use App\Eloquents\Answer;
 use App\Eloquents\Form;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
 class AnswersExport implements FromCollection, WithHeadings, WithMapping
 {
-    /**
-     * @var Form
-     */
-    private $form;
-
-    public function __construct(Form $form)
+    public function __construct(private readonly Form $form)
     {
-        $this->form = $form;
     }
 
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return $this->form->load('questions')->answers()->with(['circle', 'details'])->get();
     }
 
     /**
-     * @param Answer $answer
-     * @return array
+     * @param  Answer  $answer
      */
     public function map($answer): array
     {
@@ -47,9 +41,6 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
         );
     }
 
-    /**
-     * @return array
-     */
     public function headings(): array
     {
         return array_merge(
@@ -67,9 +58,6 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
 
     /**
      * 回答を出力用の配列にする
-     *
-     * @param Answer $answer
-     * @return array
      */
     public function getDetails(Answer $answer): array
     {
@@ -88,6 +76,7 @@ class AnswersExport implements FromCollection, WithHeadings, WithMapping
                 $details[] = $answer->details->where('question_id', $question->id)->first()->answer ?? '';
             }
         }
+
         return $details;
     }
 }

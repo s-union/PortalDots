@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Staff\SendEmails;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Email;
+use App\Http\Controllers\Controller;
 
 class DestroyAction extends Controller
 {
@@ -12,8 +11,7 @@ class DestroyAction extends Controller
     {
         Email::query()->delete();
 
-        return redirect()
-            ->route('staff.send_emails')
+        return to_route('staff.send_emails')
             ->with('topAlert.title', '一斉メール送信をキャンセルしました');
     }
 }

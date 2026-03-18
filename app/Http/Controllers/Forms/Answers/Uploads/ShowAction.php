@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Forms\Answers\Uploads;
 
-use Storage;
-use Gate;
-use Auth;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Eloquents\Answer;
 use App\Eloquents\AnswerDetail;
+use App\Http\Controllers\Controller;
+use Gate;
+use Illuminate\Http\Request;
+use Storage;
 
 class ShowAction extends Controller
 {

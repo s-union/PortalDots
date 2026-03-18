@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Users;
 
 use App\Http\Controllers\Controller;
 use App\Services\Utils\UIThemeService;
-use Illuminate\Http\Request;
 
 class EditAppearanceAction extends Controller
 {

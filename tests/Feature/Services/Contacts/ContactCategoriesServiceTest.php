@@ -1,17 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Contacts;
 
-use Illuminate\Support\Facades\App;
 use App\Eloquents\ContactCategory;
 use App\Mail\Contacts\EmailCategoryMailable;
 use App\Services\Contacts\ContactCategoriesService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
-class ContactCategoriesServiceTest extends TestCase
+final class ContactCategoriesServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -25,7 +26,7 @@ class ContactCategoriesServiceTest extends TestCase
      */
     private $contactCategory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->categoriesService = App::make(ContactCategoriesService::class);
@@ -33,17 +34,13 @@ class ContactCategoriesServiceTest extends TestCase
         $this->contactCategory = ContactCategory::factory()->create();
     }
 
-    /**
-     * @test
-     */
-    public function send_ContactCategoryへメール送信ができる()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function send_contact_categoryへメール送信ができる()
     {
         Mail::fake();
 
         $this->categoriesService->send($this->contactCategory);
 
-        Mail::assertSent(EmailCategoryMailable::class, function ($mail) {
-            return $mail->hasTo($this->contactCategory->email);
-        });
+        Mail::assertSent(EmailCategoryMailable::class, fn($mail) => $mail->hasTo($this->contactCategory->email));
     }
 }

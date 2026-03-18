@@ -5,7 +5,6 @@ namespace App\Policies\Circle;
 use App\Eloquents\Circle;
 use App\Eloquents\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Support\Facades\Auth;
 
 class BelongsPolicy
 {
@@ -24,6 +23,6 @@ class BelongsPolicy
     {
         $result = $circle->users()->where('circle_user.user_id', $user->id)->first();
 
-        return !empty($result);
+        return ! empty($result);
     }
 }

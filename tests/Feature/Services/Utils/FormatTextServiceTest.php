@@ -1,68 +1,60 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Services\Utils;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 use App\Services\Utils\FormatTextService;
 use Illuminate\Support\Facades\App;
+use Tests\TestCase;
 
-class FormatTextServiceTest extends TestCase
+final class FormatTextServiceTest extends TestCase
 {
     /**
      * @var FormatTextService
      */
     private $formatTextService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->formatTextService = App::make(FormatTextService::class);
     }
 
-    public static function filesizeProvider()
+    public static function filesizeProvider(): \Iterator
     {
-        return [
-            [1000, '0.98KB'],
-            [1030, '1.01KB'],
-            [1000000000000000, '931322.57GB'],
-        ];
+        yield [1000, '0.98KB'];
+        yield [1030, '1.01KB'];
+        yield [1000000000000000, '931322.57GB'];
     }
 
-    /**
-     * @test
-     * @dataProvider filesizeProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('filesizeProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function filesize($arg, $result)
     {
         $this->assertSame($result, $this->formatTextService->filesize($arg));
     }
 
-    public static function escapeMarkdownProvider()
+    public static function escapeMarkdownProvider(): \Iterator
     {
-        return [
-            ['Hello, *World*!', 'Hello, \\*World\\*\!'],
-            ['こんにちは、**世界**！', 'こんにちは、\\*\\*世界\\*\\*！'],
-            ['\\* テキスト \\*', '\\\\\\* テキスト \\\\\\*'],
-            ['This is `code`.', 'This is \\`code\\`\\.'],
-            ['## Title', '\\#\\# Title'],
-            ['+ Plus', '\\+ Plus'],
-            ['- Minus', '\\- Minus'],
-            ['Hello, World.', 'Hello, World\\.'],
-            [
-                '![Example Image](https://example.com/image.png)',
-                '\\!\\[Example Image\\]\\(https://example\\.com/image\\.png\\)',
-            ],
-            ['Hello, {{World}}', 'Hello, \\{\\{World\\}\\}'],
+        yield ['Hello, *World*!', 'Hello, \\*World\\*\!'];
+        yield ['こんにちは、**世界**！', 'こんにちは、\\*\\*世界\\*\\*！'];
+        yield ['\\* テキスト \\*', '\\\\\\* テキスト \\\\\\*'];
+        yield ['This is `code`.', 'This is \\`code\\`\\.'];
+        yield ['## Title', '\\#\\# Title'];
+        yield ['+ Plus', '\\+ Plus'];
+        yield ['- Minus', '\\- Minus'];
+        yield ['Hello, World.', 'Hello, World\\.'];
+        yield [
+            '![Example Image](https://example.com/image.png)',
+            '\\!\\[Example Image\\]\\(https://example\\.com/image\\.png\\)',
         ];
+        yield ['Hello, {{World}}', 'Hello, \\{\\{World\\}\\}'];
     }
 
-    /**
-     * @test
-     * @dataProvider escapeMarkdownProvider
-     */
-    public function escapeMarkdown($arg, $result)
+    #[\PHPUnit\Framework\Attributes\DataProvider('escapeMarkdownProvider')]
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function escape_markdown($arg, $result)
     {
         $this->assertSame($result, $this->formatTextService->escapeMarkdown($arg));
     }

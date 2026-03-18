@@ -4,35 +4,28 @@ declare(strict_types=1);
 
 namespace App\Services\Forms;
 
-use ZipArchive;
-use Storage;
 use App\Eloquents\Form;
 use App\Services\Forms\Exceptions\NoDownloadFileExistException;
 use App\Services\Forms\Exceptions\ZipArchiveNotSupportedException;
+use Storage;
+use ZipArchive;
 
 class DownloadZipService
 {
-    /**
-     * ZipArchive インスタンス
-     *
-     * @var ZipArchive
-     */
-    private $zip;
-
-    public function __construct(ZipArchive $zip)
-    {
-        $this->zip = $zip;
+    public function __construct(
+        /**
+         * ZipArchive インスタンス
+         */
+        private readonly ZipArchive $zip
+    ) {
     }
 
     /**
      * 指定されたアップロードファイルパス配列からZIPファイルを作成し、
      * 作成したZIPファイルのパスを返す
      *
-     * @param Form $form
-     * @param array $uploaded_file_paths
      * @throws NoDownloadFileExistException
      * @throws ZipArchiveNotSupportedException
-     * @return string
      */
     public function makeZip(Form $form, array $uploaded_file_paths): string
     {
@@ -45,18 +38,19 @@ class DownloadZipService
             if (empty($path)) {
                 return null;
             } elseif (
-                strpos($path, 'answer_details/') === 0 &&
+                str_starts_with($path, 'answer_details/') &&
                 file_exists($fullpath = Storage::path($path)) &&
                 is_file($fullpath)
             ) {
                 // Project v2 申請フォームからアップロードされたファイル
                 return [$fullpath, str_replace('answer_details/', '', $path)];
             }
+
             return null;
         }, $uploaded_file_paths);
         $tuples = array_filter($tuples);
 
-        if (!is_array($tuples) || count($tuples) === 0) {
+        if (! is_array($tuples) || count($tuples) === 0) {
             throw new NoDownloadFileExistException();
         }
 

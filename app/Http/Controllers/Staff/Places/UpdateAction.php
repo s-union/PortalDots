@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Places;
 
+use App\Eloquents\Place;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Places\PlaceRequest;
-use App\Eloquents\Place;
 
 class UpdateAction extends Controller
 {
@@ -17,8 +17,7 @@ class UpdateAction extends Controller
         $place->notes = $validated['notes'];
         $place->save();
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', '場所を更新しました');
     }
 }

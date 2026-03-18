@@ -1,21 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Carbon\CarbonImmutable;
 use App\Eloquents\Form;
 use App\Eloquents\ParticipationType;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 abstract class BaseTestCase extends TestCase
 {
     use RefreshDatabase;
 
     protected ?ParticipationType $participationType;
+
     protected ?Form $participationForm;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

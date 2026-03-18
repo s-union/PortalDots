@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Install;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Eloquents\User;
+use Illuminate\Foundation\Http\FormRequest;
 
 class AdminRequest extends FormRequest
 {
@@ -76,7 +76,7 @@ class AdminRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             if (
-                !User::isValidUnivemailByLocalPartAndDomainPart(
+                ! User::isValidUnivemailByLocalPartAndDomainPart(
                     $this->univemail_local_part,
                     $this->univemail_domain_part
                 )

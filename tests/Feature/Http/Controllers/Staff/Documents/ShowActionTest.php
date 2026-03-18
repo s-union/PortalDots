@@ -1,16 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Documents;
 
+use App\Eloquents\Document;
+use App\Eloquents\Permission;
+use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use App\Eloquents\Document;
-use App\Eloquents\Permission;
-use App\Eloquents\User;
 
-class ShowActionTest extends TestCase
+final class ShowActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -20,7 +22,7 @@ class ShowActionTest extends TestCase
     /** @var User */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -38,9 +40,7 @@ class ShowActionTest extends TestCase
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ダウンロードできる()
     {
         Permission::create(['name' => 'staff.documents.read']);
@@ -49,33 +49,29 @@ class ShowActionTest extends TestCase
         $response = $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])
             ->get(route('staff.documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合はダウンロードできない()
     {
         $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertForbidden();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function スタッフ以外はダウンロードできない()
     {
         $response = $this->actingAs(User::factory()->create())
             ->get(route('staff.documents.show', [
-                'document' => $this->document
+                'document' => $this->document,
             ]));
 
         $response->assertForbidden();

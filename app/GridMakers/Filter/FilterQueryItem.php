@@ -23,11 +23,9 @@ class FilterQueryItem
     private $operator;
 
     /**
-     * @var mixed
+     * @param mixed $value
      */
-    private $value;
-
-    public function __construct(string $fullKeyName, string $operator, $value)
+    public function __construct(string $fullKeyName, string $operator, private $value)
     {
         if (empty($fullKeyName) || empty($operator)) {
             throw new InvalidArgumentException('キーまたは演算子が指定されていません。');
@@ -35,14 +33,12 @@ class FilterQueryItem
 
         $operator = strtolower($operator);
 
-
-        if (!in_array($operator, ['=', '!=', '<', '>', '<=', '>=', 'like', 'not like'], true)) {
+        if (! in_array($operator, ['=', '!=', '<', '>', '<=', '>=', 'like', 'not like'], true)) {
             throw new InvalidArgumentException('利用できない $operator が指定されました。');
         }
 
         $this->fullKeyName = $fullKeyName;
         $this->operator = $operator;
-        $this->value = $value;
     }
 
     public function getFullKeyName(): string

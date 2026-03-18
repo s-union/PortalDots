@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddLastAccessedAtToUsers extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -17,7 +17,6 @@ class AddLastAccessedAtToUsers extends Migration
             $table->dateTime('last_accessed_at')->nullable()->after('signed_up_at');
         });
     }
-
     /**
      * Reverse the migrations.
      *
@@ -29,4 +28,4 @@ class AddLastAccessedAtToUsers extends Migration
             $table->dropColumn('last_accessed_at');
         });
     }
-}
+};

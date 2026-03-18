@@ -1,24 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Circles;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\Feature\Http\Controllers\Circles\BaseTestCase;
+use App\Eloquents\Circle;
+use App\Eloquents\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
-use App\Eloquents\User;
-use App\Eloquents\Circle;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class SubmitActionTest extends BaseTestCase
+final class SubmitActionTest extends BaseTestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
 
     private const CIRCLE_LAST_UPDATED_TIMESTAMP = 1672531200;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -34,20 +36,18 @@ class SubmitActionTest extends BaseTestCase
 
         // CIRCLE_LAST_UPDATED_TIMESTAMPと同じ日時をセット
         $this->circle->timestamps = false;
-        $this->circle->created_at = Carbon::createFromTimestamp(self::CIRCLE_LAST_UPDATED_TIMESTAMP, 'UTC');
-        $this->circle->updated_at = Carbon::createFromTimestamp(self::CIRCLE_LAST_UPDATED_TIMESTAMP, 'UTC');
+        $this->circle->created_at = \Illuminate\Support\Facades\Date::createFromTimestamp(self::CIRCLE_LAST_UPDATED_TIMESTAMP, 'UTC');
+        $this->circle->updated_at = \Illuminate\Support\Facades\Date::createFromTimestamp(self::CIRCLE_LAST_UPDATED_TIMESTAMP, 'UTC');
         $this->circle->save();
     }
 
-    /**
-     * @test
-     * @dataProvider 受付期間中かどうかに応じてリクエストを許可する_provider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('受付期間中かどうかに応じてリクエストを許可する_provider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 受付期間中かどうかに応じてリクエストを許可する(
         CarbonImmutable $today,
         bool $is_answerable
     ) {
-        Carbon::setTestNowAndTimezone($today);
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone($today);
         CarbonImmutable::setTestNowAndTimezone($today);
 
         $response = $this
@@ -57,10 +57,9 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)self::CIRCLE_LAST_UPDATED_TIMESTAMP,
+                    'last_updated_timestamp' => (string) self::CIRCLE_LAST_UPDATED_TIMESTAMP,
                 ]
             );
-
 
         $this->circle->refresh();
 
@@ -76,29 +75,25 @@ class SubmitActionTest extends BaseTestCase
         }
     }
 
-    public static function 受付期間中かどうかに応じてリクエストを許可する_provider()
+    public static function 受付期間中かどうかに応じてリクエストを許可する_provider(): \Iterator
     {
-        return [
-            '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false],
-            '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false],
-            '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true],
-            '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true],
-            '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true],
-            '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false],
-            '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false],
-        ];
+        yield '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false];
+        yield '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false];
+        yield '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true];
+        yield '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true];
+        yield '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true];
+        yield '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false];
+        yield '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false];
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 企画メンバーが規定の人数に達していない場合は参加登録の提出はできない()
     {
         // 規定の人数 = 2
         $this->participationType->update(['users_count_min' => 2]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         // 企画には1名しか所属していない状態で参加登録を提出しようとする
@@ -110,7 +105,7 @@ class SubmitActionTest extends BaseTestCase
                 ]),
                 [
                     // FIXME: このテストを実行するときだけSubmitActionのCircleのupdated_atのタイムゾーンがGMT+9になる（原因不明）ため、UTCの時間にする
-                    'last_updated_timestamp' => (string)($this->circle->updated_at->timestamp - 60 * 60 * 9),
+                    'last_updated_timestamp' => (string) ($this->circle->updated_at->timestamp - 60 * 60 * 9),
                 ]
             );
 
@@ -123,13 +118,11 @@ class SubmitActionTest extends BaseTestCase
         $response->assertRedirect(route('circles.users.index', ['circle' => $this->circle]));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 企画参加登録の提出時時点の企画の更新日時がデータベースと一致しない場合は参加登録の提出はできない()
     {
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $response = $this
@@ -139,8 +132,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' =>
-                    (string)(self::CIRCLE_LAST_UPDATED_TIMESTAMP + 15),
+                    'last_updated_timestamp' => (string) (self::CIRCLE_LAST_UPDATED_TIMESTAMP + 15),
                 ]
             );
 
@@ -153,12 +145,10 @@ class SubmitActionTest extends BaseTestCase
         $response->assertRedirect(route('circles.confirm', ['circle' => $this->circle]));
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 参加登録機能が非公開のときは提出できない()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $this->participationForm->is_public = false;
@@ -171,7 +161,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)self::CIRCLE_LAST_UPDATED_TIMESTAMP,
+                    'last_updated_timestamp' => (string) self::CIRCLE_LAST_UPDATED_TIMESTAMP,
                 ]
             );
 
@@ -181,16 +171,14 @@ class SubmitActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 他企画に成り済ました回答はできない()
     {
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $anotherCircle = Circle::factory()->notSubmitted()->create([
-            'participation_type_id' => $this->participationType->id
+            'participation_type_id' => $this->participationType->id,
         ]);
 
         $response = $this
@@ -200,7 +188,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $anotherCircle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)$anotherCircle->updated_at->timestamp,
+                    'last_updated_timestamp' => (string) $anotherCircle->updated_at->timestamp,
                 ]
             );
 
@@ -210,16 +198,14 @@ class SubmitActionTest extends BaseTestCase
         $response->assertStatus(403);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 副責任者は企画を提出できない()
     {
         $member = User::factory()->create();
         $member->circles()->attach($this->circle->id, ['is_leader' => false]);
 
         // 受付期間内
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2020-02-16 02:25:15'));
 
         $responce = $this
@@ -229,7 +215,7 @@ class SubmitActionTest extends BaseTestCase
                     'circle' => $this->circle,
                 ]),
                 [
-                    'last_updated_timestamp' => (string)self::CIRCLE_LAST_UPDATED_TIMESTAMP,
+                    'last_updated_timestamp' => (string) self::CIRCLE_LAST_UPDATED_TIMESTAMP,
                 ]
             );
 

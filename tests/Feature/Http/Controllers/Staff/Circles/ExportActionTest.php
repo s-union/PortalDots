@@ -1,26 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Circles;
 
-use App\Exports\CirclesExport;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Permission;
+use App\Eloquents\User;
+use App\Exports\CirclesExport;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
+use Tests\TestCase;
 
-class ExportActionTest extends TestCase
+final class ExportActionTest extends TestCase
 {
     use RefreshDatabase;
 
     /** @var User */
     private $staff;
-
-    /** @var User */
-    private $user;
 
     /** @var Circle */
     private $circle;
@@ -28,25 +27,23 @@ class ExportActionTest extends TestCase
     /** @var Circle */
     private $circle_not_submitted;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
-        Carbon::setTestNowAndTimezone(new CarbonImmutable('2019-08-21 14:52:38'));
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone(new CarbonImmutable('2019-08-21 14:52:38'));
         CarbonImmutable::setTestNowAndTimezone(new CarbonImmutable('2019-08-21 14:52:38'));
 
         $this->staff = User::factory()->staff()->create();
 
-        $this->user = User::factory()->create();
+        $user = User::factory()->create();
         $this->circle = Circle::factory()->create();
         $this->circle_not_submitted = Circle::factory()->notSubmitted()->create();
 
-        $this->user->circles()->attach($this->circle->id, ['is_leader' => true]);
+        $user->circles()->attach($this->circle->id, ['is_leader' => true]);
     }
 
-    /**
-     * @test
-     */
-    public function 企画情報をCSVでダウンロードできる()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 企画情報を_cs_vでダウンロードできる()
     {
         Permission::create(['name' => 'staff.circles.export']);
         $this->staff->syncPermissions(['staff.circles.export']);
@@ -56,18 +53,14 @@ class ExportActionTest extends TestCase
             ->withSession(['staff_authorized' => true])
             ->get('/staff/circles/export');
 
-        $now = Carbon::now()->format('Y-m-d_H-i-s');
+        $now = \Illuminate\Support\Facades\Date::now()->format('Y-m-d_H-i-s');
 
-        Excel::assertDownloaded("企画一覧_{$now}.csv", function (CirclesExport $export) {
-            return $export->collection()->contains('name', $this->circle->name)
-                && $export->collection()->contains('name', '<>', $this->circle_not_submitted->name);
-        });
+        Excel::assertDownloaded("企画一覧_{$now}.csv", fn(CirclesExport $export) => $export->collection()->contains('name', $this->circle->name)
+            && $export->collection()->contains('name', '<>', $this->circle_not_submitted->name));
     }
 
-    /**
-     * @test
-     */
-    public function 権限がない場合はCSVをダウンロードできない()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 権限がない場合は_cs_vをダウンロードできない()
     {
         $this->actingAs($this->staff)
             ->withSession(['staff_authorized' => true])

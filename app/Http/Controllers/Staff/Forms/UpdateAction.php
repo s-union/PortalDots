@@ -14,14 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var FormsService
-     */
-    private $formsService;
-
-    public function __construct(FormsService $formsService)
+    public function __construct(private readonly FormsService $formsService)
     {
-        $this->formsService = $formsService;
     }
 
     public function __invoke(FormRequest $request, Form $form)
@@ -42,14 +36,13 @@ class UpdateAction extends Controller
                 new Carbon($values['open_at']),
                 new Carbon($values['close_at']),
                 Auth::user(),
-                (int)$values['max_answers'] ?? 1,
-                isset($values['is_public']) && $values['is_public'] === "1",
+                (int) $values['max_answers'] ?? 1,
+                isset($values['is_public']) && $values['is_public'] === '1',
                 $values['answerable_tags'] ?? []
             );
         });
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', 'フォームを更新しました');
     }
 }

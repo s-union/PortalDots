@@ -1,25 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Forms\Answers;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\App;
-use Carbon\Carbon;
-use Carbon\CarbonImmutable;
-use App\Eloquents\User;
 use App\Eloquents\Circle;
 use App\Eloquents\Form;
 use App\Eloquents\Tag;
+use App\Eloquents\User;
 use App\Services\Circles\SelectorService;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\App;
+use Tests\TestCase;
 
-class CreateActionTest extends TestCase
+final class CreateActionTest extends TestCase
 {
     use RefreshDatabase;
 
     private $user;
+
     private $circle;
+
     private $form;
 
     /**
@@ -27,7 +30,7 @@ class CreateActionTest extends TestCase
      */
     private $selectorService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -43,26 +46,24 @@ class CreateActionTest extends TestCase
         $this->selectorService = App::make(SelectorService::class);
     }
 
-    /**
-     * @test
-     * @dataProvider 受付期間中かどうかに応じて表示が切り替わる_provider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('受付期間中かどうかに応じて表示が切り替わる_provider')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 受付期間中かどうかに応じて表示が切り替わる(
         CarbonImmutable $today,
         bool $is_answerable
     ) {
-        Carbon::setTestNowAndTimezone($today);
+        \Illuminate\Support\Facades\Date::setTestNowAndTimezone($today);
         CarbonImmutable::setTestNowAndTimezone($today);
 
         $this->selectorService->setCircle($this->circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $this->form,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $this->form,
+                ])
+            );
 
         $response->assertStatus(200);
 
@@ -73,22 +74,18 @@ class CreateActionTest extends TestCase
         }
     }
 
-    public static function 受付期間中かどうかに応じて表示が切り替わる_provider()
+    public static function 受付期間中かどうかに応じて表示が切り替わる_provider(): \Iterator
     {
-        return [
-            '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false],
-            '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false],
-            '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true],
-            '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true],
-            '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true],
-            '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false],
-            '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false],
-        ];
+        yield '受付開始はまだまだ先' => [new CarbonImmutable('2019-12-25 23:42:22'), false];
+        yield '受付開始前' => [new CarbonImmutable('2020-01-26 11:42:50'), false];
+        yield '受付開始した瞬間' => [new CarbonImmutable('2020-01-26 11:42:51'), true];
+        yield '受付期間中' => [new CarbonImmutable('2020-02-16 02:25:15'), true];
+        yield '受付終了する瞬間' => [new CarbonImmutable('2020-03-26 15:23:31'), true];
+        yield '受付終了後' => [new CarbonImmutable('2020-03-26 15:23:32'), false];
+        yield '受付終了してだいぶ経過' => [new CarbonImmutable('2020-08-14 02:35:31'), false];
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 非公開のフォームにはアクセスできない()
     {
         $privateForm = Form::factory()->private()->create();
@@ -96,19 +93,17 @@ class CreateActionTest extends TestCase
         $this->selectorService->setCircle($this->circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $privateForm,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $privateForm,
+                ])
+            );
 
         $response->assertStatus(404);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 回答可能なタグを持つ企画に所属している場合フォームにアクセスできる()
     {
         $tag = Tag::factory()->create();
@@ -124,19 +119,17 @@ class CreateActionTest extends TestCase
         $this->selectorService->setCircle($tagged_circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $tagged_form,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $tagged_form,
+                ])
+            );
 
         $response->assertStatus(200);
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 回答可能なタグを持つ企画に所属していない場合フォームにアクセスできない()
     {
         $tag = Tag::factory()->create();
@@ -154,12 +147,12 @@ class CreateActionTest extends TestCase
         $this->selectorService->setCircle($tagged_circle);
 
         $response = $this
-                    ->actingAs($this->user)
-                    ->get(
-                        route('forms.answers.create', [
-                            'form' => $tagged_form,
-                        ])
-                    );
+            ->actingAs($this->user)
+            ->get(
+                route('forms.answers.create', [
+                    'form' => $tagged_form,
+                ])
+            );
 
         $response->assertStatus(403);
     }

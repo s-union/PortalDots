@@ -13,20 +13,19 @@ use Illuminate\Support\Facades\DB;
 class ParticipationTypesService
 {
     public function __construct(
-        private ActivityLogService $activityLogService,
-        private TagsService $tagsService
+        private readonly ActivityLogService $activityLogService,
+        private readonly TagsService $tagsService
     ) {
     }
 
     /**
      * 指定された参加種別についてタグを保存する
      *
-     * @param ParticipationType $participationType
-     * @param array $tags
-     * @param boolean $allow_create タグの新規作成を許可するかどうか
-     * @param User $caused_by タグを保存したユーザー
-     * @throws DenyCreateTagsException $allow_create が false なのに企画タグの新規作成が必要になった場合に発生する例外
+     * @param  bool  $allow_create  タグの新規作成を許可するかどうか
+     * @param  User  $caused_by  タグを保存したユーザー
      * @return void
+     *
+     * @throws DenyCreateTagsException $allow_create が false なのに企画タグの新規作成が必要になった場合に発生する例外
      */
     public function saveTags(
         ParticipationType $participationType,
@@ -42,12 +41,10 @@ class ParticipationTypesService
             $participationType->tags()->sync($tags_on_db->pluck('id')->all());
 
             // ログに残す
-            $map_function = function ($tag) {
-                return [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                ];
-            };
+            $map_function = (fn($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+            ]);
 
             $this->activityLogService->logOnlyAttributesChanged(
                 'participation_type_tag',

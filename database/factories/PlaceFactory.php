@@ -2,19 +2,23 @@
 
 namespace Database\Factories;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
+/** @var Factory $factory */
 
 use App\Eloquents\Place;
-use Faker\Generator as Faker;
+use Illuminate\Database\Eloquent\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Eloquents\Place>
+ */
 class PlaceFactory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
     protected $model = Place::class;
+
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
-            'type' => $this->faker->numberBetween(1, 3),
+            'name' => fake()->name,
+            'type' => fake()->numberBetween(1, 3),
         ];
     }
 }

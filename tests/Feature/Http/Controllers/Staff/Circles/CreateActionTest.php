@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Http\Controllers\Staff\Circles;
 
 use App\Eloquents\Permission;
 use App\Eloquents\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class CreateActionTest extends TestCase
+final class CreateActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -17,39 +18,35 @@ class CreateActionTest extends TestCase
      */
     private $staff;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->staff = User::factory()->staff()->create();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 企画の新規作成フォームが表示される()
     {
         Permission::create(['name' => 'staff.circles.edit']);
         $this->staff->syncPermissions('staff.circles.edit');
 
         $responce = $this->actingAs($this->staff)
-                        ->withSession(['staff_authorized' => true])
-                        ->get(
-                            route('staff.circles.create')
-                        );
+            ->withSession(['staff_authorized' => true])
+            ->get(
+                route('staff.circles.create')
+            );
 
         $responce->assertOk();
     }
 
-    /**
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 権限がない場合は企画の新規作成フォームが表示されない()
     {
         $responce = $this->actingAs($this->staff)
-                        ->withSession(['staff_authorized' => true])
-                        ->get(
-                            route('staff.circles.create')
-                        );
+            ->withSession(['staff_authorized' => true])
+            ->get(
+                route('staff.circles.create')
+            );
 
         $responce->assertForbidden();
     }

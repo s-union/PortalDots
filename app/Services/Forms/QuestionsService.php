@@ -4,25 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services\Forms;
 
-use DB;
 use App\Eloquents\Form;
 use App\Eloquents\Question;
+use DB;
 
 class QuestionsService
 {
-    private $answerDetailsService;
-
-    public function __construct(AnswerDetailsService $answerDetailsService)
+    public function __construct(private readonly AnswerDetailsService $answerDetailsService)
     {
-        $this->answerDetailsService = $answerDetailsService;
     }
 
     /**
      * 設問を追加する
      *
-     * @param Form $form 設問を追加する対象のフォーム
-     * @param string $type 設問タイプ
-     * @return Question
+     * @param  Form  $form  設問を追加する対象のフォーム
+     * @param  string  $type  設問タイプ
+     *
      * @throws \Exception
      */
     public function addQuestion(Form $form, string $type): Question
@@ -32,20 +29,21 @@ class QuestionsService
         }
         // 適切なpriorityを設定するために、最もpriorityの値が大きい設問を取得する
         $question_max_priority = Question::select('priority')->orderBy('priority', 'desc')->first();
-        $max_priority = is_object($question_max_priority) ? (int)$question_max_priority->priority : 0;
+        $max_priority = is_object($question_max_priority) ? (int) $question_max_priority->priority : 0;
         /** @var Question $question */
         $question = $form->questions()->create([
             'type' => $type,
             'priority' => $max_priority + 1,
         ]);
+
         return $question;
     }
 
     /**
      * 設問順序を更新する
      *
-     * @param Form $form 変更したい設問が含まれているフォーム
-     * @param array $priorities キーが設問IDで値がpriorityの配列
+     * @param  Form  $form  変更したい設問が含まれているフォーム
+     * @param  array  $priorities  キーが設問IDで値がpriorityの配列
      */
     public function updateQuestionsOrder(Form $form, array $priorities)
     {
@@ -57,8 +55,8 @@ class QuestionsService
     /**
      * 設問を更新する
      *
-     * @param int $question_id 設問ID
-     * @param array $question 設問配列
+     * @param  int  $question_id  設問ID
+     * @param  array  $question  設問配列
      */
     public function updateQuestion(int $question_id, array $question)
     {
@@ -67,11 +65,11 @@ class QuestionsService
             $question['is_required'] = false;
         }
 
-        if (!empty($question['options'])) {
+        if (! empty($question['options'])) {
             $options = array_unique(
                 array_map(
-                    'trim',
-                    explode("\n", $question['options'])
+                    trim(...),
+                    explode("\n", (string) $question['options'])
                 )
             );
             $question['options'] = implode("\n", $options);
@@ -86,7 +84,7 @@ class QuestionsService
     /**
      * 設問を削除する
      *
-     * @param int $question_id 設問ID
+     * @param  int  $question_id  設問ID
      */
     public function deleteQuestion(int $question_id)
     {

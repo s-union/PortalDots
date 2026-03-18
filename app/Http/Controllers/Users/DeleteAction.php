@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Users;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,6 +15,6 @@ class DeleteAction extends Controller
         return view('users.delete')
             ->with('is_admin', $user->is_admin)
             ->with('is_staff', $user->is_staff)
-            ->with('belong', !$circles->isEmpty());
+            ->with('belong', ! $circles->isEmpty());
     }
 }

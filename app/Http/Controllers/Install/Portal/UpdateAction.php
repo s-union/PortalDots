@@ -8,14 +8,8 @@ use App\Services\Install\PortalService;
 
 class UpdateAction extends Controller
 {
-    /**
-     * @var PortalService
-     */
-    private $portalService;
-
-    public function __construct(PortalService $portalService)
+    public function __construct(private readonly PortalService $portalService)
     {
-        $this->portalService = $portalService;
     }
 
     public function __invoke(PortalRequest $request)
@@ -24,7 +18,7 @@ class UpdateAction extends Controller
         $info['APP_FORCE_HTTPS'] = isset($info['APP_FORCE_HTTPS']) && $info['APP_FORCE_HTTPS'] === '1'
             ? 'true' : 'false';
         $this->portalService->updateInfo($info);
-        return redirect()
-            ->route('install.database.edit');
+
+        return to_route('install.database.edit');
     }
 }

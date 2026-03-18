@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Staff\Users;
 
+use App\Eloquents\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\Users\UserRequest;
-use App\Eloquents\User;
 
 class UpdateAction extends Controller
 {
@@ -20,15 +20,14 @@ class UpdateAction extends Controller
         $user->tel = $validated['tel'];
         $user->notes = $validated['notes'];
 
-        if (!empty($validated['user_type'])) {
+        if (! empty($validated['user_type'])) {
             $user->is_staff = in_array($validated['user_type'], ['staff', 'admin'], true);
             $user->is_admin = $validated['user_type'] === 'admin';
         }
 
         $user->save();
 
-        return redirect()
-            ->back()
+        return back()
             ->with('topAlert.title', 'ユーザーを更新しました');
     }
 }

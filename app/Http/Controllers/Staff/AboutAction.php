@@ -7,14 +7,8 @@ use App\Services\Utils\ReleaseInfoService;
 
 class AboutAction extends Controller
 {
-    /**
-     * @var ReleaseInfoService
-     */
-    private $releaseInfoService;
-
-    public function __construct(ReleaseInfoService $releaseInfoService)
+    public function __construct(private readonly ReleaseInfoService $releaseInfoService)
     {
-        $this->releaseInfoService = $releaseInfoService;
     }
 
     public function __invoke()

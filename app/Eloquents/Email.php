@@ -15,21 +15,17 @@ class Email extends Model
 
     /**
      * メール送信済であれば true を返す動的プロパティを作る
-     *
-     * @return bool
      */
-    public function getIsSentAttribute(): bool
+    protected function isSent(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return !empty($this->sent_at);
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => ! empty($this->sent_at));
     }
 
     /**
      * 排他ロック中であれば true を返す動的プロパティを作る
-     *
-     * @return bool
      */
-    public function getIsLockedAttribute(): bool
+    protected function isLocked(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        return !empty($this->locked_at);
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(get: fn() => ! empty($this->locked_at));
     }
 }
