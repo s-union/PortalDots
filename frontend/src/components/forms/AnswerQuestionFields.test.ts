@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
 import type { FormQuestion } from "@/features/forms/api";
-import type { FormAnswer, FormAnswerDraft } from "@/features/forms/answers";
 import AnswerQuestionFields from "./AnswerQuestionFields.vue";
+import type { FormAnswerDraft } from "@/features/forms/answers";
+
+type AnswerQuestionFieldsProps = InstanceType<typeof AnswerQuestionFields>["$props"];
 
 function createQuestion(overrides: Partial<FormQuestion>): FormQuestion {
     return {
@@ -25,7 +27,7 @@ function createQuestion(overrides: Partial<FormQuestion>): FormQuestion {
 function createProps(
     question: FormQuestion,
     draft: FormAnswerDraft,
-    answer: FormAnswer | null = null,
+    answer: AnswerQuestionFieldsProps["answer"] = null,
 ) {
     return {
         question,
@@ -108,7 +110,7 @@ describe("AnswerQuestionFields", () => {
             type: "upload",
         });
         const draft: FormAnswerDraft = {};
-        const answer: FormAnswer = {
+        const answer: NonNullable<AnswerQuestionFieldsProps["answer"]> = {
             id: "answer-1",
             body: "",
             updatedAt: "2026-03-02T00:00:00Z",

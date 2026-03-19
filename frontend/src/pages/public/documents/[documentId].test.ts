@@ -25,6 +25,13 @@ vi.mock("@/lib/api/client", async () => {
 
 import PublicDocumentRedirectPage from "./[documentId].vue";
 
+function createLocationStub(replace: Location["replace"]) {
+    const location = window.location;
+    return Object.assign(Object.create(Object.getPrototypeOf(location)) as Location, location, {
+        replace,
+    });
+}
+
 describe("PublicDocumentRedirectPage", () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -33,10 +40,7 @@ describe("PublicDocumentRedirectPage", () => {
 
     it("redirects to the public document download endpoint", () => {
         const replaceSpy = vi.fn();
-        vi.stubGlobal("location", {
-            ...window.location,
-            replace: replaceSpy,
-        });
+        vi.stubGlobal("location", createLocationStub(replaceSpy));
 
         routeState.params.documentId = "doc id/01";
         mount(PublicDocumentRedirectPage);
@@ -46,10 +50,7 @@ describe("PublicDocumentRedirectPage", () => {
 
     it("does not redirect when document id is empty", () => {
         const replaceSpy = vi.fn();
-        vi.stubGlobal("location", {
-            ...window.location,
-            replace: replaceSpy,
-        });
+        vi.stubGlobal("location", createLocationStub(replaceSpy));
 
         routeState.params.documentId = "   ";
         const wrapper = mount(PublicDocumentRedirectPage);

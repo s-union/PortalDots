@@ -58,13 +58,14 @@ Useful commands:
 - `PORTALDOTS_DATABASE_URL=postgres://... mise run backend-migrate`
 - `mise run backend-sqlc-generate`
 - `PORTALDOTS_DATABASE_URL=postgres://... mise run backend-sqlc-smoke`
-- `PORTALDOTS_DATABASE_URL=postgres://... PORTALDOTS_AUTH_PASSWORD=... PORTALDOTS_STAFF_VERIFY_CODE=... go run ./cmd/api`
+- `PORTALDOTS_DATABASE_URL=postgres://... PORTALDOTS_STAFF_VERIFY_CODE=... go run ./cmd/api`
 
 Behavior notes:
 
 - `cmd/api` runs SQL migrations on startup before wiring repositories.
 - Seed data is inserted only when the database is empty (`users` count is zero).
-- `cmd/api` requires explicit non-default values for `PORTALDOTS_AUTH_PASSWORD` and `PORTALDOTS_STAFF_VERIFY_CODE` unless `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true` is set.
+- Demo users are seeded and synchronized only when `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true`.
+- `cmd/api` requires an explicit non-default value for `PORTALDOTS_STAFF_VERIFY_CODE` unless `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true` is set.
 - Session cookies now use `PORTALDOTS_SESSION_TTL_SECONDS` and default to 12 hours.
 - Staff verify email delivery is currently mocked. `POST /v1/staff/verify/request` does not send a real email and returns the verification code for UI display.
 - 現在の upload 保存先は PostgreSQL です。`answer_uploads` と `documents.content` にバイナリを直接保存しており、外部ストレージ連携はまだありません。

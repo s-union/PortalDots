@@ -10,7 +10,7 @@ import (
 
 const (
 	DefaultSessionTTLSeconds = 12 * 60 * 60
-	defaultAuthPassword      = "password"
+	defaultAuthPassword      = "demo-admin"
 	defaultStaffVerifyCode   = "123456"
 )
 
@@ -159,9 +159,81 @@ type ContactCategory struct {
 	Email string
 }
 
+func defaultDemoAuthUser() AuthUser {
+	return AuthUser{
+		ID:          "demo-admin",
+		LoginIDs:    []string{"demo-admin"},
+		DisplayName: "Demo Admin",
+		Password:    defaultAuthPassword,
+		Roles:       []string{"admin"},
+		Permissions: []string{},
+	}
+}
+
+func defaultDemoUsers() []User {
+	return []User{
+		{
+			ID:              "demo-staff",
+			LoginIDs:        []string{"demo-staff"},
+			DisplayName:     "Demo Staff",
+			Password:        "demo-staff",
+			Roles:           []string{"content_manager"},
+			Permissions:     []string{},
+			CircleIDs:       []string{},
+			LeaderCircleIDs: []string{},
+			IsVerified:      true,
+		},
+		{
+			ID:              "demo-staff-sub",
+			LoginIDs:        []string{"demo-staff-sub"},
+			DisplayName:     "Demo Staff Sub",
+			Password:        "demo-staff-sub",
+			Roles:           []string{"circle_manager"},
+			Permissions:     []string{},
+			CircleIDs:       []string{},
+			LeaderCircleIDs: []string{},
+			IsVerified:      true,
+		},
+		{
+			ID:              "demo-circle",
+			LoginIDs:        []string{"demo-circle"},
+			DisplayName:     "Demo Circle",
+			Password:        "demo-circle",
+			Roles:           []string{"participant"},
+			Permissions:     []string{},
+			CircleIDs:       []string{"circle-a"},
+			LeaderCircleIDs: []string{"circle-a"},
+			IsVerified:      true,
+		},
+		{
+			ID:              "demo-circle-sub",
+			LoginIDs:        []string{"demo-circle-sub"},
+			DisplayName:     "Demo Circle Sub",
+			Password:        "demo-circle-sub",
+			Roles:           []string{"participant"},
+			Permissions:     []string{},
+			CircleIDs:       []string{"circle-b"},
+			LeaderCircleIDs: []string{"circle-b"},
+			IsVerified:      true,
+		},
+		{
+			ID:              "member-circle-b-unverified",
+			LoginIDs:        []string{"circle-b-unverified@example.com"},
+			DisplayName:     "Circle B Unverified Member",
+			Password:        "password",
+			Roles:           []string{"participant"},
+			Permissions:     []string{},
+			CircleIDs:       []string{"circle-b"},
+			LeaderCircleIDs: []string{},
+			IsVerified:      false,
+		},
+	}
+}
+
 func FromEnv() Config {
 	authPassword, authPasswordProvided := getenvWithPresence("PORTALDOTS_AUTH_PASSWORD", defaultAuthPassword)
 	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTALDOTS_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
+	defaultAuthUser := defaultDemoAuthUser()
 
 	return Config{
 		BindAddress:               getenv("PORTALDOTS_API_BIND", ":8081"),
@@ -186,48 +258,14 @@ func FromEnv() Config {
 		PortalPrimaryColorS:       getenvInt("PORTAL_PRIMARY_COLOR_S", 80),
 		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 45),
 		AuthUser: AuthUser{
-			ID:          getenv("PORTALDOTS_AUTH_USER_ID", "demo-user"),
-			LoginIDs:    splitCSV(getenv("PORTALDOTS_AUTH_LOGIN_IDS", "demo@example.com,24a0000")),
-			DisplayName: getenv("PORTALDOTS_AUTH_DISPLAY_NAME", "Demo User"),
+			ID:          getenv("PORTALDOTS_AUTH_USER_ID", defaultAuthUser.ID),
+			LoginIDs:    splitCSV(getenv("PORTALDOTS_AUTH_LOGIN_IDS", strings.Join(defaultAuthUser.LoginIDs, ","))),
+			DisplayName: getenv("PORTALDOTS_AUTH_DISPLAY_NAME", defaultAuthUser.DisplayName),
 			Password:    authPassword,
-			Roles:       splitCSV(getenv("PORTALDOTS_AUTH_ROLES", "participant")),
+			Roles:       splitCSV(getenv("PORTALDOTS_AUTH_ROLES", strings.Join(defaultAuthUser.Roles, ","))),
 			Permissions: []string{},
 		},
-		Users: []User{
-			{
-				ID:              "member-circle-a",
-				LoginIDs:        []string{"circle-a@example.com"},
-				DisplayName:     "Circle A Member",
-				Password:        defaultAuthPassword,
-				Roles:           []string{"participant"},
-				Permissions:     []string{},
-				CircleIDs:       []string{"circle-a"},
-				LeaderCircleIDs: []string{"circle-a"},
-				IsVerified:      true,
-			},
-			{
-				ID:              "member-circle-b",
-				LoginIDs:        []string{"circle-b@example.com"},
-				DisplayName:     "Circle B Member",
-				Password:        defaultAuthPassword,
-				Roles:           []string{"participant"},
-				Permissions:     []string{},
-				CircleIDs:       []string{"circle-b"},
-				LeaderCircleIDs: []string{"circle-b"},
-				IsVerified:      true,
-			},
-			{
-				ID:              "member-circle-b-unverified",
-				LoginIDs:        []string{"circle-b-unverified@example.com"},
-				DisplayName:     "Circle B Unverified Member",
-				Password:        defaultAuthPassword,
-				Roles:           []string{"participant"},
-				Permissions:     []string{},
-				CircleIDs:       []string{"circle-b"},
-				LeaderCircleIDs: []string{},
-				IsVerified:      false,
-			},
-		},
+		Users:                   defaultDemoUsers(),
 		StaffVerifyCode:         staffVerifyCode,
 		authPasswordProvided:    authPasswordProvided,
 		staffVerifyCodeProvided: staffVerifyCodeProvided,
@@ -481,19 +519,17 @@ func (c Config) ValidateForAPI() error {
 	if c.SessionTTL <= 0 {
 		issues = append(issues, "PORTALDOTS_SESSION_TTL_SECONDS must be greater than zero")
 	}
-	if len(c.AuthUser.LoginIDs) == 0 {
-		issues = append(issues, "PORTALDOTS_AUTH_LOGIN_IDS must contain at least one login ID")
-	}
-	if strings.TrimSpace(c.AuthUser.Password) == "" {
-		issues = append(issues, "PORTALDOTS_AUTH_PASSWORD must not be empty")
-	}
 	if strings.TrimSpace(c.StaffVerifyCode) == "" {
 		issues = append(issues, "PORTALDOTS_STAFF_VERIFY_CODE must not be empty")
 	}
-	if !c.AllowInsecureDefaults {
-		if !c.authPasswordProvided || c.AuthUser.Password == defaultAuthPassword {
-			issues = append(issues, "PORTALDOTS_AUTH_PASSWORD must be set to a non-default value unless PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true")
+	if c.AllowInsecureDefaults {
+		if len(c.AuthUser.LoginIDs) == 0 {
+			issues = append(issues, "PORTALDOTS_AUTH_LOGIN_IDS must contain at least one login ID")
 		}
+		if strings.TrimSpace(c.AuthUser.Password) == "" {
+			issues = append(issues, "PORTALDOTS_AUTH_PASSWORD must not be empty")
+		}
+	} else {
 		if !c.staffVerifyCodeProvided || c.StaffVerifyCode == defaultStaffVerifyCode {
 			issues = append(issues, "PORTALDOTS_STAFF_VERIFY_CODE must be set to a non-default value unless PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true")
 		}

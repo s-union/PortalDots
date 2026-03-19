@@ -39,8 +39,10 @@ func Seed(ctx context.Context, pool *pgxpool.Pool, cfg config.Config) error {
 	if err := seedCircles(ctx, q, cfg.Circles); err != nil {
 		return err
 	}
-	if err := seedUsers(ctx, q, cfg.AuthUser, cfg.Users); err != nil {
-		return err
+	if cfg.AllowInsecureDefaults {
+		if err := seedUsers(ctx, q, cfg.AuthUser, cfg.Users); err != nil {
+			return err
+		}
 	}
 	if err := seedDocuments(ctx, q, cfg.Documents); err != nil {
 		return err
@@ -61,7 +63,12 @@ func Seed(ctx context.Context, pool *pgxpool.Pool, cfg config.Config) error {
 	return tx.Commit(ctx)
 }
 
-func SeedAuthUser(ctx context.Context, pool *pgxpool.Pool, authUser config.AuthUser) error {
+func SyncConfiguredUsers(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	authUser config.AuthUser,
+	users []config.User,
+) error {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -70,7 +77,7 @@ func SeedAuthUser(ctx context.Context, pool *pgxpool.Pool, authUser config.AuthU
 
 	q := dbgen.New(tx)
 
-	if err := seedUsers(ctx, q, authUser, nil); err != nil {
+	if err := seedUsers(ctx, q, authUser, users); err != nil {
 		return err
 	}
 
