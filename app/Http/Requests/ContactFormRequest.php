@@ -34,6 +34,7 @@ class ContactFormRequest extends FormRequest
         return [
             'circle_id' => ['filled'],
             'contact_body' => ['required'],
+            'cc_subleader' => ['nullable', 'boolean'],
         ];
     }
 

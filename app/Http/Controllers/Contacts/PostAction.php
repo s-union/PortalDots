@@ -29,7 +29,8 @@ class PostAction extends Controller
                 'name' => config('portal.admin_name'),
             ]);
 
-        $this->contactsService->create($circle, $sender, $request->contact_body, $category);
+        // チェックボックス未送信時も既定で共有ONにする（フォーム初期値と合わせる）
+        $this->contactsService->create($circle, $sender, $request->contact_body, $category, $request->boolean('cc_subleader', true));
 
         return to_route('contacts')
             ->with('topAlert.title', 'お問い合わせを受け付けました。')

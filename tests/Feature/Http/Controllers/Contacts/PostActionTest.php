@@ -46,17 +46,26 @@ final class PostActionTest extends TestCase
     public function contacts_serviceのcreateが呼び出される()
     {
         $this->mock(ContactsService::class, function ($mock) {
-            $mock->shouldReceive('create')->once()->andReturn(true);
+            $mock->shouldReceive('create')
+                ->once()
+                ->withArgs(function ($circle, $sender, $contactBody, $category, $ccSubleader) {
+                    return $circle->id === $this->circle->id
+                        && $sender->id === $this->user->id
+                        && $contactBody === 'テストです！'
+                        && $category->id === $this->ContactCategory->id
+                        && $ccSubleader === true;
+                });
         });
 
-        $responce = $this
+        $response = $this
             ->actingAs($this->user)
             ->post(route('contacts.post'), [
                 'circle_id' => $this->circle->id,
                 'contact_body' => 'テストです！',
                 'category' => $this->ContactCategory->id,
+                'cc_subleader' => '1',
             ]);
 
-        $responce->assertSessionHas('topAlert.title', 'お問い合わせを受け付けました。');
+        $response->assertSessionHas('topAlert.title', 'お問い合わせを受け付けました。');
     }
 }
