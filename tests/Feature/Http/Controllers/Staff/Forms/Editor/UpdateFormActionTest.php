@@ -39,6 +39,7 @@ final class UpdateFormActionTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function フォームエディタ更新時に受付期間が意図せず変更されない()
     {
+        // 既存の受付期間を保持できることを検証する
         $originalOpenAt = $this->form->open_at->copy();
         $originalCloseAt = $this->form->close_at->copy();
 
@@ -59,6 +60,7 @@ final class UpdateFormActionTest extends TestCase
 
         $response->assertStatus(200);
 
+        // 受付期間以外の更新は正常に反映されることを合わせて確認する
         $this->form->refresh();
         $this->assertSame('更新後フォーム', $this->form->name);
         $this->assertSame('更新後説明', $this->form->description);

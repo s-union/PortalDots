@@ -236,6 +236,7 @@ export default {
     async [SAVE_FORM]({ state, commit, dispatch }) {
       dispatch(START_SAVING)
       // 受付期間(open_at/close_at)はフォームエディタでは編集対象外のため送信しない
+      // 送信フィールドを明示することで、API レスポンス由来の余分なキー送信を防ぐ
       const form = {
         id: state.form.id,
         name: state.form.name,

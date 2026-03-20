@@ -15,6 +15,7 @@ class UpdateFormAction extends Controller
 
     public function __invoke(Form $form, UpdateFormRequest $request)
     {
+        // バリデーション済みデータのみを受け取り、想定外のキー混入を防ぐ
         $validated = $request->validated();
         $input = $validated['form'];
 
@@ -23,6 +24,7 @@ class UpdateFormAction extends Controller
             return abort(400);
         }
 
+        // ルートバインド済みの Form を正として更新対象を確定する
         $this->formEditorService->updateForm(
             $form->id,
             $input

@@ -33,6 +33,7 @@ final class FormEditorServiceTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function open_atとclose_atが渡された場合は受付期間を更新できる()
     {
+        // 指定ありの場合は従来どおり受付期間を更新する
         $this->formEditorService->updateForm($this->form->id, [
             'open_at' => '2026-06-01 00:00:00',
             'close_at' => '2026-06-30 23:59:00',
@@ -46,6 +47,7 @@ final class FormEditorServiceTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function open_atとclose_atが未指定の場合は受付期間を保持したまま更新できる()
     {
+        // 指定なしの場合は受付期間を保持し、他項目のみ更新する
         $originalOpenAt = $this->form->open_at->copy();
         $originalCloseAt = $this->form->close_at->copy();
 

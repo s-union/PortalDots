@@ -20,6 +20,7 @@ class FormEditorService
     {
         $eloquent = Form::findOrFail($form_id);
 
+        // editor 以外の更新経路では open_at / close_at が未指定の場合があるため、存在時のみ変換する
         if (array_key_exists('open_at', $form)) {
             $form['open_at'] = new Carbon($form['open_at']);
         }
@@ -28,6 +29,7 @@ class FormEditorService
             $form['close_at'] = new Carbon($form['close_at']);
         }
 
+        // fill により更新対象フィールドを一括反映する
         $eloquent->fill($form);
         $eloquent->save();
     }
