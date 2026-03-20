@@ -235,7 +235,16 @@ export default {
     },
     async [SAVE_FORM]({ state, commit, dispatch }) {
       dispatch(START_SAVING)
-      await API.update_form(state.form).catch((e) => {
+      // 受付期間(open_at/close_at)はフォームエディタでは編集対象外のため送信しない
+      // 送信フィールドを明示することで、API レスポンス由来の余分なキー送信を防ぐ
+      const form = {
+        id: state.form.id,
+        name: state.form.name,
+        description: state.form.description,
+        is_public: state.form.is_public,
+        max_answers: state.form.max_answers
+      }
+      await API.update_form(form).catch((e) => {
         if (e.status === UNPROCESSABLE_ENTITY) {
           commit(
             `status/${SET_VALIDATION_ERROR}`,
