@@ -27,8 +27,7 @@ class ContactsService
         string $contactBody,
         ContactCategory $category,
         bool $ccSubleader
-    )
-    {
+    ) {
         if (isset($circle)) {
             $leaders = $circle->leader()->get();
             $subleaders = $circle->users()->wherePivot('is_leader', false)->get();
@@ -102,8 +101,7 @@ class ContactsService
         string $contactBody,
         ContactCategory $category,
         bool $ccSubleader
-    )
-    {
+    ) {
         $senderText = isset($circle) ? $circle->name : $sender->name;
 
         $mailable = (new ContactMailable($circle, $sender, $contactBody, $category))
