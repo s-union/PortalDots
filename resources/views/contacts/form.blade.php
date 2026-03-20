@@ -31,7 +31,7 @@
                     <list-view-form-group label-for="cc_subleader">
                         <template v-slot:label>返信内容の共有先</template>
                         <template v-slot:description>
-                            返信内容は企画責任者に共有されます。必要に応じて副責任者にも共有できます。
+                            チェックを外すと送信者のみに確認メールが送信されます。
                         </template>
                         {{-- 未チェック時にも 0 を送信して boolean 判定を安定させる --}}
                         <input type="hidden" name="cc_subleader" value="0">

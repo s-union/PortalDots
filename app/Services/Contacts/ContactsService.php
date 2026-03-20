@@ -30,11 +30,19 @@ class ContactsService
     )
     {
         if (isset($circle)) {
-            $recipients = $circle->leader()->get();
+            $leaders = $circle->leader()->get();
+            $subleaders = $circle->users()->wherePivot('is_leader', false)->get();
+            $isSenderLeader = $leaders->contains('id', $sender->id);
 
             if ($ccSubleader) {
-                // 共有ONの場合のみ副責任者を追加する
-                $recipients = $recipients->concat($circle->users()->wherePivot('is_leader', false)->get());
+                // 共有ON: 責任者・副責任者へ共有する
+                $recipients = $leaders->concat($subleaders);
+            } elseif ($isSenderLeader) {
+                // 共有OFFかつ送信者が責任者: 責任者のみへ送る
+                $recipients = $leaders;
+            } else {
+                // 共有OFFかつ送信者が副責任者: 送信者本人のみに送る
+                $recipients = collect([$sender]);
             }
 
             // leader() と users() の結果が重なる可能性があるため user id で重複除外
@@ -104,13 +112,15 @@ class ContactsService
         $replyToUsers = collect([$sender]);
 
         if (isset($circle) && $ccSubleader) {
-            // スタッフ宛メールの返信先に副責任者も含める
+            // スタッフ宛メールの返信先に責任者・副責任者を含める
             $replyToUsers = $replyToUsers->concat(
+                $circle->leader()->get()
+            )->concat(
                 $circle->users()->wherePivot('is_leader', false)->get()
             );
         }
 
-        // 送信者と副責任者のメールアドレス重複を防ぐ
+        // 送信者・責任者・副責任者のメールアドレス重複を防ぐ
         foreach ($replyToUsers->unique('email') as $replyToUser) {
             $mailable->replyTo($replyToUser->email, $replyToUser->name);
         }

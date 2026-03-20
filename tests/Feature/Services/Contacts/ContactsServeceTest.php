@@ -120,6 +120,23 @@ final class ContactsServeceTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
+    public function send_副責任者がcc無効で送信した場合は責任者へ送信されない()
+    {
+        Mail::fake();
+
+        $this->contactsService->create(
+            $this->circle,
+            $this->member,
+            "こんにちは。\nこれはてすとです。",
+            $this->contactCategory,
+            false
+        );
+
+        Mail::assertSent(ContactMailable::class, fn($mail) => $mail->hasTo($this->member->email));
+        Mail::assertNotSent(ContactMailable::class, fn($mail) => $mail->hasTo($this->leader->email));
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
     public function send_to_staff_送信者が副責任者でもreply_toに重複がない()
     {
         Mail::fake();
@@ -139,7 +156,8 @@ final class ContactsServeceTest extends TestCase
 
             $replyToAddresses = collect($mail->replyTo)->pluck('address');
 
-            return $mail->hasReplyTo($this->member->email, $this->member->name)
+            return $mail->hasReplyTo($this->leader->email, $this->leader->name)
+                && $mail->hasReplyTo($this->member->email, $this->member->name)
                 && $replyToAddresses->count() === $replyToAddresses->unique()->count();
         });
     }
