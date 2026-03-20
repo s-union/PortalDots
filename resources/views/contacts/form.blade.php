@@ -28,6 +28,27 @@
                             </template>
                         @endif
                     </list-view-form-group>
+                    <list-view-form-group label-for="cc_subleader">
+                        <template v-slot:label>返信内容の共有先</template>
+                        <template v-slot:description>
+                            返信内容は企画責任者に共有されます。必要に応じて副責任者にも共有できます。
+                        </template>
+                        {{-- 未チェック時にも 0 を送信して boolean 判定を安定させる --}}
+                        <input type="hidden" name="cc_subleader" value="0">
+                        <div class="form-checkbox">
+                            <label for="cc_subleader" class="form-checkbox__label">
+                                <input type="checkbox" id="cc_subleader" name="cc_subleader" value="1"
+                                    class="form-checkbox__input @error('cc_subleader') is-invalid @enderror"
+                                    {{ old('cc_subleader', '1') === '1' ? 'checked' : '' }}>
+                                副責任者にもメールで共有する（CC）
+                            </label>
+                        </div>
+                        @error('cc_subleader')
+                            <template v-slot:invalid>
+                                {{ $message }}
+                            </template>
+                        @enderror
+                    </list-view-form-group>
                 @else
                     <list-view-form-group label-for="name">
                         <template v-slot:label>名前</template>

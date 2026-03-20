@@ -21,11 +21,30 @@ class ContactsService
      * @param  ContactCategory  $category  お問い合わせ項目
      * @return bool
      */
-    public function create(?Circle $circle, User $sender, string $contactBody, ContactCategory $category)
+    public function create(
+        ?Circle $circle,
+        User $sender,
+        string $contactBody,
+        ContactCategory $category,
+        bool $ccSubleader
+    )
     {
-        if (isset($circle) && is_iterable($circle->users) && count($circle->users) > 0) {
-            // 企画に所属するユーザー全員に確認メールを送信する
-            foreach ($circle->users as $user) {
+        if (isset($circle)) {
+            $recipients = $circle->leader()->get();
+
+            if ($ccSubleader) {
+                // 共有ONの場合のみ副責任者を追加する
+                $recipients = $recipients->concat($circle->users()->wherePivot('is_leader', false)->get());
+            }
+
+            // leader() と users() の結果が重なる可能性があるため user id で重複除外
+            $recipients = $recipients->unique('id');
+
+            if ($recipients->isEmpty()) {
+                $recipients = collect([$sender]);
+            }
+
+            foreach ($recipients as $user) {
                 $this->send($user, $circle, $sender, $contactBody, $category);
             }
         } else {
@@ -33,7 +52,7 @@ class ContactsService
             $this->send($sender, null, $sender, $contactBody, $category);
         }
 
-        $this->sendToStaff($circle, $sender, $contactBody, $category);
+        $this->sendToStaff($circle, $sender, $contactBody, $category, $ccSubleader);
     }
 
     /**
@@ -69,15 +88,34 @@ class ContactsService
      * @param  ContactCategory  $category  お問い合わせ項目
      * @return void
      */
-    private function sendToStaff(?Circle $circle, User $sender, string $contactBody, ContactCategory $category)
+    private function sendToStaff(
+        ?Circle $circle,
+        User $sender,
+        string $contactBody,
+        ContactCategory $category,
+        bool $ccSubleader
+    )
     {
         $senderText = isset($circle) ? $circle->name : $sender->name;
 
-        Mail::to($category->email, $category->name)
-            ->send(
-                (new ContactMailable($circle, $sender, $contactBody, $category))
-                    ->replyTo($sender)
-                    ->subject("お問い合わせ({$senderText} 様)")
+        $mailable = (new ContactMailable($circle, $sender, $contactBody, $category))
+            ->subject("お問い合わせ({$senderText} 様)");
+
+        $replyToUsers = collect([$sender]);
+
+        if (isset($circle) && $ccSubleader) {
+            // スタッフ宛メールの返信先に副責任者も含める
+            $replyToUsers = $replyToUsers->concat(
+                $circle->users()->wherePivot('is_leader', false)->get()
             );
+        }
+
+        // 送信者と副責任者のメールアドレス重複を防ぐ
+        foreach ($replyToUsers->unique('email') as $replyToUser) {
+            $mailable->replyTo($replyToUser->email, $replyToUser->name);
+        }
+
+        Mail::to($category->email, $category->name)
+            ->send($mailable);
     }
 }
