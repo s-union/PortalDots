@@ -29,9 +29,9 @@
                         @endif
                     </list-view-form-group>
                     <list-view-form-group label-for="cc_subleader">
-                        <template v-slot:label>返信内容の共有先</template>
+                        <template v-slot:label>問い合わせ内容の共有</template>
                         <template v-slot:description>
-                            チェックを外すと送信者のみに確認メールが送信されます。
+                            チェックを入れると、この問い合わせの控えと実行委員からの返信が企画の責任者および副責任者の全員に共有されます。
                         </template>
                         {{-- 未チェック時にも 0 を送信して boolean 判定を安定させる --}}
                         <input type="hidden" name="cc_subleader" value="0">
@@ -40,7 +40,7 @@
                                 <input type="checkbox" id="cc_subleader" name="cc_subleader" value="1"
                                     class="form-checkbox__input @error('cc_subleader') is-invalid @enderror"
                                     {{ old('cc_subleader', '1') === '1' ? 'checked' : '' }}>
-                                副責任者にもメールで共有する（CC）
+                                企画の責任者・副責任者の全員に共有する（CC）
                             </label>
                         </div>
                         @error('cc_subleader')
