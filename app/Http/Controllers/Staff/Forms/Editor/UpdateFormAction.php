@@ -13,20 +13,19 @@ class UpdateFormAction extends Controller
     {
     }
 
-    public function __invoke(int $form_id, UpdateFormRequest $request)
+    public function __invoke(Form $form, UpdateFormRequest $request)
     {
-        $form = $request->form;
+        $validated = $request->validated();
+        $input = $validated['form'];
 
         // 参加登録フォームのフォーム情報は修正禁止
-        if (isset(Form::findOrFail($form['id'])->participationType)) {
+        if (isset($form->participationType)) {
             return abort(400);
         }
 
-        unset($form['created_at'], $form['updated_at'], $form['custom_form'], $form['id']);
-
         $this->formEditorService->updateForm(
-            $form_id,
-            $form
+            $form->id,
+            $input
         );
     }
 }
