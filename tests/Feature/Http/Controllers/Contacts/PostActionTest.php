@@ -57,7 +57,7 @@ final class PostActionTest extends TestCase
                 });
         });
 
-        $responce = $this
+        $response = $this
             ->actingAs($this->user)
             ->post(route('contacts.post'), [
                 'circle_id' => $this->circle->id,
@@ -66,6 +66,6 @@ final class PostActionTest extends TestCase
                 'cc_subleader' => '1',
             ]);
 
-        $responce->assertSessionHas('topAlert.title', 'お問い合わせを受け付けました。');
+        $response->assertSessionHas('topAlert.title', 'お問い合わせを受け付けました。');
     }
 }
