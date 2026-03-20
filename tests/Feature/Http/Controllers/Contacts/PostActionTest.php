@@ -54,8 +54,7 @@ final class PostActionTest extends TestCase
                         && $contactBody === 'テストです！'
                         && $category->id === $this->ContactCategory->id
                         && $ccSubleader === true;
-                })
-                ->andReturn(true);
+                });
         });
 
         $responce = $this

@@ -8,6 +8,7 @@ use App\Eloquents\Circle;
 use App\Eloquents\ContactCategory;
 use App\Eloquents\User;
 use App\Mail\Contacts\ContactMailable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Mail;
 
 class ContactsService
@@ -19,7 +20,8 @@ class ContactsService
      * @param  User  $sender  お問い合わせを作成したユーザー
      * @param  string  $contactBody  お問い合わせ本文
      * @param  ContactCategory  $category  お問い合わせ項目
-     * @return bool
+     * @param  bool  $ccSubleader  副責任者CCを有効にするかどうか
+     * @return void
      */
     public function create(
         ?Circle $circle,
@@ -27,10 +29,16 @@ class ContactsService
         string $contactBody,
         ContactCategory $category,
         bool $ccSubleader
-    ) {
+    ): void {
+        $leaders = null;
+        $subleaders = null;
+
         if (isset($circle)) {
-            $leaders = $circle->leader()->get();
-            $subleaders = $circle->users()->wherePivot('is_leader', false)->get();
+            // メンバーを一度だけ取得し、責任者/副責任者をメモリ上で切り分ける
+            $circle->loadMissing('users');
+            $members = $circle->users;
+            $leaders = $members->filter(fn(User $user) => (bool) $user->pivot->is_leader);
+            $subleaders = $members->reject(fn(User $user) => (bool) $user->pivot->is_leader);
             $isSenderLeader = $leaders->contains('id', $sender->id);
 
             if ($ccSubleader) {
@@ -44,7 +52,7 @@ class ContactsService
                 $recipients = collect([$sender]);
             }
 
-            // leader() と users() の結果が重なる可能性があるため user id で重複除外
+            // 送信先候補が重複した場合に備えて user id で重複除外
             $recipients = $recipients->unique('id');
 
             if ($recipients->isEmpty()) {
@@ -59,7 +67,7 @@ class ContactsService
             $this->send($sender, null, $sender, $contactBody, $category);
         }
 
-        $this->sendToStaff($circle, $sender, $contactBody, $category, $ccSubleader);
+        $this->sendToStaff($circle, $sender, $contactBody, $category, $ccSubleader, $leaders, $subleaders);
     }
 
     /**
@@ -93,6 +101,9 @@ class ContactsService
      * @param  User  $sender  お問い合わせを作成したユーザー
      * @param  string  $contactBody  お問い合わせ本文
      * @param  ContactCategory  $category  お問い合わせ項目
+     * @param  bool  $ccSubleader  副責任者CCを有効にするかどうか
+     * @param  EloquentCollection<int, User>|null  $leaders  企画責任者一覧
+     * @param  EloquentCollection<int, User>|null  $subleaders  企画副責任者一覧
      * @return void
      */
     private function sendToStaff(
@@ -100,7 +111,9 @@ class ContactsService
         User $sender,
         string $contactBody,
         ContactCategory $category,
-        bool $ccSubleader
+        bool $ccSubleader,
+        ?EloquentCollection $leaders = null,
+        ?EloquentCollection $subleaders = null
     ) {
         $senderText = isset($circle) ? $circle->name : $sender->name;
 
@@ -112,9 +125,9 @@ class ContactsService
         if (isset($circle) && $ccSubleader) {
             // スタッフ宛メールの返信先に責任者・副責任者を含める
             $replyToUsers = $replyToUsers->concat(
-                $circle->leader()->get()
+                $leaders ?? collect()
             )->concat(
-                $circle->users()->wherePivot('is_leader', false)->get()
+                $subleaders ?? collect()
             );
         }
 
