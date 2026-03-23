@@ -10,12 +10,12 @@ definePage({
 
 import { computed, ref } from 'vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffActivityLogsQuery } from '@/features/staff/admin/activityLogs'
 import { useSessionStore } from '@/features/session/store'
-import { calculateTotalPages } from '@/lib/pagination'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -28,12 +28,9 @@ const activityLogsQuery = useStaffActivityLogsQuery(
     pageSize
   }))
 )
-const totalPages = computed(() =>
-  calculateTotalPages(activityLogsQuery.data.value?.total ?? 0, activityLogsQuery.data.value?.pageSize ?? pageSize)
-)
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
+  page.value = nextPage
 }
 </script>
 
@@ -94,42 +91,14 @@ function movePage(nextPage: number) {
         </table>
       </div>
 
-      <footer
+      <PaginationFooter
         v-if="activityLogsQuery.data.value && activityLogsQuery.data.value.total > 0"
-        class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-5 py-4 text-sm text-muted"
-      >
-        <p>
-          {{ activityLogsQuery.data.value.total }} 件中
-          {{ (activityLogsQuery.data.value.page - 1) * activityLogsQuery.data.value.pageSize + 1 }}
-          -
-          {{
-            Math.min(
-              activityLogsQuery.data.value.page * activityLogsQuery.data.value.pageSize,
-              activityLogsQuery.data.value.total
-            )
-          }}
-          件
-        </p>
-        <div class="flex items-center gap-3">
-          <button
-            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="page <= 1"
-            type="button"
-            @click="movePage(page - 1)"
-          >
-            前へ
-          </button>
-          <span>{{ page }} / {{ totalPages }}</span>
-          <button
-            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="page >= totalPages"
-            type="button"
-            @click="movePage(page + 1)"
-          >
-            次へ
-          </button>
-        </div>
-      </footer>
+        :page="page"
+        :page-size="activityLogsQuery.data.value.pageSize"
+        :total="activityLogsQuery.data.value.total"
+        :bordered="false"
+        @update:page="movePage"
+      />
     </SurfaceCard>
   </section>
 </template>

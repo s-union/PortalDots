@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 )
 
@@ -41,12 +42,17 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 		return statusError(c, http.StatusConflict)
 	}
 
-	selectedCircle, err := h.circles.Find(currentSession.CurrentCircleID)
+	_, err := h.circles.Find(currentSession.CurrentCircleID)
 	if err != nil {
 		return internalError(c)
 	}
 
-	pages := h.pages.ListByCircle(currentSession.CurrentCircleID, selectedCircle.Tags, c.QueryParam("query"))
+	visibleTags, err := h.workspaceVisiblePageTags()
+	if err != nil {
+		return internalError(c)
+	}
+
+	pages := h.pages.ListPublic(visibleTags, c.QueryParam("query"))
 	response := make([]pageSummaryResponse, 0, len(pages))
 	for _, page := range pages {
 		response = append(response, pageSummaryResponse{
@@ -68,12 +74,17 @@ func (h *workspaceHandlers) getPage(c echo.Context) error {
 		return statusError(c, http.StatusConflict)
 	}
 
-	selectedCircle, err := h.circles.Find(currentSession.CurrentCircleID)
+	_, err := h.circles.Find(currentSession.CurrentCircleID)
 	if err != nil {
 		return internalError(c)
 	}
 
-	page, found := h.pages.FindByCircle(currentSession.CurrentCircleID, selectedCircle.Tags, c.Param("pageID"))
+	visibleTags, err := h.workspaceVisiblePageTags()
+	if err != nil {
+		return internalError(c)
+	}
+
+	page, found := h.pages.FindPublic(visibleTags, c.Param("pageID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
@@ -139,4 +150,33 @@ func pageDocuments(docs document.Repository, circleID string, documentIDs []stri
 	}
 
 	return documents
+}
+
+func (h *workspaceHandlers) workspaceVisiblePageTags() ([]string, error) {
+	selectableCircles, err := h.circles.ListSelectable(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return collectUniqueCircleTags(selectableCircles), nil
+}
+
+func collectUniqueCircleTags(circles []circle.Circle) []string {
+	seen := map[string]struct{}{}
+	tags := make([]string, 0)
+
+	for _, currentCircle := range circles {
+		for _, tag := range currentCircle.Tags {
+			if tag == "" {
+				continue
+			}
+			if _, exists := seen[tag]; exists {
+				continue
+			}
+			seen[tag] = struct{}{}
+			tags = append(tags, tag)
+		}
+	}
+
+	return tags
 }

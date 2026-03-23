@@ -27,8 +27,10 @@ type Page struct {
 type Repository interface {
 	ListByCircle(circleID string, circleTags []string, query string) []Page
 	ListByCircleForStaff(circleID string, query string) []Page
+	ListPublic(circleTags []string, query string) []Page
 	FindByCircle(circleID string, circleTags []string, pageID string) (Page, bool)
 	FindByCircleForStaff(circleID, pageID string) (Page, bool)
+	FindPublic(circleTags []string, pageID string) (Page, bool)
 	Create(circleID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) Page
 	Update(circleID, pageID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) (Page, bool)
 	SetPinned(circleID, pageID string, isPinned bool) (Page, bool)
@@ -121,6 +123,35 @@ func (r *StaticRepository) ListByCircleForStaff(circleID string, query string) [
 	return slices.Clone(filtered)
 }
 
+func (r *StaticRepository) ListPublic(circleTags []string, query string) []Page {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	filtered := make([]Page, 0, len(r.pages))
+	normalizedQuery := strings.TrimSpace(strings.ToLower(query))
+	for _, page := range r.pages {
+		if page.IsPinned || !page.IsPublic {
+			continue
+		}
+		if !canViewPage(page.ViewableTags, circleTags) {
+			continue
+		}
+		if normalizedQuery != "" {
+			searchTarget := strings.ToLower(page.Title + "\n" + page.Body)
+			if !strings.Contains(searchTarget, normalizedQuery) {
+				continue
+			}
+		}
+		filtered = append(filtered, page)
+	}
+
+	sort.Slice(filtered, func(i, j int) bool {
+		return filtered[i].PublishedAt > filtered[j].PublishedAt
+	})
+
+	return slices.Clone(filtered)
+}
+
 func (r *StaticRepository) FindByCircle(circleID string, circleTags []string, pageID string) (Page, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -146,6 +177,23 @@ func (r *StaticRepository) FindByCircleForStaff(circleID, pageID string) (Page, 
 		if page.CircleID == circleID && page.ID == pageID {
 			return clonePage(page), true
 		}
+	}
+
+	return Page{}, false
+}
+
+func (r *StaticRepository) FindPublic(circleTags []string, pageID string) (Page, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, page := range r.pages {
+		if page.ID != pageID {
+			continue
+		}
+		if page.IsPinned || !page.IsPublic || !canViewPage(page.ViewableTags, circleTags) {
+			return Page{}, false
+		}
+		return clonePage(page), true
 	}
 
 	return Page{}, false

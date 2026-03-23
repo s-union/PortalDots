@@ -68,6 +68,7 @@ Behavior notes:
 - `cmd/api` requires an explicit non-default value for `PORTALDOTS_STAFF_VERIFY_CODE` unless `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true` is set.
 - Session cookies now use `PORTALDOTS_SESSION_TTL_SECONDS` and default to 12 hours.
 - Staff verify email delivery is currently mocked. `POST /v1/staff/verify/request` does not send a real email and returns the verification code for UI display.
+- When `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true` (demo mode), staff endpoints treat staff users as already authorized without an extra verify step.
 - 現在の upload 保存先は PostgreSQL です。`answer_uploads` と `documents.content` にバイナリを直接保存しており、外部ストレージ連携はまだありません。
 - form answer は `answer_details` と `question_id 付き answer_uploads` で保持しています。設問が 0 件の既存フォームだけは後方互換のため `body` ベースでも保存できます。
 - staff form editor は設問の追加、更新、削除、並び替えまで実装済みです。participant / staff ともに設問ベースの回答表示に切り替わっています。

@@ -9,6 +9,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import { useFormDetailQuery } from '@/features/forms/api'
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
@@ -25,6 +26,8 @@ import {
   useUpdateFormAnswerMutation
 } from '@/features/forms/answers'
 import { useSessionStore } from '@/features/session/store'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 
 const route = useRoute('/workspace/forms/[formId]')
 const router = useRouter()
@@ -345,13 +348,13 @@ function handleFileChange(questionId: string, event: Event) {
         </div>
       </section>
 
-      <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
+      <AlertMessage v-if="errorMessage" tone="danger">
         {{ errorMessage }}
-      </p>
+      </AlertMessage>
 
       <div class="flex justify-center">
         <button
-          class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+          :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
           :disabled="isDisabled || isSavingAnswer"
           type="button"
           @click="handleSaveAnswer"
@@ -361,8 +364,6 @@ function handleFileChange(questionId: string, event: Event) {
       </div>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-      フォームを取得できませんでした。
-    </div>
+    <AlertMessage v-else tone="danger"> フォームを取得できませんでした。 </AlertMessage>
   </section>
 </template>

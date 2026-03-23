@@ -10,9 +10,11 @@ import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
+import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
-import { calculateTotalPages } from '@/lib/pagination'
 import { useDocumentsPageQuery } from '@/features/documents/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -30,9 +32,6 @@ const documentsQuery = useDocumentsPageQuery(
     pageSize
   }))
 )
-const totalPages = computed(() =>
-  calculateTotalPages(documentsQuery.data.value?.total ?? 0, documentsQuery.data.value?.pageSize ?? pageSize)
-)
 
 watch(
   () => documentsQuery.data.value?.page,
@@ -48,15 +47,14 @@ watch(
 )
 
 async function movePage(nextPage: number) {
-  const normalized = Math.min(Math.max(nextPage, 1), totalPages.value)
   await router.replace({
-    query: normalized <= 1 ? {} : { page: String(normalized) }
+    query: nextPage <= 1 ? {} : { page: String(nextPage) }
   })
 }
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageContentContainer>
     <div
       v-if="documentsQuery.isPending.value"
       class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
@@ -85,7 +83,7 @@ async function movePage(nextPage: number) {
             {{ document.name }}
           </template>
           <template v-if="document.isNew" #suffix>
-            <span class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"> NEW </span>
+            <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
           </template>
           <template #meta>
             {{ document.updatedAt }} 更新
@@ -97,37 +95,12 @@ async function movePage(nextPage: number) {
       </div>
     </ListPanel>
 
-    <footer
+    <PaginationFooter
       v-if="documentsQuery.data.value && documentsQuery.data.value.total > 0"
-      class="flex flex-wrap items-center justify-between gap-4 rounded border border-border bg-surface px-5 py-4 text-sm text-muted shadow-lv1"
-    >
-      <p>
-        {{ documentsQuery.data.value.total }} 件中
-        {{ (documentsQuery.data.value.page - 1) * documentsQuery.data.value.pageSize + 1 }} -
-        {{
-          Math.min(documentsQuery.data.value.page * documentsQuery.data.value.pageSize, documentsQuery.data.value.total)
-        }}
-        件
-      </p>
-      <div class="flex items-center gap-3">
-        <button
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="(documentsQuery.data.value?.page ?? 1) <= 1"
-          type="button"
-          @click="movePage((documentsQuery.data.value?.page ?? 1) - 1)"
-        >
-          前へ
-        </button>
-        <span>{{ documentsQuery.data.value.page }} / {{ totalPages }}</span>
-        <button
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="(documentsQuery.data.value?.page ?? 1) >= totalPages"
-          type="button"
-          @click="movePage((documentsQuery.data.value?.page ?? 1) + 1)"
-        >
-          次へ
-        </button>
-      </div>
-    </footer>
-  </section>
+      :page="documentsQuery.data.value.page"
+      :page-size="documentsQuery.data.value.pageSize"
+      :total="documentsQuery.data.value.total"
+      @update:page="movePage"
+    />
+  </PageContentContainer>
 </template>

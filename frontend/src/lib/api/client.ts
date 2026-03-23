@@ -56,13 +56,47 @@ export const apiClient = createApiClient({
 
 export const $api = createQueryClient(apiClient)
 
+function resolveApiBasePath(baseUrl: string) {
+  if (/^https?:\/\//.test(baseUrl)) {
+    const pathname = new URL(baseUrl).pathname
+    return pathname === '' ? '/' : pathname.replace(/\/$/, '') || '/'
+  }
+
+  const normalizedPath = baseUrl.startsWith('/') ? baseUrl : `/${baseUrl}`
+  return normalizedPath.replace(/\/$/, '') || '/'
+}
+
+function stripDuplicatedBasePath(path: string, apiBasePath: string) {
+  if (apiBasePath === '/') {
+    return path
+  }
+
+  if (path === apiBasePath) {
+    return '/'
+  }
+
+  if (path.startsWith(`${apiBasePath}/`)) {
+    return path.slice(apiBasePath.length)
+  }
+
+  return path
+}
+
 export function buildApiUrl(path: string) {
-  const normalizedPath = path.replace(/^\//, '')
+  if (/^https?:\/\//.test(path)) {
+    return path
+  }
+
+  const normalizedInputPath = path.startsWith('/') ? path : `/${path}`
+  const apiBasePath = resolveApiBasePath(apiBaseUrl)
+  const effectivePath = stripDuplicatedBasePath(normalizedInputPath, apiBasePath)
+  const normalizedPath = effectivePath.replace(/^\//, '')
+
   if (/^https?:\/\//.test(apiBaseUrl)) {
     return new URL(normalizedPath, `${apiBaseUrl}/`).toString()
   }
 
-  const normalizedBasePath = apiBaseUrl.startsWith('/') ? apiBaseUrl : `/${apiBaseUrl}`
+  const normalizedBasePath = apiBasePath === '/' ? '/' : apiBasePath
   return new URL(normalizedPath, `${publicApiOrigin}${normalizedBasePath}/`).toString()
 }
 

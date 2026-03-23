@@ -8,7 +8,9 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
@@ -33,9 +35,7 @@ const pageQuery = usePageDetailQuery(pageId)
           <h2 class="text-2xl font-semibold text-body">{{ pageQuery.data.value.title }}</h2>
           <div class="mt-3 text-sm text-muted">{{ pageQuery.data.value.publishedAt }} 更新</div>
           <div class="mt-3 text-sm text-muted">
-            <span class="rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary">
-              限定公開ではないお知らせ
-            </span>
+            <StatusBadge tone="primary" appearance="outlined">限定公開ではないお知らせ</StatusBadge>
           </div>
         </div>
         <div class="px-6 py-6">
@@ -70,8 +70,6 @@ const pageQuery = usePageDetailQuery(pageId)
       </SurfaceCard>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-      お知らせを取得できませんでした。
-    </div>
+    <AlertMessage v-else tone="danger"> お知らせを取得できませんでした。 </AlertMessage>
   </section>
 </template>

@@ -24,22 +24,21 @@ func (r *SQLCRepository) ListByCircle(circleID string) []Document {
 
 	documents := make([]Document, 0, len(rows))
 	for _, row := range rows {
-		documents = append(documents, Document{
-			ID:          row.ID,
-			CircleID:    row.CircleID,
-			Name:        row.Name,
-			Description: row.Description,
-			Notes:       row.Notes,
-			IsPublic:    row.IsPublic,
-			IsImportant: row.IsImportant,
-			Filename:    row.Filename,
-			Extension:   normalizeDocumentExtension(row.Filename),
-			MimeType:    row.MimeType,
-			SizeBytes:   int64(len(row.Content)),
-			CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
-			UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
-			Content:     append([]byte(nil), row.Content...),
-		})
+		documents = append(documents, mapPublicDocumentByCircle(row))
+	}
+
+	return documents
+}
+
+func (r *SQLCRepository) ListPublic() []Document {
+	rows, err := r.queries.ListPublicDocuments(context.Background())
+	if err != nil {
+		return nil
+	}
+
+	documents := make([]Document, 0, len(rows))
+	for _, row := range rows {
+		documents = append(documents, mapPublicDocument(row))
 	}
 
 	return documents
@@ -53,22 +52,7 @@ func (r *SQLCRepository) ListByCircleForStaff(circleID string) []Document {
 
 	documents := make([]Document, 0, len(rows))
 	for _, row := range rows {
-		documents = append(documents, Document{
-			ID:          row.ID,
-			CircleID:    row.CircleID,
-			Name:        row.Name,
-			Description: row.Description,
-			Notes:       row.Notes,
-			IsPublic:    row.IsPublic,
-			IsImportant: row.IsImportant,
-			Filename:    row.Filename,
-			Extension:   normalizeDocumentExtension(row.Filename),
-			MimeType:    row.MimeType,
-			SizeBytes:   int64(len(row.Content)),
-			CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
-			UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
-			Content:     append([]byte(nil), row.Content...),
-		})
+		documents = append(documents, mapStaffDocument(row))
 	}
 
 	return documents
@@ -83,22 +67,16 @@ func (r *SQLCRepository) FindByCircle(circleID, documentID string) (Document, bo
 		return Document{}, false
 	}
 
-	return Document{
-		ID:          row.ID,
-		CircleID:    row.CircleID,
-		Name:        row.Name,
-		Description: row.Description,
-		Notes:       row.Notes,
-		IsPublic:    row.IsPublic,
-		IsImportant: row.IsImportant,
-		Filename:    row.Filename,
-		Extension:   normalizeDocumentExtension(row.Filename),
-		MimeType:    row.MimeType,
-		SizeBytes:   int64(len(row.Content)),
-		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
-		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
-		Content:     append([]byte(nil), row.Content...),
-	}, true
+	return mapPublicDocumentByID(row), true
+}
+
+func (r *SQLCRepository) FindPublic(documentID string) (Document, bool) {
+	row, err := r.queries.GetPublicDocumentByIDGlobal(context.Background(), documentID)
+	if err != nil {
+		return Document{}, false
+	}
+
+	return mapPublicDocumentGlobal(row), true
 }
 
 func (r *SQLCRepository) FindByCircleForStaff(circleID, documentID string) (Document, bool) {
@@ -110,22 +88,7 @@ func (r *SQLCRepository) FindByCircleForStaff(circleID, documentID string) (Docu
 		return Document{}, false
 	}
 
-	return Document{
-		ID:          row.ID,
-		CircleID:    row.CircleID,
-		Name:        row.Name,
-		Description: row.Description,
-		Notes:       row.Notes,
-		IsPublic:    row.IsPublic,
-		IsImportant: row.IsImportant,
-		Filename:    row.Filename,
-		Extension:   normalizeDocumentExtension(row.Filename),
-		MimeType:    row.MimeType,
-		SizeBytes:   int64(len(row.Content)),
-		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
-		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
-		Content:     append([]byte(nil), row.Content...),
-	}, true
+	return mapStaffDocumentByID(row), true
 }
 
 func (r *SQLCRepository) Create(
@@ -235,4 +198,118 @@ func formatDocumentTimestamp(value pgtype.Timestamptz) string {
 		return ""
 	}
 	return value.Time.UTC().Format(time.RFC3339)
+}
+
+func mapPublicDocumentByCircle(row dbgen.ListPublicDocumentsByCircleRow) Document {
+	return Document{
+		ID:          row.ID,
+		CircleID:    row.CircleID,
+		Name:        row.Name,
+		Description: row.Description,
+		Notes:       row.Notes,
+		IsPublic:    row.IsPublic,
+		IsImportant: row.IsImportant,
+		Filename:    row.Filename,
+		Extension:   normalizeDocumentExtension(row.Filename),
+		MimeType:    row.MimeType,
+		SizeBytes:   int64(len(row.Content)),
+		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
+		Content:     append([]byte(nil), row.Content...),
+	}
+}
+
+func mapPublicDocument(row dbgen.ListPublicDocumentsRow) Document {
+	return Document{
+		ID:          row.ID,
+		CircleID:    row.CircleID,
+		Name:        row.Name,
+		Description: row.Description,
+		Notes:       row.Notes,
+		IsPublic:    row.IsPublic,
+		IsImportant: row.IsImportant,
+		Filename:    row.Filename,
+		Extension:   normalizeDocumentExtension(row.Filename),
+		MimeType:    row.MimeType,
+		SizeBytes:   int64(len(row.Content)),
+		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
+		Content:     append([]byte(nil), row.Content...),
+	}
+}
+
+func mapStaffDocument(row dbgen.ListStaffDocumentsByCircleRow) Document {
+	return Document{
+		ID:          row.ID,
+		CircleID:    row.CircleID,
+		Name:        row.Name,
+		Description: row.Description,
+		Notes:       row.Notes,
+		IsPublic:    row.IsPublic,
+		IsImportant: row.IsImportant,
+		Filename:    row.Filename,
+		Extension:   normalizeDocumentExtension(row.Filename),
+		MimeType:    row.MimeType,
+		SizeBytes:   int64(len(row.Content)),
+		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
+		Content:     append([]byte(nil), row.Content...),
+	}
+}
+
+func mapPublicDocumentByID(row dbgen.GetPublicDocumentByIDRow) Document {
+	return Document{
+		ID:          row.ID,
+		CircleID:    row.CircleID,
+		Name:        row.Name,
+		Description: row.Description,
+		Notes:       row.Notes,
+		IsPublic:    row.IsPublic,
+		IsImportant: row.IsImportant,
+		Filename:    row.Filename,
+		Extension:   normalizeDocumentExtension(row.Filename),
+		MimeType:    row.MimeType,
+		SizeBytes:   int64(len(row.Content)),
+		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
+		Content:     append([]byte(nil), row.Content...),
+	}
+}
+
+func mapPublicDocumentGlobal(row dbgen.GetPublicDocumentByIDGlobalRow) Document {
+	return Document{
+		ID:          row.ID,
+		CircleID:    row.CircleID,
+		Name:        row.Name,
+		Description: row.Description,
+		Notes:       row.Notes,
+		IsPublic:    row.IsPublic,
+		IsImportant: row.IsImportant,
+		Filename:    row.Filename,
+		Extension:   normalizeDocumentExtension(row.Filename),
+		MimeType:    row.MimeType,
+		SizeBytes:   int64(len(row.Content)),
+		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
+		Content:     append([]byte(nil), row.Content...),
+	}
+}
+
+func mapStaffDocumentByID(row dbgen.GetStaffDocumentByIDRow) Document {
+	return Document{
+		ID:          row.ID,
+		CircleID:    row.CircleID,
+		Name:        row.Name,
+		Description: row.Description,
+		Notes:       row.Notes,
+		IsPublic:    row.IsPublic,
+		IsImportant: row.IsImportant,
+		Filename:    row.Filename,
+		Extension:   normalizeDocumentExtension(row.Filename),
+		MimeType:    row.MimeType,
+		SizeBytes:   int64(len(row.Content)),
+		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
+		Content:     append([]byte(nil), row.Content...),
+	}
 }

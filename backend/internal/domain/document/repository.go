@@ -30,8 +30,10 @@ type Document struct {
 
 type Repository interface {
 	ListByCircle(circleID string) []Document
+	ListPublic() []Document
 	ListByCircleForStaff(circleID string) []Document
 	FindByCircle(circleID, documentID string) (Document, bool)
+	FindPublic(documentID string) (Document, bool)
 	FindByCircleForStaff(circleID, documentID string) (Document, bool)
 	Create(circleID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
 	Update(circleID, documentID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
@@ -85,6 +87,20 @@ func (r *StaticRepository) ListByCircle(circleID string) []Document {
 	return documents
 }
 
+func (r *StaticRepository) ListPublic() []Document {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	documents := make([]Document, 0, len(r.documents))
+	for _, document := range r.documents {
+		if document.IsPublic {
+			documents = append(documents, cloneDocument(document))
+		}
+	}
+	sortDocumentsByUpdatedAt(documents)
+	return documents
+}
+
 func (r *StaticRepository) ListByCircleForStaff(circleID string) []Document {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -105,6 +121,18 @@ func (r *StaticRepository) FindByCircle(circleID, documentID string) (Document, 
 
 	for _, document := range r.documents {
 		if document.CircleID == circleID && document.ID == documentID && document.IsPublic {
+			return cloneDocument(document), true
+		}
+	}
+	return Document{}, false
+}
+
+func (r *StaticRepository) FindPublic(documentID string) (Document, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, document := range r.documents {
+		if document.ID == documentID && document.IsPublic {
 			return cloneDocument(document), true
 		}
 	}

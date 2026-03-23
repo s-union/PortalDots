@@ -440,14 +440,12 @@ declare module 'vue-router/auto-routes' {
       { pageId: ParamValue<false> },
       | never
     >,
-    '/workspace/settings': RouteRecordInfo<
-      '/workspace/settings',
+    '/workspace/settings/': RouteRecordInfo<
+      '/workspace/settings/',
       '/workspace/settings',
       Record<never, never>,
       Record<never, never>,
-      | '/workspace/settings/appearance'
-      | '/workspace/settings/delete'
-      | '/workspace/settings/password'
+      | never
     >,
     '/workspace/settings/appearance': RouteRecordInfo<
       '/workspace/settings/appearance',
@@ -841,14 +839,11 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
-    'src/pages/workspace/settings.vue': {
+    'src/pages/workspace/settings/index.vue': {
       routes:
-        | '/workspace/settings'
-        | '/workspace/settings/appearance'
-        | '/workspace/settings/delete'
-        | '/workspace/settings/password'
+        | '/workspace/settings/'
       views:
-        | 'default'
+        | never
     }
     'src/pages/workspace/settings/appearance.vue': {
       routes:

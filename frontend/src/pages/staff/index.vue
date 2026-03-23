@@ -185,7 +185,7 @@ const staffCards = computed<StaffCard[]>(() => [
           <span>{{ card.title }}</span>
           <span
             v-if="card.adminOnly"
-            class="rounded-full bg-danger-light px-2 py-0.5 text-[0.7rem] font-semibold text-danger"
+            class="inline-flex items-center justify-center rounded bg-danger-light px-1.5 text-[0.75em] font-medium leading-[1.75] text-danger"
           >
             管理者
           </span>

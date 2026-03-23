@@ -9,6 +9,8 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffCirclesExportUrl,
@@ -20,7 +22,8 @@ import {
 } from '@/features/staff/circles/api'
 import { useStaffParticipationTypesQuery } from '@/features/staff/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
-import { calculateTotalPages } from '@/lib/pagination'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -39,9 +42,6 @@ const participationTypesQuery = useStaffParticipationTypesQuery(enabled)
 const createCircleMutation = useCreateStaffCircleMutation()
 const form = useStaffCircleForm()
 const errorMessage = ref('')
-const totalPages = computed(() =>
-  calculateTotalPages(circlesQuery.data.value?.total ?? 0, circlesQuery.data.value?.pageSize ?? pageSize)
-)
 const exportUrl = buildStaffCirclesExportUrl()
 
 async function handleCreateCircle() {
@@ -64,7 +64,7 @@ async function handleCreateCircle() {
 }
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
+  page.value = nextPage
 }
 </script>
 
@@ -137,36 +137,14 @@ function movePage(nextPage: number) {
         </RouterLink>
       </div>
 
-      <footer
+      <PaginationFooter
         v-if="circlesQuery.data.value && circlesQuery.data.value.total > 0"
-        class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-4 text-sm text-muted"
-      >
-        <p>
-          {{ circlesQuery.data.value.total }} 件中
-          {{ (circlesQuery.data.value.page - 1) * circlesQuery.data.value.pageSize + 1 }} -
-          {{ Math.min(circlesQuery.data.value.page * circlesQuery.data.value.pageSize, circlesQuery.data.value.total) }}
-          件
-        </p>
-        <div class="flex items-center gap-3">
-          <button
-            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="page <= 1"
-            type="button"
-            @click="movePage(page - 1)"
-          >
-            前へ
-          </button>
-          <span>{{ page }} / {{ totalPages }}</span>
-          <button
-            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="page >= totalPages"
-            type="button"
-            @click="movePage(page + 1)"
-          >
-            次へ
-          </button>
-        </div>
-      </footer>
+        :page="page"
+        :page-size="circlesQuery.data.value.pageSize"
+        :total="circlesQuery.data.value.total"
+        :bordered="false"
+        @update:page="movePage"
+      />
     </section>
 
     <form class="rounded border border-border bg-surface shadow-lv1" @submit.prevent="handleCreateCircle">
@@ -210,13 +188,13 @@ function movePage(nextPage: number) {
           </select>
         </label>
 
-        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
+        <AlertMessage v-if="errorMessage" tone="danger">
           {{ errorMessage }}
-        </p>
+        </AlertMessage>
       </div>
       <div class="border-t border-border px-6 py-5">
         <button
-          class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+          :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
           :disabled="createCircleMutation.isPending.value"
           type="submit"
         >

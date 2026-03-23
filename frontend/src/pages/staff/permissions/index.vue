@@ -11,12 +11,12 @@ definePage({
 import { computed, ref } from 'vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { canManagePermissions } from '@/features/staff/access/capabilities'
 import { useStaffPermissionsQuery } from '@/features/staff/permissions/api'
 import { useSessionStore } from '@/features/session/store'
-import { calculateTotalPages } from '@/lib/pagination'
 
 const sessionStore = useSessionStore()
 const canReadPermissions = computed(() => canManagePermissions(sessionStore.roles, sessionStore.permissions))
@@ -30,12 +30,9 @@ const permissionsQuery = useStaffPermissionsQuery(
     pageSize
   }))
 )
-const totalPages = computed(() =>
-  calculateTotalPages(permissionsQuery.data.value?.total ?? 0, permissionsQuery.data.value?.pageSize ?? pageSize)
-)
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
+  page.value = nextPage
 }
 </script>
 
@@ -103,42 +100,15 @@ function movePage(nextPage: number) {
       </div>
 
       <template #footer>
-        <div
+        <PaginationFooter
           v-if="permissionsQuery.data.value && permissionsQuery.data.value.total > 0"
-          class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm text-muted"
-        >
-          <p>
-            {{ permissionsQuery.data.value.total }} 件中
-            {{ (permissionsQuery.data.value.page - 1) * permissionsQuery.data.value.pageSize + 1 }}
-            -
-            {{
-              Math.min(
-                permissionsQuery.data.value.page * permissionsQuery.data.value.pageSize,
-                permissionsQuery.data.value.total
-              )
-            }}
-            件
-          </p>
-          <div class="flex items-center gap-3">
-            <button
-              class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="page <= 1"
-              type="button"
-              @click="movePage(page - 1)"
-            >
-              前へ
-            </button>
-            <span>{{ page }} / {{ totalPages }}</span>
-            <button
-              class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="page >= totalPages"
-              type="button"
-              @click="movePage(page + 1)"
-            >
-              次へ
-            </button>
-          </div>
-        </div>
+          :page="page"
+          :page-size="permissionsQuery.data.value.pageSize"
+          :total="permissionsQuery.data.value.total"
+          :bordered="false"
+          class="px-6"
+          @update:page="movePage"
+        />
       </template>
     </ListPanel>
   </section>

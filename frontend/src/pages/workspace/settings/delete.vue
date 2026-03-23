@@ -6,14 +6,22 @@ definePage({
 })
 
 import { ref } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 import { useUserSettingsPage } from '@/features/session/settings'
 
 const { tabs, canDeleteAccount, deleteAccountBlockedReason, deleteAccountMutation, deleteAccount, workspaceBackLink } =
   useUserSettingsPage('delete')
 
 const deleteAccountErrorMessage = ref('')
+const deleteAccountButtonClass = cn(
+  buttonVariants({ variant: 'dangerOutline', size: 'lg', weight: 'bold' }),
+  'disabled:border-border disabled:text-muted'
+)
 
 async function handleDeleteAccount() {
   deleteAccountErrorMessage.value = (await deleteAccount()) ?? ''
@@ -21,22 +29,19 @@ async function handleDeleteAccount() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageContentContainer>
     <TabStrip :tabs="tabs" />
 
     <SettingsSection title="アカウント削除" :title-outside="true">
       <div class="px-6 py-8 text-center">
         <div class="mx-auto max-w-2xl space-y-4 text-sm leading-7 text-body">
           <p>{{ deleteAccountBlockedReason }}</p>
-          <p
-            v-if="deleteAccountErrorMessage"
-            class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-          >
+          <AlertMessage v-if="deleteAccountErrorMessage" tone="danger">
             {{ deleteAccountErrorMessage }}
-          </p>
+          </AlertMessage>
           <div class="pt-2">
             <button
-              class="rounded border border-danger px-6 py-3 text-sm font-bold text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:border-border disabled:text-muted"
+              :class="deleteAccountButtonClass"
               :disabled="!canDeleteAccount || deleteAccountMutation.isPending.value"
               type="button"
               @click="handleDeleteAccount"
@@ -47,5 +52,5 @@ async function handleDeleteAccount() {
         </div>
       </div>
     </SettingsSection>
-  </section>
+  </PageContentContainer>
 </template>

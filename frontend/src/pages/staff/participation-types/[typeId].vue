@@ -10,14 +10,17 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
-import { calculateTotalPages } from '@/lib/pagination'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 import {
   buildStaffParticipationTypeCirclesExportUrl,
   buildDeleteStaffParticipationTypeConfirmMessage,
@@ -60,9 +63,6 @@ const successMessage = ref('')
 
 const settingsRoute = computed(() => `/staff/participation-types/${encodeURIComponent(typeId.value)}`)
 const circlesExportUrl = computed(() => buildStaffParticipationTypeCirclesExportUrl(typeId.value))
-const circlesTotalPages = computed(() =>
-  calculateTotalPages(circlesQuery.data.value?.total ?? 0, circlesQuery.data.value?.pageSize ?? circlesPageSize)
-)
 
 const formEditorRoute = computed(() => {
   const current = detailQuery.data.value
@@ -136,7 +136,7 @@ async function handleDelete() {
 }
 
 function moveCirclesPage(nextPage: number) {
-  circlesPage.value = Math.min(Math.max(nextPage, 1), circlesTotalPages.value)
+  circlesPage.value = nextPage
 }
 </script>
 
@@ -362,18 +362,15 @@ function moveCirclesPage(nextPage: number) {
                 <li>提出された参加登録はスタッフ確認フローの起点になります。</li>
               </ul>
             </div>
-            <p
-              v-if="successMessage"
-              class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-            >
+            <AlertMessage v-if="successMessage" tone="success">
               {{ successMessage }}
-            </p>
-            <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
+            </AlertMessage>
+            <AlertMessage v-if="errorMessage" tone="danger">
               {{ errorMessage }}
-            </p>
+            </AlertMessage>
             <div class="flex justify-end">
               <button
-                class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:opacity-60"
+                :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
                 :disabled="updateMutation.isPending.value"
                 type="submit"
               >
@@ -427,36 +424,13 @@ function moveCirclesPage(nextPage: number) {
           </table>
         </div>
         <template v-if="circlesQuery.data.value && circlesQuery.data.value.total > 0" #footer>
-          <div class="flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
-            <p>
-              {{ circlesQuery.data.value.total }} 件中
-              {{ (circlesQuery.data.value.page - 1) * circlesQuery.data.value.pageSize + 1 }}
-              -
-              {{
-                Math.min(circlesQuery.data.value.page * circlesQuery.data.value.pageSize, circlesQuery.data.value.total)
-              }}
-              件
-            </p>
-            <div class="flex items-center gap-3">
-              <button
-                class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:opacity-50"
-                :disabled="circlesPage <= 1"
-                type="button"
-                @click="moveCirclesPage(circlesPage - 1)"
-              >
-                前へ
-              </button>
-              <span>{{ circlesPage }} / {{ circlesTotalPages }}</span>
-              <button
-                class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:opacity-50"
-                :disabled="circlesPage >= circlesTotalPages"
-                type="button"
-                @click="moveCirclesPage(circlesPage + 1)"
-              >
-                次へ
-              </button>
-            </div>
-          </div>
+          <PaginationFooter
+            :page="circlesPage"
+            :page-size="circlesQuery.data.value.pageSize"
+            :total="circlesQuery.data.value.total"
+            :bordered="false"
+            @update:page="moveCirclesPage"
+          />
         </template>
       </SettingsSection>
     </form>

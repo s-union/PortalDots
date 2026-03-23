@@ -135,6 +135,52 @@ func (q *Queries) GetPublicPageByID(ctx context.Context, arg GetPublicPageByIDPa
 	return i, err
 }
 
+const getPublicPageByIDGlobal = `-- name: GetPublicPageByIDGlobal :one
+SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+FROM pages
+WHERE (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
+  AND id = $2
+  AND is_public = true
+  AND is_pinned = false
+LIMIT 1
+`
+
+type GetPublicPageByIDGlobalParams struct {
+	Column1 []string
+	ID      string
+}
+
+type GetPublicPageByIDGlobalRow struct {
+	ID           string
+	CircleID     string
+	Title        string
+	Body         string
+	Notes        string
+	IsPinned     bool
+	IsPublic     bool
+	ViewableTags []string
+	DocumentIds  []string
+	PublishedAt  pgtype.Timestamptz
+}
+
+func (q *Queries) GetPublicPageByIDGlobal(ctx context.Context, arg GetPublicPageByIDGlobalParams) (GetPublicPageByIDGlobalRow, error) {
+	row := q.db.QueryRow(ctx, getPublicPageByIDGlobal, arg.Column1, arg.ID)
+	var i GetPublicPageByIDGlobalRow
+	err := row.Scan(
+		&i.ID,
+		&i.CircleID,
+		&i.Title,
+		&i.Body,
+		&i.Notes,
+		&i.IsPinned,
+		&i.IsPublic,
+		&i.ViewableTags,
+		&i.DocumentIds,
+		&i.PublishedAt,
+	)
+	return i, err
+}
+
 const getStaffPageByID = `-- name: GetStaffPageByID :one
 SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
 FROM pages
@@ -177,6 +223,65 @@ func (q *Queries) GetStaffPageByID(ctx context.Context, arg GetStaffPageByIDPara
 		&i.PublishedAt,
 	)
 	return i, err
+}
+
+const listPublicPages = `-- name: ListPublicPages :many
+SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+FROM pages
+WHERE is_public = true
+  AND is_pinned = false
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
+  AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%')
+ORDER BY published_at DESC
+`
+
+type ListPublicPagesParams struct {
+	Column1 []string
+	Column2 interface{}
+}
+
+type ListPublicPagesRow struct {
+	ID           string
+	CircleID     string
+	Title        string
+	Body         string
+	Notes        string
+	IsPinned     bool
+	IsPublic     bool
+	ViewableTags []string
+	DocumentIds  []string
+	PublishedAt  pgtype.Timestamptz
+}
+
+func (q *Queries) ListPublicPages(ctx context.Context, arg ListPublicPagesParams) ([]ListPublicPagesRow, error) {
+	rows, err := q.db.Query(ctx, listPublicPages, arg.Column1, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublicPagesRow
+	for rows.Next() {
+		var i ListPublicPagesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CircleID,
+			&i.Title,
+			&i.Body,
+			&i.Notes,
+			&i.IsPinned,
+			&i.IsPublic,
+			&i.ViewableTags,
+			&i.DocumentIds,
+			&i.PublishedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listPublicPagesByCircle = `-- name: ListPublicPagesByCircle :many

@@ -8,10 +8,13 @@ definePage({
 
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import {
   extractContactValidationMessage,
@@ -20,6 +23,8 @@ import {
   useSubmitContactMutation
 } from '@/features/contact/api'
 import { useSessionStore } from '@/features/session/store'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 
 const route = useRoute()
 const sessionStore = useSessionStore()
@@ -61,7 +66,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageContentContainer>
     <BackLink to="/workspace"> ワークスペースへ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -126,16 +131,16 @@ async function handleSubmit() {
           <textarea v-model="form.body" class="min-h-40" name="body" />
         </label>
 
-        <p v-if="successMessage" class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success">
+        <AlertMessage v-if="successMessage" tone="success">
           {{ successMessage }}
-        </p>
-        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
+        </AlertMessage>
+        <AlertMessage v-if="errorMessage" tone="danger">
           {{ errorMessage }}
-        </p>
+        </AlertMessage>
 
         <div class="flex justify-end">
           <button
-            class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            :class="cn(buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }))"
             :disabled="submitContactMutation.isPending.value || categoriesQuery.isPending.value"
             type="submit"
           >
@@ -161,12 +166,12 @@ async function handleSubmit() {
               <p class="text-sm font-semibold text-body">{{ item.subject }}</p>
               <p class="mt-2 text-xs text-muted">{{ item.categoryName }} / {{ item.createdAt }}</p>
             </div>
-            <span class="rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary">
+            <StatusBadge tone="primary">
               {{ item.status }}
-            </span>
+            </StatusBadge>
           </div>
         </div>
       </div>
     </ListPanel>
-  </section>
+  </PageContentContainer>
 </template>

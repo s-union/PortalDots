@@ -10,6 +10,8 @@ import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { usePagesQuery } from '@/features/pages/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -40,7 +42,7 @@ async function handleSearchReset() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageContentContainer>
     <div class="rounded border border-border bg-surface p-6 shadow-lv1">
       <h2 class="text-xl font-semibold text-body">お知らせ</h2>
       <p class="mt-2 text-sm text-muted">
@@ -85,22 +87,16 @@ async function handleSearchReset() {
         <ListItemLink v-for="page in pagesQuery.data.value" :key="page.id" :to="`/workspace/pages/${page.id}`">
           <template #title>{{ page.title }}</template>
           <template #prefix>
-            <span
-              :class="
-                page.isLimited
-                  ? 'rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary'
-                  : 'rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted'
-              "
-            >
+            <StatusBadge :tone="page.isLimited ? 'primary' : 'muted'" appearance="outlined">
               {{ page.isLimited ? '限定公開' : '全員に公開' }}
-            </span>
+            </StatusBadge>
           </template>
           <template v-if="page.isNew" #suffix>
-            <span class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"> NEW </span>
+            <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
           </template>
           <template #meta>{{ page.publishedAt }}</template>
         </ListItemLink>
       </div>
     </ListPanel>
-  </section>
+  </PageContentContainer>
 </template>

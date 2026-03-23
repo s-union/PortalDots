@@ -436,6 +436,12 @@ func TestListParticipationTypesRequiresAuthentication(t *testing.T) {
 func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 	t.Parallel()
 
+	now := testNowUTC()
+	openWindowStart := formatRFC3339(now, -24*time.Hour)
+	openWindowEnd := formatRFC3339(now, 24*time.Hour)
+	closedWindowStart := formatRFC3339(now, -72*time.Hour)
+	closedWindowEnd := formatRFC3339(now, -48*time.Hour)
+
 	cfg := testConfig()
 	cfg.ParticipationTypes = append(cfg.ParticipationTypes,
 		config.ParticipationType{
@@ -465,8 +471,8 @@ func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 			Description:         "非公開の参加登録フォームです。",
 			IsPublic:            false,
 			IsOpen:              true,
-			OpenAt:              "2026-03-01T00:00:00Z",
-			CloseAt:             "2026-03-31T23:59:59Z",
+			OpenAt:              openWindowStart,
+			CloseAt:             openWindowEnd,
 			MaxAnswers:          1,
 			AnswerableTags:      []string{},
 			ConfirmationMessage: "",
@@ -478,8 +484,8 @@ func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 			Description:         "締切済みの参加登録フォームです。",
 			IsPublic:            true,
 			IsOpen:              false,
-			OpenAt:              "2026-02-01T00:00:00Z",
-			CloseAt:             "2026-02-10T23:59:59Z",
+			OpenAt:              closedWindowStart,
+			CloseAt:             closedWindowEnd,
 			MaxAnswers:          1,
 			AnswerableTags:      []string{},
 			ConfirmationMessage: "",
@@ -838,10 +844,23 @@ func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
 	}
 }
 
-func TestListPagesUsesCurrentCircle(t *testing.T) {
+func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	cfg := testConfig()
+	cfg.Pages = append(cfg.Pages, config.Page{
+		ID:           "page-circle-a-shared",
+		CircleID:     "circle-a",
+		Title:        "展示向け共通連絡",
+		Body:         "展示企画全体への連絡です。",
+		Notes:        "",
+		IsPinned:     false,
+		IsPublic:     true,
+		ViewableTags: []string{"展示"},
+		DocumentIDs:  []string{},
+		PublishedAt:  "2026-03-06T09:00:00Z",
+	})
+	server := NewServer(cfg)
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -869,11 +888,11 @@ func TestListPagesUsesCurrentCircle(t *testing.T) {
 		t.Fatalf("unmarshal pages response: %v", err)
 	}
 
-	if len(response) != 1 {
-		t.Fatalf("expected 1 visible page for circle-b, got %d", len(response))
+	if len(response) != 3 {
+		t.Fatalf("expected 3 public pages across circles, got %d", len(response))
 	}
-	if response[0].ID != "page-circle-b-1" {
-		t.Fatalf("expected circle-b page, got %s", response[0].ID)
+	if response[0].ID != "page-circle-a-shared" || response[1].ID != "page-circle-b-1" || response[2].ID != "page-circle-a-1" {
+		t.Fatalf("expected public pages sorted desc, got %#v", response)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages?query=レイアウト", nil)
@@ -901,7 +920,7 @@ func TestListPagesUsesCurrentCircle(t *testing.T) {
 	}
 }
 
-func TestGetPageRequiresVisiblePageInCurrentCircle(t *testing.T) {
+func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testConfig())
@@ -942,9 +961,71 @@ func TestGetPageRequiresVisiblePageInCurrentCircle(t *testing.T) {
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/page-circle-b-1", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal cross-circle page detail: %v", err)
+	}
+	if detail.ID != "page-circle-b-1" || detail.Title != "展示レイアウト更新" {
+		t.Fatalf("unexpected cross-circle page detail: %#v", detail)
+	}
 }
 
-func TestListDocumentsUsesCurrentCircle(t *testing.T) {
+func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.Pages = append(cfg.Pages, config.Page{
+		ID:           "page-circle-a-shared",
+		CircleID:     "circle-a",
+		Title:        "展示向け共通連絡",
+		Body:         "展示企画全体への連絡です。",
+		Notes:        "",
+		IsPinned:     false,
+		IsPublic:     true,
+		ViewableTags: []string{"展示"},
+		DocumentIDs:  []string{"document-circle-a-1"},
+		PublishedAt:  "2026-03-06T09:00:00Z",
+	})
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
+		"circleId": "circle-b",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/page-circle-a-shared", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail pageDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal page detail: %v", err)
+	}
+	if detail.ID != "page-circle-a-shared" || detail.Title != "展示向け共通連絡" {
+		t.Fatalf("unexpected cross-circle page detail: %#v", detail)
+	}
+	if len(detail.Documents) != 1 || detail.Documents[0].ID != "document-circle-a-1" {
+		t.Fatalf("unexpected cross-circle page documents: %#v", detail.Documents)
+	}
+}
+
+func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testConfig())
@@ -975,14 +1056,17 @@ func TestListDocumentsUsesCurrentCircle(t *testing.T) {
 		t.Fatalf("unmarshal documents response: %v", err)
 	}
 
-	if len(response.Items) != 1 {
-		t.Fatalf("expected 1 visible document for circle-b, got %d", len(response.Items))
+	if len(response.Items) != 2 {
+		t.Fatalf("expected 2 visible public documents, got %d", len(response.Items))
 	}
-	if response.Page != 1 || response.PageSize != 10 || response.Total != 1 {
+	if response.Page != 1 || response.PageSize != 10 || response.Total != 2 {
 		t.Fatalf("unexpected documents pagination: %#v", response)
 	}
 	if response.Items[0].ID != "document-circle-b-1" {
-		t.Fatalf("expected circle-b document, got %s", response.Items[0].ID)
+		t.Fatalf("expected first document to be latest public doc, got %s", response.Items[0].ID)
+	}
+	if response.Items[1].ID != "document-circle-a-1" {
+		t.Fatalf("expected second document to include cross-circle doc, got %s", response.Items[1].ID)
 	}
 	if !response.Items[0].IsImportant || response.Items[0].Extension != "TXT" || response.Items[0].SizeBytes == 0 {
 		t.Fatalf("unexpected document summary metadata: %#v", response.Items[0])
@@ -996,12 +1080,12 @@ func TestListDocumentsUsesCurrentCircle(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal paginated documents response: %v", err)
 	}
-	if response.Page != 1 || len(response.Items) != 1 {
+	if response.Page != 2 || len(response.Items) != 1 || response.Items[0].ID != "document-circle-a-1" {
 		t.Fatalf("expected documents pagination to clamp to last page, got %#v", response)
 	}
 }
 
-func TestDownloadDocumentFileRequiresVisibleDocumentInCurrentCircle(t *testing.T) {
+func TestDownloadDocumentFileRequiresVisiblePublicDocument(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testConfig())
@@ -1031,7 +1115,7 @@ func TestDownloadDocumentFileRequiresVisibleDocumentInCurrentCircle(t *testing.T
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detailPage); err != nil {
 		t.Fatalf("unmarshal document list for download url: %v", err)
 	}
-	if len(detailPage.Items) != 1 || detailPage.Items[0].DownloadURL != "/v1/documents/document-circle-a-1" {
+	if len(detailPage.Items) != 2 || detailPage.Items[1].DownloadURL != "/v1/documents/document-circle-a-1" {
 		t.Fatalf("unexpected document list metadata: %#v", detailPage)
 	}
 
@@ -1193,7 +1277,7 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &publicDocuments); err != nil {
 		t.Fatalf("unmarshal public documents: %v", err)
 	}
-	if len(publicDocuments.Items) != 1 {
+	if len(publicDocuments.Items) != 2 {
 		t.Fatalf("expected uploaded public document to be visible, got %#v", publicDocuments)
 	}
 
@@ -1564,7 +1648,7 @@ func TestUpsertFormAnswerRejectsBlankBody(t *testing.T) {
 func TestStaffVerificationFlow(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testStaffConfig())
+	server := NewServer(testStrictStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1625,7 +1709,7 @@ func TestStaffVerificationFlow(t *testing.T) {
 func TestStaffVerificationRejectsWrongCode(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testStaffConfig())
+	server := NewServer(testStrictStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1858,7 +1942,7 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 func TestStaffPagesRequireVerification(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testStaffConfig())
+	server := NewServer(testStrictStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1875,8 +1959,39 @@ func TestStaffPagesRequireVerification(t *testing.T) {
 	}
 }
 
+func TestStaffRoutesBypassVerificationInInsecureDefaults(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/status", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var statusResponse staffStatusResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &statusResponse); err != nil {
+		t.Fatalf("unmarshal staff status: %v", err)
+	}
+	if !statusResponse.Allowed || !statusResponse.Authorized {
+		t.Fatalf("expected staff status to be authorized in insecure defaults, got %#v", statusResponse)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 	t.Parallel()
+
+	now := testNowUTC()
+	futureOpenAt := formatRFC3339(now, 24*time.Hour)
+	futureCloseAt := formatRFC3339(now, 48*time.Hour)
 
 	server := NewServer(testStaffConfig())
 	cookies := map[string]*http.Cookie{}
@@ -1934,8 +2049,8 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
 		"name":                "追加ヒアリング",
-		"openAt":              "2099-03-15T09:00:00Z",
-		"closeAt":             "2099-03-30T18:00:00Z",
+		"openAt":              futureOpenAt,
+		"closeAt":             futureCloseAt,
 		"maxAnswers":          3,
 		"answerableTags":      []string{"展示", "必須"},
 		"confirmationMessage": "回答ありがとうございました。",
@@ -1957,6 +2072,10 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 	t.Parallel()
 
+	now := testNowUTC()
+	openAt := formatRFC3339(now, -24*time.Hour)
+	closeAt := formatRFC3339(now, 24*time.Hour)
+
 	server := NewServer(testStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
@@ -1977,8 +2096,8 @@ func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1", map[string]any{
 		"name":                "更新後フォーム",
 		"description":         "更新後の説明です。",
-		"openAt":              "2026-03-10T09:00:00Z",
-		"closeAt":             "2026-03-25T18:00:00Z",
+		"openAt":              openAt,
+		"closeAt":             closeAt,
 		"maxAnswers":          4,
 		"answerableTags":      []string{"展示", "新規"},
 		"confirmationMessage": "更新完了です。",
@@ -2311,6 +2430,8 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 func TestStaffFormsValidation(t *testing.T) {
 	t.Parallel()
 
+	now := testNowUTC()
+
 	server := NewServer(testStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
@@ -2322,7 +2443,7 @@ func TestStaffFormsValidation(t *testing.T) {
 		"name":                " ",
 		"description":         " ",
 		"openAt":              "not-a-date",
-		"closeAt":             "2026-03-01T00:00:00Z",
+		"closeAt":             formatRFC3339(now, 24*time.Hour),
 		"maxAnswers":          1,
 		"answerableTags":      []string{"展示"},
 		"confirmationMessage": "ok",
@@ -2438,6 +2559,10 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 	t.Parallel()
 
+	now := testNowUTC()
+	openAt := formatRFC3339(now, -24*time.Hour)
+	closeAt := formatRFC3339(now, 24*time.Hour)
+
 	server := NewServer(testStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
@@ -2474,8 +2599,8 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-participation-exhibit", map[string]any{
 		"name":                "変更不可",
 		"description":         "変更不可",
-		"openAt":              "2026-03-10T09:00:00Z",
-		"closeAt":             "2026-03-25T18:00:00Z",
+		"openAt":              openAt,
+		"closeAt":             closeAt,
 		"maxAnswers":          4,
 		"answerableTags":      []string{"展示", "新規"},
 		"confirmationMessage": "更新完了です。",
@@ -3163,6 +3288,10 @@ func TestStaffUsersPreventSelfDelete(t *testing.T) {
 func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	t.Parallel()
 
+	now := testNowUTC()
+	openAt := formatRFC3339(now, 24*time.Hour)
+	closeAt := formatRFC3339(now, 48*time.Hour)
+
 	server := NewServer(testStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
@@ -3182,8 +3311,8 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
 		"name":                "追加ヒアリング",
 		"description":         "当日の搬入担当者を確認します。",
-		"openAt":              "2026-03-15T09:00:00Z",
-		"closeAt":             "2026-03-30T18:00:00Z",
+		"openAt":              openAt,
+		"closeAt":             closeAt,
 		"maxAnswers":          2,
 		"answerableTags":      []string{"展示"},
 		"confirmationMessage": "回答ありがとうございました。",
@@ -3780,7 +3909,21 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 	}
 }
 
+func testNowUTC() time.Time {
+	return time.Now().UTC().Truncate(time.Second)
+}
+
+func formatRFC3339(base time.Time, offset time.Duration) string {
+	return base.Add(offset).Format(time.RFC3339)
+}
+
 func testConfig() config.Config {
+	now := testNowUTC()
+	openWindowStart := formatRFC3339(now, -30*24*time.Hour)
+	openWindowEnd := formatRFC3339(now, 30*24*time.Hour)
+	closedWindowStart := formatRFC3339(now, -90*24*time.Hour)
+	closedWindowEnd := formatRFC3339(now, -60*24*time.Hour)
+
 	return config.Config{
 		SessionCookieName:         "test_session",
 		SessionTTL:                12 * time.Hour,
@@ -3994,8 +4137,8 @@ func testConfig() config.Config {
 				Description:         "模擬店向けの参加登録フォームです。",
 				IsPublic:            true,
 				IsOpen:              true,
-				OpenAt:              "2026-03-01T00:00:00Z",
-				CloseAt:             "2026-03-31T23:59:59Z",
+				OpenAt:              openWindowStart,
+				CloseAt:             openWindowEnd,
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "参加登録を受け付けました。",
@@ -4007,8 +4150,8 @@ func testConfig() config.Config {
 				Description:         "展示向けの参加登録フォームです。",
 				IsPublic:            true,
 				IsOpen:              true,
-				OpenAt:              "2026-03-01T00:00:00Z",
-				CloseAt:             "2026-03-31T23:59:59Z",
+				OpenAt:              openWindowStart,
+				CloseAt:             openWindowEnd,
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "参加登録を受け付けました。",
@@ -4020,8 +4163,8 @@ func testConfig() config.Config {
 				Description:         "搬入予定時刻と責任者情報を提出してください。",
 				IsPublic:            true,
 				IsOpen:              true,
-				OpenAt:              "2026-03-01T00:00:00Z",
-				CloseAt:             "2026-04-30T23:59:59Z",
+				OpenAt:              openWindowStart,
+				CloseAt:             openWindowEnd,
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "搬入確認フォームへの回答ありがとうございました。",
@@ -4033,8 +4176,8 @@ func testConfig() config.Config {
 				Description:         "展示レイアウトと機材使用申請を提出してください。",
 				IsPublic:            true,
 				IsOpen:              true,
-				OpenAt:              "2026-03-02T00:00:00Z",
-				CloseAt:             "2026-03-22T23:59:59Z",
+				OpenAt:              openWindowStart,
+				CloseAt:             openWindowEnd,
 				MaxAnswers:          2,
 				AnswerableTags:      []string{"展示"},
 				ConfirmationMessage: "展示チェックフォームへの回答を受け付けました。",
@@ -4046,8 +4189,8 @@ func testConfig() config.Config {
 				Description:         "このフォームは締切済みです。",
 				IsPublic:            true,
 				IsOpen:              false,
-				OpenAt:              "2026-02-01T00:00:00Z",
-				CloseAt:             "2026-02-10T23:59:59Z",
+				OpenAt:              closedWindowStart,
+				CloseAt:             closedWindowEnd,
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "",
@@ -4059,8 +4202,8 @@ func testConfig() config.Config {
 				Description:         "このフォームは公開されません。",
 				IsPublic:            false,
 				IsOpen:              true,
-				OpenAt:              "2026-03-02T00:00:00Z",
-				CloseAt:             "2026-03-22T23:59:59Z",
+				OpenAt:              openWindowStart,
+				CloseAt:             openWindowEnd,
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "",
@@ -4079,6 +4222,12 @@ func testStaffConfig() config.Config {
 		Roles:       []string{"admin"},
 	}
 
+	return cfg
+}
+
+func testStrictStaffConfig() config.Config {
+	cfg := testStaffConfig()
+	cfg.AllowInsecureDefaults = false
 	return cfg
 }
 

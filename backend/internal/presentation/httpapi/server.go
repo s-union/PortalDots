@@ -28,10 +28,11 @@ import (
 
 // sharedDeps holds session-related dependencies shared across all domain handler structs.
 type sharedDeps struct {
-	sessionCookieName   string
-	sessionCookieTTL    time.Duration
-	sessionCookieSecure bool
-	sessions            session.Store
+	sessionCookieName     string
+	sessionCookieTTL      time.Duration
+	sessionCookieSecure   bool
+	allowInsecureDefaults bool
+	sessions              session.Store
 }
 
 func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) {
@@ -226,10 +227,11 @@ func NewServerWithDependencies(
 	e.Use(middleware.RequestID())
 
 	shared := sharedDeps{
-		sessionCookieName:   cfg.SessionCookieName,
-		sessionCookieTTL:    cfg.SessionTTL,
-		sessionCookieSecure: cfg.SessionCookieSecure,
-		sessions:            sessionStore,
+		sessionCookieName:     cfg.SessionCookieName,
+		sessionCookieTTL:      cfg.SessionTTL,
+		sessionCookieSecure:   cfg.SessionCookieSecure,
+		allowInsecureDefaults: cfg.AllowInsecureDefaults,
+		sessions:              sessionStore,
 	}
 
 	var passwordChanger auth.PasswordChanger

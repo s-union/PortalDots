@@ -34,7 +34,7 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 		})
 	}
 
-	documents := h.documents.ListByCircle(currentSession.CurrentCircleID)
+	documents := h.documents.ListPublic()
 	response := make([]documentSummaryResponse, 0, len(documents))
 	for _, document := range documents {
 		response = append(response, documentSummaryResponse{
@@ -67,7 +67,7 @@ func (h *workspaceHandlers) getDocument(c echo.Context) error {
 		})
 	}
 
-	document, found := h.documents.FindByCircle(currentSession.CurrentCircleID, c.Param("documentID"))
+	document, found := h.documents.FindPublic(c.Param("documentID"))
 	if !found {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"message": "document_not_found",

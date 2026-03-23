@@ -10,6 +10,8 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useFormsQuery, type FormSummary } from '@/features/forms/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -75,7 +77,7 @@ async function selectTab(nextStatus: FormStatusTab) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageContentContainer>
     <nav class="flex overflow-x-auto border-b border-border">
       <button
         v-for="tab in tabs"
@@ -117,23 +119,13 @@ async function selectTab(nextStatus: FormStatusTab) {
         <ListItemLink v-for="form in visibleForms" :key="form.id" :to="formHref(form)">
           <template #title>{{ form.name }}</template>
           <template #prefix>
-            <span
-              class="rounded-full border px-2.5 py-1 text-xs font-semibold"
-              :class="form.isPublic ? 'border-border text-muted' : 'border-primary text-primary'"
-            >
+            <StatusBadge :tone="form.isPublic ? 'muted' : 'primary'" appearance="outlined">
               {{ form.isPublic ? '全員に公開' : '限定公開' }}
-            </span>
+            </StatusBadge>
           </template>
           <template #suffix>
-            <span
-              v-if="form.hasAnswer"
-              class="rounded-full bg-success-light px-2.5 py-1 text-xs font-semibold text-success"
-            >
-              提出済
-            </span>
-            <span v-if="!form.isOpen" class="rounded-full bg-muted-light px-2.5 py-1 text-xs font-semibold text-muted">
-              受付終了
-            </span>
+            <StatusBadge v-if="form.hasAnswer" tone="success">提出済</StatusBadge>
+            <StatusBadge v-if="!form.isOpen" tone="muted">受付終了</StatusBadge>
           </template>
           <template #meta>
             {{ formMeta(form) }}
@@ -149,5 +141,5 @@ async function selectTab(nextStatus: FormStatusTab) {
         受付中 {{ openForms.length }} 件 / 受付終了 {{ closedForms.length }} 件
       </div>
     </ListPanel>
-  </section>
+  </PageContentContainer>
 </template>

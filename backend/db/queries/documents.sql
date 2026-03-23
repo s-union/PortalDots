@@ -5,11 +5,24 @@ WHERE circle_id = $1
   AND is_public = true
 ORDER BY updated_at DESC, id DESC;
 
+-- name: ListPublicDocuments :many
+SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE is_public = true
+ORDER BY updated_at DESC, id DESC;
+
 -- name: GetPublicDocumentByID :one
 SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE circle_id = $1
   AND id = $2
+  AND is_public = true
+LIMIT 1;
+
+-- name: GetPublicDocumentByIDGlobal :one
+SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE id = $1
   AND is_public = true
 LIMIT 1;
 

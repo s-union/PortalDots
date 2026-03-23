@@ -1,5 +1,60 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 
+export const alertVariants = cva('rounded border px-4 py-3 text-sm', {
+  variants: {
+    tone: {
+      danger: 'border-danger bg-danger-light text-danger',
+      success: 'border-success bg-success-light text-success',
+      info: 'border-primary bg-primary-light text-primary',
+      muted: 'border-border bg-surface-light text-muted'
+    }
+  },
+  defaultVariants: {
+    tone: 'danger'
+  }
+})
+
+export type AlertVariantProps = VariantProps<typeof alertVariants>
+
+export const statusBadgeVariants = cva('inline-flex items-center rounded-full text-xs font-semibold', {
+  variants: {
+    tone: {
+      primary: '',
+      muted: '',
+      danger: '',
+      success: '',
+      warning: ''
+    },
+    appearance: {
+      filled: '',
+      outlined: 'border'
+    },
+    size: {
+      sm: 'px-2 py-0.5',
+      md: 'px-2.5 py-1'
+    }
+  },
+  compoundVariants: [
+    { tone: 'primary', appearance: 'filled', class: 'bg-primary-light text-primary' },
+    { tone: 'primary', appearance: 'outlined', class: 'border-primary text-primary' },
+    { tone: 'muted', appearance: 'filled', class: 'bg-muted-light text-muted' },
+    { tone: 'muted', appearance: 'outlined', class: 'border-border text-muted' },
+    { tone: 'danger', appearance: 'filled', class: 'bg-danger-light text-danger' },
+    { tone: 'danger', appearance: 'outlined', class: 'border-danger text-danger' },
+    { tone: 'success', appearance: 'filled', class: 'bg-success-light text-success' },
+    { tone: 'success', appearance: 'outlined', class: 'border-success text-success' },
+    { tone: 'warning', appearance: 'filled', class: 'bg-warning-light text-warning' },
+    { tone: 'warning', appearance: 'outlined', class: 'border-warning text-warning' }
+  ],
+  defaultVariants: {
+    tone: 'muted',
+    appearance: 'filled',
+    size: 'md'
+  }
+})
+
+export type StatusBadgeVariantProps = VariantProps<typeof statusBadgeVariants>
+
 export const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded border text-center leading-[1.15] no-underline transition appearance-none hover:no-underline focus:no-underline disabled:cursor-not-allowed disabled:opacity-60',
   {
@@ -8,6 +63,7 @@ export const buttonVariants = cva(
         primary: 'border-primary bg-primary text-white hover:bg-primary-hover',
         secondary: 'border-border bg-surface text-body hover:bg-surface-light',
         danger: 'border-danger bg-danger text-white hover:bg-danger-hover',
+        dangerOutline: 'border-danger bg-surface text-danger hover:bg-danger-light',
         success: 'border-success bg-success text-white hover:bg-success-hover',
         primaryInverse: 'border-border bg-surface text-primary hover:bg-primary-inverse-hover',
         transparent: 'border-border bg-transparent text-body hover:bg-surface'
@@ -120,7 +176,7 @@ export const tabStripItemVariants = cva(
 )
 
 export const tabStripBadgeVariants = cva(
-  'inline-flex items-center rounded-full px-2 py-0.5 text-[0.7rem] font-bold leading-none',
+  'inline-flex items-center justify-center rounded px-1.5 text-[0.75em] font-medium leading-[1.75]',
   {
     variants: {
       tone: {

@@ -142,6 +142,49 @@ func (q *Queries) GetPublicDocumentByID(ctx context.Context, arg GetPublicDocume
 	return i, err
 }
 
+const getPublicDocumentByIDGlobal = `-- name: GetPublicDocumentByIDGlobal :one
+SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE id = $1
+  AND is_public = true
+LIMIT 1
+`
+
+type GetPublicDocumentByIDGlobalRow struct {
+	ID          string
+	CircleID    string
+	Name        string
+	Description string
+	Notes       string
+	IsPublic    bool
+	IsImportant bool
+	Filename    string
+	MimeType    string
+	Content     []byte
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) GetPublicDocumentByIDGlobal(ctx context.Context, id string) (GetPublicDocumentByIDGlobalRow, error) {
+	row := q.db.QueryRow(ctx, getPublicDocumentByIDGlobal, id)
+	var i GetPublicDocumentByIDGlobalRow
+	err := row.Scan(
+		&i.ID,
+		&i.CircleID,
+		&i.Name,
+		&i.Description,
+		&i.Notes,
+		&i.IsPublic,
+		&i.IsImportant,
+		&i.Filename,
+		&i.MimeType,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getStaffDocumentByID = `-- name: GetStaffDocumentByID :one
 SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
@@ -188,6 +231,61 @@ func (q *Queries) GetStaffDocumentByID(ctx context.Context, arg GetStaffDocument
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listPublicDocuments = `-- name: ListPublicDocuments :many
+SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE is_public = true
+ORDER BY updated_at DESC, id DESC
+`
+
+type ListPublicDocumentsRow struct {
+	ID          string
+	CircleID    string
+	Name        string
+	Description string
+	Notes       string
+	IsPublic    bool
+	IsImportant bool
+	Filename    string
+	MimeType    string
+	Content     []byte
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) ListPublicDocuments(ctx context.Context) ([]ListPublicDocumentsRow, error) {
+	rows, err := q.db.Query(ctx, listPublicDocuments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublicDocumentsRow
+	for rows.Next() {
+		var i ListPublicDocumentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CircleID,
+			&i.Name,
+			&i.Description,
+			&i.Notes,
+			&i.IsPublic,
+			&i.IsImportant,
+			&i.Filename,
+			&i.MimeType,
+			&i.Content,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listPublicDocumentsByCircle = `-- name: ListPublicDocumentsByCircle :many

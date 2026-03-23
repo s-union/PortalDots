@@ -8,6 +8,7 @@ definePage({
 
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -18,6 +19,8 @@ import {
   useSubmitCircleMutation,
   useDeleteCircleMutation
 } from '@/features/circles/api'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 
 const router = useRouter()
 const detailQuery = useCurrentCircleDetailQuery()
@@ -152,18 +155,15 @@ async function handleDelete() {
 
         <template #footer>
           <div class="space-y-4">
-            <p
-              v-if="successMessage"
-              class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-            >
+            <AlertMessage v-if="successMessage" tone="success">
               {{ successMessage }}
-            </p>
-            <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
+            </AlertMessage>
+            <AlertMessage v-if="errorMessage" tone="danger">
               {{ errorMessage }}
-            </p>
+            </AlertMessage>
             <div class="flex flex-wrap justify-between gap-3">
               <button
-                class="rounded bg-danger px-6 py-3 font-bold text-white transition hover:bg-danger/80 disabled:cursor-not-allowed disabled:opacity-60"
+                :class="buttonVariants({ variant: 'danger', size: 'lg', weight: 'bold' })"
                 :disabled="deleteMutation.isPending.value"
                 type="button"
                 @click="handleDelete"
@@ -173,7 +173,7 @@ async function handleDelete() {
               <div class="flex gap-3">
                 <button
                   v-if="!detailQuery.data.value.submittedAt"
-                  class="rounded border border-primary px-6 py-3 font-bold text-primary transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-60"
+                  :class="buttonVariants({ variant: 'primaryInverse', size: 'lg', weight: 'bold' })"
                   :disabled="submitMutation.isPending.value"
                   type="button"
                   @click="handleSubmit"
@@ -181,7 +181,7 @@ async function handleDelete() {
                   {{ submitMutation.isPending.value ? '提出中...' : '参加登録を提出' }}
                 </button>
                 <button
-                  class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+                  :class="cn(buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }))"
                   :disabled="updateMutation.isPending.value"
                   type="button"
                   @click="handleSave"

@@ -50,6 +50,23 @@ func (r *SQLCRepository) ListByCircleForStaff(circleID string, query string) []P
 	return pages
 }
 
+func (r *SQLCRepository) ListPublic(circleTags []string, query string) []Page {
+	rows, err := r.queries.ListPublicPages(context.Background(), dbgen.ListPublicPagesParams{
+		Column1: circleTags,
+		Column2: query,
+	})
+	if err != nil {
+		return nil
+	}
+
+	pages := make([]Page, 0, len(rows))
+	for _, row := range rows {
+		pages = append(pages, mapListPublicPagesRow(row))
+	}
+
+	return pages
+}
+
 func (r *SQLCRepository) FindByCircle(circleID string, circleTags []string, pageID string) (Page, bool) {
 	row, err := r.queries.GetPublicPageByID(context.Background(), dbgen.GetPublicPageByIDParams{
 		CircleID: circleID,
@@ -73,6 +90,18 @@ func (r *SQLCRepository) FindByCircleForStaff(circleID, pageID string) (Page, bo
 	}
 
 	return mapStaffPage(row), true
+}
+
+func (r *SQLCRepository) FindPublic(circleTags []string, pageID string) (Page, bool) {
+	row, err := r.queries.GetPublicPageByIDGlobal(context.Background(), dbgen.GetPublicPageByIDGlobalParams{
+		Column1: circleTags,
+		ID:      pageID,
+	})
+	if err != nil {
+		return Page{}, false
+	}
+
+	return mapPublicPageGlobal(row), true
 }
 
 func (r *SQLCRepository) Create(
@@ -171,6 +200,21 @@ func mapListPublicPage(row dbgen.ListPublicPagesByCircleRow) Page {
 	}
 }
 
+func mapListPublicPagesRow(row dbgen.ListPublicPagesRow) Page {
+	return Page{
+		ID:           row.ID,
+		CircleID:     row.CircleID,
+		Title:        row.Title,
+		Body:         row.Body,
+		Notes:        row.Notes,
+		IsPinned:     row.IsPinned,
+		IsPublic:     row.IsPublic,
+		ViewableTags: append([]string{}, row.ViewableTags...),
+		DocumentIDs:  append([]string{}, row.DocumentIds...),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+	}
+}
+
 func mapListStaffPage(row dbgen.ListStaffPagesByCircleRow) Page {
 	return Page{
 		ID:           row.ID,
@@ -187,6 +231,21 @@ func mapListStaffPage(row dbgen.ListStaffPagesByCircleRow) Page {
 }
 
 func mapPublicPage(row dbgen.GetPublicPageByIDRow) Page {
+	return Page{
+		ID:           row.ID,
+		CircleID:     row.CircleID,
+		Title:        row.Title,
+		Body:         row.Body,
+		Notes:        row.Notes,
+		IsPinned:     row.IsPinned,
+		IsPublic:     row.IsPublic,
+		ViewableTags: append([]string{}, row.ViewableTags...),
+		DocumentIDs:  append([]string{}, row.DocumentIds...),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+	}
+}
+
+func mapPublicPageGlobal(row dbgen.GetPublicPageByIDGlobalRow) Page {
 	return Page{
 		ID:           row.ID,
 		CircleID:     row.CircleID,

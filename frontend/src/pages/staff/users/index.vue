@@ -9,10 +9,10 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildStaffUsersExportUrl, useStaffUsersQuery } from '@/features/staff/users/api'
 import { useSessionStore } from '@/features/session/store'
-import { calculateTotalPages } from '@/lib/pagination'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -25,13 +25,10 @@ const usersQuery = useStaffUsersQuery(
     pageSize
   }))
 )
-const totalPages = computed(() =>
-  calculateTotalPages(usersQuery.data.value?.total ?? 0, usersQuery.data.value?.pageSize ?? pageSize)
-)
 const exportUrl = buildStaffUsersExportUrl()
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
+  page.value = nextPage
 }
 </script>
 
@@ -111,35 +108,12 @@ function movePage(nextPage: number) {
       </div>
     </section>
 
-    <footer
+    <PaginationFooter
       v-if="usersQuery.data.value && usersQuery.data.value.total > 0"
-      class="flex flex-wrap items-center justify-between gap-4 rounded border border-border bg-surface px-5 py-4 text-sm text-muted shadow-lv1"
-    >
-      <p>
-        {{ usersQuery.data.value.total }} 件中
-        {{ (usersQuery.data.value.page - 1) * usersQuery.data.value.pageSize + 1 }} -
-        {{ Math.min(usersQuery.data.value.page * usersQuery.data.value.pageSize, usersQuery.data.value.total) }}
-        件
-      </p>
-      <div class="flex items-center gap-3">
-        <button
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="page <= 1"
-          type="button"
-          @click="movePage(page - 1)"
-        >
-          前へ
-        </button>
-        <span>{{ page }} / {{ totalPages }}</span>
-        <button
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="page >= totalPages"
-          type="button"
-          @click="movePage(page + 1)"
-        >
-          次へ
-        </button>
-      </div>
-    </footer>
+      :page="page"
+      :page-size="usersQuery.data.value.pageSize"
+      :total="usersQuery.data.value.total"
+      @update:page="movePage"
+    />
   </section>
 </template>

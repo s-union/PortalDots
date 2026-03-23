@@ -32,9 +32,12 @@ func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
 		return statusError(c, status)
 	}
 
+	allowed := hasStaffAccess(currentSession.User.Roles, currentSession.User.Permissions)
+	authorized := allowed && (h.allowInsecureDefaults || currentSession.StaffAuthorized)
+
 	return c.JSON(http.StatusOK, staffStatusResponse{
-		Allowed:    hasStaffAccess(currentSession.User.Roles, currentSession.User.Permissions),
-		Authorized: hasStaffAccess(currentSession.User.Roles, currentSession.User.Permissions) && currentSession.StaffAuthorized,
+		Allowed:    allowed,
+		Authorized: authorized,
 	})
 }
 
@@ -108,6 +111,9 @@ func (s *sharedDeps) requireStaffMode(c echo.Context) (string, session.Session, 
 	sessionID, currentSession, status, ok := s.requireStaffUser(c)
 	if !ok {
 		return "", session.Session{}, status, false
+	}
+	if s.allowInsecureDefaults {
+		return sessionID, currentSession, http.StatusOK, true
 	}
 	if !currentSession.StaffAuthorized {
 		return "", session.Session{}, http.StatusForbidden, false

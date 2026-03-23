@@ -5,6 +5,7 @@ definePage({
   }
 })
 
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
@@ -37,7 +38,7 @@ const themeOptions: {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageContentContainer>
     <TabStrip :tabs="tabs" />
 
     <SettingsSection title="外観" :title-outside="true">
@@ -70,5 +71,5 @@ const themeOptions: {
         </div>
       </template>
     </SettingsSection>
-  </section>
+  </PageContentContainer>
 </template>

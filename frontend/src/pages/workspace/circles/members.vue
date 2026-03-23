@@ -7,6 +7,7 @@ definePage({
 })
 
 import { computed, ref, shallowRef } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -21,6 +22,7 @@ import {
 } from '@/features/circles/api'
 import { buildApiUrl } from '@/lib/api/client'
 import { useSessionStore } from '@/features/session/store'
+import { buttonVariants } from '@/lib/ui/variants'
 
 const sessionStore = useSessionStore()
 const detailQuery = useCurrentCircleDetailQuery()
@@ -118,7 +120,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
           <div v-else class="flex items-center gap-2">
             <input :value="invitationUrl" type="text" readonly class="flex-1 font-mono text-xs" />
             <button
-              class="shrink-0 rounded border border-primary px-3 py-2 text-sm font-bold text-primary transition hover:bg-primary-light"
+              :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
               type="button"
               @click="handleCopyUrl"
             >
@@ -131,7 +133,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
       <template v-if="isCurrentUserLeader" #footer>
         <div class="flex justify-end">
           <button
-            class="rounded border border-border px-4 py-2 text-sm text-muted transition hover:bg-form-control disabled:opacity-60"
+            :class="buttonVariants({ variant: 'secondary', size: 'md' })"
             :disabled="regenerateMutation.isPending.value"
             type="button"
             @click="handleRegenerate"
@@ -150,7 +152,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
           <input v-model="addMemberLoginId" type="text" class="flex-1" placeholder="24a0000 / demo@example.com" />
           <button
-            class="rounded border border-primary px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary-light disabled:opacity-60"
+            :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
             :disabled="addMemberMutation.isPending.value"
             type="submit"
           >
@@ -182,7 +184,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
           </div>
           <button
             v-if="!member.isLeader && (isCurrentUserLeader || member.userId === currentUserId)"
-            class="rounded border border-danger px-3 py-2 text-xs font-bold text-danger transition hover:bg-danger-light disabled:opacity-60"
+            :class="buttonVariants({ variant: 'dangerOutline', size: 'sm', weight: 'bold' })"
             :disabled="removeMutation.isPending.value"
             type="button"
             @click="handleRemoveMember(member.userId, member.displayName)"
@@ -193,9 +195,9 @@ async function handleRemoveMember(userId: string, displayName: string) {
       </div>
 
       <template v-if="errorMessage" #footer>
-        <p class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
+        <AlertMessage tone="danger">
           {{ errorMessage }}
-        </p>
+        </AlertMessage>
       </template>
     </SettingsSection>
   </section>

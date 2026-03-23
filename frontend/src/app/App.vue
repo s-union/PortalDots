@@ -268,11 +268,12 @@ const statusBadges = computed(() => {
     return []
   }
 
-  const badges = ['ログイン中']
+  const badges: { label: string; variant: 'primary' | 'danger' }[] = []
+  if (canAccessStaff.value) {
+    badges.push({ label: 'スタッフ', variant: 'primary' })
+  }
   if (sessionStore.roles.includes('admin')) {
-    badges.push('管理者')
-  } else if (canAccessStaff.value) {
-    badges.push('スタッフ')
+    badges.push({ label: '管理者', variant: 'danger' })
   }
   return badges
 })
@@ -377,11 +378,14 @@ async function handleLogout() {
           <div class="mt-2 flex flex-wrap items-center gap-2">
             <span
               v-if="isStaffRoute"
-              class="rounded-full bg-primary-light px-2.5 py-1 text-xs font-semibold text-primary"
+              class="rounded bg-primary-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-primary"
             >
               {{ appModeLabel }}
             </span>
-            <span v-if="isDemoMode" class="rounded-full bg-muted-light px-2.5 py-1 text-xs font-semibold text-muted">
+            <span
+              v-if="isDemoMode"
+              class="rounded bg-muted-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-muted"
+            >
               デモサイト
             </span>
           </div>
@@ -438,10 +442,14 @@ async function handleLogout() {
           <div v-if="statusBadges.length > 0" class="mt-3 flex flex-wrap gap-2">
             <span
               v-for="badge in statusBadges"
-              :key="`drawer-${badge}`"
-              class="rounded-full bg-primary-light px-2 py-1 text-[10px] font-semibold text-primary"
+              :key="`drawer-${badge.label}`"
+              :class="[
+                'inline-flex items-center justify-center rounded px-1.5 text-[0.75em] font-medium leading-[1.75]',
+                badge.variant === 'primary' && 'bg-primary-light text-primary',
+                badge.variant === 'danger' && 'bg-danger-light text-danger'
+              ]"
             >
-              {{ badge }}
+              {{ badge.label }}
             </span>
           </div>
           <button

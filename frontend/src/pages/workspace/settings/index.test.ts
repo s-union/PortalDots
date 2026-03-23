@@ -4,10 +4,10 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSessionStore } from '@/features/session/store'
-import UserSettingsPage from './settings.vue'
-import UserSettingsAppearancePage from './settings/appearance.vue'
-import UserSettingsPasswordPage from './settings/password.vue'
-import UserSettingsDeletePage from './settings/delete.vue'
+import UserSettingsPage from './index.vue'
+import UserSettingsAppearancePage from './appearance.vue'
+import UserSettingsPasswordPage from './password.vue'
+import UserSettingsDeletePage from './delete.vue'
 
 function createQueryPlugin() {
   return [

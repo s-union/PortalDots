@@ -6,9 +6,13 @@ definePage({
 })
 
 import { ref } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 import { useUserSettingsPage } from '@/features/session/settings'
 
 const { tabs, updatePasswordMutation, extractPasswordValidationMessage, forgotPasswordHref, workspaceBackLink } =
@@ -49,7 +53,7 @@ async function handleSavePassword() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageContentContainer>
     <TabStrip :tabs="tabs" />
 
     <SettingsSection title="パスワード変更" :title-outside="true">
@@ -79,21 +83,15 @@ async function handleSavePassword() {
       </SettingsRow>
       <template #footer>
         <div class="space-y-4">
-          <p
-            v-if="passwordSuccessMessage"
-            class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-          >
+          <AlertMessage v-if="passwordSuccessMessage" tone="success">
             {{ passwordSuccessMessage }}
-          </p>
-          <p
-            v-if="passwordErrorMessage"
-            class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-          >
+          </AlertMessage>
+          <AlertMessage v-if="passwordErrorMessage" tone="danger">
             {{ passwordErrorMessage }}
-          </p>
+          </AlertMessage>
           <div class="flex justify-center pt-2">
             <button
-              class="min-w-40 rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+              :class="cn(buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }), 'min-w-40')"
               :disabled="updatePasswordMutation.isPending.value"
               type="button"
               @click="handleSavePassword"
@@ -104,5 +102,5 @@ async function handleSavePassword() {
         </div>
       </template>
     </SettingsSection>
-  </section>
+  </PageContentContainer>
 </template>
