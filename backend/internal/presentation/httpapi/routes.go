@@ -3,6 +3,7 @@ package httpapi
 import "github.com/labstack/echo/v4"
 
 func registerPublicRoutes(v1 *echo.Group, authH *authHandlers, publicHomeH *publicHomeHandlers, staffVerifyH *staffVerifyHandlers) {
+	v1.GET("/public/config", publicHomeH.getPublicConfig)
 	v1.GET("/public/home", publicHomeH.getPublicHome)
 	v1.GET("/public/pages", publicHomeH.listPublicPages)
 	v1.GET("/public/pages/:pageID", publicHomeH.getPublicPage)

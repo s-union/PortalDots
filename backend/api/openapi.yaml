@@ -5887,6 +5887,25 @@ paths:
                             type: string
                           canDeleteAccount:
                             type: boolean
+  /public/config:
+    get:
+      operationId: getPublicConfig
+      summary: Return the instance configuration
+      responses:
+        "200":
+          description: Instance configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - isDemo
+                  - appName
+                properties:
+                  isDemo:
+                    type: boolean
+                  appName:
+                    type: string
   /public/home:
     get:
       operationId: getPublicHome

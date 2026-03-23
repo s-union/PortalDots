@@ -13,15 +13,19 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
+	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
 type publicHomeHandlers struct {
-	circles            circle.Catalog
-	documents          backenddocument.Repository
-	forms              backendform.Repository
-	pages              page.Repository
-	participationTypes participationtype.Repository
-	portal             portalsetting.Repository
+	circles               circle.Catalog
+	documents             backenddocument.Repository
+	forms                 backendform.Repository
+	pages                 page.Repository
+	participationTypes    participationtype.Repository
+	portal                portalsetting.Repository
+	allowInsecureDefaults bool
+	authUser              config.AuthUser
+	users                 []config.User
 }
 
 type publicHomeResponse struct {
@@ -34,6 +38,11 @@ type publicHomeResponse struct {
 	ParticipationTypes []participationTypeResponse     `json:"participationTypes"`
 	Pages              []publicHomePageResponse        `json:"pages"`
 	Documents          []publicHomeDocumentResponse    `json:"documents"`
+}
+
+type publicConfigResponse struct {
+	IsDemo  bool   `json:"isDemo"`
+	AppName string `json:"appName"`
 }
 
 type publicHomeLoginMethodResponse struct {
@@ -92,11 +101,22 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 		PortalDescription:  settings.PortalDescription,
 		PortalAdminName:    settings.PortalAdminName,
 		PortalContactEmail: settings.PortalContactEmail,
-		LoginMethods:       buildPublicHomeLoginMethods(),
+		LoginMethods:       h.buildPublicHomeLoginMethods(),
 		PinnedPages:        h.collectPinnedPublicPages(selectableCircles),
 		ParticipationTypes: participationTypes,
 		Pages:              h.collectPublicPages(selectableCircles, 3),
 		Documents:          h.collectPublicDocuments(selectableCircles, 3),
+	})
+}
+
+func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
+	settings, err := h.portal.Get()
+	if err != nil {
+		return internalError(c)
+	}
+	return c.JSON(http.StatusOK, publicConfigResponse{
+		IsDemo:  h.allowInsecureDefaults,
+		AppName: settings.AppName,
 	})
 }
 
@@ -324,32 +344,51 @@ func hasVisibleTags(viewableTags []string, currentTags []string) bool {
 	return false
 }
 
-func buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {
-	return []publicHomeLoginMethodResponse{
-		{
-			RoleLabel: "管理者",
-			LoginID:   "demo-admin",
-			Password:  "demo-admin",
-		},
-		{
-			RoleLabel: "スタッフ",
-			LoginID:   "demo-staff",
-			Password:  "demo-staff",
-		},
-		{
-			RoleLabel: "スタッフ",
-			LoginID:   "demo-staff-sub",
-			Password:  "demo-staff-sub",
-		},
-		{
-			RoleLabel: "一般ユーザー",
-			LoginID:   "demo-circle",
-			Password:  "demo-circle",
-		},
-		{
-			RoleLabel: "一般ユーザー",
-			LoginID:   "demo-circle-sub",
-			Password:  "demo-circle-sub",
-		},
+func (h *publicHomeHandlers) buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {
+	if !h.allowInsecureDefaults {
+		return []publicHomeLoginMethodResponse{}
 	}
+
+	methods := make([]publicHomeLoginMethodResponse, 0, 1+len(h.users))
+
+	if len(h.authUser.LoginIDs) > 0 {
+		methods = append(methods, publicHomeLoginMethodResponse{
+			RoleLabel: roleToLabel(h.authUser.Roles),
+			LoginID:   h.authUser.LoginIDs[0],
+			Password:  h.authUser.Password,
+		})
+	}
+
+	for _, u := range h.users {
+		if !u.IsVerified {
+			continue
+		}
+		if len(u.LoginIDs) == 0 {
+			continue
+		}
+		methods = append(methods, publicHomeLoginMethodResponse{
+			RoleLabel: roleToLabel(u.Roles),
+			LoginID:   u.LoginIDs[0],
+			Password:  u.Password,
+		})
+	}
+
+	return methods
+}
+
+func roleToLabel(roles []string) string {
+	for _, role := range roles {
+		switch role {
+		case "admin":
+			return "管理者"
+		case "content_manager", "circle_manager":
+			return "スタッフ"
+		case "participant":
+			return "一般ユーザー"
+		}
+	}
+	if len(roles) > 0 {
+		return roles[0]
+	}
+	return ""
 }

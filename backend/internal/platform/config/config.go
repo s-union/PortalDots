@@ -440,7 +440,7 @@ func FromEnv() Config {
 				IsPublic:            true,
 				IsOpen:              true,
 				OpenAt:              "2026-03-01T00:00:00Z",
-				CloseAt:             "2026-03-20T23:59:59Z",
+				CloseAt:             "2026-04-30T23:59:59Z",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "搬入確認フォームへの回答ありがとうございました。",

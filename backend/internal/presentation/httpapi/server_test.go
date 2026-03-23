@@ -537,8 +537,8 @@ func TestGetPublicHomeReturnsGuestContent(t *testing.T) {
 	if response.AppName != "PortalDots" || response.PortalContactEmail != "contact@example.com" {
 		t.Fatalf("unexpected portal settings: %#v", response)
 	}
-	if len(response.LoginMethods) != 5 {
-		t.Fatalf("expected 5 login methods, got %#v", response.LoginMethods)
+	if len(response.LoginMethods) != 3 {
+		t.Fatalf("expected 3 login methods, got %#v", response.LoginMethods)
 	}
 	if len(response.PinnedPages) != 1 || response.PinnedPages[0].ID != "page-circle-a-pinned" {
 		t.Fatalf("expected pinned public page in default fixtures, got %#v", response.PinnedPages)
@@ -3785,6 +3785,7 @@ func testConfig() config.Config {
 		SessionCookieName:         "test_session",
 		SessionTTL:                12 * time.Hour,
 		StaffVerifyCode:           "123456",
+		AllowInsecureDefaults:     true,
 		AppName:                   "PortalDots",
 		PortalDescription:         "学園祭参加団体向けポータル",
 		AppURL:                    "https://portal.example.com",
@@ -4020,7 +4021,7 @@ func testConfig() config.Config {
 				IsPublic:            true,
 				IsOpen:              true,
 				OpenAt:              "2026-03-01T00:00:00Z",
-				CloseAt:             "2026-03-20T23:59:59Z",
+				CloseAt:             "2026-04-30T23:59:59Z",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "搬入確認フォームへの回答ありがとうございました。",

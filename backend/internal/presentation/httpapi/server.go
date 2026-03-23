@@ -249,12 +249,15 @@ func NewServerWithDependencies(
 	}
 
 	publicHomeH := &publicHomeHandlers{
-		circles:            circles,
-		documents:          documents,
-		forms:              forms,
-		pages:              pages,
-		participationTypes: participationTypes,
-		portal:             portal,
+		circles:               circles,
+		documents:             documents,
+		forms:                 forms,
+		pages:                 pages,
+		participationTypes:    participationTypes,
+		portal:                portal,
+		allowInsecureDefaults: cfg.AllowInsecureDefaults,
+		authUser:              cfg.AuthUser,
+		users:                 cfg.Users,
 	}
 
 	staffVerifyH := &staffVerifyHandlers{
