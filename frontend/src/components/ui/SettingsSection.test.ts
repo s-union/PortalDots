@@ -34,4 +34,21 @@ describe("SettingsSection", () => {
         expect(wrapper.text()).not.toContain("フッター");
         expect(wrapper.find(".border-t.border-border").exists()).toBe(false);
     });
+
+    it("renders title outside the card when titleOutside is true", () => {
+        const wrapper = mount(SettingsSection, {
+            props: {
+                title: "外観",
+                titleOutside: true,
+            },
+            slots: {
+                default: "本文",
+            },
+        });
+
+        const h2 = wrapper.find("h2");
+        expect(h2.exists()).toBe(true);
+        expect(h2.text()).toBe("外観");
+        expect(wrapper.find("h3").exists()).toBe(false);
+    });
 });

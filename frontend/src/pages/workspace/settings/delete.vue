@@ -6,7 +6,6 @@ definePage({
 });
 
 import { ref } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import TabStrip from "@/components/ui/TabStrip.vue";
 import { useUserSettingsPage } from "@/features/session/settings";
@@ -29,11 +28,9 @@ async function handleDeleteAccount() {
 
 <template>
   <section class="space-y-6">
-    <BackLink :to="workspaceBackLink"> ワークスペースへ戻る </BackLink>
-
     <TabStrip :tabs="tabs" />
 
-    <SettingsSection title="アカウント削除">
+    <SettingsSection title="アカウント削除" :title-outside="true">
       <div class="px-6 py-8 text-center">
         <div class="mx-auto max-w-2xl space-y-4 text-sm leading-7 text-body">
           <p>{{ deleteAccountBlockedReason }}</p>

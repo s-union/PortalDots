@@ -353,7 +353,7 @@ describe("UserSettingsPage", () => {
         expect(tabLinks.some((link) => link.props("to") === "/workspace/settings/password")).toBe(
             false,
         );
-        expect(wrapper.text()).toContain("ワークスペースへ戻る");
+        expect(wrapper.text()).not.toContain("ワークスペースへ戻る");
     });
 
     it("deletes the account and redirects to home when allowed", async () => {

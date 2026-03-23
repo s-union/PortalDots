@@ -6,7 +6,6 @@ definePage({
 });
 
 import { ref } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
 import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import TabStrip from "@/components/ui/TabStrip.vue";
@@ -40,17 +39,15 @@ async function handleSaveProfile() {
 
 <template>
   <section class="space-y-6">
-    <BackLink :to="workspaceBackLink"> ワークスペースへ戻る </BackLink>
-
     <TabStrip :tabs="tabs" />
 
-    <SettingsSection title="一般設定">
+    <SettingsSection title="一般設定" :title-outside="true">
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">表示名</p>
           <div class="grid gap-2">
             <input v-model="displayName" name="displayName" type="text" />
-            <p class="text-xs text-muted">session bootstrap に表示する名前を更新します。</p>
+            <p class="text-xs text-muted">他のユーザーやスタッフに表示される名前です。</p>
           </div>
         </div>
       </SettingsRow>

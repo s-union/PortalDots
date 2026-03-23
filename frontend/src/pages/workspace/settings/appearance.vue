@@ -5,14 +5,13 @@ definePage({
   },
 });
 
-import BackLink from "@/components/ui/BackLink.vue";
 import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import TabStrip from "@/components/ui/TabStrip.vue";
 import { useUserSettingsPage } from "@/features/session/settings";
 import { type UiTheme } from "@/features/session/theme";
 
-const { tabs, theme, setTheme, workspaceBackLink } = useUserSettingsPage("appearance");
+const { tabs, theme, setTheme } = useUserSettingsPage("appearance");
 
 const themeOptions: Array<{
   value: UiTheme;
@@ -22,60 +21,54 @@ const themeOptions: Array<{
   {
     value: "system",
     label: "自動",
-    description: "端末のライト / ダーク設定に合わせます。",
+    description: "お使いの端末の設定での外観モード設定に準じます。",
   },
   {
     value: "light",
     label: "ライトテーマ",
-    description: "常に明るい配色で表示します。",
+    description: "明るい外観になります。",
   },
   {
     value: "dark",
     label: "ダークテーマ",
-    description: "常に暗い配色で表示します。",
+    description: "暗い外観になります。",
   },
 ];
 </script>
 
 <template>
   <section class="space-y-6">
-    <BackLink :to="workspaceBackLink"> ワークスペースへ戻る </BackLink>
-
     <TabStrip :tabs="tabs" />
 
-    <SettingsSection title="外観">
+    <SettingsSection title="外観" :title-outside="true">
       <SettingsRow>
-        <div class="grid gap-4 min-[1001px]:grid-cols-[14rem_minmax(0,1fr)] min-[1001px]:gap-6">
-          <div class="space-y-1">
-            <p class="text-sm font-semibold text-body">テーマ</p>
-            <p class="text-xs leading-6 text-muted">
-              設定はこのブラウザーの cookie に保存され、次回アクセス時にも引き継がれます。
-            </p>
-          </div>
-          <div class="grid gap-3">
-            <label
-              v-for="option in themeOptions"
-              :key="option.value"
-              class="flex items-start gap-3 rounded border px-4 py-3 transition"
-              :class="
-                theme === option.value
-                  ? 'border-primary bg-primary-light'
-                  : 'border-border bg-surface'
-              "
-            >
-              <input
-                :checked="theme === option.value"
-                name="theme"
-                type="radio"
-                :value="option.value"
-                @change="setTheme(option.value)"
-              />
-              <span class="grid gap-1">
-                <span class="text-sm font-semibold text-body">{{ option.label }}</span>
-                <span class="text-xs leading-6 text-muted">{{ option.description }}</span>
-              </span>
-            </label>
-          </div>
+        <div class="flex items-start gap-3 rounded bg-primary-light p-4 text-sm text-body">
+          <i class="fas fa-info-circle mt-0.5 flex-none text-primary"></i>
+          <span>
+            外観設定はお使いのブラウザーに保存されます。Cookie
+            を削除するとこの設定はリセットされます。
+          </span>
+        </div>
+      </SettingsRow>
+      <SettingsRow>
+        <div class="space-y-4">
+          <label
+            v-for="option in themeOptions"
+            :key="option.value"
+            class="relative block cursor-pointer pl-6"
+          >
+            <input
+              class="absolute left-0 mt-[0.35rem]"
+              :checked="theme === option.value"
+              name="theme"
+              type="radio"
+              :value="option.value"
+              @change="setTheme(option.value)"
+            />
+            <span class="font-semibold text-body">{{ option.label }}</span
+            ><br />
+            <span class="text-sm text-muted">{{ option.description }}</span>
+          </label>
         </div>
       </SettingsRow>
       <template #footer>

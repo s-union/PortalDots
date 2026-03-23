@@ -6,7 +6,6 @@ definePage({
 });
 
 import { ref } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
 import SettingsRow from "@/components/ui/SettingsRow.vue";
 import SettingsSection from "@/components/ui/SettingsSection.vue";
 import TabStrip from "@/components/ui/TabStrip.vue";
@@ -56,11 +55,9 @@ async function handleSavePassword() {
 
 <template>
   <section class="space-y-6">
-    <BackLink :to="workspaceBackLink"> ワークスペースへ戻る </BackLink>
-
     <TabStrip :tabs="tabs" />
 
-    <SettingsSection title="パスワード変更">
+    <SettingsSection title="パスワード変更" :title-outside="true">
       <SettingsRow>
         <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <div class="space-y-1">
