@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 
-withDefaults(
-  defineProps<{
-    title?: string;
-    description?: string;
-    legacy?: boolean;
-    overflowHidden?: boolean;
-  }>(),
-  {
-    title: "",
-    description: "",
-    legacy: false,
-    overflowHidden: false,
-  },
-);
+const {
+  title = '',
+  description = '',
+  legacy = false,
+  overflowHidden = false
+} = defineProps<{
+  title?: string
+  description?: string
+  legacy?: boolean
+  overflowHidden?: boolean
+}>()
 </script>
 
 <template>
@@ -36,9 +33,7 @@ withDefaults(
         <slot name="actions" />
       </div>
     </div>
-    <div
-      :class="['rounded-[0.45rem] bg-surface shadow-lv1', overflowHidden ? 'overflow-hidden' : '']"
-    >
+    <div :class="['rounded-[0.45rem] bg-surface shadow-lv1', overflowHidden ? 'overflow-hidden' : '']">
       <slot />
     </div>
   </section>

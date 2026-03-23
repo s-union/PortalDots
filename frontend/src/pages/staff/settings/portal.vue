@@ -4,72 +4,74 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "portalSettings.manage",
-  },
-});
+    staffCapability: 'portalSettings.manage'
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { useAuthorizedStaffContext } from "@/features/staff/hooks/useAuthorizedStaffContext";
+import { computed, ref, watch } from 'vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   extractStaffPortalSettingsValidationMessage,
   useStaffPortalSettingsQuery,
   useUpdateStaffPortalSettingsMutation,
-  type StaffPortalSettings,
-} from "@/features/staff/admin/portalSettings";
+  type StaffPortalSettings
+} from '@/features/staff/admin/portalSettings'
 
-const { enabled } = useAuthorizedStaffContext({ capability: "portalSettings.manage" });
-const settingsQuery = useStaffPortalSettingsQuery(enabled);
-const updateMutation = useUpdateStaffPortalSettingsMutation();
-const errorMessage = ref("");
-const successMessage = ref("");
+const { enabled } = useAuthorizedStaffContext({ capability: 'portalSettings.manage' })
+const settingsQuery = useStaffPortalSettingsQuery(enabled)
+const updateMutation = useUpdateStaffPortalSettingsMutation()
+const errorMessage = ref('')
+const successMessage = ref('')
 const form = ref<StaffPortalSettings>({
-  appName: "",
-  portalDescription: "",
-  appUrl: "",
+  appName: '',
+  portalDescription: '',
+  appUrl: '',
   appForceHttps: false,
-  portalAdminName: "",
-  portalContactEmail: "",
-  portalUnivemailLocalPart: "student_id",
-  portalUnivemailDomainPart: "",
-  portalStudentIdName: "",
-  portalUnivemailName: "",
+  portalAdminName: '',
+  portalContactEmail: '',
+  portalUnivemailLocalPart: 'student_id',
+  portalUnivemailDomainPart: '',
+  portalStudentIdName: '',
+  portalUnivemailName: '',
   portalPrimaryColorH: 190,
   portalPrimaryColorS: 80,
-  portalPrimaryColorL: 45,
-});
+  portalPrimaryColorL: 45
+})
 
 const localPartOptions = [
-  { value: "student_id", label: "student_id" },
-  { value: "user_id", label: "user_id" },
-];
+  { value: 'student_id', label: 'student_id' },
+  { value: 'user_id', label: 'user_id' }
+]
 
 const previewStyle = computed(() => ({
-  backgroundColor: `hsl(${form.value.portalPrimaryColorH} ${form.value.portalPrimaryColorS}% ${form.value.portalPrimaryColorL}%)`,
-}));
+  backgroundColor: `hsl(${form.value.portalPrimaryColorH} ${form.value.portalPrimaryColorS}% ${form.value.portalPrimaryColorL}%)`
+}))
 
 watch(
   () => settingsQuery.data.value,
   (value) => {
-    if (!value) return;
-    form.value = { ...value };
+    if (!value) {
+      return
+    }
+    form.value = { ...value }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 async function handleSave() {
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
-    const updated = await updateMutation.mutateAsync({ ...form.value });
-    form.value = { ...updated };
-    successMessage.value = "Portal 設定を保存しました。";
+    const updated = await updateMutation.mutateAsync({ ...form.value })
+    form.value = { ...updated }
+    successMessage.value = 'Portal 設定を保存しました。'
   } catch (error) {
-    errorMessage.value = extractStaffPortalSettingsValidationMessage(error);
+    errorMessage.value = extractStaffPortalSettingsValidationMessage(error)
   }
 }
 </script>
@@ -78,10 +80,7 @@ async function handleSave() {
   <section class="space-y-6">
     <BackLink to="/staff/settings"> PortalDots の設定へ戻る </BackLink>
 
-    <div
-      v-if="settingsQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="settingsQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -90,8 +89,7 @@ async function handleSave() {
         <p class="text-sm text-primary">Portal Settings</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">Portal 設定</h2>
         <p class="mt-3 text-sm leading-7 text-muted">
-          legacy `/admin/portal`
-          で管理していたポータル全体の表示名・連絡先・URL・基本配色をここで更新します。
+          legacy `/admin/portal` で管理していたポータル全体の表示名・連絡先・URL・基本配色をここで更新します。
         </p>
       </SurfaceCard>
 
@@ -147,22 +145,14 @@ async function handleSave() {
             <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">学校メールのローカルパート種別</span>
               <select v-model="form.portalUnivemailLocalPart" name="portalUnivemailLocalPart">
-                <option
-                  v-for="option in localPartOptions"
-                  :key="option.value"
-                  :value="option.value"
-                >
+                <option v-for="option in localPartOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </option>
               </select>
             </label>
             <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">学校メールのドメイン</span>
-              <input
-                v-model="form.portalUnivemailDomainPart"
-                name="portalUnivemailDomainPart"
-                type="text"
-              />
+              <input v-model="form.portalUnivemailDomainPart" name="portalUnivemailDomainPart" type="text" />
             </label>
           </div>
         </SettingsRow>
@@ -174,27 +164,15 @@ async function handleSave() {
             <div class="grid gap-4 md:grid-cols-3">
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">H</span>
-                <input
-                  v-model.number="form.portalPrimaryColorH"
-                  name="portalPrimaryColorH"
-                  type="number"
-                />
+                <input v-model.number="form.portalPrimaryColorH" name="portalPrimaryColorH" type="number" />
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">S</span>
-                <input
-                  v-model.number="form.portalPrimaryColorS"
-                  name="portalPrimaryColorS"
-                  type="number"
-                />
+                <input v-model.number="form.portalPrimaryColorS" name="portalPrimaryColorS" type="number" />
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">L</span>
-                <input
-                  v-model.number="form.portalPrimaryColorL"
-                  name="portalPrimaryColorL"
-                  type="number"
-                />
+                <input v-model.number="form.portalPrimaryColorL" name="portalPrimaryColorL" type="number" />
               </label>
             </div>
             <div class="rounded border border-border bg-surface-light p-4">
@@ -211,10 +189,7 @@ async function handleSave() {
             >
               {{ successMessage }}
             </p>
-            <p
-              v-if="errorMessage"
-              class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-            >
+            <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
               {{ errorMessage }}
             </p>
             <div class="flex justify-end">
@@ -223,7 +198,7 @@ async function handleSave() {
                 :disabled="updateMutation.isPending.value"
                 type="submit"
               >
-                {{ updateMutation.isPending.value ? "保存中..." : "変更を保存" }}
+                {{ updateMutation.isPending.value ? '保存中...' : '変更を保存' }}
               </button>
             </div>
           </div>

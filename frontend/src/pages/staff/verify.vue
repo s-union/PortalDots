@@ -2,54 +2,54 @@
 definePage({
   meta: {
     requiresAuth: true,
-    requiresStaffRole: true,
-  },
-});
+    requiresStaffRole: true
+  }
+})
 
-import { computed, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { buttonVariants, formControlVariants } from "@/lib/ui/variants";
+import { computed, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { buttonVariants, formControlVariants } from '@/lib/ui/variants'
 import {
   extractStaffVerifyError,
   useConfirmStaffVerificationMutation,
   useRequestStaffVerificationMutation,
-  useStaffStatusQuery,
-} from "@/features/staff/status/api";
-import { useSessionStore } from "@/features/session/store";
+  useStaffStatusQuery
+} from '@/features/staff/status/api'
+import { useSessionStore } from '@/features/session/store'
 
-const router = useRouter();
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
-const requestMutation = useRequestStaffVerificationMutation();
-const confirmMutation = useConfirmStaffVerificationMutation();
+const router = useRouter()
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const requestMutation = useRequestStaffVerificationMutation()
+const confirmMutation = useConfirmStaffVerificationMutation()
 const form = reactive({
-  verifyCode: "",
-});
-const infoMessage = ref("");
-const errorMessage = ref("");
+  verifyCode: ''
+})
+const infoMessage = ref('')
+const errorMessage = ref('')
 
 async function handleRequestCode() {
-  infoMessage.value = "";
-  errorMessage.value = "";
+  infoMessage.value = ''
+  errorMessage.value = ''
 
   try {
-    const result = await requestMutation.mutateAsync();
-    infoMessage.value = `${result.message} モック認証コード: ${result.verifyCode}`;
+    const result = await requestMutation.mutateAsync()
+    infoMessage.value = `${result.message} モック認証コード: ${result.verifyCode}`
   } catch {
-    errorMessage.value = "認証コードの送信に失敗しました。";
+    errorMessage.value = '認証コードの送信に失敗しました。'
   }
 }
 
 async function handleConfirm() {
-  infoMessage.value = "";
-  errorMessage.value = "";
+  infoMessage.value = ''
+  errorMessage.value = ''
 
   try {
-    await confirmMutation.mutateAsync(form.verifyCode);
-    await router.push("/staff");
+    await confirmMutation.mutateAsync(form.verifyCode)
+    await router.push('/staff')
   } catch (error) {
-    errorMessage.value = extractStaffVerifyError(error);
+    errorMessage.value = extractStaffVerifyError(error)
   }
 }
 </script>
@@ -65,12 +65,10 @@ async function handleConfirm() {
       <div class="border-b border-border px-6 py-5">
         <h3 class="text-lg font-semibold text-body">認証コードを入力してください</h3>
         <p class="mt-2 text-sm leading-7 text-muted">
-          あなたの連絡先メールアドレス宛に認証メールが送信された想定で、認証コードを確認します。
-          旧実装の staff verify と同様に、コード確認後に staff session を有効化します。
+          あなたの連絡先メールアドレス宛に認証メールが送信された想定で、認証コードを確認します。 旧実装の staff verify
+          と同様に、コード確認後に staff session を有効化します。
         </p>
-        <p class="mt-2 text-sm leading-7 text-muted">
-          現在はメール送信をモックしています。実メールは送られません。
-        </p>
+        <p class="mt-2 text-sm leading-7 text-muted">現在はメール送信をモックしています。実メールは送られません。</p>
       </div>
 
       <div class="border-b border-border px-6 py-5">
@@ -80,19 +78,14 @@ async function handleConfirm() {
           type="button"
           @click="handleRequestCode"
         >
-          {{ requestMutation.isPending.value ? "送信中..." : "認証コードを送信" }}
+          {{ requestMutation.isPending.value ? '送信中...' : '認証コードを送信' }}
         </button>
       </div>
 
       <form class="px-6 py-5" @submit.prevent="handleConfirm">
         <label class="grid gap-2 text-sm text-body">
           <span class="font-medium">認証コード</span>
-          <input
-            v-model="form.verifyCode"
-            :class="formControlVariants()"
-            name="verifyCode"
-            type="text"
-          />
+          <input v-model="form.verifyCode" :class="formControlVariants()" name="verifyCode" type="text" />
         </label>
 
         <p
@@ -102,10 +95,7 @@ async function handleConfirm() {
           {{ infoMessage }}
         </p>
 
-        <p
-          v-if="errorMessage"
-          class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
 
@@ -115,7 +105,7 @@ async function handleConfirm() {
             :disabled="confirmMutation.isPending.value"
             type="submit"
           >
-            {{ confirmMutation.isPending.value ? "認証中..." : "ログイン" }}
+            {{ confirmMutation.isPending.value ? '認証中...' : 'ログイン' }}
           </button>
         </div>
       </form>

@@ -1,24 +1,24 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    requiresAuth: false,
-  },
-});
+    requiresAuth: false
+  }
+})
 
-import { onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { buildApiUrl } from "@/lib/api/client";
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { buildApiUrl } from '@/lib/api/client'
 
-const route = useRoute("/public/documents/[documentId]");
+const route = useRoute('/public/documents/[documentId]')
 
 onMounted(() => {
-  const documentId = String(route.params.documentId ?? "").trim();
-  if (documentId === "") {
-    return;
+  const documentId = String(route.params.documentId ?? '').trim()
+  if (documentId === '') {
+    return
   }
 
-  window.location.replace(buildApiUrl(`/public/documents/${encodeURIComponent(documentId)}`));
-});
+  window.location.replace(buildApiUrl(`/public/documents/${encodeURIComponent(documentId)}`))
+})
 </script>
 
 <template>

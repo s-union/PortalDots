@@ -5,18 +5,18 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "pages.read",
-  },
-});
+    staffCapability: 'pages.read'
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import { useStaffDocumentsQuery } from "@/features/staff/documents/api";
-import { useStaffTagsQuery } from "@/features/staff/masters/tags";
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import {
   buildStaffPagesExportUrl,
   extractStaffPageValidationMessage,
@@ -24,51 +24,51 @@ import {
   parseStaffPageTags,
   useCreateStaffPageMutation,
   useStaffPageForm,
-  useStaffPagesQuery,
-} from "@/features/staff/pages/api";
-import { useSessionStore } from "@/features/session/store";
+  useStaffPagesQuery
+} from '@/features/staff/pages/api'
+import { useSessionStore } from '@/features/session/store'
 
-const route = useRoute();
-const router = useRouter();
-const sessionStore = useSessionStore();
-const searchQuery = ref(String(route.query.query ?? ""));
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const route = useRoute()
+const router = useRouter()
+const sessionStore = useSessionStore()
+const searchQuery = ref(String(route.query.query ?? ''))
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const pageFormEnabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-);
-const pagesQuery = useStaffPagesQuery(searchQuery, pageFormEnabled);
-const tagsQuery = useStaffTagsQuery(pageFormEnabled);
-const documentsQuery = useStaffDocumentsQuery(pageFormEnabled);
-const createPageMutation = useCreateStaffPageMutation();
-const form = useStaffPageForm();
-const errorMessage = ref("");
-const exportHref = computed(() => buildStaffPagesExportUrl());
-const viewableTagsText = ref("");
+  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null
+)
+const pagesQuery = useStaffPagesQuery(searchQuery, pageFormEnabled)
+const tagsQuery = useStaffTagsQuery(pageFormEnabled)
+const documentsQuery = useStaffDocumentsQuery(pageFormEnabled)
+const createPageMutation = useCreateStaffPageMutation()
+const form = useStaffPageForm()
+const errorMessage = ref('')
+const exportHref = computed(() => buildStaffPagesExportUrl())
+const viewableTagsText = ref('')
 
 watch(
   () => route.query.query,
   (value) => {
-    searchQuery.value = String(value ?? "");
-  },
-);
+    searchQuery.value = String(value ?? '')
+  }
+)
 
 watch(
   () => form.value.viewableTags,
   (value) => {
-    viewableTagsText.value = formatStaffPageTags(value);
+    viewableTagsText.value = formatStaffPageTags(value)
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 async function handleSearchSubmit() {
-  const normalizedQuery = searchQuery.value.trim();
+  const normalizedQuery = searchQuery.value.trim()
   await router.replace({
-    query: normalizedQuery === "" ? {} : { query: normalizedQuery },
-  });
+    query: normalizedQuery === '' ? {} : { query: normalizedQuery }
+  })
 }
 
 async function handleCreatePage() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
     await createPageMutation.mutateAsync({
@@ -79,45 +79,45 @@ async function handleCreatePage() {
       isPublic: form.value.isPublic,
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails,
-    });
+      sendEmails: form.value.sendEmails
+    })
     form.value = {
-      title: "",
-      body: "",
-      notes: "",
+      title: '',
+      body: '',
+      notes: '',
       isPinned: false,
       isPublic: true,
       viewableTags: [],
       documentIds: [],
-      sendEmails: false,
-    };
-    viewableTagsText.value = "";
+      sendEmails: false
+    }
+    viewableTagsText.value = ''
   } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error);
+    errorMessage.value = extractStaffPageValidationMessage(error)
   }
 }
 
 function handleViewableTagsInput(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLTextAreaElement)) {
-    return;
+    return
   }
 
-  form.value.viewableTags = parseStaffPageTags(target.value);
+  form.value.viewableTags = parseStaffPageTags(target.value)
 }
 
 function handleDocumentChange(documentId: string, event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
 
   if (target.checked) {
-    form.value.documentIds = [...new Set([...form.value.documentIds, documentId])];
-    return;
+    form.value.documentIds = [...new Set([...form.value.documentIds, documentId])]
+    return
   }
 
-  form.value.documentIds = form.value.documentIds.filter((value) => value !== documentId);
+  form.value.documentIds = form.value.documentIds.filter((value) => value !== documentId)
 }
 </script>
 
@@ -127,7 +127,7 @@ function handleDocumentChange(documentId: string, event: Event) {
       <div>
         <h2 class="text-2xl font-semibold text-body">お知らせ管理</h2>
         <p class="mt-2 text-sm text-muted">
-          {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
+          {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
         </p>
       </div>
       <BackLink to="/staff"> Staff top へ戻る </BackLink>
@@ -136,12 +136,8 @@ function handleDocumentChange(documentId: string, event: Event) {
     <SurfaceCard>
       <SurfaceHeader>
         <template #actions>
-          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white">
-            新規お知らせ
-          </span>
-          <span class="rounded border border-border px-4 py-2 text-sm text-muted">
-            閲覧タグ・配布資料に対応
-          </span>
+          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white"> 新規お知らせ </span>
+          <span class="rounded border border-border px-4 py-2 text-sm text-muted"> 閲覧タグ・配布資料に対応 </span>
           <RouterLink
             class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
             to="/staff/mails"
@@ -175,14 +171,9 @@ function handleDocumentChange(documentId: string, event: Event) {
         </div>
       </form>
 
-      <div v-if="pagesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        読み込み中...
-      </div>
+      <div v-if="pagesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
 
-      <div
-        v-else-if="(pagesQuery.data.value?.length ?? 0) === 0"
-        class="px-6 py-6 text-sm text-muted"
-      >
+      <div v-else-if="(pagesQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         staff pages は見つかりませんでした。
       </div>
 
@@ -199,11 +190,7 @@ function handleDocumentChange(documentId: string, event: Event) {
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="page in pagesQuery.data.value"
-              :key="page.id"
-              class="transition hover:bg-form-control"
-            >
+            <tr v-for="page in pagesQuery.data.value" :key="page.id" class="transition hover:bg-form-control">
               <td class="border-b border-border px-4 py-4">{{ page.id }}</td>
               <td class="border-b border-border px-4 py-4 font-medium text-body">
                 <RouterLink :to="`/staff/pages/${page.id}`" class="text-primary hover:underline">
@@ -220,9 +207,7 @@ function handleDocumentChange(documentId: string, event: Event) {
               </td>
               <td class="border-b border-border px-4 py-4">{{ page.publishedAt }}</td>
               <td class="border-b border-border px-4 py-4">
-                <RouterLink :to="`/staff/pages/${page.id}`" class="text-primary hover:underline">
-                  編集
-                </RouterLink>
+                <RouterLink :to="`/staff/pages/${page.id}`" class="text-primary hover:underline"> 編集 </RouterLink>
               </td>
             </tr>
           </tbody>
@@ -230,10 +215,7 @@ function handleDocumentChange(documentId: string, event: Event) {
       </div>
     </SurfaceCard>
 
-    <form
-      class="rounded border border-border bg-surface p-6 shadow-lv1"
-      @submit.prevent="handleCreatePage"
-    >
+    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreatePage">
       <h3 class="text-lg font-semibold text-body">お知らせを新規作成</h3>
       <div class="mt-4 grid gap-4">
         <label class="grid gap-2 text-sm text-body">
@@ -262,7 +244,7 @@ function handleDocumentChange(documentId: string, event: Event) {
           />
           <span class="text-xs text-muted">
             登録済みタグ:
-            {{ (tagsQuery.data.value ?? []).map((tag) => tag.name).join(" / ") || "-" }}
+            {{ (tagsQuery.data.value ?? []).map((tag) => tag.name).join(' / ') || '-' }}
           </span>
         </label>
 
@@ -281,11 +263,7 @@ function handleDocumentChange(documentId: string, event: Event) {
             選択できる配布資料はありません。
           </div>
           <div v-else class="grid gap-2 rounded border border-border bg-surface-light p-4">
-            <label
-              v-for="document in documentsQuery.data.value"
-              :key="document.id"
-              class="flex items-start gap-3"
-            >
+            <label v-for="document in documentsQuery.data.value" :key="document.id" class="flex items-start gap-3">
               <input
                 :checked="form.documentIds.includes(document.id)"
                 type="checkbox"
@@ -293,9 +271,7 @@ function handleDocumentChange(documentId: string, event: Event) {
               />
               <span>
                 <strong class="text-body">{{ document.name }}</strong>
-                <span class="block text-xs text-muted">{{
-                  document.description || "説明なし"
-                }}</span>
+                <span class="block text-xs text-muted">{{ document.description || '説明なし' }}</span>
               </span>
             </label>
           </div>
@@ -315,14 +291,9 @@ function handleDocumentChange(documentId: string, event: Event) {
           <input v-model="form.sendEmails" name="sendEmails" type="checkbox" />
           保存後にモックメール配信を予約する
         </label>
-        <p class="text-sm text-muted">
-          配信予約はモックキューへの登録のみ行います。実メール送信は行いません。
-        </p>
+        <p class="text-sm text-muted">配信予約はモックキューへの登録のみ行います。実メール送信は行いません。</p>
 
-        <p
-          v-if="errorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
 
@@ -332,7 +303,7 @@ function handleDocumentChange(documentId: string, event: Event) {
             :disabled="createPageMutation.isPending.value"
             type="submit"
           >
-            {{ createPageMutation.isPending.value ? "作成中..." : "保存" }}
+            {{ createPageMutation.isPending.value ? '作成中...' : '保存' }}
           </button>
         </div>
       </div>

@@ -1,77 +1,79 @@
 <script setup lang="ts">
-import { buttonVariants } from "@/lib/ui/variants";
+import { buttonVariants } from '@/lib/ui/variants'
 import {
   answerValue,
   createAnswerableQuestionRef,
   questionUploads,
   setAnswerValue,
   type FormAnswer,
-  type FormAnswerDraft,
-} from "@/features/forms/answers";
-import type { FormQuestion } from "@/features/forms/api";
+  type FormAnswerDraft
+} from '@/features/forms/answers'
+import type { FormQuestion } from '@/features/forms/api'
 
-const props = defineProps<{
-  answer: FormAnswer | null | undefined;
-  draft: FormAnswerDraft;
-  question: FormQuestion;
-  disabled?: boolean;
-  uploadButtonLabel: string;
-  uploadPending?: boolean;
-  uploadErrorMessage?: string;
-  downloadLabel?: string;
-  downloadHref: (question: FormQuestion) => string;
-}>();
+const {
+  answer,
+  draft,
+  question,
+  disabled,
+  uploadButtonLabel,
+  uploadPending,
+  uploadErrorMessage,
+  downloadLabel,
+  downloadHref
+} = defineProps<{
+  answer: FormAnswer | null | undefined
+  draft: FormAnswerDraft
+  question: FormQuestion
+  disabled?: boolean
+  uploadButtonLabel: string
+  uploadPending?: boolean
+  uploadErrorMessage?: string
+  downloadLabel?: string
+  downloadHref: (question: FormQuestion) => string
+}>()
 
 const emit = defineEmits<{
-  upload: [questionId: string];
-  fileChange: [questionId: string, event: Event];
-}>();
+  upload: [questionId: string]
+  fileChange: [questionId: string, event: Event]
+}>()
 
 function toggleCheckboxValue(option: string, checked: boolean) {
-  const currentValue = draftValue();
-  const currentOptions = Array.isArray(currentValue) ? [...currentValue] : [];
+  const currentValue = draftValue()
+  const currentOptions = Array.isArray(currentValue) ? [...currentValue] : []
   if (checked) {
     if (!currentOptions.includes(option)) {
-      currentOptions.push(option);
+      currentOptions.push(option)
     }
   } else {
-    const nextOptions = currentOptions.filter((currentOption) => currentOption !== option);
-    setAnswerValue(
-      props.draft,
-      createAnswerableQuestionRef(props.question.id, "checkbox"),
-      nextOptions,
-    );
-    return;
+    const nextOptions = currentOptions.filter((currentOption) => currentOption !== option)
+    setAnswerValue(draft, createAnswerableQuestionRef(question.id, 'checkbox'), nextOptions)
+    return
   }
 
-  setAnswerValue(
-    props.draft,
-    createAnswerableQuestionRef(props.question.id, "checkbox"),
-    currentOptions,
-  );
+  setAnswerValue(draft, createAnswerableQuestionRef(question.id, 'checkbox'), currentOptions)
 }
 
 function isChecked(option: string) {
-  const currentValue = draftValue();
-  return Array.isArray(currentValue) && currentValue.includes(option);
+  const currentValue = draftValue()
+  return Array.isArray(currentValue) && currentValue.includes(option)
 }
 
 function draftValue() {
-  return answerValue(props.draft, props.question);
+  return answerValue(draft, question)
 }
 
 function eventTargetValue(event: Event) {
-  const target = event.target;
+  const target = event.target
   return target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement
     ? target.value
-    : "";
+    : ''
 }
 
 function eventTargetChecked(event: Event) {
-  const target = event.target;
-  return target instanceof HTMLInputElement ? target.checked : false;
+  const target = event.target
+  return target instanceof HTMLInputElement ? target.checked : false
 }
 </script>
 
@@ -115,11 +117,7 @@ function eventTargetChecked(event: Event) {
   </select>
 
   <div v-else-if="question.type === 'radio'" class="grid gap-2">
-    <label
-      v-for="option in question.options"
-      :key="option"
-      class="flex items-center gap-3 text-sm text-body"
-    >
+    <label v-for="option in question.options" :key="option" class="flex items-center gap-3 text-sm text-body">
       <input
         :checked="String(draftValue()) === option"
         :disabled="disabled"
@@ -133,11 +131,7 @@ function eventTargetChecked(event: Event) {
   </div>
 
   <div v-else-if="question.type === 'checkbox'" class="grid gap-2">
-    <label
-      v-for="option in question.options"
-      :key="option"
-      class="flex items-center gap-3 text-sm text-body"
-    >
+    <label v-for="option in question.options" :key="option" class="flex items-center gap-3 text-sm text-body">
       <input
         :checked="isChecked(option)"
         :disabled="disabled"
@@ -165,11 +159,8 @@ function eventTargetChecked(event: Event) {
             {{ upload.createdAt }}
           </p>
         </div>
-        <a
-          :href="downloadHref(question)"
-          :class="buttonVariants({ variant: 'secondary', size: 'xs' })"
-        >
-          {{ downloadLabel ?? "表示" }}
+        <a :href="downloadHref(question)" :class="buttonVariants({ variant: 'secondary', size: 'xs' })">
+          {{ downloadLabel ?? '表示' }}
         </a>
       </li>
     </ul>
@@ -187,14 +178,11 @@ function eventTargetChecked(event: Event) {
         type="button"
         @click="emit('upload', question.id)"
       >
-        {{ uploadPending ? "送信中..." : uploadButtonLabel }}
+        {{ uploadPending ? '送信中...' : uploadButtonLabel }}
       </button>
     </div>
 
-    <p
-      v-if="uploadErrorMessage"
-      class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-    >
+    <p v-if="uploadErrorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
       {{ uploadErrorMessage }}
     </p>
   </div>

@@ -5,40 +5,38 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "formAnswers.read",
-  },
-});
+    staffCapability: 'formAnswers.read'
+  }
+})
 
-import { computed } from "vue";
-import { useRoute } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import ListPanel from "@/components/ui/ListPanel.vue";
-import ListItemLink from "@/components/ui/ListItemLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useSessionStore } from "@/features/session/store";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import { useStaffFormAnswersIndexQuery } from "@/features/staff/forms/answers";
-import { buildStaffFormTabs } from "@/features/ui/tabStrip";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
+import ListItemLink from '@/components/ui/ListItemLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useSessionStore } from '@/features/session/store'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { useStaffFormAnswersIndexQuery } from '@/features/staff/forms/answers'
+import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute();
-const sessionStore = useSessionStore();
+const route = useRoute()
+const sessionStore = useSessionStore()
 const formId = computed(() => {
-  if (!("formId" in route.params)) {
-    return "";
+  if (!('formId' in route.params)) {
+    return ''
   }
 
-  const value = route.params.formId;
-  return typeof value === "string" ? value : "";
-});
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+  const value = route.params.formId
+  return typeof value === 'string' ? value : ''
+})
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
-  computed(
-    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-  ),
-);
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
+  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+)
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
 </script>
 
 <template>
@@ -47,10 +45,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
 
     <TabStrip :tabs="staffFormTabs" />
 
-    <div
-      v-if="answersQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -68,10 +63,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
         description="必要に応じて企画詳細を開き、状況確認や個別連絡へ進めます。"
         overflow-hidden
       >
-        <div
-          v-if="answersQuery.data.value.notAnsweredCircles.length === 0"
-          class="px-6 py-5 text-sm text-muted-2"
-        >
+        <div v-if="answersQuery.data.value.notAnsweredCircles.length === 0" class="px-6 py-5 text-sm text-muted-2">
           未回答企画はありません。
         </div>
 

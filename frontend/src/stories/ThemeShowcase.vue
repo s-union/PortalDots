@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { cn } from "@/lib/ui/cn";
-import { buttonVariants, surfaceVariants } from "@/lib/ui/variants";
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants, surfaceVariants } from '@/lib/ui/variants'
 
-defineProps<{
-  primaryLabel?: string;
-  showDanger?: boolean;
-  showSuccess?: boolean;
-}>();
+const { primaryLabel, showDanger, showSuccess } = defineProps<{
+  primaryLabel?: string
+  showDanger?: boolean
+  showSuccess?: boolean
+}>()
 </script>
 
 <template>
@@ -19,30 +19,17 @@ defineProps<{
       </p>
       <div class="flex flex-wrap items-center gap-3">
         <button :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })">
-          {{ primaryLabel ?? "プライマリ (.is-primary)" }}
+          {{ primaryLabel ?? 'プライマリ (.is-primary)' }}
         </button>
-        <button :class="buttonVariants({ variant: 'secondary', size: 'lg' })">
-          セカンダリ (.is-secondary)
-        </button>
-        <button
-          v-if="showDanger"
-          :class="buttonVariants({ variant: 'danger', size: 'lg', weight: 'bold' })"
-        >
+        <button :class="buttonVariants({ variant: 'secondary', size: 'lg' })">セカンダリ (.is-secondary)</button>
+        <button v-if="showDanger" :class="buttonVariants({ variant: 'danger', size: 'lg', weight: 'bold' })">
           デンジャー (.is-danger)
         </button>
-        <button
-          v-if="showSuccess"
-          :class="buttonVariants({ variant: 'success', size: 'lg', weight: 'bold' })"
-        >
+        <button v-if="showSuccess" :class="buttonVariants({ variant: 'success', size: 'lg', weight: 'bold' })">
           サクセス (.is-success)
         </button>
         <button
-          :class="
-            cn(
-              buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }),
-              'pointer-events-none',
-            )
-          "
+          :class="cn(buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }), 'pointer-events-none')"
           disabled
         >
           無効 (disabled)
@@ -52,15 +39,9 @@ defineProps<{
         <button :class="buttonVariants({ variant: 'primaryInverse', size: 'lg' })">
           プライマリ逆 (.is-primary-inverse)
         </button>
-        <button :class="buttonVariants({ variant: 'transparent', size: 'lg' })">
-          透過 (.is-transparent)
-        </button>
-        <button :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })">
-          幅広 (.is-wide)
-        </button>
-        <button :class="buttonVariants({ variant: 'primary', size: 'sm', weight: 'bold' })">
-          小 (.is-sm)
-        </button>
+        <button :class="buttonVariants({ variant: 'transparent', size: 'lg' })">透過 (.is-transparent)</button>
+        <button :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })">幅広 (.is-wide)</button>
+        <button :class="buttonVariants({ variant: 'primary', size: 'sm', weight: 'bold' })">小 (.is-sm)</button>
       </div>
     </section>
 
@@ -70,9 +51,7 @@ defineProps<{
       <div class="grid gap-4 min-[1001px]:grid-cols-2">
         <div :class="cn(surfaceVariants(), 'p-6')">
           <h3 class="text-lg font-semibold">通常カード (shadow-lv1)</h3>
-          <p class="mt-2 text-muted">
-            bg-surface + border-border + shadow-lv1。Laravelの .content 内カードに相当。
-          </p>
+          <p class="mt-2 text-muted">bg-surface + border-border + shadow-lv1。Laravelの .content 内カードに相当。</p>
         </div>
         <div :class="cn(surfaceVariants({ shadow: 'lv2' }), 'p-6')">
           <h3 class="text-lg font-semibold">カード (shadow-lv2)</h3>
@@ -93,24 +72,18 @@ defineProps<{
     <section class="mb-8">
       <h2 class="mb-4 text-xl font-semibold">フォームコントロール (.form-control)</h2>
       <p class="mb-4 text-sm text-muted">
-        base layer で自動適用: padding 0.5rem 1rem / font-size 1.067rem (16px, iOS zoom防止) /
-        line-height 1.6 / caret-color primary / border-radius 0.45rem
+        base layer で自動適用: padding 0.5rem 1rem / font-size 1.067rem (16px, iOS zoom防止) / line-height 1.6 /
+        caret-color primary / border-radius 0.45rem
       </p>
       <div class="grid gap-4" style="max-width: 400px">
         <div>
-          <label
-            class="mb-[0.2rem] block font-semibold"
-            style="font-weight: var(--font-weight-bold)"
+          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
             >ラベル (font-weight: 600)</label
           >
           <input placeholder="テキスト入力" type="text" />
         </div>
         <div>
-          <label
-            class="mb-[0.2rem] block font-semibold"
-            style="font-weight: var(--font-weight-bold)"
-            >セレクト</label
-          >
+          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)">セレクト</label>
           <select>
             <option>選択肢1</option>
             <option>選択肢2</option>
@@ -118,26 +91,20 @@ defineProps<{
           </select>
         </div>
         <div>
-          <label
-            class="mb-[0.2rem] block font-semibold"
-            style="font-weight: var(--font-weight-bold)"
+          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
             >テキストエリア</label
           >
           <textarea placeholder="複数行テキスト" rows="3"></textarea>
         </div>
         <div>
-          <label
-            class="mb-[0.2rem] block font-semibold"
-            style="font-weight: var(--font-weight-bold)"
+          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
             >エラー状態 (.is-invalid)</label
           >
           <input class="!border-danger !caret-danger" type="text" value="不正な値" />
           <p class="mt-[0.2rem] text-sm text-danger">この項目は必須です。</p>
         </div>
         <div>
-          <label
-            class="mb-[0.2rem] block font-semibold"
-            style="font-weight: var(--font-weight-bold)"
+          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
             >無効状態 (disabled)</label
           >
           <input disabled type="text" value="変更不可" />
@@ -167,13 +134,9 @@ defineProps<{
     <!-- Typography -->
     <section class="mb-8">
       <h2 class="mb-4 text-xl font-semibold">タイポグラフィ</h2>
-      <p class="mb-4 text-sm text-muted">
-        base: 15px / line-height 1.7 / font-family: Segoe UI, Meiryo, system-ui...
-      </p>
+      <p class="mb-4 text-sm text-muted">base: 15px / line-height 1.7 / font-family: Segoe UI, Meiryo, system-ui...</p>
       <div :class="cn(surfaceVariants(), 'p-6')">
-        <p style="font-size: 1.6rem; font-weight: var(--font-weight-bold)">
-          $font-size-xl (1.6rem = 24px) — 見出し大
-        </p>
+        <p style="font-size: 1.6rem; font-weight: var(--font-weight-bold)">$font-size-xl (1.6rem = 24px) — 見出し大</p>
         <p class="mt-2" style="font-size: 1.333rem; font-weight: var(--font-weight-bold)">
           $font-size-lg (1.333rem = 20px) — 見出し
         </p>
@@ -214,46 +177,20 @@ defineProps<{
           PortalDots
         </div>
         <nav class="py-2">
-          <a
-            class="relative block py-3 pr-6 pl-6 text-primary"
-            href="#"
-            style="font-weight: var(--font-weight-bold)"
-          >
+          <a class="relative block py-3 pr-6 pl-6 text-primary" href="#" style="font-weight: var(--font-weight-bold)">
             <span class="absolute top-2 right-0 bottom-2 w-1 rounded-l bg-primary"></span>
             ホーム
           </a>
-          <a
-            class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light"
-            href="#"
-          >
-            お知らせ
-          </a>
-          <a
-            class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light"
-            href="#"
-          >
-            配布資料
-          </a>
-          <a
-            class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light"
-            href="#"
-          >
-            申請
-          </a>
-          <a
-            class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light"
-            href="#"
-          >
+          <a class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light" href="#"> お知らせ </a>
+          <a class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light" href="#"> 配布資料 </a>
+          <a class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light" href="#"> 申請 </a>
+          <a class="block px-6 py-3 text-body no-underline transition hover:bg-surface-light" href="#">
             お問い合わせ
           </a>
         </nav>
         <div class="border-t border-border p-6">
-          <p class="mb-4 text-center" style="font-weight: var(--font-weight-bold)">
-            山田太郎としてログイン中
-          </p>
-          <button :class="buttonVariants({ variant: 'secondary', size: 'lg', fullWidth: true })">
-            ログアウト
-          </button>
+          <p class="mb-4 text-center" style="font-weight: var(--font-weight-bold)">山田太郎としてログイン中</p>
+          <button :class="buttonVariants({ variant: 'secondary', size: 'lg', fullWidth: true })">ログアウト</button>
         </div>
       </div>
     </section>

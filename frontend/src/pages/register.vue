@@ -3,9 +3,9 @@ definePage({
   meta: {
     publicOnly: true,
     noDrawer: true,
-    noBottomTabs: true,
-  },
-});
+    noBottomTabs: true
+  }
+})
 </script>
 
 <template>

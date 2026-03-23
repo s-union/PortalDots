@@ -4,70 +4,67 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "circles.read",
-  },
-});
+    staffCapability: 'circles.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref } from 'vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffCirclesExportUrl,
   extractStaffCircleValidationMessage,
   useAllStaffCirclesQuery,
   useCreateStaffCircleMutation,
   useStaffCircleForm,
-  useStaffCirclesQuery,
-} from "@/features/staff/circles/api";
-import { useStaffParticipationTypesQuery } from "@/features/staff/participation-types/api";
-import { useSessionStore } from "@/features/session/store";
-import { calculateTotalPages } from "@/lib/pagination";
+  useStaffCirclesQuery
+} from '@/features/staff/circles/api'
+import { useStaffParticipationTypesQuery } from '@/features/staff/participation-types/api'
+import { useSessionStore } from '@/features/session/store'
+import { calculateTotalPages } from '@/lib/pagination'
 
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
-const page = ref(1);
-const pageSize = 10;
-const enabled = computed(() => staffStatusQuery.data.value?.authorized === true);
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const page = ref(1)
+const pageSize = 10
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const circlesQuery = useStaffCirclesQuery(
   enabled,
   computed(() => ({
     page: page.value,
-    pageSize,
-  })),
-);
-const allCirclesQuery = useAllStaffCirclesQuery(enabled);
-const participationTypesQuery = useStaffParticipationTypesQuery(enabled);
-const createCircleMutation = useCreateStaffCircleMutation();
-const form = useStaffCircleForm();
-const errorMessage = ref("");
+    pageSize
+  }))
+)
+const allCirclesQuery = useAllStaffCirclesQuery(enabled)
+const participationTypesQuery = useStaffParticipationTypesQuery(enabled)
+const createCircleMutation = useCreateStaffCircleMutation()
+const form = useStaffCircleForm()
+const errorMessage = ref('')
 const totalPages = computed(() =>
-  calculateTotalPages(
-    circlesQuery.data.value?.total ?? 0,
-    circlesQuery.data.value?.pageSize ?? pageSize,
-  ),
-);
-const exportUrl = buildStaffCirclesExportUrl();
+  calculateTotalPages(circlesQuery.data.value?.total ?? 0, circlesQuery.data.value?.pageSize ?? pageSize)
+)
+const exportUrl = buildStaffCirclesExportUrl()
 
 async function handleCreateCircle() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
     await createCircleMutation.mutateAsync({
       name: form.value.name,
       groupName: form.value.groupName,
-      participationTypeId: form.value.participationTypeId,
-    });
+      participationTypeId: form.value.participationTypeId
+    })
     form.value = {
-      name: "",
-      groupName: "",
-      participationTypeId: "",
-    };
+      name: '',
+      groupName: '',
+      participationTypeId: ''
+    }
   } catch (error) {
-    errorMessage.value = extractStaffCircleValidationMessage(error);
+    errorMessage.value = extractStaffCircleValidationMessage(error)
   }
 }
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value);
+  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
 }
 </script>
 
@@ -106,9 +103,7 @@ function movePage(nextPage: number) {
     <section class="rounded border border-border bg-surface shadow-lv1">
       <div class="border-b border-border px-6 py-4">
         <h3 class="text-lg font-semibold text-body">企画一覧</h3>
-        <p class="mt-2 text-sm leading-7 text-muted">
-          ページ送り付きの一覧に加え、全件数も同時に確認できます。
-        </p>
+        <p class="mt-2 text-sm leading-7 text-muted">ページ送り付きの一覧に加え、全件数も同時に確認できます。</p>
       </div>
 
       <div class="grid gap-2 border-b border-border px-6 py-4 text-sm text-muted sm:grid-cols-2">
@@ -116,14 +111,9 @@ function movePage(nextPage: number) {
         <p>全企画数: {{ allCirclesQuery.data.value?.length ?? 0 }}</p>
       </div>
 
-      <div v-if="circlesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">
-        読み込み中...
-      </div>
+      <div v-if="circlesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
 
-      <div
-        v-else-if="(circlesQuery.data.value?.items.length ?? 0) === 0"
-        class="px-6 py-5 text-sm text-muted"
-      >
+      <div v-else-if="(circlesQuery.data.value?.items.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
         企画はまだありません。
       </div>
 
@@ -154,12 +144,7 @@ function movePage(nextPage: number) {
         <p>
           {{ circlesQuery.data.value.total }} 件中
           {{ (circlesQuery.data.value.page - 1) * circlesQuery.data.value.pageSize + 1 }} -
-          {{
-            Math.min(
-              circlesQuery.data.value.page * circlesQuery.data.value.pageSize,
-              circlesQuery.data.value.total,
-            )
-          }}
+          {{ Math.min(circlesQuery.data.value.page * circlesQuery.data.value.pageSize, circlesQuery.data.value.total) }}
           件
         </p>
         <div class="flex items-center gap-3">
@@ -184,10 +169,7 @@ function movePage(nextPage: number) {
       </footer>
     </section>
 
-    <form
-      class="rounded border border-border bg-surface shadow-lv1"
-      @submit.prevent="handleCreateCircle"
-    >
+    <form class="rounded border border-border bg-surface shadow-lv1" @submit.prevent="handleCreateCircle">
       <div class="border-b border-border px-6 py-4">
         <h3 class="text-lg font-semibold text-body">企画を新規作成</h3>
       </div>
@@ -228,10 +210,7 @@ function movePage(nextPage: number) {
           </select>
         </label>
 
-        <p
-          v-if="errorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
       </div>
@@ -241,7 +220,7 @@ function movePage(nextPage: number) {
           :disabled="createCircleMutation.isPending.value"
           type="submit"
         >
-          {{ createCircleMutation.isPending.value ? "作成中..." : "保存" }}
+          {{ createCircleMutation.isPending.value ? '作成中...' : '保存' }}
         </button>
       </div>
     </form>

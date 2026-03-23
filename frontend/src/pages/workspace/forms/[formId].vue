@@ -2,14 +2,14 @@
 definePage({
   meta: {
     requiresAuth: true,
-    requiresCircle: true,
-  },
-});
+    requiresCircle: true
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import AnswerQuestionFields from "@/components/forms/AnswerQuestionFields.vue";
-import { useFormDetailQuery } from "@/features/forms/api";
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
+import { useFormDetailQuery } from '@/features/forms/api'
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
   buildFormAnswerUploadDownloadUrl,
@@ -22,157 +22,153 @@ import {
   useFormAnswerEditorDraft,
   useFormAnswersQuery,
   useFormAnswerUploadMutation,
-  useUpdateFormAnswerMutation,
-} from "@/features/forms/answers";
-import { useSessionStore } from "@/features/session/store";
+  useUpdateFormAnswerMutation
+} from '@/features/forms/answers'
+import { useSessionStore } from '@/features/session/store'
 
-const route = useRoute("/workspace/forms/[formId]");
-const router = useRouter();
-const sessionStore = useSessionStore();
-const formId = computed(() => String(route.params.formId ?? ""));
-const circleSelectorLink = computed(
-  () => `/circles/select?redirect=${encodeURIComponent(route.fullPath)}`,
-);
-const formQuery = useFormDetailQuery(formId);
-const answersQuery = useFormAnswersQuery(formId);
-const legacyAnswerQuery = useFormAnswerQuery(formId);
+const route = useRoute('/workspace/forms/[formId]')
+const router = useRouter()
+const sessionStore = useSessionStore()
+const formId = computed(() => String(route.params.formId ?? ''))
+const circleSelectorLink = computed(() => `/circles/select?redirect=${encodeURIComponent(route.fullPath)}`)
+const formQuery = useFormDetailQuery(formId)
+const answersQuery = useFormAnswersQuery(formId)
+const legacyAnswerQuery = useFormAnswerQuery(formId)
 const selectedAnswerId = computed(() => {
-  const answer = route.query.answer;
-  return typeof answer === "string" ? answer : "";
-});
-const selectedAnswerQuery = useFormAnswerByIdQuery(formId, selectedAnswerId);
-const questions = computed(() => formQuery.data.value?.questions ?? []);
+  const answer = route.query.answer
+  return typeof answer === 'string' ? answer : ''
+})
+const selectedAnswerQuery = useFormAnswerByIdQuery(formId, selectedAnswerId)
+const questions = computed(() => formQuery.data.value?.questions ?? [])
 const selectedAnswer = computed(() => {
   if (selectedAnswerId.value) {
-    return selectedAnswerQuery.data.value?.answer ?? null;
+    return selectedAnswerQuery.data.value?.answer ?? null
   }
-  return legacyAnswerQuery.data.value?.answer ?? null;
-});
-const draft = useFormAnswerEditorDraft(selectedAnswer, questions);
-const createAnswerMutation = useCreateFormAnswerMutation(formId);
-const legacyAnswerMutation = useFormAnswerMutation(formId);
-const answerMutation = useUpdateFormAnswerMutation(formId, selectedAnswerId);
-const uploadMutation = useFormAnswerUploadMutation(formId);
-const errorMessage = ref("");
-const uploadErrorMessages = ref<Record<string, string>>({});
-const selectedFiles = ref<Record<string, File | null>>({});
+  return legacyAnswerQuery.data.value?.answer ?? null
+})
+const draft = useFormAnswerEditorDraft(selectedAnswer, questions)
+const createAnswerMutation = useCreateFormAnswerMutation(formId)
+const legacyAnswerMutation = useFormAnswerMutation(formId)
+const answerMutation = useUpdateFormAnswerMutation(formId, selectedAnswerId)
+const uploadMutation = useFormAnswerUploadMutation(formId)
+const errorMessage = ref('')
+const uploadErrorMessages = ref<Record<string, string>>({})
+const selectedFiles = ref<Record<string, File | null>>({})
 
-const isDisabled = computed(() => formQuery.data.value?.isOpen !== true);
-const answers = computed(() => answersQuery.data.value?.answers ?? []);
+const isDisabled = computed(() => formQuery.data.value?.isOpen !== true)
+const answers = computed(() => answersQuery.data.value?.answers ?? [])
 const hasReachedAnswerLimit = computed(() => {
-  const maxAnswers = formQuery.data.value?.maxAnswers ?? 1;
-  return answers.value.length >= maxAnswers;
-});
+  const maxAnswers = formQuery.data.value?.maxAnswers ?? 1
+  return answers.value.length >= maxAnswers
+})
 const isSavingAnswer = computed(() => {
   if (selectedAnswerId.value) {
-    return answerMutation.isPending.value;
+    return answerMutation.isPending.value
   }
-  return legacyAnswerMutation.isPending.value;
-});
+  return legacyAnswerMutation.isPending.value
+})
 
 watch(
   [answers, selectedAnswerId],
   async ([currentAnswers, currentSelectedAnswerId]) => {
     if (currentAnswers.length === 0) {
       if (!currentSelectedAnswerId) {
-        return;
+        return
       }
 
-      const nextQuery = { ...route.query };
-      delete nextQuery.answer;
-      await router.replace({ query: nextQuery });
-      return;
+      const nextQuery = { ...route.query }
+      delete nextQuery.answer
+      await router.replace({ query: nextQuery })
+      return
     }
 
-    const hasSelectedAnswer = currentAnswers.some(
-      (answer) => answer.id === currentSelectedAnswerId,
-    );
+    const hasSelectedAnswer = currentAnswers.some((answer) => answer.id === currentSelectedAnswerId)
     if (hasSelectedAnswer) {
-      return;
+      return
     }
 
     await router.replace({
       query: {
         ...route.query,
-        answer: currentAnswers[0].id,
-      },
-    });
+        answer: currentAnswers[0].id
+      }
+    })
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 async function handleSaveAnswer() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
     if (selectedAnswerId.value) {
-      await answerMutation.mutateAsync(draft.value);
+      await answerMutation.mutateAsync(draft.value)
     } else {
-      await legacyAnswerMutation.mutateAsync(draft.value);
+      await legacyAnswerMutation.mutateAsync(draft.value)
     }
   } catch (error) {
-    errorMessage.value = extractValidationMessage(error);
+    errorMessage.value = extractValidationMessage(error)
   }
 }
 
 async function handleCreateAnswer() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
-    const envelope = await createAnswerMutation.mutateAsync();
-    const createdAnswer = envelope.answer;
+    const envelope = await createAnswerMutation.mutateAsync()
+    const createdAnswer = envelope.answer
     if (!createdAnswer) {
-      errorMessage.value = "回答を作成できませんでした。";
-      return;
+      errorMessage.value = '回答を作成できませんでした。'
+      return
     }
     await router.push({
       path: `/workspace/forms/${encodeURIComponent(formId.value)}`,
-      query: { answer: createdAnswer.id },
-    });
-    await selectedAnswerQuery.refetch();
+      query: { answer: createdAnswer.id }
+    })
+    await selectedAnswerQuery.refetch()
   } catch (error) {
-    errorMessage.value = extractValidationMessage(error);
+    errorMessage.value = extractValidationMessage(error)
   }
 }
 
 async function handleUploadFile(questionId: string) {
-  uploadErrorMessages.value = { ...uploadErrorMessages.value, [questionId]: "" };
-  const file = selectedFiles.value[questionId];
+  uploadErrorMessages.value = { ...uploadErrorMessages.value, [questionId]: '' }
+  const file = selectedFiles.value[questionId]
   if (!file) {
     uploadErrorMessages.value = {
       ...uploadErrorMessages.value,
-      [questionId]: "ファイルを選択してください。",
-    };
-    return;
+      [questionId]: 'ファイルを選択してください。'
+    }
+    return
   }
 
   try {
     await uploadMutation.mutateAsync({
       questionId,
       file,
-      answerId: selectedAnswerId.value || undefined,
-    });
-    selectedFiles.value = { ...selectedFiles.value, [questionId]: null };
+      answerId: selectedAnswerId.value || undefined
+    })
+    selectedFiles.value = { ...selectedFiles.value, [questionId]: null }
   } catch (error) {
     uploadErrorMessages.value = {
       ...uploadErrorMessages.value,
-      [questionId]: extractValidationMessage(error),
-    };
+      [questionId]: extractValidationMessage(error)
+    }
   }
 }
 
 function handleFileChange(questionId: string, event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    selectedFiles.value = { ...selectedFiles.value, [questionId]: null };
-    return;
+    selectedFiles.value = { ...selectedFiles.value, [questionId]: null }
+    return
   }
 
-  const files = target.files;
+  const files = target.files
   selectedFiles.value = {
     ...selectedFiles.value,
-    [questionId]: files?.[0] ?? files?.item(0) ?? null,
-  };
+    [questionId]: files?.[0] ?? files?.item(0) ?? null
+  }
 }
 </script>
 
@@ -185,10 +181,7 @@ function handleFileChange(questionId: string, event: Event) {
       申請へ戻る
     </RouterLink>
 
-    <div
-      v-if="formQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -199,9 +192,7 @@ function handleFileChange(questionId: string, event: Event) {
           <div class="mt-3 space-y-1 text-sm text-muted">
             <p>
               受付期間 : {{ formQuery.data.value.openAt }}〜{{ formQuery.data.value.closeAt }}
-              <span v-if="!formQuery.data.value.isOpen" class="font-semibold text-danger">
-                — 受付期間外です
-              </span>
+              <span v-if="!formQuery.data.value.isOpen" class="font-semibold text-danger"> — 受付期間外です </span>
             </p>
             <p v-if="formQuery.data.value.maxAnswers > 1">
               1企画あたり {{ formQuery.data.value.maxAnswers }} 件まで回答できます。
@@ -249,16 +240,14 @@ function handleFileChange(questionId: string, event: Event) {
           <h3 class="text-base font-semibold text-body">回答一覧</h3>
         </div>
         <div class="grid gap-4 px-6 py-5">
-          <p class="text-sm text-muted">
-            現在 {{ answers.length }} / {{ formQuery.data.value.maxAnswers }} 件
-          </p>
+          <p class="text-sm text-muted">現在 {{ answers.length }} / {{ formQuery.data.value.maxAnswers }} 件</p>
           <div class="flex flex-wrap gap-3">
             <RouterLink
               v-for="answer in answers"
               :key="answer.id"
               :to="{
                 path: `/workspace/forms/${formId}`,
-                query: { answer: answer.id },
+                query: { answer: answer.id }
               }"
               class="rounded border px-4 py-2 text-sm transition"
               :class="
@@ -271,13 +260,11 @@ function handleFileChange(questionId: string, event: Event) {
             </RouterLink>
             <button
               class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="
-                isDisabled || hasReachedAnswerLimit || createAnswerMutation.isPending.value
-              "
+              :disabled="isDisabled || hasReachedAnswerLimit || createAnswerMutation.isPending.value"
               type="button"
               @click="handleCreateAnswer"
             >
-              {{ createAnswerMutation.isPending.value ? "作成中..." : "新しい回答を作成" }}
+              {{ createAnswerMutation.isPending.value ? '作成中...' : '新しい回答を作成' }}
             </button>
           </div>
           <p v-if="hasReachedAnswerLimit" class="text-sm text-muted">
@@ -289,7 +276,7 @@ function handleFileChange(questionId: string, event: Event) {
       <section class="rounded border border-border bg-surface shadow-lv1">
         <div class="border-b border-border px-6 py-4">
           <h3 class="text-base font-semibold text-body">
-            {{ formQuery.data.value.questions.length > 0 ? "回答を入力" : "回答内容" }}
+            {{ formQuery.data.value.questions.length > 0 ? '回答を入力' : '回答内容' }}
           </h3>
         </div>
 
@@ -304,13 +291,7 @@ function handleFileChange(questionId: string, event: Event) {
                   name="answer-body"
                   :disabled="isDisabled"
                   placeholder="回答内容を入力してください"
-                  @input="
-                    updateDraftValue(
-                      draft,
-                      'legacy-body',
-                      ($event.target as HTMLTextAreaElement).value,
-                    )
-                  "
+                  @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
                 />
               </label>
             </div>
@@ -319,10 +300,7 @@ function handleFileChange(questionId: string, event: Event) {
           <template v-for="question in formQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
               <h4 class="text-lg font-semibold text-body">{{ question.name }}</h4>
-              <p
-                v-if="question.description"
-                class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted"
-              >
+              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
@@ -332,14 +310,9 @@ function handleFileChange(questionId: string, event: Event) {
                 <div>
                   <p class="text-sm font-semibold text-body">
                     {{ question.name }}
-                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">
-                      必須
-                    </span>
+                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger"> 必須 </span>
                   </p>
-                  <p
-                    v-if="question.description"
-                    class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted"
-                  >
+                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
@@ -356,16 +329,11 @@ function handleFileChange(questionId: string, event: Event) {
                   :download-href="
                     (currentQuestion) =>
                       selectedAnswerId
-                        ? buildFormAnswerUploadDownloadUrlByAnswer(
-                            formId,
-                            selectedAnswerId,
-                            currentQuestion.id,
-                          )
+                        ? buildFormAnswerUploadDownloadUrlByAnswer(formId, selectedAnswerId, currentQuestion.id)
                         : buildFormAnswerUploadDownloadUrl(
                             formId,
-                            (selectedAnswer?.uploads ?? []).find(
-                              (upload) => upload.questionId === currentQuestion.id,
-                            )?.id ?? '',
+                            (selectedAnswer?.uploads ?? []).find((upload) => upload.questionId === currentQuestion.id)
+                              ?.id ?? ''
                           )
                   "
                   @upload="handleUploadFile"
@@ -377,10 +345,7 @@ function handleFileChange(questionId: string, event: Event) {
         </div>
       </section>
 
-      <p
-        v-if="errorMessage"
-        class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-      >
+      <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
         {{ errorMessage }}
       </p>
 
@@ -391,7 +356,7 @@ function handleFileChange(questionId: string, event: Event) {
           type="button"
           @click="handleSaveAnswer"
         >
-          {{ isSavingAnswer ? "送信中..." : "送信" }}
+          {{ isSavingAnswer ? '送信中...' : '送信' }}
         </button>
       </div>
     </article>

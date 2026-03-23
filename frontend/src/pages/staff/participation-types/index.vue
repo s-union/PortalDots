@@ -4,12 +4,12 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "circles.participationTypes",
-  },
-});
+    staffCapability: 'circles.participationTypes'
+  }
+})
 
-import { computed, ref } from "vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref } from 'vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractStaffParticipationTypeValidationMessage,
   formatDateTimeLocalValue,
@@ -18,54 +18,54 @@ import {
   parseParticipationTypeTags,
   useCreateStaffParticipationTypeMutation,
   useStaffParticipationTypeForm,
-  useStaffParticipationTypesQuery,
-} from "@/features/staff/participation-types/api";
-import { useSessionStore } from "@/features/session/store";
+  useStaffParticipationTypesQuery
+} from '@/features/staff/participation-types/api'
+import { useSessionStore } from '@/features/session/store'
 
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const participationTypesQuery = useStaffParticipationTypesQuery(
-  computed(() => staffStatusQuery.data.value?.authorized === true),
-);
-const createMutation = useCreateStaffParticipationTypeMutation();
-const form = useStaffParticipationTypeForm();
-const errorMessage = ref("");
+  computed(() => staffStatusQuery.data.value?.authorized === true)
+)
+const createMutation = useCreateStaffParticipationTypeMutation()
+const form = useStaffParticipationTypeForm()
+const errorMessage = ref('')
 
 function handleTagsInput(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLTextAreaElement)) {
-    return;
+    return
   }
-  form.value.tags = parseParticipationTypeTags(target.value);
+  form.value.tags = parseParticipationTypeTags(target.value)
 }
 
 function handleOpenAtInput(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
-  form.value.openAt = parseDateTimeLocalValue(target.value);
+  form.value.openAt = parseDateTimeLocalValue(target.value)
 }
 
 function handleCloseAtInput(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
-  form.value.closeAt = parseDateTimeLocalValue(target.value);
+  form.value.closeAt = parseDateTimeLocalValue(target.value)
 }
 
 async function handleCreate() {
-  errorMessage.value = "";
+  errorMessage.value = ''
   try {
     await createMutation.mutateAsync({
       ...form.value,
       openAt: parseDateTimeLocalValue(form.value.openAt),
-      closeAt: parseDateTimeLocalValue(form.value.closeAt),
-    });
-    form.value = useStaffParticipationTypeForm().value;
+      closeAt: parseDateTimeLocalValue(form.value.closeAt)
+    })
+    form.value = useStaffParticipationTypeForm().value
   } catch (error) {
-    errorMessage.value = extractStaffParticipationTypeValidationMessage(error);
+    errorMessage.value = extractStaffParticipationTypeValidationMessage(error)
   }
 }
 </script>
@@ -89,13 +89,8 @@ async function handleCreate() {
       <div class="border-b border-border px-6 py-4">
         <h3 class="text-lg font-semibold text-body">参加種別一覧</h3>
       </div>
-      <div v-if="participationTypesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">
-        読み込み中...
-      </div>
-      <div
-        v-else-if="(participationTypesQuery.data.value?.length ?? 0) === 0"
-        class="px-6 py-5 text-sm text-muted"
-      >
+      <div v-if="participationTypesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
+      <div v-else-if="(participationTypesQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
         参加種別はまだありません。
       </div>
       <div v-else class="divide-y divide-border">
@@ -118,10 +113,7 @@ async function handleCreate() {
       </div>
     </section>
 
-    <form
-      class="rounded border border-border bg-surface p-6 shadow-lv1"
-      @submit.prevent="handleCreate"
-    >
+    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreate">
       <h3 class="text-lg font-semibold text-body">参加種別を新規作成</h3>
       <div class="mt-4 grid gap-4">
         <label class="grid gap-2 text-sm text-body">
@@ -177,20 +169,13 @@ async function handleCreate() {
         </label>
         <label class="grid gap-2 text-sm text-body">
           <span>提出後メッセージ</span>
-          <textarea
-            v-model="form.formConfirmationMessage"
-            class="min-h-24"
-            name="formConfirmationMessage"
-          />
+          <textarea v-model="form.formConfirmationMessage" class="min-h-24" name="formConfirmationMessage" />
         </label>
         <label class="flex items-center gap-3 text-sm text-body">
           <input v-model="form.isPublic" name="isPublic" type="checkbox" />
           参加登録画面を公開する
         </label>
-        <p
-          v-if="errorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
       </div>
@@ -200,7 +185,7 @@ async function handleCreate() {
           :disabled="createMutation.isPending.value"
           type="submit"
         >
-          {{ createMutation.isPending.value ? "作成中..." : "保存" }}
+          {{ createMutation.isPending.value ? '作成中...' : '保存' }}
         </button>
       </div>
     </form>

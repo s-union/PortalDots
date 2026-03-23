@@ -47,3 +47,7 @@ yarn-error.log
 pnpm-debug.log
 /frontend/.env
 /backend/.env
+
+# Generated files (do not edit manually)
+/packages/api-client/src/generated/
+/backend/internal/platform/postgres/db/

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 
-defineProps<{
-  id?: string;
-  title: string;
-  titleOutside?: boolean;
-}>();
+const { id, title, titleOutside } = defineProps<{
+  id?: string
+  title: string
+  titleOutside?: boolean
+}>()
 </script>
 
 <template>

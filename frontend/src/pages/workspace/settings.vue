@@ -1,38 +1,33 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    requiresAuth: true,
-  },
-});
+    requiresAuth: true
+  }
+})
 
-import { ref } from "vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useUserSettingsPage } from "@/features/session/settings";
+import { ref } from 'vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useUserSettingsPage } from '@/features/session/settings'
 
-const {
-  tabs,
-  sessionStore,
-  updateProfileMutation,
-  workspaceBackLink,
-  extractProfileValidationMessage,
-} = useUserSettingsPage("general");
+const { tabs, sessionStore, updateProfileMutation, workspaceBackLink, extractProfileValidationMessage } =
+  useUserSettingsPage('general')
 
-const displayName = ref(sessionStore.user?.displayName ?? "");
-const errorMessage = ref("");
-const successMessage = ref("");
+const displayName = ref(sessionStore.user?.displayName ?? '')
+const errorMessage = ref('')
+const successMessage = ref('')
 
 async function handleSaveProfile() {
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
-    await updateProfileMutation.mutateAsync({ displayName: displayName.value });
-    displayName.value = sessionStore.user?.displayName ?? displayName.value;
-    successMessage.value = "表示名を更新しました。";
+    await updateProfileMutation.mutateAsync({ displayName: displayName.value })
+    displayName.value = sessionStore.user?.displayName ?? displayName.value
+    successMessage.value = '表示名を更新しました。'
   } catch (error) {
-    errorMessage.value = extractProfileValidationMessage(error);
+    errorMessage.value = extractProfileValidationMessage(error)
   }
 }
 </script>
@@ -54,13 +49,13 @@ async function handleSaveProfile() {
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">ユーザー ID</p>
-          <p class="text-sm text-body">{{ sessionStore.user?.id ?? "-" }}</p>
+          <p class="text-sm text-body">{{ sessionStore.user?.id ?? '-' }}</p>
         </div>
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">現在の企画</p>
-          <p class="text-sm text-body">{{ sessionStore.currentCircle?.name ?? "企画未選択" }}</p>
+          <p class="text-sm text-body">{{ sessionStore.currentCircle?.name ?? '企画未選択' }}</p>
         </div>
       </SettingsRow>
       <template #footer>
@@ -71,10 +66,7 @@ async function handleSaveProfile() {
           >
             {{ successMessage }}
           </p>
-          <p
-            v-if="errorMessage"
-            class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-          >
+          <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
             {{ errorMessage }}
           </p>
           <div class="flex justify-center pt-2">
@@ -84,7 +76,7 @@ async function handleSaveProfile() {
               type="button"
               @click="handleSaveProfile"
             >
-              {{ updateProfileMutation.isPending.value ? "保存中..." : "保存" }}
+              {{ updateProfileMutation.isPending.value ? '保存中...' : '保存' }}
             </button>
           </div>
         </div>

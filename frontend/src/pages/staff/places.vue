@@ -5,12 +5,12 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "places.read",
-  },
-});
+    staffCapability: 'places.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref } from 'vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffPlacesExportUrl,
   buildDeleteStaffPlaceConfirmMessage,
@@ -20,58 +20,52 @@ import {
   useDeleteStaffPlaceMutation,
   useStaffPlacesQuery,
   useUpdateStaffPlaceMutation,
-  type StaffPlace,
-} from "@/features/staff/masters/places";
-import { useSessionStore } from "@/features/session/store";
+  type StaffPlace
+} from '@/features/staff/masters/places'
+import { useSessionStore } from '@/features/session/store'
 
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
-const enabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-);
-const placesQuery = useStaffPlacesQuery(enabled);
-const createMutation = useCreateStaffPlaceMutation();
-const updateMutation = useUpdateStaffPlaceMutation();
-const deleteMutation = useDeleteStaffPlaceMutation();
-const exportHref = buildStaffPlacesExportUrl();
-const errorMessage = ref("");
-const form = ref<Omit<StaffPlace, "id">>({
-  name: "",
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+const placesQuery = useStaffPlacesQuery(enabled)
+const createMutation = useCreateStaffPlaceMutation()
+const updateMutation = useUpdateStaffPlaceMutation()
+const deleteMutation = useDeleteStaffPlaceMutation()
+const exportHref = buildStaffPlacesExportUrl()
+const errorMessage = ref('')
+const form = ref<Omit<StaffPlace, 'id'>>({
+  name: '',
   type: 1,
-  notes: "",
-});
-const editing = ref<Record<string, StaffPlace>>({});
+  notes: ''
+})
+const editing = ref<Record<string, StaffPlace>>({})
 
 async function handleCreatePlace() {
-  errorMessage.value = "";
+  errorMessage.value = ''
   try {
-    await createMutation.mutateAsync(form.value);
-    form.value = { name: "", type: 1, notes: "" };
+    await createMutation.mutateAsync(form.value)
+    form.value = { name: '', type: 1, notes: '' }
   } catch (error) {
-    errorMessage.value = extractStaffPlaceValidationMessage(error);
+    errorMessage.value = extractStaffPlaceValidationMessage(error)
   }
 }
 
 async function handleUpdatePlace(placeId: string) {
-  errorMessage.value = "";
+  errorMessage.value = ''
   try {
-    await updateMutation.mutateAsync(editing.value[placeId]);
+    await updateMutation.mutateAsync(editing.value[placeId])
   } catch (error) {
-    errorMessage.value = extractStaffPlaceValidationMessage(error);
+    errorMessage.value = extractStaffPlaceValidationMessage(error)
   }
 }
 
 async function handleDeletePlace(placeId: string) {
-  const placeName =
-    placesQuery.data.value?.find((place) => place.id === placeId)?.name ?? "この場所";
-  if (
-    typeof window !== "undefined" &&
-    !window.confirm(buildDeleteStaffPlaceConfirmMessage(placeName))
-  ) {
-    return;
+  const placeName = placesQuery.data.value?.find((place) => place.id === placeId)?.name ?? 'この場所'
+  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffPlaceConfirmMessage(placeName))) {
+    return
   }
 
-  await deleteMutation.mutateAsync(placeId);
+  await deleteMutation.mutateAsync(placeId)
 }
 </script>
 
@@ -91,9 +85,7 @@ async function handleDeletePlace(placeId: string) {
     </header>
 
     <section class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
-      <div
-        class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"
-      >
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <h3 class="text-base font-semibold text-body">場所一覧</h3>
           <p class="mt-1 text-sm text-muted">場所名・タイプ・スタッフ用メモを一覧で管理します。</p>
@@ -138,10 +130,7 @@ async function handleDeletePlace(placeId: string) {
             新規場所
           </button>
         </div>
-        <p
-          v-if="errorMessage"
-          class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
       </form>
@@ -166,9 +155,7 @@ async function handleDeletePlace(placeId: string) {
                   class="w-full rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   type="text"
                 />
-                <p class="mt-2 text-xs text-muted">
-                  現在値: {{ (editing[place.id] ?? place).name }}
-                </p>
+                <p class="mt-2 text-xs text-muted">現在値: {{ (editing[place.id] ?? place).name }}</p>
               </td>
               <td class="px-5 py-4">
                 <select

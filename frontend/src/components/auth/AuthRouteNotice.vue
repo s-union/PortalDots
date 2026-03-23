@@ -1,32 +1,29 @@
 <script setup lang="ts">
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 
-type Action = {
-  label: string;
-  to: string;
-  variant?: "primary" | "secondary";
-};
-
-interface Props {
-  eyebrow?: string;
-  title: string;
-  lead: string;
-  body: string;
-  notes?: string[];
-  actions: Action[];
+interface Action {
+  label: string
+  to: string
+  variant?: 'primary' | 'secondary'
 }
 
-withDefaults(defineProps<Props>(), {
-  eyebrow: "Auth",
-  notes: () => [],
-});
+interface Props {
+  eyebrow?: string
+  title: string
+  lead: string
+  body: string
+  notes?: string[]
+  actions: Action[]
+}
 
-function actionClasses(variant: Action["variant"] = "secondary") {
-  if (variant === "primary") {
-    return "inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover";
+const { eyebrow = 'Auth', title, lead, body, notes = () => [], actions } = defineProps<Props>()
+
+function actionClasses(variant: Action['variant'] = 'secondary') {
+  if (variant === 'primary') {
+    return 'inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover'
   }
 
-  return "inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light";
+  return 'inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light'
 }
 </script>
 

@@ -2,64 +2,60 @@
 definePage({
   meta: {
     requiresAuth: true,
-    requiresCircle: true,
-  },
-});
+    requiresCircle: true
+  }
+})
 
-import { computed, ref } from "vue";
-import { useRoute } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import ListPanel from "@/components/ui/ListPanel.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import {
   extractContactValidationMessage,
   useContactCategoriesQuery,
   useContactHistoryQuery,
-  useSubmitContactMutation,
-} from "@/features/contact/api";
-import { useSessionStore } from "@/features/session/store";
+  useSubmitContactMutation
+} from '@/features/contact/api'
+import { useSessionStore } from '@/features/session/store'
 
-const route = useRoute();
-const sessionStore = useSessionStore();
-const categoriesQuery = useContactCategoriesQuery();
-const historyQuery = useContactHistoryQuery();
-const submitContactMutation = useSubmitContactMutation();
+const route = useRoute()
+const sessionStore = useSessionStore()
+const categoriesQuery = useContactCategoriesQuery()
+const historyQuery = useContactHistoryQuery()
+const submitContactMutation = useSubmitContactMutation()
 const form = ref({
-  categoryId: "",
-  subject: "",
-  body: "",
-});
-const errorMessage = ref("");
-const successMessage = ref("");
+  categoryId: '',
+  subject: '',
+  body: ''
+})
+const errorMessage = ref('')
+const successMessage = ref('')
 const selectedCategoryName = computed(
-  () =>
-    categoriesQuery.data.value?.find((category) => category.id === form.value.categoryId)?.name ??
-    "",
-);
-const circleSelectorLink = computed(
-  () => `/circles/select?redirect=${encodeURIComponent(route.fullPath)}`,
-);
+  () => categoriesQuery.data.value?.find((category) => category.id === form.value.categoryId)?.name ?? ''
+)
+const circleSelectorLink = computed(() => `/circles/select?redirect=${encodeURIComponent(route.fullPath)}`)
 
 async function handleSubmit() {
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
     const result = await submitContactMutation.mutateAsync({
       categoryId: form.value.categoryId,
       subject: form.value.subject,
-      body: form.value.body,
-    });
-    successMessage.value = `「${result.categoryName}」宛てのモック問い合わせを登録しました。実メールは送信していません。`;
+      body: form.value.body
+    })
+    successMessage.value = `「${result.categoryName}」に問い合わせを送信しました（実際のメール送信はされません）。`
     form.value = {
-      categoryId: "",
-      subject: "",
-      body: "",
-    };
+      categoryId: '',
+      subject: '',
+      body: ''
+    }
   } catch (error) {
-    errorMessage.value = extractContactValidationMessage(error);
+    errorMessage.value = extractContactValidationMessage(error)
   }
 }
 </script>
@@ -71,12 +67,7 @@ async function handleSubmit() {
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Contact</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">お問い合わせ</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">
-        お問い合わせを現在の企画コンテキスト付きでモック登録できます。
-      </p>
-      <p class="mt-2 text-sm leading-7 text-muted">
-        実メール送信は行わず、履歴に残して確認します。
-      </p>
+      <p class="mt-3 text-sm leading-7 text-muted">現在、メール送信はデモ環境のため実際には送信されません。</p>
     </SurfaceCard>
 
     <SettingsSection title="お問い合わせ前の確認">
@@ -84,7 +75,7 @@ async function handleSubmit() {
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">現在の企画</p>
           <div class="flex flex-wrap items-center gap-3">
-            <p class="text-sm text-body">{{ sessionStore.currentCircle?.name ?? "企画未選択" }}</p>
+            <p class="text-sm text-body">{{ sessionStore.currentCircle?.name ?? '企画未選択' }}</p>
             <RouterLink
               :to="circleSelectorLink"
               class="inline-flex rounded border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-body transition hover:bg-surface-light"
@@ -98,7 +89,7 @@ async function handleSubmit() {
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">ログイン中ユーザー</p>
           <p class="text-sm text-body">
-            {{ sessionStore.user?.displayName ?? "未ログイン" }}
+            {{ sessionStore.user?.displayName ?? '未ログイン' }}
           </p>
         </div>
       </SettingsRow>
@@ -106,27 +97,20 @@ async function handleSubmit() {
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">送信先カテゴリ</p>
           <p class="text-sm leading-7 text-muted">
-            {{ selectedCategoryName || "カテゴリを選択してください" }}
+            {{ selectedCategoryName || 'カテゴリを選択してください' }}
           </p>
         </div>
       </SettingsRow>
     </SettingsSection>
 
-    <form
-      class="rounded border border-border bg-surface p-6 shadow-lv1"
-      @submit.prevent="handleSubmit"
-    >
-      <h3 class="text-lg font-semibold text-body">お問い合わせをモック送信</h3>
+    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleSubmit">
+      <h3 class="text-lg font-semibold text-body">お問い合わせ（モック）</h3>
       <div class="mt-4 grid gap-4">
         <label class="grid gap-2 text-sm text-body">
           <span>問い合わせカテゴリ</span>
           <select v-model="form.categoryId" name="categoryId">
             <option value="">選択してください</option>
-            <option
-              v-for="category in categoriesQuery.data.value ?? []"
-              :key="category.id"
-              :value="category.id"
-            >
+            <option v-for="category in categoriesQuery.data.value ?? []" :key="category.id" :value="category.id">
               {{ category.name }}
             </option>
           </select>
@@ -142,16 +126,10 @@ async function handleSubmit() {
           <textarea v-model="form.body" class="min-h-40" name="body" />
         </label>
 
-        <p
-          v-if="successMessage"
-          class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-        >
+        <p v-if="successMessage" class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success">
           {{ successMessage }}
         </p>
-        <p
-          v-if="errorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
 
@@ -161,7 +139,7 @@ async function handleSubmit() {
             :disabled="submitContactMutation.isPending.value || categoriesQuery.isPending.value"
             type="submit"
           >
-            {{ submitContactMutation.isPending.value ? "登録中..." : "モック送信する" }}
+            {{ submitContactMutation.isPending.value ? '送信中...' : '送信する（モック）' }}
           </button>
         </div>
       </div>
@@ -169,17 +147,12 @@ async function handleSubmit() {
 
     <ListPanel
       title="送信履歴"
-      description="この企画でモック送信したお問い合わせです。"
+      description="この企画で送信したお問い合わせの履歴です（メール送信はモック）。"
       overflow-hidden
     >
-      <div v-if="historyQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        読み込み中...
-      </div>
-      <div
-        v-else-if="(historyQuery.data.value?.length ?? 0) === 0"
-        class="px-6 py-6 text-sm text-muted"
-      >
-        まだモック問い合わせは送信していません。
+      <div v-if="historyQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+      <div v-else-if="(historyQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
+        まだお問い合わせは送信していません。
       </div>
       <div v-else class="divide-y divide-border">
         <div v-for="item in historyQuery.data.value" :key="item.id" class="px-6 py-5">
@@ -188,9 +161,7 @@ async function handleSubmit() {
               <p class="text-sm font-semibold text-body">{{ item.subject }}</p>
               <p class="mt-2 text-xs text-muted">{{ item.categoryName }} / {{ item.createdAt }}</p>
             </div>
-            <span
-              class="rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary"
-            >
+            <span class="rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary">
               {{ item.status }}
             </span>
           </div>

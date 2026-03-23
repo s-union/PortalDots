@@ -1,38 +1,33 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { buildStaffFormUploadDownloadUrl, type StaffFormDetail } from "@/features/staff/forms/api";
+import { computed } from 'vue'
+import { buildStaffFormUploadDownloadUrl, type StaffFormDetail } from '@/features/staff/forms/api'
 
-const props = defineProps<{
-  formId: string;
-  form: StaffFormDetail;
-  isParticipationForm?: boolean;
-}>();
+const { formId, form, isParticipationForm } = defineProps<{
+  formId: string
+  form: StaffFormDetail
+  isParticipationForm?: boolean
+}>()
 
 function answerDetails(questionId: string) {
-  return props.form.answer?.details[questionId] ?? [];
+  return form.answer?.details[questionId] ?? []
 }
 
 function answerUploads(questionId: string) {
-  return (props.form.answer?.uploads ?? []).filter((upload) => upload.questionId === questionId);
+  return (form.answer?.uploads ?? []).filter((upload) => upload.questionId === questionId)
 }
 
-const totalUploads = computed(() => props.form.answer?.uploads.length ?? 0);
+const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
 </script>
 
 <template>
-  <section
-    id="answer-panel"
-    class="rounded border border-border bg-surface shadow-lv1 scroll-mt-24"
-  >
+  <section id="answer-panel" class="rounded border border-border bg-surface shadow-lv1 scroll-mt-24">
     <div class="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
       <h3 class="text-lg font-medium text-body">現在企画の回答</h3>
       <div class="flex flex-wrap items-center gap-3">
         <p class="text-xs text-muted-2">
-          {{ form.answer?.updatedAt ? `last updated: ${form.answer.updatedAt}` : "未回答" }}
+          {{ form.answer?.updatedAt ? `last updated: ${form.answer.updatedAt}` : '未回答' }}
         </p>
-        <p v-if="isParticipationForm" class="text-xs text-muted-2">
-          参加登録フォームの回答管理はここでは行えません。
-        </p>
+        <p v-if="isParticipationForm" class="text-xs text-muted-2">参加登録フォームの回答管理はここでは行えません。</p>
         <RouterLink
           v-else
           :to="`/staff/forms/${formId}/answers`"
@@ -45,24 +40,15 @@ const totalUploads = computed(() => props.form.answer?.uploads.length ?? 0);
 
     <div v-if="form.answer" class="m-6 overflow-hidden rounded border border-border bg-surface">
       <template v-for="question in form.questions" :key="question.id">
-        <div
-          v-if="question.type === 'heading'"
-          class="border-b border-border px-4 py-4 last:border-b-0"
-        >
+        <div v-if="question.type === 'heading'" class="border-b border-border px-4 py-4 last:border-b-0">
           <h4 class="text-base font-semibold text-body">{{ question.name }}</h4>
-          <p
-            v-if="question.description"
-            class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted"
-          >
+          <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
             {{ question.description }}
           </p>
         </div>
         <div v-else class="border-b border-border px-4 py-4 last:border-b-0">
           <p class="text-sm font-semibold text-body">{{ question.name }}</p>
-          <p
-            v-if="question.description"
-            class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted"
-          >
+          <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
             {{ question.description }}
           </p>
 
@@ -91,17 +77,15 @@ const totalUploads = computed(() => props.form.answer?.uploads.length ?? 0);
           </div>
 
           <p v-else-if="question.type === 'checkbox'" class="mt-3 text-sm leading-7 text-body">
-            {{ answerDetails(question.id).join(", ") || "未入力" }}
+            {{ answerDetails(question.id).join(', ') || '未入力' }}
           </p>
 
-          <pre
-            v-else-if="question.type === 'textarea'"
-            class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body"
-            >{{ answerDetails(question.id)[0] ?? "" }}</pre
-          >
+          <pre v-else-if="question.type === 'textarea'" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{
+            answerDetails(question.id)[0] ?? ''
+          }}</pre>
 
           <p v-else class="mt-3 text-sm leading-7 text-body">
-            {{ answerDetails(question.id)[0] ?? "未入力" }}
+            {{ answerDetails(question.id)[0] ?? '未入力' }}
           </p>
         </div>
       </template>
@@ -114,9 +98,7 @@ const totalUploads = computed(() => props.form.answer?.uploads.length ?? 0);
         <span class="text-xs text-muted-2"> {{ totalUploads }} 件 </span>
       </div>
 
-      <p v-if="totalUploads === 0" class="mt-3 text-sm text-muted-2">
-        添付ファイルはまだありません。
-      </p>
+      <p v-if="totalUploads === 0" class="mt-3 text-sm text-muted-2">添付ファイルはまだありません。</p>
 
       <ul v-else class="mt-3 grid gap-3">
         <li

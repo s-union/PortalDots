@@ -5,12 +5,12 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "contactCategories.read",
-  },
-});
+    staffCapability: 'contactCategories.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref } from 'vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildDeleteStaffContactCategoryConfirmMessage,
   extractStaffContactCategoryValidationMessage,
@@ -18,56 +18,54 @@ import {
   useDeleteStaffContactCategoryMutation,
   useStaffContactCategoriesQuery,
   useUpdateStaffContactCategoryMutation,
-  type StaffContactCategory,
-} from "@/features/staff/masters/contactCategories";
-import { useSessionStore } from "@/features/session/store";
+  type StaffContactCategory
+} from '@/features/staff/masters/contactCategories'
+import { useSessionStore } from '@/features/session/store'
 
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
-const enabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-);
-const categoriesQuery = useStaffContactCategoriesQuery(enabled);
-const createMutation = useCreateStaffContactCategoryMutation();
-const updateMutation = useUpdateStaffContactCategoryMutation();
-const deleteMutation = useDeleteStaffContactCategoryMutation();
-const errorMessage = ref("");
-const form = ref<Omit<StaffContactCategory, "id">>({
-  name: "",
-  email: "",
-});
-const editing = ref<Record<string, StaffContactCategory>>({});
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+const categoriesQuery = useStaffContactCategoriesQuery(enabled)
+const createMutation = useCreateStaffContactCategoryMutation()
+const updateMutation = useUpdateStaffContactCategoryMutation()
+const deleteMutation = useDeleteStaffContactCategoryMutation()
+const errorMessage = ref('')
+const form = ref<Omit<StaffContactCategory, 'id'>>({
+  name: '',
+  email: ''
+})
+const editing = ref<Record<string, StaffContactCategory>>({})
 
 async function handleCreateCategory() {
-  errorMessage.value = "";
+  errorMessage.value = ''
   try {
-    await createMutation.mutateAsync(form.value);
-    form.value = { name: "", email: "" };
+    await createMutation.mutateAsync(form.value)
+    form.value = { name: '', email: '' }
   } catch (error) {
-    errorMessage.value = extractStaffContactCategoryValidationMessage(error);
+    errorMessage.value = extractStaffContactCategoryValidationMessage(error)
   }
 }
 
 async function handleUpdateCategory(categoryId: string) {
-  errorMessage.value = "";
+  errorMessage.value = ''
   try {
-    await updateMutation.mutateAsync(editing.value[categoryId]);
+    await updateMutation.mutateAsync(editing.value[categoryId])
   } catch (error) {
-    errorMessage.value = extractStaffContactCategoryValidationMessage(error);
+    errorMessage.value = extractStaffContactCategoryValidationMessage(error)
   }
 }
 
 async function handleDeleteCategory(categoryId: string) {
-  const category = categoriesQuery.data.value?.find((value) => value.id === categoryId);
+  const category = categoriesQuery.data.value?.find((value) => value.id === categoryId)
   if (
     category &&
-    typeof window !== "undefined" &&
+    typeof window !== 'undefined' &&
     !window.confirm(buildDeleteStaffContactCategoryConfirmMessage(category))
   ) {
-    return;
+    return
   }
 
-  await deleteMutation.mutateAsync(categoryId);
+  await deleteMutation.mutateAsync(categoryId)
 }
 </script>
 
@@ -118,20 +116,13 @@ async function handleDeleteCategory(categoryId: string) {
             メールアドレスを追加
           </button>
         </div>
-        <p
-          v-if="errorMessage"
-          class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
       </form>
 
       <div class="divide-y divide-border">
-        <article
-          v-for="category in categoriesQuery.data.value"
-          :key="category.id"
-          class="px-6 py-5"
-        >
+        <article v-for="category in categoriesQuery.data.value" :key="category.id" class="px-6 py-5">
           <div class="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
             <input
               v-model="(editing[category.id] ??= { ...category }).name"

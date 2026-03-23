@@ -5,37 +5,32 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "formAnswers.export",
-  },
-});
+    staffCapability: 'formAnswers.export'
+  }
+})
 
-import { computed } from "vue";
-import { useRoute } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useSessionStore } from "@/features/session/store";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import {
-  buildStaffFormAnswerUploadsZipUrl,
-  useStaffFormAnswersIndexQuery,
-} from "@/features/staff/forms/answers";
-import { buildStaffFormTabs } from "@/features/ui/tabStrip";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useSessionStore } from '@/features/session/store'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { buildStaffFormAnswerUploadsZipUrl, useStaffFormAnswersIndexQuery } from '@/features/staff/forms/answers'
+import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute("/staff/forms/[formId]/answers/uploads");
-const sessionStore = useSessionStore();
-const formId = computed(() => String(route.params.formId ?? ""));
-const zipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.value));
+const route = useRoute('/staff/forms/[formId]/answers/uploads')
+const sessionStore = useSessionStore()
+const formId = computed(() => String(route.params.formId ?? ''))
+const zipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.value))
 
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
-  computed(
-    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-  ),
-);
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
+  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+)
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
 </script>
 
 <template>
@@ -44,10 +39,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
 
     <TabStrip :tabs="staffFormTabs" />
 
-    <div
-      v-if="answersQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -72,9 +64,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
             <li>ファイル数が多い場合、ダウンロード完了まで時間がかかることがあります。</li>
             <li>
               アップロード件数:
-              {{
-                answersQuery.data.value.answers.reduce((sum, answer) => sum + answer.uploadCount, 0)
-              }}
+              {{ answersQuery.data.value.answers.reduce((sum, answer) => sum + answer.uploadCount, 0) }}
               件
             </li>
           </ul>

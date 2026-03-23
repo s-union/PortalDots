@@ -4,39 +4,36 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "activityLogs.read",
-  },
-});
+    staffCapability: 'activityLogs.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import { useStaffActivityLogsQuery } from "@/features/staff/admin/activityLogs";
-import { useSessionStore } from "@/features/session/store";
-import { calculateTotalPages } from "@/lib/pagination";
+import { computed, ref } from 'vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { useStaffActivityLogsQuery } from '@/features/staff/admin/activityLogs'
+import { useSessionStore } from '@/features/session/store'
+import { calculateTotalPages } from '@/lib/pagination'
 
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
-const page = ref(1);
-const pageSize = 10;
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const page = ref(1)
+const pageSize = 10
 const activityLogsQuery = useStaffActivityLogsQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
     page: page.value,
-    pageSize,
-  })),
-);
+    pageSize
+  }))
+)
 const totalPages = computed(() =>
-  calculateTotalPages(
-    activityLogsQuery.data.value?.total ?? 0,
-    activityLogsQuery.data.value?.pageSize ?? pageSize,
-  ),
-);
+  calculateTotalPages(activityLogsQuery.data.value?.total ?? 0, activityLogsQuery.data.value?.pageSize ?? pageSize)
+)
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value);
+  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
 }
 </script>
 
@@ -46,9 +43,7 @@ function movePage(nextPage: number) {
       <div>
         <p class="text-sm text-primary">Staff Activity Logs</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">活動ログ</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">
-          staff 操作の主要な mutation を時系列で確認します。
-        </p>
+        <p class="mt-3 text-sm leading-7 text-muted">staff 操作の主要な mutation を時系列で確認します。</p>
       </div>
       <BackLink to="/staff"> Staff top へ戻る </BackLink>
     </header>
@@ -64,14 +59,9 @@ function movePage(nextPage: number) {
         </template>
       </SurfaceHeader>
 
-      <div v-if="activityLogsQuery.isPending.value" class="px-6 py-5 text-sm text-muted">
-        読み込み中...
-      </div>
+      <div v-if="activityLogsQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
 
-      <div
-        v-else-if="(activityLogsQuery.data.value?.items.length ?? 0) === 0"
-        class="px-6 py-5 text-sm text-muted"
-      >
+      <div v-else-if="(activityLogsQuery.data.value?.items.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
         まだ活動ログはありません。
       </div>
 
@@ -88,11 +78,7 @@ function movePage(nextPage: number) {
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
-            <tr
-              v-for="entry in activityLogsQuery.data.value?.items"
-              :key="entry.id"
-              class="align-top"
-            >
+            <tr v-for="entry in activityLogsQuery.data.value?.items" :key="entry.id" class="align-top">
               <td class="px-5 py-4">
                 <span class="rounded-full bg-primary-light px-3 py-1 text-xs text-primary">
                   {{ entry.action }}
@@ -101,7 +87,7 @@ function movePage(nextPage: number) {
               <td class="px-5 py-4 text-body">{{ entry.summary }}</td>
               <td class="px-5 py-4 text-muted">{{ entry.actorUserId }}</td>
               <td class="px-5 py-4 text-muted">{{ entry.targetType }} / {{ entry.targetId }}</td>
-              <td class="px-5 py-4 text-muted">{{ entry.circleId || "global" }}</td>
+              <td class="px-5 py-4 text-muted">{{ entry.circleId || 'global' }}</td>
               <td class="px-5 py-4 text-muted">{{ entry.createdAt }}</td>
             </tr>
           </tbody>
@@ -119,7 +105,7 @@ function movePage(nextPage: number) {
           {{
             Math.min(
               activityLogsQuery.data.value.page * activityLogsQuery.data.value.pageSize,
-              activityLogsQuery.data.value.total,
+              activityLogsQuery.data.value.total
             )
           }}
           件

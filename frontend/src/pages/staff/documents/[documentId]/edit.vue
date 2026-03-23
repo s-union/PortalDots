@@ -5,19 +5,19 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "documents.edit",
-  },
-});
+    staffCapability: 'documents.edit'
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { formatFileSize } from "@/lib/format/fileSize";
-import { useSessionStore } from "@/features/session/store";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { formatFileSize } from '@/lib/format/fileSize'
+import { useSessionStore } from '@/features/session/store'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildDeleteStaffDocumentConfirmMessage,
   buildStaffDocumentDownloadUrl,
@@ -25,29 +25,29 @@ import {
   useDeleteStaffDocumentMutation,
   useStaffDocumentDetailQuery,
   useStaffDocumentForm,
-  useUpdateStaffDocumentMutation,
-} from "@/features/staff/documents/api";
+  useUpdateStaffDocumentMutation
+} from '@/features/staff/documents/api'
 
-const route = useRoute("/staff/documents/[documentId]/edit");
-const router = useRouter();
-const sessionStore = useSessionStore();
-const documentId = computed(() => String(route.params.documentId ?? ""));
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const route = useRoute('/staff/documents/[documentId]/edit')
+const router = useRouter()
+const sessionStore = useSessionStore()
+const documentId = computed(() => String(route.params.documentId ?? ''))
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const detailEnabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-);
-const documentQuery = useStaffDocumentDetailQuery(documentId, detailEnabled);
-const updateDocumentMutation = useUpdateStaffDocumentMutation(documentId);
-const deleteDocumentMutation = useDeleteStaffDocumentMutation(documentId);
-const form = useStaffDocumentForm();
-const errorMessage = ref("");
-const successMessage = ref("");
+  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null
+)
+const documentQuery = useStaffDocumentDetailQuery(documentId, detailEnabled)
+const updateDocumentMutation = useUpdateStaffDocumentMutation(documentId)
+const deleteDocumentMutation = useDeleteStaffDocumentMutation(documentId)
+const form = useStaffDocumentForm()
+const errorMessage = ref('')
+const successMessage = ref('')
 
 watch(
   () => documentQuery.data.value,
   (document) => {
     if (!document) {
-      return;
+      return
     }
 
     form.value = {
@@ -56,24 +56,24 @@ watch(
       notes: document.notes,
       isPublic: document.isPublic,
       isImportant: document.isImportant,
-      file: null,
-    };
+      file: null
+    }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 function handleFileChange(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
 
-  form.value.file = target.files?.[0] ?? target.files?.item(0) ?? null;
+  form.value.file = target.files?.[0] ?? target.files?.item(0) ?? null
 }
 
 async function handleSaveDocument() {
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
     await updateDocumentMutation.mutateAsync({
@@ -82,32 +82,29 @@ async function handleSaveDocument() {
       notes: form.value.notes,
       isPublic: form.value.isPublic,
       isImportant: form.value.isImportant,
-      file: form.value.file,
-    });
-    form.value.file = null;
-    successMessage.value = "配布資料を更新しました。";
+      file: form.value.file
+    })
+    form.value.file = null
+    successMessage.value = '配布資料を更新しました。'
   } catch (error) {
-    errorMessage.value = extractStaffDocumentValidationMessage(error);
+    errorMessage.value = extractStaffDocumentValidationMessage(error)
   }
 }
 
 async function handleDeleteDocument() {
-  const documentName = documentQuery.data.value?.name ?? "この配布資料";
-  if (
-    typeof window !== "undefined" &&
-    !window.confirm(buildDeleteStaffDocumentConfirmMessage(documentName))
-  ) {
-    return;
+  const documentName = documentQuery.data.value?.name ?? 'この配布資料'
+  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffDocumentConfirmMessage(documentName))) {
+    return
   }
 
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
-    await deleteDocumentMutation.mutateAsync();
-    await router.push("/staff/documents");
+    await deleteDocumentMutation.mutateAsync()
+    await router.push('/staff/documents')
   } catch (error) {
-    errorMessage.value = extractStaffDocumentValidationMessage(error);
+    errorMessage.value = extractStaffDocumentValidationMessage(error)
   }
 }
 </script>
@@ -116,26 +113,18 @@ async function handleDeleteDocument() {
   <section class="space-y-6">
     <BackLink to="/staff/documents"> 配布資料管理へ戻る </BackLink>
 
-    <div
-      v-if="documentQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="documentQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
-    <form
-      v-else-if="documentQuery.data.value"
-      class="space-y-6"
-      @submit.prevent="handleSaveDocument"
-    >
+    <form v-else-if="documentQuery.data.value" class="space-y-6" @submit.prevent="handleSaveDocument">
       <SurfaceCard tag="header">
         <p class="text-sm text-primary">Document Detail</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">配布資料を編集</h2>
         <div class="mt-3 text-sm text-muted">配布資料ID : {{ documentQuery.data.value.id }}</div>
         <div class="mt-1 text-sm text-muted">{{ sessionStore.currentCircle?.name }}</div>
         <div class="mt-3 text-sm text-muted">
-          {{ documentQuery.data.value.updatedAt }} 更新 /
-          {{ documentQuery.data.value.extension || "FILE" }} /
+          {{ documentQuery.data.value.updatedAt }} 更新 / {{ documentQuery.data.value.extension || 'FILE' }} /
           {{ formatFileSize(documentQuery.data.value.sizeBytes) }}
         </div>
       </SurfaceCard>
@@ -188,17 +177,11 @@ async function handleDeleteDocument() {
         </SettingsRow>
       </SettingsSection>
 
-      <div
-        v-if="successMessage"
-        class="rounded border border-primary bg-primary-light px-4 py-3 text-sm text-primary"
-      >
+      <div v-if="successMessage" class="rounded border border-primary bg-primary-light px-4 py-3 text-sm text-primary">
         {{ successMessage }}
       </div>
 
-      <div
-        v-if="errorMessage"
-        class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-      >
+      <div v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
         {{ errorMessage }}
       </div>
 
@@ -216,7 +199,7 @@ async function handleDeleteDocument() {
           :disabled="updateDocumentMutation.isPending.value"
           type="submit"
         >
-          {{ updateDocumentMutation.isPending.value ? "保存中..." : "更新する" }}
+          {{ updateDocumentMutation.isPending.value ? '保存中...' : '更新する' }}
         </button>
       </div>
     </form>

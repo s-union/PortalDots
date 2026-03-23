@@ -4,94 +4,89 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "permissions.read",
-  },
-});
+    staffCapability: 'permissions.read'
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractStaffPermissionsValidationMessage,
   groupPermissionDefinitions,
   normalizeSelectedPermissions,
   useStaffPermissionDetailQuery,
-  useUpdateStaffPermissionsMutation,
-} from "@/features/staff/permissions/api";
-import { useSessionStore } from "@/features/session/store";
+  useUpdateStaffPermissionsMutation
+} from '@/features/staff/permissions/api'
+import { useSessionStore } from '@/features/session/store'
 
-const route = useRoute("/staff/permissions/[userId]");
-const sessionStore = useSessionStore();
-const userId = computed(() => String(route.params.userId ?? ""));
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const route = useRoute('/staff/permissions/[userId]')
+const sessionStore = useSessionStore()
+const userId = computed(() => String(route.params.userId ?? ''))
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const detailQuery = useStaffPermissionDetailQuery(
   userId,
-  computed(() => staffStatusQuery.data.value?.authorized === true),
-);
-const updatePermissionsMutation = useUpdateStaffPermissionsMutation();
-const selectedPermissions = ref<string[]>([]);
-const errorMessage = ref("");
-const successMessage = ref("");
+  computed(() => staffStatusQuery.data.value?.authorized === true)
+)
+const updatePermissionsMutation = useUpdateStaffPermissionsMutation()
+const selectedPermissions = ref<string[]>([])
+const errorMessage = ref('')
+const successMessage = ref('')
 
 watch(
   () => detailQuery.data.value?.assignedPermissionNames,
   (assignedPermissionNames) => {
-    selectedPermissions.value = assignedPermissionNames ? [...assignedPermissionNames] : [];
+    selectedPermissions.value = assignedPermissionNames ? [...assignedPermissionNames] : []
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
-const groupedDefinitions = computed(() =>
-  groupPermissionDefinitions(detailQuery.data.value?.definedPermissions ?? []),
-);
+const groupedDefinitions = computed(() => groupPermissionDefinitions(detailQuery.data.value?.definedPermissions ?? []))
 
 async function handleSavePermissions() {
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   if (!detailQuery.data.value) {
-    return;
+    return
   }
 
   try {
     const updated = await updatePermissionsMutation.mutateAsync({
       userId: userId.value,
-      permissions: normalizeSelectedPermissions(
-        selectedPermissions.value,
-        detailQuery.data.value.definedPermissions,
-      ),
-    });
-    selectedPermissions.value = [...updated.assignedPermissionNames];
-    successMessage.value = "スタッフ権限を更新しました。";
+      permissions: normalizeSelectedPermissions(selectedPermissions.value, detailQuery.data.value.definedPermissions)
+    })
+    selectedPermissions.value = [...updated.assignedPermissionNames]
+    successMessage.value = 'スタッフ権限を更新しました。'
   } catch (error) {
-    errorMessage.value = extractStaffPermissionsValidationMessage(error);
+    errorMessage.value = extractStaffPermissionsValidationMessage(error)
   }
 }
 
 function togglePermission(permissionName: string, checked: boolean) {
   if (checked) {
     if (!selectedPermissions.value.includes(permissionName)) {
-      selectedPermissions.value = [...selectedPermissions.value, permissionName];
+      selectedPermissions.value = [...selectedPermissions.value, permissionName]
     }
-    return;
+    return
   }
 
   selectedPermissions.value = selectedPermissions.value.filter(
-    (currentPermission) => currentPermission !== permissionName,
-  );
+    (currentPermission) => currentPermission !== permissionName
+  )
 }
 
 function handlePermissionChange(event: Event, permissionName: string) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
 
-  togglePermission(permissionName, target.checked);
+  togglePermission(permissionName, target.checked)
 }
 </script>
 
@@ -99,10 +94,7 @@ function handlePermissionChange(event: Event, permissionName: string) {
   <section class="space-y-6">
     <BackLink to="/staff/permissions"> 権限設定一覧へ戻る </BackLink>
 
-    <div
-      v-if="detailQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -112,7 +104,7 @@ function handlePermissionChange(event: Event, permissionName: string) {
         <h2 class="mt-3 text-3xl font-semibold text-body">スタッフ権限を編集</h2>
         <div class="mt-3 text-sm text-muted">
           {{ detailQuery.data.value.user.displayName }} /
-          {{ detailQuery.data.value.user.loginIds.join(", ") }}
+          {{ detailQuery.data.value.user.loginIds.join(', ') }}
         </div>
       </SurfaceCard>
 
@@ -179,12 +171,10 @@ function handlePermissionChange(event: Event, permissionName: string) {
           <template #footer>
             <button
               class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="
-                updatePermissionsMutation.isPending.value || !detailQuery.data.value.user.isEditable
-              "
+              :disabled="updatePermissionsMutation.isPending.value || !detailQuery.data.value.user.isEditable"
               type="submit"
             >
-              {{ updatePermissionsMutation.isPending.value ? "更新中..." : "保存" }}
+              {{ updatePermissionsMutation.isPending.value ? '更新中...' : '保存' }}
             </button>
           </template>
         </SettingsSection>

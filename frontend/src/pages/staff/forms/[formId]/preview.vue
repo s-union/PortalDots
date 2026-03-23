@@ -5,30 +5,28 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "forms.read",
-  },
-});
+    staffCapability: 'forms.read'
+  }
+})
 
-import { computed } from "vue";
-import { useRoute } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useSessionStore } from "@/features/session/store";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import { useStaffFormPreviewQuery } from "@/features/staff/forms/api";
-import { buildStaffFormTabs } from "@/features/ui/tabStrip";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useSessionStore } from '@/features/session/store'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { useStaffFormPreviewQuery } from '@/features/staff/forms/api'
+import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute("/staff/forms/[formId]/preview");
-const sessionStore = useSessionStore();
-const formId = computed(() => String(route.params.formId ?? ""));
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const route = useRoute('/staff/forms/[formId]/preview')
+const sessionStore = useSessionStore()
+const formId = computed(() => String(route.params.formId ?? ''))
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const previewQuery = useStaffFormPreviewQuery(
   formId,
-  computed(
-    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-  ),
-);
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "settings"));
+  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+)
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'settings'))
 </script>
 
 <template>
@@ -37,10 +35,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "settings"
 
     <TabStrip :tabs="staffFormTabs" />
 
-    <div
-      v-if="previewQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="previewQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -49,9 +44,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "settings"
         <div class="border-b border-border px-6 py-5">
           <h2 class="text-2xl font-semibold text-body">{{ previewQuery.data.value.name }}</h2>
           <div class="mt-3 space-y-1 text-sm text-muted">
-            <p>
-              受付期間 : {{ previewQuery.data.value.openAt }}〜{{ previewQuery.data.value.closeAt }}
-            </p>
+            <p>受付期間 : {{ previewQuery.data.value.openAt }}〜{{ previewQuery.data.value.closeAt }}</p>
             <p>{{ previewQuery.data.value.maxAnswers }} 件まで回答可能</p>
           </div>
         </div>
@@ -70,10 +63,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "settings"
           <template v-for="question in previewQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
               <h4 class="text-lg font-semibold text-body">{{ question.name }}</h4>
-              <p
-                v-if="question.description"
-                class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted"
-              >
+              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
@@ -81,14 +71,9 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "settings"
             <div v-else class="border-b border-border px-6 py-5">
               <p class="text-sm font-semibold text-body">
                 {{ question.name }}
-                <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger"
-                  >必須</span
-                >
+                <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
               </p>
-              <p
-                v-if="question.description"
-                class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted"
-              >
+              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
                 {{ question.description }}
               </p>
 
@@ -98,19 +83,12 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "settings"
                 :type="question.type === 'number' ? 'number' : 'text'"
                 disabled
               />
-              <textarea
-                v-else-if="question.type === 'textarea'"
-                class="mt-4 min-h-32 bg-form-control"
-                disabled
-              />
+              <textarea v-else-if="question.type === 'textarea'" class="mt-4 min-h-32 bg-form-control" disabled />
               <select v-else-if="question.type === 'select'" class="mt-4 bg-form-control" disabled>
                 <option>選択してください</option>
                 <option v-for="option in question.options" :key="option">{{ option }}</option>
               </select>
-              <div
-                v-else-if="question.type === 'radio' || question.type === 'checkbox'"
-                class="mt-4 grid gap-2"
-              >
+              <div v-else-if="question.type === 'radio' || question.type === 'checkbox'" class="mt-4 grid gap-2">
                 <label
                   v-for="option in question.options"
                   :key="option"

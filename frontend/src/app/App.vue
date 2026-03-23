@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
-import BottomTabLink from "@/components/ui/BottomTabLink.vue";
-import ModeSwitchLink from "@/components/ui/ModeSwitchLink.vue";
-import NavMenuLink from "@/components/ui/NavMenuLink.vue";
-import PublicFooterLinks from "@/components/ui/PublicFooterLinks.vue";
-import { useSessionBootstrapQuery } from "@/features/session/api";
-import { useLogoutMutation } from "@/features/auth/api";
-import { useSessionStore } from "@/features/session/store";
-import { cn } from "@/lib/ui/cn";
-import { buttonVariants } from "@/lib/ui/variants";
+import { computed, onMounted, ref } from 'vue'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import BottomTabLink from '@/components/ui/BottomTabLink.vue'
+import ModeSwitchLink from '@/components/ui/ModeSwitchLink.vue'
+import NavMenuLink from '@/components/ui/NavMenuLink.vue'
+import PublicFooterLinks from '@/components/ui/PublicFooterLinks.vue'
+import { useSessionBootstrapQuery } from '@/features/session/api'
+import { useLogoutMutation } from '@/features/auth/api'
+import { useSessionStore } from '@/features/session/store'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 import {
   canReadCircles,
   canReadContactCategories,
@@ -23,303 +23,305 @@ import {
   canUseMailQueue,
   canUseStaffExports,
   canViewActivityLogs,
-  hasStaffAccess,
-} from "@/features/staff/access/capabilities";
+  hasStaffAccess
+} from '@/features/staff/access/capabilities'
+import { usePublicConfigQuery } from '@/features/public-home/api'
 
-const route = useRoute();
-const router = useRouter();
-const sessionStore = useSessionStore();
-const bootstrapQuery = useSessionBootstrapQuery();
-const logoutMutation = useLogoutMutation();
+const route = useRoute()
+const router = useRouter()
+const sessionStore = useSessionStore()
+const bootstrapQuery = useSessionBootstrapQuery()
+const logoutMutation = useLogoutMutation()
+const publicConfigQuery = usePublicConfigQuery()
+const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalDots')
+const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 
-const isDrawerOpen = ref(false);
-const isSmallScreen = ref(typeof window !== "undefined" && window.innerWidth <= 1000);
+const isDrawerOpen = ref(false)
+const isSmallScreen = ref(typeof window !== 'undefined' && window.innerWidth <= 1000)
 
 onMounted(() => {
-  const mq = window.matchMedia("(max-width: 1000px)");
-  mq.addEventListener("change", (e) => {
-    isSmallScreen.value = e.matches;
-    if (!e.matches) isDrawerOpen.value = false;
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") isDrawerOpen.value = false;
-  });
-});
+  const mq = window.matchMedia('(max-width: 1000px)')
+  mq.addEventListener('change', (e) => {
+    isSmallScreen.value = e.matches
+    if (!e.matches) {
+      isDrawerOpen.value = false
+    }
+  })
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      isDrawerOpen.value = false
+    }
+  })
+})
 
 // On small screens: slide in/out. On desktop: always visible (no transform).
 const drawerTranslateClass = computed(() => {
-  if (!isSmallScreen.value) return "";
-  return isDrawerOpen.value ? "translate-x-0" : "-translate-x-full";
-});
+  if (!isSmallScreen.value) {
+    return ''
+  }
+  return isDrawerOpen.value ? 'translate-x-0' : '-translate-x-full'
+})
 
-const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions));
-const canAccessUsers = computed(() => canReadUsers(sessionStore.roles, sessionStore.permissions));
-const canAccessCircles = computed(() =>
-  canReadCircles(sessionStore.roles, sessionStore.permissions),
-);
-const canAccessTags = computed(() => canReadTags(sessionStore.roles, sessionStore.permissions));
-const canAccessPlaces = computed(() => canReadPlaces(sessionStore.roles, sessionStore.permissions));
-const canAccessPages = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions));
-const canAccessDocuments = computed(() =>
-  canReadDocuments(sessionStore.roles, sessionStore.permissions),
-);
-const canAccessForms = computed(() => canReadForms(sessionStore.roles, sessionStore.permissions));
+const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions))
+const canAccessUsers = computed(() => canReadUsers(sessionStore.roles, sessionStore.permissions))
+const canAccessCircles = computed(() => canReadCircles(sessionStore.roles, sessionStore.permissions))
+const canAccessTags = computed(() => canReadTags(sessionStore.roles, sessionStore.permissions))
+const canAccessPlaces = computed(() => canReadPlaces(sessionStore.roles, sessionStore.permissions))
+const canAccessPages = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions))
+const canAccessDocuments = computed(() => canReadDocuments(sessionStore.roles, sessionStore.permissions))
+const canAccessForms = computed(() => canReadForms(sessionStore.roles, sessionStore.permissions))
 const canAccessContactCategories = computed(() =>
-  canReadContactCategories(sessionStore.roles, sessionStore.permissions),
-);
-const canAccessPermissions = computed(() =>
-  canReadPermissions(sessionStore.roles, sessionStore.permissions),
-);
-const canAccessExports = computed(() =>
-  canUseStaffExports(sessionStore.roles, sessionStore.permissions),
-);
-const canAccessMails = computed(() =>
-  canUseMailQueue(sessionStore.roles, sessionStore.permissions),
-);
-const canAccessActivityLogs = computed(() =>
-  canViewActivityLogs(sessionStore.roles, sessionStore.permissions),
-);
-const isStaffRoute = computed(() => route.path.startsWith("/staff"));
-const hasDrawer = computed(() => route.meta.noDrawer !== true);
-const showFooter = computed(() => route.meta.noFooter !== true);
-const showBottomTabs = computed(
-  () => !isStaffRoute.value && route.meta.noBottomTabs !== true && hasDrawer.value,
-);
-const appModeLabel = computed(() => (isStaffRoute.value ? "スタッフモード" : "一般モード"));
-const circleActionLabel = computed(() =>
-  sessionStore.currentCircle === null ? "企画を選択" : "企画を切り替え",
-);
+  canReadContactCategories(sessionStore.roles, sessionStore.permissions)
+)
+const canAccessPermissions = computed(() => canReadPermissions(sessionStore.roles, sessionStore.permissions))
+const canAccessExports = computed(() => canUseStaffExports(sessionStore.roles, sessionStore.permissions))
+const canAccessMails = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
+const canAccessActivityLogs = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
+const isStaffRoute = computed(() => route.path.startsWith('/staff'))
+const hasDrawer = computed(() => route.meta.noDrawer !== true)
+const showFooter = computed(() => route.meta.noFooter !== true)
+const showBottomTabs = computed(() => !isStaffRoute.value && route.meta.noBottomTabs !== true && hasDrawer.value)
+const appModeLabel = computed(() => (isStaffRoute.value ? 'スタッフモード' : '一般モード'))
+const circleActionLabel = computed(() => (sessionStore.currentCircle === null ? '企画を選択' : '企画を切り替え'))
 
 const generalLinks = computed(() => [
   {
-    to: "/",
-    label: "ホーム",
-    iconClass: "fas fa-home fa-fw",
-    active: route.path === "/",
+    to: '/',
+    label: 'ホーム',
+    iconClass: 'fas fa-home fa-fw',
+    active: route.path === '/'
   },
   {
-    to: sessionStore.isAuthenticated ? "/workspace/pages" : "/public/pages",
-    label: "お知らせ",
-    iconClass: "fas fa-bullhorn fa-fw",
-    active: route.path.startsWith("/workspace/pages") || route.path.startsWith("/public/pages"),
+    to: sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages',
+    label: 'お知らせ',
+    iconClass: 'fas fa-bullhorn fa-fw',
+    active: route.path.startsWith('/workspace/pages') || route.path.startsWith('/public/pages')
   },
   {
-    to: sessionStore.isAuthenticated ? "/workspace/documents" : "/public/documents",
-    label: "配布資料",
-    iconClass: "far fa-file-alt fa-fw",
-    active:
-      route.path.startsWith("/workspace/documents") || route.path.startsWith("/public/documents"),
+    to: sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents',
+    label: '配布資料',
+    iconClass: 'far fa-file-alt fa-fw',
+    active: route.path.startsWith('/workspace/documents') || route.path.startsWith('/public/documents')
   },
   {
-    to: "/workspace/forms",
-    label: "申請",
-    iconClass: "far fa-edit fa-fw",
-    active: route.path.startsWith("/workspace/forms"),
-    hidden: sessionStore.currentCircle === null,
+    to: '/workspace/forms',
+    label: '申請',
+    iconClass: 'far fa-edit fa-fw',
+    active: route.path.startsWith('/workspace/forms'),
+    hidden: sessionStore.currentCircle === null
   },
   {
-    to: "/workspace/contact",
-    label: "お問い合わせ",
-    iconClass: "far fa-envelope fa-fw",
-    active: route.path.startsWith("/workspace/contact"),
-    hidden: !sessionStore.isAuthenticated,
+    to: '/workspace/contact',
+    label: 'お問い合わせ',
+    iconClass: 'far fa-envelope fa-fw',
+    active: route.path.startsWith('/workspace/contact'),
+    hidden: !sessionStore.isAuthenticated
   },
   {
-    to: sessionStore.isAuthenticated ? "/workspace/settings" : "/workspace/settings/appearance",
-    label: "ユーザー設定",
-    iconClass: "fas fa-cog fa-fw",
-    active: route.path.startsWith("/workspace/settings"),
-  },
-]);
+    to: sessionStore.isAuthenticated ? '/workspace/settings' : '/workspace/settings/appearance',
+    label: 'ユーザー設定',
+    iconClass: 'fas fa-cog fa-fw',
+    active: route.path.startsWith('/workspace/settings')
+  }
+])
 
 const mobileTabs = computed(() => [
   {
-    to: "/",
-    label: "ホーム",
-    iconClass: "fas fa-home",
-    active: route.path === "/",
+    to: '/',
+    label: 'ホーム',
+    iconClass: 'fas fa-home',
+    active: route.path === '/'
   },
   {
-    to: sessionStore.isAuthenticated ? "/workspace/pages" : "/public/pages",
-    label: "お知らせ",
-    iconClass: "fas fa-bullhorn",
-    active: route.path.startsWith("/workspace/pages") || route.path.startsWith("/public/pages"),
-    showNotifier: false,
+    to: sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages',
+    label: 'お知らせ',
+    iconClass: 'fas fa-bullhorn',
+    active: route.path.startsWith('/workspace/pages') || route.path.startsWith('/public/pages'),
+    showNotifier: false
   },
   {
-    to: sessionStore.isAuthenticated ? "/workspace/documents" : "/public/documents",
-    label: "配布資料",
-    iconClass: "far fa-file-alt",
-    active:
-      route.path.startsWith("/workspace/documents") || route.path.startsWith("/public/documents"),
+    to: sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents',
+    label: '配布資料',
+    iconClass: 'far fa-file-alt',
+    active: route.path.startsWith('/workspace/documents') || route.path.startsWith('/public/documents')
   },
   {
-    to: "/workspace/forms",
-    label: "申請",
-    iconClass: "far fa-edit",
-    active: route.path.startsWith("/workspace/forms"),
-    hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null,
+    to: '/workspace/forms',
+    label: '申請',
+    iconClass: 'far fa-edit',
+    active: route.path.startsWith('/workspace/forms'),
+    hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null
   },
   {
-    to: "/workspace/contact",
-    label: "お問い合わせ",
-    iconClass: "far fa-envelope",
-    active: route.path.startsWith("/workspace/contact"),
-    hidden: !sessionStore.isAuthenticated,
-  },
-]);
+    to: '/workspace/contact',
+    label: 'お問い合わせ',
+    iconClass: 'far fa-envelope',
+    active: route.path.startsWith('/workspace/contact'),
+    hidden: !sessionStore.isAuthenticated
+  }
+])
 
 const staffLinks = computed(() => [
   {
-    to: "/staff",
-    label: "スタッフモード ホーム",
-    iconClass: "fas fa-home fa-fw",
-    active: route.path === "/staff",
+    to: '/staff',
+    label: 'スタッフモード ホーム',
+    iconClass: 'fas fa-home fa-fw',
+    active: route.path === '/staff'
   },
   {
-    to: "/staff/users",
-    label: "ユーザー情報管理",
-    iconClass: "far fa-address-book fa-fw",
-    active: route.path.startsWith("/staff/users"),
-    hidden: !canAccessUsers.value,
+    to: '/staff/users',
+    label: 'ユーザー情報管理',
+    iconClass: 'far fa-address-book fa-fw',
+    active: route.path.startsWith('/staff/users'),
+    hidden: !canAccessUsers.value
   },
   {
-    to: "/staff/circles",
-    label: "企画情報管理",
-    iconClass: "fas fa-star fa-fw",
-    active: route.path.startsWith("/staff/circles"),
-    hidden: !canAccessCircles.value,
+    to: '/staff/circles',
+    label: '企画情報管理',
+    iconClass: 'fas fa-star fa-fw',
+    active: route.path.startsWith('/staff/circles'),
+    hidden: !canAccessCircles.value
   },
   {
-    to: "/staff/tags",
-    label: "企画タグ管理",
-    iconClass: "fas fa-tags fa-fw",
-    active: route.path.startsWith("/staff/tags"),
-    hidden: !canAccessTags.value,
+    to: '/staff/tags',
+    label: '企画タグ管理',
+    iconClass: 'fas fa-tags fa-fw',
+    active: route.path.startsWith('/staff/tags'),
+    hidden: !canAccessTags.value
   },
   {
-    to: "/staff/places",
-    label: "場所情報管理",
-    iconClass: "fas fa-store fa-fw",
-    active: route.path.startsWith("/staff/places"),
-    hidden: !canAccessPlaces.value,
+    to: '/staff/places',
+    label: '場所情報管理',
+    iconClass: 'fas fa-store fa-fw',
+    active: route.path.startsWith('/staff/places'),
+    hidden: !canAccessPlaces.value
   },
   {
-    to: "/staff/pages",
-    label: "お知らせ管理",
-    iconClass: "fas fa-bullhorn fa-fw",
-    active: route.path.startsWith("/staff/pages"),
-    hidden: !canAccessPages.value,
+    to: '/staff/pages',
+    label: 'お知らせ管理',
+    iconClass: 'fas fa-bullhorn fa-fw',
+    active: route.path.startsWith('/staff/pages'),
+    hidden: !canAccessPages.value
   },
   {
-    to: "/staff/documents",
-    label: "配布資料管理",
-    iconClass: "far fa-file-alt fa-fw",
-    active: route.path.startsWith("/staff/documents"),
-    hidden: !canAccessDocuments.value,
+    to: '/staff/documents',
+    label: '配布資料管理',
+    iconClass: 'far fa-file-alt fa-fw',
+    active: route.path.startsWith('/staff/documents'),
+    hidden: !canAccessDocuments.value
   },
   {
-    to: "/staff/forms",
-    label: "申請管理",
-    iconClass: "far fa-edit fa-fw",
-    active: route.path.startsWith("/staff/forms"),
-    hidden: !canAccessForms.value,
+    to: '/staff/forms',
+    label: '申請管理',
+    iconClass: 'far fa-edit fa-fw',
+    active: route.path.startsWith('/staff/forms'),
+    hidden: !canAccessForms.value
   },
   {
-    to: "/staff/contact-categories",
-    label: "お問い合わせ受付設定",
-    iconClass: "fas fa-at fa-fw",
-    active: route.path.startsWith("/staff/contact-categories"),
-    hidden: !canAccessContactCategories.value,
+    to: '/staff/contact-categories',
+    label: 'お問い合わせ受付設定',
+    iconClass: 'fas fa-at fa-fw',
+    active: route.path.startsWith('/staff/contact-categories'),
+    hidden: !canAccessContactCategories.value
   },
   {
-    to: "/staff/permissions",
-    label: "スタッフの権限設定",
-    iconClass: "fas fa-key fa-fw",
-    active: route.path.startsWith("/staff/permissions"),
-    hidden: !canAccessPermissions.value,
+    to: '/staff/permissions',
+    label: 'スタッフの権限設定',
+    iconClass: 'fas fa-key fa-fw',
+    active: route.path.startsWith('/staff/permissions'),
+    hidden: !canAccessPermissions.value
   },
   {
-    to: "/staff/settings",
-    label: "PortalDots の設定",
-    iconClass: "fas fa-cog fa-fw",
-    active: route.path.startsWith("/staff/settings"),
+    to: '/staff/settings',
+    label: 'PortalDots の設定',
+    iconClass: 'fas fa-cog fa-fw',
+    active: route.path.startsWith('/staff/settings')
   },
   {
-    to: "/staff/activity-logs",
-    label: "アクティビティログ",
-    iconClass: "fas fa-user-edit fa-fw",
-    active: route.path.startsWith("/staff/activity-logs"),
-    hidden: !canAccessActivityLogs.value,
+    to: '/staff/activity-logs',
+    label: 'アクティビティログ',
+    iconClass: 'fas fa-user-edit fa-fw',
+    active: route.path.startsWith('/staff/activity-logs'),
+    hidden: !canAccessActivityLogs.value
   },
   {
-    to: "/staff/exports",
-    label: "CSV / ZIP 出力",
-    iconClass: "fas fa-file-export fa-fw",
-    active: route.path.startsWith("/staff/exports"),
-    hidden: !canAccessExports.value,
+    to: '/staff/exports',
+    label: 'CSV / ZIP 出力',
+    iconClass: 'fas fa-file-export fa-fw',
+    active: route.path.startsWith('/staff/exports'),
+    hidden: !canAccessExports.value
   },
   {
-    to: "/staff/mails",
-    label: "メールキュー",
-    iconClass: "far fa-envelope fa-fw",
-    active: route.path.startsWith("/staff/mails"),
-    hidden: !canAccessMails.value,
-  },
-]);
+    to: '/staff/mails',
+    label: 'メールキュー',
+    iconClass: 'far fa-envelope fa-fw',
+    active: route.path.startsWith('/staff/mails'),
+    hidden: !canAccessMails.value
+  }
+])
 
 const mobileTabsStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${Math.max(mobileTabs.value.filter((link) => link.hidden !== true).length, 1)}, minmax(0, 1fr))`,
-}));
+  gridTemplateColumns: `repeat(${Math.max(mobileTabs.value.filter((link) => link.hidden !== true).length, 1)}, minmax(0, 1fr))`
+}))
 const statusBadges = computed(() => {
   if (!sessionStore.isAuthenticated) {
-    return [];
+    return []
   }
 
-  const badges = ["ログイン中"];
-  if (sessionStore.roles.includes("admin")) {
-    badges.push("管理者");
+  const badges = ['ログイン中']
+  if (sessionStore.roles.includes('admin')) {
+    badges.push('管理者')
   } else if (canAccessStaff.value) {
-    badges.push("スタッフ");
+    badges.push('スタッフ')
   }
-  return badges;
-});
+  return badges
+})
 
 const authLabel = computed(() => {
   if (bootstrapQuery.isLoading.value) {
-    return "loading";
+    return 'loading'
   }
   if (!sessionStore.isAuthenticated) {
-    return "ログインしていません";
+    return 'ログインしていません'
   }
-  return `${sessionStore.user?.displayName ?? "unknown"}としてログイン中`;
-});
+  return `${sessionStore.user?.displayName ?? 'unknown'}としてログイン中`
+})
 
 const pageTitle = computed(() => {
-  if (route.path === "/login") return "ログイン";
-  if (route.path === "/register") return "ユーザー登録";
-  if (route.path === "/support") return "推奨動作環境";
-  if (route.path === "/privacy_policy") return "プライバシーポリシー";
-  if (route.path === "/circles/select") return "企画を選択";
-  if (route.path === "/circles/new") return "新しい企画を作成";
+  if (route.path === '/login') {
+    return 'ログイン'
+  }
+  if (route.path === '/register') {
+    return 'ユーザー登録'
+  }
+  if (route.path === '/support') {
+    return '推奨動作環境'
+  }
+  if (route.path === '/privacy_policy') {
+    return 'プライバシーポリシー'
+  }
+  if (route.path === '/circles/select') {
+    return '企画を選択'
+  }
+  if (route.path === '/circles/new') {
+    return '新しい企画を作成'
+  }
 
-  const activeLink = [...(isStaffRoute.value ? staffLinks.value : generalLinks.value)].find(
-    (link) => link.active,
-  );
-  return activeLink?.label ?? "PortalDots";
-});
+  const activeLink = [...(isStaffRoute.value ? staffLinks.value : generalLinks.value)].find((link) => link.active)
+  return activeLink?.label ?? 'PortalDots'
+})
 
 const mainContentClass = computed(() =>
   cn(
-    "pt-20",
-    hasDrawer.value && "pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0",
-    showBottomTabs.value && "max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]",
-  ),
-);
+    'pt-20',
+    hasDrawer.value && 'pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0',
+    showBottomTabs.value && 'max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]'
+  )
+)
 
 async function handleLogout() {
-  await logoutMutation.mutateAsync();
-  await router.push("/login");
+  await logoutMutation.mutateAsync()
+  await router.push('/login')
 }
 </script>
 
@@ -371,20 +373,20 @@ async function handleLogout() {
       <div class="flex h-full flex-col">
         <!-- Drawer Header: pt accounts for fixed navbar ($navbar-height + $spacing = 6.5rem) -->
         <div class="border-b border-border px-6 pb-6 pt-[6.5rem]">
-          <p class="text-lg font-semibold text-body">PortalDots</p>
-          <div v-if="isStaffRoute" class="mt-2 flex items-center gap-2">
+          <p class="text-lg font-semibold text-body">{{ appName }}</p>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
             <span
+              v-if="isStaffRoute"
               class="rounded-full bg-primary-light px-2.5 py-1 text-xs font-semibold text-primary"
             >
               {{ appModeLabel }}
             </span>
+            <span v-if="isDemoMode" class="rounded-full bg-muted-light px-2.5 py-1 text-xs font-semibold text-muted">
+              デモサイト
+            </span>
           </div>
           <p class="mt-3 text-sm text-muted">
-            {{
-              isStaffRoute
-                ? authLabel
-                : `現在の企画: ${sessionStore.currentCircle?.name ?? "未選択"}`
-            }}
+            {{ isStaffRoute ? authLabel : `現在の企画: ${sessionStore.currentCircle?.name ?? '未選択'}` }}
           </p>
         </div>
 
@@ -404,18 +406,13 @@ async function handleLogout() {
         </div>
 
         <!-- Circle Selection (general mode only) -->
-        <div
-          v-if="sessionStore.isAuthenticated && !isStaffRoute"
-          class="border-b border-border px-6 py-4"
-        >
+        <div v-if="sessionStore.isAuthenticated && !isStaffRoute" class="border-b border-border px-6 py-4">
           <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">選択中の企画</p>
           <p class="mt-2 text-sm text-body">
-            {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
+            {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
           </p>
           <RouterLink
-            :class="
-              cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')
-            "
+            :class="cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')"
             to="/circles/select"
           >
             {{ circleActionLabel }}
@@ -449,9 +446,7 @@ async function handleLogout() {
           </div>
           <button
             v-if="sessionStore.isAuthenticated"
-            :class="
-              cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')
-            "
+            :class="cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')"
             :disabled="logoutMutation.isPending.value"
             type="button"
             @click="handleLogout"
@@ -459,7 +454,7 @@ async function handleLogout() {
             ログアウト
           </button>
           <div class="mt-5">
-            <PublicFooterLinks />
+            <PublicFooterLinks :app-name="appName" />
           </div>
         </div>
       </div>
@@ -469,7 +464,7 @@ async function handleLogout() {
     <main :class="mainContentClass">
       <RouterView />
       <footer v-if="showFooter" class="mt-6 border-t border-border px-6 py-6 text-center">
-        <PublicFooterLinks app-name="PortalDots" />
+        <PublicFooterLinks :app-name="appName" />
       </footer>
     </main>
 
@@ -478,10 +473,7 @@ async function handleLogout() {
       v-if="showBottomTabs"
       class="fixed inset-x-0 bottom-0 z-[9980] hidden border-t border-border bg-surface-2 shadow-[0_-0.1rem_0.8rem_-0.6rem_var(--color-box-shadow)] max-[1000px]:block"
     >
-      <div
-        class="mx-auto grid w-full max-w-[600px] pb-[env(safe-area-inset-bottom)]"
-        :style="mobileTabsStyle"
-      >
+      <div class="mx-auto grid w-full max-w-[600px] pb-[env(safe-area-inset-bottom)]" :style="mobileTabsStyle">
         <BottomTabLink
           v-for="tab in mobileTabs.filter((link) => link.hidden !== true)"
           :key="tab.to"

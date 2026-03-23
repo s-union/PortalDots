@@ -2,39 +2,39 @@
 definePage({
   meta: {
     requiresAuth: true,
-    requiresCircle: true,
-  },
-});
+    requiresCircle: true
+  }
+})
 
-import { ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import {
   useCurrentCircleDetailQuery,
   useUpdateCircleMutation,
   useSubmitCircleMutation,
-  useDeleteCircleMutation,
-} from "@/features/circles/api";
+  useDeleteCircleMutation
+} from '@/features/circles/api'
 
-const router = useRouter();
-const detailQuery = useCurrentCircleDetailQuery();
-const updateMutation = useUpdateCircleMutation();
-const submitMutation = useSubmitCircleMutation();
-const deleteMutation = useDeleteCircleMutation();
+const router = useRouter()
+const detailQuery = useCurrentCircleDetailQuery()
+const updateMutation = useUpdateCircleMutation()
+const submitMutation = useSubmitCircleMutation()
+const deleteMutation = useDeleteCircleMutation()
 
 const form = ref({
-  name: "",
-  nameYomi: "",
-  groupName: "",
-  groupNameYomi: "",
-  notes: "",
-});
+  name: '',
+  nameYomi: '',
+  groupName: '',
+  groupNameYomi: '',
+  notes: ''
+})
 
-const successMessage = ref("");
-const errorMessage = ref("");
+const successMessage = ref('')
+const errorMessage = ref('')
 
 watch(
   () => detailQuery.data.value,
@@ -45,46 +45,50 @@ watch(
         nameYomi: data.nameYomi,
         groupName: data.groupName,
         groupNameYomi: data.groupNameYomi,
-        notes: data.notes,
-      };
+        notes: data.notes
+      }
     }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 async function handleSave() {
-  successMessage.value = "";
-  errorMessage.value = "";
+  successMessage.value = ''
+  errorMessage.value = ''
 
   try {
-    await updateMutation.mutateAsync(form.value);
-    successMessage.value = "企画情報を更新しました。";
+    await updateMutation.mutateAsync(form.value)
+    successMessage.value = '企画情報を更新しました。'
   } catch {
-    errorMessage.value = "企画情報の更新に失敗しました。";
+    errorMessage.value = '企画情報の更新に失敗しました。'
   }
 }
 
 async function handleSubmit() {
-  if (!confirm("参加登録を提出します。よろしいですか？")) return;
-  errorMessage.value = "";
+  if (!confirm('参加登録を提出します。よろしいですか？')) {
+    return
+  }
+  errorMessage.value = ''
 
   try {
-    await submitMutation.mutateAsync();
-    successMessage.value = "参加登録を提出しました。";
+    await submitMutation.mutateAsync()
+    successMessage.value = '参加登録を提出しました。'
   } catch {
-    errorMessage.value = "参加登録の提出に失敗しました。";
+    errorMessage.value = '参加登録の提出に失敗しました。'
   }
 }
 
 async function handleDelete() {
-  if (!confirm("企画を削除します。この操作は取り消せません。よろしいですか？")) return;
-  errorMessage.value = "";
+  if (!confirm('企画を削除します。この操作は取り消せません。よろしいですか？')) {
+    return
+  }
+  errorMessage.value = ''
 
   try {
-    await deleteMutation.mutateAsync();
-    await router.push("/workspace");
+    await deleteMutation.mutateAsync()
+    await router.push('/workspace')
   } catch {
-    errorMessage.value = "企画の削除に失敗しました。リーダーのみ削除できます。";
+    errorMessage.value = '企画の削除に失敗しました。リーダーのみ削除できます。'
   }
 }
 </script>
@@ -106,21 +110,17 @@ async function handleDelete() {
       <div
         class="rounded border px-6 py-4"
         :class="
-          detailQuery.data.value.submittedAt
-            ? 'border-success bg-success-light'
-            : 'border-warning bg-warning-light'
+          detailQuery.data.value.submittedAt ? 'border-success bg-success-light' : 'border-warning bg-warning-light'
         "
       >
         <p class="text-sm font-semibold">
           {{
             detailQuery.data.value.submittedAt
-              ? `提出済み (${new Date(detailQuery.data.value.submittedAt).toLocaleDateString("ja-JP")})`
-              : "未提出"
+              ? `提出済み (${new Date(detailQuery.data.value.submittedAt).toLocaleDateString('ja-JP')})`
+              : '未提出'
           }}
         </p>
-        <p class="mt-1 text-xs text-muted">
-          参加種別: {{ detailQuery.data.value.participationTypeName }}
-        </p>
+        <p class="mt-1 text-xs text-muted">参加種別: {{ detailQuery.data.value.participationTypeName }}</p>
       </div>
 
       <!-- 編集フォーム -->
@@ -158,10 +158,7 @@ async function handleDelete() {
             >
               {{ successMessage }}
             </p>
-            <p
-              v-if="errorMessage"
-              class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-            >
+            <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
               {{ errorMessage }}
             </p>
             <div class="flex flex-wrap justify-between gap-3">
@@ -181,7 +178,7 @@ async function handleDelete() {
                   type="button"
                   @click="handleSubmit"
                 >
-                  {{ submitMutation.isPending.value ? "提出中..." : "参加登録を提出" }}
+                  {{ submitMutation.isPending.value ? '提出中...' : '参加登録を提出' }}
                 </button>
                 <button
                   class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
@@ -189,7 +186,7 @@ async function handleDelete() {
                   type="button"
                   @click="handleSave"
                 >
-                  {{ updateMutation.isPending.value ? "保存中..." : "変更を保存" }}
+                  {{ updateMutation.isPending.value ? '保存中...' : '変更を保存' }}
                 </button>
               </div>
             </div>
@@ -214,8 +211,6 @@ async function handleDelete() {
       </SurfaceCard>
     </template>
 
-    <div v-else class="rounded border border-border px-6 py-6 text-sm text-muted">
-      企画情報を取得できませんでした。
-    </div>
+    <div v-else class="rounded border border-border px-6 py-6 text-sm text-muted">企画情報を取得できませんでした。</div>
   </section>
 </template>

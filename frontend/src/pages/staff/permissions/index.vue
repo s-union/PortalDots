@@ -4,43 +4,38 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "permissions.read",
-  },
-});
+    staffCapability: 'permissions.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
-import ListPanel from "@/components/ui/ListPanel.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import { canManagePermissions } from "@/features/staff/access/capabilities";
-import { useStaffPermissionsQuery } from "@/features/staff/permissions/api";
-import { useSessionStore } from "@/features/session/store";
-import { calculateTotalPages } from "@/lib/pagination";
+import { computed, ref } from 'vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { canManagePermissions } from '@/features/staff/access/capabilities'
+import { useStaffPermissionsQuery } from '@/features/staff/permissions/api'
+import { useSessionStore } from '@/features/session/store'
+import { calculateTotalPages } from '@/lib/pagination'
 
-const sessionStore = useSessionStore();
-const canReadPermissions = computed(() =>
-  canManagePermissions(sessionStore.roles, sessionStore.permissions),
-);
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
-const page = ref(1);
-const pageSize = 20;
+const sessionStore = useSessionStore()
+const canReadPermissions = computed(() => canManagePermissions(sessionStore.roles, sessionStore.permissions))
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const page = ref(1)
+const pageSize = 20
 const permissionsQuery = useStaffPermissionsQuery(
   computed(() => canReadPermissions.value && staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
     page: page.value,
-    pageSize,
-  })),
-);
+    pageSize
+  }))
+)
 const totalPages = computed(() =>
-  calculateTotalPages(
-    permissionsQuery.data.value?.total ?? 0,
-    permissionsQuery.data.value?.pageSize ?? pageSize,
-  ),
-);
+  calculateTotalPages(permissionsQuery.data.value?.total ?? 0, permissionsQuery.data.value?.pageSize ?? pageSize)
+)
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value);
+  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
 }
 </script>
 
@@ -60,13 +55,8 @@ function movePage(nextPage: number) {
       <div v-if="!canReadPermissions" class="px-6 py-6 text-sm text-muted">
         この画面の閲覧には `staff.permissions.read` 系または `user_manager / admin` が必要です。
       </div>
-      <div v-else-if="permissionsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        読み込み中...
-      </div>
-      <div
-        v-else-if="(permissionsQuery.data.value?.items.length ?? 0) === 0"
-        class="px-6 py-6 text-sm text-muted"
-      >
+      <div v-else-if="permissionsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+      <div v-else-if="(permissionsQuery.data.value?.items.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         権限管理対象のユーザーは見つかりませんでした。
       </div>
       <div v-else class="divide-y divide-border">
@@ -79,7 +69,7 @@ function movePage(nextPage: number) {
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="space-y-2">
               <p class="text-sm font-semibold text-body">{{ user.displayName }}</p>
-              <p class="text-xs text-muted">{{ user.loginIds.join(", ") }}</p>
+              <p class="text-xs text-muted">{{ user.loginIds.join(', ') }}</p>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="role in user.roles"
@@ -106,7 +96,7 @@ function movePage(nextPage: number) {
               </div>
             </div>
             <span class="text-sm text-primary">
-              {{ user.isEditable ? "編集へ" : "閲覧のみ" }}
+              {{ user.isEditable ? '編集へ' : '閲覧のみ' }}
             </span>
           </div>
         </RouterLink>
@@ -124,7 +114,7 @@ function movePage(nextPage: number) {
             {{
               Math.min(
                 permissionsQuery.data.value.page * permissionsQuery.data.value.pageSize,
-                permissionsQuery.data.value.total,
+                permissionsQuery.data.value.total
               )
             }}
             件

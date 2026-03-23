@@ -4,20 +4,20 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "circles.participationTypes",
-  },
-});
+    staffCapability: 'circles.participationTypes'
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useAuthorizedStaffContext } from "@/features/staff/hooks/useAuthorizedStaffContext";
-import { calculateTotalPages } from "@/lib/pagination";
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
+import { calculateTotalPages } from '@/lib/pagination'
 import {
   buildStaffParticipationTypeCirclesExportUrl,
   buildDeleteStaffParticipationTypeConfirmMessage,
@@ -29,67 +29,57 @@ import {
   useDeleteStaffParticipationTypeMutation,
   useStaffParticipationTypeCirclesQuery,
   useStaffParticipationTypeDetailQuery,
-  useUpdateStaffParticipationTypeMutation,
-} from "@/features/staff/participation-types/api";
-import { buildStaffParticipationTypeTabs } from "@/features/ui/tabStrip";
+  useUpdateStaffParticipationTypeMutation
+} from '@/features/staff/participation-types/api'
+import { buildStaffParticipationTypeTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute("/staff/participation-types/[typeId]");
-const router = useRouter();
-const typeId = computed(() => String(route.params.typeId ?? ""));
-const { enabled } = useAuthorizedStaffContext({ capability: "circles.participationTypes" });
-const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled);
-const circlesPage = ref(1);
-const circlesPageSize = 10;
-const circlesQuery = useStaffParticipationTypeCirclesQuery(
-  typeId,
-  enabled,
-  circlesPage,
-  circlesPageSize,
-);
-const updateMutation = useUpdateStaffParticipationTypeMutation(typeId);
-const deleteMutation = useDeleteStaffParticipationTypeMutation(typeId);
+const route = useRoute('/staff/participation-types/[typeId]')
+const router = useRouter()
+const typeId = computed(() => String(route.params.typeId ?? ''))
+const { enabled } = useAuthorizedStaffContext({ capability: 'circles.participationTypes' })
+const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled)
+const circlesPage = ref(1)
+const circlesPageSize = 10
+const circlesQuery = useStaffParticipationTypeCirclesQuery(typeId, enabled, circlesPage, circlesPageSize)
+const updateMutation = useUpdateStaffParticipationTypeMutation(typeId)
+const deleteMutation = useDeleteStaffParticipationTypeMutation(typeId)
 const form = ref({
-  name: "",
-  description: "",
+  name: '',
+  description: '',
   usersCountMin: 1,
   usersCountMax: 1,
   tags: [] as string[],
-  formDescription: "",
-  formConfirmationMessage: "",
-  openAt: "",
-  closeAt: "",
-  isPublic: true,
-});
-const errorMessage = ref("");
-const successMessage = ref("");
+  formDescription: '',
+  formConfirmationMessage: '',
+  openAt: '',
+  closeAt: '',
+  isPublic: true
+})
+const errorMessage = ref('')
+const successMessage = ref('')
 
-const settingsRoute = computed(
-  () => `/staff/participation-types/${encodeURIComponent(typeId.value)}`,
-);
-const circlesExportUrl = computed(() => buildStaffParticipationTypeCirclesExportUrl(typeId.value));
+const settingsRoute = computed(() => `/staff/participation-types/${encodeURIComponent(typeId.value)}`)
+const circlesExportUrl = computed(() => buildStaffParticipationTypeCirclesExportUrl(typeId.value))
 const circlesTotalPages = computed(() =>
-  calculateTotalPages(
-    circlesQuery.data.value?.total ?? 0,
-    circlesQuery.data.value?.pageSize ?? circlesPageSize,
-  ),
-);
+  calculateTotalPages(circlesQuery.data.value?.total ?? 0, circlesQuery.data.value?.pageSize ?? circlesPageSize)
+)
 
 const formEditorRoute = computed(() => {
-  const current = detailQuery.data.value;
+  const current = detailQuery.data.value
   if (!current) {
-    return settingsRoute.value;
+    return settingsRoute.value
   }
-  return `/staff/forms/${encodeURIComponent(current.form.id)}`;
-});
+  return `/staff/forms/${encodeURIComponent(current.form.id)}`
+})
 const participationTypeTabs = computed(() =>
-  buildStaffParticipationTypeTabs(typeId.value, route.hash, detailQuery.data.value?.form),
-);
+  buildStaffParticipationTypeTabs(typeId.value, route.hash, detailQuery.data.value?.form)
+)
 
 watch(
   () => detailQuery.data.value,
   (value) => {
     if (!value) {
-      return;
+      return
     }
     form.value = {
       name: value.name,
@@ -101,55 +91,52 @@ watch(
       formConfirmationMessage: value.form.confirmationMessage,
       openAt: formatDateTimeLocalValue(value.form.openAt),
       closeAt: formatDateTimeLocalValue(value.form.closeAt),
-      isPublic: value.form.isPublic,
-    };
+      isPublic: value.form.isPublic
+    }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 function handleTagsInput(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLTextAreaElement)) {
-    return;
+    return
   }
-  form.value.tags = parseParticipationTypeTags(target.value);
+  form.value.tags = parseParticipationTypeTags(target.value)
 }
 
 async function handleSave() {
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
   try {
     await updateMutation.mutateAsync({
       ...form.value,
       openAt: parseDateTimeLocalValue(form.value.openAt),
-      closeAt: parseDateTimeLocalValue(form.value.closeAt),
-    });
-    successMessage.value = "参加種別を更新しました。";
+      closeAt: parseDateTimeLocalValue(form.value.closeAt)
+    })
+    successMessage.value = '参加種別を更新しました。'
   } catch (error) {
-    errorMessage.value = extractStaffParticipationTypeValidationMessage(error);
+    errorMessage.value = extractStaffParticipationTypeValidationMessage(error)
   }
 }
 
 async function handleDelete() {
-  if (
-    typeof window !== "undefined" &&
-    !window.confirm(buildDeleteStaffParticipationTypeConfirmMessage())
-  ) {
-    return;
+  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffParticipationTypeConfirmMessage())) {
+    return
   }
 
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
   try {
-    await deleteMutation.mutateAsync();
-    await router.push("/staff/participation-types");
+    await deleteMutation.mutateAsync()
+    await router.push('/staff/participation-types')
   } catch (error) {
-    errorMessage.value = extractStaffParticipationTypeValidationMessage(error);
+    errorMessage.value = extractStaffParticipationTypeValidationMessage(error)
   }
 }
 
 function moveCirclesPage(nextPage: number) {
-  circlesPage.value = Math.min(Math.max(nextPage, 1), circlesTotalPages.value);
+  circlesPage.value = Math.min(Math.max(nextPage, 1), circlesTotalPages.value)
 }
 </script>
 
@@ -159,10 +146,7 @@ function moveCirclesPage(nextPage: number) {
 
     <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
 
-    <div
-      v-if="detailQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -184,7 +168,7 @@ function moveCirclesPage(nextPage: number) {
             type="button"
             @click="handleDelete"
           >
-            {{ deleteMutation.isPending.value ? "削除中..." : "参加種別を削除" }}
+            {{ deleteMutation.isPending.value ? '削除中...' : '参加種別を削除' }}
           </button>
         </div>
       </SurfaceCard>
@@ -236,21 +220,11 @@ function moveCirclesPage(nextPage: number) {
             <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm text-body">
                 <span>最低人数</span>
-                <input
-                  v-model.number="form.usersCountMin"
-                  min="1"
-                  name="usersCountMin"
-                  type="number"
-                />
+                <input v-model.number="form.usersCountMin" min="1" name="usersCountMin" type="number" />
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span>最大人数</span>
-                <input
-                  v-model.number="form.usersCountMax"
-                  min="1"
-                  name="usersCountMax"
-                  type="number"
-                />
+                <input v-model.number="form.usersCountMax" min="1" name="usersCountMax" type="number" />
               </label>
             </div>
           </div>
@@ -310,14 +284,10 @@ function moveCirclesPage(nextPage: number) {
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-body">公開設定</p>
-              <p class="text-xs text-muted-2">
-                この設定がオンで、かつ受付期間内のときに参加登録画面を表示します。
-              </p>
+              <p class="text-xs text-muted-2">この設定がオンで、かつ受付期間内のときに参加登録画面を表示します。</p>
             </div>
             <div class="grid gap-4">
-              <div
-                class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted"
-              >
+              <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
                 詳細な設問追加や並び替えは専用エディターで行います。ここでは公開状態と文面を先に整えます。
               </div>
               <label class="flex items-center gap-3 text-sm text-body">
@@ -332,9 +302,7 @@ function moveCirclesPage(nextPage: number) {
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-body">受付期間</p>
-              <p class="text-xs text-muted-2">
-                Laravel 版と同様に、参加登録画面の表示期間を日時で管理します。
-              </p>
+              <p class="text-xs text-muted-2">Laravel 版と同様に、参加登録画面の表示期間を日時で管理します。</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm text-body">
@@ -371,18 +339,12 @@ function moveCirclesPage(nextPage: number) {
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-body">提出後メッセージ</p>
-              <p class="text-xs text-muted-2">
-                提出完了後の画面と、自動送信メールに表示するメッセージです。
-              </p>
+              <p class="text-xs text-muted-2">提出完了後の画面と、自動送信メールに表示するメッセージです。</p>
             </div>
             <div class="grid gap-2">
               <label class="grid gap-2 text-sm text-body">
                 <span class="sr-only">提出後メッセージ</span>
-                <textarea
-                  v-model="form.formConfirmationMessage"
-                  class="min-h-32"
-                  name="formConfirmationMessage"
-                />
+                <textarea v-model="form.formConfirmationMessage" class="min-h-32" name="formConfirmationMessage" />
               </label>
               <p class="text-xs text-muted-2">こちらも Markdown 記法を利用できます。</p>
             </div>
@@ -406,10 +368,7 @@ function moveCirclesPage(nextPage: number) {
             >
               {{ successMessage }}
             </p>
-            <p
-              v-if="errorMessage"
-              class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-            >
+            <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
               {{ errorMessage }}
             </p>
             <div class="flex justify-end">
@@ -418,7 +377,7 @@ function moveCirclesPage(nextPage: number) {
                 :disabled="updateMutation.isPending.value"
                 type="submit"
               >
-                {{ updateMutation.isPending.value ? "保存中..." : "保存" }}
+                {{ updateMutation.isPending.value ? '保存中...' : '保存' }}
               </button>
             </div>
           </div>
@@ -428,9 +387,7 @@ function moveCirclesPage(nextPage: number) {
       <SettingsSection id="circles-section" title="この参加種別に紐づく企画">
         <SurfaceHeader>
           <template #title>企画一覧</template>
-          <template #description>
-            legacy の参加種別詳細画面にあった所属企画一覧をここで確認できます。
-          </template>
+          <template #description> legacy の参加種別詳細画面にあった所属企画一覧をここで確認できます。 </template>
           <template #actions>
             <a
               :href="circlesExportUrl"
@@ -441,13 +398,8 @@ function moveCirclesPage(nextPage: number) {
           </template>
         </SurfaceHeader>
 
-        <div v-if="circlesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">
-          読み込み中...
-        </div>
-        <div
-          v-else-if="(circlesQuery.data.value?.items.length ?? 0) === 0"
-          class="px-6 py-5 text-sm text-muted"
-        >
+        <div v-if="circlesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
+        <div v-else-if="(circlesQuery.data.value?.items.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
           この参加種別に紐づく企画はありません。
         </div>
         <div v-else class="overflow-x-auto">
@@ -466,10 +418,7 @@ function moveCirclesPage(nextPage: number) {
                 <td class="px-5 py-4 text-body">{{ circle.name }}</td>
                 <td class="px-5 py-4 text-muted">{{ circle.groupName }}</td>
                 <td class="px-5 py-4 text-right">
-                  <RouterLink
-                    :to="`/staff/circles/${encodeURIComponent(circle.id)}`"
-                    class="text-primary underline"
-                  >
+                  <RouterLink :to="`/staff/circles/${encodeURIComponent(circle.id)}`" class="text-primary underline">
                     企画を開く
                   </RouterLink>
                 </td>
@@ -484,10 +433,7 @@ function moveCirclesPage(nextPage: number) {
               {{ (circlesQuery.data.value.page - 1) * circlesQuery.data.value.pageSize + 1 }}
               -
               {{
-                Math.min(
-                  circlesQuery.data.value.page * circlesQuery.data.value.pageSize,
-                  circlesQuery.data.value.total,
-                )
+                Math.min(circlesQuery.data.value.page * circlesQuery.data.value.pageSize, circlesQuery.data.value.total)
               }}
               件
             </p>

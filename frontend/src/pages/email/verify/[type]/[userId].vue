@@ -3,28 +3,25 @@ definePage({
   meta: {
     publicOnly: true,
     noDrawer: true,
-    noBottomTabs: true,
-  },
-});
+    noBottomTabs: true
+  }
+})
 
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
-const route = useRoute();
-const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>);
+const route = useRoute()
+const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>)
 const verifyType = computed(() => {
-  const value = routeParams.value.type;
-  return typeof value === "string" ? value : "unknown";
-});
+  const value = routeParams.value.type
+  return typeof value === 'string' ? value : 'unknown'
+})
 const userId = computed(() => {
-  const value = routeParams.value.userId;
-  return typeof value === "string" ? value : "unknown";
-});
+  const value = routeParams.value.userId
+  return typeof value === 'string' ? value : 'unknown'
+})
 
-const verifyNotes = computed(() => [
-  `認証種別: ${verifyType.value}`,
-  `対象ユーザー: ${userId.value}`,
-]);
+const verifyNotes = computed(() => [`認証種別: ${verifyType.value}`, `対象ユーザー: ${userId.value}`])
 </script>
 
 <template>

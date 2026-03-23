@@ -5,39 +5,37 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "formAnswers.read",
-  },
-});
+    staffCapability: 'formAnswers.read'
+  }
+})
 
-import { computed } from "vue";
-import { useRoute } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useSessionStore } from "@/features/session/store";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useSessionStore } from '@/features/session/store'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffFormAnswersExportUrl,
   buildStaffFormAnswerUploadsZipUrl,
-  useStaffFormAnswersIndexQuery,
-} from "@/features/staff/forms/answers";
-import { buildStaffFormTabs } from "@/features/ui/tabStrip";
+  useStaffFormAnswersIndexQuery
+} from '@/features/staff/forms/answers'
+import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute("/staff/forms/[formId]/answers/");
-const sessionStore = useSessionStore();
-const formId = computed(() => String(route.params.formId ?? ""));
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const route = useRoute('/staff/forms/[formId]/answers/')
+const sessionStore = useSessionStore()
+const formId = computed(() => String(route.params.formId ?? ''))
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
-  computed(
-    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-  ),
-);
+  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+)
 
-const exportUrl = computed(() => buildStaffFormAnswersExportUrl(formId.value));
-const uploadsZipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.value));
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
+const exportUrl = computed(() => buildStaffFormAnswersExportUrl(formId.value))
+const uploadsZipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.value))
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
 </script>
 
 <template>
@@ -46,10 +44,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
 
     <TabStrip :tabs="staffFormTabs" />
 
-    <div
-      v-if="answersQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -99,10 +94,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
             <h2 class="text-lg font-semibold text-body">回答一覧</h2>
           </div>
 
-          <div
-            v-if="answersQuery.data.value.answers.length === 0"
-            class="px-6 py-5 text-sm text-muted-2"
-          >
+          <div v-if="answersQuery.data.value.answers.length === 0" class="px-6 py-5 text-sm text-muted-2">
             まだ回答はありません。
           </div>
 
@@ -119,11 +111,10 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
                     {{ answer.circle.groupName }} / {{ answer.circle.participationTypeName }}
                   </p>
                   <p class="line-clamp-3 whitespace-pre-wrap text-sm text-muted">
-                    {{ answer.body || "本文はまだありません。" }}
+                    {{ answer.body || '本文はまだありません。' }}
                   </p>
                   <p class="text-xs text-muted-2">
-                    作成 {{ answer.createdAt }} / 最終更新 {{ answer.updatedAt }} / 添付
-                    {{ answer.uploadCount }} 件
+                    作成 {{ answer.createdAt }} / 最終更新 {{ answer.updatedAt }} / 添付 {{ answer.uploadCount }} 件
                   </p>
                 </div>
                 <RouterLink
@@ -148,9 +139,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers")
               class="border-b border-border px-6 py-4 text-sm text-body last:border-b-0"
             >
               <p>{{ circle.name }}</p>
-              <p class="mt-1 text-xs text-muted-2">
-                {{ circle.groupName }} / {{ circle.participationTypeName }}
-              </p>
+              <p class="mt-1 text-xs text-muted-2">{{ circle.groupName }} / {{ circle.participationTypeName }}</p>
             </li>
           </ul>
           <p v-else class="px-6 py-5 text-sm text-muted-2">未回答の企画はありません。</p>

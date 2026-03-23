@@ -5,19 +5,19 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "pages.edit",
-  },
-});
+    staffCapability: 'pages.edit'
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import { useStaffDocumentsQuery } from "@/features/staff/documents/api";
-import { useStaffTagsQuery } from "@/features/staff/masters/tags";
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import {
   extractStaffPageValidationMessage,
   formatStaffPageTags,
@@ -26,34 +26,34 @@ import {
   usePatchStaffPagePinMutation,
   useStaffPageDetailQuery,
   useStaffPageForm,
-  useUpdateStaffPageMutation,
-} from "@/features/staff/pages/api";
-import { useSessionStore } from "@/features/session/store";
+  useUpdateStaffPageMutation
+} from '@/features/staff/pages/api'
+import { useSessionStore } from '@/features/session/store'
 
-const route = useRoute("/staff/pages/[pageId]");
-const router = useRouter();
-const sessionStore = useSessionStore();
-const pageId = computed(() => String(route.params.pageId ?? ""));
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const route = useRoute('/staff/pages/[pageId]')
+const router = useRouter()
+const sessionStore = useSessionStore()
+const pageId = computed(() => String(route.params.pageId ?? ''))
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const pageFormEnabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-);
-const pageQuery = useStaffPageDetailQuery(pageId, pageFormEnabled);
-const tagsQuery = useStaffTagsQuery(pageFormEnabled);
-const documentsQuery = useStaffDocumentsQuery(pageFormEnabled);
-const updatePageMutation = useUpdateStaffPageMutation(pageId);
-const deletePageMutation = useDeleteStaffPageMutation(pageId);
-const patchPinMutation = usePatchStaffPagePinMutation(pageId);
-const form = useStaffPageForm();
-const errorMessage = ref("");
-const successMessage = ref("");
-const viewableTagsText = ref("");
+  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null
+)
+const pageQuery = useStaffPageDetailQuery(pageId, pageFormEnabled)
+const tagsQuery = useStaffTagsQuery(pageFormEnabled)
+const documentsQuery = useStaffDocumentsQuery(pageFormEnabled)
+const updatePageMutation = useUpdateStaffPageMutation(pageId)
+const deletePageMutation = useDeleteStaffPageMutation(pageId)
+const patchPinMutation = usePatchStaffPagePinMutation(pageId)
+const form = useStaffPageForm()
+const errorMessage = ref('')
+const successMessage = ref('')
+const viewableTagsText = ref('')
 
 watch(
   () => pageQuery.data.value,
   (page) => {
     if (!page) {
-      return;
+      return
     }
 
     form.value = {
@@ -64,23 +64,23 @@ watch(
       isPublic: page.isPublic,
       viewableTags: [...page.viewableTags],
       documentIds: [...page.documentIds],
-      sendEmails: false,
-    };
+      sendEmails: false
+    }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 watch(
   () => form.value.viewableTags,
   (value) => {
-    viewableTagsText.value = formatStaffPageTags(value);
+    viewableTagsText.value = formatStaffPageTags(value)
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 async function handleSavePage() {
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
     await updatePageMutation.mutateAsync({
@@ -91,72 +91,70 @@ async function handleSavePage() {
       isPublic: form.value.isPublic,
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails,
-    });
-    form.value.sendEmails = false;
-    successMessage.value = "お知らせを更新しました。";
+      sendEmails: form.value.sendEmails
+    })
+    form.value.sendEmails = false
+    successMessage.value = 'お知らせを更新しました。'
   } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error);
+    errorMessage.value = extractStaffPageValidationMessage(error)
   }
 }
 
 async function handleTogglePin() {
   if (!pageQuery.data.value) {
-    return;
+    return
   }
 
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
-    const nextPinned = !pageQuery.data.value.isPinned;
-    await patchPinMutation.mutateAsync(nextPinned);
-    form.value.isPinned = nextPinned;
-    successMessage.value = nextPinned
-      ? "お知らせを固定表示しました。"
-      : "お知らせの固定表示を解除しました。";
+    const nextPinned = !pageQuery.data.value.isPinned
+    await patchPinMutation.mutateAsync(nextPinned)
+    form.value.isPinned = nextPinned
+    successMessage.value = nextPinned ? 'お知らせを固定表示しました。' : 'お知らせの固定表示を解除しました。'
   } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error);
+    errorMessage.value = extractStaffPageValidationMessage(error)
   }
 }
 
 async function handleDeletePage() {
-  if (typeof window !== "undefined" && !window.confirm("このお知らせを削除しますか？")) {
-    return;
+  if (typeof window !== 'undefined' && !window.confirm('このお知らせを削除しますか？')) {
+    return
   }
 
-  errorMessage.value = "";
-  successMessage.value = "";
+  errorMessage.value = ''
+  successMessage.value = ''
 
   try {
-    await deletePageMutation.mutateAsync();
-    await router.push("/staff/pages");
+    await deletePageMutation.mutateAsync()
+    await router.push('/staff/pages')
   } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error);
+    errorMessage.value = extractStaffPageValidationMessage(error)
   }
 }
 
 function handleViewableTagsInput(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLTextAreaElement)) {
-    return;
+    return
   }
 
-  form.value.viewableTags = parseStaffPageTags(target.value);
+  form.value.viewableTags = parseStaffPageTags(target.value)
 }
 
 function handleDocumentChange(documentId: string, event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
 
   if (target.checked) {
-    form.value.documentIds = [...new Set([...form.value.documentIds, documentId])];
-    return;
+    form.value.documentIds = [...new Set([...form.value.documentIds, documentId])]
+    return
   }
 
-  form.value.documentIds = form.value.documentIds.filter((value) => value !== documentId);
+  form.value.documentIds = form.value.documentIds.filter((value) => value !== documentId)
 }
 </script>
 
@@ -164,10 +162,7 @@ function handleDocumentChange(documentId: string, event: Event) {
   <section class="space-y-6">
     <BackLink to="/staff/pages"> お知らせ管理へ戻る </BackLink>
 
-    <div
-      v-if="pageQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -208,7 +203,7 @@ function handleDocumentChange(documentId: string, event: Event) {
               />
               <span class="text-xs text-muted">
                 登録済みタグ:
-                {{ (tagsQuery.data.value ?? []).map((tag) => tag.name).join(" / ") || "-" }}
+                {{ (tagsQuery.data.value ?? []).map((tag) => tag.name).join(' / ') || '-' }}
               </span>
             </label>
 
@@ -227,11 +222,7 @@ function handleDocumentChange(documentId: string, event: Event) {
                 選択できる配布資料はありません。
               </div>
               <div v-else class="grid gap-2 rounded border border-border bg-surface-light p-4">
-                <label
-                  v-for="document in documentsQuery.data.value"
-                  :key="document.id"
-                  class="flex items-start gap-3"
-                >
+                <label v-for="document in documentsQuery.data.value" :key="document.id" class="flex items-start gap-3">
                   <input
                     :checked="form.documentIds.includes(document.id)"
                     type="checkbox"
@@ -239,9 +230,7 @@ function handleDocumentChange(documentId: string, event: Event) {
                   />
                   <span>
                     <strong class="text-body">{{ document.name }}</strong>
-                    <span class="block text-xs text-muted">{{
-                      document.description || "説明なし"
-                    }}</span>
+                    <span class="block text-xs text-muted">{{ document.description || '説明なし' }}</span>
                   </span>
                 </label>
               </div>
@@ -261,18 +250,14 @@ function handleDocumentChange(documentId: string, event: Event) {
               <input v-model="form.sendEmails" name="sendEmails" type="checkbox" />
               保存時にモックメール配信を予約する
             </label>
-            <p class="text-sm text-muted">
-              予約された通知はモックキューに積まれ、実メールは送信しません。
-            </p>
+            <p class="text-sm text-muted">予約された通知はモックキューに積まれ、実メールは送信しません。</p>
           </div>
         </SettingsRow>
       </SettingsSection>
 
       <SettingsSection title="補足">
         <SettingsRow>
-          <div
-            class="rounded border border-border bg-surface-light px-4 py-4 text-sm leading-7 text-muted"
-          >
+          <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm leading-7 text-muted">
             閲覧タグを空にすると全体公開、タグを指定すると一致する企画タグだけが参加者画面で閲覧できます。
             関連配布資料は参加者画面でもお知らせ詳細に表示されます。
           </div>
@@ -310,7 +295,7 @@ function handleDocumentChange(documentId: string, event: Event) {
               type="button"
               @click="handleDeletePage"
             >
-              {{ deletePageMutation.isPending.value ? "削除中..." : "削除" }}
+              {{ deletePageMutation.isPending.value ? '削除中...' : '削除' }}
             </button>
 
             <div class="flex flex-wrap gap-3">
@@ -322,10 +307,10 @@ function handleDocumentChange(documentId: string, event: Event) {
               >
                 {{
                   patchPinMutation.isPending.value
-                    ? "更新中..."
+                    ? '更新中...'
                     : pageQuery.data.value.isPinned
-                      ? "固定表示を解除"
-                      : "固定表示"
+                      ? '固定表示を解除'
+                      : '固定表示'
                 }}
               </button>
               <button
@@ -333,7 +318,7 @@ function handleDocumentChange(documentId: string, event: Event) {
                 :disabled="updatePageMutation.isPending.value"
                 type="submit"
               >
-                {{ updatePageMutation.isPending.value ? "更新中..." : "保存" }}
+                {{ updatePageMutation.isPending.value ? '更新中...' : '保存' }}
               </button>
             </div>
           </div>

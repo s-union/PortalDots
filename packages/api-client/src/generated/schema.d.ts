@@ -1492,6 +1492,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/public/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the instance configuration */
+        get: operations["getPublicConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/public/home": {
         parameters: {
             query?: never;
@@ -8161,6 +8178,29 @@ export interface operations {
                             displayName: string;
                             canDeleteAccount: boolean;
                         };
+                    };
+                };
+            };
+        };
+    };
+    getPublicConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Instance configuration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        isDemo: boolean;
+                        appName: string;
                     };
                 };
             };

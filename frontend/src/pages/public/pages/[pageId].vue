@@ -1,31 +1,28 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    requiresAuth: false,
-  },
-});
+    requiresAuth: false
+  }
+})
 
-import { computed } from "vue";
-import { useRoute } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { buildApiUrl } from "@/lib/api/client";
-import { formatFileSize } from "@/lib/format/fileSize";
-import { usePublicPageDetailQuery } from "@/features/public-home/api";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { buildApiUrl } from '@/lib/api/client'
+import { formatFileSize } from '@/lib/format/fileSize'
+import { usePublicPageDetailQuery } from '@/features/public-home/api'
 
-const route = useRoute("/public/pages/[pageId]");
-const pageId = computed(() => String(route.params.pageId ?? ""));
-const pageQuery = usePublicPageDetailQuery(pageId, true);
+const route = useRoute('/public/pages/[pageId]')
+const pageId = computed(() => String(route.params.pageId ?? ''))
+const pageQuery = usePublicPageDetailQuery(pageId, true)
 </script>
 
 <template>
   <section class="mx-auto max-w-[1024px] space-y-6 px-6 py-4 max-[1000px]:px-4">
     <BackLink to="/public/pages"> お知らせへ戻る </BackLink>
 
-    <div
-      v-if="pageQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -40,10 +37,7 @@ const pageQuery = usePublicPageDetailQuery(pageId, true);
             {{ pageQuery.data.value.body }}
           </p>
 
-          <div
-            v-if="pageQuery.data.value.documents.length > 0"
-            class="mt-8 border-t border-border pt-6"
-          >
+          <div v-if="pageQuery.data.value.documents.length > 0" class="mt-8 border-t border-border pt-6">
             <h3 class="text-base font-semibold text-body">関連する配布資料</h3>
             <ul class="mt-4 space-y-3 text-sm">
               <li v-for="document in pageQuery.data.value.documents" :key="document.id">
@@ -62,7 +56,7 @@ const pageQuery = usePublicPageDetailQuery(pageId, true);
                   {{ document.name }}
                 </a>
                 <p class="mt-1 text-xs text-muted">
-                  {{ document.updatedAt }} 更新 / {{ document.extension || "FILE" }} /
+                  {{ document.updatedAt }} 更新 / {{ document.extension || 'FILE' }} /
                   {{ formatFileSize(document.sizeBytes) }}
                 </p>
                 <p v-if="document.description" class="mt-1 text-muted">

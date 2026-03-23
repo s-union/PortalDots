@@ -1,280 +1,277 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setActivePinia } from "pinia";
-import { pinia } from "@/app/providers/pinia";
-import { queryClient } from "@/app/providers/queryClient";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setActivePinia } from 'pinia'
+import { pinia } from '@/app/providers/pinia'
+import { queryClient } from '@/app/providers/queryClient'
 
 const sessionApiMocks = vi.hoisted(() => ({
-    fetchSessionBootstrap: vi.fn(),
-}));
+  fetchSessionBootstrap: vi.fn()
+}))
 
 const staffStatusApiMocks = vi.hoisted(() => ({
-    fetchStaffStatus: vi.fn(),
-}));
+  fetchStaffStatus: vi.fn()
+}))
 
-vi.mock("@/features/session/api", async () => {
-    const actual =
-        await vi.importActual<typeof import("@/features/session/api")>("@/features/session/api");
+vi.mock('@/features/session/api', async () => {
+  const actual = await vi.importActual<typeof import('@/features/session/api')>('@/features/session/api')
 
-    return {
-        ...actual,
-        fetchSessionBootstrap: sessionApiMocks.fetchSessionBootstrap,
-    };
-});
+  return {
+    ...actual,
+    fetchSessionBootstrap: sessionApiMocks.fetchSessionBootstrap
+  }
+})
 
-vi.mock("@/features/staff/status/api", async () => {
-    const actual = await vi.importActual<typeof import("@/features/staff/status/api")>(
-        "@/features/staff/status/api",
-    );
+vi.mock('@/features/staff/status/api', async () => {
+  const actual = await vi.importActual<typeof import('@/features/staff/status/api')>('@/features/staff/status/api')
 
-    return {
-        ...actual,
-        fetchStaffStatus: staffStatusApiMocks.fetchStaffStatus,
-    };
-});
+  return {
+    ...actual,
+    fetchStaffStatus: staffStatusApiMocks.fetchStaffStatus
+  }
+})
 
-import { router } from "./index";
+import { router } from './index'
 
-describe("app router guards", () => {
-    beforeEach(() => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "",
-            currentCircle: null,
-            featureFlags: [],
-            roles: [],
-            permissions: [],
-            user: null,
-        });
-        staffStatusApiMocks.fetchStaffStatus.mockResolvedValue({
-            allowed: true,
-            authorized: true,
-        });
-    });
+describe('app router guards', () => {
+  beforeEach(() => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: '',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      permissions: [],
+      user: null
+    })
+    staffStatusApiMocks.fetchStaffStatus.mockResolvedValue({
+      allowed: true,
+      authorized: true
+    })
+  })
 
-    afterEach(async () => {
-        vi.unstubAllGlobals();
-        vi.clearAllMocks();
-        queryClient.clear();
-        setActivePinia(pinia);
-        await router.replace("/");
-    });
+  afterEach(async () => {
+    vi.unstubAllGlobals()
+    vi.clearAllMocks()
+    queryClient.clear()
+    setActivePinia(pinia)
+    await router.replace('/')
+  })
 
-    it("redirects unauthenticated workspace access to login", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "",
-            currentCircle: null,
-            featureFlags: [],
-            roles: [],
-            permissions: [],
-            user: null,
-        });
+  it('redirects unauthenticated workspace access to login', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: '',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      permissions: [],
+      user: null
+    })
 
-        await router.push("/workspace");
-        await router.isReady();
+    await router.push('/workspace')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/login");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/login')
+  })
 
-    it("rewrites authenticated workspace root access to home", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "csrf-token",
-            currentCircle: null,
-            featureFlags: [],
-            roles: ["participant"],
-            permissions: [],
-            user: {
-                id: "demo-user",
-                displayName: "Demo User",
-                canDeleteAccount: false,
-            },
-        });
+  it('rewrites authenticated workspace root access to home', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      permissions: [],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
 
-        await router.push("/workspace");
+    await router.push('/workspace')
 
-        expect(router.currentRoute.value.fullPath).toBe("/");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/')
+  })
 
-    it("redirects authenticated register access to home via public-only guard", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "csrf-token",
-            currentCircle: null,
-            featureFlags: [],
-            roles: ["participant"],
-            permissions: [],
-            user: {
-                id: "demo-user",
-                displayName: "Demo User",
-                canDeleteAccount: false,
-            },
-        });
+  it('redirects authenticated register access to home via public-only guard', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      permissions: [],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
 
-        await router.push("/register");
-        await router.isReady();
+    await router.push('/register')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/')
+  })
 
-    it("redirects unauthenticated email verify access to login", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "",
-            currentCircle: null,
-            featureFlags: [],
-            roles: [],
-            permissions: [],
-            user: null,
-        });
+  it('redirects unauthenticated email verify access to login', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: '',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      permissions: [],
+      user: null
+    })
 
-        await router.push("/email/verify");
-        await router.isReady();
+    await router.push('/email/verify')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/login");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/login')
+  })
 
-    it("redirects authenticated signed password reset links to home via public-only guard", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "csrf-token",
-            currentCircle: null,
-            featureFlags: [],
-            roles: ["participant"],
-            permissions: [],
-            user: {
-                id: "demo-user",
-                displayName: "Demo User",
-                canDeleteAccount: false,
-            },
-        });
+  it('redirects authenticated signed password reset links to home via public-only guard', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      permissions: [],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
 
-        await router.push("/password/reset/user-123");
-        await router.isReady();
+    await router.push('/password/reset/user-123')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/')
+  })
 
-    it("redirects authenticated signed email verify links to home via public-only guard", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "csrf-token",
-            currentCircle: null,
-            featureFlags: [],
-            roles: ["participant"],
-            permissions: [],
-            user: {
-                id: "demo-user",
-                displayName: "Demo User",
-                canDeleteAccount: false,
-            },
-        });
+  it('redirects authenticated signed email verify links to home via public-only guard', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      permissions: [],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
 
-        await router.push("/email/verify/email/user-123");
-        await router.isReady();
+    await router.push('/email/verify/email/user-123')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/')
+  })
 
-    it("redirects unauthenticated email verify completed access to login", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "",
-            currentCircle: null,
-            featureFlags: [],
-            roles: [],
-            permissions: [],
-            user: null,
-        });
+  it('redirects unauthenticated email verify completed access to login', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: '',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      permissions: [],
+      user: null
+    })
 
-        await router.push("/email/verify/completed");
-        await router.isReady();
+    await router.push('/email/verify/completed')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/login");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/login')
+  })
 
-    it("redirects staff dashboard access to staff verify when not yet authorized", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "csrf-token",
-            currentCircle: {
-                id: "circle-a",
-                name: "デモ企画A",
-            },
-            featureFlags: [],
-            roles: ["admin"],
-            permissions: [],
-            user: {
-                id: "staff-user",
-                displayName: "Staff User",
-                canDeleteAccount: false,
-            },
-        });
-        staffStatusApiMocks.fetchStaffStatus.mockResolvedValue({
-            allowed: true,
-            authorized: false,
-        });
+  it('redirects staff dashboard access to staff verify when not yet authorized', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: ['admin'],
+      permissions: [],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User',
+        canDeleteAccount: false
+      }
+    })
+    staffStatusApiMocks.fetchStaffStatus.mockResolvedValue({
+      allowed: true,
+      authorized: false
+    })
 
-        await router.push("/staff");
+    await router.push('/staff')
 
-        expect(router.currentRoute.value.fullPath).toBe("/staff/verify");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/staff/verify')
+  })
 
-    it("redirects non-admin staff activity log access to staff top", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "csrf-token",
-            currentCircle: {
-                id: "circle-a",
-                name: "デモ企画A",
-            },
-            featureFlags: [],
-            roles: ["circle_manager"],
-            permissions: [],
-            user: {
-                id: "circle-user",
-                displayName: "Circle User",
-                canDeleteAccount: false,
-            },
-        });
+  it('redirects non-admin staff activity log access to staff top', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: ['circle_manager'],
+      permissions: [],
+      user: {
+        id: 'circle-user',
+        displayName: 'Circle User',
+        canDeleteAccount: false
+      }
+    })
 
-        await router.push("/staff/activity-logs");
+    await router.push('/staff/activity-logs')
 
-        expect(router.currentRoute.value.fullPath).toBe("/staff");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/staff')
+  })
 
-    it("redirects non-admin staff portal settings access to staff top", async () => {
-        sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
-            csrfToken: "csrf-token",
-            currentCircle: {
-                id: "circle-a",
-                name: "デモ企画A",
-            },
-            featureFlags: [],
-            roles: ["content_manager"],
-            permissions: [],
-            user: {
-                id: "content-user",
-                displayName: "Content User",
-                canDeleteAccount: false,
-            },
-        });
+  it('redirects non-admin staff portal settings access to staff top', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: ['content_manager'],
+      permissions: [],
+      user: {
+        id: 'content-user',
+        displayName: 'Content User',
+        canDeleteAccount: false
+      }
+    })
 
-        await router.push("/staff/settings/portal");
+    await router.push('/staff/settings/portal')
 
-        expect(router.currentRoute.value.fullPath).toBe("/staff");
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/staff')
+  })
 
-    it("resolves unknown routes to the not-found page", async () => {
-        await router.push("/definitely-missing");
+  it('resolves unknown routes to the not-found page', async () => {
+    await router.push('/definitely-missing')
 
-        const matchedRoutes = router.currentRoute.value.matched;
-        expect(matchedRoutes[matchedRoutes.length - 1]?.path).toBe("/:all(.*)");
-    });
+    const matchedRoutes = router.currentRoute.value.matched
+    expect(matchedRoutes[matchedRoutes.length - 1]?.path).toBe('/:all(.*)')
+  })
 
-    it("opens the support page without session bootstrap", async () => {
-        await router.push("/support");
-        await router.isReady();
+  it('opens the support page without session bootstrap', async () => {
+    await router.push('/support')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/support");
-        expect(sessionApiMocks.fetchSessionBootstrap).not.toHaveBeenCalled();
-    });
+    expect(router.currentRoute.value.fullPath).toBe('/support')
+    expect(sessionApiMocks.fetchSessionBootstrap).not.toHaveBeenCalled()
+  })
 
-    it("opens the privacy policy page without session bootstrap", async () => {
-        await router.push("/privacy_policy");
-        await router.isReady();
+  it('opens the privacy policy page without session bootstrap', async () => {
+    await router.push('/privacy_policy')
+    await router.isReady()
 
-        expect(router.currentRoute.value.fullPath).toBe("/privacy_policy");
-        expect(sessionApiMocks.fetchSessionBootstrap).not.toHaveBeenCalled();
-    });
-});
+    expect(router.currentRoute.value.fullPath).toBe('/privacy_policy')
+    expect(sessionApiMocks.fetchSessionBootstrap).not.toHaveBeenCalled()
+  })
+})

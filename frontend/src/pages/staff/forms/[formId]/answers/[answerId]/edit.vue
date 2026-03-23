@@ -5,21 +5,21 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "formAnswers.edit",
-  },
-});
+    staffCapability: 'formAnswers.edit'
+  }
+})
 
-import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import AnswerQuestionFields from "@/components/forms/AnswerQuestionFields.vue";
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
   updateDraftValue,
-  useFormAnswerEditorDraft,
-} from "@/features/forms/answers";
-import { useAuthorizedStaffContext } from "@/features/staff/hooks/useAuthorizedStaffContext";
+  useFormAnswerEditorDraft
+} from '@/features/forms/answers'
+import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   buildDeleteStaffFormAnswerConfirmMessage,
   extractStaffFormAnswerValidationMessage,
@@ -27,98 +27,96 @@ import {
   useDeleteStaffFormAnswerMutation,
   useStaffFormAnswerDetailQuery,
   useUpdateStaffFormAnswerMutation,
-  useUploadStaffFormAnswerFileMutation,
-} from "@/features/staff/forms/answers";
-import { buildStaffFormTabs } from "@/features/ui/tabStrip";
+  useUploadStaffFormAnswerFileMutation
+} from '@/features/staff/forms/answers'
+import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute("/staff/forms/[formId]/answers/[answerId]/edit");
-const router = useRouter();
-const formId = computed(() => String(route.params.formId ?? ""));
-const answerId = computed(() => String(route.params.answerId ?? ""));
-const { enabled } = useAuthorizedStaffContext({ requiresCircle: true });
-const answerQuery = useStaffFormAnswerDetailQuery(formId, answerId, enabled);
-const updateAnswerMutation = useUpdateStaffFormAnswerMutation(formId, answerId);
-const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId);
-const uploadMutation = useUploadStaffFormAnswerFileMutation(formId, answerId);
+const route = useRoute('/staff/forms/[formId]/answers/[answerId]/edit')
+const router = useRouter()
+const formId = computed(() => String(route.params.formId ?? ''))
+const answerId = computed(() => String(route.params.answerId ?? ''))
+const { enabled } = useAuthorizedStaffContext({ requiresCircle: true })
+const answerQuery = useStaffFormAnswerDetailQuery(formId, answerId, enabled)
+const updateAnswerMutation = useUpdateStaffFormAnswerMutation(formId, answerId)
+const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId)
+const uploadMutation = useUploadStaffFormAnswerFileMutation(formId, answerId)
 const draft = useFormAnswerEditorDraft(
   computed(() => answerQuery.data.value?.answer),
-  computed(() => answerQuery.data.value?.form.questions ?? []),
-);
-const errorMessage = ref("");
-const uploadErrorMessages = ref<Record<string, string>>({});
-const selectedFiles = ref<Record<string, File | null>>({});
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
+  computed(() => answerQuery.data.value?.form.questions ?? [])
+)
+const errorMessage = ref('')
+const uploadErrorMessages = ref<Record<string, string>>({})
+const selectedFiles = ref<Record<string, File | null>>({})
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
 
 async function handleSaveAnswer() {
   if (!answerQuery.data.value) {
-    return;
+    return
   }
 
-  errorMessage.value = "";
+  errorMessage.value = ''
   const body =
-    typeof draft.value["legacy-body"] === "string"
-      ? draft.value["legacy-body"]
-      : answerQuery.data.value.answer.body;
+    typeof draft.value['legacy-body'] === 'string' ? draft.value['legacy-body'] : answerQuery.data.value.answer.body
 
   try {
     await updateAnswerMutation.mutateAsync(
-      staffAnswerDraftToPayload(answerQuery.data.value.circle.id, body, draft.value),
-    );
+      staffAnswerDraftToPayload(answerQuery.data.value.circle.id, body, draft.value)
+    )
   } catch (error) {
-    errorMessage.value = extractStaffFormAnswerValidationMessage(error);
+    errorMessage.value = extractStaffFormAnswerValidationMessage(error)
   }
 }
 
 async function handleDeleteAnswer() {
-  const groupName = answerQuery.data.value?.circle.groupName;
+  const groupName = answerQuery.data.value?.circle.groupName
   if (
     groupName &&
-    typeof window !== "undefined" &&
+    typeof window !== 'undefined' &&
     !window.confirm(buildDeleteStaffFormAnswerConfirmMessage(groupName))
   ) {
-    return;
+    return
   }
 
   try {
-    await deleteAnswerMutation.mutateAsync(answerId.value);
-    await router.push(`/staff/forms/${encodeURIComponent(formId.value)}/answers`);
+    await deleteAnswerMutation.mutateAsync(answerId.value)
+    await router.push(`/staff/forms/${encodeURIComponent(formId.value)}/answers`)
   } catch (error) {
-    errorMessage.value = extractStaffFormAnswerValidationMessage(error);
+    errorMessage.value = extractStaffFormAnswerValidationMessage(error)
   }
 }
 
 async function handleUploadFile(questionId: string) {
-  uploadErrorMessages.value = { ...uploadErrorMessages.value, [questionId]: "" };
-  const file = selectedFiles.value[questionId];
+  uploadErrorMessages.value = { ...uploadErrorMessages.value, [questionId]: '' }
+  const file = selectedFiles.value[questionId]
   if (!file) {
     uploadErrorMessages.value = {
       ...uploadErrorMessages.value,
-      [questionId]: "ファイルを選択してください。",
-    };
-    return;
+      [questionId]: 'ファイルを選択してください。'
+    }
+    return
   }
 
   try {
-    await uploadMutation.mutateAsync({ questionId, file });
-    selectedFiles.value = { ...selectedFiles.value, [questionId]: null };
+    await uploadMutation.mutateAsync({ questionId, file })
+    selectedFiles.value = { ...selectedFiles.value, [questionId]: null }
   } catch (error) {
     uploadErrorMessages.value = {
       ...uploadErrorMessages.value,
-      [questionId]: extractStaffFormAnswerValidationMessage(error),
-    };
+      [questionId]: extractStaffFormAnswerValidationMessage(error)
+    }
   }
 }
 
 function handleFileChange(questionId: string, event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
 
   selectedFiles.value = {
     ...selectedFiles.value,
-    [questionId]: target.files?.[0] ?? target.files?.item(0) ?? null,
-  };
+    [questionId]: target.files?.[0] ?? target.files?.item(0) ?? null
+  }
 }
 </script>
 
@@ -128,10 +126,7 @@ function handleFileChange(questionId: string, event: Event) {
 
     <TabStrip :tabs="staffFormTabs" />
 
-    <div
-      v-if="answerQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="answerQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -156,9 +151,7 @@ function handleFileChange(questionId: string, event: Event) {
         </div>
       </section>
 
-      <section
-        class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1"
-      >
+      <section class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1">
         最終更新日時 : {{ answerQuery.data.value.answer.updatedAt }}
       </section>
 
@@ -176,13 +169,7 @@ function handleFileChange(questionId: string, event: Event) {
                   :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
                   class="min-h-40"
                   name="answer-body"
-                  @input="
-                    updateDraftValue(
-                      draft,
-                      'legacy-body',
-                      ($event.target as HTMLTextAreaElement).value,
-                    )
-                  "
+                  @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
                 />
               </label>
             </div>
@@ -191,10 +178,7 @@ function handleFileChange(questionId: string, event: Event) {
           <template v-for="question in answerQuery.data.value.form.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
               <h4 class="text-lg font-semibold text-body">{{ question.name }}</h4>
-              <p
-                v-if="question.description"
-                class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted"
-              >
+              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
@@ -204,14 +188,9 @@ function handleFileChange(questionId: string, event: Event) {
                 <div>
                   <p class="text-sm font-semibold text-body">
                     {{ question.name }}
-                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">
-                      必須
-                    </span>
+                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger"> 必須 </span>
                   </p>
-                  <p
-                    v-if="question.description"
-                    class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted"
-                  >
+                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
@@ -225,8 +204,7 @@ function handleFileChange(questionId: string, event: Event) {
                   :upload-error-message="uploadErrorMessages[question.id]"
                   :download-label="'ダウンロード'"
                   :download-href="
-                    (currentQuestion) =>
-                      buildFormAnswerUploadDownloadUrlByAnswer(formId, answerId, currentQuestion.id)
+                    (currentQuestion) => buildFormAnswerUploadDownloadUrlByAnswer(formId, answerId, currentQuestion.id)
                   "
                   @upload="handleUploadFile"
                   @file-change="handleFileChange"
@@ -236,9 +214,7 @@ function handleFileChange(questionId: string, event: Event) {
           </template>
         </div>
 
-        <div
-          class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-5"
-        >
+        <div class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-5">
           <p v-if="errorMessage" class="text-sm text-danger">{{ errorMessage }}</p>
           <div class="ml-auto flex flex-wrap gap-3">
             <button
@@ -255,7 +231,7 @@ function handleFileChange(questionId: string, event: Event) {
               type="button"
               @click="handleSaveAnswer"
             >
-              {{ updateAnswerMutation.isPending.value ? "保存中..." : "変更を保存" }}
+              {{ updateAnswerMutation.isPending.value ? '保存中...' : '変更を保存' }}
             </button>
           </div>
         </div>
@@ -283,8 +259,6 @@ function handleFileChange(questionId: string, event: Event) {
       </section>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-      回答を取得できませんでした。
-    </div>
+    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">回答を取得できませんでした。</div>
   </section>
 </template>

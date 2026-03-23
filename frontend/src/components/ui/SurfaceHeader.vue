@@ -1,7 +1,7 @@
 <script setup lang="ts">
-defineProps<{
-  borderless?: boolean;
-}>();
+const { borderless } = defineProps<{
+  borderless?: boolean
+}>()
 </script>
 
 <template>

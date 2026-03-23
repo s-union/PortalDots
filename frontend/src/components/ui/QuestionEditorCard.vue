@@ -1,8 +1,8 @@
 <script setup lang="ts">
-defineProps<{
-  title: string;
-  meta: string;
-}>();
+const { title, meta } = defineProps<{
+  title: string
+  meta: string
+}>()
 </script>
 
 <template>

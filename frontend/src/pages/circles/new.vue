@@ -1,74 +1,72 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    requiresAuth: true,
-  },
-});
+    requiresAuth: true
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import { useCreateCircleMutation } from "@/features/circles/api";
-import { useParticipationTypesQuery } from "@/features/participation-types/api";
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { useCreateCircleMutation } from '@/features/circles/api'
+import { useParticipationTypesQuery } from '@/features/participation-types/api'
 
-const route = useRoute();
-const router = useRouter();
-const createMutation = useCreateCircleMutation();
-const participationTypesQuery = useParticipationTypesQuery(true);
+const route = useRoute()
+const router = useRouter()
+const createMutation = useCreateCircleMutation()
+const participationTypesQuery = useParticipationTypesQuery(true)
 
 const form = ref({
-  name: "",
-  nameYomi: "",
-  groupName: "",
-  groupNameYomi: "",
-  participationTypeId: "",
-  notes: "",
-});
+  name: '',
+  nameYomi: '',
+  groupName: '',
+  groupNameYomi: '',
+  participationTypeId: '',
+  notes: ''
+})
 
-const errorMessage = ref("");
+const errorMessage = ref('')
 const requestedParticipationTypeId = computed(() => {
-  const legacyValue = route.query.participation_type;
-  if (typeof legacyValue === "string") {
-    return legacyValue;
+  const legacyValue = route.query.participation_type
+  if (typeof legacyValue === 'string') {
+    return legacyValue
   }
 
-  const migratedValue = route.query.participationTypeId;
-  return typeof migratedValue === "string" ? migratedValue : "";
-});
+  const migratedValue = route.query.participationTypeId
+  return typeof migratedValue === 'string' ? migratedValue : ''
+})
 
 watch(
   [requestedParticipationTypeId, () => participationTypesQuery.data.value],
   ([requestedId, participationTypes]) => {
-    if (form.value.participationTypeId !== "") {
-      return;
+    if (form.value.participationTypeId !== '') {
+      return
     }
 
     if (!requestedId) {
-      return;
+      return
     }
 
-    if (
-      !(participationTypes ?? []).some((participationType) => participationType.id === requestedId)
-    ) {
-      return;
+    if (!(participationTypes ?? []).some((participationType) => participationType.id === requestedId)) {
+      return
     }
 
-    form.value.participationTypeId = requestedId;
+    form.value.participationTypeId = requestedId
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 async function handleSubmit() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
-    await createMutation.mutateAsync(form.value);
-    await router.push("/workspace/circles/detail");
+    await createMutation.mutateAsync(form.value)
+    await router.push('/workspace/circles/detail')
   } catch {
-    errorMessage.value = "企画の作成に失敗しました。入力内容をご確認ください。";
+    errorMessage.value = '企画の作成に失敗しました。入力内容をご確認ください。'
   }
 }
 </script>
@@ -80,9 +78,7 @@ async function handleSubmit() {
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Create Circle</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">企画を新規作成</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">
-        新しい企画を作成します。あなたが企画のリーダーになります。
-      </p>
+      <p class="mt-3 text-sm leading-7 text-muted">新しい企画を作成します。あなたが企画のリーダーになります。</p>
       <p v-if="requestedParticipationTypeId" class="mt-2 text-sm text-muted">
         URLパラメータで指定された参加種別を自動選択しています。
       </p>
@@ -120,18 +116,11 @@ async function handleSubmit() {
               :key="pt.id"
               class="flex items-start gap-3 rounded border border-border p-4 cursor-pointer hover:bg-form-control"
             >
-              <input
-                v-model="form.participationTypeId"
-                type="radio"
-                :value="pt.id"
-                class="mt-0.5"
-              />
+              <input v-model="form.participationTypeId" type="radio" :value="pt.id" class="mt-0.5" />
               <div>
                 <p class="font-semibold text-body">{{ pt.name }}</p>
                 <p class="mt-1 text-xs text-muted">{{ pt.description }}</p>
-                <p class="mt-1 text-xs text-muted">
-                  メンバー数: {{ pt.usersCountMin }}〜{{ pt.usersCountMax }}人
-                </p>
+                <p class="mt-1 text-xs text-muted">メンバー数: {{ pt.usersCountMin }}〜{{ pt.usersCountMax }}人</p>
               </div>
             </label>
           </div>
@@ -147,10 +136,7 @@ async function handleSubmit() {
 
       <template #footer>
         <div class="space-y-4">
-          <p
-            v-if="errorMessage"
-            class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-          >
+          <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
             {{ errorMessage }}
           </p>
           <div class="flex justify-end">
@@ -160,7 +146,7 @@ async function handleSubmit() {
               type="button"
               @click="handleSubmit"
             >
-              {{ createMutation.isPending.value ? "作成中..." : "企画を作成する" }}
+              {{ createMutation.isPending.value ? '作成中...' : '企画を作成する' }}
             </button>
           </div>
         </div>

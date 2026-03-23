@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { buttonVariants } from "@/lib/ui/variants";
+import { buttonVariants } from '@/lib/ui/variants'
 
-defineProps<{
-  to: string;
-}>();
+const { to } = defineProps<{
+  to: string
+}>()
 </script>
 
 <template>

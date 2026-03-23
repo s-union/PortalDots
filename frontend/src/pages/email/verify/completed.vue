@@ -3,9 +3,9 @@ definePage({
   meta: {
     requiresAuth: true,
     noDrawer: true,
-    noBottomTabs: true,
-  },
-});
+    noBottomTabs: true
+  }
+})
 </script>
 
 <template>

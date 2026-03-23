@@ -3,13 +3,13 @@ definePage({
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-  },
-});
+    requiresStaffAuthorized: true
+  }
+})
 
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 </script>
 
 <template>
@@ -46,8 +46,7 @@ import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
         <article class="rounded border border-border bg-surface-light px-5 py-4">
           <h3 class="text-base font-semibold text-body">申請管理</h3>
           <p class="mt-2 text-sm leading-7 text-muted">
-            参加登録や個別申請をオンラインで受け付け、回答確認や出力作業を staff
-            画面で進められます。
+            参加登録や個別申請をオンラインで受け付け、回答確認や出力作業を staff 画面で進められます。
           </p>
         </article>
       </div>

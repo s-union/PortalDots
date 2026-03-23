@@ -2,93 +2,99 @@
 definePage({
   meta: {
     requiresAuth: true,
-    requiresCircle: true,
-  },
-});
+    requiresCircle: true
+  }
+})
 
-import { computed, ref, shallowRef } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
-import SettingsRow from "@/components/ui/SettingsRow.vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
+import { computed, ref, shallowRef } from 'vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SettingsRow from '@/components/ui/SettingsRow.vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import {
   extractAddCircleMemberValidationMessage,
   useAddCircleMemberMutation,
   useCurrentCircleDetailQuery,
   useCircleMembersQuery,
   useRemoveMemberMutation,
-  useRegenerateInvitationTokenMutation,
-} from "@/features/circles/api";
-import { buildApiUrl } from "@/lib/api/client";
-import { useSessionStore } from "@/features/session/store";
+  useRegenerateInvitationTokenMutation
+} from '@/features/circles/api'
+import { buildApiUrl } from '@/lib/api/client'
+import { useSessionStore } from '@/features/session/store'
 
-const sessionStore = useSessionStore();
-const detailQuery = useCurrentCircleDetailQuery();
-const membersQuery = useCircleMembersQuery();
-const addMemberMutation = useAddCircleMemberMutation();
-const removeMutation = useRemoveMemberMutation();
-const regenerateMutation = useRegenerateInvitationTokenMutation();
+const sessionStore = useSessionStore()
+const detailQuery = useCurrentCircleDetailQuery()
+const membersQuery = useCircleMembersQuery()
+const addMemberMutation = useAddCircleMemberMutation()
+const removeMutation = useRemoveMemberMutation()
+const regenerateMutation = useRegenerateInvitationTokenMutation()
 
-const addMemberLoginId = shallowRef("");
-const copySuccess = shallowRef(false);
-const errorMessage = shallowRef("");
+const addMemberLoginId = shallowRef('')
+const copySuccess = shallowRef(false)
+const errorMessage = shallowRef('')
 
-const currentUserId = computed(() => sessionStore.user?.id ?? "");
+const currentUserId = computed(() => sessionStore.user?.id ?? '')
 
 const invitationUrl = computed(() => {
-  const token = detailQuery.data.value?.invitationToken;
-  if (!token) return "";
-  const base = buildApiUrl("/").replace(/\/v1\/$/, "");
-  return `${window.location.origin}/circles/join/${token}`;
-});
+  const token = detailQuery.data.value?.invitationToken
+  if (!token) {
+    return ''
+  }
+  const base = buildApiUrl('/').replace(/\/v1\/$/, '')
+  return `${window.location.origin}/circles/join/${token}`
+})
 
 const isCurrentUserLeader = computed(() => {
-  return (
-    membersQuery.data.value?.some((m) => m.userId === currentUserId.value && m.isLeader) ?? false
-  );
-});
+  return membersQuery.data.value?.some((m) => m.userId === currentUserId.value && m.isLeader) ?? false
+})
 
 async function handleCopyUrl() {
-  if (!invitationUrl.value) return;
-  await navigator.clipboard.writeText(invitationUrl.value);
-  copySuccess.value = true;
+  if (!invitationUrl.value) {
+    return
+  }
+  await navigator.clipboard.writeText(invitationUrl.value)
+  copySuccess.value = true
   setTimeout(() => {
-    copySuccess.value = false;
-  }, 2000);
+    copySuccess.value = false
+  }, 2000)
 }
 
 async function handleRegenerate() {
-  if (!confirm("招待URLを再生成します。現在の招待URLは無効になります。よろしいですか？")) return;
-  errorMessage.value = "";
+  if (!confirm('招待URLを再生成します。現在の招待URLは無効になります。よろしいですか？')) {
+    return
+  }
+  errorMessage.value = ''
 
   try {
-    await regenerateMutation.mutateAsync();
+    await regenerateMutation.mutateAsync()
   } catch {
-    errorMessage.value = "招待トークンの再生成に失敗しました。";
+    errorMessage.value = '招待トークンの再生成に失敗しました。'
   }
 }
 
 async function handleAddMember() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
     await addMemberMutation.mutateAsync({
-      loginId: addMemberLoginId.value,
-    });
-    addMemberLoginId.value = "";
+      loginId: addMemberLoginId.value
+    })
+    addMemberLoginId.value = ''
   } catch (error) {
-    errorMessage.value = extractAddCircleMemberValidationMessage(error);
+    errorMessage.value = extractAddCircleMemberValidationMessage(error)
   }
 }
 
 async function handleRemoveMember(userId: string, displayName: string) {
-  if (!confirm(`${displayName} をメンバーから削除しますか？`)) return;
-  errorMessage.value = "";
+  if (!confirm(`${displayName} をメンバーから削除しますか？`)) {
+    return
+  }
+  errorMessage.value = ''
 
   try {
-    await removeMutation.mutateAsync(userId);
+    await removeMutation.mutateAsync(userId)
   } catch {
-    errorMessage.value = "メンバーの削除に失敗しました。";
+    errorMessage.value = 'メンバーの削除に失敗しました。'
   }
 }
 </script>
@@ -116,7 +122,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
               type="button"
               @click="handleCopyUrl"
             >
-              {{ copySuccess ? "コピー完了!" : "コピー" }}
+              {{ copySuccess ? 'コピー完了!' : 'コピー' }}
             </button>
           </div>
         </div>
@@ -130,7 +136,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
             type="button"
             @click="handleRegenerate"
           >
-            {{ regenerateMutation.isPending.value ? "再生成中..." : "招待URLを再生成" }}
+            {{ regenerateMutation.isPending.value ? '再生成中...' : '招待URLを再生成' }}
           </button>
         </div>
       </template>
@@ -142,18 +148,13 @@ async function handleRemoveMember(userId: string, displayName: string) {
           学籍番号または連絡先メールアドレスを入力して、学園祭係(副責任者)を直接追加できます。
         </p>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input
-            v-model="addMemberLoginId"
-            type="text"
-            class="flex-1"
-            placeholder="24a0000 / demo@example.com"
-          />
+          <input v-model="addMemberLoginId" type="text" class="flex-1" placeholder="24a0000 / demo@example.com" />
           <button
             class="rounded border border-primary px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary-light disabled:opacity-60"
             :disabled="addMemberMutation.isPending.value"
             type="submit"
           >
-            {{ addMemberMutation.isPending.value ? "追加中..." : "メンバーを追加" }}
+            {{ addMemberMutation.isPending.value ? '追加中...' : 'メンバーを追加' }}
           </button>
         </div>
       </form>
@@ -161,9 +162,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
 
     <!-- メンバー一覧 -->
     <SettingsSection title="メンバー一覧">
-      <div v-if="membersQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        読み込み中...
-      </div>
+      <div v-if="membersQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
 
       <div v-else-if="membersQuery.data.value?.length === 0" class="px-6 py-6 text-sm text-muted">
         メンバーがいません。
@@ -178,7 +177,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
           <div>
             <p class="font-semibold text-body">{{ member.displayName }}</p>
             <p class="mt-1 text-xs text-muted">
-              {{ member.isLeader ? "リーダー" : "メンバー" }}
+              {{ member.isLeader ? 'リーダー' : 'メンバー' }}
             </p>
           </div>
           <button

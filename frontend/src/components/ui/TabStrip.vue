@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-import { tabStripBadgeVariants, tabStripItemVariants } from "@/lib/ui/variants";
-import type { TabStripItem } from "@/features/ui/tabStrip";
+import { RouterLink } from 'vue-router'
+import { tabStripBadgeVariants, tabStripItemVariants } from '@/lib/ui/variants'
+import type { TabStripItem } from '@/features/ui/tabStrip'
 
-defineProps<{
-  tabs: TabStripItem[];
-}>();
+const { tabs } = defineProps<{
+  tabs: TabStripItem[]
+}>()
 </script>
 
 <template>
@@ -22,11 +22,7 @@ defineProps<{
       :class="tabStripItemVariants({ active: tab.active })"
     >
       <!-- Active indicator: bottom 4px bar (replaces ::before pseudo-element) -->
-      <span
-        v-if="tab.active"
-        class="absolute inset-x-0 bottom-0 h-1 rounded-t bg-primary"
-        aria-hidden="true"
-      />
+      <span v-if="tab.active" class="absolute inset-x-0 bottom-0 h-1 rounded-t bg-primary" aria-hidden="true" />
       <span class="inline-flex items-center gap-2">
         <span>{{ tab.label }}</span>
         <span v-if="tab.badge" :class="tabStripBadgeVariants({ tone: tab.badgeTone })">

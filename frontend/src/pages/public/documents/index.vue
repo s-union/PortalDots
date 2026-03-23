@@ -2,16 +2,17 @@
 definePage({
   meta: {
     requiresAuth: false,
-  },
-});
+    redirectWhenAuth: '/workspace/documents'
+  }
+})
 
-import ListItemLink from "@/components/ui/ListItemLink.vue";
-import ListPanel from "@/components/ui/ListPanel.vue";
-import { buildApiUrl } from "@/lib/api/client";
-import { formatFileSize } from "@/lib/format/fileSize";
-import { usePublicDocumentsQuery } from "@/features/public-home/api";
+import ListItemLink from '@/components/ui/ListItemLink.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
+import { buildApiUrl } from '@/lib/api/client'
+import { formatFileSize } from '@/lib/format/fileSize'
+import { usePublicDocumentsQuery } from '@/features/public-home/api'
 
-const documentsQuery = usePublicDocumentsQuery(true);
+const documentsQuery = usePublicDocumentsQuery(true)
 </script>
 
 <template>
@@ -40,25 +41,17 @@ const documentsQuery = usePublicDocumentsQuery(true);
           new-tab
         >
           <template #title>
-            <i
-              v-if="document.isImportant"
-              class="fas fa-exclamation-circle fa-fw text-danger"
-              aria-hidden="true"
-            />
+            <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
             <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
             {{ document.name }}
           </template>
           <template v-if="document.isNew" #suffix>
-            <span
-              class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"
-            >
-              NEW
-            </span>
+            <span class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"> NEW </span>
           </template>
           <template #meta>
             {{ document.updatedAt }} 更新
             <br />
-            {{ document.extension || "FILE" }}ファイル • {{ formatFileSize(document.sizeBytes) }}
+            {{ document.extension || 'FILE' }}ファイル • {{ formatFileSize(document.sizeBytes) }}
           </template>
           {{ document.description }}
         </ListItemLink>

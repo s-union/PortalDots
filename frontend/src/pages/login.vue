@@ -4,38 +4,38 @@ definePage({
     publicOnly: true,
     noDrawer: true,
     noFooter: true,
-    noBottomTabs: true,
-  },
-});
+    noBottomTabs: true
+  }
+})
 
-import { computed, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import { extractFirstErrorMessage, useLoginMutation } from "@/features/auth/api";
+import { computed, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { extractFirstErrorMessage, useLoginMutation } from '@/features/auth/api'
 
-const router = useRouter();
-const loginMutation = useLoginMutation();
-const isSubmitting = computed(() => loginMutation.isPending.value);
+const router = useRouter()
+const loginMutation = useLoginMutation()
+const isSubmitting = computed(() => loginMutation.isPending.value)
 
 const form = reactive({
-  loginId: "",
-  password: "",
-  remember: false,
-});
+  loginId: '',
+  password: '',
+  remember: false
+})
 
-const errorMessage = ref("");
+const errorMessage = ref('')
 
 async function handleSubmit() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
     await loginMutation.mutateAsync({
       loginId: form.loginId,
       password: form.password,
-      remember: form.remember,
-    });
-    await router.replace("/");
+      remember: form.remember
+    })
+    await router.replace('/')
   } catch (error) {
-    errorMessage.value = extractFirstErrorMessage(error);
+    errorMessage.value = extractFirstErrorMessage(error)
   }
 }
 </script>
@@ -82,9 +82,7 @@ async function handleSubmit() {
         </label>
 
         <p>
-          <RouterLink class="text-primary" to="/password/reset"
-            >パスワードをお忘れの場合はこちら</RouterLink
-          >
+          <RouterLink class="text-primary" to="/password/reset">パスワードをお忘れの場合はこちら</RouterLink>
         </p>
 
         <div>
@@ -93,7 +91,7 @@ async function handleSubmit() {
             :disabled="isSubmitting"
             type="submit"
           >
-            <strong>{{ isSubmitting ? "ログイン中..." : "ログイン" }}</strong>
+            <strong>{{ isSubmitting ? 'ログイン中...' : 'ログイン' }}</strong>
           </button>
         </div>
 

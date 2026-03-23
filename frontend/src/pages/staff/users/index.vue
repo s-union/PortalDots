@@ -4,37 +4,34 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    staffCapability: "users.read",
-  },
-});
+    staffCapability: 'users.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
-import { buildStaffUsersExportUrl, useStaffUsersQuery } from "@/features/staff/users/api";
-import { useSessionStore } from "@/features/session/store";
-import { calculateTotalPages } from "@/lib/pagination";
+import { computed, ref } from 'vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { buildStaffUsersExportUrl, useStaffUsersQuery } from '@/features/staff/users/api'
+import { useSessionStore } from '@/features/session/store'
+import { calculateTotalPages } from '@/lib/pagination'
 
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
-const page = ref(1);
-const pageSize = 10;
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const page = ref(1)
+const pageSize = 10
 const usersQuery = useStaffUsersQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
     page: page.value,
-    pageSize,
-  })),
-);
+    pageSize
+  }))
+)
 const totalPages = computed(() =>
-  calculateTotalPages(
-    usersQuery.data.value?.total ?? 0,
-    usersQuery.data.value?.pageSize ?? pageSize,
-  ),
-);
-const exportUrl = buildStaffUsersExportUrl();
+  calculateTotalPages(usersQuery.data.value?.total ?? 0, usersQuery.data.value?.pageSize ?? pageSize)
+)
+const exportUrl = buildStaffUsersExportUrl()
 
 function movePage(nextPage: number) {
-  page.value = Math.min(Math.max(nextPage, 1), totalPages.value);
+  page.value = Math.min(Math.max(nextPage, 1), totalPages.value)
 }
 </script>
 
@@ -54,14 +51,9 @@ function movePage(nextPage: number) {
         </a>
       </div>
 
-      <div v-if="usersQuery.isPending.value" class="px-5 py-6 text-sm text-muted">
-        読み込み中...
-      </div>
+      <div v-if="usersQuery.isPending.value" class="px-5 py-6 text-sm text-muted">読み込み中...</div>
 
-      <div
-        v-else-if="(usersQuery.data.value?.items.length ?? 0) === 0"
-        class="px-5 py-6 text-sm text-muted"
-      >
+      <div v-else-if="(usersQuery.data.value?.items.length ?? 0) === 0" class="px-5 py-6 text-sm text-muted">
         対象ユーザーが見つかりませんでした。
       </div>
 
@@ -83,7 +75,7 @@ function movePage(nextPage: number) {
                 <p class="mt-1 text-xs text-muted">ユーザーID: {{ user.id }}</p>
               </td>
               <td class="px-5 py-4 text-body">
-                {{ user.loginIds.join(", ") }}
+                {{ user.loginIds.join(', ') }}
               </td>
               <td class="px-5 py-4">
                 <div class="flex flex-wrap gap-2">
@@ -99,13 +91,9 @@ function movePage(nextPage: number) {
               <td class="px-5 py-4">
                 <span
                   class="rounded-full px-3 py-1 text-xs"
-                  :class="
-                    user.isVerified
-                      ? 'bg-success-light text-success'
-                      : 'bg-danger-light text-danger'
-                  "
+                  :class="user.isVerified ? 'bg-success-light text-success' : 'bg-danger-light text-danger'"
                 >
-                  {{ user.isVerified ? "確認済み" : "未確認" }}
+                  {{ user.isVerified ? '確認済み' : '未確認' }}
                 </span>
               </td>
               <td class="px-5 py-4 text-right">
@@ -130,12 +118,7 @@ function movePage(nextPage: number) {
       <p>
         {{ usersQuery.data.value.total }} 件中
         {{ (usersQuery.data.value.page - 1) * usersQuery.data.value.pageSize + 1 }} -
-        {{
-          Math.min(
-            usersQuery.data.value.page * usersQuery.data.value.pageSize,
-            usersQuery.data.value.total,
-          )
-        }}
+        {{ Math.min(usersQuery.data.value.page * usersQuery.data.value.pageSize, usersQuery.data.value.total) }}
         件
       </p>
       <div class="flex items-center gap-3">

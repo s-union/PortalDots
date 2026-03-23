@@ -2,59 +2,56 @@
 definePage({
   meta: {
     requiresAuth: true,
-    requiresCircle: true,
-  },
-});
+    requiresCircle: true
+  }
+})
 
-import { computed, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import ListItemLink from "@/components/ui/ListItemLink.vue";
-import ListPanel from "@/components/ui/ListPanel.vue";
-import { buildApiUrl } from "@/lib/api/client";
-import { formatFileSize } from "@/lib/format/fileSize";
-import { calculateTotalPages } from "@/lib/pagination";
-import { useDocumentsPageQuery } from "@/features/documents/api";
-import { useSessionStore } from "@/features/session/store";
+import { computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import ListItemLink from '@/components/ui/ListItemLink.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
+import { buildApiUrl } from '@/lib/api/client'
+import { formatFileSize } from '@/lib/format/fileSize'
+import { calculateTotalPages } from '@/lib/pagination'
+import { useDocumentsPageQuery } from '@/features/documents/api'
+import { useSessionStore } from '@/features/session/store'
 
-const route = useRoute();
-const router = useRouter();
-const sessionStore = useSessionStore();
-const pageSize = 10;
+const route = useRoute()
+const router = useRouter()
+const sessionStore = useSessionStore()
+const pageSize = 10
 const currentPage = computed(() => {
-  const raw = Number(route.query.page ?? 1);
-  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 1;
-});
+  const raw = Number(route.query.page ?? 1)
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 1
+})
 const documentsQuery = useDocumentsPageQuery(
   computed(() => ({
     page: currentPage.value,
-    pageSize,
-  })),
-);
+    pageSize
+  }))
+)
 const totalPages = computed(() =>
-  calculateTotalPages(
-    documentsQuery.data.value?.total ?? 0,
-    documentsQuery.data.value?.pageSize ?? pageSize,
-  ),
-);
+  calculateTotalPages(documentsQuery.data.value?.total ?? 0, documentsQuery.data.value?.pageSize ?? pageSize)
+)
 
 watch(
   () => documentsQuery.data.value?.page,
   async (resolvedPage) => {
     if (!resolvedPage || resolvedPage === currentPage.value) {
-      return;
+      return
     }
 
     await router.replace({
-      query: resolvedPage <= 1 ? {} : { page: String(resolvedPage) },
-    });
-  },
-);
+      query: resolvedPage <= 1 ? {} : { page: String(resolvedPage) }
+    })
+  }
+)
 
 async function movePage(nextPage: number) {
-  const normalized = Math.min(Math.max(nextPage, 1), totalPages.value);
+  const normalized = Math.min(Math.max(nextPage, 1), totalPages.value)
   await router.replace({
-    query: normalized <= 1 ? {} : { page: String(normalized) },
-  });
+    query: normalized <= 1 ? {} : { page: String(normalized) }
+  })
 }
 </script>
 
@@ -74,12 +71,7 @@ async function movePage(nextPage: number) {
       配布資料はまだありません
     </div>
 
-    <ListPanel
-      v-else
-      title="配布資料"
-      :description="sessionStore.currentCircle?.name ?? '企画未選択'"
-      overflow-hidden
-    >
+    <ListPanel v-else title="配布資料" :description="sessionStore.currentCircle?.name ?? '企画未選択'" overflow-hidden>
       <div class="divide-y divide-border">
         <ListItemLink
           v-for="document in documentsQuery.data.value?.items"
@@ -87,23 +79,18 @@ async function movePage(nextPage: number) {
           :href="buildApiUrl(document.downloadUrl)"
           new-tab
         >
-          <template #title>{{ document.name }}</template>
-          <template #prefix>
-            <span :class="document.isImportant ? 'text-danger' : 'text-muted'">
-              {{ document.isImportant ? "!" : "•" }}
-            </span>
+          <template #title>
+            <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
+            <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+            {{ document.name }}
           </template>
           <template v-if="document.isNew" #suffix>
-            <span
-              class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"
-            >
-              NEW
-            </span>
+            <span class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"> NEW </span>
           </template>
           <template #meta>
             {{ document.updatedAt }} 更新
             <br />
-            {{ document.extension || "FILE" }}ファイル • {{ formatFileSize(document.sizeBytes) }}
+            {{ document.extension || 'FILE' }}ファイル • {{ formatFileSize(document.sizeBytes) }}
           </template>
           {{ document.description }}
         </ListItemLink>
@@ -118,10 +105,7 @@ async function movePage(nextPage: number) {
         {{ documentsQuery.data.value.total }} 件中
         {{ (documentsQuery.data.value.page - 1) * documentsQuery.data.value.pageSize + 1 }} -
         {{
-          Math.min(
-            documentsQuery.data.value.page * documentsQuery.data.value.pageSize,
-            documentsQuery.data.value.total,
-          )
+          Math.min(documentsQuery.data.value.page * documentsQuery.data.value.pageSize, documentsQuery.data.value.total)
         }}
         件
       </p>

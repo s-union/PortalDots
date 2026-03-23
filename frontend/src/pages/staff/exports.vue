@@ -5,21 +5,21 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "exports.use",
-  },
-});
+    staffCapability: 'exports.use'
+  }
+})
 
-import { computed } from "vue";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import { buildApiUrl } from "@/lib/api/client";
-import { useSessionStore } from "@/features/session/store";
+import { computed } from 'vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { buildApiUrl } from '@/lib/api/client'
+import { useSessionStore } from '@/features/session/store'
 
-const sessionStore = useSessionStore();
+const sessionStore = useSessionStore()
 
-const summaryHref = computed(() => buildApiUrl("/staff/exports/summary.csv"));
-const bundleHref = computed(() => buildApiUrl("/staff/exports/bundle.zip"));
+const summaryHref = computed(() => buildApiUrl('/staff/exports/summary.csv'))
+const bundleHref = computed(() => buildApiUrl('/staff/exports/bundle.zip'))
 </script>
 
 <template>
@@ -29,8 +29,8 @@ const bundleHref = computed(() => buildApiUrl("/staff/exports/bundle.zip"));
         <p class="text-sm text-primary">Staff Exports</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">CSV / ZIP 出力</h2>
         <p class="mt-3 text-sm leading-7 text-muted">
-          {{ sessionStore.currentCircle?.name ?? "企画未選択" }} のお知らせ・資料・フォーム・回答を
-          staff mode で書き出します。
+          {{ sessionStore.currentCircle?.name ?? '企画未選択' }} のお知らせ・資料・フォーム・回答を staff mode
+          で書き出します。
         </p>
       </div>
       <BackLink to="/staff"> Staff top へ戻る </BackLink>

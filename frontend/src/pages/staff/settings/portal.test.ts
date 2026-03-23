@@ -1,277 +1,263 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { mount, flushPromises } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
-import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { createMemoryHistory, createRouter } from "vue-router";
-import { useSessionStore } from "@/features/session/store";
-import StaffPortalSettingsPage from "./portal.vue";
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { useSessionStore } from '@/features/session/store'
+import StaffPortalSettingsPage from './portal.vue'
 
 function createQueryPlugin() {
-    return [
-        VueQueryPlugin,
-        {
-            queryClient: new QueryClient({
-                defaultOptions: {
-                    queries: { retry: false },
-                },
-            }),
-        },
-    ];
+  return [
+    VueQueryPlugin,
+    {
+      queryClient: new QueryClient({
+        defaultOptions: {
+          queries: { retry: false }
+        }
+      })
+    }
+  ]
 }
 
-describe("StaffPortalSettingsPage", () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-        vi.unstubAllGlobals();
-    });
+describe('StaffPortalSettingsPage', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
 
-    it("loads and updates portal settings", async () => {
-        const pinia = createPinia();
-        setActivePinia(pinia);
-        const sessionStore = useSessionStore();
-        sessionStore.hydrate({
-            csrfToken: "csrf-token",
-            currentCircle: { id: "circle-b", name: "デモ企画B" },
+  it('loads and updates portal settings', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/settings', component: { template: '<div>settings</div>' } },
+        { path: '/staff/settings/portal', component: StaffPortalSettingsPage }
+      ]
+    })
+    await router.push('/staff/settings/portal')
+    await router.isReady()
+
+    let updatedRequestBody = ''
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+
+        const pathname = new URL(url, 'http://localhost').pathname
+
+        if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
+          return jsonResponse({
+            csrfToken: 'csrf-token',
+            currentCircle: { id: 'circle-b', name: 'デモ企画B' },
             featureFlags: [],
-            roles: ["admin"],
+            roles: ['admin'],
+            permissions: [],
             user: {
-                id: "staff-user",
-                displayName: "Staff User",
-            },
-        });
+              id: 'staff-user',
+              displayName: 'Staff User',
+              canDeleteAccount: false
+            }
+          })
+        }
 
-        const router = createRouter({
-            history: createMemoryHistory(),
-            routes: [
-                { path: "/staff/settings", component: { template: "<div>settings</div>" } },
-                { path: "/staff/settings/portal", component: StaffPortalSettingsPage },
-            ],
-        });
-        await router.push("/staff/settings/portal");
-        await router.isReady();
+        if (pathname.endsWith('/staff/status') && method === 'GET') {
+          return jsonResponse({ allowed: true, authorized: true })
+        }
 
-        let updatedRequestBody = "";
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                await Promise.resolve();
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                const method = (
-                    init?.method ?? (input instanceof Request ? input.method : "GET")
-                ).toUpperCase();
+        if (pathname.endsWith('/staff/portal-settings') && method === 'GET') {
+          return jsonResponse({
+            appName: 'PortalDots',
+            portalDescription: '学園祭参加団体向けポータル',
+            appUrl: 'https://portal.example.com',
+            appForceHttps: true,
+            portalAdminName: 'PortalDots 実行委員会',
+            portalContactEmail: 'contact@example.com',
+            portalUnivemailLocalPart: 'student_id',
+            portalUnivemailDomainPart: 'example.ac.jp',
+            portalStudentIdName: '学籍番号',
+            portalUnivemailName: '大学メールアドレス',
+            portalPrimaryColorH: 190,
+            portalPrimaryColorS: 80,
+            portalPrimaryColorL: 45
+          })
+        }
 
-                const pathname = new URL(url, "http://localhost").pathname;
+        if (pathname.endsWith('/staff/portal-settings') && method === 'PUT') {
+          if (input instanceof Request) {
+            updatedRequestBody = await input.clone().text()
+          } else if (typeof init?.body === 'string') {
+            updatedRequestBody = init.body
+          }
 
-                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
-                    return jsonResponse({
-                        csrfToken: "csrf-token",
-                        currentCircle: { id: "circle-b", name: "デモ企画B" },
-                        featureFlags: [],
-                        roles: ["admin"],
-                        permissions: [],
-                        user: {
-                            id: "staff-user",
-                            displayName: "Staff User",
-                            canDeleteAccount: false,
-                        },
-                    });
-                }
+          return jsonResponse({
+            appName: 'PortalDots Next',
+            portalDescription: '次世代の学園祭ポータル',
+            appUrl: 'https://next.example.com',
+            appForceHttps: false,
+            portalAdminName: '次世代実行委員会',
+            portalContactEmail: 'next@example.com',
+            portalUnivemailLocalPart: 'user_id',
+            portalUnivemailDomainPart: 'next.example.ac.jp',
+            portalStudentIdName: '学生番号',
+            portalUnivemailName: '学校メール',
+            portalPrimaryColorH: 24,
+            portalPrimaryColorS: 68,
+            portalPrimaryColorL: 52
+          })
+        }
 
-                if (pathname.endsWith("/staff/status") && method === "GET") {
-                    return jsonResponse({ allowed: true, authorized: true });
-                }
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
 
-                if (pathname.endsWith("/staff/portal-settings") && method === "GET") {
-                    return jsonResponse({
-                        appName: "PortalDots",
-                        portalDescription: "学園祭参加団体向けポータル",
-                        appUrl: "https://portal.example.com",
-                        appForceHttps: true,
-                        portalAdminName: "PortalDots 実行委員会",
-                        portalContactEmail: "contact@example.com",
-                        portalUnivemailLocalPart: "student_id",
-                        portalUnivemailDomainPart: "example.ac.jp",
-                        portalStudentIdName: "学籍番号",
-                        portalUnivemailName: "大学メールアドレス",
-                        portalPrimaryColorH: 190,
-                        portalPrimaryColorS: 80,
-                        portalPrimaryColorL: 45,
-                    });
-                }
+    const wrapper = mount(StaffPortalSettingsPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
 
-                if (pathname.endsWith("/staff/portal-settings") && method === "PUT") {
-                    if (input instanceof Request) {
-                        updatedRequestBody = await input.clone().text();
-                    } else if (typeof init?.body === "string") {
-                        updatedRequestBody = init.body;
-                    }
+    expect(wrapper.text()).toContain('Portal 設定')
+    expect(wrapper.get('input[name="appName"]').element).toHaveProperty('value', 'PortalDots')
 
-                    return jsonResponse({
-                        appName: "PortalDots Next",
-                        portalDescription: "次世代の学園祭ポータル",
-                        appUrl: "https://next.example.com",
-                        appForceHttps: false,
-                        portalAdminName: "次世代実行委員会",
-                        portalContactEmail: "next@example.com",
-                        portalUnivemailLocalPart: "user_id",
-                        portalUnivemailDomainPart: "next.example.ac.jp",
-                        portalStudentIdName: "学生番号",
-                        portalUnivemailName: "学校メール",
-                        portalPrimaryColorH: 24,
-                        portalPrimaryColorS: 68,
-                        portalPrimaryColorL: 52,
-                    });
-                }
+    await wrapper.get('input[name="appName"]').setValue('PortalDots Next')
+    await wrapper.get('input[name="appUrl"]').setValue('https://next.example.com')
+    await wrapper.get('input[name="portalContactEmail"]').setValue('next@example.com')
+    await wrapper.get('select[name="portalUnivemailLocalPart"]').setValue('user_id')
+    await wrapper.get('input[name="portalPrimaryColorH"]').setValue('24')
+    await wrapper.get('button[type="submit"]').trigger('submit')
+    await flushPromises()
 
-                throw new Error(`Unexpected request: ${method} ${url}`);
-            }),
-        );
+    expect(updatedRequestBody).toContain('PortalDots Next')
+    expect(updatedRequestBody).toContain('next@example.com')
+    expect(updatedRequestBody).toContain('user_id')
+    expect(updatedRequestBody).toContain('24')
+    expect(wrapper.text()).toContain('Portal 設定を保存しました。')
+  })
 
-        const wrapper = mount(StaffPortalSettingsPage, {
-            global: {
-                plugins: [pinia, router, createQueryPlugin()],
-            },
-        });
-        await flushPromises();
+  it('shows validation error returned from API', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
 
-        expect(wrapper.text()).toContain("Portal 設定");
-        expect(wrapper.get('input[name="appName"]').element).toHaveProperty("value", "PortalDots");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/settings', component: { template: '<div>settings</div>' } },
+        { path: '/staff/settings/portal', component: StaffPortalSettingsPage }
+      ]
+    })
+    await router.push('/staff/settings/portal')
+    await router.isReady()
 
-        await wrapper.get('input[name="appName"]').setValue("PortalDots Next");
-        await wrapper.get('input[name="appUrl"]').setValue("https://next.example.com");
-        await wrapper.get('input[name="portalContactEmail"]').setValue("next@example.com");
-        await wrapper.get('select[name="portalUnivemailLocalPart"]').setValue("user_id");
-        await wrapper.get('input[name="portalPrimaryColorH"]').setValue("24");
-        await wrapper.get('button[type="submit"]').trigger("submit");
-        await flushPromises();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
 
-        expect(updatedRequestBody).toContain("PortalDots Next");
-        expect(updatedRequestBody).toContain("next@example.com");
-        expect(updatedRequestBody).toContain("user_id");
-        expect(updatedRequestBody).toContain("24");
-        expect(wrapper.text()).toContain("Portal 設定を保存しました。");
-    });
+        const pathname = new URL(url, 'http://localhost').pathname
 
-    it("shows validation error returned from API", async () => {
-        const pinia = createPinia();
-        setActivePinia(pinia);
-        const sessionStore = useSessionStore();
-        sessionStore.hydrate({
-            csrfToken: "csrf-token",
-            currentCircle: { id: "circle-b", name: "デモ企画B" },
+        if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
+          return jsonResponse({
+            csrfToken: 'csrf-token',
+            currentCircle: { id: 'circle-b', name: 'デモ企画B' },
             featureFlags: [],
-            roles: ["admin"],
+            roles: ['admin'],
+            permissions: [],
             user: {
-                id: "staff-user",
-                displayName: "Staff User",
+              id: 'staff-user',
+              displayName: 'Staff User',
+              canDeleteAccount: false
+            }
+          })
+        }
+
+        if (pathname.endsWith('/staff/status') && method === 'GET') {
+          return jsonResponse({ allowed: true, authorized: true })
+        }
+
+        if (pathname.endsWith('/staff/portal-settings') && method === 'GET') {
+          return jsonResponse({
+            appName: 'PortalDots',
+            portalDescription: '学園祭参加団体向けポータル',
+            appUrl: 'https://portal.example.com',
+            appForceHttps: true,
+            portalAdminName: 'PortalDots 実行委員会',
+            portalContactEmail: 'contact@example.com',
+            portalUnivemailLocalPart: 'student_id',
+            portalUnivemailDomainPart: 'example.ac.jp',
+            portalStudentIdName: '学籍番号',
+            portalUnivemailName: '大学メールアドレス',
+            portalPrimaryColorH: 190,
+            portalPrimaryColorS: 80,
+            portalPrimaryColorL: 45
+          })
+        }
+
+        if (pathname.endsWith('/staff/portal-settings') && method === 'PUT') {
+          return jsonResponse(
+            {
+              message: 'validation_error',
+              errors: {
+                appName: ['ポータルの名前を入力してください']
+              }
             },
-        });
+            { status: 422 }
+          )
+        }
 
-        const router = createRouter({
-            history: createMemoryHistory(),
-            routes: [
-                { path: "/staff/settings", component: { template: "<div>settings</div>" } },
-                { path: "/staff/settings/portal", component: StaffPortalSettingsPage },
-            ],
-        });
-        await router.push("/staff/settings/portal");
-        await router.isReady();
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
 
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                await Promise.resolve();
-                const url =
-                    typeof input === "string"
-                        ? input
-                        : input instanceof URL
-                          ? input.toString()
-                          : input.url;
-                const method = (
-                    init?.method ?? (input instanceof Request ? input.method : "GET")
-                ).toUpperCase();
+    const wrapper = mount(StaffPortalSettingsPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
 
-                const pathname = new URL(url, "http://localhost").pathname;
+    await wrapper.get('input[name="appName"]').setValue('')
+    await wrapper.get('button[type="submit"]').trigger('submit')
+    await flushPromises()
 
-                if (pathname.endsWith("/session/bootstrap") && method === "GET") {
-                    return jsonResponse({
-                        csrfToken: "csrf-token",
-                        currentCircle: { id: "circle-b", name: "デモ企画B" },
-                        featureFlags: [],
-                        roles: ["admin"],
-                        permissions: [],
-                        user: {
-                            id: "staff-user",
-                            displayName: "Staff User",
-                            canDeleteAccount: false,
-                        },
-                    });
-                }
-
-                if (pathname.endsWith("/staff/status") && method === "GET") {
-                    return jsonResponse({ allowed: true, authorized: true });
-                }
-
-                if (pathname.endsWith("/staff/portal-settings") && method === "GET") {
-                    return jsonResponse({
-                        appName: "PortalDots",
-                        portalDescription: "学園祭参加団体向けポータル",
-                        appUrl: "https://portal.example.com",
-                        appForceHttps: true,
-                        portalAdminName: "PortalDots 実行委員会",
-                        portalContactEmail: "contact@example.com",
-                        portalUnivemailLocalPart: "student_id",
-                        portalUnivemailDomainPart: "example.ac.jp",
-                        portalStudentIdName: "学籍番号",
-                        portalUnivemailName: "大学メールアドレス",
-                        portalPrimaryColorH: 190,
-                        portalPrimaryColorS: 80,
-                        portalPrimaryColorL: 45,
-                    });
-                }
-
-                if (pathname.endsWith("/staff/portal-settings") && method === "PUT") {
-                    return jsonResponse(
-                        {
-                            message: "validation_error",
-                            errors: {
-                                appName: ["ポータルの名前を入力してください"],
-                            },
-                        },
-                        { status: 422 },
-                    );
-                }
-
-                throw new Error(`Unexpected request: ${method} ${url}`);
-            }),
-        );
-
-        const wrapper = mount(StaffPortalSettingsPage, {
-            global: {
-                plugins: [pinia, router, createQueryPlugin()],
-            },
-        });
-        await flushPromises();
-
-        await wrapper.get('input[name="appName"]').setValue("");
-        await wrapper.get('button[type="submit"]').trigger("submit");
-        await flushPromises();
-
-        expect(wrapper.text()).toContain("ポータルの名前を入力してください");
-    });
-});
+    expect(wrapper.text()).toContain('ポータルの名前を入力してください')
+  })
+})
 
 function jsonResponse(body: unknown, init?: ResponseInit) {
-    const headers = new Headers(init?.headers);
-    headers.set("Content-Type", "application/json");
+  const headers = new Headers(init?.headers)
+  headers.set('Content-Type', 'application/json')
 
-    return new Response(JSON.stringify(body), {
-        status: init?.status ?? 200,
-        headers,
-    });
+  return new Response(JSON.stringify(body), {
+    status: init?.status ?? 200,
+    headers
+  })
 }

@@ -5,16 +5,16 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "forms.read",
-  },
-});
+    staffCapability: 'forms.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildCopyStaffFormConfirmMessage,
   buildDeleteStaffFormConfirmMessage,
@@ -27,36 +27,34 @@ import {
   useCreateStaffFormMutation,
   useDeleteStaffFormMutation,
   useStaffFormForm,
-  useStaffFormsQuery,
-} from "@/features/staff/forms/api";
-import { useSessionStore } from "@/features/session/store";
+  useStaffFormsQuery
+} from '@/features/staff/forms/api'
+import { useSessionStore } from '@/features/session/store'
 
-const router = useRouter();
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const router = useRouter()
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const formsQuery = useStaffFormsQuery(
-  computed(
-    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-  ),
-);
-const createFormMutation = useCreateStaffFormMutation();
-const copyFormMutation = useCopyStaffFormMutation();
-const deleteFormMutation = useDeleteStaffFormMutation();
-const form = useStaffFormForm();
-const errorMessage = ref("");
-const exportHref = computed(() => buildStaffFormsExportUrl());
+  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+)
+const createFormMutation = useCreateStaffFormMutation()
+const copyFormMutation = useCopyStaffFormMutation()
+const deleteFormMutation = useDeleteStaffFormMutation()
+const form = useStaffFormForm()
+const errorMessage = ref('')
+const exportHref = computed(() => buildStaffFormsExportUrl())
 
 function handleAnswerableTagsInput(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLTextAreaElement)) {
-    return;
+    return
   }
 
-  form.value.answerableTags = parseStaffFormTags(target.value);
+  form.value.answerableTags = parseStaffFormTags(target.value)
 }
 
 async function handleCreateForm() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
     await createFormMutation.mutateAsync({
@@ -67,48 +65,40 @@ async function handleCreateForm() {
       maxAnswers: form.value.maxAnswers,
       answerableTags: form.value.answerableTags,
       confirmationMessage: form.value.confirmationMessage,
-      isPublic: form.value.isPublic,
-    });
-    form.value = createDefaultStaffFormPayload();
+      isPublic: form.value.isPublic
+    })
+    form.value = createDefaultStaffFormPayload()
   } catch (error) {
-    errorMessage.value = extractStaffFormValidationMessage(error);
+    errorMessage.value = extractStaffFormValidationMessage(error)
   }
 }
 
 async function handleCopyForm(formId: string) {
-  const formName =
-    formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? "このフォーム";
-  if (
-    typeof window !== "undefined" &&
-    !window.confirm(buildCopyStaffFormConfirmMessage(formName))
-  ) {
-    return;
+  const formName = formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? 'このフォーム'
+  if (typeof window !== 'undefined' && !window.confirm(buildCopyStaffFormConfirmMessage(formName))) {
+    return
   }
 
   try {
-    const copied = await copyFormMutation.mutateAsync(formId);
+    const copied = await copyFormMutation.mutateAsync(formId)
     if (copied?.id) {
-      await router.push(`/staff/forms/${encodeURIComponent(copied.id)}`);
+      await router.push(`/staff/forms/${encodeURIComponent(copied.id)}`)
     }
   } catch (error) {
-    errorMessage.value = extractStaffFormValidationMessage(error);
+    errorMessage.value = extractStaffFormValidationMessage(error)
   }
 }
 
 async function handleDeleteForm(formId: string) {
-  const formName =
-    formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? "このフォーム";
-  if (
-    typeof window !== "undefined" &&
-    !window.confirm(buildDeleteStaffFormConfirmMessage(formName))
-  ) {
-    return;
+  const formName = formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? 'このフォーム'
+  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffFormConfirmMessage(formName))) {
+    return
   }
 
   try {
-    await deleteFormMutation.mutateAsync(formId);
+    await deleteFormMutation.mutateAsync(formId)
   } catch (error) {
-    errorMessage.value = extractStaffFormValidationMessage(error);
+    errorMessage.value = extractStaffFormValidationMessage(error)
   }
 }
 </script>
@@ -119,7 +109,7 @@ async function handleDeleteForm(formId: string) {
       <div>
         <h2 class="text-2xl font-semibold text-body">申請管理</h2>
         <p class="mt-2 text-sm text-muted">
-          {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
+          {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
         </p>
       </div>
       <BackLink to="/staff"> Staff top へ戻る </BackLink>
@@ -129,9 +119,7 @@ async function handleDeleteForm(formId: string) {
       <SurfaceHeader>
         <template #description>Laravel の data-grid 構造に合わせた一覧</template>
         <template #actions>
-          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white">
-            新規フォーム
-          </span>
+          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white"> 新規フォーム </span>
           <a
             :href="exportHref"
             class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
@@ -141,14 +129,9 @@ async function handleDeleteForm(formId: string) {
         </template>
       </SurfaceHeader>
 
-      <div v-if="formsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        読み込み中...
-      </div>
+      <div v-if="formsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
 
-      <div
-        v-else-if="(formsQuery.data.value?.length ?? 0) === 0"
-        class="px-6 py-6 text-sm text-muted"
-      >
+      <div v-else-if="(formsQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         staff forms は見つかりませんでした。
       </div>
 
@@ -185,9 +168,7 @@ async function handleDeleteForm(formId: string) {
                 <strong v-if="staffForm.isPublic">はい</strong>
                 <span v-else>-</span>
               </td>
-              <td class="border-b border-border px-4 py-4 text-body">
-                {{ staffForm.maxAnswers }} 件
-              </td>
+              <td class="border-b border-border px-4 py-4 text-body">{{ staffForm.maxAnswers }} 件</td>
               <td class="border-b border-border px-4 py-4 text-body">
                 {{ staffForm.openAt }}
               </td>
@@ -224,20 +205,13 @@ async function handleDeleteForm(formId: string) {
       </div>
     </SurfaceCard>
 
-    <form
-      class="rounded border border-border bg-surface p-6 shadow-lv1"
-      @submit.prevent="handleCreateForm"
-    >
+    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreateForm">
       <h3 class="text-lg font-semibold text-body">フォームを新規作成</h3>
       <div class="mt-4 grid gap-4">
         <label class="grid gap-2 text-sm text-body">
           <span>
             フォーム名
-            <span
-              class="ml-2 rounded bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"
-            >
-              必須
-            </span>
+            <span class="ml-2 rounded bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"> 必須 </span>
           </span>
           <input v-model="form.name" name="name" type="text" />
         </label>
@@ -276,11 +250,7 @@ async function handleDeleteForm(formId: string) {
 
         <label class="grid gap-2 text-sm text-body">
           <span>回答完了メッセージ</span>
-          <textarea
-            v-model="form.confirmationMessage"
-            class="min-h-24"
-            name="confirmationMessage"
-          />
+          <textarea v-model="form.confirmationMessage" class="min-h-24" name="confirmationMessage" />
         </label>
 
         <label class="flex items-center gap-3 text-sm text-body">
@@ -288,10 +258,7 @@ async function handleDeleteForm(formId: string) {
           公開する
         </label>
 
-        <p
-          v-if="errorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
 
@@ -301,7 +268,7 @@ async function handleDeleteForm(formId: string) {
             :disabled="createFormMutation.isPending.value"
             type="submit"
           >
-            {{ createFormMutation.isPending.value ? "作成中..." : "保存" }}
+            {{ createFormMutation.isPending.value ? '作成中...' : '保存' }}
           </button>
         </div>
       </div>

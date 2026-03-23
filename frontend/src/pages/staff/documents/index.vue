@@ -5,49 +5,47 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "documents.read",
-  },
-});
+    staffCapability: 'documents.read'
+  }
+})
 
-import { computed, ref } from "vue";
-import { RouterLink } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import { formatFileSize } from "@/lib/format/fileSize";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { formatFileSize } from '@/lib/format/fileSize'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffDocumentsExportUrl,
   buildStaffDocumentDownloadUrl,
   extractStaffDocumentValidationMessage,
   useCreateStaffDocumentMutation,
   useStaffDocumentForm,
-  useStaffDocumentsQuery,
-} from "@/features/staff/documents/api";
-import { useSessionStore } from "@/features/session/store";
+  useStaffDocumentsQuery
+} from '@/features/staff/documents/api'
+import { useSessionStore } from '@/features/session/store'
 
-const sessionStore = useSessionStore();
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const documentsQuery = useStaffDocumentsQuery(
-  computed(
-    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-  ),
-);
-const createDocumentMutation = useCreateStaffDocumentMutation();
-const form = useStaffDocumentForm();
-const errorMessage = ref("");
+  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+)
+const createDocumentMutation = useCreateStaffDocumentMutation()
+const form = useStaffDocumentForm()
+const errorMessage = ref('')
 
 function handleFileChange(event: Event) {
-  const target = event.target;
+  const target = event.target
   if (!(target instanceof HTMLInputElement)) {
-    return;
+    return
   }
 
-  form.value.file = target.files?.[0] ?? target.files?.item(0) ?? null;
+  form.value.file = target.files?.[0] ?? target.files?.item(0) ?? null
 }
 
 async function handleCreateDocument() {
-  errorMessage.value = "";
+  errorMessage.value = ''
 
   try {
     await createDocumentMutation.mutateAsync({
@@ -56,18 +54,18 @@ async function handleCreateDocument() {
       notes: form.value.notes,
       isPublic: form.value.isPublic,
       isImportant: form.value.isImportant,
-      file: form.value.file,
-    });
+      file: form.value.file
+    })
     form.value = {
-      name: "",
-      description: "",
-      notes: "",
+      name: '',
+      description: '',
+      notes: '',
       isPublic: true,
       isImportant: false,
-      file: null,
-    };
+      file: null
+    }
   } catch (error) {
-    errorMessage.value = extractStaffDocumentValidationMessage(error);
+    errorMessage.value = extractStaffDocumentValidationMessage(error)
   }
 }
 </script>
@@ -78,7 +76,7 @@ async function handleCreateDocument() {
       <div>
         <h2 class="text-2xl font-semibold text-body">配布資料管理</h2>
         <p class="mt-2 text-sm text-muted">
-          {{ sessionStore.currentCircle?.name ?? "企画未選択" }}
+          {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
         </p>
       </div>
       <BackLink to="/staff"> Staff top へ戻る </BackLink>
@@ -87,9 +85,7 @@ async function handleCreateDocument() {
     <SurfaceCard>
       <SurfaceHeader>
         <template #actions>
-          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white">
-            新規配布資料
-          </span>
+          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white"> 新規配布資料 </span>
           <a
             :href="buildStaffDocumentsExportUrl()"
             class="rounded border border-border px-4 py-2 text-sm text-muted transition hover:border-primary hover:text-primary"
@@ -99,14 +95,9 @@ async function handleCreateDocument() {
         </template>
       </SurfaceHeader>
 
-      <div v-if="documentsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        読み込み中...
-      </div>
+      <div v-if="documentsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
 
-      <div
-        v-else-if="(documentsQuery.data.value?.length ?? 0) === 0"
-        class="px-6 py-6 text-sm text-muted"
-      >
+      <div v-else-if="(documentsQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         staff documents はまだありません。
       </div>
 
@@ -169,10 +160,7 @@ async function handleCreateDocument() {
       </div>
     </SurfaceCard>
 
-    <form
-      class="rounded border border-border bg-surface p-6 shadow-lv1"
-      @submit.prevent="handleCreateDocument"
-    >
+    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreateDocument">
       <h3 class="text-lg font-semibold text-body">配布資料を新規作成</h3>
       <div class="mt-4 grid gap-4">
         <label class="grid gap-2 text-sm text-body">
@@ -209,10 +197,7 @@ async function handleCreateDocument() {
           現在の upload は DB 保存です。外部ストレージ連携はまだ実装していません。
         </p>
 
-        <p
-          v-if="errorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
+        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
 
@@ -222,7 +207,7 @@ async function handleCreateDocument() {
             :disabled="createDocumentMutation.isPending.value"
             type="submit"
           >
-            {{ createDocumentMutation.isPending.value ? "アップロード中..." : "保存" }}
+            {{ createDocumentMutation.isPending.value ? 'アップロード中...' : '保存' }}
           </button>
         </div>
       </div>

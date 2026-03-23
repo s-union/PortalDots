@@ -1,28 +1,22 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    requiresAuth: true,
-  },
-});
+    requiresAuth: true
+  }
+})
 
-import { ref } from "vue";
-import SettingsSection from "@/components/ui/SettingsSection.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useUserSettingsPage } from "@/features/session/settings";
+import { ref } from 'vue'
+import SettingsSection from '@/components/ui/SettingsSection.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useUserSettingsPage } from '@/features/session/settings'
 
-const {
-  tabs,
-  canDeleteAccount,
-  deleteAccountBlockedReason,
-  deleteAccountMutation,
-  deleteAccount,
-  workspaceBackLink,
-} = useUserSettingsPage("delete");
+const { tabs, canDeleteAccount, deleteAccountBlockedReason, deleteAccountMutation, deleteAccount, workspaceBackLink } =
+  useUserSettingsPage('delete')
 
-const deleteAccountErrorMessage = ref("");
+const deleteAccountErrorMessage = ref('')
 
 async function handleDeleteAccount() {
-  deleteAccountErrorMessage.value = (await deleteAccount()) ?? "";
+  deleteAccountErrorMessage.value = (await deleteAccount()) ?? ''
 }
 </script>
 
@@ -47,7 +41,7 @@ async function handleDeleteAccount() {
               type="button"
               @click="handleDeleteAccount"
             >
-              {{ deleteAccountMutation.isPending.value ? "削除中..." : "アカウントを削除" }}
+              {{ deleteAccountMutation.isPending.value ? '削除中...' : 'アカウントを削除' }}
             </button>
           </div>
         </div>

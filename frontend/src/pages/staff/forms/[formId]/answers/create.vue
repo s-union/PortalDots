@@ -5,86 +5,76 @@ definePage({
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
     requiresCircle: true,
-    staffCapability: "formAnswers.edit",
-  },
-});
+    staffCapability: 'formAnswers.edit'
+  }
+})
 
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import BackLink from "@/components/ui/BackLink.vue";
-import SurfaceCard from "@/components/ui/SurfaceCard.vue";
-import SurfaceHeader from "@/components/ui/SurfaceHeader.vue";
-import TabStrip from "@/components/ui/TabStrip.vue";
-import { useSessionStore } from "@/features/session/store";
-import { useStaffStatusQuery } from "@/features/staff/status/api";
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
+import { useSessionStore } from '@/features/session/store'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractExistingAnswerId,
   extractStaffFormAnswerValidationMessage,
   staffAnswerDraftToPayload,
   useCreateStaffFormAnswerMutation,
-  useStaffFormAnswersIndexQuery,
-} from "@/features/staff/forms/answers";
-import { buildStaffFormTabs } from "@/features/ui/tabStrip";
+  useStaffFormAnswersIndexQuery
+} from '@/features/staff/forms/answers'
+import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute("/staff/forms/[formId]/answers/create");
-const router = useRouter();
-const sessionStore = useSessionStore();
-const formId = computed(() => String(route.params.formId ?? ""));
-const selectedCircleId = ref("");
-const errorMessage = ref("");
+const route = useRoute('/staff/forms/[formId]/answers/create')
+const router = useRouter()
+const sessionStore = useSessionStore()
+const formId = computed(() => String(route.params.formId ?? ''))
+const selectedCircleId = ref('')
+const errorMessage = ref('')
 
-const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated));
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
-  computed(
-    () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null,
-  ),
-);
-const createAnswerMutation = useCreateStaffFormAnswerMutation(formId);
+  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+)
+const createAnswerMutation = useCreateStaffFormAnswerMutation(formId)
 
 watch(
   () => route.query.circle,
   (value) => {
-    selectedCircleId.value = typeof value === "string" ? value : "";
+    selectedCircleId.value = typeof value === 'string' ? value : ''
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 const selectedCircle = computed(
-  () =>
-    answersQuery.data.value?.circles.find((circle) => circle.id === selectedCircleId.value) ?? null,
-);
+  () => answersQuery.data.value?.circles.find((circle) => circle.id === selectedCircleId.value) ?? null
+)
 const selectedCircleAnswers = computed(
-  () =>
-    answersQuery.data.value?.answers.filter(
-      (answer) => answer.circle.id === selectedCircleId.value,
-    ) ?? [],
-);
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, "answers"));
+  () => answersQuery.data.value?.answers.filter((answer) => answer.circle.id === selectedCircleId.value) ?? []
+)
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
 
 async function handleCreateAnswer() {
-  errorMessage.value = "";
+  errorMessage.value = ''
   if (selectedCircleId.value.length === 0) {
-    errorMessage.value = "対象企画を選択してください。";
-    return;
+    errorMessage.value = '対象企画を選択してください。'
+    return
   }
 
   try {
-    const created = await createAnswerMutation.mutateAsync(
-      staffAnswerDraftToPayload(selectedCircleId.value, "", {}),
-    );
-    await router.push(
-      `/staff/forms/${encodeURIComponent(formId.value)}/answers/${encodeURIComponent(created.id)}/edit`,
-    );
+    const created = await createAnswerMutation.mutateAsync(staffAnswerDraftToPayload(selectedCircleId.value, '', {}))
+    await router.push(`/staff/forms/${encodeURIComponent(formId.value)}/answers/${encodeURIComponent(created.id)}/edit`)
   } catch (error) {
-    const existingAnswerId = extractExistingAnswerId(error);
+    const existingAnswerId = extractExistingAnswerId(error)
     if (existingAnswerId) {
       await router.push(
-        `/staff/forms/${encodeURIComponent(formId.value)}/answers/${encodeURIComponent(existingAnswerId)}/edit`,
-      );
-      return;
+        `/staff/forms/${encodeURIComponent(formId.value)}/answers/${encodeURIComponent(existingAnswerId)}/edit`
+      )
+      return
     }
-    errorMessage.value = extractStaffFormAnswerValidationMessage(error);
+    errorMessage.value = extractStaffFormAnswerValidationMessage(error)
   }
 }
 </script>
@@ -95,10 +85,7 @@ async function handleCreateAnswer() {
 
     <TabStrip :tabs="staffFormTabs" />
 
-    <div
-      v-if="answersQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
+    <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
@@ -120,29 +107,20 @@ async function handleCreateAnswer() {
               class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
             >
               <option value="">企画を選択してください</option>
-              <option
-                v-for="circle in answersQuery.data.value.circles"
-                :key="circle.id"
-                :value="circle.id"
-              >
+              <option v-for="circle in answersQuery.data.value.circles" :key="circle.id" :value="circle.id">
                 {{ circle.name }} / {{ circle.groupName }} / {{ circle.participationTypeName }}
               </option>
             </select>
           </label>
 
-          <div
-            v-if="selectedCircle"
-            class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted"
-          >
+          <div v-if="selectedCircle" class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
             <p class="font-semibold text-body">{{ selectedCircle.name }}</p>
-            <p class="mt-1">
-              {{ selectedCircle.groupName }} / {{ selectedCircle.participationTypeName }}
-            </p>
+            <p class="mt-1">{{ selectedCircle.groupName }} / {{ selectedCircle.participationTypeName }}</p>
             <p class="mt-3">
               {{
                 answersQuery.data.value.form.isPublic
-                  ? "公開フォームのため、保存時に確認用モックメールをキューへ追加します。実メールは送信しません。"
-                  : "非公開フォームのため、保存しても確認メールのモック登録は行いません。"
+                  ? '公開フォームのため、保存時に確認用モックメールをキューへ追加します。実メールは送信しません。'
+                  : '非公開フォームのため、保存しても確認メールのモック登録は行いません。'
               }}
             </p>
           </div>
@@ -154,7 +132,7 @@ async function handleCreateAnswer() {
               type="button"
               @click="handleCreateAnswer"
             >
-              {{ createAnswerMutation.isPending.value ? "作成中..." : "新規回答を作成" }}
+              {{ createAnswerMutation.isPending.value ? '作成中...' : '新規回答を作成' }}
             </button>
           </div>
         </div>
@@ -162,10 +140,7 @@ async function handleCreateAnswer() {
         <p v-if="errorMessage" class="mt-4 text-sm text-danger">{{ errorMessage }}</p>
       </section>
 
-      <section
-        v-if="selectedCircleId.length > 0"
-        class="rounded border border-border bg-surface shadow-lv1"
-      >
+      <section v-if="selectedCircleId.length > 0" class="rounded border border-border bg-surface shadow-lv1">
         <div class="border-b border-border px-6 py-4">
           <h2 class="text-lg font-semibold text-body">以前の回答を閲覧・変更</h2>
         </div>
@@ -180,16 +155,11 @@ async function handleCreateAnswer() {
             :key="answer.id"
             class="border-b border-border px-6 py-5 last:border-b-0"
           >
-            <RouterLink
-              :to="`/staff/forms/${formId}/answers/${answer.id}/edit`"
-              class="grid gap-2 text-sm text-body"
-            >
-              <span class="font-semibold"
-                >作成 {{ answer.createdAt }} / 回答ID : {{ answer.id }}</span
-              >
+            <RouterLink :to="`/staff/forms/${formId}/answers/${answer.id}/edit`" class="grid gap-2 text-sm text-body">
+              <span class="font-semibold">作成 {{ answer.createdAt }} / 回答ID : {{ answer.id }}</span>
               <span class="text-muted-2">最終更新 {{ answer.updatedAt }}</span>
               <span class="line-clamp-2 whitespace-pre-wrap text-muted">
-                {{ answer.body || "本文はまだありません。" }}
+                {{ answer.body || '本文はまだありません。' }}
               </span>
             </RouterLink>
           </li>

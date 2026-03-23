@@ -1,37 +1,30 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue'
 
-const props = withDefaults(
-  defineProps<{
-    to?: string;
-    href?: string;
-    newTab?: boolean;
-    legacy?: boolean;
-  }>(),
-  {
-    to: "",
-    href: "",
-    newTab: false,
-    legacy: false,
-  },
-);
+const {
+  to = '',
+  href = '',
+  newTab = false,
+  legacy = false
+} = defineProps<{
+  to?: string
+  href?: string
+  newTab?: boolean
+  legacy?: boolean
+}>()
 
 const rootClass = computed(() =>
-  props.legacy
-    ? "block px-6 py-[1.2rem] text-body transition hover:bg-form-control max-[1000px]:px-4"
-    : "block px-6 py-5 transition hover:bg-form-control",
-);
+  legacy
+    ? 'block px-6 py-[1.2rem] text-body transition hover:bg-form-control max-[1000px]:px-4'
+    : 'block px-6 py-5 transition hover:bg-form-control'
+)
 const titleClass = computed(() =>
-  props.legacy
-    ? "text-base font-semibold leading-[1.4] text-body"
-    : "text-base font-semibold text-body",
-);
-const metaClass = computed(() =>
-  props.legacy ? "text-base text-muted" : "mt-2 text-sm text-muted",
-);
+  legacy ? 'text-base font-semibold leading-[1.4] text-body' : 'text-base font-semibold text-body'
+)
+const metaClass = computed(() => (legacy ? 'text-base text-muted' : 'mt-2 text-sm text-muted'))
 const bodyClass = computed(() =>
-  props.legacy ? "mt-1 text-base leading-[1.7] text-muted" : "mt-3 text-sm leading-7 text-body",
-);
+  legacy ? 'mt-1 text-base leading-[1.7] text-muted' : 'mt-3 text-sm leading-7 text-body'
+)
 </script>
 
 <template>

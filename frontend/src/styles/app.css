@@ -1,67 +1,67 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-    /* Primary Color — default: HSL(220, 90%, 56%) from Laravel UIThemeService */
-    --color-primary: hsla(220, 90%, 56%, 1);
-    --color-primary-hover: hsla(220, 90%, 56%, 0.8);
-    --color-primary-light: hsla(220, 90%, 56%, 0.1);
-    --color-primary-inverse-hover: hsla(220, 90%, 56%, 0.15);
+  /* Primary Color — default: HSL(220, 90%, 56%) from Laravel UIThemeService */
+  --color-primary: hsla(220, 90%, 56%, 1);
+  --color-primary-hover: hsla(220, 90%, 56%, 0.8);
+  --color-primary-light: hsla(220, 90%, 56%, 0.1);
+  --color-primary-inverse-hover: hsla(220, 90%, 56%, 0.15);
 
-    /* Danger */
-    --color-danger: rgb(219, 60, 62);
-    --color-danger-hover: rgba(219, 60, 62, 0.8);
-    --color-danger-light: rgba(219, 60, 62, 0.1);
+  /* Danger */
+  --color-danger: rgb(219, 60, 62);
+  --color-danger-hover: rgba(219, 60, 62, 0.8);
+  --color-danger-light: rgba(219, 60, 62, 0.1);
 
-    /* Success */
-    --color-success: rgb(27, 162, 78);
-    --color-success-hover: rgba(27, 162, 78, 0.8);
-    --color-success-light: rgba(27, 162, 78, 0.1);
+  /* Success */
+  --color-success: rgb(27, 162, 78);
+  --color-success-hover: rgba(27, 162, 78, 0.8);
+  --color-success-light: rgba(27, 162, 78, 0.1);
 
-    /* Muted */
-    --color-muted: rgb(108, 117, 125);
-    --color-muted-2: rgb(167, 182, 194);
-    --color-muted-3: rgb(195, 207, 216);
-    --color-muted-light: rgba(108, 117, 125, 0.1);
+  /* Muted */
+  --color-muted: rgb(108, 117, 125);
+  --color-muted-2: rgb(167, 182, 194);
+  --color-muted-3: rgb(195, 207, 216);
+  --color-muted-light: rgba(108, 117, 125, 0.1);
 
-    /* Text / backgrounds — renamed for Tailwind-generated utilities */
-    --color-body: rgb(34, 41, 47);
-    --color-base: rgb(243, 244, 250);
-    --color-surface: rgb(255, 255, 255);
-    --color-surface-2: rgb(255, 255, 255);
-    --color-surface-3: rgb(255, 255, 255);
-    --color-surface-light: rgb(239, 239, 239);
-    --color-form-control: rgb(250, 250, 252);
-    --color-form-control-readonly: rgb(255, 255, 255);
-    --color-form-control-focus: rgb(255, 255, 255);
-    --color-form-addon: rgb(245, 245, 249);
+  /* Text / backgrounds — renamed for Tailwind-generated utilities */
+  --color-body: rgb(34, 41, 47);
+  --color-base: rgb(243, 244, 250);
+  --color-surface: rgb(255, 255, 255);
+  --color-surface-2: rgb(255, 255, 255);
+  --color-surface-3: rgb(255, 255, 255);
+  --color-surface-light: rgb(239, 239, 239);
+  --color-form-control: rgb(250, 250, 252);
+  --color-form-control-readonly: rgb(255, 255, 255);
+  --color-form-control-focus: rgb(255, 255, 255);
+  --color-form-addon: rgb(245, 245, 249);
 
-    /* Borders */
-    --color-border: rgb(215, 222, 228);
-    --color-border-form: rgb(215, 222, 228);
+  /* Borders */
+  --color-border: rgb(215, 222, 228);
+  --color-border-form: rgb(215, 222, 228);
 
-    /* Shadows — matches Laravel --color-box-shadow* */
-    --color-box-shadow: rgba(34, 41, 47, 0.5);
-    --color-box-shadow-subdued: rgba(34, 41, 47, 0.1);
+  /* Shadows — matches Laravel --color-box-shadow* */
+  --color-box-shadow: rgba(34, 41, 47, 0.5);
+  --color-box-shadow-subdued: rgba(34, 41, 47, 0.1);
 
-    /* Drawer */
-    --color-drawer-backdrop: rgba(34, 41, 47, 0.75);
+  /* Drawer */
+  --color-drawer-backdrop: rgba(34, 41, 47, 0.75);
 
-    /* Misc */
-    --color-pre-background: rgba(255, 255, 255, 0.25);
-    --color-code-background: rgba(27, 162, 78, 0.1);
-    --color-grid-table-stripe: rgba(239, 239, 239, 0.4);
-    --color-top-alert-border: rgba(255, 255, 255, 0.16);
-    --color-emphasis-gray: rgb(34, 41, 47);
-    --color-fg-emphasis-gray: rgb(255, 255, 255);
+  /* Misc */
+  --color-pre-background: rgba(255, 255, 255, 0.25);
+  --color-code-background: rgba(27, 162, 78, 0.1);
+  --color-grid-table-stripe: rgba(239, 239, 239, 0.4);
+  --color-top-alert-border: rgba(255, 255, 255, 0.16);
+  --color-emphasis-gray: rgb(34, 41, 47);
+  --color-fg-emphasis-gray: rgb(255, 255, 255);
 
-    /* Focus */
-    --color-focus-primary: hsla(220, 90%, 56%, 1);
-    --color-focus-danger: rgba(219, 60, 62, 0.25);
+  /* Focus */
+  --color-focus-primary: hsla(220, 90%, 56%, 1);
+  --color-focus-danger: rgba(219, 60, 62, 0.25);
 
-    /* Font */
-    --font-sans:
-        "Segoe UI", Meiryo, system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif,
-        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* Font */
+  --font-sans:
+    'Segoe UI', Meiryo, system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 /* ========================================================================
@@ -69,78 +69,78 @@
    ======================================================================== */
 
 @layer base {
+  :root {
+    color-scheme: light;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    accent-color: var(--color-primary);
+    --font-weight-bold: 600;
+  }
+
+  html.theme-light,
+  html.theme-system {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background: var(--color-base);
+    color: var(--color-body);
+    font-weight: 400;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: rgb(0 0 0 / 0%);
+  }
+
+  *:focus-visible {
+    outline: 3px solid var(--color-focus-primary);
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  a:hover,
+  a:focus {
+    text-decoration: underline;
+  }
+
+  strong,
+  b {
+    font-weight: var(--font-weight-bold);
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    margin: 1.5rem 0;
+    padding: 0;
+  }
+
+  p {
+    margin: 0 0 1rem;
+  }
+
+  p:first-child {
+    margin-top: 0;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+
+  @media screen and (max-width: 350px) {
     :root {
-        color-scheme: light;
-        font-family: var(--font-sans);
-        font-size: 15px;
-        line-height: 1.7;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        accent-color: var(--color-primary);
-        --font-weight-bold: 600;
+      font-size: 12px;
     }
-
-    html.theme-light,
-    html.theme-system {
-        color-scheme: light;
-    }
-
-    body {
-        margin: 0;
-        min-width: 320px;
-        background: var(--color-base);
-        color: var(--color-body);
-        font-weight: 400;
-    }
-
-    * {
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: rgb(0 0 0 / 0%);
-    }
-
-    *:focus-visible {
-        outline: 3px solid var(--color-focus-primary);
-    }
-
-    a {
-        color: var(--color-primary);
-        text-decoration: none;
-    }
-
-    a:hover,
-    a:focus {
-        text-decoration: underline;
-    }
-
-    strong,
-    b {
-        font-weight: var(--font-weight-bold);
-    }
-
-    hr {
-        border: 0;
-        border-top: 1px solid var(--color-border);
-        margin: 1.5rem 0;
-        padding: 0;
-    }
-
-    p {
-        margin: 0 0 1rem;
-    }
-
-    p:first-child {
-        margin-top: 0;
-    }
-
-    p:last-child {
-        margin-bottom: 0;
-    }
-
-    @media screen and (max-width: 350px) {
-        :root {
-            font-size: 12px;
-        }
-    }
+  }
 }
 
 /* ========================================================================
@@ -148,6 +148,43 @@
    ======================================================================== */
 
 html.theme-dark {
+  color-scheme: dark;
+  --color-primary-light: hsla(220, 90%, 56%, 0.225);
+  --color-body: rgb(215, 215, 215);
+  --color-danger: rgb(226, 118, 120);
+  --color-danger-light: rgba(226, 118, 120, 0.2);
+  --color-danger-hover: rgba(226, 118, 120, 0.8);
+  --color-success: rgb(75, 189, 119);
+  --color-success-light: rgba(75, 189, 119, 0.2);
+  --color-success-hover: rgba(75, 189, 119, 0.8);
+  --color-muted: rgb(150, 150, 150);
+  --color-muted-2: rgb(130, 130, 130);
+  --color-muted-light: rgba(150, 150, 150, 0.1);
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-form: rgb(62, 63, 66);
+  --color-base: rgb(0, 0, 0);
+  --color-surface-light: rgba(255, 255, 255, 0.075);
+  --color-surface: rgb(30, 30, 30);
+  --color-surface-2: rgb(46, 46, 46);
+  --color-surface-3: rgb(51, 51, 51);
+  --color-form-control: rgba(0, 0, 0, 0.25);
+  --color-form-control-readonly: rgba(255, 255, 255, 0.055);
+  --color-form-control-focus: rgba(0, 0, 0, 0.2);
+  --color-form-addon: rgba(0, 0, 0, 0.3);
+  --color-box-shadow: rgba(0, 0, 0, 1);
+  --color-box-shadow-subdued: rgba(0, 0, 0, 1);
+  --color-focus-danger: rgba(226, 118, 120, 0.4);
+  --color-pre-background: rgba(255, 255, 255, 0.02);
+  --color-code-background: rgba(75, 189, 119, 0.15);
+  --color-drawer-backdrop: rgba(0, 0, 0, 0.75);
+  --color-grid-table-stripe: rgb(40, 40, 40);
+  --color-top-alert-border: rgba(28, 28, 28, 0.16);
+  --color-emphasis-gray: rgb(100, 100, 100);
+  --color-fg-emphasis-gray: rgb(255, 255, 255);
+}
+
+@media (prefers-color-scheme: dark) {
+  html.theme-system {
     color-scheme: dark;
     --color-primary-light: hsla(220, 90%, 56%, 0.225);
     --color-body: rgb(215, 215, 215);
@@ -181,44 +218,7 @@ html.theme-dark {
     --color-top-alert-border: rgba(28, 28, 28, 0.16);
     --color-emphasis-gray: rgb(100, 100, 100);
     --color-fg-emphasis-gray: rgb(255, 255, 255);
-}
-
-@media (prefers-color-scheme: dark) {
-    html.theme-system {
-        color-scheme: dark;
-        --color-primary-light: hsla(220, 90%, 56%, 0.225);
-        --color-body: rgb(215, 215, 215);
-        --color-danger: rgb(226, 118, 120);
-        --color-danger-light: rgba(226, 118, 120, 0.2);
-        --color-danger-hover: rgba(226, 118, 120, 0.8);
-        --color-success: rgb(75, 189, 119);
-        --color-success-light: rgba(75, 189, 119, 0.2);
-        --color-success-hover: rgba(75, 189, 119, 0.8);
-        --color-muted: rgb(150, 150, 150);
-        --color-muted-2: rgb(130, 130, 130);
-        --color-muted-light: rgba(150, 150, 150, 0.1);
-        --color-border: rgba(255, 255, 255, 0.12);
-        --color-border-form: rgb(62, 63, 66);
-        --color-base: rgb(0, 0, 0);
-        --color-surface-light: rgba(255, 255, 255, 0.075);
-        --color-surface: rgb(30, 30, 30);
-        --color-surface-2: rgb(46, 46, 46);
-        --color-surface-3: rgb(51, 51, 51);
-        --color-form-control: rgba(0, 0, 0, 0.25);
-        --color-form-control-readonly: rgba(255, 255, 255, 0.055);
-        --color-form-control-focus: rgba(0, 0, 0, 0.2);
-        --color-form-addon: rgba(0, 0, 0, 0.3);
-        --color-box-shadow: rgba(0, 0, 0, 1);
-        --color-box-shadow-subdued: rgba(0, 0, 0, 1);
-        --color-focus-danger: rgba(226, 118, 120, 0.4);
-        --color-pre-background: rgba(255, 255, 255, 0.02);
-        --color-code-background: rgba(75, 189, 119, 0.15);
-        --color-drawer-backdrop: rgba(0, 0, 0, 0.75);
-        --color-grid-table-stripe: rgb(40, 40, 40);
-        --color-top-alert-border: rgba(28, 28, 28, 0.16);
-        --color-emphasis-gray: rgb(100, 100, 100);
-        --color-fg-emphasis-gray: rgb(255, 255, 255);
-    }
+  }
 }
 
 /* ========================================================================
@@ -226,41 +226,41 @@ html.theme-dark {
    ======================================================================== */
 
 @utility shadow-lv1 {
-    box-shadow:
-        0 0.2rem 0.4rem -0.3rem var(--color-box-shadow),
-        0 0 0 1px var(--color-box-shadow-subdued);
+  box-shadow:
+    0 0.2rem 0.4rem -0.3rem var(--color-box-shadow),
+    0 0 0 1px var(--color-box-shadow-subdued);
 }
 
 @utility shadow-lv2 {
-    box-shadow:
-        0 0.4rem 0.8rem -0.3rem var(--color-box-shadow),
-        0 0 0 1px var(--color-box-shadow-subdued);
+  box-shadow:
+    0 0.4rem 0.8rem -0.3rem var(--color-box-shadow),
+    0 0 0 1px var(--color-box-shadow-subdued);
 }
 
 @utility shadow-lv3 {
-    box-shadow:
-        0 0.6rem 1.2rem -0.3rem var(--color-box-shadow),
-        0 0 0 1px var(--color-box-shadow-subdued);
+  box-shadow:
+    0 0.6rem 1.2rem -0.3rem var(--color-box-shadow),
+    0 0 0 1px var(--color-box-shadow-subdued);
 }
 
 @utility shadow-lv4 {
-    box-shadow:
-        0 0.8rem 1.6rem -0.3rem var(--color-box-shadow),
-        0 0 0 1px var(--color-box-shadow-subdued);
+  box-shadow:
+    0 0.8rem 1.6rem -0.3rem var(--color-box-shadow),
+    0 0 0 1px var(--color-box-shadow-subdued);
 }
 
 /* Focus shadow — matches $box-shadow-focus-primary / $box-shadow-focus-danger
    Inner ring uses bg-base (not bg-surface) to match Laravel */
 @utility focus-ring-primary {
-    box-shadow:
-        0 0 0 1.5px var(--color-focus-primary),
-        inset 0 0 0 2px var(--color-base);
+  box-shadow:
+    0 0 0 1.5px var(--color-focus-primary),
+    inset 0 0 0 2px var(--color-base);
 }
 
 @utility focus-ring-danger {
-    box-shadow:
-        0 0 0 1.5px var(--color-focus-danger),
-        inset 0 0 0 2px var(--color-base);
+  box-shadow:
+    0 0 0 1.5px var(--color-focus-danger),
+    inset 0 0 0 2px var(--color-base);
 }
 
 /* ========================================================================
@@ -269,66 +269,66 @@ html.theme-dark {
    ======================================================================== */
 
 @layer base {
-    textarea {
-        resize: vertical;
-    }
+  textarea {
+    resize: vertical;
+  }
 
-    /* Input / select / textarea matching .form-control */
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="number"],
-    input[type="search"],
-    input[type="tel"],
-    input[type="url"],
-    input[type="date"],
-    input[type="datetime-local"],
-    input[type="time"],
-    input[type="file"],
-    select,
-    textarea {
-        appearance: none;
-        background-color: var(--color-form-control);
-        border: 1px solid var(--color-border-form);
-        border-radius: 0.45rem;
-        caret-color: var(--color-primary);
-        color: var(--color-body);
-        font-size: 1.067rem; /* 16/15 — prevents iOS zoom on focus */
-        line-height: 1.6;
-        padding: 0.5rem 1rem; /* $spacing-sm $spacing-md */
-        transition:
-            0.15s ease background-color,
-            0.15s ease box-shadow,
-            0.15s ease border-color;
-        width: 100%;
-    }
+  /* Input / select / textarea matching .form-control */
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number'],
+  input[type='search'],
+  input[type='tel'],
+  input[type='url'],
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='time'],
+  input[type='file'],
+  select,
+  textarea {
+    appearance: none;
+    background-color: var(--color-form-control);
+    border: 1px solid var(--color-border-form);
+    border-radius: 0.45rem;
+    caret-color: var(--color-primary);
+    color: var(--color-body);
+    font-size: 1.067rem; /* 16/15 — prevents iOS zoom on focus */
+    line-height: 1.6;
+    padding: 0.5rem 1rem; /* $spacing-sm $spacing-md */
+    transition:
+      0.15s ease background-color,
+      0.15s ease box-shadow,
+      0.15s ease border-color;
+    width: 100%;
+  }
 
-    input:focus,
-    select:focus,
-    textarea:focus {
-        outline: 0;
-    }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 0;
+  }
 
-    input:not([readonly]):focus,
-    select:not([readonly]):focus,
-    textarea:not([readonly]):focus {
-        background: var(--color-form-control-focus);
-        border-color: var(--color-primary);
-        box-shadow:
-            0 0 0 1.5px var(--color-focus-primary),
-            inset 0 0 0 2px var(--color-base);
-    }
+  input:not([readonly]):focus,
+  select:not([readonly]):focus,
+  textarea:not([readonly]):focus {
+    background: var(--color-form-control-focus);
+    border-color: var(--color-primary);
+    box-shadow:
+      0 0 0 1.5px var(--color-focus-primary),
+      inset 0 0 0 2px var(--color-base);
+  }
 
-    input[disabled],
-    select[disabled],
-    textarea[disabled] {
-        color: var(--color-muted);
-        cursor: not-allowed;
-        opacity: 0.75;
-    }
+  input[disabled],
+  select[disabled],
+  textarea[disabled] {
+    color: var(--color-muted);
+    cursor: not-allowed;
+    opacity: 0.75;
+  }
 
-    /* Button reset — matches resources/sass/v2/modules/_btn.scss */
-    button {
-        color: var(--color-body);
-    }
+  /* Button reset — matches resources/sass/v2/modules/_btn.scss */
+  button {
+    color: var(--color-body);
+  }
 }
