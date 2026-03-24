@@ -6,16 +6,15 @@ definePage({
 })
 
 import { ref } from 'vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useUserSettingsPage } from '@/features/session/settings'
 
-const { tabs, updatePasswordMutation, extractPasswordValidationMessage, forgotPasswordHref, workspaceBackLink } =
+const { tabs, updatePasswordMutation, extractPasswordValidationMessage, forgotPasswordHref } =
   useUserSettingsPage('password')
 
 const passwordForm = ref({
@@ -53,9 +52,7 @@ async function handleSavePassword() {
 </script>
 
 <template>
-  <PageContentContainer>
-    <TabStrip :tabs="tabs" />
-
+  <TabbedSettingsPage :tabs="tabs">
     <SettingsSection title="パスワード変更" :title-outside="true">
       <SettingsRow>
         <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
@@ -102,5 +99,5 @@ async function handleSavePassword() {
         </div>
       </template>
     </SettingsSection>
-  </PageContentContainer>
+  </TabbedSettingsPage>
 </template>

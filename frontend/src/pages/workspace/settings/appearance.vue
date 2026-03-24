@@ -5,10 +5,9 @@ definePage({
   }
 })
 
-import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { useUserSettingsPage } from '@/features/session/settings'
 import { type UiTheme } from '@/features/session/theme'
 
@@ -38,9 +37,7 @@ const themeOptions: {
 </script>
 
 <template>
-  <PageContentContainer>
-    <TabStrip :tabs="tabs" />
-
+  <TabbedSettingsPage :tabs="tabs">
     <SettingsSection title="外観" :title-outside="true">
       <SettingsRow>
         <div class="flex items-start gap-3 rounded bg-primary-light p-4 text-sm text-body">
@@ -71,5 +68,5 @@ const themeOptions: {
         </div>
       </template>
     </SettingsSection>
-  </PageContentContainer>
+  </TabbedSettingsPage>
 </template>

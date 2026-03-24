@@ -9,7 +9,10 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import DataCard from '@/components/layouts/DataCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildStaffUsersExportUrl, useStaffUsersQuery } from '@/features/staff/users/api'
 import { useSessionStore } from '@/features/session/store'
@@ -33,12 +36,9 @@ function movePage(nextPage: number) {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
-        <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー情報管理</h2>
-      </div>
-      <div class="px-6 py-4">
+  <PageLayout>
+    <DataCard title="ユーザー情報管理" overflow-hidden>
+      <template #toolbar>
         <a
           :href="exportUrl"
           class="inline-flex items-center gap-2 rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
@@ -46,7 +46,7 @@ function movePage(nextPage: number) {
           <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
           CSVで出力
         </a>
-      </div>
+      </template>
 
       <div v-if="usersQuery.isPending.value" class="px-5 py-6 text-sm text-muted">読み込み中...</div>
 
@@ -76,22 +76,15 @@ function movePage(nextPage: number) {
               </td>
               <td class="px-5 py-4">
                 <div class="flex flex-wrap gap-2">
-                  <span
-                    v-for="role in user.roles"
-                    :key="role"
-                    class="rounded-full bg-primary-light px-3 py-1 text-xs text-primary"
-                  >
+                  <StatusBadge v-for="role in user.roles" :key="role" tone="primary" size="sm">
                     {{ role }}
-                  </span>
+                  </StatusBadge>
                 </div>
               </td>
               <td class="px-5 py-4">
-                <span
-                  class="rounded-full px-3 py-1 text-xs"
-                  :class="user.isVerified ? 'bg-success-light text-success' : 'bg-danger-light text-danger'"
-                >
+                <StatusBadge :tone="user.isVerified ? 'success' : 'danger'" size="sm">
                   {{ user.isVerified ? '確認済み' : '未確認' }}
-                </span>
+                </StatusBadge>
               </td>
               <td class="px-5 py-4 text-right">
                 <RouterLink
@@ -106,14 +99,16 @@ function movePage(nextPage: number) {
           </tbody>
         </table>
       </div>
-    </section>
-
-    <PaginationFooter
-      v-if="usersQuery.data.value && usersQuery.data.value.total > 0"
-      :page="page"
-      :page-size="usersQuery.data.value.pageSize"
-      :total="usersQuery.data.value.total"
-      @update:page="movePage"
-    />
-  </section>
+      <template #footer>
+        <PaginationFooter
+          v-if="usersQuery.data.value && usersQuery.data.value.total > 0"
+          :page="page"
+          :page-size="usersQuery.data.value.pageSize"
+          :total="usersQuery.data.value.total"
+          :bordered="false"
+          @update:page="movePage"
+        />
+      </template>
+    </DataCard>
+  </PageLayout>
 </template>

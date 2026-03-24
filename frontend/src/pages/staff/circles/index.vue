@@ -9,8 +9,12 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import DataCard from '@/components/layouts/DataCard.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffCirclesExportUrl,
@@ -69,47 +73,43 @@ function movePage(nextPage: number) {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Staff Circles</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">企画管理</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">
-          企画名、企画グループ、参加種別、関連メール送信の導線を staff mode で管理します。
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <a
-          :href="exportUrl"
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-        >
-          CSVで出力
-        </a>
-        <RouterLink
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-          to="/staff/participation-types"
-        >
-          参加種別管理
-        </RouterLink>
-        <RouterLink
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-          to="/staff"
-        >
-          Staff top へ戻る
-        </RouterLink>
-      </div>
-    </header>
+  <PageLayout>
+    <PageHeader
+      eyebrow="Staff Circles"
+      title="企画管理"
+      description="企画名、企画グループ、参加種別、関連メール送信の導線を staff mode で管理します。"
+    >
+      <template #actions>
+        <div class="flex flex-wrap gap-3">
+          <a
+            :href="exportUrl"
+            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+          >
+            CSVで出力
+          </a>
+          <RouterLink
+            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            to="/staff/participation-types"
+          >
+            参加種別管理
+          </RouterLink>
+          <RouterLink
+            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            to="/staff"
+          >
+            Staff top へ戻る
+          </RouterLink>
+        </div>
+      </template>
+    </PageHeader>
 
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-4">
-        <h3 class="text-lg font-semibold text-body">企画一覧</h3>
-        <p class="mt-2 text-sm leading-7 text-muted">ページ送り付きの一覧に加え、全件数も同時に確認できます。</p>
-      </div>
-
-      <div class="grid gap-2 border-b border-border px-6 py-4 text-sm text-muted sm:grid-cols-2">
-        <p>現在のページ件数: {{ circlesQuery.data.value?.items.length ?? 0 }}</p>
-        <p>全企画数: {{ allCirclesQuery.data.value?.length ?? 0 }}</p>
-      </div>
+    <DataCard title="企画一覧" description="ページ送り付きの一覧に加え、全件数も同時に確認できます。" overflow-hidden>
+      <template #toolbar>
+        <div class="grid gap-2 text-sm text-muted sm:grid-cols-2">
+          <p>現在のページ件数: {{ circlesQuery.data.value?.items.length ?? 0 }}</p>
+          <p>全企画数: {{ allCirclesQuery.data.value?.length ?? 0 }}</p>
+        </div>
+      </template>
 
       <div v-if="circlesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
 
@@ -130,77 +130,78 @@ function movePage(nextPage: number) {
               <p class="mt-1 text-sm text-muted">{{ circle.groupName }}</p>
               <p class="mt-1 text-xs text-muted">ID: {{ circle.id }}</p>
             </div>
-            <span class="rounded-full bg-primary-light px-3 py-1 text-xs text-primary">
+            <StatusBadge tone="primary" size="sm">
               {{ circle.participationTypeName }}
-            </span>
+            </StatusBadge>
           </div>
         </RouterLink>
       </div>
 
-      <PaginationFooter
-        v-if="circlesQuery.data.value && circlesQuery.data.value.total > 0"
-        :page="page"
-        :page-size="circlesQuery.data.value.pageSize"
-        :total="circlesQuery.data.value.total"
-        :bordered="false"
-        @update:page="movePage"
-      />
-    </section>
+      <template #footer>
+        <PaginationFooter
+          v-if="circlesQuery.data.value && circlesQuery.data.value.total > 0"
+          :page="page"
+          :page-size="circlesQuery.data.value.pageSize"
+          :total="circlesQuery.data.value.total"
+          :bordered="false"
+          @update:page="movePage"
+        />
+      </template>
+    </DataCard>
 
-    <form class="rounded border border-border bg-surface shadow-lv1" @submit.prevent="handleCreateCircle">
-      <div class="border-b border-border px-6 py-4">
-        <h3 class="text-lg font-semibold text-body">企画を新規作成</h3>
-      </div>
-      <div class="grid gap-4 px-6 py-5">
-        <label class="grid gap-2 text-sm text-body">
-          <span class="font-medium">企画名</span>
-          <input
-            v-model="form.name"
-            class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-            name="name"
-            type="text"
-          />
-        </label>
-        <label class="grid gap-2 text-sm text-body">
-          <span class="font-medium">企画グループ名</span>
-          <input
-            v-model="form.groupName"
-            class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-            name="groupName"
-            type="text"
-          />
-        </label>
-        <label class="grid gap-2 text-sm text-body">
-          <span class="font-medium">参加種別</span>
-          <select
-            v-model="form.participationTypeId"
-            class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-            name="participationTypeId"
-          >
-            <option value="">参加種別を選択してください</option>
-            <option
-              v-for="participationType in participationTypesQuery.data.value ?? []"
-              :key="participationType.id"
-              :value="participationType.id"
+    <DataCard title="企画を新規作成">
+      <form @submit.prevent="handleCreateCircle">
+        <div class="grid gap-4 px-6 py-5">
+          <label class="grid gap-2 text-sm text-body">
+            <span class="font-medium">企画名</span>
+            <input
+              v-model="form.name"
+              class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+              name="name"
+              type="text"
+            />
+          </label>
+          <label class="grid gap-2 text-sm text-body">
+            <span class="font-medium">企画グループ名</span>
+            <input
+              v-model="form.groupName"
+              class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+              name="groupName"
+              type="text"
+            />
+          </label>
+          <label class="grid gap-2 text-sm text-body">
+            <span class="font-medium">参加種別</span>
+            <select
+              v-model="form.participationTypeId"
+              class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+              name="participationTypeId"
             >
-              {{ participationType.name }}
-            </option>
-          </select>
-        </label>
+              <option value="">参加種別を選択してください</option>
+              <option
+                v-for="participationType in participationTypesQuery.data.value ?? []"
+                :key="participationType.id"
+                :value="participationType.id"
+              >
+                {{ participationType.name }}
+              </option>
+            </select>
+          </label>
 
-        <AlertMessage v-if="errorMessage" tone="danger">
-          {{ errorMessage }}
-        </AlertMessage>
-      </div>
-      <div class="border-t border-border px-6 py-5">
-        <button
-          :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
-          :disabled="createCircleMutation.isPending.value"
-          type="submit"
-        >
-          {{ createCircleMutation.isPending.value ? '作成中...' : '保存' }}
-        </button>
-      </div>
-    </form>
-  </section>
+          <AlertMessage v-if="errorMessage" tone="danger">
+            {{ errorMessage }}
+          </AlertMessage>
+        </div>
+        <div class="border-t border-border px-6 py-5">
+          <button
+            :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
+            :disabled="createCircleMutation.isPending.value"
+            type="submit"
+          >
+            {{ createCircleMutation.isPending.value ? '作成中...' : '保存' }}
+          </button>
+        </div>
+      </form>
+    </DataCard>
+  </PageLayout>
 </template>

@@ -6,15 +6,14 @@ definePage({
 })
 
 import { ref } from 'vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useUserSettingsPage } from '@/features/session/settings'
 
-const { tabs, canDeleteAccount, deleteAccountBlockedReason, deleteAccountMutation, deleteAccount, workspaceBackLink } =
+const { tabs, canDeleteAccount, deleteAccountBlockedReason, deleteAccountMutation, deleteAccount } =
   useUserSettingsPage('delete')
 
 const deleteAccountErrorMessage = ref('')
@@ -29,9 +28,7 @@ async function handleDeleteAccount() {
 </script>
 
 <template>
-  <PageContentContainer>
-    <TabStrip :tabs="tabs" />
-
+  <TabbedSettingsPage :tabs="tabs">
     <SettingsSection title="アカウント削除" :title-outside="true">
       <div class="px-6 py-8 text-center">
         <div class="mx-auto max-w-2xl space-y-4 text-sm leading-7 text-body">
@@ -52,5 +49,5 @@ async function handleDeleteAccount() {
         </div>
       </div>
     </SettingsSection>
-  </PageContentContainer>
+  </TabbedSettingsPage>
 </template>

@@ -6,17 +6,15 @@ definePage({
 })
 
 import { ref } from 'vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useUserSettingsPage } from '@/features/session/settings'
 
-const { tabs, sessionStore, updateProfileMutation, workspaceBackLink, extractProfileValidationMessage } =
-  useUserSettingsPage('general')
+const { tabs, sessionStore, updateProfileMutation, extractProfileValidationMessage } = useUserSettingsPage('general')
 
 const displayName = ref(sessionStore.user?.displayName ?? '')
 const errorMessage = ref('')
@@ -37,9 +35,7 @@ async function handleSaveProfile() {
 </script>
 
 <template>
-  <PageContentContainer>
-    <TabStrip :tabs="tabs" />
-
+  <TabbedSettingsPage :tabs="tabs">
     <SettingsSection title="一般設定" :title-outside="true">
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
@@ -83,5 +79,5 @@ async function handleSaveProfile() {
         </div>
       </template>
     </SettingsSection>
-  </PageContentContainer>
+  </TabbedSettingsPage>
 </template>

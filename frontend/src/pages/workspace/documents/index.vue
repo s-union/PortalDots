@@ -8,9 +8,9 @@ definePage({
 
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
-import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { buildApiUrl } from '@/lib/api/client'
@@ -54,7 +54,7 @@ async function movePage(nextPage: number) {
 </script>
 
 <template>
-  <PageContentContainer>
+  <PageLayout>
     <div
       v-if="documentsQuery.isPending.value"
       class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
@@ -102,5 +102,5 @@ async function movePage(nextPage: number) {
       :total="documentsQuery.data.value.total"
       @update:page="movePage"
     />
-  </PageContentContainer>
+  </PageLayout>
 </template>
