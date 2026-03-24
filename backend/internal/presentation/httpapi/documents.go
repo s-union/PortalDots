@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
+	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
 )
 
 type documentSummaryResponse struct {
@@ -78,7 +79,7 @@ func (h *workspaceHandlers) getDocument(c echo.Context) error {
 	return c.Blob(http.StatusOK, document.MimeType, document.Content)
 }
 
-func readDocumentsPagination(c echo.Context) paginationParams {
+func readDocumentsPagination(c echo.Context) models.PaginationParams {
 	pagination := readPagination(c)
 	if c.QueryParam("pageSize") == "" {
 		pagination.PageSize = 10
@@ -86,10 +87,10 @@ func readDocumentsPagination(c echo.Context) paginationParams {
 	return pagination
 }
 
-func paginateDocuments(items []documentSummaryResponse, pagination paginationParams) paginatedResponse[documentSummaryResponse] {
+func paginateDocuments(items []documentSummaryResponse, pagination models.PaginationParams) models.PaginatedResponse[documentSummaryResponse] {
 	total := len(items)
 	if total == 0 {
-		return paginatedResponse[documentSummaryResponse]{
+		return models.PaginatedResponse[documentSummaryResponse]{
 			Items:    []documentSummaryResponse{},
 			Page:     1,
 			PageSize: pagination.PageSize,

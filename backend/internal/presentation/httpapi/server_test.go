@@ -16,6 +16,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
 )
 
 func TestLoginAndBootstrap(t *testing.T) {
@@ -292,7 +293,7 @@ func TestDeleteOwnAccountRejectsCircleMembers(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal delete account validation response: %v", err)
 	}
@@ -336,7 +337,7 @@ func TestDeleteOwnAccountRejectsStaffUsers(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal delete account validation response: %v", err)
 	}
@@ -359,7 +360,7 @@ func TestLoginValidation(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation error response: %v", err)
 	}
@@ -798,7 +799,7 @@ func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation response: %v", err)
 	}
@@ -835,7 +836,7 @@ func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation response: %v", err)
 	}
@@ -1051,7 +1052,7 @@ func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response paginatedResponse[documentSummaryResponse]
+	var response models.PaginatedResponse[documentSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal documents response: %v", err)
 	}
@@ -1111,7 +1112,7 @@ func TestDownloadDocumentFileRequiresVisiblePublicDocument(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var detailPage paginatedResponse[documentSummaryResponse]
+	var detailPage models.PaginatedResponse[documentSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detailPage); err != nil {
 		t.Fatalf("unmarshal document list for download url: %v", err)
 	}
@@ -1273,7 +1274,7 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var publicDocuments paginatedResponse[documentSummaryResponse]
+	var publicDocuments models.PaginatedResponse[documentSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &publicDocuments); err != nil {
 		t.Fatalf("unmarshal public documents: %v", err)
 	}
@@ -1636,7 +1637,7 @@ func TestUpsertFormAnswerRejectsBlankBody(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation response: %v", err)
 	}
@@ -1732,7 +1733,7 @@ func TestStaffVerificationRejectsWrongCode(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation response: %v", err)
 	}
@@ -2454,7 +2455,7 @@ func TestStaffFormsValidation(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation response: %v", err)
 	}
@@ -2662,7 +2663,7 @@ func TestStaffCirclesListCreateDetailAndUpdate(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var circles paginatedResponse[staffCircleResponse]
+	var circles models.PaginatedResponse[staffCircleResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &circles); err != nil {
 		t.Fatalf("unmarshal staff circles response: %v", err)
 	}
@@ -2759,7 +2760,7 @@ func TestStaffCirclesValidation(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal circle validation response: %v", err)
 	}
@@ -2899,7 +2900,7 @@ func TestStaffUsersNonAdminCannotChangeAdminRole(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal promote admin validation response: %v", err)
 	}
@@ -2955,7 +2956,7 @@ func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var users paginatedResponse[staffUserSummaryResponse]
+	var users models.PaginatedResponse[staffUserSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &users); err != nil {
 		t.Fatalf("unmarshal staff users response: %v", err)
 	}
@@ -3030,7 +3031,7 @@ func TestStaffPermissionsListDetailAndUpdate(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var list paginatedResponse[staffPermissionUserSummaryResponse]
+	var list models.PaginatedResponse[staffPermissionUserSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &list); err != nil {
 		t.Fatalf("unmarshal staff permissions list: %v", err)
 	}
@@ -3099,7 +3100,7 @@ func TestStaffPermissionsValidation(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal staff permission validation response: %v", err)
 	}
@@ -3124,7 +3125,7 @@ func TestStaffUsersPreventSelfLockout(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal self lockout validation response: %v", err)
 	}
@@ -3180,7 +3181,7 @@ func TestStaffUsersValidation(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal staff user validation response: %v", err)
 	}
@@ -3253,7 +3254,7 @@ func TestStaffUsersUpdateVerifyExportAndDelete(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var users paginatedResponse[staffUserSummaryResponse]
+	var users models.PaginatedResponse[staffUserSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &users); err != nil {
 		t.Fatalf("unmarshal users after delete: %v", err)
 	}
@@ -3276,7 +3277,7 @@ func TestStaffUsersPreventSelfDelete(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal self delete validation response: %v", err)
 	}
@@ -3337,7 +3338,7 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var logs paginatedResponse[staffActivityLogResponse]
+	var logs models.PaginatedResponse[staffActivityLogResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &logs); err != nil {
 		t.Fatalf("unmarshal activity logs: %v", err)
 	}
@@ -3422,7 +3423,7 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var circles paginatedResponse[staffCircleResponse]
+	var circles models.PaginatedResponse[staffCircleResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &circles); err != nil {
 		t.Fatalf("unmarshal paginated circles response: %v", err)
 	}
@@ -3435,7 +3436,7 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var logs paginatedResponse[staffActivityLogResponse]
+	var logs models.PaginatedResponse[staffActivityLogResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &logs); err != nil {
 		t.Fatalf("unmarshal paginated logs response: %v", err)
 	}
@@ -3588,7 +3589,7 @@ func TestStaffPortalSettingsGetAndUpdate(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var logs paginatedResponse[staffActivityLogResponse]
+	var logs models.PaginatedResponse[staffActivityLogResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &logs); err != nil {
 		t.Fatalf("unmarshal paginated logs response: %v", err)
 	}
@@ -3633,7 +3634,7 @@ func TestStaffPortalSettingsValidateInput(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation response: %v", err)
 	}
@@ -3657,7 +3658,7 @@ func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response paginatedResponse[staffCircleResponse]
+	var response models.PaginatedResponse[staffCircleResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal participation type circles: %v", err)
 	}
@@ -3861,7 +3862,7 @@ func TestStaffMailValidation(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var response validationErrorResponse
+	var response models.ValidationErrorResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal validation response: %v", err)
 	}

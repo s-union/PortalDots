@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
@@ -24,6 +23,8 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/controllers"
+	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/middlewares"
 )
 
 // sharedDeps holds session-related dependencies shared across all domain handler structs.
@@ -36,6 +37,10 @@ type sharedDeps struct {
 }
 
 func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) {
+	if sessionID, currentSession, ok := middlewares.SessionFromContext(c); ok {
+		return sessionID, currentSession, true
+	}
+
 	cookie, err := c.Cookie(s.sessionCookieName)
 	if err != nil || cookie.Value == "" {
 		return "", session.Session{}, false
@@ -223,8 +228,7 @@ func NewServerWithDependencies(
 ) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
-	e.Use(middleware.Recover())
-	e.Use(middleware.RequestID())
+	middlewares.Setup(e)
 
 	shared := sharedDeps{
 		sessionCookieName:     cfg.SessionCookieName,
@@ -360,9 +364,162 @@ func NewServerWithDependencies(
 	})
 
 	v1 := e.Group("/v1")
-	registerPublicRoutes(v1, authH, publicHomeH, staffVerifyH)
-	registerStaffRoutes(v1, staffAdminH, staffCircleH, staffDocumentH, staffFormH, staffMastersH, staffPageH, staffPermissionH, staffUsersH)
-	registerWorkspaceRoutes(v1, workspaceH)
+	sessionMiddlewareConfig := middlewares.SessionMiddlewareConfig{
+		SessionCookieName:     cfg.SessionCookieName,
+		AllowInsecureDefaults: cfg.AllowInsecureDefaults,
+		Sessions:              sessionStore,
+	}
+
+	controllers.RegisterPublicRoutes(v1, controllers.PublicRoutes{
+		GetPublicConfig:          publicHomeH.getPublicConfig,
+		GetPublicHome:            publicHomeH.getPublicHome,
+		ListPublicPages:          publicHomeH.listPublicPages,
+		GetPublicPage:            publicHomeH.getPublicPage,
+		ListPublicDocuments:      publicHomeH.listPublicDocuments,
+		GetPublicDocument:        publicHomeH.getPublicDocument,
+		SessionBootstrap:         authH.sessionBootstrap,
+		UpdateProfile:            authH.updateProfile,
+		UpdatePassword:           authH.updatePassword,
+		DeleteAccount:            authH.deleteAccount,
+		Login:                    authH.login,
+		Logout:                   authH.logout,
+		ListContactCategories:    authH.listContactCategories,
+		ListContactHistory:       authH.listContactHistory,
+		SubmitContact:            authH.submitContact,
+		StaffStatus:              staffVerifyH.staffStatus,
+		RequestStaffVerification: staffVerifyH.requestStaffVerification,
+		ConfirmStaffVerification: staffVerifyH.confirmStaffVerification,
+	})
+
+	controllers.RegisterStaffRoutes(v1, controllers.StaffRoutes{
+		// Pages
+		ListStaffPages:        staffPageH.listStaffPages,
+		CreateStaffPage:       staffPageH.createStaffPage,
+		DownloadStaffPagesCSV: staffPageH.downloadStaffPagesCSV,
+		GetStaffPage:          staffPageH.getStaffPage,
+		UpdateStaffPage:       staffPageH.updateStaffPage,
+		PatchStaffPagePin:     staffPageH.patchStaffPagePin,
+		DeleteStaffPage:       staffPageH.deleteStaffPage,
+		// Documents
+		ListStaffDocuments:        staffDocumentH.listStaffDocuments,
+		CreateStaffDocument:       staffDocumentH.createStaffDocument,
+		DownloadStaffDocumentsCSV: staffDocumentH.downloadStaffDocumentsCSV,
+		GetStaffDocument:          staffDocumentH.getStaffDocument,
+		DownloadStaffDocumentFile: staffDocumentH.downloadStaffDocumentFile,
+		UpdateStaffDocument:       staffDocumentH.updateStaffDocument,
+		DeleteStaffDocument:       staffDocumentH.deleteStaffDocument,
+		// Tags
+		ListStaffTags:        staffMastersH.listStaffTags,
+		DownloadStaffTagsCSV: staffMastersH.downloadStaffTagsCSV,
+		CreateStaffTag:       staffMastersH.createStaffTag,
+		UpdateStaffTag:       staffMastersH.updateStaffTag,
+		DeleteStaffTag:       staffMastersH.deleteStaffTag,
+		// Places
+		ListStaffPlaces:        staffMastersH.listStaffPlaces,
+		DownloadStaffPlacesCSV: staffMastersH.downloadStaffPlacesCSV,
+		CreateStaffPlace:       staffMastersH.createStaffPlace,
+		UpdateStaffPlace:       staffMastersH.updateStaffPlace,
+		DeleteStaffPlace:       staffMastersH.deleteStaffPlace,
+		// Contact Categories
+		ListStaffContactCategories: staffMastersH.listStaffContactCategories,
+		CreateStaffContactCategory: staffMastersH.createStaffContactCategory,
+		UpdateStaffContactCategory: staffMastersH.updateStaffContactCategory,
+		DeleteStaffContactCategory: staffMastersH.deleteStaffContactCategory,
+		// Forms
+		ListStaffForms:                    staffFormH.listStaffForms,
+		CreateStaffForm:                   staffFormH.createStaffForm,
+		DownloadStaffFormsCSV:             staffFormH.downloadStaffFormsCSV,
+		GetStaffForm:                      staffFormH.getStaffForm,
+		PreviewStaffForm:                  staffFormH.previewStaffForm,
+		UpdateStaffForm:                   staffFormH.updateStaffForm,
+		CopyStaffForm:                     staffFormH.copyStaffForm,
+		DeleteStaffForm:                   staffFormH.deleteStaffForm,
+		ListStaffFormAnswers:              staffFormH.listStaffFormAnswers,
+		CreateStaffFormAnswer:             staffFormH.createStaffFormAnswer,
+		DownloadStaffFormAnswersCSV:       staffFormH.downloadStaffFormAnswersCSV,
+		ListStaffFormNotAnsweredCircles:   staffFormH.listStaffFormNotAnsweredCircles,
+		DownloadStaffFormAnswerUploadsZIP: staffFormH.downloadStaffFormAnswerUploadsZIP,
+		GetStaffFormAnswer:                staffFormH.getStaffFormAnswer,
+		UpdateStaffFormAnswer:             staffFormH.updateStaffFormAnswer,
+		DeleteStaffFormAnswer:             staffFormH.deleteStaffFormAnswer,
+		UploadStaffFormAnswerFile:         staffFormH.uploadStaffFormAnswerFile,
+		DownloadStaffFormAnswerUpload:     staffFormH.downloadStaffFormAnswerUpload,
+		CreateStaffFormQuestion:           staffFormH.createStaffFormQuestion,
+		UpdateStaffFormQuestion:           staffFormH.updateStaffFormQuestion,
+		DeleteStaffFormQuestion:           staffFormH.deleteStaffFormQuestion,
+		ReorderStaffFormQuestions:         staffFormH.reorderStaffFormQuestions,
+		DownloadStaffFormUpload:           staffFormH.downloadStaffFormUpload,
+		// Participation Types
+		ListStaffParticipationTypes:              staffCircleH.listStaffParticipationTypes,
+		CreateStaffParticipationType:             staffCircleH.createStaffParticipationType,
+		GetStaffParticipationType:                staffCircleH.getStaffParticipationType,
+		ListStaffParticipationTypeCircles:        staffCircleH.listStaffParticipationTypeCircles,
+		DownloadStaffParticipationTypeCirclesCSV: staffCircleH.downloadStaffParticipationTypeCirclesCSV,
+		UpdateStaffParticipationType:             staffCircleH.updateStaffParticipationType,
+		DeleteStaffParticipationType:             staffCircleH.deleteStaffParticipationType,
+		// Circles
+		ListStaffCircles:        staffCircleH.listStaffCircles,
+		ListAllStaffCircles:     staffCircleH.listAllStaffCircles,
+		DownloadStaffCirclesCSV: staffCircleH.downloadStaffCirclesCSV,
+		CreateStaffCircle:       staffCircleH.createStaffCircle,
+		GetStaffCircle:          staffCircleH.getStaffCircle,
+		UpdateStaffCircle:       staffCircleH.updateStaffCircle,
+		DeleteStaffCircle:       staffCircleH.deleteStaffCircle,
+		GetStaffCircleMailForm:  staffCircleH.getStaffCircleMailForm,
+		SendStaffCircleMail:     staffCircleH.sendStaffCircleMail,
+		// Admin
+		ListStaffActivityLogs:     staffAdminH.listStaffActivityLogs,
+		GetStaffPortalSettings:    staffAdminH.getStaffPortalSettings,
+		UpdateStaffPortalSettings: staffAdminH.updateStaffPortalSettings,
+		DownloadStaffSummaryCSV:   staffAdminH.downloadStaffSummaryCSV,
+		DownloadStaffBundleZIP:    staffAdminH.downloadStaffBundleZIP,
+		ListStaffMails:            staffAdminH.listStaffMails,
+		EnqueueStaffMail:          staffAdminH.enqueueStaffMail,
+		// Users
+		ListStaffUsers:        staffUsersH.listStaffUsers,
+		DownloadStaffUsersCSV: staffUsersH.downloadStaffUsersCSV,
+		GetStaffUser:          staffUsersH.getStaffUser,
+		UpdateStaffUser:       staffUsersH.updateStaffUser,
+		VerifyStaffUser:       staffUsersH.verifyStaffUser,
+		DeleteStaffUser:       staffUsersH.deleteStaffUser,
+		UpdateStaffUserRoles:  staffUsersH.updateStaffUserRoles,
+		// Permissions
+		ListStaffPermissions:   staffPermissionH.listStaffPermissions,
+		GetStaffPermission:     staffPermissionH.getStaffPermission,
+		UpdateStaffPermissions: staffPermissionH.updateStaffPermissions,
+	}, middlewares.RequireStaffMode(sessionMiddlewareConfig, hasStaffAccess))
+
+	controllers.RegisterWorkspaceRoutes(v1, controllers.WorkspaceRoutes{
+		ListCircles:                workspaceH.listCircles,
+		ListParticipationTypes:     workspaceH.listParticipationTypes,
+		CreateCircle:               workspaceH.createCircle,
+		SetCurrentCircle:           workspaceH.setCurrentCircle,
+		GetCurrentCircleDetail:     workspaceH.getCurrentCircleDetail,
+		UpdateCurrentCircle:        workspaceH.updateCurrentCircle,
+		DeleteCurrentCircle:        workspaceH.deleteCurrentCircle,
+		SubmitCurrentCircle:        workspaceH.submitCurrentCircle,
+		ListCurrentCircleMembers:   workspaceH.listCurrentCircleMembers,
+		AddCurrentCircleMember:     workspaceH.addCurrentCircleMember,
+		RemoveCurrentCircleMember:  workspaceH.removeCurrentCircleMember,
+		RegenerateInvitationToken:  workspaceH.regenerateInvitationToken,
+		JoinCircleByToken:          workspaceH.joinCircleByToken,
+		ListDocuments:              workspaceH.listDocuments,
+		GetDocument:                workspaceH.getDocument,
+		ListForms:                  workspaceH.listForms,
+		GetForm:                    workspaceH.getForm,
+		ListFormAnswers:            workspaceH.listFormAnswers,
+		CreateFormAnswer:           workspaceH.createFormAnswer,
+		GetFormAnswerByID:          workspaceH.getFormAnswerByID,
+		UpdateFormAnswer:           workspaceH.updateFormAnswer,
+		UploadFormAnswerFileByID:   workspaceH.uploadFormAnswerFileByID,
+		DownloadFormAnswerFileByID: workspaceH.downloadFormAnswerFileByID,
+		GetFormAnswer:              workspaceH.getFormAnswer,
+		UpsertFormAnswer:           workspaceH.upsertFormAnswer,
+		UploadFormAnswerFile:       workspaceH.uploadFormAnswerFile,
+		DownloadFormAnswerFile:     workspaceH.downloadFormAnswerFile,
+		ListPages:                  workspaceH.listPages,
+		GetPage:                    workspaceH.getPage,
+	}, middlewares.RequireWorkspaceUser(sessionMiddlewareConfig))
 
 	return e
 }

@@ -2,7 +2,12 @@
 
 `internal/presentation` contains transport-facing code.
 
-Currently `httpapi/` owns Echo handlers, request parsing, and route registration.
+`httpapi/` is organized by HTTP-layer responsibility:
+
+- `controllers/`: route registration and endpoint wiring
+- `middlewares/`: Echo middleware setup
+- `models/`: shared request/response transport models
+- root `httpapi` package: feature handlers and server composition
 
 Rule of thumb:
 

@@ -22,6 +22,9 @@ Rules of thumb:
 - `internal/domain`: feature-oriented business code such as `form`, `page`, `useradmin`.
 - `internal/platform`: infrastructure code such as config loading, SQLC store wiring, and generated PostgreSQL access.
 - `internal/presentation/httpapi`: Echo handlers and request/response mapping.
+  - `controllers`: route registration and handler binding
+  - `middlewares`: Echo middleware setup
+  - `models`: shared API transport models (errors/pagination, etc.)
 
 Current scope:
 

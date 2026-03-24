@@ -1,0 +1,305 @@
+package controllers
+
+import "github.com/labstack/echo/v4"
+
+// PublicRoutes holds handler function references for public endpoints.
+type PublicRoutes struct {
+	GetPublicConfig          echo.HandlerFunc
+	GetPublicHome            echo.HandlerFunc
+	ListPublicPages          echo.HandlerFunc
+	GetPublicPage            echo.HandlerFunc
+	ListPublicDocuments      echo.HandlerFunc
+	GetPublicDocument        echo.HandlerFunc
+	SessionBootstrap         echo.HandlerFunc
+	UpdateProfile            echo.HandlerFunc
+	UpdatePassword           echo.HandlerFunc
+	DeleteAccount            echo.HandlerFunc
+	Login                    echo.HandlerFunc
+	Logout                   echo.HandlerFunc
+	ListContactCategories    echo.HandlerFunc
+	ListContactHistory       echo.HandlerFunc
+	SubmitContact            echo.HandlerFunc
+	StaffStatus              echo.HandlerFunc
+	RequestStaffVerification echo.HandlerFunc
+	ConfirmStaffVerification echo.HandlerFunc
+}
+
+// StaffRoutes holds handler function references for staff endpoints.
+type StaffRoutes struct {
+	// Pages
+	ListStaffPages        echo.HandlerFunc
+	CreateStaffPage       echo.HandlerFunc
+	DownloadStaffPagesCSV echo.HandlerFunc
+	GetStaffPage          echo.HandlerFunc
+	UpdateStaffPage       echo.HandlerFunc
+	PatchStaffPagePin     echo.HandlerFunc
+	DeleteStaffPage       echo.HandlerFunc
+	// Documents
+	ListStaffDocuments        echo.HandlerFunc
+	CreateStaffDocument       echo.HandlerFunc
+	DownloadStaffDocumentsCSV echo.HandlerFunc
+	GetStaffDocument          echo.HandlerFunc
+	DownloadStaffDocumentFile echo.HandlerFunc
+	UpdateStaffDocument       echo.HandlerFunc
+	DeleteStaffDocument       echo.HandlerFunc
+	// Tags
+	ListStaffTags        echo.HandlerFunc
+	DownloadStaffTagsCSV echo.HandlerFunc
+	CreateStaffTag       echo.HandlerFunc
+	UpdateStaffTag       echo.HandlerFunc
+	DeleteStaffTag       echo.HandlerFunc
+	// Places
+	ListStaffPlaces        echo.HandlerFunc
+	DownloadStaffPlacesCSV echo.HandlerFunc
+	CreateStaffPlace       echo.HandlerFunc
+	UpdateStaffPlace       echo.HandlerFunc
+	DeleteStaffPlace       echo.HandlerFunc
+	// Contact Categories
+	ListStaffContactCategories echo.HandlerFunc
+	CreateStaffContactCategory echo.HandlerFunc
+	UpdateStaffContactCategory echo.HandlerFunc
+	DeleteStaffContactCategory echo.HandlerFunc
+	// Forms
+	ListStaffForms                    echo.HandlerFunc
+	CreateStaffForm                   echo.HandlerFunc
+	DownloadStaffFormsCSV             echo.HandlerFunc
+	GetStaffForm                      echo.HandlerFunc
+	PreviewStaffForm                  echo.HandlerFunc
+	UpdateStaffForm                   echo.HandlerFunc
+	CopyStaffForm                     echo.HandlerFunc
+	DeleteStaffForm                   echo.HandlerFunc
+	ListStaffFormAnswers              echo.HandlerFunc
+	CreateStaffFormAnswer             echo.HandlerFunc
+	DownloadStaffFormAnswersCSV       echo.HandlerFunc
+	ListStaffFormNotAnsweredCircles   echo.HandlerFunc
+	DownloadStaffFormAnswerUploadsZIP echo.HandlerFunc
+	GetStaffFormAnswer                echo.HandlerFunc
+	UpdateStaffFormAnswer             echo.HandlerFunc
+	DeleteStaffFormAnswer             echo.HandlerFunc
+	UploadStaffFormAnswerFile         echo.HandlerFunc
+	DownloadStaffFormAnswerUpload     echo.HandlerFunc
+	CreateStaffFormQuestion           echo.HandlerFunc
+	UpdateStaffFormQuestion           echo.HandlerFunc
+	DeleteStaffFormQuestion           echo.HandlerFunc
+	ReorderStaffFormQuestions         echo.HandlerFunc
+	DownloadStaffFormUpload           echo.HandlerFunc
+	// Participation Types
+	ListStaffParticipationTypes              echo.HandlerFunc
+	CreateStaffParticipationType             echo.HandlerFunc
+	GetStaffParticipationType                echo.HandlerFunc
+	ListStaffParticipationTypeCircles        echo.HandlerFunc
+	DownloadStaffParticipationTypeCirclesCSV echo.HandlerFunc
+	UpdateStaffParticipationType             echo.HandlerFunc
+	DeleteStaffParticipationType             echo.HandlerFunc
+	// Circles
+	ListStaffCircles        echo.HandlerFunc
+	ListAllStaffCircles     echo.HandlerFunc
+	DownloadStaffCirclesCSV echo.HandlerFunc
+	CreateStaffCircle       echo.HandlerFunc
+	GetStaffCircle          echo.HandlerFunc
+	UpdateStaffCircle       echo.HandlerFunc
+	DeleteStaffCircle       echo.HandlerFunc
+	GetStaffCircleMailForm  echo.HandlerFunc
+	SendStaffCircleMail     echo.HandlerFunc
+	// Admin
+	ListStaffActivityLogs     echo.HandlerFunc
+	GetStaffPortalSettings    echo.HandlerFunc
+	UpdateStaffPortalSettings echo.HandlerFunc
+	DownloadStaffSummaryCSV   echo.HandlerFunc
+	DownloadStaffBundleZIP    echo.HandlerFunc
+	ListStaffMails            echo.HandlerFunc
+	EnqueueStaffMail          echo.HandlerFunc
+	// Users
+	ListStaffUsers        echo.HandlerFunc
+	DownloadStaffUsersCSV echo.HandlerFunc
+	GetStaffUser          echo.HandlerFunc
+	UpdateStaffUser       echo.HandlerFunc
+	VerifyStaffUser       echo.HandlerFunc
+	DeleteStaffUser       echo.HandlerFunc
+	UpdateStaffUserRoles  echo.HandlerFunc
+	// Permissions
+	ListStaffPermissions   echo.HandlerFunc
+	GetStaffPermission     echo.HandlerFunc
+	UpdateStaffPermissions echo.HandlerFunc
+}
+
+// WorkspaceRoutes holds handler function references for workspace endpoints.
+type WorkspaceRoutes struct {
+	ListCircles                echo.HandlerFunc
+	ListParticipationTypes     echo.HandlerFunc
+	CreateCircle               echo.HandlerFunc
+	SetCurrentCircle           echo.HandlerFunc
+	GetCurrentCircleDetail     echo.HandlerFunc
+	UpdateCurrentCircle        echo.HandlerFunc
+	DeleteCurrentCircle        echo.HandlerFunc
+	SubmitCurrentCircle        echo.HandlerFunc
+	ListCurrentCircleMembers   echo.HandlerFunc
+	AddCurrentCircleMember     echo.HandlerFunc
+	RemoveCurrentCircleMember  echo.HandlerFunc
+	RegenerateInvitationToken  echo.HandlerFunc
+	JoinCircleByToken          echo.HandlerFunc
+	ListDocuments              echo.HandlerFunc
+	GetDocument                echo.HandlerFunc
+	ListForms                  echo.HandlerFunc
+	GetForm                    echo.HandlerFunc
+	ListFormAnswers            echo.HandlerFunc
+	CreateFormAnswer           echo.HandlerFunc
+	GetFormAnswerByID          echo.HandlerFunc
+	UpdateFormAnswer           echo.HandlerFunc
+	UploadFormAnswerFileByID   echo.HandlerFunc
+	DownloadFormAnswerFileByID echo.HandlerFunc
+	GetFormAnswer              echo.HandlerFunc
+	UpsertFormAnswer           echo.HandlerFunc
+	UploadFormAnswerFile       echo.HandlerFunc
+	DownloadFormAnswerFile     echo.HandlerFunc
+	ListPages                  echo.HandlerFunc
+	GetPage                    echo.HandlerFunc
+}
+
+// RegisterPublicRoutes registers public API routes on the given group.
+func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
+	v1.GET("/public/config", r.GetPublicConfig)
+	v1.GET("/public/home", r.GetPublicHome)
+	v1.GET("/public/pages", r.ListPublicPages)
+	v1.GET("/public/pages/:pageID", r.GetPublicPage)
+	v1.GET("/public/documents", r.ListPublicDocuments)
+	v1.GET("/public/documents/:documentID", r.GetPublicDocument)
+	v1.GET("/session/bootstrap", r.SessionBootstrap)
+	v1.PUT("/session/profile", r.UpdateProfile)
+	v1.PUT("/session/password", r.UpdatePassword)
+	v1.DELETE("/session/account", r.DeleteAccount)
+	v1.POST("/auth/login", r.Login)
+	v1.POST("/auth/logout", r.Logout)
+	v1.GET("/contact-categories", r.ListContactCategories)
+	v1.GET("/contact", r.ListContactHistory)
+	v1.POST("/contact", r.SubmitContact)
+	v1.GET("/staff/status", r.StaffStatus)
+	v1.POST("/staff/verify/request", r.RequestStaffVerification)
+	v1.POST("/staff/verify/confirm", r.ConfirmStaffVerification)
+}
+
+// RegisterStaffRoutes registers staff API routes on the given group.
+func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.MiddlewareFunc) {
+	staff := v1.Group("/staff", middlewares...)
+	staff.GET("/pages", r.ListStaffPages)
+	staff.POST("/pages", r.CreateStaffPage)
+	staff.GET("/pages/export.csv", r.DownloadStaffPagesCSV)
+	staff.GET("/pages/:pageID", r.GetStaffPage)
+	staff.PUT("/pages/:pageID", r.UpdateStaffPage)
+	staff.PATCH("/pages/:pageID/pin", r.PatchStaffPagePin)
+	staff.DELETE("/pages/:pageID", r.DeleteStaffPage)
+	staff.GET("/documents", r.ListStaffDocuments)
+	staff.POST("/documents", r.CreateStaffDocument)
+	staff.GET("/documents/export", r.DownloadStaffDocumentsCSV)
+	staff.GET("/documents/:documentID/edit", r.GetStaffDocument)
+	staff.GET("/documents/:documentID", r.DownloadStaffDocumentFile)
+	staff.PUT("/documents/:documentID", r.UpdateStaffDocument)
+	staff.DELETE("/documents/:documentID", r.DeleteStaffDocument)
+	staff.GET("/tags", r.ListStaffTags)
+	staff.GET("/tags/export", r.DownloadStaffTagsCSV)
+	staff.POST("/tags", r.CreateStaffTag)
+	staff.PUT("/tags/:tagID", r.UpdateStaffTag)
+	staff.DELETE("/tags/:tagID", r.DeleteStaffTag)
+	staff.GET("/places", r.ListStaffPlaces)
+	staff.GET("/places/export", r.DownloadStaffPlacesCSV)
+	staff.POST("/places", r.CreateStaffPlace)
+	staff.PUT("/places/:placeID", r.UpdateStaffPlace)
+	staff.DELETE("/places/:placeID", r.DeleteStaffPlace)
+	staff.GET("/contact-categories", r.ListStaffContactCategories)
+	staff.POST("/contact-categories", r.CreateStaffContactCategory)
+	staff.PUT("/contact-categories/:categoryID", r.UpdateStaffContactCategory)
+	staff.DELETE("/contact-categories/:categoryID", r.DeleteStaffContactCategory)
+	staff.GET("/forms", r.ListStaffForms)
+	staff.POST("/forms", r.CreateStaffForm)
+	staff.GET("/forms/export", r.DownloadStaffFormsCSV)
+	staff.GET("/forms/:formID", r.GetStaffForm)
+	staff.GET("/forms/:formID/edit", r.GetStaffForm)
+	staff.GET("/forms/:formID/preview", r.PreviewStaffForm)
+	staff.PUT("/forms/:formID", r.UpdateStaffForm)
+	staff.POST("/forms/:formID/copy", r.CopyStaffForm)
+	staff.DELETE("/forms/:formID", r.DeleteStaffForm)
+	staff.GET("/forms/:formID/answers", r.ListStaffFormAnswers)
+	staff.POST("/forms/:formID/answers", r.CreateStaffFormAnswer)
+	staff.GET("/forms/:formID/answers/export", r.DownloadStaffFormAnswersCSV)
+	staff.GET("/forms/:formID/answers/not_answered", r.ListStaffFormNotAnsweredCircles)
+	staff.GET("/forms/:formID/not_answered", r.ListStaffFormNotAnsweredCircles)
+	staff.GET("/forms/:formID/answers/uploads.zip", r.DownloadStaffFormAnswerUploadsZIP)
+	staff.POST("/forms/:formID/answers/uploads/download_zip", r.DownloadStaffFormAnswerUploadsZIP)
+	staff.GET("/forms/:formID/answers/:answerID/edit", r.GetStaffFormAnswer)
+	staff.PUT("/forms/:formID/answers/:answerID", r.UpdateStaffFormAnswer)
+	staff.DELETE("/forms/:formID/answers/:answerID", r.DeleteStaffFormAnswer)
+	staff.POST("/forms/:formID/answers/:answerID/uploads", r.UploadStaffFormAnswerFile)
+	staff.GET("/forms/:formID/answers/:answerID/uploads/:questionID/file", r.DownloadStaffFormAnswerUpload)
+	staff.POST("/forms/:formID/questions", r.CreateStaffFormQuestion)
+	staff.PUT("/forms/:formID/questions/:questionID", r.UpdateStaffFormQuestion)
+	staff.DELETE("/forms/:formID/questions/:questionID", r.DeleteStaffFormQuestion)
+	staff.PUT("/forms/:formID/questions/order", r.ReorderStaffFormQuestions)
+	staff.GET("/forms/:formID/uploads/:uploadID/file", r.DownloadStaffFormUpload)
+	staff.GET("/participation-types", r.ListStaffParticipationTypes)
+	staff.POST("/participation-types", r.CreateStaffParticipationType)
+	staff.GET("/participation-types/:typeID", r.GetStaffParticipationType)
+	staff.GET("/participation-types/:typeID/circles", r.ListStaffParticipationTypeCircles)
+	staff.GET("/participation-types/:typeID/circles/export", r.DownloadStaffParticipationTypeCirclesCSV)
+	staff.PUT("/participation-types/:typeID", r.UpdateStaffParticipationType)
+	staff.DELETE("/participation-types/:typeID", r.DeleteStaffParticipationType)
+	staff.GET("/circles", r.ListStaffCircles)
+	staff.GET("/circles/all", r.ListAllStaffCircles)
+	staff.GET("/circles/export", r.DownloadStaffCirclesCSV)
+	staff.POST("/circles", r.CreateStaffCircle)
+	staff.GET("/circles/:circleID", r.GetStaffCircle)
+	staff.PUT("/circles/:circleID", r.UpdateStaffCircle)
+	staff.DELETE("/circles/:circleID", r.DeleteStaffCircle)
+	staff.GET("/circles/:circleID/email", r.GetStaffCircleMailForm)
+	staff.POST("/circles/:circleID/email", r.SendStaffCircleMail)
+	staff.GET("/activity-logs", r.ListStaffActivityLogs)
+	staff.GET("/portal-settings", r.GetStaffPortalSettings)
+	staff.PUT("/portal-settings", r.UpdateStaffPortalSettings)
+	staff.GET("/exports/summary.csv", r.DownloadStaffSummaryCSV)
+	staff.GET("/exports/bundle.zip", r.DownloadStaffBundleZIP)
+	staff.GET("/mails", r.ListStaffMails)
+	staff.POST("/mails", r.EnqueueStaffMail)
+	staff.GET("/users", r.ListStaffUsers)
+	staff.GET("/users/export", r.DownloadStaffUsersCSV)
+	staff.GET("/users/:userID", r.GetStaffUser)
+	staff.PUT("/users/:userID", r.UpdateStaffUser)
+	staff.PATCH("/users/:userID/verify", r.VerifyStaffUser)
+	staff.DELETE("/users/:userID", r.DeleteStaffUser)
+	staff.PUT("/users/:userID/roles", r.UpdateStaffUserRoles)
+	staff.GET("/permissions", r.ListStaffPermissions)
+	staff.GET("/permissions/:userID", r.GetStaffPermission)
+	staff.PUT("/permissions/:userID", r.UpdateStaffPermissions)
+}
+
+// RegisterWorkspaceRoutes registers workspace API routes on the given group.
+func RegisterWorkspaceRoutes(v1 *echo.Group, r WorkspaceRoutes, middlewares ...echo.MiddlewareFunc) {
+	workspace := v1.Group("", middlewares...)
+	workspace.GET("/circles", r.ListCircles)
+	workspace.GET("/participation-types", r.ListParticipationTypes)
+	workspace.POST("/circles", r.CreateCircle)
+	workspace.PUT("/circles/current", r.SetCurrentCircle)
+	workspace.GET("/circles/current/detail", r.GetCurrentCircleDetail)
+	workspace.PUT("/circles/current/detail", r.UpdateCurrentCircle)
+	workspace.DELETE("/circles/current", r.DeleteCurrentCircle)
+	workspace.POST("/circles/current/submit", r.SubmitCurrentCircle)
+	workspace.GET("/circles/current/members", r.ListCurrentCircleMembers)
+	workspace.POST("/circles/current/members", r.AddCurrentCircleMember)
+	workspace.DELETE("/circles/current/members/:userID", r.RemoveCurrentCircleMember)
+	workspace.POST("/circles/current/invitation-token/regenerate", r.RegenerateInvitationToken)
+	workspace.POST("/circles/join/:token", r.JoinCircleByToken)
+	workspace.GET("/documents", r.ListDocuments)
+	workspace.GET("/documents/:documentID", r.GetDocument)
+	workspace.GET("/forms", r.ListForms)
+	workspace.GET("/forms/:formID", r.GetForm)
+	workspace.GET("/forms/:formID/answers", r.ListFormAnswers)
+	workspace.POST("/forms/:formID/answers", r.CreateFormAnswer)
+	workspace.GET("/forms/:formID/answers/:answerID", r.GetFormAnswerByID)
+	workspace.PUT("/forms/:formID/answers/:answerID", r.UpdateFormAnswer)
+	workspace.POST("/forms/:formID/answers/:answerID/uploads", r.UploadFormAnswerFileByID)
+	workspace.GET("/forms/:formID/answers/:answerID/uploads/:questionID/file", r.DownloadFormAnswerFileByID)
+	workspace.GET("/forms/:formID/answer", r.GetFormAnswer)
+	workspace.PUT("/forms/:formID/answer", r.UpsertFormAnswer)
+	workspace.POST("/forms/:formID/answer/uploads", r.UploadFormAnswerFile)
+	workspace.GET("/forms/:formID/answer/uploads/:uploadID/file", r.DownloadFormAnswerFile)
+	workspace.GET("/pages", r.ListPages)
+	workspace.GET("/pages/:pageID", r.GetPage)
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
+	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
 )
 
 type staffMailResponse struct {
@@ -66,7 +67,7 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		errors["recipients"] = []string{"宛先メールアドレスを 1 件以上入力してください"}
 	}
 	if len(errors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
+		return c.JSON(http.StatusUnprocessableEntity, models.ValidationErrorResponse{
 			Message: "validation_error",
 			Errors:  errors,
 		})

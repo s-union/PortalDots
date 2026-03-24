@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
 )
 
 type loginRequest struct {
@@ -37,7 +38,7 @@ func (h *authHandlers) login(c echo.Context) error {
 
 	user, ok := h.authenticator.Authenticate(c.Request().Context(), request.LoginID, request.Password)
 	if !ok {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
+		return c.JSON(http.StatusUnprocessableEntity, models.ValidationErrorResponse{
 			Message: "authentication_failed",
 			Errors: map[string][]string{
 				"loginId": {"ログイン情報が正しくありません"},
@@ -47,7 +48,7 @@ func (h *authHandlers) login(c echo.Context) error {
 
 	managedUser, err := h.users.Find(user.ID)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
+		return c.JSON(http.StatusUnprocessableEntity, models.ValidationErrorResponse{
 			Message: "authentication_failed",
 			Errors: map[string][]string{
 				"loginId": {"ログイン情報が正しくありません"},

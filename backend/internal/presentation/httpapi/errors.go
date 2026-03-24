@@ -4,12 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
 )
-
-type validationErrorResponse struct {
-	Message string              `json:"message"`
-	Errors  map[string][]string `json:"errors"`
-}
 
 // errorJSON writes a JSON error response with a single "message" field.
 func errorJSON(c echo.Context, status int, message string) error {
@@ -23,7 +19,7 @@ func internalError(c echo.Context) error {
 
 // validationError writes a 422 Unprocessable Entity response with field-level errors.
 func validationError(c echo.Context, errors map[string][]string) error {
-	return c.JSON(http.StatusUnprocessableEntity, validationErrorResponse{
+	return c.JSON(http.StatusUnprocessableEntity, models.ValidationErrorResponse{
 		Message: "validation_error",
 		Errors:  errors,
 	})
