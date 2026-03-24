@@ -11,9 +11,11 @@ backend/
 ├── db/                     # migrations and sqlc query sources
 └── internal/
     ├── app/               # app-level jobs and workers
+    ├── controllers/       # HTTP handlers, routes, server composition
     ├── domain/            # business repositories and domain services
-    ├── platform/          # config, database wiring, postgres helpers
-    └── presentation/      # HTTP handlers and API surface
+    ├── middlewares/       # Echo middleware and request guards
+    ├── models/            # shared request/response transport models
+    └── platform/          # config, database wiring, postgres helpers
 ```
 
 Rules of thumb:
@@ -21,10 +23,9 @@ Rules of thumb:
 - `cmd/*`: only program startup and wiring for CLI / server processes.
 - `internal/domain`: feature-oriented business code such as `form`, `page`, `useradmin`.
 - `internal/platform`: infrastructure code such as config loading, SQLC store wiring, and generated PostgreSQL access.
-- `internal/presentation/httpapi`: Echo handlers and request/response mapping.
-  - `controllers`: route registration and handler binding
-  - `middlewares`: Echo middleware setup
-  - `models`: shared API transport models (errors/pagination, etc.)
+- `internal/controllers`: Echo handlers and request/response mapping.
+- `internal/middlewares`: Echo middleware setup.
+- `internal/models`: shared API transport models (errors/pagination, etc.)
 
 Current scope:
 

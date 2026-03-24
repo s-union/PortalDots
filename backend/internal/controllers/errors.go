@@ -1,10 +1,10 @@
-package httpapi
+package controllers
 
 import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
+	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 // errorJSON writes a JSON error response with a single "message" field.

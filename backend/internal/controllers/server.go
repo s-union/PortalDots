@@ -1,4 +1,4 @@
-package httpapi
+package controllers
 
 import (
 	"net/http"
@@ -22,9 +22,8 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/controllers"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/middlewares"
 )
 
 // sharedDeps holds session-related dependencies shared across all domain handler structs.
@@ -370,7 +369,7 @@ func NewServerWithDependencies(
 		Sessions:              sessionStore,
 	}
 
-	controllers.RegisterPublicRoutes(v1, controllers.PublicRoutes{
+	RegisterPublicRoutes(v1, PublicRoutes{
 		GetPublicConfig:          publicHomeH.getPublicConfig,
 		GetPublicHome:            publicHomeH.getPublicHome,
 		ListPublicPages:          publicHomeH.listPublicPages,
@@ -391,7 +390,7 @@ func NewServerWithDependencies(
 		ConfirmStaffVerification: staffVerifyH.confirmStaffVerification,
 	})
 
-	controllers.RegisterStaffRoutes(v1, controllers.StaffRoutes{
+	RegisterStaffRoutes(v1, StaffRoutes{
 		// Pages
 		ListStaffPages:        staffPageH.listStaffPages,
 		CreateStaffPage:       staffPageH.createStaffPage,
@@ -489,7 +488,7 @@ func NewServerWithDependencies(
 		UpdateStaffPermissions: staffPermissionH.updateStaffPermissions,
 	}, middlewares.RequireStaffMode(sessionMiddlewareConfig, hasStaffAccess))
 
-	controllers.RegisterWorkspaceRoutes(v1, controllers.WorkspaceRoutes{
+	RegisterWorkspaceRoutes(v1, WorkspaceRoutes{
 		ListCircles:                workspaceH.listCircles,
 		ListParticipationTypes:     workspaceH.listParticipationTypes,
 		CreateCircle:               workspaceH.createCircle,

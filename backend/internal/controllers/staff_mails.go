@@ -1,4 +1,4 @@
-package httpapi
+package controllers
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
+	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 type staffMailResponse struct {

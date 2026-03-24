@@ -1,4 +1,4 @@
-package httpapi
+package controllers
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
+	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 type loginRequest struct {

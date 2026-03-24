@@ -1,4 +1,4 @@
-package httpapi
+package controllers
 
 import (
 	"math"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
+	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 type documentSummaryResponse struct {

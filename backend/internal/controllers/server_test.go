@@ -1,4 +1,4 @@
-package httpapi
+package controllers
 
 import (
 	"archive/zip"
@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
 )
 
 func TestLoginAndBootstrap(t *testing.T) {

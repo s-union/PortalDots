@@ -1,8 +1,8 @@
-package httpapi
+package controllers
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/s-union/PortalDots/backend/internal/presentation/httpapi/models"
+	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 // readPagination extracts pagination parameters from a request query string.

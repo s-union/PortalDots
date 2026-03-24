@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
+	httpserver "github.com/s-union/PortalDots/backend/internal/controllers"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/platform/database"
-	httpserver "github.com/s-union/PortalDots/backend/internal/presentation/httpapi"
 )
 
 func main() {
