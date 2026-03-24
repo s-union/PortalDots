@@ -12,6 +12,7 @@ import BackLink from '@/components/ui/BackLink.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { canManagePortalSettings } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
 
@@ -59,7 +60,7 @@ const settingLinks = computed(() => [
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff"> Staff top へ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -76,5 +77,5 @@ const settingLinks = computed(() => [
         </ListItemLink>
       </div>
     </ListPanel>
-  </section>
+  </PageLayout>
 </template>

@@ -9,6 +9,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { usePublicPageDetailQuery } from '@/features/public-home/api'
@@ -19,7 +20,7 @@ const pageQuery = usePublicPageDetailQuery(pageId, true)
 </script>
 
 <template>
-  <section class="mx-auto max-w-[1024px] space-y-6 px-6 py-4 max-[1000px]:px-4">
+  <PageLayout>
     <BackLink to="/public/pages"> お知らせへ戻る </BackLink>
 
     <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -72,5 +73,5 @@ const pageQuery = usePublicPageDetailQuery(pageId, true)
     <div v-else class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
       お知らせを取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

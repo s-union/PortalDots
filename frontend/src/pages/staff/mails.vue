@@ -10,8 +10,15 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { cn } from '@/lib/ui/cn'
-import { buttonVariants, formControlVariants, surfaceVariants } from '@/lib/ui/variants'
+import { buttonVariants, formControlVariants } from '@/lib/ui/variants'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractStaffMailValidationMessage,
@@ -52,26 +59,22 @@ async function handleCreateMail() {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Staff Mail Queue</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">メールキュー</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">
-          {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
-          向けのメールをモックキューに積みます。 実メールは送信しません。
-        </p>
-      </div>
-      <RouterLink :class="buttonVariants({ variant: 'secondary', size: 'md' })" to="/staff">
-        Staff top へ戻る
-      </RouterLink>
-    </header>
+  <PageLayout>
+    <PageHeader
+      eyebrow="Staff Mail Queue"
+      title="メールキュー"
+      :description="`${sessionStore.currentCircle?.name ?? '企画未選択'} 向けのメールをモックキューに積みます。実メールは送信しません。`"
+    >
+      <template #actions>
+        <BackLink to="/staff">Staff top へ戻る</BackLink>
+      </template>
+    </PageHeader>
 
-    <section class="space-y-6">
-      <form :class="surfaceVariants()" @submit.prevent="handleCreateMail">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-lg font-semibold text-body">メール配信設定</h3>
-        </div>
+    <div class="space-y-6">
+      <SurfaceCard tag="form" @submit.prevent="handleCreateMail">
+        <SurfaceHeader>
+          <template #title>メール配信設定</template>
+        </SurfaceHeader>
         <div class="grid gap-4 px-6 py-5">
           <p class="rounded border border-border bg-surface-light px-4 py-3 text-sm text-muted">
             この画面で登録したメールはすべてモック扱いです。宛先や本文は確認できますが、外部送信は行いません。
@@ -96,9 +99,7 @@ async function handleCreateMail() {
             />
           </label>
 
-          <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-            {{ errorMessage }}
-          </p>
+          <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
         </div>
         <div class="border-t border-border px-6 py-5">
           <button
@@ -109,12 +110,12 @@ async function handleCreateMail() {
             {{ createMailMutation.isPending.value ? '登録中...' : 'モックメールをキューに追加' }}
           </button>
         </div>
-      </form>
+      </SurfaceCard>
 
-      <section :class="surfaceVariants()">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-lg font-semibold text-body">メールキュー</h3>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>メールキュー</template>
+        </SurfaceHeader>
 
         <div v-if="mailsQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
 
@@ -126,12 +127,9 @@ async function handleCreateMail() {
           <article v-for="mail in mailsQuery.data.value" :key="mail.id" class="px-6 py-5">
             <div class="flex items-center justify-between gap-3">
               <h3 class="text-lg font-medium text-body">{{ mail.subject }}</h3>
-              <span
-                class="rounded-full px-3 py-1 text-xs"
-                :class="mail.status === 'sent' ? 'bg-success-light text-success' : 'bg-primary-light text-primary'"
-              >
+              <StatusBadge :tone="mail.status === 'sent' ? 'success' : 'primary'">
                 {{ mail.status === 'sent' ? 'モック送信済み' : 'モック待機中' }}
-              </span>
+              </StatusBadge>
             </div>
             <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{ mail.body }}</p>
             <p class="mt-4 text-sm text-muted-2">recipients: {{ mail.recipients.join(', ') }}</p>
@@ -141,7 +139,7 @@ async function handleCreateMail() {
             </p>
           </article>
         </div>
-      </section>
-    </section>
-  </section>
+      </SurfaceCard>
+    </div>
+  </PageLayout>
 </template>

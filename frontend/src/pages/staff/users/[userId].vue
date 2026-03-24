@@ -10,10 +10,12 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   createEditableLoginIds,
@@ -147,7 +149,7 @@ function handleRoleChange(event: Event, role: string) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/users"> ユーザー管理へ戻る </BackLink>
 
     <div v-if="userQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -271,16 +273,12 @@ function handleRoleChange(event: Event, role: string) {
         </SettingsRow>
       </SettingsSection>
 
-      <p v-if="successMessage" class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success">
-        {{ successMessage }}
-      </p>
-      <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-        {{ errorMessage }}
-      </p>
+      <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
+      <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
     </article>
 
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       ユーザーを取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

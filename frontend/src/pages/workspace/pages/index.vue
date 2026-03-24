@@ -10,7 +10,7 @@ import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
-import PageContentContainer from '@/components/ui/PageContentContainer.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { usePagesQuery } from '@/features/pages/api'
 import { useSessionStore } from '@/features/session/store'
@@ -42,7 +42,7 @@ async function handleSearchReset() {
 </script>
 
 <template>
-  <PageContentContainer>
+  <PageLayout>
     <div class="rounded border border-border bg-surface p-6 shadow-lv1">
       <h2 class="text-xl font-semibold text-body">お知らせ</h2>
       <p class="mt-2 text-sm text-muted">
@@ -98,5 +98,5 @@ async function handleSearchReset() {
         </ListItemLink>
       </div>
     </ListPanel>
-  </PageContentContainer>
+  </PageLayout>
 </template>

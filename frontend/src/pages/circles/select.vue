@@ -12,6 +12,7 @@ import { resolveCircleSelectorDestination, sanitizeCircleSelectorCircleId } from
 import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from '@/features/circles/api'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -57,7 +58,7 @@ watch(
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <ListPanel
       title="作業対象の企画を選択します。"
       :description="
@@ -110,5 +111,5 @@ watch(
         </RouterLink>
       </div>
     </ListPanel>
-  </section>
+  </PageLayout>
 </template>

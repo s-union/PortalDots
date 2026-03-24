@@ -11,9 +11,12 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
@@ -122,16 +125,12 @@ function handleDocumentChange(documentId: string, event: Event) {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-semibold text-body">お知らせ管理</h2>
-        <p class="mt-2 text-sm text-muted">
-          {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
-        </p>
-      </div>
-      <BackLink to="/staff"> Staff top へ戻る </BackLink>
-    </header>
+  <PageLayout>
+    <PageHeader title="お知らせ管理" :description="sessionStore.currentCircle?.name ?? '企画未選択'">
+      <template #actions>
+        <BackLink to="/staff">Staff top へ戻る</BackLink>
+      </template>
+    </PageHeader>
 
     <SurfaceCard>
       <SurfaceHeader>
@@ -293,9 +292,7 @@ function handleDocumentChange(documentId: string, event: Event) {
         </label>
         <p class="text-sm text-muted">配信予約はモックキューへの登録のみ行います。実メール送信は行いません。</p>
 
-        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-          {{ errorMessage }}
-        </p>
+        <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
 
         <div class="flex justify-end">
           <button
@@ -308,5 +305,5 @@ function handleDocumentChange(documentId: string, event: Event) {
         </div>
       </div>
     </form>
-  </section>
+  </PageLayout>
 </template>

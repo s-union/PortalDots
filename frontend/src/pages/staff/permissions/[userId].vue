@@ -10,10 +10,12 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractStaffPermissionsValidationMessage,
@@ -91,7 +93,7 @@ function handlePermissionChange(event: Event, permissionName: string) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/permissions"> 権限設定一覧へ戻る </BackLink>
 
     <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -155,18 +157,8 @@ function handlePermissionChange(event: Event, permissionName: string) {
               </section>
             </div>
 
-            <p
-              v-if="successMessage"
-              class="mt-4 rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-            >
-              {{ successMessage }}
-            </p>
-            <p
-              v-if="errorMessage"
-              class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-            >
-              {{ errorMessage }}
-            </p>
+            <AlertMessage v-if="successMessage" tone="success" class="mt-4">{{ successMessage }}</AlertMessage>
+            <AlertMessage v-if="errorMessage" class="mt-4">{{ errorMessage }}</AlertMessage>
           </SettingsRow>
           <template #footer>
             <button
@@ -184,5 +176,5 @@ function handlePermissionChange(event: Event, permissionName: string) {
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       権限詳細を取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

@@ -25,6 +25,7 @@ import {
   useStaffFormAnswersIndexQuery
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/create')
 const router = useRouter()
@@ -80,7 +81,7 @@ async function handleCreateAnswer() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
 
     <TabStrip :tabs="staffFormTabs" />
@@ -170,5 +171,5 @@ async function handleCreateAnswer() {
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       回答作成画面を表示できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

@@ -13,6 +13,7 @@ import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import {
   useCurrentCircleDetailQuery,
   useUpdateCircleMutation,
@@ -97,7 +98,7 @@ async function handleDelete() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/workspace"> ワークスペースへ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -212,5 +213,5 @@ async function handleDelete() {
     </template>
 
     <div v-else class="rounded border border-border px-6 py-6 text-sm text-muted">企画情報を取得できませんでした。</div>
-  </section>
+  </PageLayout>
 </template>

@@ -12,7 +12,9 @@ import { computed, ref } from 'vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { canManagePermissions } from '@/features/staff/access/capabilities'
 import { useStaffPermissionsQuery } from '@/features/staff/permissions/api'
@@ -37,7 +39,7 @@ function movePage(nextPage: number) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff"> Staff top へ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -68,28 +70,13 @@ function movePage(nextPage: number) {
               <p class="text-sm font-semibold text-body">{{ user.displayName }}</p>
               <p class="text-xs text-muted">{{ user.loginIds.join(', ') }}</p>
               <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="role in user.roles"
-                  :key="role"
-                  class="rounded-full bg-surface-light px-3 py-1 text-xs text-muted"
-                >
-                  {{ role }}
-                </span>
+                <StatusBadge v-for="role in user.roles" :key="role" tone="muted">{{ role }}</StatusBadge>
               </div>
               <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="permission in user.permissions"
-                  :key="permission.name"
-                  class="rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary"
-                >
+                <StatusBadge v-for="permission in user.permissions" :key="permission.name" tone="primary">
                   {{ permission.shortName }}
-                </span>
-                <span
-                  v-if="user.permissions.length === 0"
-                  class="rounded-full bg-surface-light px-3 py-1 text-xs text-muted"
-                >
-                  権限なし
-                </span>
+                </StatusBadge>
+                <StatusBadge v-if="user.permissions.length === 0" tone="muted">権限なし</StatusBadge>
               </div>
             </div>
             <span class="text-sm text-primary">
@@ -111,5 +98,5 @@ function movePage(nextPage: number) {
         />
       </template>
     </ListPanel>
-  </section>
+  </PageLayout>
 </template>

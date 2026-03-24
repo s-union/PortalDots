@@ -23,6 +23,7 @@ import {
   useStaffFormAnswersIndexQuery
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/')
 const sessionStore = useSessionStore()
@@ -39,7 +40,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink :to="`/staff/forms/${formId}`"> フォーム詳細へ戻る </BackLink>
 
     <TabStrip :tabs="staffFormTabs" />
@@ -89,10 +90,10 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
       </SurfaceCard>
 
       <section class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-        <div class="rounded border border-border bg-surface shadow-lv1">
-          <div class="border-b border-border px-6 py-4">
-            <h2 class="text-lg font-semibold text-body">回答一覧</h2>
-          </div>
+        <SurfaceCard>
+          <SurfaceHeader>
+            <template #title>回答一覧</template>
+          </SurfaceHeader>
 
           <div v-if="answersQuery.data.value.answers.length === 0" class="px-6 py-5 text-sm text-muted-2">
             まだ回答はありません。
@@ -126,12 +127,12 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
               </div>
             </li>
           </ul>
-        </div>
+        </SurfaceCard>
 
-        <aside class="rounded border border-border bg-surface shadow-lv1">
-          <div class="border-b border-border px-6 py-4">
-            <h2 class="text-lg font-semibold text-body">未回答企画</h2>
-          </div>
+        <SurfaceCard tag="aside">
+          <SurfaceHeader>
+            <template #title>未回答企画</template>
+          </SurfaceHeader>
           <ul v-if="answersQuery.data.value.notAnsweredCircles.length > 0" class="grid gap-0">
             <li
               v-for="circle in answersQuery.data.value.notAnsweredCircles"
@@ -159,12 +160,12 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
               </a>
             </div>
           </div>
-        </aside>
+        </SurfaceCard>
       </section>
     </article>
 
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       回答一覧を取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

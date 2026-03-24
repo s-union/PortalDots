@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import privacyPolicyMarkdown from '../../../resources/md/privacy_policy.md?raw'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 function escapeHtml(value: string) {
   return value
@@ -78,7 +79,7 @@ const privacyPolicyHtml = toSimpleHtml(privacyPolicyMarkdown)
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[1024px] px-6 py-4 max-[1000px]:px-4">
+  <PageLayout>
     <section class="pb-2 pt-4">
       <div class="rounded-[0.45rem] bg-surface shadow-lv1">
         <div class="px-6 py-[1.2rem] text-base leading-[1.7] text-body max-[1000px]:px-4">
@@ -90,5 +91,5 @@ const privacyPolicyHtml = toSimpleHtml(privacyPolicyMarkdown)
         </div>
       </div>
     </section>
-  </section>
+  </PageLayout>
 </template>

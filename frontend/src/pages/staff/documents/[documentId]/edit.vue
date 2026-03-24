@@ -11,10 +11,12 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -110,7 +112,7 @@ async function handleDeleteDocument() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/documents"> 配布資料管理へ戻る </BackLink>
 
     <div v-if="documentQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -177,13 +179,8 @@ async function handleDeleteDocument() {
         </SettingsRow>
       </SettingsSection>
 
-      <div v-if="successMessage" class="rounded border border-primary bg-primary-light px-4 py-3 text-sm text-primary">
-        {{ successMessage }}
-      </div>
-
-      <div v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-        {{ errorMessage }}
-      </div>
+      <AlertMessage v-if="successMessage" tone="info">{{ successMessage }}</AlertMessage>
+      <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
 
       <div class="flex flex-wrap justify-end gap-3">
         <button
@@ -207,5 +204,5 @@ async function handleDeleteDocument() {
     <div v-else class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
       配布資料を取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

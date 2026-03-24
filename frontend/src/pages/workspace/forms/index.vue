@@ -7,18 +7,19 @@ definePage({
 })
 
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import TabStrip from '@/components/ui/TabStrip.vue'
 import { useFormsQuery, type FormSummary } from '@/features/forms/api'
 import { useSessionStore } from '@/features/session/store'
+import type { TabStripItem } from '@/features/ui/tabStrip'
 
 type FormStatusTab = 'open' | 'closed' | 'all'
 
 const route = useRoute()
-const router = useRouter()
 const sessionStore = useSessionStore()
 const formsQuery = useFormsQuery()
 const formStatusTab = computed<FormStatusTab>(() => {
@@ -45,19 +46,10 @@ const visibleForms = computed(() => {
   return openForms.value
 })
 
-const tabs = computed(() => [
-  {
-    key: 'open' as const,
-    label: '受付中'
-  },
-  {
-    key: 'closed' as const,
-    label: '受付終了'
-  },
-  {
-    key: 'all' as const,
-    label: '全て'
-  }
+const tabs = computed<TabStripItem[]>(() => [
+  { label: '受付中', to: { query: {} }, active: formStatusTab.value === 'open' },
+  { label: '受付終了', to: { query: { status: 'closed' } }, active: formStatusTab.value === 'closed' },
+  { label: '全て', to: { query: { status: 'all' } }, active: formStatusTab.value === 'all' }
 ])
 
 function formMeta(form: FormSummary) {
@@ -68,31 +60,11 @@ function formMeta(form: FormSummary) {
 function formHref(form: FormSummary) {
   return `/workspace/forms/${form.id}`
 }
-
-async function selectTab(nextStatus: FormStatusTab) {
-  await router.replace({
-    query: nextStatus === 'open' ? {} : { status: nextStatus }
-  })
-}
 </script>
 
 <template>
   <PageContentContainer>
-    <nav class="flex overflow-x-auto border-b border-border">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="border-b-2 px-4 py-3 text-sm whitespace-nowrap"
-        :class="
-          tab.key === formStatusTab ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted'
-        "
-        type="button"
-        :aria-pressed="tab.key === formStatusTab"
-        @click="selectTab(tab.key)"
-      >
-        {{ tab.label }}
-      </button>
-    </nav>
+    <TabStrip :tabs="tabs" />
 
     <div v-if="formsQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...

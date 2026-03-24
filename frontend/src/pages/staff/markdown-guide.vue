@@ -10,6 +10,7 @@ definePage({
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const guideSections = [
   {
@@ -41,7 +42,7 @@ const guideSections = [
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff"> Staff top へ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -73,5 +74,5 @@ const guideSections = [
         </article>
       </div>
     </SurfaceCard>
-  </section>
+  </PageLayout>
 </template>

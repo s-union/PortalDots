@@ -11,7 +11,10 @@ definePage({
 
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import {
@@ -30,6 +33,7 @@ import {
   useUploadStaffFormAnswerFileMutation
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/[answerId]/edit')
 const router = useRouter()
@@ -121,7 +125,7 @@ function handleFileChange(questionId: string, event: Event) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
 
     <TabStrip :tabs="staffFormTabs" />
@@ -131,34 +135,31 @@ function handleFileChange(questionId: string, event: Event) {
     </div>
 
     <article v-else-if="answerQuery.data.value" class="space-y-6">
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-5">
-          <h2 class="text-2xl font-semibold text-body">{{ answerQuery.data.value.form.name }}</h2>
-          <div class="mt-3 space-y-1 text-sm text-muted">
-            <p>企画 : {{ answerQuery.data.value.circle.name }}</p>
-            <p>
-              受付期間 :
-              {{ answerQuery.data.value.form.openAt }}〜{{ answerQuery.data.value.form.closeAt }}
-            </p>
-            <p>回答 ID : {{ answerQuery.data.value.answer.id }}</p>
-            <p>作成日時 : {{ answerQuery.data.value.answer.createdAt }}</p>
-          </div>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>{{ answerQuery.data.value.form.name }}</template>
+          <template #description>
+            企画 : {{ answerQuery.data.value.circle.name }}<br />
+            受付期間 : {{ answerQuery.data.value.form.openAt }}〜{{ answerQuery.data.value.form.closeAt }}<br />
+            回答 ID : {{ answerQuery.data.value.answer.id }}<br />
+            作成日時 : {{ answerQuery.data.value.answer.createdAt }}
+          </template>
+        </SurfaceHeader>
         <div class="px-6 py-5">
           <p class="whitespace-pre-wrap text-sm leading-7 text-body">
             {{ answerQuery.data.value.form.description }}
           </p>
         </div>
-      </section>
+      </SurfaceCard>
 
       <section class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1">
         最終更新日時 : {{ answerQuery.data.value.answer.updatedAt }}
       </section>
 
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-base font-semibold text-body">回答を編集</h3>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>回答を編集</template>
+        </SurfaceHeader>
 
         <div class="grid gap-0">
           <template v-if="answerQuery.data.value.form.questions.length === 0">
@@ -215,7 +216,7 @@ function handleFileChange(questionId: string, event: Event) {
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-5">
-          <p v-if="errorMessage" class="text-sm text-danger">{{ errorMessage }}</p>
+          <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
           <div class="ml-auto flex flex-wrap gap-3">
             <button
               class="rounded border border-danger px-4 py-3 text-sm font-semibold text-danger transition hover:bg-danger-light"
@@ -235,12 +236,12 @@ function handleFileChange(questionId: string, event: Event) {
             </button>
           </div>
         </div>
-      </section>
+      </SurfaceCard>
 
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-base font-semibold text-body">同一企画の回答</h3>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>同一企画の回答</template>
+        </SurfaceHeader>
         <ul class="grid gap-0">
           <li
             v-for="sibling in answerQuery.data.value.siblingAnswers"
@@ -256,9 +257,9 @@ function handleFileChange(questionId: string, event: Event) {
             </RouterLink>
           </li>
         </ul>
-      </section>
+      </SurfaceCard>
     </article>
 
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">回答を取得できませんでした。</div>
-  </section>
+  </PageLayout>
 </template>

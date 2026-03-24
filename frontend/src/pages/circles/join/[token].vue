@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useJoinCircleMutation } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -62,7 +63,7 @@ function extractApiMessage(error: unknown) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/"> ホームへ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -113,5 +114,5 @@ function extractApiMessage(error: unknown) {
         </div>
       </div>
     </SurfaceCard>
-  </section>
+  </PageLayout>
 </template>

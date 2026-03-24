@@ -12,11 +12,14 @@ definePage({
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffFormPreviewQuery } from '@/features/staff/forms/api'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/forms/[formId]/preview')
 const sessionStore = useSessionStore()
@@ -30,7 +33,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'settings'
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink :to="`/staff/forms/${formId}`"> フォーム詳細へ戻る </BackLink>
 
     <TabStrip :tabs="staffFormTabs" />
@@ -40,25 +43,25 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'settings'
     </div>
 
     <article v-else-if="previewQuery.data.value" class="space-y-6">
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-5">
-          <h2 class="text-2xl font-semibold text-body">{{ previewQuery.data.value.name }}</h2>
-          <div class="mt-3 space-y-1 text-sm text-muted">
-            <p>受付期間 : {{ previewQuery.data.value.openAt }}〜{{ previewQuery.data.value.closeAt }}</p>
-            <p>{{ previewQuery.data.value.maxAnswers }} 件まで回答可能</p>
-          </div>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>{{ previewQuery.data.value.name }}</template>
+          <template #description>
+            受付期間 : {{ previewQuery.data.value.openAt }}〜{{ previewQuery.data.value.closeAt }}<br />
+            {{ previewQuery.data.value.maxAnswers }} 件まで回答可能
+          </template>
+        </SurfaceHeader>
         <div class="px-6 py-5">
           <p class="whitespace-pre-wrap text-sm leading-7 text-body">
             {{ previewQuery.data.value.description }}
           </p>
         </div>
-      </section>
+      </SurfaceCard>
 
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-base font-semibold text-body">プレビュー</h3>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>プレビュー</template>
+        </SurfaceHeader>
         <div class="grid gap-0">
           <template v-for="question in previewQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
@@ -107,11 +110,11 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'settings'
             </div>
           </template>
         </div>
-      </section>
+      </SurfaceCard>
     </article>
 
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       プレビューを取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

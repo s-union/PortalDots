@@ -13,6 +13,7 @@ import { computed } from 'vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { useSessionStore } from '@/features/session/store'
 
@@ -23,7 +24,7 @@ const bundleHref = computed(() => buildApiUrl('/staff/exports/bundle.zip'))
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <header class="flex items-end justify-between gap-4">
       <div>
         <p class="text-sm text-primary">Staff Exports</p>
@@ -80,5 +81,5 @@ const bundleHref = computed(() => buildApiUrl('/staff/exports/bundle.zip'))
         </article>
       </div>
     </SurfaceCard>
-  </section>
+  </PageLayout>
 </template>

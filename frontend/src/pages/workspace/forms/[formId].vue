@@ -10,6 +10,9 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { useFormDetailQuery } from '@/features/forms/api'
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
@@ -28,6 +31,7 @@ import {
 import { useSessionStore } from '@/features/session/store'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/workspace/forms/[formId]')
 const router = useRouter()
@@ -176,43 +180,36 @@ function handleFileChange(questionId: string, event: Event) {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <RouterLink
-      class="inline-flex rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-      to="/workspace/forms"
-    >
-      申請へ戻る
-    </RouterLink>
+  <PageLayout>
+    <BackLink to="/workspace/forms">申請へ戻る</BackLink>
 
     <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
     <article v-else-if="formQuery.data.value" class="space-y-6">
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-5">
-          <h2 class="text-2xl font-semibold text-body">{{ formQuery.data.value.name }}</h2>
-          <div class="mt-3 space-y-1 text-sm text-muted">
-            <p>
-              受付期間 : {{ formQuery.data.value.openAt }}〜{{ formQuery.data.value.closeAt }}
-              <span v-if="!formQuery.data.value.isOpen" class="font-semibold text-danger"> — 受付期間外です </span>
-            </p>
-            <p v-if="formQuery.data.value.maxAnswers > 1">
-              1企画あたり {{ formQuery.data.value.maxAnswers }} 件まで回答できます。
-            </p>
-          </div>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>{{ formQuery.data.value.name }}</template>
+          <template #description>
+            受付期間 : {{ formQuery.data.value.openAt }}〜{{ formQuery.data.value.closeAt }}
+            <span v-if="!formQuery.data.value.isOpen" class="font-semibold text-danger"> — 受付期間外です </span>
+            <template v-if="formQuery.data.value.maxAnswers > 1">
+              <br />1企画あたり {{ formQuery.data.value.maxAnswers }} 件まで回答できます。
+            </template>
+          </template>
+        </SurfaceHeader>
         <div class="px-6 py-5">
           <p class="whitespace-pre-wrap text-sm leading-7 text-body">
             {{ formQuery.data.value.description }}
           </p>
         </div>
-      </section>
+      </SurfaceCard>
 
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-base font-semibold text-body">申請企画名</h3>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>申請企画名</template>
+        </SurfaceHeader>
         <div class="px-6 py-5">
           <div class="flex flex-wrap items-center gap-3">
             <input
@@ -229,7 +226,7 @@ function handleFileChange(questionId: string, event: Event) {
             </RouterLink>
           </div>
         </div>
-      </section>
+      </SurfaceCard>
 
       <section
         v-if="selectedAnswer?.updatedAt"
@@ -238,10 +235,10 @@ function handleFileChange(questionId: string, event: Event) {
         回答の最終更新日時 : {{ selectedAnswer.updatedAt }}
       </section>
 
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-base font-semibold text-body">回答一覧</h3>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>回答一覧</template>
+        </SurfaceHeader>
         <div class="grid gap-4 px-6 py-5">
           <p class="text-sm text-muted">現在 {{ answers.length }} / {{ formQuery.data.value.maxAnswers }} 件</p>
           <div class="flex flex-wrap gap-3">
@@ -274,14 +271,12 @@ function handleFileChange(questionId: string, event: Event) {
             このフォームではこれ以上新しい回答を作成できません。
           </p>
         </div>
-      </section>
+      </SurfaceCard>
 
-      <section class="rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-4">
-          <h3 class="text-base font-semibold text-body">
-            {{ formQuery.data.value.questions.length > 0 ? '回答を入力' : '回答内容' }}
-          </h3>
-        </div>
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>{{ formQuery.data.value.questions.length > 0 ? '回答を入力' : '回答内容' }}</template>
+        </SurfaceHeader>
 
         <div class="grid gap-0">
           <template v-if="formQuery.data.value.questions.length === 0">
@@ -346,7 +341,7 @@ function handleFileChange(questionId: string, event: Event) {
             </div>
           </template>
         </div>
-      </section>
+      </SurfaceCard>
 
       <AlertMessage v-if="errorMessage" tone="danger">
         {{ errorMessage }}
@@ -365,5 +360,5 @@ function handleFileChange(questionId: string, event: Event) {
     </article>
 
     <AlertMessage v-else tone="danger"> フォームを取得できませんでした。 </AlertMessage>
-  </section>
+  </PageLayout>
 </template>

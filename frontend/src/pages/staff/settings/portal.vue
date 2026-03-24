@@ -9,10 +9,12 @@ definePage({
 })
 
 import { computed, ref, watch } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   extractStaffPortalSettingsValidationMessage,
@@ -77,7 +79,7 @@ async function handleSave() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/settings"> PortalDots の設定へ戻る </BackLink>
 
     <div v-if="settingsQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -183,15 +185,8 @@ async function handleSave() {
         </SettingsRow>
         <template #footer>
           <div class="space-y-4">
-            <p
-              v-if="successMessage"
-              class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-            >
-              {{ successMessage }}
-            </p>
-            <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-              {{ errorMessage }}
-            </p>
+            <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
+            <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
             <div class="flex justify-end">
               <button
                 class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:opacity-60"
@@ -205,5 +200,5 @@ async function handleSave() {
         </template>
       </SettingsSection>
     </form>
-  </section>
+  </PageLayout>
 </template>

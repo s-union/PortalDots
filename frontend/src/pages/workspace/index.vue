@@ -9,6 +9,7 @@ definePage({
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useSessionStore } from '@/features/session/store'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
@@ -55,7 +56,7 @@ const quickLinks = [
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">現在の企画</p>
       <h2 class="mt-2 text-2xl font-semibold text-body">
@@ -79,5 +80,5 @@ const quickLinks = [
         </ListItemLink>
       </div>
     </ListPanel>
-  </section>
+  </PageLayout>
 </template>

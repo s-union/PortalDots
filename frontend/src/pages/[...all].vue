@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/">ホームへ戻る</BackLink>
 
     <SurfaceCard>
@@ -19,5 +20,5 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
         </p>
       </div>
     </SurfaceCard>
-  </section>
+  </PageLayout>
 </template>

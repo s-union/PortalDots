@@ -11,10 +11,12 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
@@ -159,7 +161,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/pages"> お知らせ管理へ戻る </BackLink>
 
     <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -274,18 +276,8 @@ function handleDocumentChange(documentId: string, event: Event) {
             </li>
           </ul>
 
-          <p
-            v-if="successMessage"
-            class="mt-4 rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-          >
-            {{ successMessage }}
-          </p>
-          <p
-            v-if="errorMessage"
-            class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-          >
-            {{ errorMessage }}
-          </p>
+          <AlertMessage v-if="successMessage" tone="success" class="mt-4">{{ successMessage }}</AlertMessage>
+          <AlertMessage v-if="errorMessage" class="mt-4">{{ errorMessage }}</AlertMessage>
         </SettingsRow>
         <template #footer>
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -329,5 +321,5 @@ function handleDocumentChange(documentId: string, event: Event) {
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       お知らせを取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

@@ -35,6 +35,7 @@ import {
   useUpdateStaffParticipationTypeMutation
 } from '@/features/staff/participation-types/api'
 import { buildStaffParticipationTypeTabs } from '@/features/ui/tabStrip'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/participation-types/[typeId]')
 const router = useRouter()
@@ -141,7 +142,7 @@ function moveCirclesPage(nextPage: number) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/participation-types"> 参加種別管理へ戻る </BackLink>
 
     <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
@@ -438,5 +439,5 @@ function moveCirclesPage(nextPage: number) {
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       参加種別を取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

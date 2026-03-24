@@ -11,8 +11,11 @@ definePage({
 import { computed, ref } from 'vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffActivityLogsQuery } from '@/features/staff/admin/activityLogs'
 import { useSessionStore } from '@/features/session/store'
@@ -35,21 +38,22 @@ function movePage(nextPage: number) {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Staff Activity Logs</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">活動ログ</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">staff 操作の主要な mutation を時系列で確認します。</p>
-      </div>
-      <BackLink to="/staff"> Staff top へ戻る </BackLink>
-    </header>
+  <PageLayout>
+    <PageHeader
+      eyebrow="Staff Activity Logs"
+      title="活動ログ"
+      description="staff 操作の主要な mutation を時系列で確認します。"
+    >
+      <template #actions>
+        <BackLink to="/staff"> Staff top へ戻る </BackLink>
+      </template>
+    </PageHeader>
 
     <SurfaceCard overflow-hidden>
       <SurfaceHeader>
         <template #title>
           アクティビティログ
-          <span class="rounded-full bg-surface-light px-2 py-1 text-xs text-muted">BETA</span>
+          <StatusBadge tone="muted" size="sm">BETA</StatusBadge>
         </template>
         <template #description>
           「アクティビティログ」では、PortalDots 内で行われた各種データ操作の履歴を確認できます。
@@ -77,9 +81,7 @@ function movePage(nextPage: number) {
           <tbody class="divide-y divide-border">
             <tr v-for="entry in activityLogsQuery.data.value?.items" :key="entry.id" class="align-top">
               <td class="px-5 py-4">
-                <span class="rounded-full bg-primary-light px-3 py-1 text-xs text-primary">
-                  {{ entry.action }}
-                </span>
+                <StatusBadge tone="primary">{{ entry.action }}</StatusBadge>
               </td>
               <td class="px-5 py-4 text-body">{{ entry.summary }}</td>
               <td class="px-5 py-4 text-muted">{{ entry.actorUserId }}</td>
@@ -100,5 +102,5 @@ function movePage(nextPage: number) {
         @update:page="movePage"
       />
     </SurfaceCard>
-  </section>
+  </PageLayout>
 </template>

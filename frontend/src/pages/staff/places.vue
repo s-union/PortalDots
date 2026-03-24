@@ -10,6 +10,12 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffPlacesExportUrl,
@@ -70,33 +76,26 @@ async function handleDeletePlace(placeId: string) {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Staff Places</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">場所管理</h2>
-      </div>
-      <RouterLink
-        class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-        to="/staff"
-      >
-        Staff top へ戻る
-      </RouterLink>
-    </header>
+  <PageLayout>
+    <PageHeader eyebrow="Staff Places" title="場所管理">
+      <template #actions>
+        <BackLink to="/staff">Staff top へ戻る</BackLink>
+      </template>
+    </PageHeader>
 
-    <section class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-        <div>
-          <h3 class="text-base font-semibold text-body">場所一覧</h3>
-          <p class="mt-1 text-sm text-muted">場所名・タイプ・スタッフ用メモを一覧で管理します。</p>
-        </div>
-        <a
-          :href="exportHref"
-          class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-        >
-          CSVで出力(場所別企画一覧)
-        </a>
-      </div>
+    <SurfaceCard overflow-hidden>
+      <SurfaceHeader>
+        <template #title>場所一覧</template>
+        <template #description>場所名・タイプ・スタッフ用メモを一覧で管理します。</template>
+        <template #actions>
+          <a
+            :href="exportHref"
+            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+          >
+            CSVで出力(場所別企画一覧)
+          </a>
+        </template>
+      </SurfaceHeader>
 
       <form class="border-b border-border px-5 py-4" @submit.prevent="handleCreatePlace">
         <div class="grid gap-4 md:grid-cols-3">
@@ -130,9 +129,7 @@ async function handleDeletePlace(placeId: string) {
             新規場所
           </button>
         </div>
-        <p v-if="errorMessage" class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-          {{ errorMessage }}
-        </p>
+        <AlertMessage v-if="errorMessage" class="mt-4">{{ errorMessage }}</AlertMessage>
       </form>
 
       <div class="overflow-x-auto">
@@ -199,6 +196,6 @@ async function handleDeletePlace(placeId: string) {
           </tbody>
         </table>
       </div>
-    </section>
-  </section>
+    </SurfaceCard>
+  </PageLayout>
 </template>

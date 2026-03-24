@@ -11,7 +11,7 @@ import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
-import PageContentContainer from '@/components/ui/PageContentContainer.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -66,7 +66,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <PageContentContainer>
+  <PageLayout>
     <BackLink to="/workspace"> ワークスペースへ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -173,5 +173,5 @@ async function handleSubmit() {
         </div>
       </div>
     </ListPanel>
-  </PageContentContainer>
+  </PageLayout>
 </template>

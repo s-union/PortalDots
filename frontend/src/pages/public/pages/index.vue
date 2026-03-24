@@ -8,13 +8,15 @@ definePage({
 
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { usePublicPagesQuery } from '@/features/public-home/api'
 
 const pagesQuery = usePublicPagesQuery(true)
 </script>
 
 <template>
-  <section class="mx-auto max-w-[1024px] px-6 py-4 max-[1000px]:px-4">
+  <PageLayout>
     <div v-if="pagesQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
@@ -36,23 +38,17 @@ const pagesQuery = usePublicPagesQuery(true)
         >
           <template #title>{{ page.title }}</template>
           <template #prefix>
-            <span
-              :class="
-                page.isLimited
-                  ? 'rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary'
-                  : 'rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted'
-              "
-            >
+            <StatusBadge :tone="page.isLimited ? 'primary' : 'muted'" appearance="outlined">
               {{ page.isLimited ? '限定公開' : '全員に公開' }}
-            </span>
+            </StatusBadge>
           </template>
           <template v-if="page.isNew" #suffix>
-            <span class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"> NEW </span>
+            <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
           </template>
           <template #meta>{{ page.publishedAt }}</template>
           {{ page.summary }}
         </ListItemLink>
       </div>
     </ListPanel>
-  </section>
+  </PageLayout>
 </template>

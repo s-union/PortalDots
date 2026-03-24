@@ -10,6 +10,7 @@ definePage({
 import { computed } from 'vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import { buildHomeModeTabs } from '@/features/ui/tabStrip'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import {
   canManageCircles,
   canManageParticipationTypes,
@@ -169,7 +170,7 @@ const staffCards = computed<StaffCard[]>(() => [
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <TabStrip :tabs="homeTabs" />
 
     <section class="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
@@ -201,5 +202,5 @@ const staffCards = computed<StaffCard[]>(() => [
         利用可能なスタッフ機能がありません。管理者にアクセス権の付与を依頼してください。
       </div>
     </section>
-  </section>
+  </PageLayout>
 </template>

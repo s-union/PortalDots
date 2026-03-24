@@ -12,6 +12,7 @@ import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import {
   extractAddCircleMemberValidationMessage,
   useAddCircleMemberMutation,
@@ -102,7 +103,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/workspace/circles/detail"> 企画情報へ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -200,5 +201,5 @@ async function handleRemoveMember(userId: string, displayName: string) {
         </AlertMessage>
       </template>
     </SettingsSection>
-  </section>
+  </PageLayout>
 </template>

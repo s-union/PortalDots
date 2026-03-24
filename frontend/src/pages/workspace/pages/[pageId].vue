@@ -15,6 +15,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { usePageDetailQuery } from '@/features/pages/api'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/workspace/pages/[pageId]')
 const pageId = computed(() => String(route.params.pageId ?? ''))
@@ -22,7 +23,7 @@ const pageQuery = usePageDetailQuery(pageId)
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/workspace/pages"> お知らせへ戻る </BackLink>
 
     <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -71,5 +72,5 @@ const pageQuery = usePageDetailQuery(pageId)
     </article>
 
     <AlertMessage v-else tone="danger"> お知らせを取得できませんでした。 </AlertMessage>
-  </section>
+  </PageLayout>
 </template>

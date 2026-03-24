@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
@@ -81,12 +82,7 @@ const pageDetailPath = (pageId: string) =>
           <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">{{ page.title }}</h2>
           <div class="mt-px flex flex-wrap items-center gap-2 text-base text-muted">
             <span>{{ page.publishedAt }} 更新</span>
-            <span
-              v-if="page.isLimited"
-              class="rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary"
-            >
-              限定公開
-            </span>
+            <StatusBadge v-if="page.isLimited" tone="primary" appearance="outlined">限定公開</StatusBadge>
           </div>
         </div>
         <div class="px-6 py-[1.2rem] max-[1000px]:px-4">
@@ -175,15 +171,9 @@ const pageDetailPath = (pageId: string) =>
           <ListItemLink v-for="page in publicPages" :key="page.id" legacy :to="pageDetailPath(page.id)">
             <template #title>{{ page.title }}</template>
             <template #prefix>
-              <span
-                :class="
-                  page.isLimited
-                    ? 'rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary'
-                    : 'rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-muted'
-                "
-              >
+              <StatusBadge :tone="page.isLimited ? 'primary' : 'muted'" appearance="outlined">
                 {{ page.isLimited ? '限定公開' : '全員に公開' }}
-              </span>
+              </StatusBadge>
             </template>
             <template #meta>{{ page.publishedAt }}</template>
             {{ page.summary }}
@@ -215,7 +205,7 @@ const pageDetailPath = (pageId: string) =>
               {{ document.name }}
             </template>
             <template v-if="document.isNew" #suffix>
-              <span class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger">NEW</span>
+              <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
             </template>
             <template #meta>
               {{ document.updatedAt }} 更新

@@ -8,6 +8,8 @@ definePage({
 
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { usePublicDocumentsQuery } from '@/features/public-home/api'
@@ -16,7 +18,7 @@ const documentsQuery = usePublicDocumentsQuery(true)
 </script>
 
 <template>
-  <section class="mx-auto max-w-[1024px] px-6 py-4 max-[1000px]:px-4">
+  <PageLayout>
     <div
       v-if="documentsQuery.isPending.value"
       class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
@@ -46,7 +48,7 @@ const documentsQuery = usePublicDocumentsQuery(true)
             {{ document.name }}
           </template>
           <template v-if="document.isNew" #suffix>
-            <span class="rounded-full bg-danger-light px-2 py-0.5 text-xs font-semibold text-danger"> NEW </span>
+            <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
           </template>
           <template #meta>
             {{ document.updatedAt }} 更新
@@ -57,5 +59,5 @@ const documentsQuery = usePublicDocumentsQuery(true)
         </ListItemLink>
       </div>
     </ListPanel>
-  </section>
+  </PageLayout>
 </template>

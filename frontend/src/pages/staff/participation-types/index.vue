@@ -9,6 +9,13 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractStaffParticipationTypeValidationMessage,
@@ -71,24 +78,17 @@ async function handleCreate() {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Participation Types</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">参加種別管理</h2>
-      </div>
-      <RouterLink
-        class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-        to="/staff/circles"
-      >
-        企画管理へ戻る
-      </RouterLink>
-    </header>
+  <PageLayout>
+    <PageHeader eyebrow="Participation Types" title="参加種別管理">
+      <template #actions>
+        <BackLink to="/staff/circles">企画管理へ戻る</BackLink>
+      </template>
+    </PageHeader>
 
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-4">
-        <h3 class="text-lg font-semibold text-body">参加種別一覧</h3>
-      </div>
+    <SurfaceCard>
+      <SurfaceHeader>
+        <template #title>参加種別一覧</template>
+      </SurfaceHeader>
       <div v-if="participationTypesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
       <div v-else-if="(participationTypesQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
         参加種別はまだありません。
@@ -105,13 +105,13 @@ async function handleCreate() {
               <h3 class="text-lg font-medium text-body">{{ participationType.name }}</h3>
               <p class="mt-1 text-sm text-muted">{{ participationType.description }}</p>
             </div>
-            <span class="rounded-full bg-primary-light px-3 py-1 text-xs text-primary">
+            <StatusBadge tone="primary">
               {{ participationType.usersCountMin }} - {{ participationType.usersCountMax }} 人
-            </span>
+            </StatusBadge>
           </div>
         </RouterLink>
       </div>
-    </section>
+    </SurfaceCard>
 
     <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreate">
       <h3 class="text-lg font-semibold text-body">参加種別を新規作成</h3>
@@ -175,9 +175,7 @@ async function handleCreate() {
           <input v-model="form.isPublic" name="isPublic" type="checkbox" />
           参加登録画面を公開する
         </label>
-        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-          {{ errorMessage }}
-        </p>
+        <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
       </div>
       <div class="mt-5">
         <button
@@ -189,5 +187,5 @@ async function handleCreate() {
         </button>
       </div>
     </form>
-  </section>
+  </PageLayout>
 </template>

@@ -11,6 +11,7 @@ import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useCreateCircleMutation } from '@/features/circles/api'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
 
@@ -72,7 +73,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/workspace"> ワークスペースへ戻る </BackLink>
 
     <SurfaceCard tag="header">
@@ -152,5 +153,5 @@ async function handleSubmit() {
         </div>
       </template>
     </SettingsSection>
-  </section>
+  </PageLayout>
 </template>

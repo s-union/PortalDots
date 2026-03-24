@@ -10,10 +10,12 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   extractStaffCircleMailValidationMessage,
@@ -130,7 +132,7 @@ async function handleSendMail() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/circles"> 企画管理へ戻る </BackLink>
 
     <div v-if="circleQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -264,23 +266,12 @@ async function handleSendMail() {
         </template>
       </SettingsSection>
 
-      <p v-if="successMessage" class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success">
-        {{ successMessage }}
-      </p>
-      <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-        {{ errorMessage }}
-      </p>
-      <p
-        v-if="mailSuccessMessage"
-        class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success"
-      >
-        {{ mailSuccessMessage }}
-      </p>
-      <p v-if="mailErrorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-        {{ mailErrorMessage }}
-      </p>
+      <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
+      <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
+      <AlertMessage v-if="mailSuccessMessage" tone="success">{{ mailSuccessMessage }}</AlertMessage>
+      <AlertMessage v-if="mailErrorMessage">{{ mailErrorMessage }}</AlertMessage>
     </div>
 
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">企画を取得できませんでした。</div>
-  </section>
+  </PageLayout>
 </template>

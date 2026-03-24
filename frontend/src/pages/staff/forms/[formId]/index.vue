@@ -39,6 +39,8 @@ import {
 } from '@/features/staff/forms/api'
 import { useSessionStore } from '@/features/session/store'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/forms/[formId]/')
 const router = useRouter()
@@ -294,7 +296,7 @@ async function handleDeleteForm() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink to="/staff/forms"> フォーム管理へ戻る </BackLink>
 
     <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -508,9 +510,7 @@ async function handleDeleteForm() {
             >
               参加登録フォームの公開設定・受付期間・人数条件は参加種別画面から変更してください。
             </p>
-            <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-              {{ errorMessage }}
-            </p>
+            <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
             <div class="flex justify-end">
               <button
                 class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
@@ -558,12 +558,7 @@ async function handleDeleteForm() {
           </div>
         </div>
 
-        <p
-          v-if="questionErrorMessage"
-          class="mx-6 mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger"
-        >
-          {{ questionErrorMessage }}
-        </p>
+        <AlertMessage v-if="questionErrorMessage" class="mx-6 mt-4">{{ questionErrorMessage }}</AlertMessage>
 
         <div
           v-if="formQuery.data.value.questions.length === 0"
@@ -697,5 +692,5 @@ async function handleDeleteForm() {
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       フォームを取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

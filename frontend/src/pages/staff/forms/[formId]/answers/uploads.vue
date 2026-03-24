@@ -19,6 +19,7 @@ import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildStaffFormAnswerUploadsZipUrl, useStaffFormAnswersIndexQuery } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/uploads')
 const sessionStore = useSessionStore()
@@ -34,7 +35,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
 </script>
 
 <template>
-  <section class="space-y-6">
+  <PageLayout>
     <BackLink :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
 
     <TabStrip :tabs="staffFormTabs" />
@@ -81,5 +82,5 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       アップロード管理画面を表示できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

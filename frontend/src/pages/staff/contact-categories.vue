@@ -10,6 +10,12 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildDeleteStaffContactCategoryConfirmMessage,
@@ -70,28 +76,20 @@ async function handleDeleteCategory(categoryId: string) {
 </script>
 
 <template>
-  <section class="space-y-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Staff Contacts</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">問い合わせカテゴリ管理</h2>
-      </div>
-      <RouterLink
-        class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-        to="/staff"
-      >
-        Staff top へ戻る
-      </RouterLink>
-    </header>
+  <PageLayout>
+    <PageHeader eyebrow="Staff Contacts" title="問い合わせカテゴリ管理">
+      <template #actions>
+        <BackLink to="/staff">Staff top へ戻る</BackLink>
+      </template>
+    </PageHeader>
 
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-4">
-        <h3 class="text-lg font-semibold text-body">お問い合わせ受付設定</h3>
-      </div>
-
-      <div class="border-b border-border px-6 py-4 text-sm leading-7 text-muted">
-        ここでメールアドレスを設定するとポータルからのお問い合わせを振り分けることができます。
-      </div>
+    <SurfaceCard>
+      <SurfaceHeader>
+        <template #title>お問い合わせ受付設定</template>
+        <template #description
+          >ここでメールアドレスを設定するとポータルからのお問い合わせを振り分けることができます。</template
+        >
+      </SurfaceHeader>
 
       <form class="border-b border-border px-6 py-4" @submit.prevent="handleCreateCategory">
         <div class="grid gap-4 md:grid-cols-2">
@@ -116,9 +114,7 @@ async function handleDeleteCategory(categoryId: string) {
             メールアドレスを追加
           </button>
         </div>
-        <p v-if="errorMessage" class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-          {{ errorMessage }}
-        </p>
+        <AlertMessage v-if="errorMessage" class="mt-4">{{ errorMessage }}</AlertMessage>
       </form>
 
       <div class="divide-y divide-border">
@@ -154,6 +150,6 @@ async function handleDeleteCategory(categoryId: string) {
           <p class="mt-3 text-sm text-muted">現在値: {{ category.name }} / {{ category.email }}</p>
         </article>
       </div>
-    </section>
-  </section>
+    </SurfaceCard>
+  </PageLayout>
 </template>
