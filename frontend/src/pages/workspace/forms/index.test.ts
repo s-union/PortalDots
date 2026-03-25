@@ -216,14 +216,15 @@ describe('FormsIndexPage', () => {
     })
     await flushPromises()
 
-    await wrapper.get('button:nth-of-type(2)').trigger('click')
+    const tabs = wrapper.findAll('.border-b.border-border.bg-surface a')
+    await tabs[1].trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.query.status).toBe('closed')
     expect(wrapper.text()).toContain('備品返却報告')
     expect(wrapper.text()).not.toContain('展示チェックフォーム')
 
-    await wrapper.get('button:nth-of-type(3)').trigger('click')
+    await tabs[2].trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.query.status).toBe('all')

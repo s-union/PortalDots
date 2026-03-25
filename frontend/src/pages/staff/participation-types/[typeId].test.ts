@@ -175,7 +175,7 @@ describe('StaffParticipationTypeDetailPage', () => {
     expect(wrapper.get('a[href="/staff/forms/form-participation-food"]').text()).toContain('参加登録フォームを編集')
     expect(
       wrapper
-        .get('a[href="http://127.0.0.1:8081/v1/staff/participation-types/participation-type-food/circles/export"]')
+        .get('a[href="http://127.0.0.1:8080/v1/staff/participation-types/participation-type-food/circles/export"]')
         .text()
     ).toContain('CSV をダウンロード')
     expect(wrapper.get('a[href="/staff/circles/circle-a"]').text()).toContain('企画を開く')

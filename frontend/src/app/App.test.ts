@@ -8,7 +8,8 @@ import { useSessionStore } from '@/features/session/store'
 
 const appApiMocks = vi.hoisted(() => ({
   useSessionBootstrapQuery: vi.fn(),
-  useLogoutMutation: vi.fn()
+  useLogoutMutation: vi.fn(),
+  usePublicConfigQuery: vi.fn()
 }))
 
 vi.mock('@/features/session/api', () => ({
@@ -17,6 +18,10 @@ vi.mock('@/features/session/api', () => ({
 
 vi.mock('@/features/auth/api', () => ({
   useLogoutMutation: appApiMocks.useLogoutMutation
+}))
+
+vi.mock('@/features/public-home/api', () => ({
+  usePublicConfigQuery: appApiMocks.usePublicConfigQuery
 }))
 
 import App from './App.vue'
@@ -41,6 +46,9 @@ describe('App', () => {
     const sessionStore = useSessionStore()
     sessionStore.reset()
     appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) })
+    appApiMocks.usePublicConfigQuery.mockReturnValue({
+      data: ref({ isDemo: false, appName: 'PortalDots' })
+    })
     appApiMocks.useLogoutMutation.mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: ref(false)
@@ -121,6 +129,9 @@ describe('App', () => {
     const sessionStore = useSessionStore()
     sessionStore.reset()
     appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) })
+    appApiMocks.usePublicConfigQuery.mockReturnValue({
+      data: ref({ isDemo: false, appName: 'PortalDots' })
+    })
     appApiMocks.useLogoutMutation.mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: ref(false)
@@ -212,6 +223,9 @@ describe('App', () => {
       user: { id: 'user-1', displayName: 'Demo User', canDeleteAccount: false }
     })
     appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) })
+    appApiMocks.usePublicConfigQuery.mockReturnValue({
+      data: ref({ isDemo: false, appName: 'PortalDots' })
+    })
     appApiMocks.useLogoutMutation.mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: ref(false)
@@ -287,6 +301,81 @@ describe('App', () => {
         configurable: true,
         value: originalInnerWidth
       })
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia
+      })
+    }
+  })
+
+  it('hides privacy policy in staff demo mode footer', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      permissions: [],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User',
+        canDeleteAccount: false
+      }
+    })
+    appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) })
+    appApiMocks.usePublicConfigQuery.mockReturnValue({
+      data: ref({ isDemo: true, appName: 'PortalDots Demo' })
+    })
+    appApiMocks.useLogoutMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: ref(false)
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff top</div>' } },
+        { path: '/support', component: { template: '<div>support</div>' } },
+        { path: '/privacy_policy', component: { template: '<div>privacy</div>' } }
+      ]
+    })
+    await router.push('/staff')
+    await router.isReady()
+
+    const originalMatchMedia = window.matchMedia
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: () => ({
+        matches: false,
+        media: '(max-width: 1000px)',
+        onchange: null,
+        addEventListener() {},
+        removeEventListener() {},
+        addListener() {},
+        removeListener() {},
+        dispatchEvent() {
+          return true
+        }
+      })
+    })
+
+    try {
+      const wrapper = mount(App, {
+        global: {
+          plugins: [pinia, router, createQueryPlugin()]
+        }
+      })
+      await flushPromises()
+
+      expect(wrapper.find('aside a[href="/support"]').exists()).toBe(false)
+      expect(wrapper.find('aside a[href="/privacy_policy"]').exists()).toBe(false)
+      expect(wrapper.find('main a[href="/support"]').exists()).toBe(true)
+      expect(wrapper.find('main a[href="/privacy_policy"]').exists()).toBe(false)
+    } finally {
       Object.defineProperty(window, 'matchMedia', {
         configurable: true,
         writable: true,

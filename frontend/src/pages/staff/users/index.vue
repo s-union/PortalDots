@@ -11,7 +11,7 @@ definePage({
 import { computed, ref } from 'vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildStaffUsersExportUrl, useStaffUsersQuery } from '@/features/staff/users/api'
@@ -20,95 +20,210 @@ import { useSessionStore } from '@/features/session/store'
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const page = ref(1)
-const pageSize = 10
+const pageSize = ref(25)
+const staffUserSortKeys = ['id', 'displayName', 'loginIds', 'roles', 'isVerified'] as const
+type StaffUserSortKey = (typeof staffUserSortKeys)[number]
+
+const sortKey = ref<StaffUserSortKey>('id')
+const sortDirection = ref<'asc' | 'desc'>('asc')
 const usersQuery = useStaffUsersQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
     page: page.value,
-    pageSize
+    pageSize: pageSize.value
   }))
 )
 const exportUrl = buildStaffUsersExportUrl()
 
-function movePage(nextPage: number) {
-  page.value = nextPage
+const columns: StaffDataGridColumn[] = [
+  {
+    key: 'id',
+    label: 'ユーザーID',
+    sortable: true
+  },
+  {
+    key: 'displayName',
+    label: 'ユーザー',
+    sortable: true
+  },
+  {
+    key: 'loginIds',
+    label: 'ログイン ID',
+    sortable: true
+  },
+  {
+    key: 'roles',
+    label: 'ユーザー種別',
+    sortable: true
+  },
+  {
+    key: 'isVerified',
+    label: '本人確認',
+    sortable: true,
+    align: 'center'
+  }
+]
+
+const rows = computed<StaffUserRow[]>(() => usersQuery.data.value?.items ?? [])
+const sortedRows = computed<StaffUserRow[]>(() => {
+  const cloned = [...rows.value]
+  const direction = sortDirection.value === 'asc' ? 1 : -1
+  const key = sortKey.value
+
+  cloned.sort((left, right) => {
+    const leftValue = toSortableValue(left, key)
+    const rightValue = toSortableValue(right, key)
+
+    if (leftValue < rightValue) {
+      return -1 * direction
+    }
+    if (leftValue > rightValue) {
+      return direction
+    }
+    return 0
+  })
+
+  return cloned
+})
+const gridRows = computed<StaffDataGridRow[]>(() => sortedRows.value.map((user) => ({ ...user })))
+
+function handleSort(nextKey: string) {
+  if (!isStaffUserSortKey(nextKey)) {
+    return
+  }
+
+  if (sortKey.value === nextKey) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+    return
+  }
+
+  sortKey.value = nextKey
+  sortDirection.value = 'asc'
+}
+
+function handleFirstPage() {
+  page.value = 1
+}
+
+function handlePrevPage() {
+  page.value = Math.max(1, page.value - 1)
+}
+
+function handleNextPage() {
+  const total = usersQuery.data.value?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize.value))
+  page.value = Math.min(totalPages, page.value + 1)
+}
+
+function handleLastPage() {
+  const total = usersQuery.data.value?.total ?? 0
+  page.value = Math.max(1, Math.ceil(total / pageSize.value))
+}
+
+async function handleReload() {
+  if (typeof usersQuery.refetch === 'function') {
+    await usersQuery.refetch()
+  }
+}
+
+function handlePageSizeChange(nextSize: number) {
+  pageSize.value = nextSize
+  page.value = 1
+}
+
+interface StaffUserRow {
+  id: string
+  displayName: string
+  loginIds: string[]
+  roles: string[]
+  isVerified: boolean
+}
+
+function isStaffUserSortKey(value: string): value is StaffUserSortKey {
+  return (staffUserSortKeys as readonly string[]).includes(value)
+}
+
+function toSortableValue(user: StaffUserRow, key: StaffUserSortKey) {
+  if (key === 'loginIds') {
+    return user.loginIds.join(',').toLowerCase()
+  }
+
+  if (key === 'roles') {
+    return user.roles.join(',').toLowerCase()
+  }
+
+  if (key === 'isVerified') {
+    return user.isVerified ? 1 : 0
+  }
+
+  return String(user[key]).toLowerCase()
 }
 </script>
 
 <template>
   <PageLayout>
     <DataCard title="ユーザー情報管理" overflow-hidden>
-      <template #toolbar>
-        <a
-          :href="exportUrl"
-          class="inline-flex items-center gap-2 rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
-        >
-          <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-          CSVで出力
-        </a>
-      </template>
+      <StaffDataGrid
+        :rows="gridRows"
+        :columns="columns"
+        :page="page"
+        :page-size="pageSize"
+        :total="usersQuery.data.value?.total ?? 0"
+        :loading="usersQuery.isPending.value"
+        :sort-key="sortKey"
+        :sort-direction="sortDirection"
+        empty-message="対象ユーザーが見つかりませんでした。"
+        table-label="staff users"
+        @first="handleFirstPage"
+        @prev="handlePrevPage"
+        @next="handleNextPage"
+        @last="handleLastPage"
+        @reload="handleReload"
+        @sort="handleSort"
+        @update:page-size="handlePageSizeChange"
+      >
+        <template #toolbar>
+          <a
+            :href="exportUrl"
+            class="inline-flex items-center gap-2 rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
+          >
+            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+            CSVで出力
+          </a>
+        </template>
 
-      <div v-if="usersQuery.isPending.value" class="px-5 py-6 text-sm text-muted">読み込み中...</div>
+        <template #actions="{ row }">
+          <RouterLink
+            :to="`/staff/users/${String(row.id)}`"
+            class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
+            title="編集"
+          >
+            <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+          </RouterLink>
+        </template>
 
-      <div v-else-if="(usersQuery.data.value?.items.length ?? 0) === 0" class="px-5 py-6 text-sm text-muted">
-        対象ユーザーが見つかりませんでした。
-      </div>
+        <template #cell-displayName="{ value }">
+          <p class="font-medium text-body">{{ String(value) }}</p>
+        </template>
 
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-border text-sm">
-          <thead class="bg-surface-light text-left text-muted-2">
-            <tr>
-              <th class="px-5 py-3 font-medium">ユーザー</th>
-              <th class="px-5 py-3 font-medium">ログイン ID</th>
-              <th class="px-5 py-3 font-medium">ユーザー種別</th>
-              <th class="px-5 py-3 font-medium">本人確認</th>
-              <th class="px-5 py-3 font-medium text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border">
-            <tr v-for="user in usersQuery.data.value?.items" :key="user.id" class="align-top">
-              <td class="px-5 py-4">
-                <p class="font-medium text-body">{{ user.displayName }}</p>
-                <p class="mt-1 text-xs text-muted">ユーザーID: {{ user.id }}</p>
-              </td>
-              <td class="px-5 py-4 text-body">
-                {{ user.loginIds.join(', ') }}
-              </td>
-              <td class="px-5 py-4">
-                <div class="flex flex-wrap gap-2">
-                  <StatusBadge v-for="role in user.roles" :key="role" tone="primary" size="sm">
-                    {{ role }}
-                  </StatusBadge>
-                </div>
-              </td>
-              <td class="px-5 py-4">
-                <StatusBadge :tone="user.isVerified ? 'success' : 'danger'" size="sm">
-                  {{ user.isVerified ? '確認済み' : '未確認' }}
-                </StatusBadge>
-              </td>
-              <td class="px-5 py-4 text-right">
-                <RouterLink
-                  :to="`/staff/users/${user.id}`"
-                  class="inline-flex rounded border border-border px-3 py-2 text-sm text-body transition hover:bg-surface-light"
-                >
-                  <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-                  編集
-                </RouterLink>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <template #footer>
-        <PaginationFooter
-          v-if="usersQuery.data.value && usersQuery.data.value.total > 0"
-          :page="page"
-          :page-size="usersQuery.data.value.pageSize"
-          :total="usersQuery.data.value.total"
-          :bordered="false"
-          @update:page="movePage"
-        />
-      </template>
+        <template #cell-loginIds="{ value }">
+          {{ Array.isArray(value) ? value.join(', ') : '-' }}
+        </template>
+
+        <template #cell-roles="{ value }">
+          <div class="flex flex-wrap gap-2">
+            <StatusBadge v-for="role in Array.isArray(value) ? value : []" :key="String(role)" tone="primary" size="sm">
+              {{ String(role) }}
+            </StatusBadge>
+          </div>
+        </template>
+
+        <template #cell-isVerified="{ value }">
+          <StatusBadge :tone="value === true ? 'success' : 'danger'" size="sm">
+            {{ value === true ? '確認済み' : '未確認' }}
+          </StatusBadge>
+        </template>
+      </StaffDataGrid>
     </DataCard>
   </PageLayout>
 </template>

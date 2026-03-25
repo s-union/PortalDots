@@ -3,20 +3,18 @@ import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { usePublicHomeQuery, usePublicConfigQuery } from '@/features/public-home/api'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
-import { buildHomeModeTabs } from '@/features/ui/tabStrip'
 
 const sessionStore = useSessionStore()
 const publicHomeQuery = usePublicHomeQuery(computed(() => true))
 const publicConfigQuery = usePublicConfigQuery()
 
 const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions))
-const homeTabs = computed(() => buildHomeModeTabs(false))
 const publicHome = computed(() => publicHomeQuery.data.value)
 const publicPinnedPages = computed(() => publicHome.value?.pinnedPages ?? [])
 const publicParticipationTypes = computed(() => publicHome.value?.participationTypes ?? [])
@@ -34,7 +32,7 @@ const pageDetailPath = (pageId: string) =>
 
 <template>
   <section class="space-y-6">
-    <TabStrip v-if="sessionStore.isAuthenticated && canAccessStaff" :tabs="homeTabs" />
+    <HomeModeTabs v-if="sessionStore.isAuthenticated && canAccessStaff" :is-staff-page="false" />
 
     <!-- 未ログインのみ表示するヒーローヘッダー -->
     <header v-if="!sessionStore.isAuthenticated" class="border-b border-border bg-surface">

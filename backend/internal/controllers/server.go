@@ -227,7 +227,9 @@ func NewServerWithDependencies(
 ) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
-	middlewares.Setup(e)
+	middlewares.Setup(e, middlewares.SetupConfig{
+		AllowedOrigins: []string{cfg.AppURL},
+	})
 
 	shared := sharedDeps{
 		sessionCookieName:     cfg.SessionCookieName,
@@ -368,6 +370,7 @@ func NewServerWithDependencies(
 		AllowInsecureDefaults: cfg.AllowInsecureDefaults,
 		Sessions:              sessionStore,
 	}
+	v1.Use(middlewares.VerifyCSRF(sessionMiddlewareConfig))
 
 	RegisterPublicRoutes(v1, PublicRoutes{
 		GetPublicConfig:          publicHomeH.getPublicConfig,

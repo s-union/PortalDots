@@ -10,7 +10,7 @@ vi.mock('@/features/staff/forms/api', async () => {
   }
 })
 
-import StaffFormAnswerPreviewSection from './StaffFormAnswerPreviewSection.vue'
+import FormAnswerPreviewPanel from './FormAnswerPreviewPanel.vue'
 
 function createForm(overrides: Partial<StaffFormDetail> = {}): StaffFormDetail {
   return {
@@ -121,9 +121,9 @@ function createForm(overrides: Partial<StaffFormDetail> = {}): StaffFormDetail {
   }
 }
 
-describe('StaffFormAnswerPreviewSection', () => {
+describe('FormAnswerPreviewPanel', () => {
   it('renders answer details, upload links, and management link', () => {
-    const wrapper = mount(StaffFormAnswerPreviewSection, {
+    const wrapper = mount(FormAnswerPreviewPanel, {
       props: {
         formId: 'form-1',
         form: createForm()
@@ -149,7 +149,7 @@ describe('StaffFormAnswerPreviewSection', () => {
   })
 
   it('hides management link for participation form and shows empty states', () => {
-    const wrapper = mount(StaffFormAnswerPreviewSection, {
+    const wrapper = mount(FormAnswerPreviewPanel, {
       props: {
         formId: 'form-1',
         isParticipationForm: true,

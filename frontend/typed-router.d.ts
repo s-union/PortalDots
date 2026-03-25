@@ -153,6 +153,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/staff/contact-categories': RouteRecordInfo<
+      '/staff/contact-categories',
+      '/staff/contacts/categories',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/staff/about': RouteRecordInfo<
       '/staff/about',
       '/staff/about',
@@ -179,13 +186,6 @@ declare module 'vue-router/auto-routes' {
       '/staff/circles/:circleId',
       { circleId: ParamValue<true> },
       { circleId: ParamValue<false> },
-      | never
-    >,
-    '/staff/contact-categories': RouteRecordInfo<
-      '/staff/contact-categories',
-      '/staff/contact-categories',
-      Record<never, never>,
-      Record<never, never>,
       | never
     >,
     '/staff/documents/': RouteRecordInfo<
@@ -592,6 +592,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/staff/contact-categories.vue': {
+      routes:
+        | '/staff/contact-categories'
+      views:
+        | never
+    }
     'src/pages/staff/about.vue': {
       routes:
         | '/staff/about'
@@ -613,12 +619,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/staff/circles/[circleId].vue': {
       routes:
         | '/staff/circles/[circleId]'
-      views:
-        | never
-    }
-    'src/pages/staff/contact-categories.vue': {
-      routes:
-        | '/staff/contact-categories'
       views:
         | never
     }

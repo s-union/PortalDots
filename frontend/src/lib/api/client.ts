@@ -1,6 +1,6 @@
 import { createApiClient, createQueryClient, expectApiData, expectApiNoContent } from '@portaldots/api-client'
 
-export const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8081/v1').replace(/\/$/, '')
+export const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080/v1').replace(/\/$/, '')
 
 function resolveApiClientBaseUrl(baseUrl: string) {
   if (/^https?:\/\//.test(baseUrl)) {
@@ -36,7 +36,7 @@ function resolvePublicApiOrigin(baseUrl: string) {
     return globalThis.location.origin
   }
 
-  return 'http://127.0.0.1:8081'
+  return 'http://127.0.0.1:8080'
 }
 
 const apiClientBaseUrl = resolveApiClientBaseUrl(apiBaseUrl)

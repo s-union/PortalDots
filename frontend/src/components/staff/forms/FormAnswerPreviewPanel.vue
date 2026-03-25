@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { buildStaffFormUploadDownloadUrl, type StaffFormDetail } from '@/features/staff/forms/api'
+import { type StaffFormDetail } from '@/features/staff/forms/api'
+import UploadFileRow from './UploadFileRow.vue'
 
 const { formId, form, isParticipationForm } = defineProps<{
   formId: string
@@ -56,24 +57,13 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
             <p v-if="answerUploads(question.id).length === 0" class="text-sm text-muted-2">
               添付ファイルはありません。
             </p>
-            <div
+            <UploadFileRow
               v-for="upload in answerUploads(question.id)"
               :key="upload.id"
-              class="flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-surface-light px-4 py-3 text-sm text-body"
-            >
-              <div>
-                <p>{{ upload.filename }}</p>
-                <p class="mt-1 text-xs text-muted-2">
-                  {{ upload.mimeType }} / {{ upload.sizeBytes }} bytes / {{ upload.createdAt }}
-                </p>
-              </div>
-              <a
-                :href="buildStaffFormUploadDownloadUrl(formId, upload.id)"
-                class="rounded border border-border px-4 py-2 text-xs text-body transition hover:bg-surface"
-              >
-                ダウンロード
-              </a>
-            </div>
+              :form-id="formId"
+              :upload="upload"
+              variant="highlight"
+            />
           </div>
 
           <p v-else-if="question.type === 'checkbox'" class="mt-3 text-sm leading-7 text-body">
@@ -101,23 +91,8 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
       <p v-if="totalUploads === 0" class="mt-3 text-sm text-muted-2">添付ファイルはまだありません。</p>
 
       <ul v-else class="mt-3 grid gap-3">
-        <li
-          v-for="upload in form.answer?.uploads"
-          :key="upload.id"
-          class="flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-surface px-4 py-3 text-sm text-body"
-        >
-          <div>
-            <p>{{ upload.filename }}</p>
-            <p class="mt-1 text-xs text-muted-2">
-              {{ upload.mimeType }} / {{ upload.sizeBytes }} bytes / {{ upload.createdAt }}
-            </p>
-          </div>
-          <a
-            :href="buildStaffFormUploadDownloadUrl(formId, upload.id)"
-            class="rounded border border-border px-4 py-2 text-xs text-body transition hover:bg-surface-light"
-          >
-            ダウンロード
-          </a>
+        <li v-for="upload in form.answer?.uploads" :key="upload.id">
+          <UploadFileRow :form-id="formId" :upload="upload" />
         </li>
       </ul>
     </div>

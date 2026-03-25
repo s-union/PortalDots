@@ -1660,6 +1660,8 @@ func TestStaffVerificationFlow(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
+	csrfToken := fetchCSRFToken(t, server, cookies)
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/status", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -1673,7 +1675,9 @@ func TestStaffVerificationFlow(t *testing.T) {
 		t.Fatalf("unexpected initial staff status: %#v", initialStatus)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{})
+	csrf := map[string]string{"X-CSRF-Token": csrfToken}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{}, csrf)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1688,7 +1692,7 @@ func TestStaffVerificationFlow(t *testing.T) {
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
 		"verifyCode": "123456",
-	})
+	}, csrf)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
@@ -1721,14 +1725,16 @@ func TestStaffVerificationRejectsWrongCode(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{})
+	csrf := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{}, csrf)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
 		"verifyCode": "999999",
-	})
+	}, csrf)
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
@@ -4252,6 +4258,7 @@ func doJSONRequest(
 	method string,
 	path string,
 	payload any,
+	extraHeaders ...map[string]string,
 ) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -4269,6 +4276,11 @@ func doJSONRequest(
 	for _, cookie := range cookies {
 		req.AddCookie(cookie)
 	}
+	for _, hdrs := range extraHeaders {
+		for k, v := range hdrs {
+			req.Header.Set(k, v)
+		}
+	}
 
 	recorder := httptest.NewRecorder()
 	server.ServeHTTP(recorder, req)
@@ -4282,6 +4294,22 @@ func doJSONRequest(
 	}
 
 	return recorder
+}
+
+func fetchCSRFToken(t *testing.T, server *echo.Echo, cookies map[string]*http.Cookie) string {
+	t.Helper()
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/session/bootstrap", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected bootstrap status %d, got %d", http.StatusOK, recorder.Code)
+	}
+	var response sessionBootstrapResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal bootstrap response: %v", err)
+	}
+	if response.CSRFToken == "" {
+		t.Fatal("expected non-empty csrf token from bootstrap")
+	}
+	return response.CSRFToken
 }
 
 func doMultipartRequest(

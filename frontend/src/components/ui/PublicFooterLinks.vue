@@ -1,6 +1,7 @@
 <script setup lang="ts">
-const { appName } = defineProps<{
+const { appName, showPrivacyPolicy = true } = defineProps<{
   appName?: string
+  showPrivacyPolicy?: boolean
 }>()
 </script>
 
@@ -22,10 +23,12 @@ const { appName } = defineProps<{
       <RouterLink class="font-semibold text-muted transition hover:text-body hover:underline" to="/support">
         推奨動作環境
       </RouterLink>
-      <span aria-hidden="true">•</span>
-      <RouterLink class="font-semibold text-muted transition hover:text-body hover:underline" to="/privacy_policy">
-        プライバシーポリシー
-      </RouterLink>
+      <template v-if="showPrivacyPolicy">
+        <span aria-hidden="true">•</span>
+        <RouterLink class="font-semibold text-muted transition hover:text-body hover:underline" to="/privacy_policy">
+          プライバシーポリシー
+        </RouterLink>
+      </template>
     </div>
   </div>
 </template>

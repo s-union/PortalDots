@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/contacts/categories',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,

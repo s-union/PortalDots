@@ -10,4 +10,4 @@
 
 ## Rule of thumb
 
-Each file here should correspond to a URL or a closely related route screen. Business logic should stay thin and call into `src/features`.
+Each file here should correspond to a URL or a closely related route screen. Keep business logic thin—delegate to `src/features` for API/domain logic and `src/components` for UI building blocks.

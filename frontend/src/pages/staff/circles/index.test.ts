@@ -36,6 +36,7 @@ describe('StaffCirclesIndexPage', () => {
       },
       featureFlags: [],
       roles: ['admin'],
+      permissions: ['staff.circles'],
       user: {
         id: 'staff-user',
         displayName: 'Staff User'
@@ -225,7 +226,14 @@ describe('StaffCirclesIndexPage', () => {
     expect(wrapper.text()).toContain('デモ企画A')
     expect(wrapper.text()).toContain('模擬店')
     expect(wrapper.text()).toContain('全企画数: 2')
-    expect(wrapper.get('a[href="http://127.0.0.1:8081/v1/staff/circles/export"]').text()).toContain('CSVで出力')
+    expect(wrapper.text()).toContain('表示件数:')
+    expect(wrapper.get('a[href="http://127.0.0.1:8080/v1/staff/circles/export"]').text()).toContain('CSVで出力')
+
+    await wrapper.get('thead button').trigger('click')
+    expect(wrapper.text()).toContain('デモ企画A')
+
+    await wrapper.get('select').setValue('50')
+    await flushPromises()
 
     await wrapper.get('input[name="name"]').setValue('追加企画')
     await wrapper.get('input[name="groupName"]').setValue('Cブロック')

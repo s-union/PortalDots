@@ -132,7 +132,7 @@ describe('StaffFormUploadsPage', () => {
     expect(wrapper.text()).toContain('アップロード件数:')
     expect(wrapper.text()).toContain('3 件')
     expect(
-      wrapper.get('a[href="http://127.0.0.1:8081/v1/staff/forms/form-circle-b-1/answers/uploads.zip"]').text()
+      wrapper.get('a[href="http://127.0.0.1:8080/v1/staff/forms/form-circle-b-1/answers/uploads.zip"]').text()
     ).toContain('ダウンロードする (ZIP)')
   })
 })

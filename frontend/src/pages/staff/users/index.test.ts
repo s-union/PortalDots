@@ -49,7 +49,7 @@ describe('StaffUsersIndexPage', () => {
     statusApiMocks.useStaffStatusQuery.mockReturnValue({
       data: ref({ allowed: true, authorized: true })
     })
-    usersApiMocks.buildStaffUsersExportUrl.mockReturnValue('http://127.0.0.1:8081/v1/staff/users/export')
+    usersApiMocks.buildStaffUsersExportUrl.mockReturnValue('http://127.0.0.1:8080/v1/staff/users/export')
     usersApiMocks.useStaffUsersQuery.mockReturnValue({
       data: ref({
         items: [
@@ -99,6 +99,15 @@ describe('StaffUsersIndexPage', () => {
     expect(wrapper.text()).toContain('participant')
     expect(wrapper.text()).toContain('確認済み')
     expect(wrapper.text()).toContain('未確認')
-    expect(wrapper.get('a[href="http://127.0.0.1:8081/v1/staff/users/export"]').text()).toContain('CSVで出力')
+    expect(wrapper.text()).toContain('表示件数:')
+    expect(wrapper.text()).toContain('全2件')
+    expect(wrapper.get('a[href="http://127.0.0.1:8080/v1/staff/users/export"]').text()).toContain('CSVで出力')
+
+    await wrapper.get('thead button').trigger('click')
+    expect(wrapper.text()).toContain('Demo User')
+
+    await wrapper.get('select').setValue('50')
+    await flushPromises()
+    expect(usersApiMocks.useStaffUsersQuery).toHaveBeenCalled()
   })
 })

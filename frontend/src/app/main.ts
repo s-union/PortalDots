@@ -16,4 +16,4 @@ app.use(pinia)
 app.use(router)
 app.use(VueQueryPlugin, { queryClient })
 
-app.mount('#app')
+app.mount('#v2-app')

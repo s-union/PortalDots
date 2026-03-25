@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"crypto/subtle"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -8,10 +9,63 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 )
 
+// SetupConfig configures the standard middleware stack.
+type SetupConfig struct {
+	// AllowedOrigins is a list of origins allowed for CORS requests.
+	// If empty, CORS middleware is not added.
+	AllowedOrigins []string
+}
+
 // Setup applies the standard middleware stack to the Echo instance.
-func Setup(e *echo.Echo) {
+func Setup(e *echo.Echo, cfg SetupConfig) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
+	if len(cfg.AllowedOrigins) > 0 {
+		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+			AllowOrigins:     cfg.AllowedOrigins,
+			AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodHead, http.MethodOptions},
+			AllowHeaders:     []string{echo.HeaderContentType, "X-CSRF-Token"},
+			AllowCredentials: true,
+		}))
+	}
+}
+
+// VerifyCSRF validates the X-CSRF-Token header against the session's CSRF token
+// for state-mutating requests (POST, PUT, PATCH, DELETE).
+// Requests with no active session (e.g. the login endpoint) are skipped.
+// When AllowInsecureDefaults is true the check is skipped entirely.
+func VerifyCSRF(cfg SessionMiddlewareConfig) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if cfg.AllowInsecureDefaults {
+				return next(c)
+			}
+
+			method := c.Request().Method
+			if method == http.MethodGet || method == http.MethodHead ||
+				method == http.MethodOptions || method == http.MethodTrace {
+				return next(c)
+			}
+
+			cookie, err := c.Cookie(cfg.SessionCookieName)
+			if err != nil || cookie.Value == "" {
+				return next(c)
+			}
+			currentSession, ok := cfg.Sessions.Get(cookie.Value)
+			if !ok {
+				return next(c)
+			}
+
+			token := c.Request().Header.Get("X-CSRF-Token")
+			if subtle.ConstantTimeCompare([]byte(token), []byte(currentSession.CSRFToken)) != 1 {
+				return c.JSON(http.StatusForbidden, map[string]string{
+					"message": "csrf_token_invalid",
+				})
+			}
+
+			return next(c)
+		}
+	}
 }
 
 const sessionContextKey = "httpapi.session"

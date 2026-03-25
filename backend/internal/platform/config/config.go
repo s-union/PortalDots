@@ -178,7 +178,7 @@ func defaultDemoUsers() []User {
 			DisplayName:     "Demo Staff",
 			Password:        "demo-staff",
 			Roles:           []string{"content_manager"},
-			Permissions:     []string{},
+			Permissions:     []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
 			CircleIDs:       []string{},
 			LeaderCircleIDs: []string{},
 			IsVerified:      true,
@@ -188,8 +188,8 @@ func defaultDemoUsers() []User {
 			LoginIDs:        []string{"demo-staff-sub"},
 			DisplayName:     "Demo Staff Sub",
 			Password:        "demo-staff-sub",
-			Roles:           []string{"circle_manager"},
-			Permissions:     []string{},
+			Roles:           []string{"content_manager"},
+			Permissions:     []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
 			CircleIDs:       []string{},
 			LeaderCircleIDs: []string{},
 			IsVerified:      true,
@@ -254,9 +254,9 @@ func FromEnv() Config {
 		PortalUnivemailDomainPart: getenv("PORTAL_UNIVEMAIL_DOMAIN_PART", "example.ac.jp"),
 		PortalStudentIDName:       getenv("PORTAL_STUDENT_ID_NAME", "学籍番号"),
 		PortalUnivemailName:       getenv("PORTAL_UNIVEMAIL_NAME", "大学メールアドレス"),
-		PortalPrimaryColorH:       getenvInt("PORTAL_PRIMARY_COLOR_H", 190),
-		PortalPrimaryColorS:       getenvInt("PORTAL_PRIMARY_COLOR_S", 80),
-		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 45),
+		PortalPrimaryColorH:       getenvInt("PORTAL_PRIMARY_COLOR_H", 214),
+		PortalPrimaryColorS:       getenvInt("PORTAL_PRIMARY_COLOR_S", 91),
+		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 53),
 		AuthUser: AuthUser{
 			ID:          getenv("PORTALDOTS_AUTH_USER_ID", defaultAuthUser.ID),
 			LoginIDs:    splitCSV(getenv("PORTALDOTS_AUTH_LOGIN_IDS", strings.Join(defaultAuthUser.LoginIDs, ","))),
@@ -265,7 +265,12 @@ func FromEnv() Config {
 			Roles:       splitCSV(getenv("PORTALDOTS_AUTH_ROLES", strings.Join(defaultAuthUser.Roles, ","))),
 			Permissions: []string{},
 		},
-		Users:                   defaultDemoUsers(),
+		Users: func() []User {
+			if getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true" {
+				return defaultDemoUsers()
+			}
+			return []User{}
+		}(),
 		StaffVerifyCode:         staffVerifyCode,
 		authPasswordProvided:    authPasswordProvided,
 		staffVerifyCodeProvided: staffVerifyCodeProvided,
@@ -532,6 +537,9 @@ func (c Config) ValidateForAPI() error {
 	} else {
 		if !c.staffVerifyCodeProvided || c.StaffVerifyCode == defaultStaffVerifyCode {
 			issues = append(issues, "PORTALDOTS_STAFF_VERIFY_CODE must be set to a non-default value unless PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true")
+		}
+		if !c.authPasswordProvided || c.AuthUser.Password == defaultAuthPassword {
+			issues = append(issues, "PORTALDOTS_AUTH_PASSWORD must be set to a non-default value unless PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true")
 		}
 	}
 

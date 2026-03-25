@@ -27,7 +27,7 @@ const settingLinks = computed(() => [
     hidden: !portalSettingsAvailable.value
   },
   {
-    to: '/staff/contact-categories',
+    to: '/staff/contacts/categories',
     label: 'お問い合わせ受付設定',
     description: '問い合わせカテゴリと送信先メールを管理します。'
   },

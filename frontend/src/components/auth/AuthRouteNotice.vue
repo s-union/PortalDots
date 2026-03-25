@@ -16,7 +16,7 @@ interface Props {
   actions: Action[]
 }
 
-const { eyebrow = 'Auth', title, lead, body, notes = () => [], actions } = defineProps<Props>()
+const { eyebrow = 'Auth', title, lead, body, notes = [], actions } = defineProps<Props>()
 
 function actionClasses(variant: Action['variant'] = 'secondary') {
   if (variant === 'primary') {

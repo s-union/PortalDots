@@ -18,7 +18,7 @@ import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
-import StaffFormAnswerPreviewSection from '@/features/staff/forms/components/StaffFormAnswerPreviewSection.vue'
+import FormAnswerPreviewPanel from '@/components/staff/forms/FormAnswerPreviewPanel.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   allowedQuestionTypes,
@@ -681,7 +681,7 @@ async function handleDeleteForm() {
         </div>
       </section>
 
-      <StaffFormAnswerPreviewSection
+      <FormAnswerPreviewPanel
         id="answer-panel"
         :form="formQuery.data.value"
         :form-id="formId"

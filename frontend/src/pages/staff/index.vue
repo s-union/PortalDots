@@ -8,8 +8,7 @@ definePage({
 })
 
 import { computed } from 'vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
-import { buildHomeModeTabs } from '@/features/ui/tabStrip'
+import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import {
   canManageCircles,
@@ -27,9 +26,12 @@ import {
   canManagePortalSettings,
   canViewActivityLogs
 } from '@/features/staff/access/capabilities'
+import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
+const publicConfigQuery = usePublicConfigQuery()
+const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 const pageAdminAvailable = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions))
 const documentAdminAvailable = computed(() => canReadDocuments(sessionStore.roles, sessionStore.permissions))
 const tagAdminAvailable = computed(() => canReadTags(sessionStore.roles, sessionStore.permissions))
@@ -46,8 +48,6 @@ const exportAvailable = computed(() => canUseStaffExports(sessionStore.roles, se
 const mailQueueAvailable = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
 const activityLogAvailable = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
 const portalSettingsAvailable = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
-
-const homeTabs = computed(() => buildHomeModeTabs(true))
 
 interface StaffCard {
   to: string
@@ -73,6 +73,13 @@ const staffCards = computed<StaffCard[]>(() => [
     iconClass: 'fas fa-star fa-fw',
     description: 'PortalDotsに登録している企画の情報の管理や、企画参加登録フォームの設定を行います',
     hidden: !circleAdminAvailable.value
+  },
+  {
+    to: '/staff/participation-types',
+    title: '参加種別管理',
+    iconClass: 'fas fa-list fa-fw',
+    description: '企画参加登録に利用する参加種別を管理します',
+    hidden: isDemoMode.value || !participationTypeAvailable.value
   },
   {
     to: '/staff/tags',
@@ -110,7 +117,7 @@ const staffCards = computed<StaffCard[]>(() => [
     hidden: !formsAdminAvailable.value
   },
   {
-    to: '/staff/contact-categories',
+    to: '/staff/contacts/categories',
     title: 'お問い合わせ受付設定',
     iconClass: 'fas fa-at fa-fw',
     description: 'PortalDotsのお問い合わせフォームの受付方法を設定します',
@@ -146,32 +153,25 @@ const staffCards = computed<StaffCard[]>(() => [
     description: 'セキュリティのため、定期的に PortalDots をアップデートしましょう'
   },
   {
-    to: '/staff/participation-types',
-    title: '参加種別管理',
-    iconClass: 'fas fa-list fa-fw',
-    description: '企画参加登録に利用する参加種別を管理します',
-    hidden: !participationTypeAvailable.value
-  },
-  {
     to: '/staff/exports',
     title: 'CSV / ZIP 出力',
     iconClass: 'fas fa-file-export fa-fw',
     description: '各種データのエクスポートを行います',
-    hidden: !exportAvailable.value
+    hidden: isDemoMode.value || !exportAvailable.value
   },
   {
     to: '/staff/mails',
     title: 'メールキュー',
     iconClass: 'far fa-envelope fa-fw',
     description: 'メール配信の状態を確認します',
-    hidden: !mailQueueAvailable.value
+    hidden: isDemoMode.value || !mailQueueAvailable.value
   }
 ])
 </script>
 
 <template>
   <PageLayout>
-    <TabStrip :tabs="homeTabs" />
+    <HomeModeTabs :is-staff-page="true" />
 
     <section class="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
       <RouterLink

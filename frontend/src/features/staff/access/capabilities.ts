@@ -99,6 +99,20 @@ export function canEditCircles(roles: string[], permissions: string[] = []) {
   )
 }
 
+export function canDeleteCircles(roles: string[], permissions: string[] = []) {
+  return (
+    hasAnyRole(roles, 'admin', 'circle_manager') ||
+    hasAnyPermission(permissions, 'staff.circles', 'staff.circles.read,edit,delete')
+  )
+}
+
+export function canSendCircleEmails(roles: string[], permissions: string[] = []) {
+  return (
+    hasAnyRole(roles, 'admin', 'circle_manager') ||
+    hasAnyPermission(permissions, 'staff.circles', 'staff.circles.read,send_email')
+  )
+}
+
 export function canManageParticipationTypes(roles: string[], permissions: string[] = []) {
   return (
     hasAnyRole(roles, 'admin', 'circle_manager') ||

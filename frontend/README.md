@@ -1,25 +1,33 @@
 # Frontend Structure
 
-Vue 3 + Vite frontends are easier to read when route pages, feature logic, and shared UI are separated.
+This frontend centralizes **all Vue components** under `src/components`.
 
 ```text
 frontend/
 ├── src/
-│   ├── app/        # entrypoint, providers, router
-│   ├── pages/      # route-level pages grouped by area
-│   ├── features/   # domain-specific API and state logic
-│   ├── shared/     # reusable UI and utility code
-│   ├── styles/     # global styles
-│   ├── stories/    # Storybook stories
-│   └── test/       # test setup
-├── tests/e2e/      # Playwright tests
+│   ├── app/         # app bootstrap and router wiring (no component implementations)
+│   ├── components/  # all Vue components
+│   ├── features/    # domain API/state/composables
+│   ├── pages/       # route-level pages grouped by area
+│   ├── styles/      # global styles
+│   ├── stories/     # Storybook stories
+│   └── test/        # test setup
+├── tests/e2e/       # Playwright tests
 └── ...tooling files
 ```
 
-Rules of thumb:
+## Ownership rules
 
-- `src/app`: things the whole app needs once, such as `main.ts`, Pinia, Vue Query, and the router.
-- `src/pages`: components that map directly to URLs like `/workspace/forms` or `/staff/users/:userId`.
-- `src/features`: logic owned by a feature, such as `features/staff/forms/api.ts`.
-- `src/shared`: code reused across multiple features, such as UI primitives and API helpers.
-- `src/styles`, `src/stories`, `src/test`: keep support code out of feature folders.
+- **`src/components`**: every Vue component (`.vue`) lives here.
+- **`src/pages`**: route screens that map directly to URLs.
+- **`src/features`**: domain logic only (API, state, business logic, composables).
+- **`src/app`**: app bootstrap and router composition only.
+
+## Where to place new code
+
+| What                        | Where                         |
+| --------------------------- | ----------------------------- |
+| New route page              | `src/pages/<area>/...`        |
+| Any Vue component           | `src/components/<domain>/...` |
+| Feature API/state logic     | `src/features/<feature>/...`  |
+| App bootstrap/router wiring | `src/app/...`                 |
