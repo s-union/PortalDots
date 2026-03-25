@@ -14,8 +14,14 @@ export type StaffCircleMailRecipient = StaffCircleMailForm['recipients'][number]
 
 export interface MutateStaffCirclePayload {
   name: string
+  nameYomi: string
   groupName: string
+  groupNameYomi: string
   participationTypeId: string
+  notes: string
+  status: 'pending' | 'approved' | 'rejected'
+  statusReason: string
+  placeIds: string[]
 }
 
 type UpdateStaffCirclePayload = MutateStaffCirclePayload & {
@@ -137,8 +143,14 @@ export async function updateStaffCircle(payload: UpdateStaffCirclePayload, csrfT
       },
       body: {
         name: payload.name,
+        nameYomi: payload.nameYomi,
         groupName: payload.groupName,
-        participationTypeId: payload.participationTypeId
+        groupNameYomi: payload.groupNameYomi,
+        participationTypeId: payload.participationTypeId,
+        notes: payload.notes,
+        status: payload.status,
+        statusReason: payload.statusReason,
+        placeIds: payload.placeIds
       }
     },
     parseStaffCircle,
@@ -370,8 +382,14 @@ export function useSendStaffCircleMailMutation(circleId: MaybeRefOrGetter<string
 export function useStaffCircleForm() {
   return ref<MutateStaffCirclePayload>({
     name: '',
+    nameYomi: '',
     groupName: '',
-    participationTypeId: ''
+    groupNameYomi: '',
+    participationTypeId: '',
+    notes: '',
+    status: 'pending',
+    statusReason: '',
+    placeIds: []
   })
 }
 

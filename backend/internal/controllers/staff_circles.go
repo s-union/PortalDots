@@ -15,11 +15,21 @@ import (
 )
 
 type staffCircleResponse struct {
-	ID                    string `json:"id"`
-	Name                  string `json:"name"`
-	GroupName             string `json:"groupName"`
-	ParticipationTypeID   string `json:"participationTypeId"`
-	ParticipationTypeName string `json:"participationTypeName"`
+	ID                    string   `json:"id"`
+	Name                  string   `json:"name"`
+	NameYomi              string   `json:"nameYomi"`
+	GroupName             string   `json:"groupName"`
+	GroupNameYomi         string   `json:"groupNameYomi"`
+	ParticipationTypeID   string   `json:"participationTypeId"`
+	ParticipationTypeName string   `json:"participationTypeName"`
+	Tags                  []string `json:"tags"`
+	Notes                 string   `json:"notes"`
+	SubmittedAt           *string  `json:"submittedAt"`
+	Status                string   `json:"status"`
+	StatusReason          string   `json:"statusReason"`
+	StatusSetAt           *string  `json:"statusSetAt"`
+	StatusSetByID         *string  `json:"statusSetById"`
+	Places                []string `json:"places"`
 }
 
 type staffCircleMailRecipientResponse struct {
@@ -34,9 +44,15 @@ type staffCircleMailFormResponse struct {
 }
 
 type mutateStaffCircleRequest struct {
-	Name                string `json:"name"`
-	GroupName           string `json:"groupName"`
-	ParticipationTypeID string `json:"participationTypeId"`
+	Name                string   `json:"name"`
+	NameYomi            string   `json:"nameYomi"`
+	GroupName           string   `json:"groupName"`
+	GroupNameYomi       string   `json:"groupNameYomi"`
+	ParticipationTypeID string   `json:"participationTypeId"`
+	Notes               string   `json:"notes"`
+	Status              string   `json:"status"`
+	StatusReason        string   `json:"statusReason"`
+	PlaceIDs            []string `json:"placeIds"`
 }
 
 type sendStaffCircleMailRequest struct {
@@ -95,14 +111,26 @@ func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	rows := [][]string{{"id", "name", "group_name", "participation_type_id", "participation_type_name"}}
+	rows := [][]string{{"id", "name", "name_yomi", "group_name", "group_name_yomi", "participation_type_id", "participation_type_name", "tags", "notes", "submitted_at", "status", "status_reason", "places"}}
 	for _, currentCircle := range circles {
+		submittedAt := ""
+		if currentCircle.SubmittedAt != nil {
+			submittedAt = currentCircle.SubmittedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		}
 		rows = append(rows, []string{
 			currentCircle.ID,
 			currentCircle.Name,
+			currentCircle.NameYomi,
 			currentCircle.GroupName,
+			currentCircle.GroupNameYomi,
 			currentCircle.ParticipationTypeID,
 			currentCircle.ParticipationTypeName,
+			strings.Join(currentCircle.Tags, " "),
+			currentCircle.Notes,
+			submittedAt,
+			currentCircle.Status,
+			currentCircle.StatusReason,
+			strings.Join(currentCircle.Places, " "),
 		})
 	}
 
@@ -157,10 +185,17 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 
 	created, err := h.circles.Create(
 		request.Name,
+		request.NameYomi,
 		request.GroupName,
+		request.GroupNameYomi,
 		participationType.ID,
 		participationType.Name,
+		request.Notes,
 		participationType.Tags,
+		request.Status,
+		request.StatusReason,
+		currentSession.User.ID,
+		request.PlaceIDs,
 	)
 	if err != nil {
 		return internalError(c)
@@ -202,10 +237,17 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 	updated, err := h.circles.Update(
 		c.Param("circleID"),
 		request.Name,
+		request.NameYomi,
 		request.GroupName,
+		request.GroupNameYomi,
 		participationType.ID,
 		participationType.Name,
+		request.Notes,
 		participationType.Tags,
+		request.Status,
+		request.StatusReason,
+		currentSession.User.ID,
+		request.PlaceIDs,
 	)
 	if errors.Is(err, circle.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
@@ -369,21 +411,36 @@ func bindAndValidateStaffCircle(c echo.Context) (mutateStaffCircleRequest, map[s
 	}
 
 	request.Name = strings.TrimSpace(request.Name)
+	request.NameYomi = strings.TrimSpace(request.NameYomi)
 	request.GroupName = strings.TrimSpace(request.GroupName)
+	request.GroupNameYomi = strings.TrimSpace(request.GroupNameYomi)
 	request.ParticipationTypeID = strings.TrimSpace(request.ParticipationTypeID)
+	request.Notes = strings.TrimSpace(request.Notes)
+	request.Status = strings.TrimSpace(request.Status)
+	request.StatusReason = strings.TrimSpace(request.StatusReason)
+	if request.Status == "" {
+		request.Status = "pending"
+	}
+	if request.PlaceIDs == nil {
+		request.PlaceIDs = []string{}
+	}
 
-	errors := map[string][]string{}
+	errs := map[string][]string{}
 	if request.Name == "" {
-		errors["name"] = []string{"企画名を入力してください"}
+		errs["name"] = []string{"企画名を入力してください"}
 	}
 	if request.GroupName == "" {
-		errors["groupName"] = []string{"企画グループ名を入力してください"}
+		errs["groupName"] = []string{"企画グループ名を入力してください"}
 	}
 	if request.ParticipationTypeID == "" {
-		errors["participationTypeId"] = []string{"参加種別を選択してください"}
+		errs["participationTypeId"] = []string{"参加種別を選択してください"}
+	}
+	validStatuses := map[string]bool{"pending": true, "approved": true, "rejected": true}
+	if !validStatuses[request.Status] {
+		errs["status"] = []string{"登録受理状況は pending, approved, rejected のいずれかを選択してください"}
 	}
 
-	return request, errors, len(errors) == 0
+	return request, errs, len(errs) == 0
 }
 
 func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, leadersOnly bool) (circle.Circle, []useradmin.User, error) {
@@ -423,12 +480,40 @@ func collectRecipientLoginIDs(users []useradmin.User) []string {
 }
 
 func mapStaffCircle(circleValue circle.Circle) staffCircleResponse {
+	var submittedAt *string
+	if circleValue.SubmittedAt != nil {
+		t := circleValue.SubmittedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		submittedAt = &t
+	}
+	var statusSetAt *string
+	if circleValue.StatusSetAt != nil {
+		t := circleValue.StatusSetAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		statusSetAt = &t
+	}
+	tags := circleValue.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+	places := circleValue.Places
+	if places == nil {
+		places = []string{}
+	}
 	return staffCircleResponse{
 		ID:                    circleValue.ID,
 		Name:                  circleValue.Name,
+		NameYomi:              circleValue.NameYomi,
 		GroupName:             circleValue.GroupName,
+		GroupNameYomi:         circleValue.GroupNameYomi,
 		ParticipationTypeID:   circleValue.ParticipationTypeID,
 		ParticipationTypeName: circleValue.ParticipationTypeName,
+		Tags:                  tags,
+		Notes:                 circleValue.Notes,
+		SubmittedAt:           submittedAt,
+		Status:                circleValue.Status,
+		StatusReason:          circleValue.StatusReason,
+		StatusSetAt:           statusSetAt,
+		StatusSetByID:         circleValue.StatusSetByID,
+		Places:                places,
 	}
 }
 

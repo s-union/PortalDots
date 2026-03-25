@@ -50,6 +50,11 @@ func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 			InvitationToken:       nullableTextValue(row.InvitationToken),
 			SubmittedAt:           nullableTime(row.SubmittedAt),
 			Notes:                 row.Notes,
+			Status:                row.Status,
+			StatusReason:          row.StatusReason,
+			StatusSetAt:           nullableTime(row.StatusSetAt),
+			StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+			Places:                []string{},
 		})
 	}
 	return circles, nil
@@ -72,18 +77,62 @@ func (c *SQLCCatalog) ListForStaff() ([]Circle, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	circles := make([]Circle, 0, len(rows))
+	ids := make([]string, 0, len(rows))
 	for _, row := range rows {
 		circles = append(circles, circleFromListRow(row))
+		ids = append(ids, row.ID)
 	}
+
+	if len(ids) > 0 {
+		placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), ids)
+		if err != nil {
+			return nil, err
+		}
+		placeMap := make(map[string][]string)
+		for _, p := range placeRows {
+			placeMap[p.CircleID] = append(placeMap[p.CircleID], p.Name)
+		}
+		for i := range circles {
+			if places, ok := placeMap[circles[i].ID]; ok {
+				circles[i].Places = places
+			}
+		}
+	}
+
 	return circles, nil
 }
 
 func (c *SQLCCatalog) Find(circleID string) (Circle, error) {
-	return c.FindSelectable(nil, circleID)
+	row, err := c.queries.GetCircleByID(context.Background(), circleID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Circle{}, ErrNotFound
+		}
+		return Circle{}, err
+	}
+
+	circle := circleFromGetByIDRow(row)
+
+	placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), []string{circleID})
+	if err != nil {
+		return Circle{}, err
+	}
+	places := make([]string, 0, len(placeRows))
+	for _, p := range placeRows {
+		places = append(places, p.Name)
+	}
+	circle.Places = places
+
+	return circle, nil
 }
 
-func (c *SQLCCatalog) Create(name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error) {
+func (c *SQLCCatalog) Create(name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error) {
+	if status == "" {
+		status = "pending"
+	}
+
 	row, err := c.queries.CreateCircle(context.Background(), dbgen.CreateCircleParams{
 		Name:                  name,
 		GroupName:             groupName,
@@ -95,23 +144,50 @@ func (c *SQLCCatalog) Create(name, groupName, participationTypeID, participation
 		return Circle{}, err
 	}
 
-	return Circle{
-		ID:                    row.ID,
-		Name:                  row.Name,
-		NameYomi:              row.NameYomi,
-		GroupName:             row.GroupName,
-		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
-		ParticipationTypeName: row.ParticipationTypeName,
-		Tags:                  append([]string{}, row.Tags...),
-		InvitationToken:       nullableTextValue(row.InvitationToken),
-		SubmittedAt:           nullableTime(row.SubmittedAt),
-		Notes:                 row.Notes,
-	}, nil
+	detailRow, err := c.queries.UpdateCircleDetails(context.Background(), dbgen.UpdateCircleDetailsParams{
+		ID:            row.ID,
+		Name:          name,
+		NameYomi:      nameYomi,
+		GroupName:     groupName,
+		GroupNameYomi: groupNameYomi,
+		Notes:         notes,
+	})
+	if err != nil {
+		return Circle{}, err
+	}
+
+	statusRow, err := c.queries.SetCircleStatus(context.Background(), dbgen.SetCircleStatusParams{
+		ID:           detailRow.ID,
+		Status:       status,
+		StatusReason: statusReason,
+		Column4:      setByUserID,
+	})
+	if err != nil {
+		return Circle{}, err
+	}
+
+	if err := c.setCircleBooths(row.ID, placeIDs); err != nil {
+		return Circle{}, err
+	}
+
+	placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), []string{row.ID})
+	if err != nil {
+		return Circle{}, err
+	}
+	placeNames := make([]string, 0, len(placeRows))
+	for _, p := range placeRows {
+		placeNames = append(placeNames, p.Name)
+	}
+
+	return circleFromSetStatusRow(statusRow, placeNames), nil
 }
 
-func (c *SQLCCatalog) Update(circleID, name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error) {
-	row, err := c.queries.UpdateCircle(context.Background(), dbgen.UpdateCircleParams{
+func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error) {
+	if status == "" {
+		status = "pending"
+	}
+
+	_, err := c.queries.UpdateCircle(context.Background(), dbgen.UpdateCircleParams{
 		ID:                    circleID,
 		Name:                  name,
 		GroupName:             groupName,
@@ -126,19 +202,46 @@ func (c *SQLCCatalog) Update(circleID, name, groupName, participationTypeID, par
 		return Circle{}, err
 	}
 
-	return Circle{
-		ID:                    row.ID,
-		Name:                  row.Name,
-		NameYomi:              row.NameYomi,
-		GroupName:             row.GroupName,
-		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
-		ParticipationTypeName: row.ParticipationTypeName,
-		Tags:                  append([]string{}, row.Tags...),
-		InvitationToken:       nullableTextValue(row.InvitationToken),
-		SubmittedAt:           nullableTime(row.SubmittedAt),
-		Notes:                 row.Notes,
-	}, nil
+	detailRow, err := c.queries.UpdateCircleDetails(context.Background(), dbgen.UpdateCircleDetailsParams{
+		ID:            circleID,
+		Name:          name,
+		NameYomi:      nameYomi,
+		GroupName:     groupName,
+		GroupNameYomi: groupNameYomi,
+		Notes:         notes,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Circle{}, ErrNotFound
+		}
+		return Circle{}, err
+	}
+
+	statusRow, err := c.queries.SetCircleStatus(context.Background(), dbgen.SetCircleStatusParams{
+		ID:           detailRow.ID,
+		Status:       status,
+		StatusReason: statusReason,
+		Column4:      setByUserID,
+	})
+	if err != nil {
+		return Circle{}, err
+	}
+
+	if err := c.setCircleBooths(circleID, placeIDs); err != nil {
+		return Circle{}, err
+	}
+
+	// reload place names from DB since placeIDs are IDs, not names
+	placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), []string{circleID})
+	if err != nil {
+		return Circle{}, err
+	}
+	placeNames := make([]string, 0, len(placeRows))
+	for _, p := range placeRows {
+		placeNames = append(placeNames, p.Name)
+	}
+
+	return circleFromSetStatusRow(statusRow, placeNames), nil
 }
 
 func (c *SQLCCatalog) Delete(circleID string) error {
@@ -177,6 +280,11 @@ func (c *SQLCCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, e
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
 	}, nil
 }
 
@@ -206,6 +314,11 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
 	}
 
 	if err := c.queries.CreateCircleUser(context.Background(), dbgen.CreateCircleUserParams{
@@ -258,6 +371,11 @@ func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params Upd
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
 	}, nil
 }
 
@@ -308,6 +426,11 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
 	}, nil
 }
 
@@ -428,6 +551,11 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
 	}, nil
 }
 
@@ -471,7 +599,27 @@ func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error)
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
 	}, nil
+}
+
+func (c *SQLCCatalog) setCircleBooths(circleID string, placeIDs []string) error {
+	if err := c.queries.DeleteBoothsByCircle(context.Background(), circleID); err != nil {
+		return err
+	}
+	for _, placeID := range placeIDs {
+		if err := c.queries.AddCircleBooth(context.Background(), dbgen.AddCircleBoothParams{
+			PlaceID:  placeID,
+			CircleID: circleID,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func circleFromListRow(row dbgen.ListCirclesRow) Circle {
@@ -487,6 +635,11 @@ func circleFromListRow(row dbgen.ListCirclesRow) Circle {
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
 	}
 }
 
@@ -503,6 +656,32 @@ func circleFromGetByIDRow(row dbgen.GetCircleByIDRow) Circle {
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
 		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
+	}
+}
+
+func circleFromSetStatusRow(row dbgen.SetCircleStatusRow, places []string) Circle {
+	return Circle{
+		ID:                    row.ID,
+		Name:                  row.Name,
+		NameYomi:              row.NameYomi,
+		GroupName:             row.GroupName,
+		GroupNameYomi:         row.GroupNameYomi,
+		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeName: row.ParticipationTypeName,
+		Tags:                  append([]string{}, row.Tags...),
+		InvitationToken:       nullableTextValue(row.InvitationToken),
+		SubmittedAt:           nullableTime(row.SubmittedAt),
+		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                places,
 	}
 }
 
@@ -518,6 +697,14 @@ func nullableTextValue(value pgtype.Text) string {
 		return ""
 	}
 	return value.String
+}
+
+func nullableTextPtr(value pgtype.Text) *string {
+	if !value.Valid {
+		return nil
+	}
+	s := value.String
+	return &s
 }
 
 func nullableTime(value pgtype.Timestamptz) *time.Time {

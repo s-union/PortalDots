@@ -58,7 +58,7 @@ describe('StaffDashboardPage', () => {
         { path: '/staff', component: StaffDashboardPage },
         { path: '/staff/circles', component: { template: '<div>staff circles</div>' } },
         {
-          path: '/staff/participation-types',
+          path: '/staff/circles/participation_types',
           component: { template: '<div>participation types</div>' }
         },
         {
@@ -145,7 +145,7 @@ describe('StaffDashboardPage', () => {
         { path: '/staff', component: StaffDashboardPage },
         { path: '/staff/circles', component: { template: '<div>staff circles</div>' } },
         {
-          path: '/staff/participation-types',
+          path: '/staff/circles/participation_types',
           component: { template: '<div>participation types</div>' }
         },
         { path: '/staff/exports', component: { template: '<div>exports</div>' } },

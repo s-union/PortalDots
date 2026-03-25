@@ -5,7 +5,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/features/staff/participation-types/api'
-import StaffParticipationTypeDetailPage from './[typeId].vue'
+import StaffParticipationTypeDetailPage from '../circles/participation_types/[typeId].vue'
 
 function createQueryPlugin() {
   return [
@@ -50,9 +50,9 @@ describe('StaffParticipationTypeDetailPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: '/staff/participation-types', component: { template: '<div>types</div>' } },
+        { path: '/staff/circles/participation_types', component: { template: '<div>types</div>' } },
         {
-          path: '/staff/participation-types/:typeId',
+          path: '/staff/circles/participation_types/:typeId',
           component: StaffParticipationTypeDetailPage
         },
         {
@@ -62,7 +62,7 @@ describe('StaffParticipationTypeDetailPage', () => {
         { path: '/staff/forms/:formId', component: { template: '<div>form detail</div>' } }
       ]
     })
-    await router.push('/staff/participation-types/participation-type-food')
+    await router.push('/staff/circles/participation_types/participation-type-food')
     await router.isReady()
 
     let updatedRequestBody = ''
@@ -86,9 +86,19 @@ describe('StaffParticipationTypeDetailPage', () => {
               {
                 id: 'circle-a',
                 name: '屋台企画A',
+                nameYomi: 'ヤタイキカクエー',
                 groupName: 'Aブロック',
+                groupNameYomi: 'エーブロック',
                 participationTypeId: 'participation-type-food',
-                participationTypeName: '模擬店'
+                participationTypeName: '模擬店',
+                tags: ['模擬店'],
+                notes: '',
+                submittedAt: '2026-03-05T12:00:00Z',
+                status: 'pending',
+                statusReason: '',
+                statusSetAt: null,
+                statusSetById: null,
+                places: []
               }
             ],
             page: 1,
@@ -209,7 +219,7 @@ describe('StaffParticipationTypeDetailPage', () => {
     expect(confirmMock).toHaveBeenCalledWith(
       '本当にこの参加種別を削除しますか？この参加種別に紐づく企画もすべて削除されます。'
     )
-    expect(router.currentRoute.value.path).toBe('/staff/participation-types')
+    expect(router.currentRoute.value.path).toBe('/staff/circles/participation_types')
   })
 
   it('does not delete participation types when confirmation is cancelled', async () => {
@@ -236,9 +246,9 @@ describe('StaffParticipationTypeDetailPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: '/staff/participation-types', component: { template: '<div>types</div>' } },
+        { path: '/staff/circles/participation_types', component: { template: '<div>types</div>' } },
         {
-          path: '/staff/participation-types/:typeId',
+          path: '/staff/circles/participation_types/:typeId',
           component: StaffParticipationTypeDetailPage
         },
         {
@@ -248,7 +258,7 @@ describe('StaffParticipationTypeDetailPage', () => {
         { path: '/staff/forms/:formId', component: { template: '<div>form detail</div>' } }
       ]
     })
-    await router.push('/staff/participation-types/participation-type-food')
+    await router.push('/staff/circles/participation_types/participation-type-food')
     await router.isReady()
 
     let deleted = false
@@ -327,7 +337,7 @@ describe('StaffParticipationTypeDetailPage', () => {
       '本当にこの参加種別を削除しますか？この参加種別に紐づく企画もすべて削除されます。'
     )
     expect(deleted).toBe(false)
-    expect(router.currentRoute.value.path).toBe('/staff/participation-types/participation-type-food')
+    expect(router.currentRoute.value.path).toBe('/staff/circles/participation_types/participation-type-food')
   })
 })
 

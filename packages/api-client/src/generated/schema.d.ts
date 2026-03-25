@@ -5395,8 +5395,19 @@ export interface operations {
                         items: {
                             id: string;
                             name: string;
+                            nameYomi: string;
                             groupName: string;
+                            groupNameYomi: string;
+                            participationTypeId: string;
                             participationTypeName: string;
+                            tags: string[];
+                            notes: string;
+                            submittedAt?: string | null;
+                            status: string;
+                            statusReason: string;
+                            statusSetAt?: string | null;
+                            statusSetById?: string | null;
+                            places: string[];
                         }[];
                         page: number;
                         pageSize: number;
@@ -5431,8 +5442,15 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
+                    nameYomi?: string;
                     groupName: string;
+                    groupNameYomi?: string;
                     participationTypeId: string;
+                    notes?: string;
+                    /** @enum {string} */
+                    status?: "pending" | "approved" | "rejected";
+                    statusReason?: string;
+                    placeIds?: string[];
                 };
             };
         };
@@ -5446,9 +5464,19 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        nameYomi: string;
                         groupName: string;
+                        groupNameYomi: string;
                         participationTypeId: string;
                         participationTypeName: string;
+                        tags: string[];
+                        notes: string;
+                        submittedAt?: string | null;
+                        status: string;
+                        statusReason: string;
+                        statusSetAt?: string | null;
+                        statusSetById?: string | null;
+                        places: string[];
                     };
                 };
             };
@@ -5493,9 +5521,19 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        nameYomi: string;
                         groupName: string;
+                        groupNameYomi: string;
                         participationTypeId: string;
                         participationTypeName: string;
+                        tags: string[];
+                        notes: string;
+                        submittedAt?: string | null;
+                        status: string;
+                        statusReason: string;
+                        statusSetAt?: string | null;
+                        statusSetById?: string | null;
+                        places: string[];
                     }[];
                 };
             };
@@ -5569,9 +5607,19 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        nameYomi: string;
                         groupName: string;
+                        groupNameYomi: string;
                         participationTypeId: string;
                         participationTypeName: string;
+                        tags: string[];
+                        notes: string;
+                        submittedAt?: string | null;
+                        status: string;
+                        statusReason: string;
+                        statusSetAt?: string | null;
+                        statusSetById?: string | null;
+                        places: string[];
                     };
                 };
             };
@@ -5611,8 +5659,15 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
+                    nameYomi?: string;
                     groupName: string;
+                    groupNameYomi?: string;
                     participationTypeId: string;
+                    notes?: string;
+                    /** @enum {string} */
+                    status?: "pending" | "approved" | "rejected";
+                    statusReason?: string;
+                    placeIds?: string[];
                 };
             };
         };
@@ -5626,9 +5681,19 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        nameYomi: string;
                         groupName: string;
+                        groupNameYomi: string;
                         participationTypeId: string;
                         participationTypeName: string;
+                        tags: string[];
+                        notes: string;
+                        submittedAt?: string | null;
+                        status: string;
+                        statusReason: string;
+                        statusSetAt?: string | null;
+                        statusSetById?: string | null;
+                        places: string[];
                     };
                 };
             };
@@ -5724,9 +5789,19 @@ export interface operations {
                         circle: {
                             id: string;
                             name: string;
+                            nameYomi: string;
                             groupName: string;
+                            groupNameYomi: string;
                             participationTypeId: string;
                             participationTypeName: string;
+                            tags: string[];
+                            notes: string;
+                            submittedAt?: string | null;
+                            status: string;
+                            statusReason: string;
+                            statusSetAt?: string | null;
+                            statusSetById?: string | null;
+                            places: string[];
                         };
                         recipients: {
                             id: string;

@@ -38,7 +38,7 @@ INSERT INTO circles (
     $4,
     $5
 )
-RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 `
 
 type CreateCircleParams struct {
@@ -61,6 +61,10 @@ type CreateCircleRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -85,6 +89,10 @@ func (q *Queries) CreateCircle(ctx context.Context, arg CreateCircleParams) (Cre
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -128,7 +136,7 @@ INSERT INTO circles (
     $7,
     encode(gen_random_bytes(16), 'hex')
 )
-RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 `
 
 type CreateUserCircleParams struct {
@@ -153,6 +161,10 @@ type CreateUserCircleRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -179,6 +191,10 @@ func (q *Queries) CreateUserCircle(ctx context.Context, arg CreateUserCirclePara
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -195,7 +211,7 @@ func (q *Queries) DeleteCircle(ctx context.Context, id string) error {
 }
 
 const getCircleByID = `-- name: GetCircleByID :one
-SELECT id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+SELECT id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 FROM circles
 WHERE id = $1
 `
@@ -212,6 +228,10 @@ type GetCircleByIDRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -230,13 +250,17 @@ func (q *Queries) GetCircleByID(ctx context.Context, id string) (GetCircleByIDRo
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getCircleByInvitationToken = `-- name: GetCircleByInvitationToken :one
-SELECT id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+SELECT id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 FROM circles
 WHERE invitation_token = $1
 `
@@ -253,6 +277,10 @@ type GetCircleByInvitationTokenRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -271,13 +299,17 @@ func (q *Queries) GetCircleByInvitationToken(ctx context.Context, invitationToke
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserCircle = `-- name: GetUserCircle :one
-SELECT c.id, c.name, c.name_yomi, c.group_name, c.group_name_yomi, c.participation_type_id, c.participation_type_name, c.tags, c.invitation_token, c.submitted_at, c.notes, c.created_at
+SELECT c.id, c.name, c.name_yomi, c.group_name, c.group_name_yomi, c.participation_type_id, c.participation_type_name, c.tags, c.invitation_token, c.submitted_at, c.notes, c.status, c.status_reason, c.status_set_at, c.status_set_by, c.created_at
 FROM circles c
 JOIN circle_user cu ON cu.circle_id = c.id
 WHERE c.id = $1 AND cu.user_id = $2
@@ -300,6 +332,10 @@ type GetUserCircleRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -318,6 +354,10 @@ func (q *Queries) GetUserCircle(ctx context.Context, arg GetUserCircleParams) (G
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -389,8 +429,41 @@ func (q *Queries) ListCircleMembers(ctx context.Context, circleID string) ([]Lis
 	return items, nil
 }
 
+const listCirclePlaceNames = `-- name: ListCirclePlaceNames :many
+SELECT b.circle_id, p.name
+FROM booths b
+JOIN places p ON p.id = b.place_id
+WHERE b.circle_id = ANY($1::text[])
+ORDER BY b.circle_id, p.name
+`
+
+type ListCirclePlaceNamesRow struct {
+	CircleID string
+	Name     string
+}
+
+func (q *Queries) ListCirclePlaceNames(ctx context.Context, dollar_1 []string) ([]ListCirclePlaceNamesRow, error) {
+	rows, err := q.db.Query(ctx, listCirclePlaceNames, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListCirclePlaceNamesRow
+	for rows.Next() {
+		var i ListCirclePlaceNamesRow
+		if err := rows.Scan(&i.CircleID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCircles = `-- name: ListCircles :many
-SELECT id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+SELECT id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 FROM circles
 ORDER BY id
 `
@@ -407,6 +480,10 @@ type ListCirclesRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -431,6 +508,10 @@ func (q *Queries) ListCircles(ctx context.Context) ([]ListCirclesRow, error) {
 			&i.InvitationToken,
 			&i.SubmittedAt,
 			&i.Notes,
+			&i.Status,
+			&i.StatusReason,
+			&i.StatusSetAt,
+			&i.StatusSetBy,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -444,7 +525,7 @@ func (q *Queries) ListCircles(ctx context.Context) ([]ListCirclesRow, error) {
 }
 
 const listUserCircles = `-- name: ListUserCircles :many
-SELECT c.id, c.name, c.name_yomi, c.group_name, c.group_name_yomi, c.participation_type_id, c.participation_type_name, c.tags, c.invitation_token, c.submitted_at, c.notes, c.created_at
+SELECT c.id, c.name, c.name_yomi, c.group_name, c.group_name_yomi, c.participation_type_id, c.participation_type_name, c.tags, c.invitation_token, c.submitted_at, c.notes, c.status, c.status_reason, c.status_set_at, c.status_set_by, c.created_at
 FROM circles c
 JOIN circle_user cu ON cu.circle_id = c.id
 WHERE cu.user_id = $1
@@ -463,6 +544,10 @@ type ListUserCirclesRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -487,6 +572,10 @@ func (q *Queries) ListUserCircles(ctx context.Context, userID string) ([]ListUse
 			&i.InvitationToken,
 			&i.SubmittedAt,
 			&i.Notes,
+			&i.Status,
+			&i.StatusReason,
+			&i.StatusSetAt,
+			&i.StatusSetBy,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -514,11 +603,76 @@ func (q *Queries) RemoveCircleMember(ctx context.Context, arg RemoveCircleMember
 	return err
 }
 
+const setCircleStatus = `-- name: SetCircleStatus :one
+UPDATE circles
+SET status = $2,
+    status_reason = $3,
+    status_set_at = CASE WHEN $2 = 'approved' OR $2 = 'rejected' THEN now() ELSE NULL END,
+    status_set_by = CASE WHEN ($2 = 'approved' OR $2 = 'rejected') AND $4::text != '' THEN $4 ELSE NULL END
+WHERE id = $1
+RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
+`
+
+type SetCircleStatusParams struct {
+	ID           string
+	Status       string
+	StatusReason string
+	Column4      string
+}
+
+type SetCircleStatusRow struct {
+	ID                    string
+	Name                  string
+	NameYomi              string
+	GroupName             string
+	GroupNameYomi         string
+	ParticipationTypeID   pgtype.Text
+	ParticipationTypeName string
+	Tags                  []string
+	InvitationToken       pgtype.Text
+	SubmittedAt           pgtype.Timestamptz
+	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
+	CreatedAt             pgtype.Timestamptz
+}
+
+func (q *Queries) SetCircleStatus(ctx context.Context, arg SetCircleStatusParams) (SetCircleStatusRow, error) {
+	row := q.db.QueryRow(ctx, setCircleStatus,
+		arg.ID,
+		arg.Status,
+		arg.StatusReason,
+		arg.Column4,
+	)
+	var i SetCircleStatusRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.NameYomi,
+		&i.GroupName,
+		&i.GroupNameYomi,
+		&i.ParticipationTypeID,
+		&i.ParticipationTypeName,
+		&i.Tags,
+		&i.InvitationToken,
+		&i.SubmittedAt,
+		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const submitCircle = `-- name: SubmitCircle :one
 UPDATE circles
 SET submitted_at = now()
 WHERE id = $1
-RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 `
 
 type SubmitCircleRow struct {
@@ -533,6 +687,10 @@ type SubmitCircleRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -551,6 +709,10 @@ func (q *Queries) SubmitCircle(ctx context.Context, id string) (SubmitCircleRow,
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -564,7 +726,7 @@ SET name = $2,
     participation_type_name = $5,
     tags = $6
 WHERE id = $1
-RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 `
 
 type UpdateCircleParams struct {
@@ -588,6 +750,10 @@ type UpdateCircleRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -613,6 +779,10 @@ func (q *Queries) UpdateCircle(ctx context.Context, arg UpdateCircleParams) (Upd
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -626,7 +796,7 @@ SET name = $2,
     group_name_yomi = $5,
     notes = $6
 WHERE id = $1
-RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 `
 
 type UpdateCircleDetailsParams struct {
@@ -650,6 +820,10 @@ type UpdateCircleDetailsRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -675,6 +849,10 @@ func (q *Queries) UpdateCircleDetails(ctx context.Context, arg UpdateCircleDetai
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -684,7 +862,7 @@ const updateCircleInvitationToken = `-- name: UpdateCircleInvitationToken :one
 UPDATE circles
 SET invitation_token = encode(gen_random_bytes(16), 'hex')
 WHERE id = $1
-RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, created_at
+RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, status, status_reason, status_set_at, status_set_by, created_at
 `
 
 type UpdateCircleInvitationTokenRow struct {
@@ -699,6 +877,10 @@ type UpdateCircleInvitationTokenRow struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 	CreatedAt             pgtype.Timestamptz
 }
 
@@ -717,6 +899,10 @@ func (q *Queries) UpdateCircleInvitationToken(ctx context.Context, id string) (U
 		&i.InvitationToken,
 		&i.SubmittedAt,
 		&i.Notes,
+		&i.Status,
+		&i.StatusReason,
+		&i.StatusSetAt,
+		&i.StatusSetBy,
 		&i.CreatedAt,
 	)
 	return i, err

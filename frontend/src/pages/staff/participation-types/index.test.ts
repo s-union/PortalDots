@@ -4,7 +4,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
-import StaffParticipationTypesIndexPage from './index.vue'
+import StaffParticipationTypesIndexPage from '../circles/participation_types/index.vue'
 
 function createQueryPlugin() {
   return [
@@ -49,14 +49,14 @@ describe('StaffParticipationTypesIndexPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/staff/circles', component: { template: '<div>circles</div>' } },
-        { path: '/staff/participation-types', component: StaffParticipationTypesIndexPage },
+        { path: '/staff/circles/participation_types', component: StaffParticipationTypesIndexPage },
         {
-          path: '/staff/participation-types/:typeId',
+          path: '/staff/circles/participation_types/:typeId',
           component: { template: '<div>participation type detail</div>' }
         }
       ]
     })
-    await router.push('/staff/participation-types')
+    await router.push('/staff/circles/participation_types')
     await router.isReady()
 
     vi.stubGlobal(
@@ -137,7 +137,9 @@ describe('StaffParticipationTypesIndexPage', () => {
     expect(wrapper.text()).toContain('参加種別管理')
     expect(wrapper.text()).toContain('模擬店')
     expect(wrapper.text()).toContain('展示')
-    expect(wrapper.get('a[href="/staff/participation-types/participation-type-food"]').text()).toContain('模擬店')
+    expect(wrapper.get('a[href="/staff/circles/participation_types/participation-type-food"]').text()).toContain(
+      '模擬店'
+    )
 
     await wrapper.get('input[name="name"]').setValue('ステージ')
     await wrapper.get('textarea[name="description"]').setValue('ステージ企画向けの参加種別です。')
@@ -150,7 +152,9 @@ describe('StaffParticipationTypesIndexPage', () => {
     expect(createdRequestBody).toContain('ステージ')
     expect(createdRequestBody).toContain('音響')
     expect(wrapper.text()).toContain('ステージ')
-    expect(wrapper.get('a[href="/staff/participation-types/participation-type-stage"]').text()).toContain('ステージ')
+    expect(wrapper.get('a[href="/staff/circles/participation_types/participation-type-stage"]').text()).toContain(
+      'ステージ'
+    )
   })
 })
 

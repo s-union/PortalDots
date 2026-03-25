@@ -75,7 +75,7 @@ const staffCards = computed<StaffCard[]>(() => [
     hidden: !circleAdminAvailable.value
   },
   {
-    to: '/staff/participation-types',
+    to: '/staff/circles/participation_types',
     title: '参加種別管理',
     iconClass: 'fas fa-list fa-fw',
     description: '企画参加登録に利用する参加種別を管理します',

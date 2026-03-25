@@ -215,9 +215,19 @@ export const staffUserSchema = z.object({
 export const staffCircleSchema = z.object({
   id: z.string(),
   name: z.string(),
+  nameYomi: z.string(),
   groupName: z.string(),
+  groupNameYomi: z.string(),
   participationTypeId: z.string(),
-  participationTypeName: z.string()
+  participationTypeName: z.string(),
+  tags: z.array(z.string()),
+  notes: z.string(),
+  submittedAt: z.string().nullable(),
+  status: z.enum(['pending', 'approved', 'rejected']),
+  statusReason: z.string(),
+  statusSetAt: z.string().nullable(),
+  statusSetById: z.string().nullable(),
+  places: z.array(z.string())
 })
 
 export const staffCircleMailRecipientSchema = z.object({

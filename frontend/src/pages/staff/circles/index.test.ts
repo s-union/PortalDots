@@ -24,7 +24,7 @@ describe('StaffCirclesIndexPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('lists and creates circles', async () => {
+  it('shows participation type links', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -43,14 +43,18 @@ describe('StaffCirclesIndexPage', () => {
       }
     })
 
-    let created = false
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
         { path: '/staff', component: { template: '<div>staff</div>' } },
         { path: '/staff/circles', component: StaffCirclesIndexPage },
         { path: '/staff/circles/:circleId', component: { template: '<div>detail</div>' } },
-        { path: '/staff/participation-types', component: { template: '<div>types</div>' } }
+        {
+          path: '/staff/circles/participation_types/:typeId',
+          component: { template: '<div>type detail</div>' }
+        },
+        { path: '/staff/circles/all', component: { template: '<div>all circles</div>' } },
+        { path: '/staff/circles/participation_types', component: { template: '<div>types</div>' } }
       ]
     })
     await router.push('/staff/circles')
@@ -123,95 +127,6 @@ describe('StaffCirclesIndexPage', () => {
           )
         }
 
-        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              {
-                id: 'circle-a',
-                name: 'デモ企画A',
-                groupName: 'Aブロック',
-                participationTypeId: 'participation-type-food',
-                participationTypeName: '模擬店'
-              },
-              {
-                id: 'circle-b',
-                name: 'デモ企画B',
-                groupName: 'Bブロック',
-                participationTypeId: 'participation-type-exhibit',
-                participationTypeName: '展示'
-              }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (url.includes('/staff/circles') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              items: created
-                ? [
-                    {
-                      id: 'circle-generated-1',
-                      name: '追加企画',
-                      groupName: 'Cブロック',
-                      participationTypeId: 'participation-type-exhibit',
-                      participationTypeName: '展示'
-                    },
-                    {
-                      id: 'circle-a',
-                      name: 'デモ企画A',
-                      groupName: 'Aブロック',
-                      participationTypeId: 'participation-type-food',
-                      participationTypeName: '模擬店'
-                    }
-                  ]
-                : [
-                    {
-                      id: 'circle-a',
-                      name: 'デモ企画A',
-                      groupName: 'Aブロック',
-                      participationTypeId: 'participation-type-food',
-                      participationTypeName: '模擬店'
-                    },
-                    {
-                      id: 'circle-b',
-                      name: 'デモ企画B',
-                      groupName: 'Bブロック',
-                      participationTypeId: 'participation-type-exhibit',
-                      participationTypeName: '展示'
-                    }
-                  ],
-              page: 1,
-              pageSize: 10,
-              total: 2
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/circles') && method === 'POST') {
-          created = true
-          return new Response(
-            JSON.stringify({
-              id: 'circle-generated-1',
-              name: '追加企画',
-              groupName: 'Cブロック',
-              participationTypeId: 'participation-type-exhibit',
-              participationTypeName: '展示'
-            }),
-            {
-              status: 201,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
         throw new Error(`Unexpected request: ${method} ${url}`)
       })
     )
@@ -223,24 +138,11 @@ describe('StaffCirclesIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('デモ企画A')
+    expect(wrapper.text()).toContain('参加種別から探す')
     expect(wrapper.text()).toContain('模擬店')
-    expect(wrapper.text()).toContain('全企画数: 2')
-    expect(wrapper.text()).toContain('表示件数:')
-    expect(wrapper.get('a[href="http://127.0.0.1:8080/v1/staff/circles/export"]').text()).toContain('CSVで出力')
-
-    await wrapper.get('thead button').trigger('click')
-    expect(wrapper.text()).toContain('デモ企画A')
-
-    await wrapper.get('select').setValue('50')
-    await flushPromises()
-
-    await wrapper.get('input[name="name"]').setValue('追加企画')
-    await wrapper.get('input[name="groupName"]').setValue('Cブロック')
-    await wrapper.get('select[name="participationTypeId"]').setValue('participation-type-exhibit')
-    await wrapper.get('button[type="submit"]').trigger('submit')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('追加企画')
+    expect(wrapper.text()).toContain('展示')
+    expect(wrapper.get('a[href="/staff/circles/participation_types/participation-type-food"]').text()).toContain(
+      '模擬店'
+    )
   })
 })

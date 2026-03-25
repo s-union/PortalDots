@@ -53,7 +53,7 @@ describe('StaffCircleDetailPage', () => {
         { path: '/staff/circles', component: { template: '<div>circles</div>' } },
         { path: '/staff/circles/:circleId', component: StaffCircleDetailPage },
         {
-          path: '/staff/participation-types/:typeId',
+          path: '/staff/circles/participation_types/:typeId',
           component: { template: '<div>type</div>' }
         }
       ]
@@ -128,14 +128,37 @@ describe('StaffCircleDetailPage', () => {
           )
         }
 
+        if (pathname.endsWith('/staff/places') && method === 'GET') {
+          return new Response(
+            JSON.stringify([
+              { id: 'place-booth', name: '屋内ブース', maxCircleCount: 200 },
+              { id: 'place-stage', name: 'メインステージ', maxCircleCount: 30 }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         if (pathname.endsWith('/staff/circles/circle-b') && method === 'GET') {
           return new Response(
             JSON.stringify({
               id: 'circle-b',
               name: 'デモ企画B',
+              nameYomi: 'デモキカクビー',
               groupName: 'Bブロック',
+              groupNameYomi: 'ビーブロック',
               participationTypeId: 'participation-type-exhibit',
-              participationTypeName: '展示'
+              participationTypeName: '展示',
+              tags: ['展示'],
+              notes: '既存メモ',
+              submittedAt: '2025-02-01T00:00:00Z',
+              status: 'pending',
+              statusReason: '',
+              statusSetAt: null,
+              statusSetById: null,
+              places: ['屋内ブース']
             }),
             {
               status: 200,
@@ -150,9 +173,19 @@ describe('StaffCircleDetailPage', () => {
               circle: {
                 id: 'circle-b',
                 name: 'デモ企画B',
+                nameYomi: 'デモキカクビー',
                 groupName: 'Bブロック',
+                groupNameYomi: 'ビーブロック',
                 participationTypeId: 'participation-type-exhibit',
-                participationTypeName: '展示'
+                participationTypeName: '展示',
+                tags: ['展示'],
+                notes: '既存メモ',
+                submittedAt: '2025-02-01T00:00:00Z',
+                status: 'pending',
+                statusReason: '',
+                statusSetAt: null,
+                statusSetById: null,
+                places: ['屋内ブース']
               },
               recipients: [
                 {
@@ -179,9 +212,19 @@ describe('StaffCircleDetailPage', () => {
             JSON.stringify({
               id: 'circle-b',
               name: '更新後の企画B',
+              nameYomi: 'コウシンゴノキカクビー',
               groupName: '更新後Bブロック',
-              participationTypeId: 'participation-type-food',
-              participationTypeName: '模擬店'
+              groupNameYomi: 'コウシンゴビーブロック',
+              participationTypeId: 'participation-type-exhibit',
+              participationTypeName: '展示',
+              tags: ['展示'],
+              notes: '既存メモ',
+              submittedAt: '2025-02-01T00:00:00Z',
+              status: 'pending',
+              statusReason: '',
+              statusSetAt: null,
+              statusSetById: null,
+              places: ['屋内ブース']
             }),
             {
               status: 200,
@@ -207,6 +250,7 @@ describe('StaffCircleDetailPage', () => {
               },
               featureFlags: [],
               roles: ['admin'],
+              permissions: ['staff.circles'],
               user: {
                 id: 'staff-user',
                 displayName: 'Staff User'
@@ -280,7 +324,7 @@ describe('StaffCircleDetailPage', () => {
         { path: '/staff/circles', component: { template: '<div>circles</div>' } },
         { path: '/staff/circles/:circleId', component: StaffCircleDetailPage },
         {
-          path: '/staff/participation-types/:typeId',
+          path: '/staff/circles/participation_types/:typeId',
           component: { template: '<div>type</div>' }
         }
       ]
@@ -311,14 +355,31 @@ describe('StaffCircleDetailPage', () => {
           })
         }
 
+        if (pathname.endsWith('/staff/places') && method === 'GET') {
+          return new Response(JSON.stringify([{ id: 'place-booth', name: '屋内ブース', maxCircleCount: 200 }]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
         if (pathname.endsWith('/staff/circles/circle-b') && method === 'GET') {
           return new Response(
             JSON.stringify({
               id: 'circle-b',
               name: 'デモ企画B',
+              nameYomi: 'デモキカクビー',
               groupName: 'Bブロック',
+              groupNameYomi: 'ビーブロック',
               participationTypeId: 'participation-type-exhibit',
-              participationTypeName: '展示'
+              participationTypeName: '展示',
+              tags: ['展示'],
+              notes: '既存メモ',
+              submittedAt: '2025-02-01T00:00:00Z',
+              status: 'pending',
+              statusReason: '',
+              statusSetAt: null,
+              statusSetById: null,
+              places: ['屋内ブース']
             }),
             {
               status: 200,
@@ -333,9 +394,19 @@ describe('StaffCircleDetailPage', () => {
               circle: {
                 id: 'circle-b',
                 name: 'デモ企画B',
+                nameYomi: 'デモキカクビー',
                 groupName: 'Bブロック',
+                groupNameYomi: 'ビーブロック',
                 participationTypeId: 'participation-type-exhibit',
-                participationTypeName: '展示'
+                participationTypeName: '展示',
+                tags: ['展示'],
+                notes: '既存メモ',
+                submittedAt: '2025-02-01T00:00:00Z',
+                status: 'pending',
+                statusReason: '',
+                statusSetAt: null,
+                statusSetById: null,
+                places: ['屋内ブース']
               },
               recipients: []
             }),

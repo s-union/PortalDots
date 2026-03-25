@@ -30,6 +30,11 @@ type Circle struct {
 	InvitationToken       string
 	SubmittedAt           *time.Time
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           *time.Time
+	StatusSetByID         *string
+	Places                []string
 }
 
 type CircleMember struct {
@@ -61,8 +66,8 @@ type Catalog interface {
 	FindSelectable(user *auth.User, circleID string) (Circle, error)
 	ListForStaff() ([]Circle, error)
 	Find(circleID string) (Circle, error)
-	Create(name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error)
-	Update(circleID, name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error)
+	Create(name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
+	Update(circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
 	Delete(circleID string) error
 
 	// Workspace user-facing methods
@@ -99,6 +104,8 @@ func NewStaticCatalog(cfg []config.Circle, authUser config.AuthUser, users []con
 			ParticipationTypeName: item.ParticipationTypeName,
 			Tags:                  slices.Clone(item.Tags),
 			InvitationToken:       item.ID + "-invite-token",
+			Status:                "pending",
+			Places:                []string{},
 		})
 		members[item.ID] = []CircleMember{}
 	}
@@ -153,36 +160,54 @@ func (c *StaticCatalog) Find(circleID string) (Circle, error) {
 	return c.FindSelectable(nil, circleID)
 }
 
-func (c *StaticCatalog) Create(name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error) {
+func (c *StaticCatalog) Create(name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, _ string, placeIDs []string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if status == "" {
+		status = "pending"
+	}
 	circle := Circle{
 		ID:                    "circle-generated-" + strconv.Itoa(c.nextID),
 		Name:                  name,
+		NameYomi:              nameYomi,
 		GroupName:             groupName,
+		GroupNameYomi:         groupNameYomi,
 		ParticipationTypeID:   participationTypeID,
 		ParticipationTypeName: participationTypeName,
 		Tags:                  slices.Clone(tags),
+		Notes:                 notes,
+		Status:                status,
+		StatusReason:          statusReason,
+		Places:                slices.Clone(placeIDs),
 	}
 	c.nextID++
 	c.circles = append(c.circles, circle)
 	return cloneCircle(circle), nil
 }
 
-func (c *StaticCatalog) Update(circleID, name, groupName, participationTypeID, participationTypeName string, tags []string) (Circle, error) {
+func (c *StaticCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, _ string, placeIDs []string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if status == "" {
+		status = "pending"
+	}
 	for index := range c.circles {
 		if c.circles[index].ID != circleID {
 			continue
 		}
 		c.circles[index].Name = name
+		c.circles[index].NameYomi = nameYomi
 		c.circles[index].GroupName = groupName
+		c.circles[index].GroupNameYomi = groupNameYomi
 		c.circles[index].ParticipationTypeID = participationTypeID
 		c.circles[index].ParticipationTypeName = participationTypeName
 		c.circles[index].Tags = slices.Clone(tags)
+		c.circles[index].Notes = notes
+		c.circles[index].Status = status
+		c.circles[index].StatusReason = statusReason
+		c.circles[index].Places = slices.Clone(placeIDs)
 		return cloneCircle(c.circles[index]), nil
 	}
 
@@ -210,14 +235,7 @@ func (c *StaticCatalog) GetUserCircle(_ *auth.User, circleID string) (Circle, er
 }
 
 func (c *StaticCatalog) CreateForUser(_ *auth.User, params CreateCircleParams) (Circle, error) {
-	created, err := c.Create(params.Name, params.GroupName, params.ParticipationTypeID, params.ParticipationTypeName, nil)
-	if err != nil {
-		return Circle{}, err
-	}
-	created.NameYomi = params.NameYomi
-	created.GroupNameYomi = params.GroupNameYomi
-	created.Notes = params.Notes
-	return created, nil
+	return c.Create(params.Name, params.NameYomi, params.GroupName, params.GroupNameYomi, params.ParticipationTypeID, params.ParticipationTypeName, params.Notes, nil, "pending", "", "", nil)
 }
 
 func (c *StaticCatalog) UpdateForUser(_ *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
@@ -380,6 +398,7 @@ func cloneCircles(values []Circle) []Circle {
 
 func cloneCircle(value Circle) Circle {
 	value.Tags = slices.Clone(value.Tags)
+	value.Places = slices.Clone(value.Places)
 	return value
 }
 

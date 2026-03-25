@@ -66,7 +66,7 @@ export function buildStaffParticipationTypeTabs(
     {
       label: '企画一覧',
       to: {
-        path: `/staff/participation-types/${encodeURIComponent(typeId)}`,
+        path: `/staff/circles/participation_types/${encodeURIComponent(typeId)}`,
         hash: '#circles-section'
       },
       active: currentHash === '#circles-section'
@@ -74,7 +74,7 @@ export function buildStaffParticipationTypeTabs(
     {
       label: '参加種別を編集',
       to: {
-        path: `/staff/participation-types/${encodeURIComponent(typeId)}`,
+        path: `/staff/circles/participation_types/${encodeURIComponent(typeId)}`,
         hash: '#participation-type-section'
       },
       active: currentHash === '#participation-type-section'
@@ -82,7 +82,7 @@ export function buildStaffParticipationTypeTabs(
     {
       label: '参加登録フォームの設定',
       to: {
-        path: `/staff/participation-types/${encodeURIComponent(typeId)}`,
+        path: `/staff/circles/participation_types/${encodeURIComponent(typeId)}`,
         hash: '#form-settings-section'
       },
       active: currentHash === '#form-settings-section',

@@ -3393,16 +3393,45 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [id, name, groupName, participationTypeName]
+                      required: [id, name, nameYomi, groupName, groupNameYomi, participationTypeId, participationTypeName, tags, notes, status, statusReason, places]
                       properties:
                         id:
                           type: string
                         name:
                           type: string
+                        nameYomi:
+                          type: string
                         groupName:
+                          type: string
+                        groupNameYomi:
+                          type: string
+                        participationTypeId:
                           type: string
                         participationTypeName:
                           type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        notes:
+                          type: string
+                        submittedAt:
+                          type: string
+                          nullable: true
+                        status:
+                          type: string
+                        statusReason:
+                          type: string
+                        statusSetAt:
+                          type: string
+                          nullable: true
+                        statusSetById:
+                          type: string
+                          nullable: true
+                        places:
+                          type: array
+                          items:
+                            type: string
                   page:
                     type: integer
                   pageSize:
@@ -3427,12 +3456,27 @@ paths:
                 name:
                   type: string
                   minLength: 1
+                nameYomi:
+                  type: string
                 groupName:
                   type: string
                   minLength: 1
+                groupNameYomi:
+                  type: string
                 participationTypeId:
                   type: string
                   minLength: 1
+                notes:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, approved, rejected]
+                statusReason:
+                  type: string
+                placeIds:
+                  type: array
+                  items:
+                    type: string
       responses:
         "201":
           description: Created circle
@@ -3440,18 +3484,45 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, groupName, participationTypeId, participationTypeName]
+                required: [id, name, nameYomi, groupName, groupNameYomi, participationTypeId, participationTypeName, tags, notes, status, statusReason, places]
                 properties:
                   id:
                     type: string
                   name:
                     type: string
+                  nameYomi:
+                    type: string
                   groupName:
+                    type: string
+                  groupNameYomi:
                     type: string
                   participationTypeId:
                     type: string
                   participationTypeName:
                     type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  notes:
+                    type: string
+                  submittedAt:
+                    type: string
+                    nullable: true
+                  status:
+                    type: string
+                  statusReason:
+                    type: string
+                  statusSetAt:
+                    type: string
+                    nullable: true
+                  statusSetById:
+                    type: string
+                    nullable: true
+                  places:
+                    type: array
+                    items:
+                      type: string
         "401":
           description: Unauthenticated
         "403":
@@ -3471,18 +3542,45 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, name, groupName, participationTypeId, participationTypeName]
+                  required: [id, name, nameYomi, groupName, groupNameYomi, participationTypeId, participationTypeName, tags, notes, status, statusReason, places]
                   properties:
                     id:
                       type: string
                     name:
                       type: string
+                    nameYomi:
+                      type: string
                     groupName:
+                      type: string
+                    groupNameYomi:
                       type: string
                     participationTypeId:
                       type: string
                     participationTypeName:
                       type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    notes:
+                      type: string
+                    submittedAt:
+                      type: string
+                      nullable: true
+                    status:
+                      type: string
+                    statusReason:
+                      type: string
+                    statusSetAt:
+                      type: string
+                      nullable: true
+                    statusSetById:
+                      type: string
+                      nullable: true
+                    places:
+                      type: array
+                      items:
+                        type: string
         "401":
           description: Unauthenticated
         "403":
@@ -3520,18 +3618,45 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, groupName, participationTypeId, participationTypeName]
+                required: [id, name, nameYomi, groupName, groupNameYomi, participationTypeId, participationTypeName, tags, notes, status, statusReason, places]
                 properties:
                   id:
                     type: string
                   name:
                     type: string
+                  nameYomi:
+                    type: string
                   groupName:
+                    type: string
+                  groupNameYomi:
                     type: string
                   participationTypeId:
                     type: string
                   participationTypeName:
                     type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  notes:
+                    type: string
+                  submittedAt:
+                    type: string
+                    nullable: true
+                  status:
+                    type: string
+                  statusReason:
+                    type: string
+                  statusSetAt:
+                    type: string
+                    nullable: true
+                  statusSetById:
+                    type: string
+                    nullable: true
+                  places:
+                    type: array
+                    items:
+                      type: string
         "401":
           description: Unauthenticated
         "403":
@@ -3576,12 +3701,27 @@ paths:
                 name:
                   type: string
                   minLength: 1
+                nameYomi:
+                  type: string
                 groupName:
                   type: string
                   minLength: 1
+                groupNameYomi:
+                  type: string
                 participationTypeId:
                   type: string
                   minLength: 1
+                notes:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, approved, rejected]
+                statusReason:
+                  type: string
+                placeIds:
+                  type: array
+                  items:
+                    type: string
       responses:
         "200":
           description: Updated circle
@@ -3589,18 +3729,45 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, groupName, participationTypeId, participationTypeName]
+                required: [id, name, nameYomi, groupName, groupNameYomi, participationTypeId, participationTypeName, tags, notes, status, statusReason, places]
                 properties:
                   id:
                     type: string
                   name:
                     type: string
+                  nameYomi:
+                    type: string
                   groupName:
+                    type: string
+                  groupNameYomi:
                     type: string
                   participationTypeId:
                     type: string
                   participationTypeName:
                     type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  notes:
+                    type: string
+                  submittedAt:
+                    type: string
+                    nullable: true
+                  status:
+                    type: string
+                  statusReason:
+                    type: string
+                  statusSetAt:
+                    type: string
+                    nullable: true
+                  statusSetById:
+                    type: string
+                    nullable: true
+                  places:
+                    type: array
+                    items:
+                      type: string
         "401":
           description: Unauthenticated
         "403":
@@ -3630,18 +3797,45 @@ paths:
                 properties:
                   circle:
                     type: object
-                    required: [id, name, groupName, participationTypeId, participationTypeName]
+                    required: [id, name, nameYomi, groupName, groupNameYomi, participationTypeId, participationTypeName, tags, notes, status, statusReason, places]
                     properties:
                       id:
                         type: string
                       name:
                         type: string
+                      nameYomi:
+                        type: string
                       groupName:
+                        type: string
+                      groupNameYomi:
                         type: string
                       participationTypeId:
                         type: string
                       participationTypeName:
                         type: string
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                      notes:
+                        type: string
+                      submittedAt:
+                        type: string
+                        nullable: true
+                      status:
+                        type: string
+                      statusReason:
+                        type: string
+                      statusSetAt:
+                        type: string
+                        nullable: true
+                      statusSetById:
+                        type: string
+                        nullable: true
+                      places:
+                        type: array
+                        items:
+                          type: string
                   recipients:
                     type: array
                     items:

@@ -148,17 +148,28 @@ func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c echo.Co
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	rows := [][]string{{"participation_type_id", "participation_type_name", "circle_id", "circle_name", "group_name"}}
+	rows := [][]string{{"id", "participation_type_id", "participation_type_name", "name", "name_yomi", "group_name", "group_name_yomi", "tags", "notes", "submitted_at", "status", "places"}}
 	for _, currentCircle := range circles {
 		if currentCircle.ParticipationTypeID != participationType.ID {
 			continue
 		}
+		submittedAt := ""
+		if currentCircle.SubmittedAt != nil {
+			submittedAt = currentCircle.SubmittedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		}
 		rows = append(rows, []string{
+			currentCircle.ID,
 			participationType.ID,
 			participationType.Name,
-			currentCircle.ID,
 			currentCircle.Name,
+			currentCircle.NameYomi,
 			currentCircle.GroupName,
+			currentCircle.GroupNameYomi,
+			strings.Join(currentCircle.Tags, " "),
+			currentCircle.Notes,
+			submittedAt,
+			currentCircle.Status,
+			strings.Join(currentCircle.Places, " "),
 		})
 	}
 

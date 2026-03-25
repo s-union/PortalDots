@@ -188,6 +188,27 @@ declare module 'vue-router/auto-routes' {
       { circleId: ParamValue<false> },
       | never
     >,
+    '/staff/circles/all': RouteRecordInfo<
+      '/staff/circles/all',
+      '/staff/circles/all',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/staff/circles/participation_types/': RouteRecordInfo<
+      '/staff/circles/participation_types/',
+      '/staff/circles/participation_types',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/staff/circles/participation_types/[typeId]': RouteRecordInfo<
+      '/staff/circles/participation_types/[typeId]',
+      '/staff/circles/participation_types/:typeId',
+      { typeId: ParamValue<true> },
+      { typeId: ParamValue<false> },
+      | never
+    >,
     '/staff/documents/': RouteRecordInfo<
       '/staff/documents/',
       '/staff/documents',
@@ -619,6 +640,24 @@ declare module 'vue-router/auto-routes' {
     'src/pages/staff/circles/[circleId].vue': {
       routes:
         | '/staff/circles/[circleId]'
+      views:
+        | never
+    }
+    'src/pages/staff/circles/all.vue': {
+      routes:
+        | '/staff/circles/all'
+      views:
+        | never
+    }
+    'src/pages/staff/circles/participation_types/index.vue': {
+      routes:
+        | '/staff/circles/participation_types/'
+      views:
+        | never
+    }
+    'src/pages/staff/circles/participation_types/[typeId].vue': {
+      routes:
+        | '/staff/circles/participation_types/[typeId]'
       views:
         | never
     }

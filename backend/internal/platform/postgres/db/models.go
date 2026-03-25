@@ -72,6 +72,10 @@ type Circle struct {
 	InvitationToken       pgtype.Text
 	SubmittedAt           pgtype.Timestamptz
 	Notes                 string
+	Status                string
+	StatusReason          string
+	StatusSetAt           pgtype.Timestamptz
+	StatusSetBy           pgtype.Text
 }
 
 type CircleUser struct {

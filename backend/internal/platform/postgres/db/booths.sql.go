@@ -9,6 +9,20 @@ import (
 	"context"
 )
 
+const addCircleBooth = `-- name: AddCircleBooth :exec
+INSERT INTO booths (place_id, circle_id) VALUES ($1, $2) ON CONFLICT DO NOTHING
+`
+
+type AddCircleBoothParams struct {
+	PlaceID  string
+	CircleID string
+}
+
+func (q *Queries) AddCircleBooth(ctx context.Context, arg AddCircleBoothParams) error {
+	_, err := q.db.Exec(ctx, addCircleBooth, arg.PlaceID, arg.CircleID)
+	return err
+}
+
 const deleteBoothsByCircle = `-- name: DeleteBoothsByCircle :exec
 DELETE FROM booths
 WHERE circle_id = $1

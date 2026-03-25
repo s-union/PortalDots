@@ -3,6 +3,7 @@ node = "24"
 go = "1.26"
 sqlc = "1.30.0"
 staticcheck = "latest"
+air = "latest"
 prek = "latest"
 
 [tasks.frontend-install]
@@ -34,7 +35,7 @@ run = "pnpm run codegen:api"
 [tasks.backend-dev]
 description = "Start the new Go API"
 dir = "backend"
-run = "go run ./cmd/api"
+run = "air -c .air.toml"
 
 [tasks.db-up]
 description = "Start local PostgreSQL container"

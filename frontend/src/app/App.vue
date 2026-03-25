@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watchEffect } from 'vue'
-import { RouterView, useRoute, useRouter } from 'vue-router'
-import AppBottomTabs from '@/components/shell/AppBottomTabs.vue'
-import AppDrawer from '@/components/shell/AppDrawer.vue'
-import AppHeader from '@/components/shell/AppHeader.vue'
-import type { AppModeSwitchTarget, AppStatusBadge, DrawerNavLink, MobileTabLink } from '@/app/types/shell'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import BottomTabLink from '@/components/ui/BottomTabLink.vue'
+import ModeSwitchLink from '@/components/ui/ModeSwitchLink.vue'
+import NavMenuLink from '@/components/ui/NavMenuLink.vue'
 import PublicFooterLinks from '@/components/ui/PublicFooterLinks.vue'
-import { useLogoutMutation } from '@/features/auth/api'
-import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useSessionBootstrapQuery } from '@/features/session/api'
+import { useLogoutMutation } from '@/features/auth/api'
 import { useSessionStore } from '@/features/session/store'
+import { cn } from '@/lib/ui/cn'
+import { buttonVariants } from '@/lib/ui/variants'
 import {
-  canManageParticipationTypes,
-  canManagePortalSettings,
   canReadCircles,
   canReadContactCategories,
   canReadDocuments,
@@ -22,12 +20,14 @@ import {
   canReadPlaces,
   canReadTags,
   canReadUsers,
+  canManageParticipationTypes,
+  canManagePortalSettings,
   canUseMailQueue,
   canUseStaffExports,
   canViewActivityLogs,
   hasStaffAccess
 } from '@/features/staff/access/capabilities'
-import { cn } from '@/lib/ui/cn'
+import { usePublicConfigQuery } from '@/features/public-home/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,9 +35,9 @@ const sessionStore = useSessionStore()
 const bootstrapQuery = useSessionBootstrapQuery()
 const logoutMutation = useLogoutMutation()
 const publicConfigQuery = usePublicConfigQuery()
-
 const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalDots')
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
+
 const isDrawerOpen = ref(false)
 const isSmallScreen = ref(typeof window !== 'undefined' && window.innerWidth <= 1000)
 
@@ -49,7 +49,6 @@ onMounted(() => {
       isDrawerOpen.value = false
     }
   })
-
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       isDrawerOpen.value = false
@@ -57,6 +56,7 @@ onMounted(() => {
   })
 })
 
+// On small screens: slide in/out. On desktop: always visible (no transform).
 const drawerTranslateClass = computed(() => {
   if (!isSmallScreen.value) {
     return ''
@@ -83,14 +83,21 @@ const canAccessExports = computed(() => canUseStaffExports(sessionStore.roles, s
 const canAccessMails = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
 const canAccessActivityLogs = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
 const canAccessPortalSettings = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
-
 const isStaffRoute = computed(() => route.path.startsWith('/staff'))
 const hasDrawer = computed(() => route.meta.noDrawer !== true)
 const showFooter = computed(() => route.meta.noFooter !== true)
 const showBottomTabs = computed(() => !isStaffRoute.value && route.meta.noBottomTabs !== true && hasDrawer.value)
 const appModeLabel = computed(() => (isStaffRoute.value ? 'スタッフモード' : '一般モード'))
 const circleActionLabel = computed(() => (sessionStore.currentCircle === null ? '企画を選択' : '企画を切り替え'))
-const circleName = computed(() => sessionStore.currentCircle?.name ?? '企画未選択')
+
+interface DrawerNavLink {
+  to: string
+  label: string
+  iconClass: string
+  active: boolean
+  hidden?: boolean
+  adminOnly?: boolean
+}
 
 const generalLinks = computed<DrawerNavLink[]>(() => [
   {
@@ -133,6 +140,42 @@ const generalLinks = computed<DrawerNavLink[]>(() => [
   }
 ])
 
+const mobileTabs = computed(() => [
+  {
+    to: '/',
+    label: 'ホーム',
+    iconClass: 'fas fa-home',
+    active: route.path === '/'
+  },
+  {
+    to: sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages',
+    label: 'お知らせ',
+    iconClass: 'fas fa-bullhorn',
+    active: route.path.startsWith('/workspace/pages') || route.path.startsWith('/public/pages'),
+    showNotifier: false
+  },
+  {
+    to: sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents',
+    label: '配布資料',
+    iconClass: 'far fa-file-alt',
+    active: route.path.startsWith('/workspace/documents') || route.path.startsWith('/public/documents')
+  },
+  {
+    to: '/workspace/forms',
+    label: '申請',
+    iconClass: 'far fa-edit',
+    active: route.path.startsWith('/workspace/forms'),
+    hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null
+  },
+  {
+    to: '/workspace/contact',
+    label: 'お問い合わせ',
+    iconClass: 'far fa-envelope',
+    active: route.path.startsWith('/workspace/contact'),
+    hidden: !sessionStore.isAuthenticated
+  }
+])
+
 const staffLinks = computed<DrawerNavLink[]>(() => [
   {
     to: '/staff',
@@ -155,10 +198,12 @@ const staffLinks = computed<DrawerNavLink[]>(() => [
     hidden: !canAccessCircles.value
   },
   {
-    to: '/staff/participation-types',
+    to: '/staff/circles/participation_types',
     label: '参加種別管理',
     iconClass: 'fas fa-list fa-fw',
-    active: route.path.startsWith('/staff/participation-types'),
+    active:
+      route.path.startsWith('/staff/circles/participation_types') ||
+      route.path.startsWith('/staff/participation-types'),
     hidden: isDemoMode.value || !canAccessParticipationTypes.value
   },
   {
@@ -248,52 +293,15 @@ const staffLinks = computed<DrawerNavLink[]>(() => [
   }
 ])
 
-const mobileTabs = computed<MobileTabLink[]>(() => [
-  {
-    to: '/',
-    label: 'ホーム',
-    iconClass: 'fas fa-home',
-    active: route.path === '/'
-  },
-  {
-    to: sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages',
-    label: 'お知らせ',
-    iconClass: 'fas fa-bullhorn',
-    active: route.path.startsWith('/workspace/pages') || route.path.startsWith('/public/pages'),
-    showNotifier: false
-  },
-  {
-    to: sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents',
-    label: '配布資料',
-    iconClass: 'far fa-file-alt',
-    active: route.path.startsWith('/workspace/documents') || route.path.startsWith('/public/documents')
-  },
-  {
-    to: '/workspace/forms',
-    label: '申請',
-    iconClass: 'far fa-edit',
-    active: route.path.startsWith('/workspace/forms'),
-    hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null
-  },
-  {
-    to: '/workspace/contact',
-    label: 'お問い合わせ',
-    iconClass: 'far fa-envelope',
-    active: route.path.startsWith('/workspace/contact'),
-    hidden: !sessionStore.isAuthenticated
-  }
-])
-
-const modeDrawerLinks = computed(() => (isStaffRoute.value ? staffLinks.value : generalLinks.value))
-const visibleDrawerLinks = computed(() => modeDrawerLinks.value.filter((link) => link.hidden !== true))
-const visibleMobileTabs = computed(() => mobileTabs.value.filter((tab) => tab.hidden !== true))
-
-const statusBadges = computed<AppStatusBadge[]>(() => {
+const mobileTabsStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${Math.max(mobileTabs.value.filter((link) => link.hidden !== true).length, 1)}, minmax(0, 1fr))`
+}))
+const statusBadges = computed(() => {
   if (!sessionStore.isAuthenticated) {
     return []
   }
 
-  const badges: AppStatusBadge[] = []
+  const badges: { label: string; variant: 'primary' | 'danger' }[] = []
   if (canAccessStaff.value) {
     badges.push({ label: 'スタッフ', variant: 'primary' })
   }
@@ -311,23 +319,6 @@ const authLabel = computed(() => {
     return 'ログインしていません'
   }
   return `${sessionStore.user?.displayName ?? 'unknown'}としてログイン中`
-})
-
-const drawerTopDescription = computed(() =>
-  isStaffRoute.value ? authLabel.value : `現在の企画: ${sessionStore.currentCircle?.name ?? '未選択'}`
-)
-
-const modeSwitchTarget = computed<AppModeSwitchTarget | null>(() => {
-  if (sessionStore.isAuthenticated && canAccessStaff.value && !isStaffRoute.value) {
-    return { to: '/staff', label: 'スタッフモードへ' }
-  }
-  if (sessionStore.isAuthenticated && canAccessStaff.value && isStaffRoute.value) {
-    return { to: '/', label: '一般モードへ' }
-  }
-  if (!sessionStore.isAuthenticated) {
-    return { to: '/login', label: 'ログイン' }
-  }
-  return null
 })
 
 const pageTitle = computed(() => {
@@ -356,7 +347,7 @@ const pageTitle = computed(() => {
     return 'PortalDotsについて'
   }
 
-  const activeLink = modeDrawerLinks.value.find((link) => link.active)
+  const activeLink = [...(isStaffRoute.value ? staffLinks.value : generalLinks.value)].find((link) => link.active)
   return activeLink?.label ?? 'PortalDots'
 })
 
@@ -390,52 +381,175 @@ async function handleLogout() {
 
 <template>
   <div class="min-h-screen bg-base text-body">
-    <AppHeader
-      :has-drawer="hasDrawer"
-      :page-title="pageTitle"
-      :app-mode-label="appModeLabel"
-      :is-staff-route="isStaffRoute"
-      @open-drawer="isDrawerOpen = true"
-    />
-
-    <AppDrawer
-      v-if="hasDrawer"
-      :is-small-screen="isSmallScreen"
-      :is-drawer-open="isDrawerOpen"
-      :drawer-translate-class="drawerTranslateClass"
-      :app-name="appName"
-      :app-mode-label="appModeLabel"
-      :is-staff-route="isStaffRoute"
-      :is-demo-mode="isDemoMode"
-      :top-description="drawerTopDescription"
-      :mode-switch-target="modeSwitchTarget"
-      :is-authenticated="sessionStore.isAuthenticated"
-      :circle-name="circleName"
-      :circle-action-label="circleActionLabel"
-      :links="visibleDrawerLinks"
-      :auth-label="authLabel"
-      :status-badges="statusBadges"
-      :logout-pending="logoutMutation.isPending.value"
-      @close-drawer="isDrawerOpen = false"
-      @logout="handleLogout"
-    />
-
-    <main :class="cn('content', mainContentClass)">
-      <RouterView />
-      <footer
-        v-if="showFooter"
-        class="mt-6 border-t border-border px-6 py-6 text-center"
-        :class="isStaffRoute && isDemoMode ? 'max-[1000px]:hidden' : ''"
+    <!-- Fixed Navbar: height 5rem (h-20), z-[9980] — matches $z-index-navbar -->
+    <header
+      class="navbar fixed right-0 top-0 z-[9980] flex h-20 items-center gap-4 bg-surface-2 px-6 shadow-lv1"
+      :class="hasDrawer ? 'left-[320px] max-[1440px]:left-[280px] max-[1000px]:left-0' : 'left-0'"
+    >
+      <!-- Hamburger button: visible only at ≤1000px -->
+      <button
+        v-if="hasDrawer"
+        class="hidden max-[1000px]:flex items-center justify-center rounded p-2 text-body transition hover:bg-surface-light"
+        type="button"
+        aria-label="メニューを開く"
+        @click="isDrawerOpen = true"
       >
-        <PublicFooterLinks :app-name="appName" :show-privacy-policy="!(isStaffRoute && isDemoMode)" />
-      </footer>
+        <span class="text-xl leading-none">☰</span>
+      </button>
+
+      <div v-if="hasDrawer" class="min-w-0">
+        <p class="truncate text-lg font-semibold text-body">{{ pageTitle }}</p>
+        <p class="mt-1 text-xs text-muted">{{ appModeLabel }}</p>
+      </div>
+
+      <RouterLink
+        v-else
+        class="text-lg font-semibold text-body no-underline hover:no-underline"
+        :to="isStaffRoute ? '/staff' : '/'"
+      >
+        PortalDots
+      </RouterLink>
+    </header>
+
+    <!-- Drawer Backdrop: visible on small screens when drawer is open -->
+    <div
+      v-if="hasDrawer && isSmallScreen"
+      class="fixed inset-0 z-[9989] bg-drawer-backdrop transition-[opacity,visibility] duration-300"
+      :class="isDrawerOpen ? 'opacity-100 visible' : 'invisible opacity-0'"
+      @click="isDrawerOpen = false"
+    />
+
+    <!-- Drawer: fixed 320px (280px at ≤1440px), slides off at ≤1000px — z-[9990] -->
+    <aside
+      v-if="hasDrawer"
+      class="drawer fixed left-0 top-0 z-[9990] h-full w-[320px] max-[1440px]:w-[280px] max-[1000px]:w-[320px] max-w-[80vw] overflow-y-auto border-r border-border bg-surface-2 transition-transform duration-300"
+      :class="drawerTranslateClass"
+    >
+      <div class="flex h-full flex-col">
+        <!-- Drawer Header: pt accounts for fixed navbar ($navbar-height + $spacing = 6.5rem) -->
+        <div class="border-b border-border px-6 pb-6 pt-[6.5rem]">
+          <p class="text-lg font-semibold text-body">{{ appName }}</p>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <span
+              v-if="isStaffRoute"
+              class="rounded bg-primary-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-primary"
+            >
+              {{ appModeLabel }}
+            </span>
+            <span
+              v-if="isDemoMode"
+              class="rounded bg-muted-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-muted"
+            >
+              デモサイト
+            </span>
+          </div>
+          <p class="mt-3 text-sm text-muted">
+            {{ isStaffRoute ? authLabel : `現在の企画: ${sessionStore.currentCircle?.name ?? '未選択'}` }}
+          </p>
+        </div>
+
+        <!-- Mode Switch -->
+        <div class="border-b border-border px-6 py-4">
+          <ModeSwitchLink
+            v-if="sessionStore.isAuthenticated && canAccessStaff && !isStaffRoute"
+            to="/staff"
+            label="スタッフモードへ"
+          />
+          <ModeSwitchLink
+            v-else-if="sessionStore.isAuthenticated && canAccessStaff && isStaffRoute"
+            to="/"
+            label="一般モードへ"
+          />
+          <ModeSwitchLink v-else-if="!sessionStore.isAuthenticated" to="/login" label="ログイン" />
+        </div>
+
+        <!-- Circle Selection (general mode only) -->
+        <div v-if="sessionStore.isAuthenticated && !isStaffRoute" class="border-b border-border px-6 py-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">選択中の企画</p>
+          <p class="mt-2 text-sm text-body">
+            {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
+          </p>
+          <RouterLink
+            :class="cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')"
+            to="/circles/select"
+          >
+            {{ circleActionLabel }}
+          </RouterLink>
+        </div>
+
+        <!-- Nav Links -->
+        <nav class="flex-1 py-2">
+          <NavMenuLink
+            v-for="link in isStaffRoute ? staffLinks : generalLinks"
+            v-show="link.hidden !== true"
+            :key="link.to"
+            :to="link.to"
+            :label="link.label"
+            :icon-class="link.iconClass"
+            :active="link.active"
+            :admin-only="link.adminOnly"
+          />
+        </nav>
+
+        <!-- Footer: pushed to bottom of scrollable content -->
+        <div class="mt-auto border-t border-border px-6 py-6">
+          <p v-if="isStaffRoute" class="text-sm text-muted">{{ authLabel }}</p>
+          <div v-if="statusBadges.length > 0" class="mt-3 flex flex-wrap gap-2">
+            <span
+              v-for="badge in statusBadges"
+              :key="`drawer-${badge.label}`"
+              :class="[
+                'inline-flex items-center justify-center rounded px-1.5 text-[0.75em] font-medium leading-[1.75]',
+                badge.variant === 'primary' && 'bg-primary-light text-primary',
+                badge.variant === 'danger' && 'bg-danger-light text-danger'
+              ]"
+            >
+              {{ badge.label }}
+            </span>
+          </div>
+          <button
+            v-if="sessionStore.isAuthenticated"
+            :class="cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')"
+            :disabled="logoutMutation.isPending.value"
+            type="button"
+            @click="handleLogout"
+          >
+            ログアウト
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content: offset by navbar height (pt-20) and drawer width (pl-*) -->
+    <main :class="cn('content', mainContentClass)">
+      <div class="min-h-full">
+        <RouterView />
+        <footer
+          v-if="showFooter"
+          class="mt-6 border-t border-border px-6 py-6 text-center"
+          :class="isStaffRoute && isDemoMode ? 'max-[1000px]:hidden' : ''"
+        >
+          <PublicFooterLinks :app-name="appName" :show-privacy-policy="!(isStaffRoute && isDemoMode)" />
+        </footer>
+      </div>
     </main>
 
+    <!-- Bottom Tabs: fixed, only visible at ≤1000px — z-[9980] matches $z-index-bottom-tabs -->
     <nav
       v-if="showBottomTabs"
       class="fixed inset-x-0 bottom-0 z-[9980] hidden border-t border-border bg-surface-2 shadow-[0_-0.1rem_0.8rem_-0.6rem_var(--color-box-shadow)] max-[1000px]:block"
     >
-      <AppBottomTabs :tabs="visibleMobileTabs" />
+      <div class="mx-auto grid w-full max-w-[600px] pb-[env(safe-area-inset-bottom)]" :style="mobileTabsStyle">
+        <BottomTabLink
+          v-for="tab in mobileTabs.filter((link) => link.hidden !== true)"
+          :key="tab.to"
+          :to="tab.to"
+          :label="tab.label"
+          :icon-class="tab.iconClass"
+          :active="tab.active"
+          :show-notifier="tab.showNotifier"
+        />
+      </div>
     </nav>
   </div>
 </template>

@@ -28,6 +28,7 @@ import {
   useUpdateStaffCircleMutation
 } from '@/features/staff/circles/api'
 import { useStaffParticipationTypesQuery } from '@/features/staff/participation-types/api'
+import { useStaffPlacesQuery } from '@/features/staff/masters/places'
 
 const route = useRoute('/staff/circles/[circleId]')
 const router = useRouter()
@@ -35,14 +36,21 @@ const circleId = computed(() => String(route.params.circleId ?? ''))
 const { enabled } = useAuthorizedStaffContext({ capability: 'circles.edit' })
 const circleQuery = useStaffCircleDetailQuery(circleId, enabled)
 const participationTypesQuery = useStaffParticipationTypesQuery(enabled)
+const placesQuery = useStaffPlacesQuery(enabled)
 const mailFormQuery = useStaffCircleMailFormQuery(circleId, enabled)
 const updateCircleMutation = useUpdateStaffCircleMutation()
 const deleteCircleMutation = useDeleteStaffCircleMutation(circleId)
 const sendCircleMailMutation = useSendStaffCircleMailMutation(circleId)
 const form = ref({
   name: '',
+  nameYomi: '',
   groupName: '',
-  participationTypeId: ''
+  groupNameYomi: '',
+  participationTypeId: '',
+  notes: '',
+  status: 'pending' as 'pending' | 'approved' | 'rejected',
+  statusReason: '',
+  placeIds: [] as string[]
 })
 const mailForm = useStaffCircleMailForm()
 const errorMessage = ref('')
@@ -53,24 +61,30 @@ const mailSuccessMessage = ref('')
 const participationTypeEditorRoute = computed(() => {
   const participationTypeId = circleQuery.data.value?.participationTypeId
   if (!participationTypeId) {
-    return '/staff/participation-types'
+    return '/staff/circles/participation_types'
   }
-  return `/staff/participation-types/${encodeURIComponent(participationTypeId)}`
+  return `/staff/circles/participation_types/${encodeURIComponent(participationTypeId)}`
 })
 
 const mailRecipientCount = computed(() => mailFormQuery.data.value?.recipients.length ?? 0)
 const canSendMail = computed(() => mailRecipientCount.value > 0 && !sendCircleMailMutation.isPending.value)
 
 watch(
-  () => circleQuery.data.value,
-  (circle) => {
+  () => [circleQuery.data.value, placesQuery.data.value] as const,
+  ([circle, places]) => {
     if (!circle) {
       return
     }
     form.value = {
       name: circle.name,
+      nameYomi: circle.nameYomi,
       groupName: circle.groupName,
-      participationTypeId: circle.participationTypeId
+      groupNameYomi: circle.groupNameYomi,
+      participationTypeId: circle.participationTypeId,
+      notes: circle.notes,
+      status: circle.status as 'pending' | 'approved' | 'rejected',
+      statusReason: circle.statusReason,
+      placeIds: places ? places.filter((p) => circle.places.includes(p.name)).map((p) => p.id) : []
     }
   },
   { immediate: true }
@@ -84,8 +98,14 @@ async function handleSaveCircle() {
     await updateCircleMutation.mutateAsync({
       circleId: circleId.value,
       name: form.value.name,
+      nameYomi: form.value.nameYomi,
       groupName: form.value.groupName,
-      participationTypeId: form.value.participationTypeId
+      groupNameYomi: form.value.groupNameYomi,
+      participationTypeId: form.value.participationTypeId,
+      notes: form.value.notes,
+      status: form.value.status,
+      statusReason: form.value.statusReason,
+      placeIds: form.value.placeIds
     })
     successMessage.value = '企画を更新しました。'
   } catch (error) {
@@ -162,8 +182,16 @@ async function handleSendMail() {
                 <input v-model="form.name" name="name" type="text" />
               </label>
               <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画グループ名</span>
+                <span class="font-medium">企画名(よみ)</span>
+                <input v-model="form.nameYomi" name="nameYomi" type="text" />
+              </label>
+              <label class="grid gap-2 text-sm text-body">
+                <span class="font-medium">企画を出店する団体の名称</span>
                 <input v-model="form.groupName" name="groupName" type="text" />
+              </label>
+              <label class="grid gap-2 text-sm text-body">
+                <span class="font-medium">企画を出店する団体の名称(よみ)</span>
+                <input v-model="form.groupNameYomi" name="groupNameYomi" type="text" />
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">参加種別</span>
@@ -179,6 +207,41 @@ async function handleSendMail() {
                 </select>
                 <span class="text-xs text-muted-2"> 既存企画の参加種別は変更できません。 </span>
               </label>
+              <label class="grid gap-2 text-sm text-body">
+                <span class="font-medium">スタッフ用メモ</span>
+                <span class="text-xs text-muted">ここに入力された内容はスタッフのみ閲覧できます。</span>
+                <textarea v-model="form.notes" class="min-h-24" name="notes" />
+              </label>
+              <div class="grid gap-2 text-sm text-body">
+                <span class="font-medium">登録受理状況</span>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2">
+                    <input v-model="form.status" type="radio" name="status" value="pending" />
+                    審査中
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input v-model="form.status" type="radio" name="status" value="approved" />
+                    受理
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input v-model="form.status" type="radio" name="status" value="rejected" />
+                    不受理
+                  </label>
+                </div>
+              </div>
+              <label v-if="form.status === 'rejected'" class="grid gap-2 text-sm text-body">
+                <span class="font-medium">不受理理由</span>
+                <textarea v-model="form.statusReason" class="min-h-16" name="statusReason" />
+              </label>
+              <div class="grid gap-2 text-sm text-body">
+                <span class="font-medium">使用場所</span>
+                <select v-model="form.placeIds" name="placeIds" multiple>
+                  <option v-for="place in placesQuery.data.value ?? []" :key="place.id" :value="place.id">
+                    {{ place.name }}
+                  </option>
+                </select>
+                <span class="text-xs text-muted">Ctrl/Cmd を押しながらクリックで複数選択できます</span>
+              </div>
             </div>
           </SettingsRow>
           <template #footer>
