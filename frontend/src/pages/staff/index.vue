@@ -167,38 +167,47 @@ const staffCards = computed<StaffCard[]>(() => [
     hidden: isDemoMode.value || !mailQueueAvailable.value
   }
 ])
+
+const visibleStaffCards = computed(() => staffCards.value.filter((card) => card.hidden !== true))
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout class="max-w-full space-y-0">
     <HomeModeTabs :is-staff-page="true" />
 
-    <section class="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
-      <RouterLink
-        v-for="card in staffCards"
-        v-show="card.hidden !== true"
-        :key="card.to"
-        :to="card.to"
-        class="rounded border border-border bg-surface p-5 text-body no-underline shadow-lv1 transition hover:bg-form-control hover:no-underline"
-      >
-        <p class="flex items-center gap-2 text-base font-semibold">
-          <i :class="card.iconClass" aria-hidden="true" />
-          <span>{{ card.title }}</span>
-          <span
-            v-if="card.adminOnly"
-            class="inline-flex items-center justify-center rounded bg-danger-light px-1.5 text-[0.75em] font-medium leading-[1.75] text-danger"
-          >
-            管理者
-          </span>
-        </p>
-        <p class="mt-2 text-sm leading-7 text-muted">
-          {{ card.description }}
-        </p>
-      </RouterLink>
+    <section v-if="visibleStaffCards.length > 0" class="px-6 pb-6 pt-6 max-[1000px]:px-4">
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6">
+        <RouterLink
+          v-for="card in visibleStaffCards"
+          :key="card.to"
+          :to="card.to"
+          class="block h-full rounded-[0.45rem] bg-surface text-body no-underline shadow-lv1 transition-colors duration-150 hover:bg-surface-light hover:no-underline"
+        >
+          <div class="flex h-full flex-col items-center px-6 py-8 text-center">
+            <span
+              class="mb-4 flex h-12 w-12 items-center justify-center rounded-[0.45rem] bg-primary-light text-[1.75rem] leading-none text-primary"
+            >
+              <i :class="card.iconClass" aria-hidden="true" />
+            </span>
+            <p class="flex flex-wrap items-center justify-center gap-2 text-[1.1rem] font-bold">
+              <span>{{ card.title }}</span>
+              <span
+                v-if="card.adminOnly"
+                class="inline-flex h-[1.75em] items-center justify-center rounded-[0.2rem] bg-danger-light px-[0.4rem] text-[0.75em] font-medium leading-[1.2] text-danger"
+              >
+                管理者
+              </span>
+            </p>
+            <p class="mt-2 text-muted">
+              {{ card.description }}
+            </p>
+          </div>
+        </RouterLink>
+      </div>
     </section>
 
-    <section v-if="staffCards.filter((card) => card.hidden !== true).length === 0">
-      <div class="rounded border border-border bg-surface px-6 py-10 text-center text-muted shadow-lv1">
+    <section v-else class="px-6 pb-6 pt-6 max-[1000px]:px-4">
+      <div class="rounded-[0.45rem] bg-surface px-6 py-10 text-center text-muted shadow-lv1">
         利用可能なスタッフ機能がありません。管理者にアクセス権の付与を依頼してください。
       </div>
     </section>

@@ -1385,7 +1385,46 @@ paths:
           required: false
           schema:
             type: string
-          description: 名前・ログインIDで絞り込む
+          description: 名前・ログインID・連絡先メールアドレスで絞り込む
+        - in: query
+          name: sortKey
+          required: false
+          schema:
+            type: string
+            enum:
+              [
+                id,
+                lastName,
+                firstName,
+                loginIds,
+                contactEmail,
+                phoneNumber,
+                isStaff,
+                isAdmin,
+                isEmailVerified,
+                isVerified,
+              ]
+          description: ソート対象のキー
+        - in: query
+          name: sortDirection
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: ソート方向
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+          description: 絞り込み条件のJSON文字列
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
+          description: 絞り込み条件の結合モード
       responses:
         "200":
           description: Staff user list

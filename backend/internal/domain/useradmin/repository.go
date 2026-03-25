@@ -154,6 +154,7 @@ func (r *StaticRepository) ListByQuery(query string) ([]User, error) {
 		target := strings.ToLower(strings.Join([]string{
 			u.ID, u.DisplayName, u.LastName, u.FirstName,
 			strings.Join(u.LoginIDs, " "),
+			u.ContactEmail,
 		}, " "))
 		if strings.Contains(target, q) {
 			filtered = append(filtered, cloneUser(u))

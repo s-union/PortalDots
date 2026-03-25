@@ -25,6 +25,8 @@ const {
   loading = false,
   sortKey = '',
   sortDirection = 'asc',
+  filterActive = false,
+  showFilterButton = false,
   perPageOptions = [10, 25, 50, 100],
   emptyMessage = 'データが見つかりませんでした。',
   tableLabel = 'staff data grid'
@@ -37,6 +39,8 @@ const {
   loading?: boolean
   sortKey?: string
   sortDirection?: 'asc' | 'desc'
+  filterActive?: boolean
+  showFilterButton?: boolean
   perPageOptions?: number[]
   emptyMessage?: string
   tableLabel?: string
@@ -48,6 +52,7 @@ const emit = defineEmits<{
   next: []
   last: []
   reload: []
+  filter: []
   sort: [key: string]
   'update:pageSize': [pageSize: number]
 }>()
@@ -78,12 +83,22 @@ function handlePageSizeChange(event: Event) {
 
 function resolveAlignClass(column: StaffDataGridColumn) {
   if (column.align === 'center') {
-    return 'is-center'
+    return 'text-center'
   }
   if (column.align === 'right') {
-    return 'is-right'
+    return 'text-right'
   }
-  return 'is-left'
+  return 'text-left'
+}
+
+function resolveHeaderButtonAlignClass(column: StaffDataGridColumn) {
+  if (column.align === 'center') {
+    return 'justify-center text-center'
+  }
+  if (column.align === 'right') {
+    return 'justify-end text-right'
+  }
+  return 'justify-start text-left'
 }
 
 function formatValue(value: unknown) {
@@ -109,15 +124,15 @@ function rowKey(row: Record<string, unknown>, index: number) {
 </script>
 
 <template>
-  <div class="grid">
-    <div v-if="$slots.toolbar" class="grid-toolbar">
+  <div class="grid bg-surface">
+    <div v-if="$slots.toolbar" class="grid-toolbar flex flex-wrap gap-2 px-2 py-4">
       <slot name="toolbar" />
     </div>
 
-    <div class="grid-controls">
-      <div class="grid-controls__group">
+    <div class="grid-controls flex flex-wrap items-center gap-1 border-y border-border bg-base p-2 text-[0.9rem]">
+      <div class="grid-controls__group inline-flex items-center gap-0.5">
         <button
-          class="grid-controls__button"
+          class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           :disabled="loading || page <= 1"
           title="最初のページ"
@@ -126,7 +141,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           <i class="fas fa-angle-double-left fa-fw" aria-hidden="true" />
         </button>
         <button
-          class="grid-controls__button"
+          class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           :disabled="loading || page <= 1"
           title="前のページ"
@@ -135,7 +150,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           <i class="fas fa-chevron-left fa-fw" aria-hidden="true" />
         </button>
         <button
-          class="grid-controls__button"
+          class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           :disabled="loading || page >= totalPages"
           title="次のページ"
@@ -144,7 +159,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           <i class="fas fa-chevron-right fa-fw" aria-hidden="true" />
         </button>
         <button
-          class="grid-controls__button"
+          class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           :disabled="loading || page >= totalPages"
           title="最後のページ"
@@ -153,7 +168,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           <i class="fas fa-angle-double-right fa-fw" aria-hidden="true" />
         </button>
         <button
-          class="grid-controls__button"
+          class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           :disabled="loading"
           title="再読み込み"
@@ -163,10 +178,31 @@ function rowKey(row: Record<string, unknown>, index: number) {
         </button>
       </div>
 
-      <div class="grid-controls__group is-separated">
-        <label class="grid-controls__label">
+      <button
+        v-if="showFilterButton"
+        class="grid-controls__button relative ml-2 inline-flex h-8 items-center justify-center gap-1 border-l border-border pl-2 pr-2 text-body transition hover:bg-primary-light hover:text-primary"
+        type="button"
+        title="絞り込み"
+        @click="emit('filter')"
+      >
+        <i class="fas fa-filter fa-fw" aria-hidden="true" />
+        絞り込み
+        <i
+          v-if="filterActive"
+          class="fas fa-circle absolute right-1 top-1 scale-[0.5] text-primary"
+          aria-hidden="true"
+        />
+      </button>
+
+      <div class="grid-controls__group ml-2 inline-flex items-center border-l border-border pl-2">
+        <label class="grid-controls__label inline-flex items-center gap-2 font-medium text-body">
           表示件数:
-          <select class="grid-controls__select" :value="pageSize" :disabled="loading" @change="handlePageSizeChange">
+          <select
+            class="grid-controls__select min-w-[4.5rem] rounded-[0.45rem] border border-border bg-surface px-2 py-1 text-[0.9rem]"
+            :value="pageSize"
+            :disabled="loading"
+            @change="handlePageSizeChange"
+          >
             <option v-for="count in perPageOptions" :key="count" :value="count">
               {{ count }}
             </option>
@@ -174,31 +210,34 @@ function rowKey(row: Record<string, unknown>, index: number) {
         </label>
       </div>
 
-      <div class="grid-controls__summary">
+      <div
+        class="grid-controls__summary ml-2 border-l border-border pl-2 text-body max-[860px]:basis-full max-[860px]:border-l-0 max-[860px]:pl-0 min-[861px]:ml-auto"
+      >
         <template v-if="total > 0">
           {{ startIndex }}〜{{ endIndex }}件目 • 全{{ total }}件 (ページ{{ page }} / {{ totalPages }})
         </template>
         <template v-else>0件</template>
       </div>
 
-      <div v-if="loading" class="grid-controls__loading text-primary">
+      <div v-if="loading" class="grid-controls__loading ml-2 text-primary">
         <i class="fas fa-spinner fa-pulse" aria-hidden="true" />
       </div>
     </div>
 
-    <div class="grid__table_wrap">
-      <table class="grid-table" :aria-label="tableLabel">
-        <thead class="grid-table__thead">
+    <div class="grid__table_wrap w-full overflow-auto border-b border-border bg-surface">
+      <table class="grid-table w-full min-w-full border-collapse border-spacing-0" :aria-label="tableLabel">
+        <thead class="grid-table__thead border-b border-border">
           <tr class="grid-table__tr">
-            <th class="grid-table__th is-activities" />
+            <th class="grid-table__th is-activities w-24" />
             <th
               v-for="column in columns"
               :key="column.key"
-              class="grid-table__th"
+              class="grid-table__th p-0"
               :class="[resolveAlignClass(column), column.headerClass]"
             >
               <button
-                class="grid-table__th__button"
+                class="grid-table__th__button inline-flex w-full items-center gap-1 whitespace-nowrap px-4 py-6 text-[0.9rem] font-semibold text-body disabled:cursor-default"
+                :class="resolveHeaderButtonAlignClass(column)"
                 type="button"
                 :disabled="!column.sortable"
                 @click="handleSort(column)"
@@ -215,18 +254,22 @@ function rowKey(row: Record<string, unknown>, index: number) {
         </thead>
         <tbody class="grid-table__tbody">
           <tr v-if="rows.length === 0" class="grid-table__tr is-empty">
-            <td class="grid-table__empty" :colspan="columns.length + 1">
+            <td class="grid-table__empty px-4 py-4 text-center text-[0.95rem] text-muted" :colspan="columns.length + 1">
               {{ loading ? '読み込み中...' : emptyMessage }}
             </td>
           </tr>
-          <tr v-for="(row, index) in rows" :key="rowKey(row, index)" class="grid-table__tr is-in-tbody">
-            <td class="grid-table__td is-activities">
+          <tr
+            v-for="(row, index) in rows"
+            :key="rowKey(row, index)"
+            class="grid-table__tr is-in-tbody even:bg-grid-table-stripe hover:bg-surface-light"
+          >
+            <td class="grid-table__td is-activities whitespace-nowrap px-4 py-2 align-middle text-[0.9rem]">
               <slot name="actions" :row="row" :index="index" />
             </td>
             <td
               v-for="column in columns"
               :key="`${rowKey(row, index)}-${column.key}`"
-              class="grid-table__td"
+              class="grid-table__td whitespace-nowrap px-4 py-2 align-middle text-[0.9rem]"
               :class="[resolveAlignClass(column), column.cellClass]"
             >
               <slot :name="`cell-${column.key}`" :row="row" :column="column" :value="row[column.key]">
@@ -241,169 +284,3 @@ function rowKey(row: Record<string, unknown>, index: number) {
     </div>
   </div>
 </template>
-
-<style scoped>
-.grid {
-  background: var(--color-surface);
-}
-
-.grid-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-}
-
-.grid-controls {
-  align-items: center;
-  background: var(--color-base);
-  border-bottom: 1px solid var(--color-border);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  flex-wrap: wrap;
-  font-size: 0.9rem;
-  gap: 0.25rem;
-  padding: 0.5rem;
-}
-
-.grid-controls__group {
-  align-items: center;
-  display: inline-flex;
-  gap: 0.125rem;
-}
-
-.grid-controls__group.is-separated {
-  border-left: 1px solid var(--color-border);
-  margin-left: 0.5rem;
-  padding-left: 0.5rem;
-}
-
-.grid-controls__button {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  border-radius: 0.45rem;
-  color: var(--color-body);
-  cursor: pointer;
-  font-size: 0.95rem;
-  line-height: 1;
-  min-height: 2rem;
-  min-width: 2rem;
-}
-
-.grid-controls__button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.grid-controls__label {
-  align-items: center;
-  color: var(--color-body);
-  display: inline-flex;
-  font-weight: 500;
-  gap: 0.4rem;
-}
-
-.grid-controls__select {
-  border: 1px solid var(--color-border);
-  border-radius: 0.45rem;
-  font-size: 0.9rem;
-  padding: 0.25rem 0.4rem;
-  width: auto;
-}
-
-.grid-controls__summary {
-  margin-left: auto;
-  padding-left: 0.5rem;
-  white-space: nowrap;
-}
-
-.grid-controls__loading {
-  padding-left: 0.5rem;
-}
-
-.grid__table_wrap {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  overflow: auto;
-  width: 100%;
-}
-
-.grid-table {
-  border: 0;
-  border-collapse: collapse;
-  border-spacing: 0;
-  min-width: 100%;
-  width: 100%;
-}
-
-.grid-table__thead {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.grid-table__th {
-  padding: 0;
-  text-align: left;
-}
-
-.grid-table__th.is-activities {
-  min-width: 6rem;
-}
-
-.grid-table__th__button {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: var(--color-body);
-  cursor: pointer;
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  text-align: left;
-  white-space: nowrap;
-  width: 100%;
-}
-
-.grid-table__th__button:disabled {
-  cursor: default;
-}
-
-.grid-table__tr.is-in-tbody:nth-child(2n) {
-  background: var(--color-grid-table-stripe);
-}
-
-.grid-table__tr.is-in-tbody:hover {
-  background: var(--color-surface-light);
-}
-
-.grid-table__td {
-  font-size: 0.9rem;
-  padding: 0.5rem 1rem;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
-.grid-table__td.is-activities {
-  white-space: nowrap;
-}
-
-.grid-table__empty {
-  color: var(--color-muted);
-  font-size: 0.95rem;
-  padding: 1rem;
-  text-align: center;
-}
-
-.is-left {
-  text-align: left;
-}
-
-.is-center {
-  text-align: center;
-}
-
-.is-right {
-  text-align: right;
-}
-</style>

@@ -70,10 +70,73 @@ interface UpdateStaffUserRolesPayload {
   roles: string[]
 }
 
+export type StaffUserFilterMode = 'and' | 'or'
+export type StaffUserFilterOperator = '=' | '!=' | 'like' | 'not like'
+export type StaffUserFilterKey =
+  | 'id'
+  | 'lastName'
+  | 'firstName'
+  | 'loginIds'
+  | 'contactEmail'
+  | 'phoneNumber'
+  | 'isStaff'
+  | 'isAdmin'
+  | 'isEmailVerified'
+  | 'isVerified'
+export type StaffUserSortKey =
+  | 'id'
+  | 'lastName'
+  | 'firstName'
+  | 'loginIds'
+  | 'contactEmail'
+  | 'phoneNumber'
+  | 'isStaff'
+  | 'isAdmin'
+  | 'isEmailVerified'
+  | 'isVerified'
+
+export interface StaffUserFilterQuery {
+  keyName: StaffUserFilterKey
+  operator: StaffUserFilterOperator
+  value: string
+}
+
 interface StaffUsersPagination {
   page: number
   pageSize: number
   query?: string
+  sortKey?: StaffUserSortKey
+  sortDirection?: 'asc' | 'desc'
+  queries?: StaffUserFilterQuery[]
+  mode?: StaffUserFilterMode
+}
+
+function serializeFilterQueries(queries: StaffUserFilterQuery[]) {
+  return JSON.stringify(
+    queries.map((query) => ({
+      key_name: query.keyName,
+      operator: query.operator,
+      value: query.value
+    }))
+  )
+}
+
+function buildStaffUsersQueryParams(pagination: StaffUsersPagination) {
+  const trimmedQuery = pagination.query?.trim() ?? ''
+
+  return {
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    ...(trimmedQuery !== '' ? { query: trimmedQuery } : {}),
+    ...(pagination.sortKey ? { sortKey: pagination.sortKey } : {}),
+    ...(pagination.sortDirection ? { sortDirection: pagination.sortDirection } : {}),
+    ...(pagination.queries && pagination.queries.length > 0
+      ? {
+          queries: serializeFilterQueries(pagination.queries),
+          mode: pagination.mode ?? 'and'
+        }
+      : {})
+  }
 }
 
 export async function fetchStaffUsers(pagination: StaffUsersPagination) {
@@ -83,11 +146,7 @@ export async function fetchStaffUsers(pagination: StaffUsersPagination) {
     {
       headers: createJsonHeaders(),
       params: {
-        query: {
-          page: pagination.page,
-          pageSize: pagination.pageSize,
-          ...(pagination.query ? { query: pagination.query } : {})
-        }
+        query: buildStaffUsersQueryParams(pagination)
       }
     },
     (value) => parsePaginatedResult(value, parseStaffUser, 'staff users'),
@@ -228,11 +287,7 @@ export function useStaffUsersQuery(
       return {
         headers: createJsonHeaders(),
         params: {
-          query: {
-            page: p.page,
-            pageSize: p.pageSize,
-            ...(p.query ? { query: p.query } : {})
-          }
+          query: buildStaffUsersQueryParams(p)
         }
       }
     },

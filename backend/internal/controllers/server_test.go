@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"slices"
 	"strings"
 	"testing"
@@ -3012,6 +3013,71 @@ func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 	}
 }
 
+func TestStaffUsersListSupportsSearchSortAndFilters(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.Users[0].ContactEmail = "member-a-contact@example.com"
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users?query=member-a-contact@example.com", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var searched models.PaginatedResponse[staffUserSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &searched); err != nil {
+		t.Fatalf("unmarshal searched users response: %v", err)
+	}
+	if searched.Total != 1 || searched.Items[0].ID != "member-circle-a" {
+		t.Fatalf("expected contact email search to match member-circle-a, got %#v", searched)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users?sortKey=contactEmail&sortDirection=desc", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var sorted models.PaginatedResponse[staffUserSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &sorted); err != nil {
+		t.Fatalf("unmarshal sorted users response: %v", err)
+	}
+	if len(sorted.Items) < 2 {
+		t.Fatalf("expected at least two users for sort assertion, got %#v", sorted.Items)
+	}
+	if sorted.Items[0].ID != "member-circle-a" {
+		t.Fatalf("expected member-circle-a to be first by contactEmail desc, got %#v", sorted.Items)
+	}
+
+	filterQueries := `[{"key_name":"isVerified","operator":"=","value":"false"}]`
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users?queries="+url.QueryEscape(filterQueries)+"&mode=and", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var filtered models.PaginatedResponse[staffUserSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &filtered); err != nil {
+		t.Fatalf("unmarshal filtered users response: %v", err)
+	}
+	if filtered.Total != 1 || filtered.Items[0].ID != "member-circle-b-unverified" {
+		t.Fatalf("expected isVerified=false filter result, got %#v", filtered)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users?sortDirection=invalid", nil)
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusBadRequest, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users?queries="+url.QueryEscape(`[{"key_name":"unknown","operator":"=","value":"x"}]`), nil)
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusBadRequest, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestStaffPermissionsListDetailAndUpdate(t *testing.T) {
 	t.Parallel()
 
@@ -3684,8 +3750,14 @@ func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read participation type csv: %v", err)
 	}
-	if len(rows) != 2 || rows[1][2] != "circle-a" {
-		t.Fatalf("unexpected csv rows: %#v", rows)
+	if len(rows) != 2 {
+		t.Fatalf("expected 2 csv rows, got %#v", rows)
+	}
+	if got, want := rows[0][0], "id"; got != want {
+		t.Fatalf("unexpected header first column: got=%q want=%q", got, want)
+	}
+	if got, want := rows[1][0], "circle-a"; got != want {
+		t.Fatalf("unexpected csv row id: got=%q want=%q all=%#v", got, want, rows)
 	}
 }
 

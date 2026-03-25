@@ -3507,8 +3507,16 @@ export interface operations {
             query?: {
                 page?: number;
                 pageSize?: number;
-                /** @description 名前・ログインIDで絞り込む */
+                /** @description 名前・ログインID・連絡先メールアドレスで絞り込む */
                 query?: string;
+                /** @description ソート対象のキー */
+                sortKey?: "id" | "lastName" | "firstName" | "loginIds" | "contactEmail" | "phoneNumber" | "isStaff" | "isAdmin" | "isEmailVerified" | "isVerified";
+                /** @description ソート方向 */
+                sortDirection?: "asc" | "desc";
+                /** @description 絞り込み条件のJSON文字列 */
+                queries?: string;
+                /** @description 絞り込み条件の結合モード */
+                mode?: "and" | "or";
             };
             header?: never;
             path?: never;

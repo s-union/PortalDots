@@ -393,6 +393,7 @@ WHERE ($1::text = '' OR
     users.display_name ILIKE '%' || $1 || '%' OR
     users.last_name ILIKE '%' || $1 || '%' OR
     users.first_name ILIKE '%' || $1 || '%' OR
+    users.contact_email ILIKE '%' || $1 || '%' OR
     EXISTS (SELECT 1 FROM user_login_ids AS li WHERE li.user_id = users.id AND li.login_id ILIKE '%' || $1 || '%')
 )
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,

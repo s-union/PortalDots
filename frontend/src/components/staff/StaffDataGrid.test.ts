@@ -82,4 +82,23 @@ describe('StaffDataGrid', () => {
     await pageSizeSelect.setValue('50')
     expect(wrapper.emitted('update:pageSize')).toEqual([[50]])
   })
+
+  it('emits filter when filter button is clicked', async () => {
+    const wrapper = mount(StaffDataGrid, {
+      props: {
+        rows,
+        columns,
+        page: 1,
+        pageSize: 20,
+        total: 2,
+        showFilterButton: true,
+        filterActive: true
+      }
+    })
+
+    const filterButton = wrapper.get('button[title="絞り込み"]')
+    await filterButton.trigger('click')
+    expect(wrapper.emitted('filter')).toBeTruthy()
+    expect(wrapper.text()).toContain('絞り込み')
+  })
 })

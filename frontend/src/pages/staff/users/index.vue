@@ -11,10 +11,25 @@ definePage({
 import { computed, ref } from 'vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import StaffFilterDrawer, {
+  type StaffFilterField,
+  type StaffFilterQuery
+} from '@/components/staff/StaffFilterDrawer.vue'
+import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
+import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import StaffUserEditor from '@/components/staff/StaffUserEditor.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
-import { buildStaffUsersExportUrl, useStaffUsersQuery } from '@/features/staff/users/api'
+import {
+  buildStaffUsersExportUrl,
+  type StaffUserFilterQuery,
+  type StaffUserFilterKey,
+  type StaffUserFilterMode,
+  type StaffUserFilterOperator,
+  type StaffUserSortKey,
+  useStaffUsersQuery
+} from '@/features/staff/users/api'
 import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
@@ -22,6 +37,14 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const page = ref(1)
 const pageSize = ref(25)
 const searchQuery = ref('')
+const isEditorOpen = ref(false)
+const isFilterOpen = ref(false)
+const selectedUserId = ref('')
+const nextFilterId = ref(1)
+const appliedFilterMode = ref<StaffUserFilterMode>('and')
+const appliedFilterQueries = ref<StaffUserFilterQuery[]>([])
+const draftFilterMode = ref<StaffUserFilterMode>('and')
+const draftFilterQueries = ref<StaffFilterQuery[]>([])
 const staffUserSortKeys = [
   'id',
   'lastName',
@@ -34,7 +57,6 @@ const staffUserSortKeys = [
   'isEmailVerified',
   'isVerified'
 ] as const
-type StaffUserSortKey = (typeof staffUserSortKeys)[number]
 
 const sortKey = ref<StaffUserSortKey>('id')
 const sortDirection = ref<'asc' | 'desc'>('asc')
@@ -43,10 +65,27 @@ const usersQuery = useStaffUsersQuery(
   computed(() => ({
     page: page.value,
     pageSize: pageSize.value,
-    query: searchQuery.value
+    query: searchQuery.value,
+    sortKey: sortKey.value,
+    sortDirection: sortDirection.value,
+    queries: appliedFilterQueries.value,
+    mode: appliedFilterMode.value
   }))
 )
 const exportUrl = buildStaffUsersExportUrl()
+
+const filterFields: StaffFilterField[] = [
+  { key: 'id', label: 'ユーザーID', type: 'string' },
+  { key: 'lastName', label: '姓', type: 'string' },
+  { key: 'firstName', label: '名', type: 'string' },
+  { key: 'loginIds', label: '学生用メールアドレス', type: 'string' },
+  { key: 'contactEmail', label: '連絡先メールアドレス', type: 'string' },
+  { key: 'phoneNumber', label: '電話番号', type: 'string' },
+  { key: 'isStaff', label: 'スタッフ', type: 'bool' },
+  { key: 'isAdmin', label: '管理者', type: 'bool' },
+  { key: 'isEmailVerified', label: 'メール確認', type: 'bool' },
+  { key: 'isVerified', label: '本人確認', type: 'bool' }
+]
 
 const columns: StaffDataGridColumn[] = [
   {
@@ -132,27 +171,7 @@ const rows = computed<StaffUserRow[]>(() =>
     isVerified: user.isVerified
   }))
 )
-const sortedRows = computed<StaffUserRow[]>(() => {
-  const cloned = [...rows.value]
-  const direction = sortDirection.value === 'asc' ? 1 : -1
-  const key = sortKey.value
-
-  cloned.sort((left, right) => {
-    const leftValue = toSortableValue(left, key)
-    const rightValue = toSortableValue(right, key)
-
-    if (leftValue < rightValue) {
-      return -1 * direction
-    }
-    if (leftValue > rightValue) {
-      return direction
-    }
-    return 0
-  })
-
-  return cloned
-})
-const gridRows = computed<StaffDataGridRow[]>(() => sortedRows.value.map((user) => ({ ...user })))
+const gridRows = computed<StaffDataGridRow[]>(() => rows.value.map((user) => ({ ...user })))
 
 function handleSort(nextKey: string) {
   if (!isStaffUserSortKey(nextKey)) {
@@ -161,11 +180,13 @@ function handleSort(nextKey: string) {
 
   if (sortKey.value === nextKey) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+    page.value = 1
     return
   }
 
   sortKey.value = nextKey
   sortDirection.value = 'asc'
+  page.value = 1
 }
 
 function handleFirstPage() {
@@ -202,108 +223,261 @@ function handleSearch() {
   page.value = 1
 }
 
+function openFilter() {
+  draftFilterQueries.value = toDraftFilterQueries(appliedFilterQueries.value)
+  draftFilterMode.value = appliedFilterMode.value
+  syncNextFilterId()
+  isFilterOpen.value = true
+}
+
+function closeFilter() {
+  isFilterOpen.value = false
+}
+
+function handleAddFilter(keyName: string) {
+  if (!isStaffUserFilterKey(keyName)) {
+    return
+  }
+
+  const field = filterFields.find((item) => item.key === keyName)
+  if (!field) {
+    return
+  }
+
+  const defaultOperator = field.type === 'bool' ? '=' : 'like'
+  const defaultValue = field.type === 'bool' ? 'true' : ''
+  draftFilterQueries.value = [
+    ...draftFilterQueries.value,
+    {
+      id: nextFilterId.value++,
+      keyName,
+      operator: defaultOperator,
+      value: defaultValue
+    }
+  ]
+}
+
+function handleRemoveFilter(queryId: number) {
+  draftFilterQueries.value = draftFilterQueries.value.filter((query) => query.id !== queryId)
+}
+
+function handleUpdateFilter(queryId: number, patch: Partial<Omit<StaffFilterQuery, 'id'>>) {
+  draftFilterQueries.value = draftFilterQueries.value.map((query) => {
+    if (query.id !== queryId) {
+      return query
+    }
+    return {
+      ...query,
+      ...patch
+    }
+  })
+}
+
+function handleApplyFilters() {
+  appliedFilterQueries.value = toAppliedFilterQueries(draftFilterQueries.value)
+  appliedFilterMode.value = draftFilterMode.value
+  page.value = 1
+  closeFilter()
+}
+
+function handleClearFilters() {
+  appliedFilterQueries.value = []
+  draftFilterQueries.value = []
+  appliedFilterMode.value = 'and'
+  draftFilterMode.value = 'and'
+  page.value = 1
+  closeFilter()
+}
+
+function toDraftFilterQueries(queries: StaffUserFilterQuery[]) {
+  return queries.map((query, index) => ({
+    id: index + 1,
+    keyName: query.keyName,
+    operator: query.operator,
+    value: query.value
+  }))
+}
+
+function toAppliedFilterQueries(queries: StaffFilterQuery[]) {
+  const normalized: StaffUserFilterQuery[] = []
+  for (const query of queries) {
+    if (!isStaffUserFilterKey(query.keyName)) {
+      continue
+    }
+    normalized.push({
+      keyName: query.keyName,
+      operator: query.operator as StaffUserFilterOperator,
+      value: query.value
+    })
+  }
+  return normalized
+}
+
+function syncNextFilterId() {
+  const maxId = draftFilterQueries.value.reduce((max, query) => Math.max(max, query.id), 0)
+  nextFilterId.value = maxId + 1
+}
+
+function openEditor(userId: string) {
+  selectedUserId.value = userId
+  isEditorOpen.value = true
+}
+
+function closeEditor() {
+  isEditorOpen.value = false
+}
+
+function editorPopUpUrl() {
+  if (selectedUserId.value.length === 0) {
+    return undefined
+  }
+
+  return `/staff/users/${encodeURIComponent(selectedUserId.value)}`
+}
+
+function handleSaved() {
+  void handleReload()
+}
+
+function handleDeleted() {
+  closeEditor()
+  selectedUserId.value = ''
+  void handleReload()
+}
+
 function isStaffUserSortKey(value: string): value is StaffUserSortKey {
   return (staffUserSortKeys as readonly string[]).includes(value)
 }
 
-function toSortableValue(user: StaffUserRow, key: StaffUserSortKey) {
-  if (key === 'loginIds') {
-    return user.loginIds.join(',').toLowerCase()
-  }
+function isStaffUserFilterKey(value: string): value is StaffUserFilterKey {
+  return filterFields.some((field) => field.key === value)
+}
 
-  if (key === 'isStaff' || key === 'isAdmin' || key === 'isEmailVerified' || key === 'isVerified') {
-    return user[key] ? 1 : 0
-  }
-
-  return String(user[key]).toLowerCase()
+function handleFilterModeUpdate(mode: StaffUserFilterMode) {
+  draftFilterMode.value = mode
 }
 </script>
 
 <template>
-  <PageLayout>
-    <DataCard title="ユーザー情報管理" overflow-hidden>
-      <StaffDataGrid
-        :rows="gridRows"
-        :columns="columns"
-        :page="page"
-        :page-size="pageSize"
-        :total="usersQuery.data.value?.total ?? 0"
-        :loading="usersQuery.isPending.value"
-        :sort-key="sortKey"
-        :sort-direction="sortDirection"
-        empty-message="対象ユーザーが見つかりませんでした。"
-        table-label="staff users"
-        @first="handleFirstPage"
-        @prev="handlePrevPage"
-        @next="handleNextPage"
-        @last="handleLastPage"
-        @reload="handleReload"
-        @sort="handleSort"
-        @update:page-size="handlePageSizeChange"
-      >
-        <template #toolbar>
-          <form class="flex items-center gap-2" @submit.prevent="handleSearch">
-            <input
-              v-model="searchQuery"
-              type="search"
-              placeholder="姓名・メールアドレスで絞り込み"
-              class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              type="submit"
-              class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
+  <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
+    <PageLayout class="max-w-full">
+      <DataCard title="ユーザー情報管理" overflow-hidden>
+        <StaffDataGrid
+          :rows="gridRows"
+          :columns="columns"
+          :page="page"
+          :page-size="pageSize"
+          :total="usersQuery.data.value?.total ?? 0"
+          :loading="usersQuery.isPending.value"
+          :sort-key="sortKey"
+          :sort-direction="sortDirection"
+          :show-filter-button="true"
+          :filter-active="searchQuery.length > 0 || appliedFilterQueries.length > 0"
+          empty-message="対象ユーザーが見つかりませんでした。"
+          table-label="staff users"
+          @first="handleFirstPage"
+          @prev="handlePrevPage"
+          @next="handleNextPage"
+          @last="handleLastPage"
+          @reload="handleReload"
+          @sort="handleSort"
+          @filter="openFilter"
+          @update:page-size="handlePageSizeChange"
+        >
+          <template #toolbar>
+            <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+              <input
+                v-model="searchQuery"
+                type="search"
+                placeholder="姓名・メールアドレス・学生用メールアドレスで絞り込み"
+                class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                type="submit"
+                class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
+              >
+                <i class="fas fa-search fa-fw" aria-hidden="true" />
+                絞り込み
+              </button>
+            </form>
+            <a
+              :href="exportUrl"
+              class="inline-flex items-center gap-2 rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
             >
-              <i class="fas fa-search fa-fw" aria-hidden="true" />
-              絞り込み
+              <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+              CSVで出力
+            </a>
+          </template>
+
+          <template #actions="{ row }">
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
+              title="編集"
+              type="button"
+              @click="openEditor(String(row.id))"
+            >
+              <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
             </button>
-          </form>
-          <a
-            :href="exportUrl"
-            class="inline-flex items-center gap-2 rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
-          >
-            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-            CSVで出力
-          </a>
-        </template>
+          </template>
 
-        <template #actions="{ row }">
-          <RouterLink
-            :to="`/staff/users/${String(row.id)}`"
-            class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
-            title="編集"
-          >
-            <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-          </RouterLink>
-        </template>
+          <template #cell-loginIds="{ value }">
+            {{ Array.isArray(value) ? value.join(', ') : '-' }}
+          </template>
 
-        <template #cell-loginIds="{ value }">
-          {{ Array.isArray(value) ? value.join(', ') : '-' }}
-        </template>
+          <template #cell-isStaff="{ value }">
+            <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
+              {{ value === true ? 'スタッフ' : '-' }}
+            </StatusBadge>
+          </template>
 
-        <template #cell-isStaff="{ value }">
-          <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
-            {{ value === true ? 'スタッフ' : '-' }}
-          </StatusBadge>
-        </template>
+          <template #cell-isAdmin="{ value }">
+            <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
+              {{ value === true ? '管理者' : '-' }}
+            </StatusBadge>
+          </template>
 
-        <template #cell-isAdmin="{ value }">
-          <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
-            {{ value === true ? '管理者' : '-' }}
-          </StatusBadge>
-        </template>
+          <template #cell-isEmailVerified="{ value }">
+            <StatusBadge :tone="value === true ? 'success' : 'muted'" size="sm">
+              {{ value === true ? '確認済み' : '未確認' }}
+            </StatusBadge>
+          </template>
 
-        <template #cell-isEmailVerified="{ value }">
-          <StatusBadge :tone="value === true ? 'success' : 'muted'" size="sm">
-            {{ value === true ? '確認済み' : '未確認' }}
-          </StatusBadge>
-        </template>
+          <template #cell-isVerified="{ value }">
+            <StatusBadge :tone="value === true ? 'success' : 'danger'" size="sm">
+              {{ value === true ? '確認済み' : '未確認' }}
+            </StatusBadge>
+          </template>
+        </StaffDataGrid>
+      </DataCard>
+    </PageLayout>
+  </StaffSideWindowContainer>
 
-        <template #cell-isVerified="{ value }">
-          <StatusBadge :tone="value === true ? 'success' : 'danger'" size="sm">
-            {{ value === true ? '確認済み' : '未確認' }}
-          </StatusBadge>
-        </template>
-      </StaffDataGrid>
-    </DataCard>
-  </PageLayout>
+  <StaffSideWindow
+    :is-open="isEditorOpen"
+    :pop-up-url="editorPopUpUrl()"
+    title="ユーザーを編集"
+    @click-close="closeEditor"
+  >
+    <StaffUserEditor
+      v-if="selectedUserId.length > 0"
+      :user-id="selectedUserId"
+      @deleted="handleDeleted"
+      @saved="handleSaved"
+    />
+  </StaffSideWindow>
+
+  <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">
+    <StaffFilterDrawer
+      :fields="filterFields"
+      :queries="draftFilterQueries"
+      :mode="draftFilterMode"
+      :loading="usersQuery.isPending.value"
+      @add="handleAddFilter"
+      @remove="handleRemoveFilter"
+      @update-query="handleUpdateFilter"
+      @update-mode="handleFilterModeUpdate"
+      @apply="handleApplyFilters"
+      @clear="handleClearFilters"
+    />
+  </StaffSideWindow>
 </template>
