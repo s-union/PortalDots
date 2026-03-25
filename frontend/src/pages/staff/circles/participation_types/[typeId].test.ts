@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
-import StaffParticipationTypeCirclesPage from './[typeId].vue'
+import StaffParticipationTypeCirclesPage from './[typeId]/index.vue'
 
 function createQueryPlugin() {
   return [
@@ -24,7 +24,7 @@ describe('StaffParticipationTypeCirclesPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders tab strip and circles grid with legacy tab labels', async () => {
+  it('renders tab strip, circles grid, and can navigate to the edit tab', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -139,6 +139,16 @@ describe('StaffParticipationTypeCirclesPage', () => {
     expect(wrapper.text()).toContain('屋台企画A')
     expect(wrapper.text()).toContain('CSVで出力')
     expect(wrapper.text()).toContain('ファイルを一括ダウンロード')
+
+    const editTab = wrapper.findAll('a').find((link) => link.text().includes('参加種別を編集'))
+    if (!editTab) {
+      throw new Error('edit tab not found')
+    }
+
+    await editTab.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/staff/circles/participation_types/participation-type-food/edit')
   })
 })
 

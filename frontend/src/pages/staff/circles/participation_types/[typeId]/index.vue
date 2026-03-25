@@ -27,7 +27,7 @@ import {
 } from '@/features/staff/participation-types/api'
 import { buildStaffParticipationTypeTabs } from '@/features/ui/tabStrip'
 
-const route = useRoute('/staff/circles/participation_types/[typeId]')
+const route = useRoute('/staff/circles/participation_types/[typeId]/')
 const typeId = computed(() => String(route.params.typeId ?? ''))
 const { enabled } = useAuthorizedStaffContext({ capability: 'circles.participationTypes' })
 const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled)
