@@ -84,10 +84,17 @@ describe('StaffUserDetailPage', () => {
           return new Response(
             JSON.stringify({
               id: 'demo-user',
+              lastName: 'デモ',
+              lastNameReading: 'でも',
+              firstName: 'ユーザー',
+              firstNameReading: 'ゆーざー',
               displayName,
               loginIds,
+              contactEmail: 'demo@example.com',
+              phoneNumber: '090-0000-0001',
               roles: updatedRoles,
-              isVerified
+              isVerified,
+              isEmailVerified: false
             }),
             {
               status: 200,
@@ -102,10 +109,17 @@ describe('StaffUserDetailPage', () => {
           return new Response(
             JSON.stringify({
               id: 'demo-user',
+              lastName: 'デモ',
+              lastNameReading: 'でも',
+              firstName: 'ユーザー',
+              firstNameReading: 'ゆーざー',
               displayName,
               loginIds,
+              contactEmail: 'updated@example.com',
+              phoneNumber: '090-0000-0001',
               roles: updatedRoles,
-              isVerified
+              isVerified,
+              isEmailVerified: false
             }),
             {
               status: 200,
@@ -119,10 +133,17 @@ describe('StaffUserDetailPage', () => {
           return new Response(
             JSON.stringify({
               id: 'demo-user',
+              lastName: 'デモ',
+              lastNameReading: 'でも',
+              firstName: 'ユーザー',
+              firstNameReading: 'ゆーざー',
               displayName,
               loginIds,
+              contactEmail: 'demo@example.com',
+              phoneNumber: '090-0000-0001',
               roles: updatedRoles,
-              isVerified
+              isVerified,
+              isEmailVerified: false
             }),
             {
               status: 200,
@@ -136,10 +157,17 @@ describe('StaffUserDetailPage', () => {
           return new Response(
             JSON.stringify({
               id: 'demo-user',
+              lastName: 'デモ',
+              lastNameReading: 'でも',
+              firstName: 'ユーザー',
+              firstNameReading: 'ゆーざー',
               displayName,
               loginIds,
+              contactEmail: 'demo@example.com',
+              phoneNumber: '090-0000-0001',
               roles: updatedRoles,
-              isVerified
+              isVerified,
+              isEmailVerified: false
             }),
             {
               status: 200,
@@ -182,7 +210,7 @@ describe('StaffUserDetailPage', () => {
     await flushPromises()
 
     expectInputValue(wrapper, 'input[name="displayName"]', 'Demo User')
-    expect(wrapper.text()).toContain('participant')
+    expect(wrapper.text()).toContain('参加者')
     expect(wrapper.text()).toContain('本人確認未完了')
 
     await wrapper.get('input[name="displayName"]').setValue('Updated Demo User')
@@ -204,6 +232,6 @@ describe('StaffUserDetailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('ロールを更新しました。')
-    expect(wrapper.text()).toContain('forms_manager')
+    expect(wrapper.text()).toContain('申請管理')
   })
 })

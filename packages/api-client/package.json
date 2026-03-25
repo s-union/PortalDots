@@ -13,7 +13,8 @@
         "format:check": "oxfmt --check .",
         "test": "vitest run",
         "test:watch": "vitest",
-        "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check"
+        "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check",
+        "codegen:api": "openapi-typescript ../../backend/api/openapi.yaml --output src/generated/schema.d.ts"
     },
     "dependencies": {
         "openapi-fetch": "^0.17.0"
@@ -21,6 +22,7 @@
     "devDependencies": {
         "@tanstack/vue-query": "^5.92.9",
         "@typescript/native-preview": "7.0.0-dev.20260314.1",
+        "openapi-typescript": "^7.13.0",
         "oxfmt": "^0.40.0",
         "oxlint": "^1.55.0",
         "oxlint-tsgolint": "^0.16.0",

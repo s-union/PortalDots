@@ -3507,6 +3507,8 @@ export interface operations {
             query?: {
                 page?: number;
                 pageSize?: number;
+                /** @description 名前・ログインIDで絞り込む */
+                query?: string;
             };
             header?: never;
             path?: never;
@@ -3523,10 +3525,17 @@ export interface operations {
                     "application/json": {
                         items: {
                             id: string;
+                            lastName: string;
+                            lastNameReading: string;
+                            firstName: string;
+                            firstNameReading: string;
                             displayName: string;
                             loginIds: string[];
+                            contactEmail: string;
+                            phoneNumber: string;
                             roles: string[];
                             isVerified: boolean;
+                            isEmailVerified: boolean;
                         }[];
                         page: number;
                         pageSize: number;
@@ -3603,10 +3612,17 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        lastName: string;
+                        lastNameReading: string;
+                        firstName: string;
+                        firstNameReading: string;
                         displayName: string;
                         loginIds: string[];
+                        contactEmail: string;
+                        phoneNumber: string;
                         roles: string[];
                         isVerified: boolean;
+                        isEmailVerified: boolean;
                     };
                 };
             };
@@ -3645,8 +3661,14 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    lastName?: string;
+                    lastNameReading?: string;
+                    firstName?: string;
+                    firstNameReading?: string;
                     displayName: string;
                     loginIds: string[];
+                    contactEmail?: string;
+                    phoneNumber?: string;
                 };
             };
         };
@@ -3659,10 +3681,17 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        lastName: string;
+                        lastNameReading: string;
+                        firstName: string;
+                        firstNameReading: string;
                         displayName: string;
                         loginIds: string[];
+                        contactEmail: string;
+                        phoneNumber: string;
                         roles: string[];
                         isVerified: boolean;
+                        isEmailVerified: boolean;
                     };
                 };
             };
@@ -3763,10 +3792,17 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        lastName: string;
+                        lastNameReading: string;
+                        firstName: string;
+                        firstNameReading: string;
                         displayName: string;
                         loginIds: string[];
+                        contactEmail: string;
+                        phoneNumber: string;
                         roles: string[];
                         isVerified: boolean;
+                        isEmailVerified: boolean;
                     };
                 };
             };
@@ -3825,10 +3861,17 @@ export interface operations {
                 content: {
                     "application/json": {
                         id: string;
+                        lastName: string;
+                        lastNameReading: string;
+                        firstName: string;
+                        firstNameReading: string;
                         displayName: string;
                         loginIds: string[];
+                        contactEmail: string;
+                        phoneNumber: string;
                         roles: string[];
                         isVerified: boolean;
+                        isEmailVerified: boolean;
                     };
                 };
             };

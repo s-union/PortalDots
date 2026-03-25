@@ -24,7 +24,12 @@ run = "pnpm run ci:check"
 
 [tasks.frontend-format]
 description = "Run frontend formatter"
-run = "pnpm format"
+run = "pnpm run format"
+
+[tasks.frontend-generate]
+description = "Run openapi-typescript"
+dir = "packages/api-client"
+run = "pnpm run codegen:api"
 
 [tasks.backend-dev]
 description = "Start the new Go API"

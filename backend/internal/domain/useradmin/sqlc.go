@@ -31,14 +31,51 @@ func (r *SQLCRepository) List() ([]User, error) {
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:              row.ID,
-			DisplayName:     row.DisplayName,
-			LoginIDs:        row.LoginIds,
-			Roles:           row.Roles,
-			Permissions:     row.Permissions,
-			CircleIDs:       row.CircleIds,
-			LeaderCircleIDs: []string{},
-			IsVerified:      row.IsVerified,
+			ID:               row.ID,
+			LastName:         row.LastName,
+			LastNameReading:  row.LastNameReading,
+			FirstName:        row.FirstName,
+			FirstNameReading: row.FirstNameReading,
+			DisplayName:      row.DisplayName,
+			LoginIDs:         row.LoginIds,
+			ContactEmail:     row.ContactEmail,
+			PhoneNumber:      row.PhoneNumber,
+			Roles:            row.Roles,
+			Permissions:      row.Permissions,
+			CircleIDs:        row.CircleIds,
+			LeaderCircleIDs:  []string{},
+			IsVerified:       row.IsVerified,
+			IsEmailVerified:  row.IsEmailVerified,
+		})
+	}
+
+	return users, nil
+}
+
+func (r *SQLCRepository) ListByQuery(query string) ([]User, error) {
+	rows, err := r.queries.ListUsersWithQuery(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+
+	users := make([]User, 0, len(rows))
+	for _, row := range rows {
+		users = append(users, User{
+			ID:               row.ID,
+			LastName:         row.LastName,
+			LastNameReading:  row.LastNameReading,
+			FirstName:        row.FirstName,
+			FirstNameReading: row.FirstNameReading,
+			DisplayName:      row.DisplayName,
+			LoginIDs:         row.LoginIds,
+			ContactEmail:     row.ContactEmail,
+			PhoneNumber:      row.PhoneNumber,
+			Roles:            row.Roles,
+			Permissions:      row.Permissions,
+			CircleIDs:        row.CircleIds,
+			LeaderCircleIDs:  []string{},
+			IsVerified:       row.IsVerified,
+			IsEmailVerified:  row.IsEmailVerified,
 		})
 	}
 
@@ -55,14 +92,21 @@ func (r *SQLCRepository) Find(userID string) (User, error) {
 	}
 
 	return User{
-		ID:              row.ID,
-		DisplayName:     row.DisplayName,
-		LoginIDs:        row.LoginIds,
-		Roles:           row.Roles,
-		Permissions:     row.Permissions,
-		CircleIDs:       row.CircleIds,
-		LeaderCircleIDs: []string{},
-		IsVerified:      row.IsVerified,
+		ID:               row.ID,
+		LastName:         row.LastName,
+		LastNameReading:  row.LastNameReading,
+		FirstName:        row.FirstName,
+		FirstNameReading: row.FirstNameReading,
+		DisplayName:      row.DisplayName,
+		LoginIDs:         row.LoginIds,
+		ContactEmail:     row.ContactEmail,
+		PhoneNumber:      row.PhoneNumber,
+		Roles:            row.Roles,
+		Permissions:      row.Permissions,
+		CircleIDs:        row.CircleIds,
+		LeaderCircleIDs:  []string{},
+		IsVerified:       row.IsVerified,
+		IsEmailVerified:  row.IsEmailVerified,
 	}, nil
 }
 
@@ -82,6 +126,26 @@ func (r *SQLCRepository) UpdateDisplayName(userID, displayName string) (User, er
 	_, err := r.queries.UpdateUserDisplayName(context.Background(), dbgen.UpdateUserDisplayNameParams{
 		ID:          userID,
 		DisplayName: displayName,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+
+	return r.Find(userID)
+}
+
+func (r *SQLCRepository) UpdateProfile(userID, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error) {
+	_, err := r.queries.UpdateUserProfile(context.Background(), dbgen.UpdateUserProfileParams{
+		ID:               userID,
+		LastName:         lastName,
+		LastNameReading:  lastNameReading,
+		FirstName:        firstName,
+		FirstNameReading: firstNameReading,
+		ContactEmail:     contactEmail,
+		PhoneNumber:      phoneNumber,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -259,14 +323,21 @@ func (r *SQLCRepository) ListByCircleIDs(circleIDs []string) ([]User, error) {
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:              row.ID,
-			DisplayName:     row.DisplayName,
-			LoginIDs:        row.LoginIds,
-			Roles:           row.Roles,
-			Permissions:     row.Permissions,
-			CircleIDs:       row.CircleIds,
-			LeaderCircleIDs: []string{},
-			IsVerified:      row.IsVerified,
+			ID:               row.ID,
+			LastName:         row.LastName,
+			LastNameReading:  row.LastNameReading,
+			FirstName:        row.FirstName,
+			FirstNameReading: row.FirstNameReading,
+			DisplayName:      row.DisplayName,
+			LoginIDs:         row.LoginIds,
+			ContactEmail:     row.ContactEmail,
+			PhoneNumber:      row.PhoneNumber,
+			Roles:            row.Roles,
+			Permissions:      row.Permissions,
+			CircleIDs:        row.CircleIds,
+			LeaderCircleIDs:  []string{},
+			IsVerified:       row.IsVerified,
+			IsEmailVerified:  row.IsEmailVerified,
 		})
 	}
 
@@ -286,14 +357,21 @@ func (r *SQLCRepository) ListLeadersByCircleIDs(circleIDs []string) ([]User, err
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:              row.ID,
-			DisplayName:     row.DisplayName,
-			LoginIDs:        row.LoginIds,
-			Roles:           row.Roles,
-			Permissions:     row.Permissions,
-			CircleIDs:       row.CircleIds,
-			LeaderCircleIDs: row.CircleIds,
-			IsVerified:      row.IsVerified,
+			ID:               row.ID,
+			LastName:         row.LastName,
+			LastNameReading:  row.LastNameReading,
+			FirstName:        row.FirstName,
+			FirstNameReading: row.FirstNameReading,
+			DisplayName:      row.DisplayName,
+			LoginIDs:         row.LoginIds,
+			ContactEmail:     row.ContactEmail,
+			PhoneNumber:      row.PhoneNumber,
+			Roles:            row.Roles,
+			Permissions:      row.Permissions,
+			CircleIDs:        row.CircleIds,
+			LeaderCircleIDs:  row.CircleIds,
+			IsVerified:       row.IsVerified,
+			IsEmailVerified:  row.IsEmailVerified,
 		})
 	}
 
@@ -320,14 +398,21 @@ func (r *SQLCRepository) ListVerifiedByCircleIDs(circleIDs []string) ([]User, er
 		users := make([]User, 0, len(typed))
 		for _, row := range typed {
 			users = append(users, User{
-				ID:              row.ID,
-				DisplayName:     row.DisplayName,
-				LoginIDs:        row.LoginIds,
-				Roles:           row.Roles,
-				Permissions:     row.Permissions,
-				CircleIDs:       row.CircleIds,
-				LeaderCircleIDs: []string{},
-				IsVerified:      row.IsVerified,
+				ID:               row.ID,
+				LastName:         row.LastName,
+				LastNameReading:  row.LastNameReading,
+				FirstName:        row.FirstName,
+				FirstNameReading: row.FirstNameReading,
+				DisplayName:      row.DisplayName,
+				LoginIDs:         row.LoginIds,
+				ContactEmail:     row.ContactEmail,
+				PhoneNumber:      row.PhoneNumber,
+				Roles:            row.Roles,
+				Permissions:      row.Permissions,
+				CircleIDs:        row.CircleIds,
+				LeaderCircleIDs:  []string{},
+				IsVerified:       row.IsVerified,
+				IsEmailVerified:  row.IsEmailVerified,
 			})
 		}
 		return users, nil
@@ -335,14 +420,21 @@ func (r *SQLCRepository) ListVerifiedByCircleIDs(circleIDs []string) ([]User, er
 		users := make([]User, 0, len(typed))
 		for _, row := range typed {
 			users = append(users, User{
-				ID:              row.ID,
-				DisplayName:     row.DisplayName,
-				LoginIDs:        row.LoginIds,
-				Roles:           row.Roles,
-				Permissions:     row.Permissions,
-				CircleIDs:       row.CircleIds,
-				LeaderCircleIDs: []string{},
-				IsVerified:      row.IsVerified,
+				ID:               row.ID,
+				LastName:         row.LastName,
+				LastNameReading:  row.LastNameReading,
+				FirstName:        row.FirstName,
+				FirstNameReading: row.FirstNameReading,
+				DisplayName:      row.DisplayName,
+				LoginIDs:         row.LoginIds,
+				ContactEmail:     row.ContactEmail,
+				PhoneNumber:      row.PhoneNumber,
+				Roles:            row.Roles,
+				Permissions:      row.Permissions,
+				CircleIDs:        row.CircleIds,
+				LeaderCircleIDs:  []string{},
+				IsVerified:       row.IsVerified,
+				IsEmailVerified:  row.IsEmailVerified,
 			})
 		}
 		return users, nil
@@ -364,14 +456,21 @@ func (r *SQLCRepository) ListVerifiedLeadersByCircleIDs(circleIDs []string) ([]U
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:              row.ID,
-			DisplayName:     row.DisplayName,
-			LoginIDs:        row.LoginIds,
-			Roles:           row.Roles,
-			Permissions:     row.Permissions,
-			CircleIDs:       row.CircleIds,
-			LeaderCircleIDs: row.CircleIds,
-			IsVerified:      row.IsVerified,
+			ID:               row.ID,
+			LastName:         row.LastName,
+			LastNameReading:  row.LastNameReading,
+			FirstName:        row.FirstName,
+			FirstNameReading: row.FirstNameReading,
+			DisplayName:      row.DisplayName,
+			LoginIDs:         row.LoginIds,
+			ContactEmail:     row.ContactEmail,
+			PhoneNumber:      row.PhoneNumber,
+			Roles:            row.Roles,
+			Permissions:      row.Permissions,
+			CircleIDs:        row.CircleIds,
+			LeaderCircleIDs:  row.CircleIds,
+			IsVerified:       row.IsVerified,
+			IsEmailVerified:  row.IsEmailVerified,
 		})
 	}
 

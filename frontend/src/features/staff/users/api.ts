@@ -16,18 +16,53 @@ export const manageableRoles = [
   'admin'
 ] as const
 
+export const roleDisplayNames: Record<string, string> = {
+  participant: '参加者',
+  content_manager: 'コンテンツ管理',
+  forms_manager: '申請管理',
+  circle_manager: '企画管理',
+  user_manager: 'ユーザー管理',
+  admin: '管理者'
+}
+
+export const roleDescriptions: Record<string, string> = {
+  participant: '企画への参加登録ができます。',
+  content_manager: 'お知らせ・配布資料の管理ができます。',
+  forms_manager: '申請フォームの管理ができます。',
+  circle_manager: '企画情報の管理ができます。',
+  user_manager: 'ユーザー情報の管理ができます。',
+  admin: 'スタッフモードを含む全機能を利用できます。'
+}
+
+export function getRoleDisplayName(role: string): string {
+  return roleDisplayNames[role] ?? role
+}
+
 export interface StaffUser {
   id: string
+  lastName: string
+  lastNameReading: string
+  firstName: string
+  firstNameReading: string
   displayName: string
   loginIds: string[]
+  contactEmail: string
+  phoneNumber: string
   roles: string[]
   isVerified: boolean
+  isEmailVerified: boolean
 }
 
 export interface UpdateStaffUserPayload {
   userId: string
+  lastName: string
+  lastNameReading: string
+  firstName: string
+  firstNameReading: string
   displayName: string
   loginIds: string[]
+  contactEmail: string
+  phoneNumber: string
 }
 
 interface UpdateStaffUserRolesPayload {
@@ -38,6 +73,7 @@ interface UpdateStaffUserRolesPayload {
 interface StaffUsersPagination {
   page: number
   pageSize: number
+  query?: string
 }
 
 export async function fetchStaffUsers(pagination: StaffUsersPagination) {
@@ -49,7 +85,8 @@ export async function fetchStaffUsers(pagination: StaffUsersPagination) {
       params: {
         query: {
           page: pagination.page,
-          pageSize: pagination.pageSize
+          pageSize: pagination.pageSize,
+          ...(pagination.query ? { query: pagination.query } : {})
         }
       }
     },
@@ -91,8 +128,14 @@ export async function updateStaffUser(payload: UpdateStaffUserPayload, csrfToken
         }
       },
       body: {
+        lastName: payload.lastName,
+        lastNameReading: payload.lastNameReading,
+        firstName: payload.firstName,
+        firstNameReading: payload.firstNameReading,
         displayName: payload.displayName,
-        loginIds: payload.loginIds
+        loginIds: payload.loginIds,
+        contactEmail: payload.contactEmail,
+        phoneNumber: payload.phoneNumber
       }
     },
     parseStaffUser,
@@ -180,15 +223,19 @@ export function useStaffUsersQuery(
   return $api.useQueryData(
     'get',
     '/staff/users',
-    () => ({
-      headers: createJsonHeaders(),
-      params: {
-        query: {
-          page: toValue(pagination).page,
-          pageSize: toValue(pagination).pageSize
+    () => {
+      const p = toValue(pagination)
+      return {
+        headers: createJsonHeaders(),
+        params: {
+          query: {
+            page: p.page,
+            pageSize: p.pageSize,
+            ...(p.query ? { query: p.query } : {})
+          }
         }
       }
-    }),
+    },
     (value) => parsePaginatedResult(value, parseStaffUser, 'staff users'),
     {
       queryKey: computed(() => ['staff', 'users', toValue(pagination)]),

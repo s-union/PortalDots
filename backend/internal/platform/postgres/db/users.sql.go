@@ -171,8 +171,15 @@ func (q *Queries) GetUserByLoginID(ctx context.Context, loginID string) (GetUser
 const getUserWithRelationsByID = `-- name: GetUserWithRelationsByID :one
 SELECT
     users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
     users.display_name,
+    users.contact_email,
+    users.phone_number,
     users.is_verified,
+    users.is_email_verified,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -195,17 +202,25 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 LEFT JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.id = $1
-GROUP BY users.id, users.display_name, users.is_verified
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
 `
 
 type GetUserWithRelationsByIDRow struct {
-	ID          string
-	DisplayName string
-	IsVerified  bool
-	LoginIds    []string
-	Roles       []string
-	Permissions []string
-	CircleIds   []string
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
 }
 
 func (q *Queries) GetUserWithRelationsByID(ctx context.Context, id string) (GetUserWithRelationsByIDRow, error) {
@@ -213,8 +228,15 @@ func (q *Queries) GetUserWithRelationsByID(ctx context.Context, id string) (GetU
 	var i GetUserWithRelationsByIDRow
 	err := row.Scan(
 		&i.ID,
+		&i.LastName,
+		&i.LastNameReading,
+		&i.FirstName,
+		&i.FirstNameReading,
 		&i.DisplayName,
+		&i.ContactEmail,
+		&i.PhoneNumber,
 		&i.IsVerified,
+		&i.IsEmailVerified,
 		&i.LoginIds,
 		&i.Roles,
 		&i.Permissions,
@@ -226,8 +248,15 @@ func (q *Queries) GetUserWithRelationsByID(ctx context.Context, id string) (GetU
 const listCircleLeadersByCircleIDs = `-- name: ListCircleLeadersByCircleIDs :many
 SELECT
     users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
     users.display_name,
+    users.contact_email,
+    users.phone_number,
     users.is_verified,
+    users.is_email_verified,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -251,18 +280,26 @@ LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE circle_user.is_leader = true
   AND circle_user.circle_id = ANY($1::text[])
-GROUP BY users.id, users.display_name, users.is_verified
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
 ORDER BY users.id
 `
 
 type ListCircleLeadersByCircleIDsRow struct {
-	ID          string
-	DisplayName string
-	IsVerified  bool
-	LoginIds    []string
-	Roles       []string
-	Permissions []string
-	CircleIds   []string
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
 }
 
 func (q *Queries) ListCircleLeadersByCircleIDs(ctx context.Context, dollar_1 []string) ([]ListCircleLeadersByCircleIDsRow, error) {
@@ -276,8 +313,15 @@ func (q *Queries) ListCircleLeadersByCircleIDs(ctx context.Context, dollar_1 []s
 		var i ListCircleLeadersByCircleIDsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.LastName,
+			&i.LastNameReading,
+			&i.FirstName,
+			&i.FirstNameReading,
 			&i.DisplayName,
+			&i.ContactEmail,
+			&i.PhoneNumber,
 			&i.IsVerified,
+			&i.IsEmailVerified,
 			&i.LoginIds,
 			&i.Roles,
 			&i.Permissions,
@@ -417,8 +461,15 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
 const listUsersByCircleIDs = `-- name: ListUsersByCircleIDs :many
 SELECT
     users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
     users.display_name,
+    users.contact_email,
+    users.phone_number,
     users.is_verified,
+    users.is_email_verified,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -441,18 +492,26 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE circle_user.circle_id = ANY($1::text[])
-GROUP BY users.id, users.display_name, users.is_verified
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
 ORDER BY users.id
 `
 
 type ListUsersByCircleIDsRow struct {
-	ID          string
-	DisplayName string
-	IsVerified  bool
-	LoginIds    []string
-	Roles       []string
-	Permissions []string
-	CircleIds   []string
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
 }
 
 func (q *Queries) ListUsersByCircleIDs(ctx context.Context, dollar_1 []string) ([]ListUsersByCircleIDsRow, error) {
@@ -466,8 +525,15 @@ func (q *Queries) ListUsersByCircleIDs(ctx context.Context, dollar_1 []string) (
 		var i ListUsersByCircleIDsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.LastName,
+			&i.LastNameReading,
+			&i.FirstName,
+			&i.FirstNameReading,
 			&i.DisplayName,
+			&i.ContactEmail,
+			&i.PhoneNumber,
 			&i.IsVerified,
+			&i.IsEmailVerified,
 			&i.LoginIds,
 			&i.Roles,
 			&i.Permissions,
@@ -483,11 +549,18 @@ func (q *Queries) ListUsersByCircleIDs(ctx context.Context, dollar_1 []string) (
 	return items, nil
 }
 
-const listUsersWithRelations = `-- name: ListUsersWithRelations :many
+const listUsersWithQuery = `-- name: ListUsersWithQuery :many
 SELECT
     users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
     users.display_name,
+    users.contact_email,
+    users.phone_number,
     users.is_verified,
+    users.is_email_verified,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -509,18 +582,123 @@ LEFT JOIN user_login_ids ON user_login_ids.user_id = users.id
 LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 LEFT JOIN circle_user ON circle_user.user_id = users.id
-GROUP BY users.id, users.display_name, users.is_verified
+WHERE ($1::text = '' OR
+    users.id ILIKE '%' || $1 || '%' OR
+    users.display_name ILIKE '%' || $1 || '%' OR
+    users.last_name ILIKE '%' || $1 || '%' OR
+    users.first_name ILIKE '%' || $1 || '%' OR
+    EXISTS (SELECT 1 FROM user_login_ids AS li WHERE li.user_id = users.id AND li.login_id ILIKE '%' || $1 || '%')
+)
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
+ORDER BY users.id
+`
+
+type ListUsersWithQueryRow struct {
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
+}
+
+func (q *Queries) ListUsersWithQuery(ctx context.Context, dollar_1 string) ([]ListUsersWithQueryRow, error) {
+	rows, err := q.db.Query(ctx, listUsersWithQuery, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsersWithQueryRow
+	for rows.Next() {
+		var i ListUsersWithQueryRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.LastName,
+			&i.LastNameReading,
+			&i.FirstName,
+			&i.FirstNameReading,
+			&i.DisplayName,
+			&i.ContactEmail,
+			&i.PhoneNumber,
+			&i.IsVerified,
+			&i.IsEmailVerified,
+			&i.LoginIds,
+			&i.Roles,
+			&i.Permissions,
+			&i.CircleIds,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUsersWithRelations = `-- name: ListUsersWithRelations :many
+SELECT
+    users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
+    users.display_name,
+    users.contact_email,
+    users.phone_number,
+    users.is_verified,
+    users.is_email_verified,
+    COALESCE(
+        array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
+        ARRAY[]::text[]
+    )::text[] AS login_ids,
+    COALESCE(
+        array_agg(DISTINCT user_roles.role) FILTER (WHERE user_roles.role IS NOT NULL),
+        ARRAY[]::text[]
+    )::text[] AS roles,
+    COALESCE(
+        array_agg(DISTINCT user_permissions.permission) FILTER (WHERE user_permissions.permission IS NOT NULL),
+        ARRAY[]::text[]
+    )::text[] AS permissions,
+    COALESCE(
+        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        ARRAY[]::text[]
+    )::text[] AS circle_ids
+FROM users
+LEFT JOIN user_login_ids ON user_login_ids.user_id = users.id
+LEFT JOIN user_roles ON user_roles.user_id = users.id
+LEFT JOIN user_permissions ON user_permissions.user_id = users.id
+LEFT JOIN circle_user ON circle_user.user_id = users.id
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
 ORDER BY users.id
 `
 
 type ListUsersWithRelationsRow struct {
-	ID          string
-	DisplayName string
-	IsVerified  bool
-	LoginIds    []string
-	Roles       []string
-	Permissions []string
-	CircleIds   []string
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
 }
 
 func (q *Queries) ListUsersWithRelations(ctx context.Context) ([]ListUsersWithRelationsRow, error) {
@@ -534,8 +712,15 @@ func (q *Queries) ListUsersWithRelations(ctx context.Context) ([]ListUsersWithRe
 		var i ListUsersWithRelationsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.LastName,
+			&i.LastNameReading,
+			&i.FirstName,
+			&i.FirstNameReading,
 			&i.DisplayName,
+			&i.ContactEmail,
+			&i.PhoneNumber,
 			&i.IsVerified,
+			&i.IsEmailVerified,
 			&i.LoginIds,
 			&i.Roles,
 			&i.Permissions,
@@ -554,8 +739,15 @@ func (q *Queries) ListUsersWithRelations(ctx context.Context) ([]ListUsersWithRe
 const listVerifiedCircleLeadersByCircleIDs = `-- name: ListVerifiedCircleLeadersByCircleIDs :many
 SELECT
     users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
     users.display_name,
+    users.contact_email,
+    users.phone_number,
     users.is_verified,
+    users.is_email_verified,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -580,18 +772,26 @@ JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.is_verified = true
   AND circle_user.is_leader = true
   AND circle_user.circle_id = ANY($1::text[])
-GROUP BY users.id, users.display_name, users.is_verified
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
 ORDER BY users.id
 `
 
 type ListVerifiedCircleLeadersByCircleIDsRow struct {
-	ID          string
-	DisplayName string
-	IsVerified  bool
-	LoginIds    []string
-	Roles       []string
-	Permissions []string
-	CircleIds   []string
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
 }
 
 func (q *Queries) ListVerifiedCircleLeadersByCircleIDs(ctx context.Context, dollar_1 []string) ([]ListVerifiedCircleLeadersByCircleIDsRow, error) {
@@ -605,8 +805,15 @@ func (q *Queries) ListVerifiedCircleLeadersByCircleIDs(ctx context.Context, doll
 		var i ListVerifiedCircleLeadersByCircleIDsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.LastName,
+			&i.LastNameReading,
+			&i.FirstName,
+			&i.FirstNameReading,
 			&i.DisplayName,
+			&i.ContactEmail,
+			&i.PhoneNumber,
 			&i.IsVerified,
+			&i.IsEmailVerified,
 			&i.LoginIds,
 			&i.Roles,
 			&i.Permissions,
@@ -625,8 +832,15 @@ func (q *Queries) ListVerifiedCircleLeadersByCircleIDs(ctx context.Context, doll
 const listVerifiedUsersByCircleIDs = `-- name: ListVerifiedUsersByCircleIDs :many
 SELECT
     users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
     users.display_name,
+    users.contact_email,
+    users.phone_number,
     users.is_verified,
+    users.is_email_verified,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -650,18 +864,26 @@ LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.is_verified = true
   AND circle_user.circle_id = ANY($1::text[])
-GROUP BY users.id, users.display_name, users.is_verified
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
 ORDER BY users.id
 `
 
 type ListVerifiedUsersByCircleIDsRow struct {
-	ID          string
-	DisplayName string
-	IsVerified  bool
-	LoginIds    []string
-	Roles       []string
-	Permissions []string
-	CircleIds   []string
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
 }
 
 func (q *Queries) ListVerifiedUsersByCircleIDs(ctx context.Context, dollar_1 []string) ([]ListVerifiedUsersByCircleIDsRow, error) {
@@ -675,8 +897,15 @@ func (q *Queries) ListVerifiedUsersByCircleIDs(ctx context.Context, dollar_1 []s
 		var i ListVerifiedUsersByCircleIDsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.LastName,
+			&i.LastNameReading,
+			&i.FirstName,
+			&i.FirstNameReading,
 			&i.DisplayName,
+			&i.ContactEmail,
+			&i.PhoneNumber,
 			&i.IsVerified,
+			&i.IsEmailVerified,
 			&i.LoginIds,
 			&i.Roles,
 			&i.Permissions,
@@ -695,8 +924,15 @@ func (q *Queries) ListVerifiedUsersByCircleIDs(ctx context.Context, dollar_1 []s
 const listVerifiedUsersWithRelations = `-- name: ListVerifiedUsersWithRelations :many
 SELECT
     users.id,
+    users.last_name,
+    users.last_name_reading,
+    users.first_name,
+    users.first_name_reading,
     users.display_name,
+    users.contact_email,
+    users.phone_number,
     users.is_verified,
+    users.is_email_verified,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -719,18 +955,26 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 LEFT JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.is_verified = true
-GROUP BY users.id, users.display_name, users.is_verified
+GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
+         users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified
 ORDER BY users.id
 `
 
 type ListVerifiedUsersWithRelationsRow struct {
-	ID          string
-	DisplayName string
-	IsVerified  bool
-	LoginIds    []string
-	Roles       []string
-	Permissions []string
-	CircleIds   []string
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	IsVerified       bool
+	IsEmailVerified  bool
+	LoginIds         []string
+	Roles            []string
+	Permissions      []string
+	CircleIds        []string
 }
 
 func (q *Queries) ListVerifiedUsersWithRelations(ctx context.Context) ([]ListVerifiedUsersWithRelationsRow, error) {
@@ -744,8 +988,15 @@ func (q *Queries) ListVerifiedUsersWithRelations(ctx context.Context) ([]ListVer
 		var i ListVerifiedUsersWithRelationsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.LastName,
+			&i.LastNameReading,
+			&i.FirstName,
+			&i.FirstNameReading,
 			&i.DisplayName,
+			&i.ContactEmail,
+			&i.PhoneNumber,
 			&i.IsVerified,
+			&i.IsEmailVerified,
 			&i.LoginIds,
 			&i.Roles,
 			&i.Permissions,
@@ -855,6 +1106,71 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 		&i.DisplayName,
 		&i.Password,
 		&i.IsVerified,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateUserProfile = `-- name: UpdateUserProfile :one
+UPDATE users
+SET last_name = $2,
+    last_name_reading = $3,
+    first_name = $4,
+    first_name_reading = $5,
+    contact_email = $6,
+    phone_number = $7
+WHERE id = $1
+RETURNING id, last_name, last_name_reading, first_name, first_name_reading, display_name, contact_email, phone_number, password, is_verified, is_email_verified, created_at
+`
+
+type UpdateUserProfileParams struct {
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	ContactEmail     string
+	PhoneNumber      string
+}
+
+type UpdateUserProfileRow struct {
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	ContactEmail     string
+	PhoneNumber      string
+	Password         string
+	IsVerified       bool
+	IsEmailVerified  bool
+	CreatedAt        pgtype.Timestamptz
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (UpdateUserProfileRow, error) {
+	row := q.db.QueryRow(ctx, updateUserProfile,
+		arg.ID,
+		arg.LastName,
+		arg.LastNameReading,
+		arg.FirstName,
+		arg.FirstNameReading,
+		arg.ContactEmail,
+		arg.PhoneNumber,
+	)
+	var i UpdateUserProfileRow
+	err := row.Scan(
+		&i.ID,
+		&i.LastName,
+		&i.LastNameReading,
+		&i.FirstName,
+		&i.FirstNameReading,
+		&i.DisplayName,
+		&i.ContactEmail,
+		&i.PhoneNumber,
+		&i.Password,
+		&i.IsVerified,
+		&i.IsEmailVerified,
 		&i.CreatedAt,
 	)
 	return i, err

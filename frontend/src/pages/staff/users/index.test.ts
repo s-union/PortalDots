@@ -55,17 +55,31 @@ describe('StaffUsersIndexPage', () => {
         items: [
           {
             id: 'staff-user',
+            lastName: 'スタッフ',
+            lastNameReading: 'すたっふ',
+            firstName: 'ユーザー',
+            firstNameReading: 'ゆーざー',
             displayName: 'Staff User',
             loginIds: ['staff@example.com'],
+            contactEmail: 'staff@example.com',
+            phoneNumber: '090-0000-0001',
             roles: ['admin'],
-            isVerified: true
+            isVerified: true,
+            isEmailVerified: true
           },
           {
             id: 'demo-user',
+            lastName: 'デモ',
+            lastNameReading: 'でも',
+            firstName: 'ユーザー',
+            firstNameReading: 'ゆーざー',
             displayName: 'Demo User',
             loginIds: ['demo@example.com', '24a0000'],
+            contactEmail: 'demo@example.com',
+            phoneNumber: '',
             roles: ['participant'],
-            isVerified: false
+            isVerified: false,
+            isEmailVerified: false
           }
         ],
         page: 1,
@@ -93,10 +107,9 @@ describe('StaffUsersIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Staff User')
-    expect(wrapper.text()).toContain('Demo User')
+    expect(wrapper.text()).toContain('staff-user')
+    expect(wrapper.text()).toContain('demo-user')
     expect(wrapper.text()).toContain('staff@example.com')
-    expect(wrapper.text()).toContain('participant')
     expect(wrapper.text()).toContain('確認済み')
     expect(wrapper.text()).toContain('未確認')
     expect(wrapper.text()).toContain('表示件数:')
@@ -104,7 +117,7 @@ describe('StaffUsersIndexPage', () => {
     expect(wrapper.get('a[href="http://127.0.0.1:8080/v1/staff/users/export"]').text()).toContain('CSVで出力')
 
     await wrapper.get('thead button').trigger('click')
-    expect(wrapper.text()).toContain('Demo User')
+    expect(wrapper.text()).toContain('demo-user')
 
     await wrapper.get('select').setValue('50')
     await flushPromises()

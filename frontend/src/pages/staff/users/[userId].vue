@@ -22,9 +22,11 @@ import {
   createEditableRoles,
   extractStaffUserValidationMessage,
   formatStaffUserLoginIds,
+  getRoleDisplayName,
   manageableRoles,
   normalizeSelectedRoles,
   parseStaffUserLoginIds,
+  roleDescriptions,
   useDeleteStaffUserMutation,
   useStaffUserDetailQuery,
   useUpdateStaffUserMutation,
@@ -43,7 +45,13 @@ const verifyUserMutation = useVerifyStaffUserMutation(userId)
 const deleteUserMutation = useDeleteStaffUserMutation(userId)
 const editableRoles = createEditableRoles([])
 const loginIdsText = createEditableLoginIds([])
+const lastName = ref('')
+const lastNameReading = ref('')
+const firstName = ref('')
+const firstNameReading = ref('')
 const displayName = ref('')
+const contactEmail = ref('')
+const phoneNumber = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
@@ -54,8 +62,14 @@ watch(
       return
     }
 
+    lastName.value = user.lastName
+    lastNameReading.value = user.lastNameReading
+    firstName.value = user.firstName
+    firstNameReading.value = user.firstNameReading
     displayName.value = user.displayName
     loginIdsText.value = formatStaffUserLoginIds(user.loginIds)
+    contactEmail.value = user.contactEmail
+    phoneNumber.value = user.phoneNumber
     editableRoles.value = [...user.roles]
   },
   { immediate: true }
@@ -68,11 +82,23 @@ async function handleSaveUser() {
   try {
     const updatedUser = await updateUserMutation.mutateAsync({
       userId: userId.value,
+      lastName: lastName.value,
+      lastNameReading: lastNameReading.value,
+      firstName: firstName.value,
+      firstNameReading: firstNameReading.value,
       displayName: displayName.value,
-      loginIds: parseStaffUserLoginIds(loginIdsText.value)
+      loginIds: parseStaffUserLoginIds(loginIdsText.value),
+      contactEmail: contactEmail.value,
+      phoneNumber: phoneNumber.value
     })
+    lastName.value = updatedUser.lastName
+    lastNameReading.value = updatedUser.lastNameReading
+    firstName.value = updatedUser.firstName
+    firstNameReading.value = updatedUser.firstNameReading
     displayName.value = updatedUser.displayName
     loginIdsText.value = formatStaffUserLoginIds(updatedUser.loginIds)
+    contactEmail.value = updatedUser.contactEmail
+    phoneNumber.value = updatedUser.phoneNumber
     successMessage.value = 'ユーザー情報を更新しました。'
   } catch (error) {
     errorMessage.value = extractStaffUserValidationMessage(error)
@@ -158,7 +184,6 @@ function handleRoleChange(event: Event, role: string) {
 
     <article v-else-if="userQuery.data.value" class="space-y-6">
       <SurfaceCard tag="header">
-        <p class="text-sm text-primary">User Detail</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">ユーザーを編集</h2>
         <div class="mt-3 text-sm text-muted">ユーザーID : {{ userQuery.data.value.id }}</div>
         <div class="mt-3">
@@ -175,9 +200,37 @@ function handleRoleChange(event: Event, role: string) {
         <SettingsSection title="一般設定">
           <SettingsRow>
             <div class="grid gap-4">
+              <div class="grid grid-cols-2 gap-4">
+                <label class="grid gap-2 text-sm text-body">
+                  <span class="font-medium">姓</span>
+                  <input v-model="lastName" name="lastName" type="text" />
+                </label>
+                <label class="grid gap-2 text-sm text-body">
+                  <span class="font-medium">名</span>
+                  <input v-model="firstName" name="firstName" type="text" />
+                </label>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <label class="grid gap-2 text-sm text-body">
+                  <span class="font-medium">姓よみ</span>
+                  <input v-model="lastNameReading" name="lastNameReading" type="text" />
+                </label>
+                <label class="grid gap-2 text-sm text-body">
+                  <span class="font-medium">名よみ</span>
+                  <input v-model="firstNameReading" name="firstNameReading" type="text" />
+                </label>
+              </div>
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">表示名</span>
                 <input v-model="displayName" name="displayName" type="text" />
+              </label>
+              <label class="grid gap-2 text-sm text-body">
+                <span class="font-medium">連絡先メールアドレス</span>
+                <input v-model="contactEmail" name="contactEmail" type="email" />
+              </label>
+              <label class="grid gap-2 text-sm text-body">
+                <span class="font-medium">電話番号</span>
+                <input v-model="phoneNumber" name="phoneNumber" type="tel" />
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">ログイン ID</span>
@@ -222,13 +275,9 @@ function handleRoleChange(event: Event, role: string) {
                   @change="handleRoleChange($event, role)"
                 />
                 <span class="grid gap-1">
-                  <span class="font-medium">{{ role }}</span>
+                  <span class="font-medium">{{ getRoleDisplayName(role) }}</span>
                   <span class="text-xs leading-6 text-muted">
-                    {{
-                      role === 'admin'
-                        ? 'スタッフモードを含む全機能を利用できます。'
-                        : 'このロールに紐づく staff 機能を利用できます。'
-                    }}
+                    {{ roleDescriptions[role] ?? 'このロールに紐づく staff 機能を利用できます。' }}
                   </span>
                 </span>
               </label>

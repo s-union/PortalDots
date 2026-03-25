@@ -16,7 +16,6 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check",
-    "codegen:api": "openapi-typescript ../backend/api/openapi.yaml --output ../packages/api-client/src/generated/schema.d.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -42,7 +41,6 @@
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.9.0",
     "jsdom": "^28.1.0",
-    "openapi-typescript": "^7.13.0",
     "oxfmt": "^0.40.0",
     "oxlint": "^1.55.0",
     "oxlint-tsgolint": "^0.16.0",

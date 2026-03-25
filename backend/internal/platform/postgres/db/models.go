@@ -200,11 +200,18 @@ type Tag struct {
 }
 
 type User struct {
-	ID          string
-	DisplayName string
-	Password    string
-	CreatedAt   pgtype.Timestamptz
-	IsVerified  bool
+	ID               string
+	DisplayName      string
+	Password         string
+	CreatedAt        pgtype.Timestamptz
+	IsVerified       bool
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	ContactEmail     string
+	PhoneNumber      string
+	IsEmailVerified  bool
 }
 
 type UserLoginID struct {

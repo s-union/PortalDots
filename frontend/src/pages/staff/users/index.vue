@@ -21,7 +21,19 @@ const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const page = ref(1)
 const pageSize = ref(25)
-const staffUserSortKeys = ['id', 'displayName', 'loginIds', 'roles', 'isVerified'] as const
+const searchQuery = ref('')
+const staffUserSortKeys = [
+  'id',
+  'lastName',
+  'firstName',
+  'loginIds',
+  'contactEmail',
+  'phoneNumber',
+  'isStaff',
+  'isAdmin',
+  'isEmailVerified',
+  'isVerified'
+] as const
 type StaffUserSortKey = (typeof staffUserSortKeys)[number]
 
 const sortKey = ref<StaffUserSortKey>('id')
@@ -30,7 +42,8 @@ const usersQuery = useStaffUsersQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
     page: page.value,
-    pageSize: pageSize.value
+    pageSize: pageSize.value,
+    query: searchQuery.value
   }))
 )
 const exportUrl = buildStaffUsersExportUrl()
@@ -42,19 +55,47 @@ const columns: StaffDataGridColumn[] = [
     sortable: true
   },
   {
-    key: 'displayName',
-    label: 'ユーザー',
+    key: 'lastName',
+    label: '姓',
+    sortable: true
+  },
+  {
+    key: 'firstName',
+    label: '名',
     sortable: true
   },
   {
     key: 'loginIds',
-    label: 'ログイン ID',
+    label: '学生用メールアドレス',
     sortable: true
   },
   {
-    key: 'roles',
-    label: 'ユーザー種別',
+    key: 'contactEmail',
+    label: '連絡先メールアドレス',
     sortable: true
+  },
+  {
+    key: 'phoneNumber',
+    label: '電話番号',
+    sortable: true
+  },
+  {
+    key: 'isStaff',
+    label: 'スタッフ',
+    sortable: true,
+    align: 'center'
+  },
+  {
+    key: 'isAdmin',
+    label: '管理者',
+    sortable: true,
+    align: 'center'
+  },
+  {
+    key: 'isEmailVerified',
+    label: 'メール確認',
+    sortable: true,
+    align: 'center'
   },
   {
     key: 'isVerified',
@@ -64,7 +105,33 @@ const columns: StaffDataGridColumn[] = [
   }
 ]
 
-const rows = computed<StaffUserRow[]>(() => usersQuery.data.value?.items ?? [])
+interface StaffUserRow {
+  id: string
+  lastName: string
+  firstName: string
+  loginIds: string[]
+  contactEmail: string
+  phoneNumber: string
+  isStaff: boolean
+  isAdmin: boolean
+  isEmailVerified: boolean
+  isVerified: boolean
+}
+
+const rows = computed<StaffUserRow[]>(() =>
+  (usersQuery.data.value?.items ?? []).map((user) => ({
+    id: user.id,
+    lastName: user.lastName,
+    firstName: user.firstName,
+    loginIds: user.loginIds,
+    contactEmail: user.contactEmail,
+    phoneNumber: user.phoneNumber,
+    isStaff: user.roles.some((r) => r !== 'participant'),
+    isAdmin: user.roles.includes('admin'),
+    isEmailVerified: user.isEmailVerified,
+    isVerified: user.isVerified
+  }))
+)
 const sortedRows = computed<StaffUserRow[]>(() => {
   const cloned = [...rows.value]
   const direction = sortDirection.value === 'asc' ? 1 : -1
@@ -131,12 +198,8 @@ function handlePageSizeChange(nextSize: number) {
   page.value = 1
 }
 
-interface StaffUserRow {
-  id: string
-  displayName: string
-  loginIds: string[]
-  roles: string[]
-  isVerified: boolean
+function handleSearch() {
+  page.value = 1
 }
 
 function isStaffUserSortKey(value: string): value is StaffUserSortKey {
@@ -148,12 +211,8 @@ function toSortableValue(user: StaffUserRow, key: StaffUserSortKey) {
     return user.loginIds.join(',').toLowerCase()
   }
 
-  if (key === 'roles') {
-    return user.roles.join(',').toLowerCase()
-  }
-
-  if (key === 'isVerified') {
-    return user.isVerified ? 1 : 0
+  if (key === 'isStaff' || key === 'isAdmin' || key === 'isEmailVerified' || key === 'isVerified') {
+    return user[key] ? 1 : 0
   }
 
   return String(user[key]).toLowerCase()
@@ -183,6 +242,21 @@ function toSortableValue(user: StaffUserRow, key: StaffUserSortKey) {
         @update:page-size="handlePageSizeChange"
       >
         <template #toolbar>
+          <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+            <input
+              v-model="searchQuery"
+              type="search"
+              placeholder="姓名・メールアドレスで絞り込み"
+              class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button
+              type="submit"
+              class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
+            >
+              <i class="fas fa-search fa-fw" aria-hidden="true" />
+              絞り込み
+            </button>
+          </form>
           <a
             :href="exportUrl"
             class="inline-flex items-center gap-2 rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
@@ -202,20 +276,26 @@ function toSortableValue(user: StaffUserRow, key: StaffUserSortKey) {
           </RouterLink>
         </template>
 
-        <template #cell-displayName="{ value }">
-          <p class="font-medium text-body">{{ String(value) }}</p>
-        </template>
-
         <template #cell-loginIds="{ value }">
           {{ Array.isArray(value) ? value.join(', ') : '-' }}
         </template>
 
-        <template #cell-roles="{ value }">
-          <div class="flex flex-wrap gap-2">
-            <StatusBadge v-for="role in Array.isArray(value) ? value : []" :key="String(role)" tone="primary" size="sm">
-              {{ String(role) }}
-            </StatusBadge>
-          </div>
+        <template #cell-isStaff="{ value }">
+          <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
+            {{ value === true ? 'スタッフ' : '-' }}
+          </StatusBadge>
+        </template>
+
+        <template #cell-isAdmin="{ value }">
+          <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
+            {{ value === true ? '管理者' : '-' }}
+          </StatusBadge>
+        </template>
+
+        <template #cell-isEmailVerified="{ value }">
+          <StatusBadge :tone="value === true ? 'success' : 'muted'" size="sm">
+            {{ value === true ? '確認済み' : '未確認' }}
+          </StatusBadge>
         </template>
 
         <template #cell-isVerified="{ value }">

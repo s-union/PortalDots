@@ -22,16 +22,29 @@ var manageableRoles = []string{
 }
 
 type staffUserSummaryResponse struct {
-	ID          string   `json:"id"`
-	DisplayName string   `json:"displayName"`
-	LoginIDs    []string `json:"loginIds"`
-	Roles       []string `json:"roles"`
-	IsVerified  bool     `json:"isVerified"`
+	ID               string   `json:"id"`
+	LastName         string   `json:"lastName"`
+	LastNameReading  string   `json:"lastNameReading"`
+	FirstName        string   `json:"firstName"`
+	FirstNameReading string   `json:"firstNameReading"`
+	DisplayName      string   `json:"displayName"`
+	LoginIDs         []string `json:"loginIds"`
+	ContactEmail     string   `json:"contactEmail"`
+	PhoneNumber      string   `json:"phoneNumber"`
+	Roles            []string `json:"roles"`
+	IsVerified       bool     `json:"isVerified"`
+	IsEmailVerified  bool     `json:"isEmailVerified"`
 }
 
 type updateStaffUserRequest struct {
-	DisplayName string   `json:"displayName"`
-	LoginIDs    []string `json:"loginIds"`
+	LastName         string   `json:"lastName"`
+	LastNameReading  string   `json:"lastNameReading"`
+	FirstName        string   `json:"firstName"`
+	FirstNameReading string   `json:"firstNameReading"`
+	DisplayName      string   `json:"displayName"`
+	LoginIDs         []string `json:"loginIds"`
+	ContactEmail     string   `json:"contactEmail"`
+	PhoneNumber      string   `json:"phoneNumber"`
 }
 
 type updateStaffUserRolesRequest struct {
@@ -44,7 +57,8 @@ func (h *staffUserHandlers) listStaffUsers(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	users, err := h.users.List()
+	query := c.QueryParam("query")
+	users, err := h.users.ListByQuery(query)
 	if err != nil {
 		return internalError(c)
 	}
@@ -94,6 +108,22 @@ func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 		return validationError(c, map[string][]string{
 			"loginIds": {"入力されたログイン ID はすでに登録されています"},
 		})
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	updatedUser, err = h.users.UpdateProfile(
+		c.Param("userID"),
+		request.LastName,
+		request.LastNameReading,
+		request.FirstName,
+		request.FirstNameReading,
+		request.ContactEmail,
+		request.PhoneNumber,
+	)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
 		return internalError(c)
@@ -271,14 +301,21 @@ func (h *staffUserHandlers) downloadStaffUsersCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	rows := [][]string{{"id", "display_name", "login_ids", "roles", "is_verified"}}
+	rows := [][]string{{"id", "last_name", "last_name_reading", "first_name", "first_name_reading", "display_name", "login_ids", "contact_email", "phone_number", "roles", "is_verified", "is_email_verified"}}
 	for _, userValue := range users {
 		rows = append(rows, []string{
 			userValue.ID,
+			userValue.LastName,
+			userValue.LastNameReading,
+			userValue.FirstName,
+			userValue.FirstNameReading,
 			userValue.DisplayName,
 			strings.Join(userValue.LoginIDs, ","),
+			userValue.ContactEmail,
+			userValue.PhoneNumber,
 			strings.Join(userValue.Roles, ","),
 			boolString(userValue.IsVerified),
+			boolString(userValue.IsEmailVerified),
 		})
 	}
 
@@ -395,10 +432,17 @@ func updateStaffUserSession(sessionID string, currentSession session.Session, up
 
 func mapStaffUser(userValue useradmin.User) staffUserSummaryResponse {
 	return staffUserSummaryResponse{
-		ID:          userValue.ID,
-		DisplayName: userValue.DisplayName,
-		LoginIDs:    slices.Clone(userValue.LoginIDs),
-		Roles:       slices.Clone(userValue.Roles),
-		IsVerified:  userValue.IsVerified,
+		ID:               userValue.ID,
+		LastName:         userValue.LastName,
+		LastNameReading:  userValue.LastNameReading,
+		FirstName:        userValue.FirstName,
+		FirstNameReading: userValue.FirstNameReading,
+		DisplayName:      userValue.DisplayName,
+		LoginIDs:         slices.Clone(userValue.LoginIDs),
+		ContactEmail:     userValue.ContactEmail,
+		PhoneNumber:      userValue.PhoneNumber,
+		Roles:            slices.Clone(userValue.Roles),
+		IsVerified:       userValue.IsVerified,
+		IsEmailVerified:  userValue.IsEmailVerified,
 	}
 }

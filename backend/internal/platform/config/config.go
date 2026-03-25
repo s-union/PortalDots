@@ -62,15 +62,22 @@ type AuthUser struct {
 }
 
 type User struct {
-	ID              string
-	LoginIDs        []string
-	DisplayName     string
-	Password        string
-	Roles           []string
-	Permissions     []string
-	CircleIDs       []string
-	LeaderCircleIDs []string
-	IsVerified      bool
+	ID               string
+	LoginIDs         []string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	Password         string
+	ContactEmail     string
+	PhoneNumber      string
+	Roles            []string
+	Permissions      []string
+	CircleIDs        []string
+	LeaderCircleIDs  []string
+	IsVerified       bool
+	IsEmailVerified  bool
 }
 
 type Circle struct {
@@ -173,59 +180,94 @@ func defaultDemoAuthUser() AuthUser {
 func defaultDemoUsers() []User {
 	return []User{
 		{
-			ID:              "demo-staff",
-			LoginIDs:        []string{"demo-staff"},
-			DisplayName:     "Demo Staff",
-			Password:        "demo-staff",
-			Roles:           []string{"content_manager"},
-			Permissions:     []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
-			CircleIDs:       []string{},
-			LeaderCircleIDs: []string{},
-			IsVerified:      true,
+			ID:               "demo-staff",
+			LoginIDs:         []string{"demo-staff"},
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "スタッフ",
+			FirstNameReading: "すたっふ",
+			DisplayName:      "Demo Staff",
+			Password:         "demo-staff",
+			ContactEmail:     "demo-staff@example.com",
+			PhoneNumber:      "090-0000-0001",
+			Roles:            []string{"content_manager"},
+			Permissions:      []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
+			CircleIDs:        []string{},
+			LeaderCircleIDs:  []string{},
+			IsVerified:       true,
+			IsEmailVerified:  true,
 		},
 		{
-			ID:              "demo-staff-sub",
-			LoginIDs:        []string{"demo-staff-sub"},
-			DisplayName:     "Demo Staff Sub",
-			Password:        "demo-staff-sub",
-			Roles:           []string{"content_manager"},
-			Permissions:     []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
-			CircleIDs:       []string{},
-			LeaderCircleIDs: []string{},
-			IsVerified:      true,
+			ID:               "demo-staff-sub",
+			LoginIDs:         []string{"demo-staff-sub"},
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "サブスタッフ",
+			FirstNameReading: "さぶすたっふ",
+			DisplayName:      "Demo Staff Sub",
+			Password:         "demo-staff-sub",
+			ContactEmail:     "demo-staff-sub@example.com",
+			PhoneNumber:      "090-0000-0002",
+			Roles:            []string{"content_manager"},
+			Permissions:      []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
+			CircleIDs:        []string{},
+			LeaderCircleIDs:  []string{},
+			IsVerified:       true,
+			IsEmailVerified:  true,
 		},
 		{
-			ID:              "demo-circle",
-			LoginIDs:        []string{"demo-circle"},
-			DisplayName:     "Demo Circle",
-			Password:        "demo-circle",
-			Roles:           []string{"participant"},
-			Permissions:     []string{},
-			CircleIDs:       []string{"circle-a"},
-			LeaderCircleIDs: []string{"circle-a"},
-			IsVerified:      true,
+			ID:               "demo-circle",
+			LoginIDs:         []string{"demo-circle"},
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "サークル",
+			FirstNameReading: "さーくる",
+			DisplayName:      "Demo Circle",
+			Password:         "demo-circle",
+			ContactEmail:     "demo-circle@example.com",
+			PhoneNumber:      "090-0000-0003",
+			Roles:            []string{"participant"},
+			Permissions:      []string{},
+			CircleIDs:        []string{"circle-a"},
+			LeaderCircleIDs:  []string{"circle-a"},
+			IsVerified:       true,
+			IsEmailVerified:  true,
 		},
 		{
-			ID:              "demo-circle-sub",
-			LoginIDs:        []string{"demo-circle-sub"},
-			DisplayName:     "Demo Circle Sub",
-			Password:        "demo-circle-sub",
-			Roles:           []string{"participant"},
-			Permissions:     []string{},
-			CircleIDs:       []string{"circle-b"},
-			LeaderCircleIDs: []string{"circle-b"},
-			IsVerified:      true,
+			ID:               "demo-circle-sub",
+			LoginIDs:         []string{"demo-circle-sub"},
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "サブ",
+			FirstNameReading: "さぶ",
+			DisplayName:      "Demo Circle Sub",
+			Password:         "demo-circle-sub",
+			ContactEmail:     "demo-circle-sub@example.com",
+			PhoneNumber:      "090-0000-0004",
+			Roles:            []string{"participant"},
+			Permissions:      []string{},
+			CircleIDs:        []string{"circle-b"},
+			LeaderCircleIDs:  []string{"circle-b"},
+			IsVerified:       true,
+			IsEmailVerified:  true,
 		},
 		{
-			ID:              "member-circle-b-unverified",
-			LoginIDs:        []string{"circle-b-unverified@example.com"},
-			DisplayName:     "Circle B Unverified Member",
-			Password:        "password",
-			Roles:           []string{"participant"},
-			Permissions:     []string{},
-			CircleIDs:       []string{"circle-b"},
-			LeaderCircleIDs: []string{},
-			IsVerified:      false,
+			ID:               "member-circle-b-unverified",
+			LoginIDs:         []string{"circle-b-unverified@example.com"},
+			LastName:         "未確認",
+			LastNameReading:  "みかくにん",
+			FirstName:        "メンバー",
+			FirstNameReading: "めんばー",
+			DisplayName:      "Circle B Unverified Member",
+			Password:         "password",
+			ContactEmail:     "circle-b-unverified@example.com",
+			PhoneNumber:      "",
+			Roles:            []string{"participant"},
+			Permissions:      []string{},
+			CircleIDs:        []string{"circle-b"},
+			LeaderCircleIDs:  []string{},
+			IsVerified:       false,
+			IsEmailVerified:  false,
 		},
 	}
 }

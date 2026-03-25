@@ -199,10 +199,17 @@ export const staffPortalSettingsSchema = z.object({
 
 export const staffUserSchema = z.object({
   id: z.string(),
+  lastName: z.string().default(''),
+  lastNameReading: z.string().default(''),
+  firstName: z.string().default(''),
+  firstNameReading: z.string().default(''),
   displayName: z.string(),
   loginIds: stringArraySchema,
+  contactEmail: z.string().default(''),
+  phoneNumber: z.string().default(''),
   roles: stringArraySchema,
-  isVerified: z.boolean()
+  isVerified: z.boolean(),
+  isEmailVerified: z.boolean().default(false)
 })
 
 export const staffCircleSchema = z.object({

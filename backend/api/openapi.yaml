@@ -1380,6 +1380,12 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: 名前・ログインIDで絞り込む
       responses:
         "200":
           description: Staff user list
@@ -1393,9 +1399,17 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [id, displayName, loginIds, roles, isVerified]
+                      required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
                       properties:
                         id:
+                          type: string
+                        lastName:
+                          type: string
+                        lastNameReading:
+                          type: string
+                        firstName:
+                          type: string
+                        firstNameReading:
                           type: string
                         displayName:
                           type: string
@@ -1403,11 +1417,17 @@ paths:
                           type: array
                           items:
                             type: string
+                        contactEmail:
+                          type: string
+                        phoneNumber:
+                          type: string
                         roles:
                           type: array
                           items:
                             type: string
                         isVerified:
+                          type: boolean
+                        isEmailVerified:
                           type: boolean
                   page:
                     type: integer
@@ -1452,9 +1472,17 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, displayName, loginIds, roles, isVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
                 properties:
                   id:
+                    type: string
+                  lastName:
+                    type: string
+                  lastNameReading:
+                    type: string
+                  firstName:
+                    type: string
+                  firstNameReading:
                     type: string
                   displayName:
                     type: string
@@ -1462,11 +1490,17 @@ paths:
                     type: array
                     items:
                       type: string
+                  contactEmail:
+                    type: string
+                  phoneNumber:
+                    type: string
                   roles:
                     type: array
                     items:
                       type: string
                   isVerified:
+                    type: boolean
+                  isEmailVerified:
                     type: boolean
         "401":
           description: Unauthenticated
@@ -1491,6 +1525,14 @@ paths:
               type: object
               required: [displayName, loginIds]
               properties:
+                lastName:
+                  type: string
+                lastNameReading:
+                  type: string
+                firstName:
+                  type: string
+                firstNameReading:
+                  type: string
                 displayName:
                   type: string
                   minLength: 1
@@ -1498,6 +1540,10 @@ paths:
                   type: array
                   items:
                     type: string
+                contactEmail:
+                  type: string
+                phoneNumber:
+                  type: string
       responses:
         "200":
           description: Updated staff user
@@ -1505,9 +1551,17 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, displayName, loginIds, roles, isVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
                 properties:
                   id:
+                    type: string
+                  lastName:
+                    type: string
+                  lastNameReading:
+                    type: string
+                  firstName:
+                    type: string
+                  firstNameReading:
                     type: string
                   displayName:
                     type: string
@@ -1515,11 +1569,17 @@ paths:
                     type: array
                     items:
                       type: string
+                  contactEmail:
+                    type: string
+                  phoneNumber:
+                    type: string
                   roles:
                     type: array
                     items:
                       type: string
                   isVerified:
+                    type: boolean
+                  isEmailVerified:
                     type: boolean
         "401":
           description: Unauthenticated
@@ -1566,9 +1626,17 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, displayName, loginIds, roles, isVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
                 properties:
                   id:
+                    type: string
+                  lastName:
+                    type: string
+                  lastNameReading:
+                    type: string
+                  firstName:
+                    type: string
+                  firstNameReading:
                     type: string
                   displayName:
                     type: string
@@ -1576,11 +1644,17 @@ paths:
                     type: array
                     items:
                       type: string
+                  contactEmail:
+                    type: string
+                  phoneNumber:
+                    type: string
                   roles:
                     type: array
                     items:
                       type: string
                   isVerified:
+                    type: boolean
+                  isEmailVerified:
                     type: boolean
         "401":
           description: Unauthenticated
@@ -1619,9 +1693,17 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, displayName, loginIds, roles, isVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
                 properties:
                   id:
+                    type: string
+                  lastName:
+                    type: string
+                  lastNameReading:
+                    type: string
+                  firstName:
+                    type: string
+                  firstNameReading:
                     type: string
                   displayName:
                     type: string
@@ -1629,11 +1711,17 @@ paths:
                     type: array
                     items:
                       type: string
+                  contactEmail:
+                    type: string
+                  phoneNumber:
+                    type: string
                   roles:
                     type: array
                     items:
                       type: string
                   isVerified:
+                    type: boolean
+                  isEmailVerified:
                     type: boolean
         "401":
           description: Unauthenticated

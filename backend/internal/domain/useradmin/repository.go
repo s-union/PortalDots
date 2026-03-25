@@ -3,6 +3,7 @@ package useradmin
 import (
 	"errors"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
@@ -12,22 +13,31 @@ var ErrNotFound = errors.New("user not found")
 var ErrConflict = errors.New("user conflict")
 
 type User struct {
-	ID              string
-	DisplayName     string
-	LoginIDs        []string
-	Roles           []string
-	Permissions     []string
-	CircleIDs       []string
-	LeaderCircleIDs []string
-	IsVerified      bool
+	ID               string
+	LastName         string
+	LastNameReading  string
+	FirstName        string
+	FirstNameReading string
+	DisplayName      string
+	LoginIDs         []string
+	ContactEmail     string
+	PhoneNumber      string
+	Roles            []string
+	Permissions      []string
+	CircleIDs        []string
+	LeaderCircleIDs  []string
+	IsVerified       bool
+	IsEmailVerified  bool
 }
 
 type Repository interface {
 	List() ([]User, error)
+	ListByQuery(query string) ([]User, error)
 	Find(userID string) (User, error)
 	FindByLoginID(loginID string) (User, error)
 	Update(userID, displayName string, loginIDs []string) (User, error)
 	UpdateDisplayName(userID, displayName string) (User, error)
+	UpdateProfile(userID, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error)
 	UpdateRoles(userID string, roles []string) (User, error)
 	UpdatePermissions(userID string, permissions []string) (User, error)
 	UpdateVerified(userID string, verified bool) (User, error)
@@ -51,34 +61,63 @@ func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticR
 	authCircleIDs := []string{}
 	authLeaderCircleIDs := []string{}
 	authIsVerified := true
+	authLastName := ""
+	authLastNameReading := ""
+	authFirstName := ""
+	authFirstNameReading := ""
+	authContactEmail := ""
+	authPhoneNumber := ""
+	authIsEmailVerified := false
 	if matchedAuthUserIndex >= 0 {
-		authCircleIDs = slices.Clone(users[matchedAuthUserIndex].CircleIDs)
-		authLeaderCircleIDs = slices.Clone(users[matchedAuthUserIndex].LeaderCircleIDs)
-		authIsVerified = users[matchedAuthUserIndex].IsVerified
+		matched := users[matchedAuthUserIndex]
+		authCircleIDs = slices.Clone(matched.CircleIDs)
+		authLeaderCircleIDs = slices.Clone(matched.LeaderCircleIDs)
+		authIsVerified = matched.IsVerified
+		authLastName = matched.LastName
+		authLastNameReading = matched.LastNameReading
+		authFirstName = matched.FirstName
+		authFirstNameReading = matched.FirstNameReading
+		authContactEmail = matched.ContactEmail
+		authPhoneNumber = matched.PhoneNumber
+		authIsEmailVerified = matched.IsEmailVerified
 	}
 	built = append(built, User{
-		ID:              authUser.ID,
-		DisplayName:     authUser.DisplayName,
-		LoginIDs:        slices.Clone(authUser.LoginIDs),
-		Roles:           slices.Clone(authUser.Roles),
-		Permissions:     slices.Clone(authUser.Permissions),
-		CircleIDs:       authCircleIDs,
-		LeaderCircleIDs: authLeaderCircleIDs,
-		IsVerified:      authIsVerified,
+		ID:               authUser.ID,
+		LastName:         authLastName,
+		LastNameReading:  authLastNameReading,
+		FirstName:        authFirstName,
+		FirstNameReading: authFirstNameReading,
+		DisplayName:      authUser.DisplayName,
+		LoginIDs:         slices.Clone(authUser.LoginIDs),
+		ContactEmail:     authContactEmail,
+		PhoneNumber:      authPhoneNumber,
+		Roles:            slices.Clone(authUser.Roles),
+		Permissions:      slices.Clone(authUser.Permissions),
+		CircleIDs:        authCircleIDs,
+		LeaderCircleIDs:  authLeaderCircleIDs,
+		IsVerified:       authIsVerified,
+		IsEmailVerified:  authIsEmailVerified,
 	})
 	for _, user := range users {
 		if user.ID == authUser.ID {
 			continue
 		}
 		built = append(built, User{
-			ID:              user.ID,
-			DisplayName:     user.DisplayName,
-			LoginIDs:        slices.Clone(user.LoginIDs),
-			Roles:           slices.Clone(user.Roles),
-			Permissions:     slices.Clone(user.Permissions),
-			CircleIDs:       slices.Clone(user.CircleIDs),
-			LeaderCircleIDs: slices.Clone(user.LeaderCircleIDs),
-			IsVerified:      user.IsVerified,
+			ID:               user.ID,
+			LastName:         user.LastName,
+			LastNameReading:  user.LastNameReading,
+			FirstName:        user.FirstName,
+			FirstNameReading: user.FirstNameReading,
+			DisplayName:      user.DisplayName,
+			LoginIDs:         slices.Clone(user.LoginIDs),
+			ContactEmail:     user.ContactEmail,
+			PhoneNumber:      user.PhoneNumber,
+			Roles:            slices.Clone(user.Roles),
+			Permissions:      slices.Clone(user.Permissions),
+			CircleIDs:        slices.Clone(user.CircleIDs),
+			LeaderCircleIDs:  slices.Clone(user.LeaderCircleIDs),
+			IsVerified:       user.IsVerified,
+			IsEmailVerified:  user.IsEmailVerified,
 		})
 	}
 
@@ -95,6 +134,33 @@ func (r *StaticRepository) List() ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (r *StaticRepository) ListByQuery(query string) ([]User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if strings.TrimSpace(query) == "" {
+		users := make([]User, 0, len(r.users))
+		for _, user := range r.users {
+			users = append(users, cloneUser(user))
+		}
+		return users, nil
+	}
+
+	q := strings.ToLower(strings.TrimSpace(query))
+	filtered := make([]User, 0)
+	for _, u := range r.users {
+		target := strings.ToLower(strings.Join([]string{
+			u.ID, u.DisplayName, u.LastName, u.FirstName,
+			strings.Join(u.LoginIDs, " "),
+		}, " "))
+		if strings.Contains(target, q) {
+			filtered = append(filtered, cloneUser(u))
+		}
+	}
+
+	return filtered, nil
 }
 
 func (r *StaticRepository) Find(userID string) (User, error) {
@@ -187,6 +253,26 @@ func (r *StaticRepository) UpdateDisplayName(userID, displayName string) (User, 
 			continue
 		}
 		r.users[index].DisplayName = displayName
+		return cloneUser(r.users[index]), nil
+	}
+
+	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) UpdateProfile(userID, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for index := range r.users {
+		if r.users[index].ID != userID {
+			continue
+		}
+		r.users[index].LastName = lastName
+		r.users[index].LastNameReading = lastNameReading
+		r.users[index].FirstName = firstName
+		r.users[index].FirstNameReading = firstNameReading
+		r.users[index].ContactEmail = contactEmail
+		r.users[index].PhoneNumber = phoneNumber
 		return cloneUser(r.users[index]), nil
 	}
 
