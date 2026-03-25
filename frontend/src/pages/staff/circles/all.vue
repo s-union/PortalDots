@@ -284,7 +284,7 @@ function isStaffCircleSortKey(value: string): value is StaffCircleSortKey {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout class="max-w-full">
     <PageHeader title="企画情報管理 - 全企画一覧">
       <template #actions>
         <div class="flex flex-wrap gap-3">

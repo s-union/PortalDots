@@ -207,6 +207,21 @@ declare module 'vue-router/auto-routes' {
       '/staff/circles/participation_types/:typeId',
       { typeId: ParamValue<true> },
       { typeId: ParamValue<false> },
+      | '/staff/circles/participation_types/[typeId]/edit'
+      | '/staff/circles/participation_types/[typeId]/form/edit'
+    >,
+    '/staff/circles/participation_types/[typeId]/edit': RouteRecordInfo<
+      '/staff/circles/participation_types/[typeId]/edit',
+      '/staff/circles/participation_types/:typeId/edit',
+      { typeId: ParamValue<true> },
+      { typeId: ParamValue<false> },
+      | never
+    >,
+    '/staff/circles/participation_types/[typeId]/form/edit': RouteRecordInfo<
+      '/staff/circles/participation_types/[typeId]/form/edit',
+      '/staff/circles/participation_types/:typeId/form/edit',
+      { typeId: ParamValue<true> },
+      { typeId: ParamValue<false> },
       | never
     >,
     '/staff/documents/': RouteRecordInfo<
@@ -658,6 +673,20 @@ declare module 'vue-router/auto-routes' {
     'src/pages/staff/circles/participation_types/[typeId].vue': {
       routes:
         | '/staff/circles/participation_types/[typeId]'
+        | '/staff/circles/participation_types/[typeId]/edit'
+        | '/staff/circles/participation_types/[typeId]/form/edit'
+      views:
+        | 'default'
+    }
+    'src/pages/staff/circles/participation_types/[typeId]/edit.vue': {
+      routes:
+        | '/staff/circles/participation_types/[typeId]/edit'
+      views:
+        | never
+    }
+    'src/pages/staff/circles/participation_types/[typeId]/form/edit.vue': {
+      routes:
+        | '/staff/circles/participation_types/[typeId]/form/edit'
       views:
         | never
     }

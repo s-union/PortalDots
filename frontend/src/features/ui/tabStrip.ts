@@ -47,12 +47,14 @@ export function buildUserSettingsTabs(activeTab: UserSettingsTab, isAuthenticate
   ]
 }
 
+export type StaffParticipationTypeTab = 'circles' | 'edit' | 'form'
+
 export function buildStaffParticipationTypeTabs(
   typeId: string,
-  activeHash: string,
+  activeTab: StaffParticipationTypeTab,
   form?: { isPublic: boolean; isOpen: boolean }
 ): TabStripItem[] {
-  const currentHash = activeHash || '#participation-type-section'
+  const basePath = `/staff/circles/participation_types/${encodeURIComponent(typeId)}`
   const formBadge =
     form === undefined
       ? undefined
@@ -65,27 +67,18 @@ export function buildStaffParticipationTypeTabs(
   return [
     {
       label: '企画一覧',
-      to: {
-        path: `/staff/circles/participation_types/${encodeURIComponent(typeId)}`,
-        hash: '#circles-section'
-      },
-      active: currentHash === '#circles-section'
+      to: basePath,
+      active: activeTab === 'circles'
     },
     {
       label: '参加種別を編集',
-      to: {
-        path: `/staff/circles/participation_types/${encodeURIComponent(typeId)}`,
-        hash: '#participation-type-section'
-      },
-      active: currentHash === '#participation-type-section'
+      to: `${basePath}/edit`,
+      active: activeTab === 'edit'
     },
     {
       label: '参加登録フォームの設定',
-      to: {
-        path: `/staff/circles/participation_types/${encodeURIComponent(typeId)}`,
-        hash: '#form-settings-section'
-      },
-      active: currentHash === '#form-settings-section',
+      to: `${basePath}/form/edit`,
+      active: activeTab === 'form',
       ...formBadge
     }
   ]
