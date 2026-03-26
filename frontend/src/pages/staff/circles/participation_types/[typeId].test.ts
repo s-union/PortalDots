@@ -36,6 +36,7 @@ describe('StaffParticipationTypeCirclesPage', () => {
       },
       featureFlags: [],
       roles: ['admin'],
+      permissions: ['staff.circles'],
       user: {
         id: 'staff-user',
         displayName: 'Staff User'
@@ -96,29 +97,28 @@ describe('StaffParticipationTypeCirclesPage', () => {
         }
 
         if (pathname.endsWith('/staff/participation-types/participation-type-food/circles') && method === 'GET') {
+          const pageSize = Number.parseInt(new URL(url, 'http://localhost').searchParams.get('pageSize') ?? '25', 10)
           return jsonResponse({
-            items: [
-              {
-                id: 'circle-a',
-                name: '屋台企画A',
-                nameYomi: 'ヤタイキカクエー',
-                groupName: 'Aブロック',
-                groupNameYomi: 'エーブロック',
-                participationTypeId: 'participation-type-food',
-                participationTypeName: '模擬店',
-                tags: ['模擬店'],
-                notes: '',
-                submittedAt: '2026-03-05T12:00:00Z',
-                status: 'pending',
-                statusReason: '',
-                statusSetAt: null,
-                statusSetById: null,
-                places: ['第一会場']
-              }
-            ],
+            items: Array.from({ length: Math.min(pageSize, 2) }, (_, index) => ({
+              id: index === 0 ? 'circle-a' : 'circle-b',
+              name: index === 0 ? '屋台企画A' : '屋台企画B',
+              nameYomi: index === 0 ? 'ヤタイキカクエー' : 'ヤタイキカクビー',
+              groupName: index === 0 ? 'Aブロック' : 'Bブロック',
+              groupNameYomi: index === 0 ? 'エーブロック' : 'ビーブロック',
+              participationTypeId: 'participation-type-food',
+              participationTypeName: '模擬店',
+              tags: ['模擬店'],
+              notes: '',
+              submittedAt: '2026-03-05T12:00:00Z',
+              status: 'pending',
+              statusReason: '',
+              statusSetAt: null,
+              statusSetById: null,
+              places: ['第一会場']
+            })),
             page: 1,
-            pageSize: 25,
-            total: 1
+            pageSize,
+            total: 2
           })
         }
 
@@ -128,7 +128,10 @@ describe('StaffParticipationTypeCirclesPage', () => {
 
     const wrapper = mount(StaffParticipationTypeCirclesPage, {
       global: {
-        plugins: [pinia, router, createQueryPlugin()]
+        plugins: [pinia, router, createQueryPlugin()],
+        stubs: {
+          teleport: true
+        }
       }
     })
     await flushPromises()
@@ -139,6 +142,15 @@ describe('StaffParticipationTypeCirclesPage', () => {
     expect(wrapper.text()).toContain('屋台企画A')
     expect(wrapper.text()).toContain('CSVで出力')
     expect(wrapper.text()).toContain('ファイルを一括ダウンロード')
+    expect(wrapper.text()).toContain('絞り込み')
+
+    const filterButton = wrapper.get('button[title="絞り込み"]')
+    await filterButton.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('絞り込み条件')
+
+    const emailLink = wrapper.get('a[title="メール送信"]')
+    expect(emailLink.attributes('href')).toBe('/staff/circles/circle-a#mail')
 
     const editTab = wrapper.findAll('a').find((link) => link.text().includes('参加種別を編集'))
     if (!editTab) {

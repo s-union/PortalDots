@@ -1,5 +1,5 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { z } from 'zod'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, staffCircleSchema, staffParticipationTypeSchema } from '@/lib/api/schema'
@@ -77,6 +77,25 @@ export async function fetchStaffParticipationTypeCircles(typeId: string, page: n
       errorMessage: 'Failed to fetch participation type circles'
     }
   )
+}
+
+export async function fetchAllStaffParticipationTypeCircles(typeId: string) {
+  const pageSize = 100
+  let page = 1
+  const allItems: StaffParticipationTypeCircle[] = []
+
+  while (true) {
+    const current = await fetchStaffParticipationTypeCircles(typeId, page, pageSize)
+    allItems.push(...current.items)
+
+    const totalPages = Math.max(1, Math.ceil(current.total / current.pageSize))
+    if (page >= totalPages) {
+      break
+    }
+    page += 1
+  }
+
+  return allItems
 }
 
 export async function createStaffParticipationType(payload: MutateStaffParticipationTypePayload, csrfToken: string) {
@@ -226,6 +245,18 @@ export function useStaffParticipationTypeCirclesQuery(
       errorMessage: 'Failed to fetch participation type circles'
     }
   )
+}
+
+export function useAllStaffParticipationTypeCirclesQuery(
+  typeId: MaybeRefOrGetter<string>,
+  enabled: MaybeRefOrGetter<boolean>
+) {
+  return useQuery({
+    queryKey: computed(() => ['staff', 'participation-types', toValue(typeId), 'circles', 'all']),
+    queryFn: () => fetchAllStaffParticipationTypeCircles(toValue(typeId)),
+    enabled: computed(() => toValue(enabled) && toValue(typeId).trim().length > 0),
+    retry: false
+  })
 }
 
 export function useCreateStaffParticipationTypeMutation() {
