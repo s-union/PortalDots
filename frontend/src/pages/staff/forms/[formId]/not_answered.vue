@@ -22,29 +22,22 @@ import { useStaffFormAnswersIndexQuery } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 
-const route = useRoute()
+const route = useRoute('/staff/forms/[formId]/not_answered')
 const sessionStore = useSessionStore()
-const formId = computed(() => {
-  if (!('formId' in route.params)) {
-    return ''
-  }
-
-  const value = route.params.formId
-  return typeof value === 'string' ? value : ''
-})
+const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
   computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
 )
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
+const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTabs(formId.value, 'answers') : []))
 </script>
 
 <template>
   <PageLayout>
-    <BackLink :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
+    <BackLink v-if="formId.length > 0" :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
 
-    <TabStrip :tabs="staffFormTabs" />
+    <TabStrip v-if="formId.length > 0" :tabs="staffFormTabs" />
 
     <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...

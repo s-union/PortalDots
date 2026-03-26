@@ -84,7 +84,7 @@ export function buildStaffParticipationTypeTabs(
   ]
 }
 
-export function buildStaffFormTabs(formId: string, activeTab: 'answers' | 'editor' | 'settings'): TabStripItem[] {
+export function buildStaffFormTabs(formId: string, activeTab: 'answers' | 'editor' | 'edit'): TabStripItem[] {
   const basePath = `/staff/forms/${encodeURIComponent(formId)}`
 
   return [
@@ -95,13 +95,13 @@ export function buildStaffFormTabs(formId: string, activeTab: 'answers' | 'edito
     },
     {
       label: 'エディター',
-      to: { path: basePath, hash: '#editor-panel' },
+      to: `${basePath}/editor`,
       active: activeTab === 'editor'
     },
     {
       label: '設定',
-      to: { path: basePath, hash: '#settings-panel' },
-      active: activeTab === 'settings'
+      to: `${basePath}/edit`,
+      active: activeTab === 'edit'
     }
   ]
 }

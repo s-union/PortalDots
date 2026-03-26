@@ -58,7 +58,7 @@ const formEditorRoute = computed(() => {
   if (!formId) {
     return `/staff/circles/participation_types/${encodeURIComponent(typeId.value)}/form/edit`
   }
-  return `/staff/forms/${encodeURIComponent(formId)}`
+  return `/staff/forms/${encodeURIComponent(formId)}/editor`
 })
 
 const participationTypeTabs = computed(() =>

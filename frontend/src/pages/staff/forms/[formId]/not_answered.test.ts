@@ -35,7 +35,19 @@ describe('StaffFormNotAnsweredPage', () => {
           component: { template: '<div>answers</div>' }
         },
         {
-          path: '/staff/forms/:formId',
+          path: '/staff/forms/:formId/answers/create',
+          component: { template: '<div>create</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/answers/uploads',
+          component: { template: '<div>uploads</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/editor',
+          component: { template: '<div>editor</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/edit',
           component: { template: '<div>form detail</div>' }
         },
         { path: '/staff/circles/:circleId', component: { template: '<div>circle</div>' } }
@@ -66,11 +78,19 @@ describe('StaffFormNotAnsweredPage', () => {
               form: {
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
+                description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
                 closeAt: '2026-03-22T23:59:59Z',
                 maxAnswers: 2,
+                answerableTags: ['展示'],
+                confirmationMessage: '回答ありがとうございました。',
                 isPublic: true,
-                isOpen: true
+                isOpen: true,
+                createdAt: '2026-03-01T10:00:00Z',
+                updatedAt: '2026-03-01T10:00:00Z',
+                isParticipationForm: false,
+                questions: [],
+                answer: null
               },
               answers: [],
               circles: [],

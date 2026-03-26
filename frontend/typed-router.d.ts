@@ -258,6 +258,20 @@ declare module 'vue-router/auto-routes' {
       { formId: ParamValue<false> },
       | never
     >,
+    '/staff/forms/[formId]/edit': RouteRecordInfo<
+      '/staff/forms/[formId]/edit',
+      '/staff/forms/:formId/edit',
+      { formId: ParamValue<true> },
+      { formId: ParamValue<false> },
+      | never
+    >,
+    '/staff/forms/[formId]/editor': RouteRecordInfo<
+      '/staff/forms/[formId]/editor',
+      '/staff/forms/:formId/editor',
+      { formId: ParamValue<true> },
+      { formId: ParamValue<false> },
+      | never
+    >,
     '/staff/forms/[formId]/answers/': RouteRecordInfo<
       '/staff/forms/[formId]/answers/',
       '/staff/forms/:formId/answers',
@@ -298,6 +312,13 @@ declare module 'vue-router/auto-routes' {
       '/staff/forms/:formId/preview',
       { formId: ParamValue<true> },
       { formId: ParamValue<false> },
+      | never
+    >,
+    '/staff/forms/create': RouteRecordInfo<
+      '/staff/forms/create',
+      '/staff/forms/create',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
     '/staff/mails': RouteRecordInfo<
@@ -717,6 +738,18 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/staff/forms/[formId]/edit.vue': {
+      routes:
+        | '/staff/forms/[formId]/edit'
+      views:
+        | never
+    }
+    'src/pages/staff/forms/[formId]/editor.vue': {
+      routes:
+        | '/staff/forms/[formId]/editor'
+      views:
+        | never
+    }
     'src/pages/staff/forms/[formId]/answers/index.vue': {
       routes:
         | '/staff/forms/[formId]/answers/'
@@ -750,6 +783,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/staff/forms/[formId]/preview.vue': {
       routes:
         | '/staff/forms/[formId]/preview'
+      views:
+        | never
+    }
+    'src/pages/staff/forms/create.vue': {
+      routes:
+        | '/staff/forms/create'
       views:
         | never
     }

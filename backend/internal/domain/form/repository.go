@@ -17,6 +17,8 @@ type Form struct {
 	IsOpen              bool
 	OpenAt              string
 	CloseAt             string
+	CreatedAt           string
+	UpdatedAt           string
 	MaxAnswers          int32
 	AnswerableTags      []string
 	ConfirmationMessage string
@@ -43,6 +45,15 @@ type StaticRepository struct {
 func NewStaticRepository(cfg []config.Form) *StaticRepository {
 	forms := make([]Form, 0, len(cfg))
 	for _, item := range cfg {
+		createdAt := item.CreatedAt
+		if createdAt == "" {
+			createdAt = item.OpenAt
+		}
+		updatedAt := item.UpdatedAt
+		if updatedAt == "" {
+			updatedAt = createdAt
+		}
+
 		forms = append(forms, Form{
 			ID:                  item.ID,
 			CircleID:            item.CircleID,
@@ -52,6 +63,8 @@ func NewStaticRepository(cfg []config.Form) *StaticRepository {
 			IsOpen:              item.IsOpen,
 			OpenAt:              item.OpenAt,
 			CloseAt:             item.CloseAt,
+			CreatedAt:           createdAt,
+			UpdatedAt:           updatedAt,
 			MaxAnswers:          item.MaxAnswers,
 			AnswerableTags:      append([]string{}, item.AnswerableTags...),
 			ConfirmationMessage: item.ConfirmationMessage,
@@ -142,6 +155,7 @@ func (r *StaticRepository) Create(
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	now := time.Now().UTC().Format(time.RFC3339)
 	form := Form{
 		ID:                  "form-generated-" + strconv.Itoa(r.nextID),
 		CircleID:            circleID,
@@ -150,6 +164,8 @@ func (r *StaticRepository) Create(
 		IsPublic:            isPublic,
 		OpenAt:              openAt,
 		CloseAt:             closeAt,
+		CreatedAt:           now,
+		UpdatedAt:           now,
 		MaxAnswers:          maxAnswers,
 		AnswerableTags:      append([]string{}, answerableTags...),
 		ConfirmationMessage: confirmationMessage,
@@ -189,11 +205,13 @@ func (r *StaticRepository) Update(
 			continue
 		}
 
+		updatedAt := time.Now().UTC().Format(time.RFC3339)
 		r.forms[index].Name = name
 		r.forms[index].Description = description
 		r.forms[index].IsPublic = isPublic
 		r.forms[index].OpenAt = openAt
 		r.forms[index].CloseAt = closeAt
+		r.forms[index].UpdatedAt = updatedAt
 		r.forms[index].MaxAnswers = maxAnswers
 		r.forms[index].AnswerableTags = append([]string{}, answerableTags...)
 		r.forms[index].ConfirmationMessage = confirmationMessage
@@ -224,11 +242,13 @@ func (r *StaticRepository) UpdateByID(
 			continue
 		}
 
+		updatedAt := time.Now().UTC().Format(time.RFC3339)
 		r.forms[index].Name = name
 		r.forms[index].Description = description
 		r.forms[index].IsPublic = isPublic
 		r.forms[index].OpenAt = openAt
 		r.forms[index].CloseAt = closeAt
+		r.forms[index].UpdatedAt = updatedAt
 		r.forms[index].MaxAnswers = maxAnswers
 		r.forms[index].AnswerableTags = append([]string{}, answerableTags...)
 		r.forms[index].ConfirmationMessage = confirmationMessage

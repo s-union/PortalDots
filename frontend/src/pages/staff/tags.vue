@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'tags.read'
   }
 })
@@ -29,7 +28,7 @@ import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const enabled = computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const tagsQuery = useStaffTagsQuery(enabled)
 const createMutation = useCreateStaffTagMutation()
 const updateMutation = useUpdateStaffTagMutation()

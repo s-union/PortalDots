@@ -60,8 +60,29 @@ func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 	return circles, nil
 }
 
-func (c *SQLCCatalog) FindSelectable(_ *auth.User, circleID string) (Circle, error) {
-	row, err := c.queries.GetCircleByID(context.Background(), circleID)
+func (c *SQLCCatalog) FindSelectable(user *auth.User, circleID string) (Circle, error) {
+	var (
+		circle Circle
+		err    error
+	)
+
+	if user == nil {
+		row, queryErr := c.queries.GetCircleByID(context.Background(), circleID)
+		if queryErr == nil {
+			circle = circleFromGetByIDRow(row)
+		}
+		err = queryErr
+	} else {
+		row, queryErr := c.queries.GetUserCircle(context.Background(), dbgen.GetUserCircleParams{
+			ID:     circleID,
+			UserID: user.ID,
+		})
+		if queryErr == nil {
+			circle = circleFromGetUserCircleRow(row)
+		}
+		err = queryErr
+	}
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Circle{}, ErrNotFound
@@ -69,7 +90,7 @@ func (c *SQLCCatalog) FindSelectable(_ *auth.User, circleID string) (Circle, err
 		return Circle{}, err
 	}
 
-	return circleFromGetByIDRow(row), nil
+	return circle, nil
 }
 
 func (c *SQLCCatalog) ListForStaff() ([]Circle, error) {
@@ -644,6 +665,27 @@ func circleFromListRow(row dbgen.ListCirclesRow) Circle {
 }
 
 func circleFromGetByIDRow(row dbgen.GetCircleByIDRow) Circle {
+	return Circle{
+		ID:                    row.ID,
+		Name:                  row.Name,
+		NameYomi:              row.NameYomi,
+		GroupName:             row.GroupName,
+		GroupNameYomi:         row.GroupNameYomi,
+		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeName: row.ParticipationTypeName,
+		Tags:                  append([]string{}, row.Tags...),
+		InvitationToken:       nullableTextValue(row.InvitationToken),
+		SubmittedAt:           nullableTime(row.SubmittedAt),
+		Notes:                 row.Notes,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
+	}
+}
+
+func circleFromGetUserCircleRow(row dbgen.GetUserCircleRow) Circle {
 	return Circle{
 		ID:                    row.ID,
 		Name:                  row.Name,

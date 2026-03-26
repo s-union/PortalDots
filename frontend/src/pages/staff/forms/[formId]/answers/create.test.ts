@@ -37,6 +37,14 @@ describe('StaffFormAnswerCreatePage', () => {
           component: { template: '<div>index</div>' }
         },
         {
+          path: '/staff/forms/:formId/editor',
+          component: { template: '<div>editor</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/edit',
+          component: { template: '<div>edit tab</div>' }
+        },
+        {
           path: '/staff/forms/:formId/answers/create',
           component: StaffFormAnswerCreatePage
         },
@@ -71,11 +79,19 @@ describe('StaffFormAnswerCreatePage', () => {
               form: {
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
+                description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
                 closeAt: '2026-03-22T23:59:59Z',
                 maxAnswers: 2,
+                answerableTags: ['展示'],
+                confirmationMessage: '回答ありがとうございました。',
                 isPublic: true,
-                isOpen: true
+                isOpen: true,
+                createdAt: '2026-03-01T10:00:00Z',
+                updatedAt: '2026-03-01T10:00:00Z',
+                isParticipationForm: false,
+                questions: [],
+                answer: null
               },
               answers: [
                 {
@@ -89,7 +105,8 @@ describe('StaffFormAnswerCreatePage', () => {
                   body: '前回回答',
                   createdAt: '2026-03-13T10:00:00Z',
                   updatedAt: '2026-03-13T12:00:00Z',
-                  uploadCount: 1
+                  uploadCount: 1,
+                  details: {}
                 }
               ],
               circles: [
@@ -123,7 +140,8 @@ describe('StaffFormAnswerCreatePage', () => {
                 body: '',
                 createdAt: '2026-03-14T02:00:00Z',
                 updatedAt: '2026-03-14T02:00:00Z',
-                uploadCount: 0
+                uploadCount: 0,
+                details: {}
               }
             }),
             {

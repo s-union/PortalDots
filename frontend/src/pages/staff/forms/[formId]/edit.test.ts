@@ -1,0 +1,501 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { useSessionStore } from '@/features/session/store'
+import StaffFormEditPage from './edit.vue'
+
+function createQueryPlugin() {
+  return [
+    VueQueryPlugin,
+    {
+      queryClient: new QueryClient({
+        defaultOptions: {
+          queries: { retry: false }
+        }
+      })
+    }
+  ]
+}
+
+describe('StaffFormEditPage', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('renders and updates staff form settings', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/forms', component: { template: '<div>forms</div>' } },
+        { path: '/staff/forms/:formId/edit', component: StaffFormEditPage },
+        {
+          path: '/staff/forms/:formId/answers',
+          component: { template: '<div>answers</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/editor',
+          component: { template: '<div>editor</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/preview',
+          component: { template: '<div>preview</div>' }
+        }
+      ]
+    })
+    await router.push('/staff/forms/form-circle-b-1/edit')
+    await router.isReady()
+
+    let updatedName = '展示チェックフォーム'
+    let updatedMaxAnswers = 2
+    let updatedTags = ['展示']
+    let updatedConfirmationMessage = '回答ありがとうございました。'
+    let updatedRequestBody: Record<string, unknown> | null = null
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+
+        const pathname = new URL(url, 'http://localhost').pathname
+
+        if (pathname.endsWith('/staff/status') && method === 'GET') {
+          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'GET') {
+          return new Response(
+            JSON.stringify({
+              id: 'form-circle-b-1',
+              name: updatedName,
+              description: '展示レイアウトと機材使用申請を提出してください。',
+              openAt: '2026-03-02T00:00:00Z',
+              closeAt: '2026-03-22T23:59:59Z',
+              maxAnswers: updatedMaxAnswers,
+              answerableTags: updatedTags,
+              confirmationMessage: updatedConfirmationMessage,
+              isPublic: true,
+              isOpen: true,
+              createdAt: '2026-03-01T12:00:00Z',
+              updatedAt: '2026-03-01T12:00:00Z',
+              isParticipationForm: false,
+              questions: [],
+              answer: {
+                id: 'answer-1',
+                body: '展示位置は正面入口側を希望します。',
+                updatedAt: '2026-03-05T10:00:00Z',
+                details: {},
+                uploads: []
+              }
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
+        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'PUT') {
+          updatedRequestBody = await parseRequestBody(input, init?.body)
+          updatedName = '更新後フォーム'
+          updatedMaxAnswers = 3
+          updatedTags = ['展示', '必須']
+          updatedConfirmationMessage = '送信が完了しました。'
+          return new Response(
+            JSON.stringify({
+              id: 'form-circle-b-1',
+              name: updatedName,
+              description: '更新後の説明',
+              openAt: '2026-03-02T00:00:00Z',
+              closeAt: '2026-03-22T23:59:59Z',
+              maxAnswers: updatedMaxAnswers,
+              answerableTags: updatedTags,
+              confirmationMessage: updatedConfirmationMessage,
+              isPublic: true,
+              isOpen: true,
+              createdAt: '2026-03-01T12:00:00Z',
+              updatedAt: '2026-03-01T12:00:00Z',
+              isParticipationForm: false
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
+
+    const wrapper = mount(StaffFormEditPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('展示チェックフォーム')
+
+    await wrapper.get('input[name="name"]').setValue('更新後フォーム')
+    await wrapper.get('input[name="openAt"]').setValue('2026-03-02T09:30')
+    await wrapper.get('input[name="closeAt"]').setValue('2026-03-22T18:45')
+    await wrapper.get('input[name="maxAnswers"]').setValue('3')
+    await wrapper.get('textarea[name="answerableTags"]').setValue('展示\n必須')
+    await wrapper.get('textarea[name="confirmationMessage"]').setValue('送信が完了しました。')
+    const saveFormButton = wrapper
+      .findAll('button[type="button"]')
+      .find((button) => button.text().includes('変更を保存'))
+    if (!saveFormButton) {
+      throw new Error('save form button not found')
+    }
+    await saveFormButton.trigger('click')
+    await flushPromises()
+
+    expect(updatedRequestBody).toMatchObject({
+      maxAnswers: 3,
+      answerableTags: ['展示', '必須'],
+      confirmationMessage: '送信が完了しました。'
+    })
+    expect(String(updatedRequestBody?.openAt)).toMatch(/^2026-03-02T/)
+    expect(String(updatedRequestBody?.closeAt)).toMatch(/^2026-03-22T/)
+  })
+
+  it('confirms before copying and deleting the current form', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/forms', component: { template: '<div>forms</div>' } },
+        { path: '/staff/forms/:formId/edit', component: StaffFormEditPage },
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
+        {
+          path: '/staff/forms/:formId/answers',
+          component: { template: '<div>answers</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/preview',
+          component: { template: '<div>preview</div>' }
+        }
+      ]
+    })
+    await router.push('/staff/forms/form-circle-b-1/edit')
+    await router.isReady()
+
+    const deleteRequests: string[] = []
+    const confirmMock = vi
+      .fn<(message?: string) => boolean>()
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true)
+    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+
+        const pathname = new URL(url, 'http://localhost').pathname
+
+        if (pathname.endsWith('/staff/status') && method === 'GET') {
+          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'GET') {
+          return new Response(
+            JSON.stringify({
+              id: 'form-circle-b-1',
+              name: '展示チェックフォーム',
+              description: '展示レイアウトと機材使用申請を提出してください。',
+              openAt: '2026-03-02T00:00:00Z',
+              closeAt: '2026-03-22T23:59:59Z',
+              maxAnswers: 2,
+              answerableTags: ['展示'],
+              confirmationMessage: '回答ありがとうございました。',
+              isPublic: true,
+              isOpen: true,
+              createdAt: '2026-03-01T12:00:00Z',
+              updatedAt: '2026-03-01T12:00:00Z',
+              isParticipationForm: false,
+              questions: [],
+              answer: null
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
+        if (pathname.endsWith('/staff/forms/form-circle-b-1/copy') && method === 'POST') {
+          return new Response(
+            JSON.stringify({
+              id: 'form-circle-b-copy',
+              name: '展示チェックフォームのコピー',
+              description: '展示レイアウトと機材使用申請を提出してください。',
+              openAt: '2026-03-02T00:00:00Z',
+              closeAt: '2026-03-22T23:59:59Z',
+              maxAnswers: 2,
+              answerableTags: ['展示'],
+              confirmationMessage: '回答ありがとうございました。',
+              isPublic: false,
+              isOpen: false,
+              createdAt: '2026-03-01T12:00:00Z',
+              updatedAt: '2026-03-01T12:00:00Z',
+              isParticipationForm: false
+            }),
+            {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
+        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'DELETE') {
+          deleteRequests.push(url)
+          return new Response(null, { status: 204 })
+        }
+
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
+
+    const wrapper = mount(StaffFormEditPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    const buttonLabels = ['複製', '削除']
+    for (const [index, label] of buttonLabels.entries()) {
+      const button = wrapper.findAll('button[type="button"]').find((candidate) => candidate.text().includes(label))
+      if (!button) {
+        throw new Error(`${label} button not found at step ${index}`)
+      }
+
+      await button.trigger('click')
+      await flushPromises()
+
+      if (label === '複製') {
+        expect(confirmMock).toHaveBeenNthCalledWith(
+          1,
+          expect.stringContaining('フォーム「展示チェックフォーム」を複製しますか？')
+        )
+        expect(router.currentRoute.value.fullPath).toBe('/staff/forms/form-circle-b-1/edit')
+
+        await button.trigger('click')
+        await flushPromises()
+        expect(confirmMock).toHaveBeenNthCalledWith(
+          2,
+          expect.stringContaining('非公開です。後から必要に応じて設定を変更してください')
+        )
+        expect(router.currentRoute.value.fullPath).toBe('/staff/forms/form-circle-b-copy/editor')
+
+        await router.push('/staff/forms/form-circle-b-1/edit')
+        await flushPromises()
+      } else {
+        expect(confirmMock).toHaveBeenNthCalledWith(
+          3,
+          expect.stringContaining('フォーム「展示チェックフォーム」を削除しますか？')
+        )
+        expect(deleteRequests).toHaveLength(0)
+
+        await button.trigger('click')
+        await flushPromises()
+        expect(confirmMock).toHaveBeenNthCalledWith(4, expect.stringContaining('設問、回答は全て削除されます'))
+        expect(deleteRequests).toHaveLength(1)
+        expect(router.currentRoute.value.fullPath).toBe('/staff/forms')
+      }
+    }
+  })
+
+  it('shows participation forms as question-editor only', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/forms', component: { template: '<div>forms</div>' } },
+        { path: '/staff/forms/:formId/edit', component: StaffFormEditPage },
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
+        {
+          path: '/staff/forms/:formId/answers',
+          component: { template: '<div>answers</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/preview',
+          component: { template: '<div>preview</div>' }
+        }
+      ]
+    })
+    await router.push('/staff/forms/form-participation-exhibit/edit')
+    await router.isReady()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+
+        const pathname = new URL(url, 'http://localhost').pathname
+
+        if (pathname.endsWith('/staff/status') && method === 'GET') {
+          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (pathname.endsWith('/staff/forms/form-participation-exhibit') && method === 'GET') {
+          return new Response(
+            JSON.stringify({
+              id: 'form-participation-exhibit',
+              name: '企画参加登録',
+              description: '参加登録を提出してください。',
+              openAt: '2026-03-01T00:00:00Z',
+              closeAt: '2026-03-31T23:59:59Z',
+              maxAnswers: 1,
+              answerableTags: [],
+              confirmationMessage: 'ありがとうございました。',
+              isPublic: true,
+              isOpen: true,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z',
+              isParticipationForm: true,
+              questions: [
+                {
+                  id: 'question-1',
+                  name: '追加設問',
+                  description: '補足事項を入力してください',
+                  type: 'text',
+                  isRequired: false,
+                  numberMin: null,
+                  numberMax: null,
+                  allowedTypes: '',
+                  options: [],
+                  priority: 1,
+                  createdAt: '2026-03-01T00:00:00Z',
+                  updatedAt: '2026-03-01T00:00:00Z'
+                }
+              ],
+              answer: null
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
+
+    const wrapper = mount(StaffFormEditPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(
+      'このフォームは参加登録フォームです。基本設定は参加種別画面で管理し、ここでは設問編集のみ行えます。'
+    )
+    expect(wrapper.text()).toContain(
+      '参加登録フォームの公開設定・受付期間・人数条件は参加種別画面から変更してください。'
+    )
+    expect(wrapper.get('input[name="name"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('textarea[name="description"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).not.toContain('複製')
+    expect(wrapper.text()).toContain('参加種別画面で編集')
+  })
+})
+
+async function parseRequestBody(
+  input: RequestInfo | URL,
+  body: null | string | ArrayBuffer | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | undefined
+) {
+  if (typeof body !== 'string') {
+    if (typeof Request !== 'undefined' && input instanceof Request) {
+      body = await input.clone().text()
+    }
+  }
+
+  if (typeof body !== 'string') {
+    throw new Error('Request body was not a string')
+  }
+
+  const parsed: unknown = JSON.parse(body)
+  if (!isRecord(parsed)) {
+    throw new Error('Request body was not an object')
+  }
+
+  return parsed
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}

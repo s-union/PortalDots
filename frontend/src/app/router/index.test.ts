@@ -71,7 +71,7 @@ describe('app router guards', () => {
     expect(router.currentRoute.value.fullPath).toBe('/login')
   })
 
-  it('rewrites authenticated workspace root access to home', async () => {
+  it('redirects authenticated workspace root without current circle to selector', async () => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
       csrfToken: 'csrf-token',
       currentCircle: null,
@@ -87,7 +87,69 @@ describe('app router guards', () => {
 
     await router.push('/workspace')
 
-    expect(router.currentRoute.value.fullPath).toBe('/')
+    expect(router.currentRoute.value.fullPath).toBe('/circles/select?redirect=/workspace')
+  })
+
+  it('allows authenticated workspace root access when current circle exists', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: ['participant'],
+      permissions: [],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
+
+    await router.push('/workspace')
+
+    expect(router.currentRoute.value.fullPath).toBe('/workspace')
+  })
+
+  it('allows global staff master pages without current circle', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      permissions: [],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User',
+        canDeleteAccount: false
+      }
+    })
+
+    for (const path of ['/staff/places', '/staff/tags', '/staff/contacts/categories']) {
+      await router.push(path)
+      expect(router.currentRoute.value.fullPath).toBe(path)
+    }
+  })
+
+  it('redirects circle-scoped staff pages without current circle to selector', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      permissions: [],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User',
+        canDeleteAccount: false
+      }
+    })
+
+    for (const path of ['/staff/pages', '/staff/documents', '/staff/forms', '/staff/exports', '/staff/mails']) {
+      await router.push(path)
+      expect(router.currentRoute.value.fullPath).toBe(`/circles/select?redirect=${path}`)
+    }
   })
 
   it('redirects authenticated register access to home via public-only guard', async () => {

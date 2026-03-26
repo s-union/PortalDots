@@ -31,10 +31,11 @@ type staffManagedFormAnswerSummaryResponse struct {
 	CreatedAt   string                    `json:"createdAt"`
 	UpdatedAt   string                    `json:"updatedAt"`
 	UploadCount int                       `json:"uploadCount"`
+	Details     map[string][]string       `json:"details"`
 }
 
 type staffFormAnswersIndexResponse struct {
-	Form               staffFormSummaryResponse                `json:"form"`
+	Form               staffFormDetailResponse                 `json:"form"`
 	Answers            []staffManagedFormAnswerSummaryResponse `json:"answers"`
 	Circles            []staffAnswerCircleResponse             `json:"circles"`
 	NotAnsweredCircles []staffAnswerCircleResponse             `json:"notAnsweredCircles"`
@@ -63,7 +64,7 @@ type existingStaffFormAnswerResponse struct {
 }
 
 func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
-	_, _, formValue, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
+	_, _, formValue, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -96,7 +97,7 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, staffFormAnswersIndexResponse{
-		Form:               h.mapStaffFormSummary(formValue),
+		Form:               h.buildStaffFormDetailResponse(formValue, questions, nil),
 		Answers:            answerResponse,
 		Circles:            allCircles,
 		NotAnsweredCircles: notAnswered,
@@ -568,6 +569,7 @@ func mapStaffManagedFormAnswerSummary(
 		CreatedAt:   answerValue.CreatedAt,
 		UpdatedAt:   answerValue.UpdatedAt,
 		UploadCount: len(uploads),
+		Details:     cloneAnswerDetails(answerValue.Details),
 	}
 }
 

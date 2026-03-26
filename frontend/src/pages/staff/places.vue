@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'places.read'
   }
 })
@@ -32,7 +31,7 @@ import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const enabled = computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const placesQuery = useStaffPlacesQuery(enabled)
 const createMutation = useCreateStaffPlaceMutation()
 const updateMutation = useUpdateStaffPlaceMutation()

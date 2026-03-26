@@ -138,6 +138,8 @@ type Form struct {
 	IsOpen              bool
 	OpenAt              string
 	CloseAt             string
+	CreatedAt           string
+	UpdatedAt           string
 	MaxAnswers          int32
 	AnswerableTags      []string
 	ConfirmationMessage string
@@ -462,6 +464,8 @@ func FromEnv() Config {
 				IsOpen:              true,
 				OpenAt:              "2026-03-01T00:00:00Z",
 				CloseAt:             "2026-03-31T23:59:59Z",
+				CreatedAt:           "2026-03-01T00:00:00Z",
+				UpdatedAt:           "2026-03-01T00:00:00Z",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "企画参加登録を受け付けました。",
@@ -475,6 +479,8 @@ func FromEnv() Config {
 				IsOpen:              true,
 				OpenAt:              "2026-03-01T00:00:00Z",
 				CloseAt:             "2026-03-31T23:59:59Z",
+				CreatedAt:           "2026-03-01T00:00:00Z",
+				UpdatedAt:           "2026-03-01T00:00:00Z",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "企画参加登録を受け付けました。",
@@ -488,6 +494,8 @@ func FromEnv() Config {
 				IsOpen:              true,
 				OpenAt:              "2026-03-01T00:00:00Z",
 				CloseAt:             "2026-04-30T23:59:59Z",
+				CreatedAt:           "2026-03-01T00:00:00Z",
+				UpdatedAt:           "2026-03-01T00:00:00Z",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "搬入確認フォームへの回答ありがとうございました。",
@@ -501,6 +509,8 @@ func FromEnv() Config {
 				IsOpen:              true,
 				OpenAt:              "2026-03-02T00:00:00Z",
 				CloseAt:             "2026-03-22T23:59:59Z",
+				CreatedAt:           "2026-03-02T00:00:00Z",
+				UpdatedAt:           "2026-03-02T00:00:00Z",
 				MaxAnswers:          2,
 				AnswerableTags:      []string{"展示"},
 				ConfirmationMessage: "展示チェックフォームへの回答を受け付けました。",
@@ -514,6 +524,8 @@ func FromEnv() Config {
 				IsOpen:              false,
 				OpenAt:              "2026-02-01T00:00:00Z",
 				CloseAt:             "2026-02-10T23:59:59Z",
+				CreatedAt:           "2026-02-01T00:00:00Z",
+				UpdatedAt:           "2026-02-01T00:00:00Z",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "",
@@ -527,6 +539,8 @@ func FromEnv() Config {
 				IsOpen:              true,
 				OpenAt:              "2026-03-02T00:00:00Z",
 				CloseAt:             "2026-03-22T23:59:59Z",
+				CreatedAt:           "2026-03-02T00:00:00Z",
+				UpdatedAt:           "2026-03-02T00:00:00Z",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{"展示"},
 				ConfirmationMessage: "",

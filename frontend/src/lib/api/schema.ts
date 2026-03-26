@@ -306,11 +306,16 @@ export const formAnswerEnvelopeSchema = z.object({
 export const staffFormSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string(),
   openAt: z.string(),
   closeAt: z.string(),
   maxAnswers: z.number(),
+  answerableTags: stringArraySchema,
+  confirmationMessage: z.string(),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   isParticipationForm: z.boolean().default(false)
 })
 
@@ -325,9 +330,6 @@ export const staffFormAnswerSchema = z.object({
 })
 
 export const staffFormDetailSchema = staffFormSummarySchema.extend({
-  description: z.string(),
-  answerableTags: stringArraySchema,
-  confirmationMessage: z.string(),
   questions: z.array(formQuestionSchema),
   answer: staffFormAnswerSchema.nullable()
 })
@@ -357,7 +359,8 @@ export const staffManagedFormAnswerSummarySchema = z.object({
   body: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  uploadCount: z.number()
+  uploadCount: z.number(),
+  details: answerDetailsSchema
 })
 
 export const staffManagedFormAnswerValueSchema = z.object({
@@ -370,7 +373,7 @@ export const staffManagedFormAnswerValueSchema = z.object({
 })
 
 export const staffFormAnswersIndexSchema = z.object({
-  form: staffFormSummarySchema,
+  form: staffFormDetailSchema,
   answers: z.array(staffManagedFormAnswerSummarySchema),
   circles: z.array(staffAnswerCircleSchema),
   notAnsweredCircles: z.array(staffAnswerCircleSchema)

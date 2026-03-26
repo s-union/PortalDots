@@ -52,7 +52,7 @@ describe('StaffParticipationTypeFormSettingsPage', () => {
           path: '/staff/circles/participation_types/:typeId/form/edit',
           component: StaffParticipationTypeFormSettingsPage
         },
-        { path: '/staff/forms/:formId', component: { template: '<div>form editor</div>' } }
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>form editor</div>' } }
       ]
     })
     await router.push('/staff/circles/participation_types/participation-type-food/form/edit')
@@ -140,7 +140,9 @@ describe('StaffParticipationTypeFormSettingsPage', () => {
     expect(wrapper.text()).toContain('企画一覧')
     expect(wrapper.text()).toContain('参加種別を編集')
     expect(wrapper.text()).toContain('参加登録フォームの設定')
-    expect(wrapper.get('a[href="/staff/forms/form-participation-food"]').text()).toContain('フォームエディターを開く')
+    expect(wrapper.get('a[href="/staff/forms/form-participation-food/editor"]').text()).toContain(
+      'フォームエディターを開く'
+    )
 
     await wrapper.get('input[name="isPublic"]').setValue(false)
     await wrapper.get('input[name="openAt"]').setValue('2026-03-02T09:30')

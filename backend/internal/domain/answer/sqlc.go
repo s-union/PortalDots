@@ -48,7 +48,7 @@ func (r *SQLCRepository) ListByCircle(circleID string) []Answer {
 		return nil
 	}
 
-	return mapAnswerRows(rows)
+	return r.loadAnswerRows(rows)
 }
 
 func (r *SQLCRepository) ListByForm(formID string) []Answer {
@@ -57,7 +57,7 @@ func (r *SQLCRepository) ListByForm(formID string) []Answer {
 		return nil
 	}
 
-	return mapAnswerRows(rows)
+	return r.loadAnswerRows(rows)
 }
 
 func (r *SQLCRepository) ListByFormAndCircle(formID, circleID string) []Answer {
@@ -69,7 +69,7 @@ func (r *SQLCRepository) ListByFormAndCircle(formID, circleID string) []Answer {
 		return nil
 	}
 
-	return mapAnswerRows(rows)
+	return r.loadAnswerRows(rows)
 }
 
 func (r *SQLCRepository) Upsert(formID, circleID, body string, details map[string][]string) Answer {
@@ -348,17 +348,13 @@ func persistAnswerDetails(
 	return true
 }
 
-func mapAnswerRows(rows []dbgen.Answer) []Answer {
+func (r *SQLCRepository) loadAnswerRows(rows []dbgen.Answer) []Answer {
 	answers := make([]Answer, 0, len(rows))
 	for _, row := range rows {
-		answers = append(answers, Answer{
-			ID:        row.ID,
-			FormID:    row.FormID,
-			CircleID:  row.CircleID,
-			Body:      row.Body,
-			UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
-			Details:   map[string][]string{},
-		})
+		a, ok := r.loadAnswer(row)
+		if ok {
+			answers = append(answers, a)
+		}
 	}
 
 	return answers

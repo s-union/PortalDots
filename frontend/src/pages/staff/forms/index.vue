@@ -9,29 +9,26 @@ definePage({
   }
 })
 
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BackLink from '@/components/ui/BackLink.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { canEditForms, canReadFormAnswers } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildCopyStaffFormConfirmMessage,
   buildDeleteStaffFormConfirmMessage,
   buildStaffFormsExportUrl,
-  createDefaultStaffFormPayload,
   extractStaffFormValidationMessage,
-  formatStaffFormTags,
-  parseStaffFormTags,
   useCopyStaffFormMutation,
-  useCreateStaffFormMutation,
   useDeleteStaffFormMutation,
-  useStaffFormForm,
-  useStaffFormsQuery
+  useStaffFormsQuery,
+  type StaffFormSummary
 } from '@/features/staff/forms/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -41,52 +38,129 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const formsQuery = useStaffFormsQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
 )
-const createFormMutation = useCreateStaffFormMutation()
 const copyFormMutation = useCopyStaffFormMutation()
 const deleteFormMutation = useDeleteStaffFormMutation()
-const form = useStaffFormForm()
 const errorMessage = ref('')
 const exportHref = computed(() => buildStaffFormsExportUrl())
+const canReadAnswers = computed(() => canReadFormAnswers(sessionStore.roles, sessionStore.permissions))
+const canEdit = computed(() => canEditForms(sessionStore.roles, sessionStore.permissions))
+const detailActionTitle = computed(() => (canReadAnswers.value ? '回答一覧・設定' : '設定'))
+const detailActionIconClass = computed(() => (canReadAnswers.value ? 'far fa-eye fa-fw' : 'fas fa-cog fa-fw'))
 
-function handleAnswerableTagsInput(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLTextAreaElement)) {
+const page = ref(1)
+const pageSize = ref(25)
+const sortKey = ref<StaffFormSortKey>('closeAt')
+const sortDirection = ref<'asc' | 'desc'>('asc')
+
+const sortKeys = ['id', 'name', 'isPublic', 'openAt', 'closeAt', 'createdAt', 'updatedAt', 'maxAnswers'] as const
+
+type StaffFormSortKey = (typeof sortKeys)[number]
+
+const columns: StaffDataGridColumn[] = [
+  { key: 'id', label: 'フォームID', sortable: true },
+  { key: 'name', label: 'フォーム名', sortable: true },
+  { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
+  { key: 'answerableTags', label: '回答可能なタグ' },
+  { key: 'description', label: 'フォームの説明' },
+  { key: 'openAt', label: '受付開始日時', sortable: true },
+  { key: 'closeAt', label: '受付終了日時', sortable: true },
+  { key: 'createdAt', label: '作成日時', sortable: true },
+  { key: 'updatedAt', label: '更新日時', sortable: true }
+]
+
+const isBusy = computed(
+  () =>
+    formsQuery.isPending.value ||
+    formsQuery.isFetching.value ||
+    copyFormMutation.isPending.value ||
+    deleteFormMutation.isPending.value
+)
+
+const sortedForms = computed(() => {
+  const forms = formsQuery.data.value ?? []
+  const key = sortKey.value
+  const direction = sortDirection.value
+
+  return [...forms].sort((left, right) => {
+    const order = direction === 'asc' ? 1 : -1
+    switch (key) {
+      case 'isPublic':
+        return compareBoolean(left.isPublic, right.isPublic) * order
+      case 'maxAnswers':
+        return (left.maxAnswers - right.maxAnswers) * order
+      default:
+        return compareString(left[key], right[key]) * order
+    }
+  })
+})
+
+const total = computed(() => sortedForms.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+
+const rows = computed<StaffDataGridRow[]>(() => {
+  const start = (page.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return sortedForms.value.slice(start, end).map((staffForm) => ({ ...staffForm }))
+})
+
+watch(
+  totalPages,
+  (nextTotalPages) => {
+    page.value = Math.min(page.value, nextTotalPages)
+  },
+  { immediate: true }
+)
+
+function compareString(left: string, right: string) {
+  if (left < right) {
+    return -1
+  }
+  if (left > right) {
+    return 1
+  }
+  return 0
+}
+
+function compareBoolean(left: boolean, right: boolean) {
+  if (left === right) {
+    return 0
+  }
+  return left ? 1 : -1
+}
+
+function isStaffFormSortKey(value: string): value is StaffFormSortKey {
+  return sortKeys.includes(value as StaffFormSortKey)
+}
+
+function handleSort(nextSortKey: string) {
+  if (!isStaffFormSortKey(nextSortKey)) {
     return
   }
 
-  form.value.answerableTags = parseStaffFormTags(target.value)
+  if (sortKey.value === nextSortKey) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = nextSortKey
+    sortDirection.value = 'asc'
+  }
+  page.value = 1
 }
 
-async function handleCreateForm() {
-  errorMessage.value = ''
-
-  try {
-    await createFormMutation.mutateAsync({
-      name: form.value.name,
-      description: form.value.description,
-      openAt: form.value.openAt,
-      closeAt: form.value.closeAt,
-      maxAnswers: form.value.maxAnswers,
-      answerableTags: form.value.answerableTags,
-      confirmationMessage: form.value.confirmationMessage,
-      isPublic: form.value.isPublic
-    })
-    form.value = createDefaultStaffFormPayload()
-  } catch (error) {
-    errorMessage.value = extractStaffFormValidationMessage(error)
-  }
+function findFormName(formId: string) {
+  return formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? 'このフォーム'
 }
 
 async function handleCopyForm(formId: string) {
-  const formName = formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? 'このフォーム'
+  const formName = findFormName(formId)
   if (typeof window !== 'undefined' && !window.confirm(buildCopyStaffFormConfirmMessage(formName))) {
     return
   }
 
+  errorMessage.value = ''
   try {
     const copied = await copyFormMutation.mutateAsync(formId)
     if (copied?.id) {
-      await router.push(`/staff/forms/${encodeURIComponent(copied.id)}`)
+      await router.push(`/staff/forms/${encodeURIComponent(copied.id)}/editor`)
     }
   } catch (error) {
     errorMessage.value = extractStaffFormValidationMessage(error)
@@ -94,16 +168,49 @@ async function handleCopyForm(formId: string) {
 }
 
 async function handleDeleteForm(formId: string) {
-  const formName = formsQuery.data.value?.find((staffForm) => staffForm.id === formId)?.name ?? 'このフォーム'
+  const formName = findFormName(formId)
   if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffFormConfirmMessage(formName))) {
     return
   }
 
+  errorMessage.value = ''
   try {
     await deleteFormMutation.mutateAsync(formId)
+    page.value = Math.min(page.value, totalPages.value)
   } catch (error) {
     errorMessage.value = extractStaffFormValidationMessage(error)
   }
+}
+
+function resolveTags(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+function resolveRowId(row: StaffDataGridRow) {
+  return String(row.id ?? '')
+}
+
+function resolveDetailPath(formId: string) {
+  const encodedFormId = encodeURIComponent(formId)
+
+  if (canReadAnswers.value) {
+    return `/staff/forms/${encodedFormId}/answers`
+  }
+  if (canEdit.value) {
+    return `/staff/forms/${encodedFormId}/edit`
+  }
+
+  return null
+}
+
+function resolveDescription(form: StaffFormSummary) {
+  if (form.description.trim().length === 0) {
+    return '-'
+  }
+  return form.description
 }
 </script>
 
@@ -117,159 +224,126 @@ async function handleDeleteForm(formId: string) {
 
     <SurfaceCard>
       <SurfaceHeader>
-        <template #description>Laravel の data-grid 構造に合わせた一覧</template>
-        <template #actions>
-          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white"> 新規フォーム </span>
+        <template #description>旧 data-grid 互換の一覧表示</template>
+      </SurfaceHeader>
+
+      <AlertMessage v-if="errorMessage" class="mx-6 mt-4">{{ errorMessage }}</AlertMessage>
+
+      <StaffDataGrid
+        :rows="rows"
+        :columns="columns"
+        :page="page"
+        :page-size="pageSize"
+        :total="total"
+        :loading="isBusy"
+        :sort-key="sortKey"
+        :sort-direction="sortDirection"
+        table-label="申請フォーム一覧"
+        empty-message="staff forms は見つかりませんでした。"
+        @first="page = 1"
+        @prev="page = Math.max(1, page - 1)"
+        @next="page = Math.min(totalPages, page + 1)"
+        @last="page = totalPages"
+        @reload="formsQuery.refetch()"
+        @sort="handleSort"
+        @update:page-size="
+          (nextPageSize) => {
+            pageSize = nextPageSize
+            page = 1
+          }
+        "
+      >
+        <template #toolbar>
+          <RouterLink
+            to="/staff/forms/create"
+            class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
+          >
+            <i class="fas fa-plus fa-fw" aria-hidden="true" />
+            新規フォーム
+          </RouterLink>
           <a
             :href="exportHref"
+            download
             class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
           >
+            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
             CSVで出力
           </a>
         </template>
-      </SurfaceHeader>
 
-      <div v-if="formsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
-
-      <div v-else-if="(formsQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
-        staff forms は見つかりませんでした。
-      </div>
-
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full border-collapse text-sm">
-          <thead class="bg-form-control">
-            <tr class="text-left text-muted">
-              <th class="border-b border-border px-4 py-3 font-semibold">フォームID</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">フォーム名</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">公開</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">回答上限</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">受付開始日時</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">受付終了日時</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="staffForm in formsQuery.data.value"
-              :key="staffForm.id"
-              class="align-top transition hover:bg-form-control"
+        <template #actions="{ row }">
+          <div class="flex items-center gap-1">
+            <RouterLink
+              v-if="resolveDetailPath(resolveRowId(row))"
+              :to="resolveDetailPath(resolveRowId(row))!"
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+              :title="detailActionTitle"
             >
-              <td class="border-b border-border px-4 py-4">
-                <RouterLink class="font-medium text-primary" :to="`/staff/forms/${staffForm.id}`">
-                  {{ staffForm.id }}
-                </RouterLink>
-              </td>
-              <td class="border-b border-border px-4 py-4">
-                <RouterLink class="font-medium text-primary" :to="`/staff/forms/${staffForm.id}`">
-                  {{ staffForm.name }}
-                </RouterLink>
-              </td>
-              <td class="border-b border-border px-4 py-4">
-                <strong v-if="staffForm.isPublic">はい</strong>
-                <span v-else>-</span>
-              </td>
-              <td class="border-b border-border px-4 py-4 text-body">{{ staffForm.maxAnswers }} 件</td>
-              <td class="border-b border-border px-4 py-4 text-body">
-                {{ staffForm.openAt }}
-              </td>
-              <td class="border-b border-border px-4 py-4 text-body">
-                {{ staffForm.closeAt }}
-              </td>
-              <td class="border-b border-border px-4 py-4">
-                <div class="flex flex-wrap gap-2">
-                  <RouterLink
-                    class="rounded border border-border px-3 py-2 text-xs text-body transition hover:bg-surface-light"
-                    :to="`/staff/forms/${staffForm.id}`"
-                  >
-                    回答一覧・設定
-                  </RouterLink>
-                  <button
-                    class="rounded border border-border px-3 py-2 text-xs text-body transition hover:bg-surface-light"
-                    type="button"
-                    @click="handleCopyForm(staffForm.id)"
-                  >
-                    複製
-                  </button>
-                  <button
-                    class="rounded border border-danger px-3 py-2 text-xs text-danger transition hover:bg-danger-light"
-                    type="button"
-                    @click="handleDeleteForm(staffForm.id)"
-                  >
-                    削除
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </SurfaceCard>
+              <i :class="detailActionIconClass" aria-hidden="true" />
+            </RouterLink>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+              type="button"
+              title="複製"
+              :disabled="isBusy"
+              @click="handleCopyForm(resolveRowId(row))"
+            >
+              <i class="far fa-copy fa-fw" aria-hidden="true" />
+            </button>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light"
+              type="button"
+              title="削除"
+              :disabled="isBusy"
+              @click="handleDeleteForm(resolveRowId(row))"
+            >
+              <i class="fas fa-trash fa-fw" aria-hidden="true" />
+            </button>
+          </div>
+        </template>
 
-    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreateForm">
-      <h3 class="text-lg font-semibold text-body">フォームを新規作成</h3>
-      <div class="mt-4 grid gap-4">
-        <label class="grid gap-2 text-sm text-body">
-          <span>
-            フォーム名
-            <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
-          </span>
-          <input v-model="form.name" name="name" type="text" />
-        </label>
-
-        <label class="grid gap-2 text-sm text-body">
-          <span>説明</span>
-          <textarea v-model="form.description" class="min-h-32" name="description" />
-        </label>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span>受付開始日時</span>
-            <input v-model="form.openAt" name="openAt" type="text" />
-          </label>
-
-          <label class="grid gap-2 text-sm text-body">
-            <span>受付終了日時</span>
-            <input v-model="form.closeAt" name="closeAt" type="text" />
-          </label>
-        </div>
-
-        <label class="grid gap-2 text-sm text-body">
-          <span>最大回答数</span>
-          <input v-model.number="form.maxAnswers" min="1" name="maxAnswers" type="number" />
-        </label>
-
-        <label class="grid gap-2 text-sm text-body">
-          <span>回答可能タグ</span>
-          <textarea
-            class="min-h-24"
-            name="answerableTags"
-            :value="formatStaffFormTags(form.answerableTags)"
-            @input="handleAnswerableTagsInput"
-          />
-        </label>
-
-        <label class="grid gap-2 text-sm text-body">
-          <span>回答完了メッセージ</span>
-          <textarea v-model="form.confirmationMessage" class="min-h-24" name="confirmationMessage" />
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-body">
-          <input v-model="form.isPublic" name="isPublic" type="checkbox" />
-          公開する
-        </label>
-
-        <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
-
-        <div class="flex justify-end">
-          <button
-            class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="createFormMutation.isPending.value"
-            type="submit"
+        <template #cell-id="{ row }">
+          <RouterLink
+            v-if="resolveDetailPath(resolveRowId(row))"
+            class="font-medium text-primary"
+            :to="resolveDetailPath(resolveRowId(row))!"
           >
-            {{ createFormMutation.isPending.value ? '作成中...' : '保存' }}
-          </button>
-        </div>
-      </div>
-    </form>
+            {{ row.id }}
+          </RouterLink>
+          <span v-else class="font-medium text-body">{{ row.id }}</span>
+        </template>
+
+        <template #cell-name="{ row }">
+          <RouterLink
+            v-if="resolveDetailPath(resolveRowId(row))"
+            class="font-medium text-primary"
+            :to="resolveDetailPath(resolveRowId(row))!"
+          >
+            {{ row.name }}
+          </RouterLink>
+          <span v-else class="font-medium text-body">{{ row.name }}</span>
+        </template>
+
+        <template #cell-isPublic="{ value }">
+          <strong v-if="value === true">はい</strong>
+          <span v-else>-</span>
+        </template>
+
+        <template #cell-answerableTags="{ value }">
+          <div class="flex flex-wrap gap-1">
+            <template v-for="tag in resolveTags(value)" :key="tag">
+              <span class="inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-white">
+                {{ tag }}
+              </span>
+            </template>
+            <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
+          </div>
+        </template>
+
+        <template #cell-description="{ row }">
+          <span class="whitespace-pre-wrap">{{ resolveDescription(row as StaffFormSummary) }}</span>
+        </template>
+      </StaffDataGrid>
+    </SurfaceCard>
   </PageLayout>
 </template>

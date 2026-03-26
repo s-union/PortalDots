@@ -29,12 +29,12 @@ const previewQuery = useStaffFormPreviewQuery(
   formId,
   computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
 )
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'settings'))
+const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
 </script>
 
 <template>
   <PageLayout>
-    <BackLink :to="`/staff/forms/${formId}`"> フォーム詳細へ戻る </BackLink>
+    <BackLink :to="`/staff/forms/${formId}/edit`"> フォーム詳細へ戻る </BackLink>
 
     <TabStrip :tabs="staffFormTabs" />
 

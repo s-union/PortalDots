@@ -549,11 +549,14 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, name, openAt, closeAt, maxAnswers, isPublic, isOpen, isParticipationForm]
+                  required:
+                    [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, createdAt, updatedAt, isParticipationForm]
                   properties:
                     id:
                       type: string
                     name:
+                      type: string
+                    description:
                       type: string
                     openAt:
                       type: string
@@ -563,10 +566,22 @@ paths:
                       format: date-time
                     maxAnswers:
                       type: integer
+                    answerableTags:
+                      type: array
+                      items:
+                        type: string
+                    confirmationMessage:
+                      type: string
                     isPublic:
                       type: boolean
                     isOpen:
                       type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+                    updatedAt:
+                      type: string
+                      format: date-time
                     isParticipationForm:
                       type: boolean
         "401":
@@ -615,11 +630,14 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, openAt, closeAt, maxAnswers, isPublic, isOpen, isParticipationForm]
+                required:
+                  [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, createdAt, updatedAt, isParticipationForm]
                 properties:
                   id:
                     type: string
                   name:
+                    type: string
+                  description:
                     type: string
                   openAt:
                     type: string
@@ -629,10 +647,22 @@ paths:
                     format: date-time
                   maxAnswers:
                     type: integer
+                  answerableTags:
+                    type: array
+                    items:
+                      type: string
+                  confirmationMessage:
+                    type: string
                   isPublic:
                     type: boolean
                   isOpen:
                     type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
                   isParticipationForm:
                     type: boolean
         "401":
@@ -2191,11 +2221,14 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, openAt, closeAt, maxAnswers, isPublic, isOpen, isParticipationForm]
+                required:
+                  [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, createdAt, updatedAt, isParticipationForm]
                 properties:
                   id:
                     type: string
                   name:
+                    type: string
+                  description:
                     type: string
                   openAt:
                     type: string
@@ -2205,10 +2238,22 @@ paths:
                     format: date-time
                   maxAnswers:
                     type: integer
+                  answerableTags:
+                    type: array
+                    items:
+                      type: string
+                  confirmationMessage:
+                    type: string
                   isPublic:
                     type: boolean
                   isOpen:
                     type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
                   isParticipationForm:
                     type: boolean
         "401":
@@ -2470,11 +2515,14 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, openAt, closeAt, maxAnswers, isPublic, isOpen, isParticipationForm]
+                required:
+                  [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, createdAt, updatedAt, isParticipationForm]
                 properties:
                   id:
                     type: string
                   name:
+                    type: string
+                  description:
                     type: string
                   openAt:
                     type: string
@@ -2484,10 +2532,22 @@ paths:
                     format: date-time
                   maxAnswers:
                     type: integer
+                  answerableTags:
+                    type: array
+                    items:
+                      type: string
+                  confirmationMessage:
+                    type: string
                   isPublic:
                     type: boolean
                   isOpen:
                     type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
                   isParticipationForm:
                     type: boolean
         "401":

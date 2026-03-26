@@ -15,14 +15,19 @@ import (
 )
 
 type staffFormSummaryResponse struct {
-	ID                  string `json:"id"`
-	Name                string `json:"name"`
-	OpenAt              string `json:"openAt"`
-	CloseAt             string `json:"closeAt"`
-	IsPublic            bool   `json:"isPublic"`
-	IsOpen              bool   `json:"isOpen"`
-	MaxAnswers          int32  `json:"maxAnswers"`
-	IsParticipationForm bool   `json:"isParticipationForm"`
+	ID                  string   `json:"id"`
+	Name                string   `json:"name"`
+	Description         string   `json:"description"`
+	OpenAt              string   `json:"openAt"`
+	CloseAt             string   `json:"closeAt"`
+	IsPublic            bool     `json:"isPublic"`
+	IsOpen              bool     `json:"isOpen"`
+	CreatedAt           string   `json:"createdAt"`
+	UpdatedAt           string   `json:"updatedAt"`
+	MaxAnswers          int32    `json:"maxAnswers"`
+	AnswerableTags      []string `json:"answerableTags"`
+	ConfirmationMessage string   `json:"confirmationMessage"`
+	IsParticipationForm bool     `json:"isParticipationForm"`
 }
 
 type staffFormAnswerResponse struct {
@@ -586,11 +591,16 @@ func (h *staffFormHandlers) mapStaffFormSummary(formValue backendform.Form) staf
 	return staffFormSummaryResponse{
 		ID:                  formValue.ID,
 		Name:                formValue.Name,
+		Description:         formValue.Description,
 		OpenAt:              formValue.OpenAt,
 		CloseAt:             formValue.CloseAt,
 		IsPublic:            formValue.IsPublic,
 		IsOpen:              formValue.IsOpen,
+		CreatedAt:           formValue.CreatedAt,
+		UpdatedAt:           formValue.UpdatedAt,
 		MaxAnswers:          formValue.MaxAnswers,
+		AnswerableTags:      slices.Clone(formValue.AnswerableTags),
+		ConfirmationMessage: formValue.ConfirmationMessage,
 		IsParticipationForm: h.isParticipationForm(formValue.ID),
 	}
 }

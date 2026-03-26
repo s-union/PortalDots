@@ -49,7 +49,8 @@ describe('StaffFormAnswersIndexPage', () => {
           path: '/staff/forms/:formId/answers/:answerId/edit',
           component: { template: '<div>edit</div>' }
         },
-        { path: '/staff/forms/:formId', component: { template: '<div>form</div>' } }
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
+        { path: '/staff/forms/:formId/edit', component: { template: '<div>form</div>' } }
       ]
     })
     await router.push('/staff/forms/form-circle-b-1/answers')
@@ -77,11 +78,19 @@ describe('StaffFormAnswersIndexPage', () => {
               form: {
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
+                description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
                 closeAt: '2026-03-22T23:59:59Z',
                 maxAnswers: 2,
+                answerableTags: ['展示'],
+                confirmationMessage: '回答ありがとうございました。',
                 isPublic: true,
-                isOpen: true
+                isOpen: true,
+                createdAt: '2026-03-01T10:00:00Z',
+                updatedAt: '2026-03-01T10:00:00Z',
+                isParticipationForm: false,
+                questions: [],
+                answer: null
               },
               answers: [],
               circles: [
@@ -125,9 +134,9 @@ describe('StaffFormAnswersIndexPage', () => {
     await flushPromises()
     const links = wrapper.findAll('a').map((link) => link.text())
     expect(links).toContain('新規回答')
-    expect(links).toContain('添付管理')
-    expect(links).toContain('未回答企画一覧')
-    expect(wrapper.text()).toContain('未回答の企画はありません。')
+    expect(links).toContain('ファイルを一括ダウンロード')
+    expect(links).toContain('未提出企画を表示')
+    expect(wrapper.text()).toContain('まだ回答はありません。')
   })
 
   it('links not answered circles to dedicated page and circle detail', async () => {
@@ -153,10 +162,19 @@ describe('StaffFormAnswersIndexPage', () => {
       routes: [
         { path: '/staff/forms/:formId/answers', component: StaffFormAnswersIndexPage },
         {
+          path: '/staff/forms/:formId/answers/create',
+          component: { template: '<div>create</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/answers/uploads',
+          component: { template: '<div>uploads</div>' }
+        },
+        {
           path: '/staff/forms/:formId/not_answered',
           component: { template: '<div>not answered</div>' }
         },
-        { path: '/staff/forms/:formId', component: { template: '<div>form</div>' } }
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
+        { path: '/staff/forms/:formId/edit', component: { template: '<div>form</div>' } }
       ]
     })
     await router.push('/staff/forms/form-circle-b-1/answers')
@@ -184,11 +202,19 @@ describe('StaffFormAnswersIndexPage', () => {
               form: {
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
+                description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
                 closeAt: '2026-03-22T23:59:59Z',
                 maxAnswers: 2,
+                answerableTags: ['展示'],
+                confirmationMessage: '回答ありがとうございました。',
                 isPublic: true,
-                isOpen: true
+                isOpen: true,
+                createdAt: '2026-03-01T10:00:00Z',
+                updatedAt: '2026-03-01T10:00:00Z',
+                isParticipationForm: false,
+                questions: [],
+                answer: null
               },
               answers: [],
               circles: [],
@@ -231,8 +257,7 @@ describe('StaffFormAnswersIndexPage', () => {
 
     await flushPromises()
 
-    expect(wrapper.get('a[href="/staff/forms/form-circle-b-1/not_answered"]').text()).toContain('未回答企画一覧')
-    expect(wrapper.text()).toContain('デモ企画A')
+    expect(wrapper.get('a[href="/staff/forms/form-circle-b-1/not_answered"]').text()).toContain('未提出企画を表示')
     expect(wrapper.get('a[href="/staff/forms/form-circle-b-1/not_answered"]').exists()).toBe(true)
   })
 })

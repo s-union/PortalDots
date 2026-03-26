@@ -5,7 +5,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'contactCategories.read'
   }
 })
@@ -31,7 +30,7 @@ import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const enabled = computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const categoriesQuery = useStaffContactCategoriesQuery(enabled)
 const createMutation = useCreateStaffContactCategoryMutation()
 const updateMutation = useUpdateStaffContactCategoryMutation()

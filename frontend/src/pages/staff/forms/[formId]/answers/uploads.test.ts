@@ -33,6 +33,14 @@ describe('StaffFormUploadsPage', () => {
           path: '/staff/forms/:formId/answers',
           component: { template: '<div>answers</div>' }
         },
+        {
+          path: '/staff/forms/:formId/editor',
+          component: { template: '<div>editor</div>' }
+        },
+        {
+          path: '/staff/forms/:formId/edit',
+          component: { template: '<div>edit tab</div>' }
+        },
         { path: '/staff/forms/:formId/answers/uploads', component: StaffFormUploadsPage }
       ]
     })
@@ -61,11 +69,19 @@ describe('StaffFormUploadsPage', () => {
               form: {
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
+                description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
                 closeAt: '2026-03-22T23:59:59Z',
                 maxAnswers: 2,
+                answerableTags: ['展示'],
+                confirmationMessage: '回答ありがとうございました。',
                 isPublic: true,
-                isOpen: true
+                isOpen: true,
+                createdAt: '2026-03-01T10:00:00Z',
+                updatedAt: '2026-03-01T10:00:00Z',
+                isParticipationForm: false,
+                questions: [],
+                answer: null
               },
               answers: [
                 {
@@ -79,7 +95,8 @@ describe('StaffFormUploadsPage', () => {
                   body: '前回回答',
                   createdAt: '2026-03-13T10:00:00Z',
                   updatedAt: '2026-03-13T12:00:00Z',
-                  uploadCount: 2
+                  uploadCount: 2,
+                  details: {}
                 },
                 {
                   id: 'answer-2',
@@ -92,7 +109,8 @@ describe('StaffFormUploadsPage', () => {
                   body: '追加回答',
                   createdAt: '2026-03-14T10:00:00Z',
                   updatedAt: '2026-03-14T12:00:00Z',
-                  uploadCount: 1
+                  uploadCount: 1,
+                  details: {}
                 }
               ],
               circles: [],

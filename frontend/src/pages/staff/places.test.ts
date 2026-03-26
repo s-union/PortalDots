@@ -201,4 +201,66 @@ describe('StaffPlacesPage', () => {
     expect(deleteRequests).toHaveLength(0)
     expect(wrapper.text()).toContain('中庭')
   })
+
+  it('loads places without current circle', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/places', component: StaffPlacesPage }
+      ]
+    })
+    await router.push('/staff/places')
+    await router.isReady()
+
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+      const pathname = new URL(url, 'http://localhost').pathname
+
+      if (pathname.endsWith('/staff/status') && method === 'GET') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ allowed: true, authorized: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+      }
+      if (pathname.endsWith('/staff/places') && method === 'GET') {
+        return Promise.resolve(
+          new Response(JSON.stringify([{ id: 'place-1', name: '1号館', type: 1, notes: '屋内' }]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+      }
+
+      return Promise.reject(new Error(`Unexpected request: ${method} ${url}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(StaffPlacesPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(
+      fetchMock.mock.calls.some(([input]) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        return new URL(url, 'http://localhost').pathname.endsWith('/staff/places')
+      })
+    ).toBe(true)
+    expect(wrapper.text()).toContain('1号館')
+  })
 })

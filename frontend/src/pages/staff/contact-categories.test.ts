@@ -205,4 +205,66 @@ describe('StaffContactCategoriesPage', () => {
     expect(deleteRequests).toHaveLength(0)
     expect(wrapper.text()).toContain('安全')
   })
+
+  it('loads contact categories without current circle', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/contacts/categories', component: StaffContactCategoriesPage }
+      ]
+    })
+    await router.push('/staff/contacts/categories')
+    await router.isReady()
+
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+      const pathname = new URL(url, 'http://localhost').pathname
+
+      if (pathname.endsWith('/staff/status') && method === 'GET') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ allowed: true, authorized: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+      }
+      if (pathname.endsWith('/staff/contact-categories') && method === 'GET') {
+        return Promise.resolve(
+          new Response(JSON.stringify([{ id: 'category-1', name: '総合', email: 'general@example.com' }]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+      }
+
+      return Promise.reject(new Error(`Unexpected request: ${method} ${url}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(StaffContactCategoriesPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(
+      fetchMock.mock.calls.some(([input]) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        return new URL(url, 'http://localhost').pathname.endsWith('/staff/contact-categories')
+      })
+    ).toBe(true)
+    expect(wrapper.text()).toContain('総合')
+  })
 })

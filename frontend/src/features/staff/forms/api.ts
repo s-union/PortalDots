@@ -529,6 +529,39 @@ export function formatStaffFormTags(tags: string[]) {
   return tags.join('\n')
 }
 
+export function formatStaffFormDateTimeLocalValue(value: string) {
+  if (value.trim().length === 0) {
+    return ''
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return `${date.getFullYear()}-${padStaffFormDateTimeLocalValue(date.getMonth() + 1)}-${padStaffFormDateTimeLocalValue(date.getDate())}T${padStaffFormDateTimeLocalValue(date.getHours())}:${padStaffFormDateTimeLocalValue(date.getMinutes())}`
+}
+
+export function parseStaffFormDateTimeLocalValue(value: string, previousValue = '') {
+  if (value.trim().length === 0) {
+    return ''
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  if (previousValue.trim().length > 0 && formatStaffFormDateTimeLocalValue(previousValue) === value) {
+    const previousDate = new Date(previousValue)
+    if (!Number.isNaN(previousDate.getTime())) {
+      date.setSeconds(previousDate.getSeconds(), previousDate.getMilliseconds())
+    }
+  }
+
+  return date.toISOString()
+}
+
 export function buildCopyStaffFormConfirmMessage(formName: string) {
   return `フォーム「${formName}」を複製しますか？\n\n• 設問は全て複製されます\n• 「${formName}のコピー」という名前のフォームが作成されます\n• 「${formName}のコピー」は非公開です。後から必要に応じて設定を変更してください`
 }
@@ -551,6 +584,10 @@ function parseStaffFormPreview(value: unknown): StaffFormPreview {
 
 function parseStaffFormQuestion(value: unknown): StaffFormQuestion {
   return parseWithSchema(formQuestionSchema, value, 'staff form question')
+}
+
+function padStaffFormDateTimeLocalValue(value: number) {
+  return String(value).padStart(2, '0')
 }
 
 export function buildStaffFormUploadDownloadUrl(formId: string, uploadId: string) {

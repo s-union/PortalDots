@@ -14,7 +14,7 @@ import (
 const createForm = `-- name: CreateForm :one
 INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message)
 VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 `
 
 type CreateFormParams struct {
@@ -43,6 +43,7 @@ type CreateFormRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) CreateForm(ctx context.Context, arg CreateFormParams) (CreateFormRow, error) {
@@ -72,6 +73,7 @@ func (q *Queries) CreateForm(ctx context.Context, arg CreateFormParams) (CreateF
 		&i.AnswerableTags,
 		&i.ConfirmationMessage,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -96,7 +98,7 @@ func (q *Queries) DeleteForm(ctx context.Context, arg DeleteFormParams) (int64, 
 }
 
 const getAnyStaffFormByID = `-- name: GetAnyStaffFormByID :one
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 FROM forms
 WHERE id = $1
 LIMIT 1
@@ -115,6 +117,7 @@ type GetAnyStaffFormByIDRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) GetAnyStaffFormByID(ctx context.Context, id string) (GetAnyStaffFormByIDRow, error) {
@@ -133,12 +136,13 @@ func (q *Queries) GetAnyStaffFormByID(ctx context.Context, id string) (GetAnySta
 		&i.AnswerableTags,
 		&i.ConfirmationMessage,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getPublicOpenFormByID = `-- name: GetPublicOpenFormByID :one
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 FROM forms
 WHERE circle_id = $1
   AND id = $2
@@ -165,6 +169,7 @@ type GetPublicOpenFormByIDRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) GetPublicOpenFormByID(ctx context.Context, arg GetPublicOpenFormByIDParams) (GetPublicOpenFormByIDRow, error) {
@@ -183,12 +188,13 @@ func (q *Queries) GetPublicOpenFormByID(ctx context.Context, arg GetPublicOpenFo
 		&i.AnswerableTags,
 		&i.ConfirmationMessage,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getStaffFormByID = `-- name: GetStaffFormByID :one
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 FROM forms
 WHERE circle_id = $1
   AND id = $2
@@ -213,6 +219,7 @@ type GetStaffFormByIDRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) GetStaffFormByID(ctx context.Context, arg GetStaffFormByIDParams) (GetStaffFormByIDRow, error) {
@@ -231,12 +238,13 @@ func (q *Queries) GetStaffFormByID(ctx context.Context, arg GetStaffFormByIDPara
 		&i.AnswerableTags,
 		&i.ConfirmationMessage,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const listPublicOpenFormsByCircle = `-- name: ListPublicOpenFormsByCircle :many
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 FROM forms
 WHERE circle_id = $1
   AND is_public = true
@@ -257,6 +265,7 @@ type ListPublicOpenFormsByCircleRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) ListPublicOpenFormsByCircle(ctx context.Context, circleID pgtype.Text) ([]ListPublicOpenFormsByCircleRow, error) {
@@ -281,6 +290,7 @@ func (q *Queries) ListPublicOpenFormsByCircle(ctx context.Context, circleID pgty
 			&i.AnswerableTags,
 			&i.ConfirmationMessage,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -293,7 +303,7 @@ func (q *Queries) ListPublicOpenFormsByCircle(ctx context.Context, circleID pgty
 }
 
 const listStaffFormsByCircle = `-- name: ListStaffFormsByCircle :many
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 FROM forms
 WHERE circle_id = $1
 ORDER BY close_at ASC, id ASC
@@ -312,6 +322,7 @@ type ListStaffFormsByCircleRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) ListStaffFormsByCircle(ctx context.Context, circleID pgtype.Text) ([]ListStaffFormsByCircleRow, error) {
@@ -336,6 +347,7 @@ func (q *Queries) ListStaffFormsByCircle(ctx context.Context, circleID pgtype.Te
 			&i.AnswerableTags,
 			&i.ConfirmationMessage,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -355,11 +367,12 @@ SET name = $2,
     is_open = $5,
     open_at = $6,
     close_at = $7,
+    updated_at = now(),
     max_answers = $8,
     answerable_tags = $9,
     confirmation_message = $10
 WHERE id = $1
-RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 `
 
 type UpdateAnyFormByIDParams struct {
@@ -388,6 +401,7 @@ type UpdateAnyFormByIDRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) UpdateAnyFormByID(ctx context.Context, arg UpdateAnyFormByIDParams) (UpdateAnyFormByIDRow, error) {
@@ -417,6 +431,7 @@ func (q *Queries) UpdateAnyFormByID(ctx context.Context, arg UpdateAnyFormByIDPa
 		&i.AnswerableTags,
 		&i.ConfirmationMessage,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -429,12 +444,13 @@ SET name = $3,
     is_open = $6,
     open_at = $7,
     close_at = $8,
+    updated_at = now(),
     max_answers = $9,
     answerable_tags = $10,
     confirmation_message = $11
 WHERE circle_id = $1
   AND id = $2
-RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at
+RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 `
 
 type UpdateFormParams struct {
@@ -464,6 +480,7 @@ type UpdateFormRow struct {
 	AnswerableTags      []string
 	ConfirmationMessage string
 	CreatedAt           pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
 }
 
 func (q *Queries) UpdateForm(ctx context.Context, arg UpdateFormParams) (UpdateFormRow, error) {
@@ -494,6 +511,7 @@ func (q *Queries) UpdateForm(ctx context.Context, arg UpdateFormParams) (UpdateF
 		&i.AnswerableTags,
 		&i.ConfirmationMessage,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

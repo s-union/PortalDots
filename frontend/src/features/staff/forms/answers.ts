@@ -13,7 +13,7 @@ import {
 import { extractValidationMessage as extractApiValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { useSessionStore } from '@/features/session/store'
 import type { FormAnswerDraft } from '@/features/forms/answers'
-import type { StaffFormDetail, StaffFormUpload, StaffFormSummary } from '@/features/staff/forms/api'
+import type { StaffFormDetail, StaffFormUpload } from '@/features/staff/forms/api'
 
 export interface StaffAnswerCircle {
   id: string
@@ -29,10 +29,11 @@ export interface StaffManagedFormAnswerSummary {
   createdAt: string
   updatedAt: string
   uploadCount: number
+  details: Record<string, string[]>
 }
 
 export interface StaffFormAnswersIndex {
-  form: StaffFormSummary
+  form: StaffFormDetail
   answers: StaffManagedFormAnswerSummary[]
   circles: StaffAnswerCircle[]
   notAnsweredCircles: StaffAnswerCircle[]
