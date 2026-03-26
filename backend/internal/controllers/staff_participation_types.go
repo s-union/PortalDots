@@ -52,7 +52,7 @@ type mutateStaffParticipationTypeRequest struct {
 }
 
 func (h *staffCircleHandlers) listStaffParticipationTypes(c echo.Context) error {
-	_, _, status, ok := h.requireParticipationTypeAdmin(c)
+	_, _, status, ok := h.requireParticipationTypeRead(c)
 	if !ok {
 		return statusError(c, status)
 	}

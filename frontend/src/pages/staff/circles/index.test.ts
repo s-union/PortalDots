@@ -145,4 +145,67 @@ describe('StaffCirclesIndexPage', () => {
       '模擬店'
     )
   })
+
+  it('allows circle readers to open the page without participation type management links', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: [],
+      permissions: ['staff.circles.read'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/circles', component: StaffCirclesIndexPage },
+        { path: '/staff/circles/all', component: { template: '<div>all circles</div>' } },
+        { path: '/staff/circles/participation_types', component: { template: '<div>types</div>' } }
+      ]
+    })
+    await router.push('/staff/circles')
+    await router.isReady()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+        const pathname = new URL(url, 'http://localhost').pathname
+
+        if (pathname.endsWith('/staff/status') && method === 'GET') {
+          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
+
+    const wrapper = mount(StaffCirclesIndexPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('企画管理')
+    expect(wrapper.get('a[href="/staff/circles/all"]').text()).toContain('すべての企画を表示')
+    expect(wrapper.text()).not.toContain('参加種別から探す')
+    expect(wrapper.find('a[href="/staff/circles/participation_types"]').exists()).toBe(false)
+  })
 })

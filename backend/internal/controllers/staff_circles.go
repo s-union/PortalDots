@@ -398,6 +398,10 @@ func (h *staffCircleHandlers) requireCircleEdit(c echo.Context) (string, session
 	return h.requireStaffCapability(c, canEditCircles)
 }
 
+func (h *staffCircleHandlers) requireParticipationTypeRead(c echo.Context) (string, session.Session, int, bool) {
+	return h.requireStaffCapability(c, canReadParticipationTypes)
+}
+
 func (h *staffCircleHandlers) requireParticipationTypeAdmin(c echo.Context) (string, session.Session, int, bool) {
 	return h.requireStaffCapability(c, canManageParticipationTypes)
 }

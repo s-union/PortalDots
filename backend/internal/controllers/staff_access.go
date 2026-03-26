@@ -221,6 +221,9 @@ func canExportCircles(user *auth.User) bool   { return canAccessCapability(user,
 func canSendCircleEmails(user *auth.User) bool {
 	return canAccessCapability(user, "circles.sendEmails")
 }
+func canReadParticipationTypes(user *auth.User) bool {
+	return canReadCircles(user) || canManageParticipationTypes(user)
+}
 func canManageParticipationTypes(user *auth.User) bool {
 	return canAccessCapability(user, "circles.participationTypes")
 }

@@ -162,6 +162,8 @@ export async function deleteStaffParticipationType(typeId: string, csrfToken: st
 }
 
 export function useStaffParticipationTypesQuery(enabled: MaybeRefOrGetter<boolean>) {
+  const isEnabled = computed(() => toValue(enabled))
+
   return $api.useQueryData(
     'get',
     '/staff/participation-types',
@@ -171,7 +173,7 @@ export function useStaffParticipationTypesQuery(enabled: MaybeRefOrGetter<boolea
     (value) => parseWithSchema(staffParticipationTypeSchema.array(), value, 'participation types'),
     {
       queryKey: ['staff', 'participation-types'],
-      enabled: computed(() => toValue(enabled)),
+      enabled: isEnabled,
       retry: false
     },
     {

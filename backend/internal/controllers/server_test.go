@@ -3765,6 +3765,34 @@ func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
 	}
 }
 
+func TestStaffParticipationTypesListAllowsCircleReaders(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.AuthUser.Roles = nil
+	cfg.AuthUser.Permissions = []string{"staff.circles.read"}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response []staffParticipationTypeResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal participation types: %v", err)
+	}
+	if len(response) == 0 {
+		t.Fatalf("expected at least one participation type, got %#v", response)
+	}
+}
+
 func TestStaffTagsExportCSV(t *testing.T) {
 	t.Parallel()
 

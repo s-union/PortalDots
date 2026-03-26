@@ -14,14 +14,18 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { canManageParticipationTypes } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffParticipationTypesQuery } from '@/features/staff/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const canManageParticipationType = computed(() =>
+  canManageParticipationTypes(sessionStore.roles, sessionStore.permissions)
+)
 const participationTypesQuery = useStaffParticipationTypesQuery(
-  computed(() => staffStatusQuery.data.value?.authorized === true)
+  computed(() => staffStatusQuery.data.value?.authorized === true && canManageParticipationType.value)
 )
 </script>
 
@@ -37,6 +41,7 @@ const participationTypesQuery = useStaffParticipationTypesQuery(
             すべての企画を表示
           </RouterLink>
           <RouterLink
+            v-if="canManageParticipationType"
             class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
             to="/staff/circles/participation_types"
           >
@@ -46,7 +51,7 @@ const participationTypesQuery = useStaffParticipationTypesQuery(
       </template>
     </PageHeader>
 
-    <SurfaceCard>
+    <SurfaceCard v-if="canManageParticipationType">
       <SurfaceHeader>
         <template #title>参加種別から探す</template>
       </SurfaceHeader>
