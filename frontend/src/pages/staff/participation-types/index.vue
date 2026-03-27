@@ -4,3 +4,5 @@ definePage({
   redirect: '/staff/circles/participation_types'
 })
 </script>
+
+<template></template>

@@ -4,3 +4,5 @@ definePage({
   redirect: (to) => to.path.replace('/staff/participation-types/', '/staff/circles/participation_types/')
 })
 </script>
+
+<template></template>

@@ -4,3 +4,5 @@ definePage({
   redirect: (to) => `${to.path.replace(/\/+$/, '')}/edit`
 })
 </script>
+
+<template></template>
