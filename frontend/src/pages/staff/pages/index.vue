@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'pages.read'
   }
 })
@@ -17,6 +16,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
@@ -36,9 +36,8 @@ const router = useRouter()
 const sessionStore = useSessionStore()
 const searchQuery = ref(String(route.query.query ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const pageFormEnabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null
-)
+const pageFormEnabled = computed(() => staffStatusQuery.data.value?.authorized === true)
+const circlesQuery = useAllStaffCirclesQuery(pageFormEnabled)
 const pagesQuery = useStaffPagesQuery(searchQuery, pageFormEnabled)
 const tagsQuery = useStaffTagsQuery(pageFormEnabled)
 const documentsQuery = useStaffDocumentsQuery(pageFormEnabled)
@@ -47,6 +46,9 @@ const form = useStaffPageForm()
 const errorMessage = ref('')
 const exportHref = computed(() => buildStaffPagesExportUrl())
 const viewableTagsText = ref('')
+const availableDocuments = computed(() =>
+  (documentsQuery.data.value ?? []).filter((document) => document.circle.id === form.value.circleId)
+)
 
 watch(
   () => route.query.query,
@@ -75,6 +77,7 @@ async function handleCreatePage() {
 
   try {
     await createPageMutation.mutateAsync({
+      circleId: form.value.circleId,
       title: form.value.title,
       body: form.value.body,
       notes: form.value.notes,
@@ -85,6 +88,7 @@ async function handleCreatePage() {
       sendEmails: form.value.sendEmails
     })
     form.value = {
+      circleId: '',
       title: '',
       body: '',
       notes: '',
@@ -126,7 +130,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 
 <template>
   <PageLayout>
-    <PageHeader title="お知らせ管理" :description="sessionStore.currentCircle?.name ?? '企画未選択'">
+    <PageHeader title="お知らせ管理" description="全企画のお知らせを横断して管理します。">
       <template #actions>
         <BackLink to="/staff">Staff top へ戻る</BackLink>
       </template>
@@ -180,6 +184,7 @@ function handleDocumentChange(documentId: string, event: Event) {
         <table class="min-w-full border-collapse text-sm">
           <thead class="bg-form-control">
             <tr class="text-left text-muted">
+              <th class="border-b border-border px-4 py-3 font-semibold">企画</th>
               <th class="border-b border-border px-4 py-3 font-semibold">お知らせID</th>
               <th class="border-b border-border px-4 py-3 font-semibold">タイトル</th>
               <th class="border-b border-border px-4 py-3 font-semibold">固定</th>
@@ -190,6 +195,7 @@ function handleDocumentChange(documentId: string, event: Event) {
           </thead>
           <tbody>
             <tr v-for="page in pagesQuery.data.value" :key="page.id" class="transition hover:bg-form-control">
+              <td class="border-b border-border px-4 py-4">{{ page.circle.name }}</td>
               <td class="border-b border-border px-4 py-4">{{ page.id }}</td>
               <td class="border-b border-border px-4 py-4 font-medium text-body">
                 <RouterLink :to="`/staff/pages/${page.id}`" class="text-primary hover:underline">
@@ -217,6 +223,16 @@ function handleDocumentChange(documentId: string, event: Event) {
     <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreatePage">
       <h3 class="text-lg font-semibold text-body">お知らせを新規作成</h3>
       <div class="mt-4 grid gap-4">
+        <label class="grid gap-2 text-sm text-body">
+          <span>対象企画</span>
+          <select v-model="form.circleId" name="circleId">
+            <option value="">企画を選択してください</option>
+            <option v-for="circle in circlesQuery.data.value ?? []" :key="circle.id" :value="circle.id">
+              {{ circle.name }}
+            </option>
+          </select>
+        </label>
+
         <label class="grid gap-2 text-sm text-body">
           <span>タイトル</span>
           <input v-model="form.title" name="title" type="text" />
@@ -250,19 +266,22 @@ function handleDocumentChange(documentId: string, event: Event) {
         <fieldset class="grid gap-2 text-sm text-body">
           <legend>関連する配布資料</legend>
           <div
-            v-if="documentsQuery.isPending.value"
+            v-if="form.circleId && documentsQuery.isPending.value"
             class="rounded border border-border bg-surface-light px-4 py-3 text-muted"
           >
             配布資料を読み込み中...
           </div>
+          <div v-else-if="!form.circleId" class="rounded border border-border bg-surface-light px-4 py-3 text-muted">
+            先に対象企画を選択してください。
+          </div>
           <div
-            v-else-if="(documentsQuery.data.value?.length ?? 0) === 0"
+            v-else-if="availableDocuments.length === 0"
             class="rounded border border-border bg-surface-light px-4 py-3 text-muted"
           >
             選択できる配布資料はありません。
           </div>
           <div v-else class="grid gap-2 rounded border border-border bg-surface-light p-4">
-            <label v-for="document in documentsQuery.data.value" :key="document.id" class="flex items-start gap-3">
+            <label v-for="document in availableDocuments" :key="document.id" class="flex items-start gap-3">
               <input
                 :checked="form.documentIds.includes(document.id)"
                 type="checkbox"

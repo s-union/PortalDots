@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'documents.read'
   }
 })
@@ -18,6 +17,7 @@ import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { formatFileSize } from '@/lib/format/fileSize'
+import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffDocumentsExportUrl,
@@ -31,9 +31,9 @@ import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const documentsQuery = useStaffDocumentsQuery(
-  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
-)
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
+const circlesQuery = useAllStaffCirclesQuery(enabled)
+const documentsQuery = useStaffDocumentsQuery(enabled)
 const createDocumentMutation = useCreateStaffDocumentMutation()
 const form = useStaffDocumentForm()
 const errorMessage = ref('')
@@ -52,6 +52,7 @@ async function handleCreateDocument() {
 
   try {
     await createDocumentMutation.mutateAsync({
+      circleId: form.value.circleId,
       name: form.value.name,
       description: form.value.description,
       notes: form.value.notes,
@@ -60,6 +61,7 @@ async function handleCreateDocument() {
       file: form.value.file
     })
     form.value = {
+      circleId: '',
       name: '',
       description: '',
       notes: '',
@@ -75,7 +77,7 @@ async function handleCreateDocument() {
 
 <template>
   <PageLayout>
-    <PageHeader title="配布資料管理" :description="sessionStore.currentCircle?.name ?? '企画未選択'">
+    <PageHeader title="配布資料管理" description="全企画の配布資料を横断して管理します。">
       <template #actions>
         <BackLink to="/staff">Staff top へ戻る</BackLink>
       </template>
@@ -104,6 +106,7 @@ async function handleCreateDocument() {
         <table class="min-w-full border-collapse text-sm">
           <thead class="bg-form-control">
             <tr class="text-left text-muted">
+              <th class="border-b border-border px-4 py-3 font-semibold">企画</th>
               <th class="border-b border-border px-4 py-3 font-semibold">配布資料ID</th>
               <th class="border-b border-border px-4 py-3 font-semibold">配布資料名</th>
               <th class="border-b border-border px-4 py-3 font-semibold">説明</th>
@@ -122,6 +125,7 @@ async function handleCreateDocument() {
               :key="staffDocument.id"
               class="transition hover:bg-form-control"
             >
+              <td class="border-b border-border px-4 py-4">{{ staffDocument.circle.name }}</td>
               <td class="border-b border-border px-4 py-4">{{ staffDocument.id }}</td>
               <td class="border-b border-border px-4 py-4 font-medium text-body">
                 <RouterLink :to="`/staff/documents/${staffDocument.id}/edit`" class="text-primary">
@@ -162,6 +166,16 @@ async function handleCreateDocument() {
     <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreateDocument">
       <h3 class="text-lg font-semibold text-body">配布資料を新規作成</h3>
       <div class="mt-4 grid gap-4">
+        <label class="grid gap-2 text-sm text-body">
+          <span>対象企画</span>
+          <select v-model="form.circleId" name="circleId">
+            <option value="">企画を選択してください</option>
+            <option v-for="circle in circlesQuery.data.value ?? []" :key="circle.id" :value="circle.id">
+              {{ circle.name }}
+            </option>
+          </select>
+        </label>
+
         <label class="grid gap-2 text-sm text-body">
           <span>配布資料名</span>
           <input v-model="form.name" name="name" type="text" />

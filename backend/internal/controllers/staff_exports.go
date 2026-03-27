@@ -16,42 +16,49 @@ import (
 )
 
 func (h *staffAdminHandlers) downloadStaffSummaryCSV(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseStaffExports)
+	_, _, status, ok := h.requireStaffCapability(c, canUseStaffExports)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	csvBytes, err := h.buildStaffSummaryCSV(selectedCircle.ID)
+	csvBytes, err := h.buildStaffSummaryCSV()
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("%s-summary.csv", selectedCircle.ID)
+	filename := "staff-summary.csv"
 	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
 	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
 }
 
 func (h *staffAdminHandlers) downloadStaffBundleZIP(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseStaffExports)
+	_, _, status, ok := h.requireStaffCapability(c, canUseStaffExports)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	zipBytes, err := h.buildStaffBundleZIP(selectedCircle.ID, selectedCircle.Name)
+	zipBytes, err := h.buildStaffBundleZIP()
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("%s-bundle.zip", selectedCircle.ID)
+	filename := "staff-bundle.zip"
 	c.Response().Header().Set(echo.HeaderContentType, "application/zip")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
 	return c.Blob(http.StatusOK, "application/zip", zipBytes)
 }
 
-func (h *staffAdminHandlers) buildStaffSummaryCSV(circleID string) ([]byte, error) {
+func (h *staffAdminHandlers) buildStaffSummaryCSV() ([]byte, error) {
+	circles, _, err := listStaffManagedCircles(h.circles)
+	if err != nil {
+		return nil, err
+	}
+
 	rows := [][]string{{
 		"resource_type",
+		"circle_id",
+		"circle_name",
 		"id",
 		"name",
 		"visibility",
@@ -59,75 +66,102 @@ func (h *staffAdminHandlers) buildStaffSummaryCSV(circleID string) ([]byte, erro
 		"detail",
 	}}
 
-	for _, currentPage := range h.pages.ListByCircleForStaff(circleID, "") {
-		rows = append(rows, []string{
-			"page",
-			currentPage.ID,
-			currentPage.Title,
-			visibilityLabel(currentPage.IsPublic),
-			pageStatus(currentPage.IsPinned),
-			currentPage.PublishedAt,
-		})
-	}
-	for _, currentDocument := range h.documents.ListByCircleForStaff(circleID) {
-		rows = append(rows, []string{
-			"document",
-			currentDocument.ID,
-			currentDocument.Name,
-			visibilityLabel(currentDocument.IsPublic),
-			currentDocument.Filename,
-			currentDocument.MimeType,
-		})
-	}
-	for _, currentForm := range h.forms.ListByCircleForStaff(circleID) {
-		rows = append(rows, []string{
-			"form",
-			currentForm.ID,
-			currentForm.Name,
-			visibilityLabel(currentForm.IsPublic),
-			formStatus(currentForm.IsOpen),
-			currentForm.CloseAt,
-		})
-	}
-	for _, currentAnswer := range h.answers.ListByCircle(circleID) {
-		rows = append(rows, []string{
-			"answer",
-			currentAnswer.ID,
-			currentAnswer.FormID,
-			"submitted",
-			currentAnswer.UpdatedAt,
-			singleLine(currentAnswer.Body),
-		})
+	for _, currentCircle := range circles {
+		for _, currentPage := range h.pages.ListByCircleForStaff(currentCircle.ID, "") {
+			rows = append(rows, []string{
+				"page",
+				currentCircle.ID,
+				currentCircle.Name,
+				currentPage.ID,
+				currentPage.Title,
+				visibilityLabel(currentPage.IsPublic),
+				pageStatus(currentPage.IsPinned),
+				currentPage.PublishedAt,
+			})
+		}
+		for _, currentDocument := range h.documents.ListByCircleForStaff(currentCircle.ID) {
+			rows = append(rows, []string{
+				"document",
+				currentCircle.ID,
+				currentCircle.Name,
+				currentDocument.ID,
+				currentDocument.Name,
+				visibilityLabel(currentDocument.IsPublic),
+				currentDocument.Filename,
+				currentDocument.MimeType,
+			})
+		}
+		for _, currentForm := range h.forms.ListByCircleForStaff(currentCircle.ID) {
+			rows = append(rows, []string{
+				"form",
+				currentCircle.ID,
+				currentCircle.Name,
+				currentForm.ID,
+				currentForm.Name,
+				visibilityLabel(currentForm.IsPublic),
+				formStatus(currentForm.IsOpen),
+				currentForm.CloseAt,
+			})
+		}
+		for _, currentAnswer := range h.answers.ListByCircle(currentCircle.ID) {
+			rows = append(rows, []string{
+				"answer",
+				currentCircle.ID,
+				currentCircle.Name,
+				currentAnswer.ID,
+				currentAnswer.FormID,
+				"submitted",
+				currentAnswer.UpdatedAt,
+				singleLine(currentAnswer.Body),
+			})
+		}
 	}
 
 	return writeCSV(rows)
 }
 
-func (h *staffAdminHandlers) buildStaffBundleZIP(circleID string, circleName string) ([]byte, error) {
+func (h *staffAdminHandlers) buildStaffBundleZIP() ([]byte, error) {
+	circles, _, err := listStaffManagedCircles(h.circles)
+	if err != nil {
+		return nil, err
+	}
+	circleNames := make(map[string]string, len(circles))
+	pages := make([]page.Page, 0)
+	documents := make([]document.Document, 0)
+	forms := make([]form.Form, 0)
+	answers := make([]answer.Answer, 0)
+	for _, currentCircle := range circles {
+		circleNames[currentCircle.ID] = currentCircle.Name
+		pages = append(pages, h.pages.ListByCircleForStaff(currentCircle.ID, "")...)
+		documents = append(documents, h.documents.ListByCircleForStaff(currentCircle.ID)...)
+		forms = append(forms, h.forms.ListByCircleForStaff(currentCircle.ID)...)
+		answers = append(answers, h.answers.ListByCircle(currentCircle.ID)...)
+	}
+
 	var buffer bytes.Buffer
 	writer := zip.NewWriter(&buffer)
 
 	pagesCSV, err := writeCSV(append([][]string{
-		{"id", "title", "viewable_tags", "body", "is_pinned", "is_public", "notes", "published_at"},
-	}, staffPageRows(h.pages.ListByCircleForStaff(circleID, ""))...))
+		{"circle_id", "circle_name", "id", "title", "viewable_tags", "body", "is_pinned", "is_public", "notes", "published_at"},
+	}, staffPageRowsWithCircles(pages, circleNames)...))
 	if err != nil {
 		return nil, err
 	}
 	documentsCSV, err := writeCSV(append([][]string{
-		{"id", "name", "filename", "size_bytes", "extension", "description", "visibility", "is_important", "notes", "created_at", "updated_at"},
-	}, staffDocumentRows(h.documents.ListByCircleForStaff(circleID))...))
+		{"circle_id", "circle_name", "id", "name", "filename", "size_bytes", "extension", "description", "visibility", "is_important", "notes", "created_at", "updated_at"},
+	}, staffDocumentRowsWithCircles(documents, circleNames)...))
 	if err != nil {
 		return nil, err
 	}
 	formsCSV, err := writeCSV(append([][]string{
-		{"id", "name", "visibility", "status", "open_at", "close_at"},
-	}, staffFormRows(h.forms.ListByCircleForStaff(circleID))...))
+		{"circle_id", "circle_name", "id", "name", "visibility", "status", "open_at", "close_at"},
+	}, staffFormRowsWithCircles(forms, circleNames)...))
 	if err != nil {
 		return nil, err
 	}
 	answersCSV, err := writeCSV(append([][]string{
-		{"id", "form_id", "updated_at", "body"},
-	}, answerRows(h.answers.ListByCircle(circleID))...))
+		{"circle_id", "circle_name", "id", "form_id", "updated_at", "body"},
+	}, answerRowsWithCircles(answers, circleNames)...))
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +188,7 @@ func (h *staffAdminHandlers) buildStaffBundleZIP(circleID string, circleName str
 		},
 		{
 			name:    "README.txt",
-			content: []byte(fmt.Sprintf("PortalDots export bundle\ncircle_id=%s\ncircle_name=%s\n", circleID, circleName)),
+			content: []byte("PortalDots export bundle\nscope=all_managed_circles\n"),
 		},
 	}
 
@@ -192,47 +226,12 @@ func writeCSV(rows [][]string) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func staffPageRows(pages []page.Page) [][]string {
-	rows := make([][]string, 0, len(pages))
-	for _, currentPage := range pages {
-		rows = append(rows, []string{
-			currentPage.ID,
-			currentPage.Title,
-			strings.Join(currentPage.ViewableTags, ","),
-			singleLine(currentPage.Body),
-			boolString(currentPage.IsPinned),
-			visibilityLabel(currentPage.IsPublic),
-			singleLine(currentPage.Notes),
-			currentPage.PublishedAt,
-		})
-	}
-	return rows
-}
-
-func staffDocumentRows(documents []document.Document) [][]string {
-	rows := make([][]string, 0, len(documents))
-	for _, currentDocument := range documents {
-		rows = append(rows, []string{
-			currentDocument.ID,
-			currentDocument.Name,
-			currentDocument.Filename,
-			fmt.Sprintf("%d", currentDocument.SizeBytes),
-			currentDocument.Extension,
-			singleLine(currentDocument.Description),
-			visibilityLabel(currentDocument.IsPublic),
-			boolString(currentDocument.IsImportant),
-			singleLine(currentDocument.Notes),
-			currentDocument.CreatedAt,
-			currentDocument.UpdatedAt,
-		})
-	}
-	return rows
-}
-
-func staffFormRows(forms []form.Form) [][]string {
+func staffFormRowsWithCircles(forms []form.Form, circleNames map[string]string) [][]string {
 	rows := make([][]string, 0, len(forms))
 	for _, currentForm := range forms {
 		rows = append(rows, []string{
+			currentForm.CircleID,
+			circleNames[currentForm.CircleID],
 			currentForm.ID,
 			currentForm.Name,
 			visibilityLabel(currentForm.IsPublic),
@@ -244,10 +243,12 @@ func staffFormRows(forms []form.Form) [][]string {
 	return rows
 }
 
-func answerRows(answers []answer.Answer) [][]string {
+func answerRowsWithCircles(answers []answer.Answer, circleNames map[string]string) [][]string {
 	rows := make([][]string, 0, len(answers))
 	for _, currentAnswer := range answers {
 		rows = append(rows, []string{
+			currentAnswer.CircleID,
+			circleNames[currentAnswer.CircleID],
 			currentAnswer.ID,
 			currentAnswer.FormID,
 			currentAnswer.UpdatedAt,

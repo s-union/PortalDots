@@ -6,6 +6,10 @@ import { extractValidationMessage, parseValidationError } from '@/lib/api/valida
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffMail {
+  circle: {
+    id: string
+    name: string
+  }
   id: string
   subject: string
   body: string
@@ -16,6 +20,7 @@ export interface StaffMail {
 }
 
 interface CreateStaffMailPayload {
+  circleId: string
   subject: string
   body: string
   recipients: string[]
@@ -88,6 +93,7 @@ export function useCreateStaffMailMutation() {
 
 export function useStaffMailForm() {
   return ref({
+    circleId: '',
     subject: '',
     body: '',
     recipientsText: ''

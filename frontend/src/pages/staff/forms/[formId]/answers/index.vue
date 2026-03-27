@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'formAnswers.read'
   }
 })
@@ -34,7 +33,7 @@ const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
-  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+  computed(() => staffStatusQuery.data.value?.authorized === true)
 )
 const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId)
 

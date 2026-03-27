@@ -9,44 +9,48 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
 )
 
 const maxStaffDocumentUploadBytes = 10 * 1024 * 1024
 
 type staffDocumentSummaryResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Notes       string `json:"notes"`
-	IsImportant bool   `json:"isImportant"`
-	Filename    string `json:"filename"`
-	Extension   string `json:"extension"`
-	MimeType    string `json:"mimeType"`
-	SizeBytes   int64  `json:"sizeBytes"`
-	IsPublic    bool   `json:"isPublic"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
-	DownloadURL string `json:"downloadUrl"`
+	Circle      staffManagedCircleResponse `json:"circle"`
+	ID          string                     `json:"id"`
+	Name        string                     `json:"name"`
+	Description string                     `json:"description"`
+	Notes       string                     `json:"notes"`
+	IsImportant bool                       `json:"isImportant"`
+	Filename    string                     `json:"filename"`
+	Extension   string                     `json:"extension"`
+	MimeType    string                     `json:"mimeType"`
+	SizeBytes   int64                      `json:"sizeBytes"`
+	IsPublic    bool                       `json:"isPublic"`
+	CreatedAt   string                     `json:"createdAt"`
+	UpdatedAt   string                     `json:"updatedAt"`
+	DownloadURL string                     `json:"downloadUrl"`
 }
 
 type staffDocumentDetailResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Notes       string `json:"notes"`
-	IsImportant bool   `json:"isImportant"`
-	Filename    string `json:"filename"`
-	Extension   string `json:"extension"`
-	MimeType    string `json:"mimeType"`
-	SizeBytes   int64  `json:"sizeBytes"`
-	IsPublic    bool   `json:"isPublic"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
-	DownloadURL string `json:"downloadUrl"`
+	Circle      staffManagedCircleResponse `json:"circle"`
+	ID          string                     `json:"id"`
+	Name        string                     `json:"name"`
+	Description string                     `json:"description"`
+	Notes       string                     `json:"notes"`
+	IsImportant bool                       `json:"isImportant"`
+	Filename    string                     `json:"filename"`
+	Extension   string                     `json:"extension"`
+	MimeType    string                     `json:"mimeType"`
+	SizeBytes   int64                      `json:"sizeBytes"`
+	IsPublic    bool                       `json:"isPublic"`
+	CreatedAt   string                     `json:"createdAt"`
+	UpdatedAt   string                     `json:"updatedAt"`
+	DownloadURL string                     `json:"downloadUrl"`
 }
 
 type mutateStaffDocumentRequest struct {
+	CircleID    string
 	Name        string
 	Description string
 	Notes       string
@@ -55,43 +59,54 @@ type mutateStaffDocumentRequest struct {
 }
 
 func (h *staffDocumentHandlers) listStaffDocuments(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadDocuments)
+	_, _, status, ok := h.requireStaffCapability(c, canReadDocuments)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	documents := h.documents.ListByCircleForStaff(selectedCircle.ID)
+	_, circlesByID, documents, err := h.listManagedStaffDocuments()
+	if err != nil {
+		return internalError(c)
+	}
 	response := make([]staffDocumentSummaryResponse, 0, len(documents))
 	for _, currentDocument := range documents {
-		response = append(response, mapStaffDocumentSummary(currentDocument))
+		response = append(response, mapStaffDocumentSummary(currentDocument, circlesByID[currentDocument.CircleID]))
 	}
 
 	return c.JSON(http.StatusOK, response)
 }
 
 func (h *staffDocumentHandlers) getStaffDocument(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadDocuments)
+	_, _, status, ok := h.requireStaffCapability(c, canReadDocuments)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	document, found := h.documents.FindByCircleForStaff(selectedCircle.ID, c.Param("documentID"))
-	if !found {
+	documentValue, circleValue, err := h.findManagedStaffDocument(c.Param("documentID"))
+	if err != nil {
+		return internalError(c)
+	}
+	if documentValue.ID == "" {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	return c.JSON(http.StatusOK, mapStaffDocumentDetail(document))
+	return c.JSON(http.StatusOK, mapStaffDocumentDetail(documentValue, mapStaffManagedCircle(circleValue)))
 }
 
 func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditDocuments)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditDocuments)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, true)
+	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, true, true)
 	if !valid {
 		return validationError(c, validationErrors)
+	}
+	if _, err := h.circles.Find(request.CircleID); err != nil {
+		return validationError(c, map[string][]string{
+			"circleId": {"企画を選択してください"},
+		})
 	}
 
 	filename, mimeType, content, readErrors, ok := readStaffDocumentUpload(fileHeader)
@@ -100,7 +115,7 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 	}
 
 	created, createdOK := h.documents.Create(
-		selectedCircle.ID,
+		request.CircleID,
 		request.Name,
 		request.Description,
 		request.Notes,
@@ -120,26 +135,29 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 		"staff.document.created",
 		"document",
 		created.ID,
-		selectedCircle.ID,
+		created.CircleID,
 		buildActivitySummary("staff が配布資料を作成しました", created.Name),
 	)
 
-	return c.JSON(http.StatusCreated, mapStaffDocumentSummary(created))
+	return c.JSON(http.StatusCreated, mapStaffDocumentSummary(created, staffManagedCircleResponse{ID: created.CircleID}))
 }
 
 func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditDocuments)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditDocuments)
 	if !ok {
 		return statusError(c, status)
 	}
 
 	documentID := c.Param("documentID")
-	currentDocument, found := h.documents.FindByCircleForStaff(selectedCircle.ID, documentID)
-	if !found {
+	currentDocument, circleValue, err := h.findManagedStaffDocument(documentID)
+	if err != nil {
+		return internalError(c)
+	}
+	if currentDocument.ID == "" {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, false)
+	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, false, false)
 	if !valid {
 		return validationError(c, validationErrors)
 	}
@@ -157,7 +175,7 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 	}
 
 	updated, updatedOK := h.documents.Update(
-		selectedCircle.ID,
+		currentDocument.CircleID,
 		documentID,
 		request.Name,
 		request.Description,
@@ -178,26 +196,29 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 		"staff.document.updated",
 		"document",
 		updated.ID,
-		selectedCircle.ID,
+		updated.CircleID,
 		buildActivitySummary("staff が配布資料を更新しました", updated.Name),
 	)
 
-	return c.JSON(http.StatusOK, mapStaffDocumentSummary(updated))
+	return c.JSON(http.StatusOK, mapStaffDocumentSummary(updated, mapStaffManagedCircle(circleValue)))
 }
 
 func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canDeleteDocuments)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteDocuments)
 	if !ok {
 		return statusError(c, status)
 	}
 
 	documentID := c.Param("documentID")
-	currentDocument, found := h.documents.FindByCircleForStaff(selectedCircle.ID, documentID)
-	if !found {
+	currentDocument, _, err := h.findManagedStaffDocument(documentID)
+	if err != nil {
+		return internalError(c)
+	}
+	if currentDocument.ID == "" {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	if deleted := h.documents.Delete(selectedCircle.ID, documentID); !deleted {
+	if deleted := h.documents.Delete(currentDocument.CircleID, documentID); !deleted {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
@@ -207,7 +228,7 @@ func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
 		"staff.document.deleted",
 		"document",
 		documentID,
-		selectedCircle.ID,
+		currentDocument.CircleID,
 		buildActivitySummary("staff が配布資料を削除しました", currentDocument.Name),
 	)
 
@@ -215,41 +236,55 @@ func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
 }
 
 func (h *staffDocumentHandlers) downloadStaffDocumentFile(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadDocuments)
+	_, _, status, ok := h.requireStaffCapability(c, canReadDocuments)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	document, found := h.documents.FindByCircleForStaff(selectedCircle.ID, c.Param("documentID"))
-	if !found {
+	documentValue, _, err := h.findManagedStaffDocument(c.Param("documentID"))
+	if err != nil {
+		return internalError(c)
+	}
+	if documentValue.ID == "" {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+document.Filename+`"`)
-	return c.Blob(http.StatusOK, document.MimeType, document.Content)
+	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+documentValue.Filename+`"`)
+	return c.Blob(http.StatusOK, documentValue.MimeType, documentValue.Content)
 }
 
 func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canExportDocuments)
+	_, _, status, ok := h.requireStaffCapability(c, canExportDocuments)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	csvBytes, err := writeCSV(append([][]string{
-		{"id", "name", "filename", "size_bytes", "extension", "description", "is_public", "is_important", "notes", "created_at", "updated_at"},
-	}, staffDocumentRows(h.documents.ListByCircleForStaff(selectedCircle.ID))...))
+	circles, _, documents, err := h.listManagedStaffDocuments()
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("%s-documents.csv", selectedCircle.ID)
+	circleNames := make(map[string]string, len(circles))
+	for _, currentCircle := range circles {
+		circleNames[currentCircle.ID] = currentCircle.Name
+	}
+
+	csvBytes, err := writeCSV(append([][]string{
+		{"circle_id", "circle_name", "id", "name", "filename", "size_bytes", "extension", "description", "is_public", "is_important", "notes", "created_at", "updated_at"},
+	}, staffDocumentRowsWithCircles(documents, circleNames)...))
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+
+	filename := "staff-documents.csv"
 	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
 	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
 }
 
-func mapStaffDocumentSummary(document backenddocument.Document) staffDocumentSummaryResponse {
+func mapStaffDocumentSummary(document backenddocument.Document, circleValue staffManagedCircleResponse) staffDocumentSummaryResponse {
 	return staffDocumentSummaryResponse{
+		Circle:      circleValue,
 		ID:          document.ID,
 		Name:        document.Name,
 		Description: document.Description,
@@ -266,8 +301,9 @@ func mapStaffDocumentSummary(document backenddocument.Document) staffDocumentSum
 	}
 }
 
-func mapStaffDocumentDetail(document backenddocument.Document) staffDocumentDetailResponse {
+func mapStaffDocumentDetail(document backenddocument.Document, circleValue staffManagedCircleResponse) staffDocumentDetailResponse {
 	return staffDocumentDetailResponse{
+		Circle:      circleValue,
 		ID:          document.ID,
 		Name:        document.Name,
 		Description: document.Description,
@@ -287,8 +323,10 @@ func mapStaffDocumentDetail(document backenddocument.Document) staffDocumentDeta
 func bindStaffDocumentRequest(
 	c echo.Context,
 	fileRequired bool,
+	circleRequired bool,
 ) (mutateStaffDocumentRequest, *multipart.FileHeader, map[string][]string, bool) {
 	request := mutateStaffDocumentRequest{
+		CircleID:    strings.TrimSpace(c.FormValue("circleId")),
 		Name:        strings.TrimSpace(c.FormValue("name")),
 		Description: strings.TrimSpace(c.FormValue("description")),
 		Notes:       strings.TrimSpace(c.FormValue("notes")),
@@ -311,6 +349,9 @@ func bindStaffDocumentRequest(
 	request.IsImportant = isImportant
 
 	validationErrors := map[string][]string{}
+	if circleRequired && request.CircleID == "" {
+		validationErrors["circleId"] = []string{"企画を選択してください"}
+	}
 	if request.Name == "" {
 		validationErrors["name"] = []string{"配布資料名を入力してください"}
 	}
@@ -329,6 +370,57 @@ func bindStaffDocumentRequest(
 	}
 
 	return request, fileHeader, nil, true
+}
+
+func (h *staffDocumentHandlers) listManagedStaffDocuments() ([]circle.Circle, map[string]staffManagedCircleResponse, []backenddocument.Document, error) {
+	circles, circlesByID, err := listStaffManagedCircles(h.circles)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	documents := make([]backenddocument.Document, 0)
+	for _, currentCircle := range circles {
+		documents = append(documents, h.documents.ListByCircleForStaff(currentCircle.ID)...)
+	}
+
+	return circles, circlesByID, documents, nil
+}
+
+func (h *staffDocumentHandlers) findManagedStaffDocument(documentID string) (backenddocument.Document, circle.Circle, error) {
+	circles, _, err := listStaffManagedCircles(h.circles)
+	if err != nil {
+		return backenddocument.Document{}, circle.Circle{}, err
+	}
+
+	for _, currentCircle := range circles {
+		if currentDocument, found := h.documents.FindByCircleForStaff(currentCircle.ID, documentID); found {
+			return currentDocument, currentCircle, nil
+		}
+	}
+
+	return backenddocument.Document{}, circle.Circle{}, nil
+}
+
+func staffDocumentRowsWithCircles(documents []backenddocument.Document, circleNames map[string]string) [][]string {
+	rows := make([][]string, 0, len(documents))
+	for _, currentDocument := range documents {
+		rows = append(rows, []string{
+			currentDocument.CircleID,
+			circleNames[currentDocument.CircleID],
+			currentDocument.ID,
+			currentDocument.Name,
+			currentDocument.Filename,
+			fmt.Sprintf("%d", currentDocument.SizeBytes),
+			currentDocument.Extension,
+			singleLine(currentDocument.Description),
+			visibilityLabel(currentDocument.IsPublic),
+			boolString(currentDocument.IsImportant),
+			singleLine(currentDocument.Notes),
+			currentDocument.CreatedAt,
+			currentDocument.UpdatedAt,
+		})
+	}
+	return rows
 }
 
 func readStaffDocumentUpload(

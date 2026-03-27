@@ -10,24 +10,26 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 )
 
 type staffFormSummaryResponse struct {
-	ID                  string   `json:"id"`
-	Name                string   `json:"name"`
-	Description         string   `json:"description"`
-	OpenAt              string   `json:"openAt"`
-	CloseAt             string   `json:"closeAt"`
-	IsPublic            bool     `json:"isPublic"`
-	IsOpen              bool     `json:"isOpen"`
-	CreatedAt           string   `json:"createdAt"`
-	UpdatedAt           string   `json:"updatedAt"`
-	MaxAnswers          int32    `json:"maxAnswers"`
-	AnswerableTags      []string `json:"answerableTags"`
-	ConfirmationMessage string   `json:"confirmationMessage"`
-	IsParticipationForm bool     `json:"isParticipationForm"`
+	Circle              staffManagedCircleResponse `json:"circle"`
+	ID                  string                     `json:"id"`
+	Name                string                     `json:"name"`
+	Description         string                     `json:"description"`
+	OpenAt              string                     `json:"openAt"`
+	CloseAt             string                     `json:"closeAt"`
+	IsPublic            bool                       `json:"isPublic"`
+	IsOpen              bool                       `json:"isOpen"`
+	CreatedAt           string                     `json:"createdAt"`
+	UpdatedAt           string                     `json:"updatedAt"`
+	MaxAnswers          int32                      `json:"maxAnswers"`
+	AnswerableTags      []string                   `json:"answerableTags"`
+	ConfirmationMessage string                     `json:"confirmationMessage"`
+	IsParticipationForm bool                       `json:"isParticipationForm"`
 }
 
 type staffFormAnswerResponse struct {
@@ -40,19 +42,20 @@ type staffFormAnswerResponse struct {
 }
 
 type staffFormDetailResponse struct {
-	ID                  string                   `json:"id"`
-	Name                string                   `json:"name"`
-	Description         string                   `json:"description"`
-	OpenAt              string                   `json:"openAt"`
-	CloseAt             string                   `json:"closeAt"`
-	IsPublic            bool                     `json:"isPublic"`
-	IsOpen              bool                     `json:"isOpen"`
-	MaxAnswers          int32                    `json:"maxAnswers"`
-	AnswerableTags      []string                 `json:"answerableTags"`
-	ConfirmationMessage string                   `json:"confirmationMessage"`
-	IsParticipationForm bool                     `json:"isParticipationForm"`
-	Questions           []staffFormQuestion      `json:"questions"`
-	Answer              *staffFormAnswerResponse `json:"answer"`
+	Circle              staffManagedCircleResponse `json:"circle"`
+	ID                  string                     `json:"id"`
+	Name                string                     `json:"name"`
+	Description         string                     `json:"description"`
+	OpenAt              string                     `json:"openAt"`
+	CloseAt             string                     `json:"closeAt"`
+	IsPublic            bool                       `json:"isPublic"`
+	IsOpen              bool                       `json:"isOpen"`
+	MaxAnswers          int32                      `json:"maxAnswers"`
+	AnswerableTags      []string                   `json:"answerableTags"`
+	ConfirmationMessage string                     `json:"confirmationMessage"`
+	IsParticipationForm bool                       `json:"isParticipationForm"`
+	Questions           []staffFormQuestion        `json:"questions"`
+	Answer              *staffFormAnswerResponse   `json:"answer"`
 }
 
 type staffFormQuestion struct {
@@ -91,6 +94,7 @@ type reorderStaffFormQuestionsRequest struct {
 }
 
 type mutateStaffFormRequest struct {
+	CircleID            string   `json:"circleId"`
 	Name                string   `json:"name"`
 	Description         string   `json:"description"`
 	OpenAt              string   `json:"openAt"`
@@ -102,30 +106,33 @@ type mutateStaffFormRequest struct {
 }
 
 func (h *staffFormHandlers) listStaffForms(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
+	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	forms := h.forms.ListByCircleForStaff(selectedCircle.ID)
+	_, circlesByID, forms, err := h.listManagedStaffForms()
+	if err != nil {
+		return internalError(c)
+	}
 	response := make([]staffFormSummaryResponse, 0, len(forms))
 	for _, currentForm := range forms {
 		if h.isParticipationForm(currentForm.ID) {
 			continue
 		}
-		response = append(response, h.mapStaffFormSummary(currentForm))
+		response = append(response, h.mapStaffFormSummary(currentForm, circlesByID[currentForm.CircleID]))
 	}
 
 	return c.JSON(http.StatusOK, response)
 }
 
 func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
+	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	form, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	form, currentCircle, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -135,34 +142,26 @@ func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
 		return internalError(c)
 	}
 
-	var answerResponse *staffFormAnswerResponse
-	if answerValue, found := h.answers.Get(form.ID, selectedCircle.ID); found {
-		answerResponse = &staffFormAnswerResponse{
-			ID:        answerValue.ID,
-			Body:      answerValue.Body,
-			CreatedAt: answerValue.CreatedAt,
-			UpdatedAt: answerValue.UpdatedAt,
-			Details:   cloneAnswerDetails(answerValue.Details),
-			Uploads:   mapFormAnswerUploads(h.answers.ListUploads(form.ID, selectedCircle.ID)),
-		}
-	}
-
-	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(form, questions, answerResponse))
+	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(form, mapStaffManagedCircle(currentCircle), questions, nil))
 }
 
 func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	request, validationErrors, valid := bindAndValidateStaffForm(c)
+	request, validationErrors, valid := bindAndValidateStaffForm(c, true)
 	if !valid {
 		return validationError(c, validationErrors)
 	}
+	currentCircle, err := h.circles.Find(request.CircleID)
+	if err != nil {
+		return validationError(c, map[string][]string{"circleId": {"企画を選択してください"}})
+	}
 
 	created := h.forms.Create(
-		selectedCircle.ID,
+		request.CircleID,
 		request.Name,
 		request.Description,
 		request.IsPublic,
@@ -178,25 +177,25 @@ func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
 		"staff.form.created",
 		"form",
 		created.ID,
-		selectedCircle.ID,
+		created.CircleID,
 		buildActivitySummary("staff がフォームを作成しました", created.Name),
 	)
 
-	return c.JSON(http.StatusCreated, h.mapStaffFormSummary(created))
+	return c.JSON(http.StatusCreated, h.mapStaffFormSummary(created, mapStaffManagedCircle(currentCircle)))
 }
 
 func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	request, validationErrors, valid := bindAndValidateStaffForm(c)
+	request, validationErrors, valid := bindAndValidateStaffForm(c, false)
 	if !valid {
 		return validationError(c, validationErrors)
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	formValue, currentCircle, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -204,8 +203,7 @@ func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
-	updated, found := h.forms.Update(
-		selectedCircle.ID,
+	updated, found := h.forms.UpdateByID(
 		c.Param("formID"),
 		request.Name,
 		request.Description,
@@ -226,20 +224,20 @@ func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
 		"staff.form.updated",
 		"form",
 		updated.ID,
-		selectedCircle.ID,
+		updated.CircleID,
 		buildActivitySummary("staff がフォームを更新しました", updated.Name),
 	)
 
-	return c.JSON(http.StatusOK, h.mapStaffFormSummary(updated))
+	return c.JSON(http.StatusOK, h.mapStaffFormSummary(updated, mapStaffManagedCircle(currentCircle)))
 }
 
 func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
+	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -263,12 +261,12 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canDuplicateForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canDuplicateForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	source, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	source, currentCircle, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -282,7 +280,7 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 	}
 
 	copied := h.forms.Create(
-		selectedCircle.ID,
+		source.CircleID,
 		source.Name+" (コピー)",
 		source.Description,
 		source.IsPublic,
@@ -330,27 +328,27 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 		"staff.form.copied",
 		"form",
 		copied.ID,
-		selectedCircle.ID,
+		copied.CircleID,
 		buildActivitySummary("staff がフォームを複製しました", copied.Name),
 	)
 
-	return c.JSON(http.StatusCreated, h.mapStaffFormSummary(copied))
+	return c.JSON(http.StatusCreated, h.mapStaffFormSummary(copied, mapStaffManagedCircle(currentCircle)))
 }
 
 func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canDeleteForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 	if h.isParticipationForm(formValue.ID) {
 		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
-	if deleted := h.forms.Delete(selectedCircle.ID, formValue.ID); !deleted {
+	if deleted := h.forms.Delete(formValue.CircleID, formValue.ID); !deleted {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
@@ -360,7 +358,7 @@ func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
 		"staff.form.deleted",
 		"form",
 		formValue.ID,
-		selectedCircle.ID,
+		formValue.CircleID,
 		buildActivitySummary("staff がフォームを削除しました", formValue.Name),
 	)
 
@@ -368,12 +366,23 @@ func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canExportForms)
+	_, _, status, ok := h.requireStaffCapability(c, canExportForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
+	circles, _, forms, err := h.listManagedStaffForms()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+	circleNames := make(map[string]string, len(circles))
+	for _, currentCircle := range circles {
+		circleNames[currentCircle.ID] = currentCircle.Name
+	}
+
 	rows := append([][]string{{
+		"企画ID",
+		"企画名",
 		"フォームID",
 		"フォーム名",
 		"公開",
@@ -383,7 +392,7 @@ func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
 		"最大回答数",
 		"回答可能タグ",
 		"完了メッセージ",
-	}}, staffFormRowsExtended(h.filterEditableStaffForms(h.forms.ListByCircleForStaff(selectedCircle.ID)))...)
+	}}, staffFormRowsExtendedWithCircles(h.filterEditableStaffForms(forms), circleNames)...)
 
 	buffer := strings.Builder{}
 	writer := csv.NewWriter(&buffer)
@@ -391,38 +400,47 @@ func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("%s-forms.csv", selectedCircle.ID)
+	filename := "staff-forms.csv"
 	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
 	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", []byte(buffer.String()))
 }
 
 func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canReadForms)
+	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	if _, found := h.forms.FindByCircleForStaff(selectedCircle.ID, c.Param("formID")); !found {
+	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), false)
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
-	upload, found := h.answers.FindUpload(c.Param("formID"), selectedCircle.ID, c.Param("uploadID"))
-	if !found {
-		return errorJSON(c, http.StatusNotFound, "upload_not_found")
+	for _, currentAnswer := range h.answers.ListByForm(formValue.ID) {
+		for _, listedUpload := range h.answers.ListUploadsByAnswer(currentAnswer.ID) {
+			if listedUpload.ID != c.Param("uploadID") {
+				continue
+			}
+			upload, found := h.answers.FindUpload(formValue.ID, currentAnswer.CircleID, listedUpload.ID)
+			if !found {
+				return errorJSON(c, http.StatusNotFound, "upload_not_found")
+			}
+			c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
+			return c.Blob(http.StatusOK, upload.MimeType, upload.Content)
+		}
 	}
 
-	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
-	return c.Blob(http.StatusOK, upload.MimeType, upload.Content)
+	return errorJSON(c, http.StatusNotFound, "upload_not_found")
 }
 
 func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -447,7 +465,7 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 		"staff.form.question.created",
 		"form_question",
 		created.ID,
-		selectedCircle.ID,
+		formValue.CircleID,
 		buildActivitySummary("staff がフォーム設問を追加しました", formValue.Name),
 	)
 
@@ -455,12 +473,12 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -507,7 +525,7 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 		"staff.form.question.updated",
 		"form_question",
 		updated.ID,
-		selectedCircle.ID,
+		formValue.CircleID,
 		buildActivitySummary("staff がフォーム設問を更新しました", formValue.Name),
 	)
 
@@ -515,12 +533,12 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -537,7 +555,7 @@ func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
 		"staff.form.question.deleted",
 		"form_question",
 		c.Param("questionID"),
-		selectedCircle.ID,
+		formValue.CircleID,
 		buildActivitySummary("staff がフォーム設問を削除しました", formValue.Name),
 	)
 
@@ -545,12 +563,12 @@ func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canEditForms)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), true)
+	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -580,15 +598,16 @@ func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
 		"staff.form.question.reordered",
 		"form",
 		formValue.ID,
-		selectedCircle.ID,
+		formValue.CircleID,
 		buildActivitySummary("staff がフォーム設問の順序を更新しました", formValue.Name),
 	)
 
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffFormHandlers) mapStaffFormSummary(formValue backendform.Form) staffFormSummaryResponse {
+func (h *staffFormHandlers) mapStaffFormSummary(formValue backendform.Form, circleValue staffManagedCircleResponse) staffFormSummaryResponse {
 	return staffFormSummaryResponse{
+		Circle:              circleValue,
 		ID:                  formValue.ID,
 		Name:                formValue.Name,
 		Description:         formValue.Description,
@@ -631,6 +650,17 @@ func staffFormRowsExtended(forms []backendform.Form) [][]string {
 	return rows
 }
 
+func staffFormRowsExtendedWithCircles(forms []backendform.Form, circleNames map[string]string) [][]string {
+	rows := make([][]string, 0, len(forms))
+	for _, currentForm := range forms {
+		rows = append(rows, append([]string{
+			currentForm.CircleID,
+			circleNames[currentForm.CircleID],
+		}, staffFormRowsExtended([]backendform.Form{currentForm})[0]...))
+	}
+	return rows
+}
+
 func (h *staffFormHandlers) filterEditableStaffForms(forms []backendform.Form) []backendform.Form {
 	filtered := make([]backendform.Form, 0, len(forms))
 	for _, currentForm := range forms {
@@ -643,20 +673,45 @@ func (h *staffFormHandlers) filterEditableStaffForms(forms []backendform.Form) [
 	return filtered
 }
 
-func (h *staffFormHandlers) findStaffFormForManagement(selectedCircleID, formID string, allowParticipation bool) (backendform.Form, bool) {
-	if formValue, found := h.forms.FindByCircleForStaff(selectedCircleID, formID); found {
-		return formValue, true
+func (h *staffFormHandlers) listManagedStaffForms() ([]circle.Circle, map[string]staffManagedCircleResponse, []backendform.Form, error) {
+	circles, circlesByID, err := listStaffManagedCircles(h.circles)
+	if err != nil {
+		return nil, nil, nil, err
 	}
+
+	forms := make([]backendform.Form, 0)
+	for _, currentCircle := range circles {
+		forms = append(forms, h.forms.ListByCircleForStaff(currentCircle.ID)...)
+	}
+
+	return circles, circlesByID, forms, nil
+}
+
+func (h *staffFormHandlers) findManagedStaffForm(formID string, allowParticipation bool) (backendform.Form, circle.Circle, bool) {
+	circles, _, err := listStaffManagedCircles(h.circles)
+	if err == nil {
+		for _, currentCircle := range circles {
+			if formValue, found := h.forms.FindByCircleForStaff(currentCircle.ID, formID); found {
+				return formValue, currentCircle, true
+			}
+		}
+	}
+
 	if !allowParticipation {
-		return backendform.Form{}, false
+		return backendform.Form{}, circle.Circle{}, false
 	}
 
 	formValue, found := h.forms.FindByIDForStaff(formID)
 	if !found || !h.isParticipationForm(formValue.ID) {
-		return backendform.Form{}, false
+		return backendform.Form{}, circle.Circle{}, false
+	}
+	if formValue.CircleID != "" {
+		if currentCircle, err := h.circles.Find(formValue.CircleID); err == nil {
+			return formValue, currentCircle, true
+		}
 	}
 
-	return formValue, true
+	return formValue, circle.Circle{}, true
 }
 
 func questionIDsByPriority(questions []formquestion.Question, err error) ([]string, error) {
@@ -696,7 +751,7 @@ func parseRFC3339Field(value string) (time.Time, bool) {
 	return parsed, true
 }
 
-func bindAndValidateStaffForm(c echo.Context) (mutateStaffFormRequest, map[string][]string, bool) {
+func bindAndValidateStaffForm(c echo.Context, circleRequired bool) (mutateStaffFormRequest, map[string][]string, bool) {
 	var request mutateStaffFormRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffFormRequest{}, map[string][]string{
@@ -704,6 +759,7 @@ func bindAndValidateStaffForm(c echo.Context) (mutateStaffFormRequest, map[strin
 		}, false
 	}
 
+	request.CircleID = strings.TrimSpace(request.CircleID)
 	request.Name = strings.TrimSpace(request.Name)
 	request.Description = strings.TrimSpace(request.Description)
 	request.OpenAt = strings.TrimSpace(request.OpenAt)
@@ -712,6 +768,9 @@ func bindAndValidateStaffForm(c echo.Context) (mutateStaffFormRequest, map[strin
 	request.AnswerableTags = normalizeTags(request.AnswerableTags)
 
 	errors := map[string][]string{}
+	if circleRequired && request.CircleID == "" {
+		errors["circleId"] = []string{"企画を選択してください"}
+	}
 	if request.Name == "" {
 		errors["name"] = []string{"フォーム名を入力してください"}
 	}

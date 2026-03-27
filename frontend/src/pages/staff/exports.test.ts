@@ -20,7 +20,7 @@ function createQueryPlugin() {
 }
 
 describe('StaffExportsPage', () => {
-  it('shows current circle export links', async () => {
+  it('shows global export links', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -54,7 +54,7 @@ describe('StaffExportsPage', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('デモ企画B')
+    expect(wrapper.text()).toContain('全企画')
     expect(wrapper.text()).toContain('CSV をダウンロード')
     expect(wrapper.text()).toContain('ZIP をダウンロード')
     const summaryLink = wrapper.get('a[href$="/v1/staff/exports/summary.csv"]')

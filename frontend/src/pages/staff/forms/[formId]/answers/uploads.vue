@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'formAnswers.export'
   }
 })
@@ -29,7 +28,7 @@ const zipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.value))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
-  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+  computed(() => staffStatusQuery.data.value?.authorized === true)
 )
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
 </script>

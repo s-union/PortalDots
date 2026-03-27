@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'forms.read'
   }
 })
@@ -35,9 +34,7 @@ import { useSessionStore } from '@/features/session/store'
 const router = useRouter()
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const formsQuery = useStaffFormsQuery(
-  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
-)
+const formsQuery = useStaffFormsQuery(computed(() => staffStatusQuery.data.value?.authorized === true))
 const copyFormMutation = useCopyStaffFormMutation()
 const deleteFormMutation = useDeleteStaffFormMutation()
 const errorMessage = ref('')
@@ -57,6 +54,7 @@ const sortKeys = ['id', 'name', 'isPublic', 'openAt', 'closeAt', 'createdAt', 'u
 type StaffFormSortKey = (typeof sortKeys)[number]
 
 const columns: StaffDataGridColumn[] = [
+  { key: 'circle', label: '企画' },
   { key: 'id', label: 'フォームID', sortable: true },
   { key: 'name', label: 'フォーム名', sortable: true },
   { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
@@ -216,7 +214,7 @@ function resolveDescription(form: StaffFormSummary) {
 
 <template>
   <PageLayout>
-    <PageHeader title="申請管理" :description="sessionStore.currentCircle?.name ?? '企画未選択'">
+    <PageHeader title="申請管理" description="全企画の申請フォームを横断して管理します。">
       <template #actions>
         <BackLink to="/staff">Staff top へ戻る</BackLink>
       </template>
@@ -322,6 +320,13 @@ function resolveDescription(form: StaffFormSummary) {
             {{ row.name }}
           </RouterLink>
           <span v-else class="font-medium text-body">{{ row.name }}</span>
+        </template>
+
+        <template #cell-circle="{ value }">
+          <span v-if="value && typeof value === 'object' && 'name' in value">
+            {{ (value as { name: string }).name }}
+          </span>
+          <span v-else class="text-muted">-</span>
         </template>
 
         <template #cell-isPublic="{ value }">

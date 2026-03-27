@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -11,38 +12,53 @@ import (
 )
 
 type staffMailResponse struct {
-	ID          string   `json:"id"`
-	Subject     string   `json:"subject"`
-	Body        string   `json:"body"`
-	Recipients  []string `json:"recipients"`
-	Status      string   `json:"status"`
-	CreatedAt   string   `json:"createdAt"`
-	DeliveredAt string   `json:"deliveredAt"`
+	Circle      staffManagedCircleResponse `json:"circle"`
+	ID          string                     `json:"id"`
+	Subject     string                     `json:"subject"`
+	Body        string                     `json:"body"`
+	Recipients  []string                   `json:"recipients"`
+	Status      string                     `json:"status"`
+	CreatedAt   string                     `json:"createdAt"`
+	DeliveredAt string                     `json:"deliveredAt"`
 }
 
 type enqueueStaffMailRequest struct {
+	CircleID   string   `json:"circleId"`
 	Subject    string   `json:"subject"`
 	Body       string   `json:"body"`
 	Recipients []string `json:"recipients"`
 }
 
 func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
-	_, _, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseMailQueue)
+	_, _, status, ok := h.requireStaffCapability(c, canUseMailQueue)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	jobs := h.mails.ListByCircle(selectedCircle.ID)
+	circles, circlesByID, err := listStaffManagedCircles(h.circles)
+	if err != nil {
+		return internalError(c)
+	}
+	jobs := make([]mailqueue.Job, 0)
+	for _, currentCircle := range circles {
+		jobs = append(jobs, h.mails.ListByCircle(currentCircle.ID)...)
+	}
+	sort.SliceStable(jobs, func(i, j int) bool {
+		if jobs[i].CreatedAt == jobs[j].CreatedAt {
+			return jobs[i].ID > jobs[j].ID
+		}
+		return jobs[i].CreatedAt > jobs[j].CreatedAt
+	})
 	response := make([]staffMailResponse, 0, len(jobs))
 	for _, job := range jobs {
-		response = append(response, mapStaffMail(job))
+		response = append(response, mapStaffMail(job, circlesByID[job.CircleID]))
 	}
 
 	return c.JSON(http.StatusOK, response)
 }
 
 func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
-	_, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, canUseMailQueue)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canUseMailQueue)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -52,11 +68,15 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
+	request.CircleID = strings.TrimSpace(request.CircleID)
 	request.Subject = strings.TrimSpace(request.Subject)
 	request.Body = strings.TrimSpace(request.Body)
 	recipients := normalizeRecipients(request.Recipients)
 
 	errors := map[string][]string{}
+	if request.CircleID == "" {
+		errors["circleId"] = []string{"企画を選択してください"}
+	}
 	if request.Subject == "" {
 		errors["subject"] = []string{"件名を入力してください"}
 	}
@@ -73,21 +93,32 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		})
 	}
 
-	job := h.mails.Enqueue(selectedCircle.ID, currentSession.User.ID, request.Subject, request.Body, recipients)
+	currentCircle, err := h.circles.Find(request.CircleID)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, models.ValidationErrorResponse{
+			Message: "validation_error",
+			Errors: map[string][]string{
+				"circleId": {"企画を選択してください"},
+			},
+		})
+	}
+
+	job := h.mails.Enqueue(request.CircleID, currentSession.User.ID, request.Subject, request.Body, recipients)
 	recordActivity(
 		h.activities,
 		currentSession.User.ID,
 		"staff.mail.queued",
 		"mail_job",
 		job.ID,
-		selectedCircle.ID,
+		job.CircleID,
 		buildActivitySummary("staff がメールをキューに追加しました", job.Subject),
 	)
-	return c.JSON(http.StatusCreated, mapStaffMail(job))
+	return c.JSON(http.StatusCreated, mapStaffMail(job, mapStaffManagedCircle(currentCircle)))
 }
 
-func mapStaffMail(job mailqueue.Job) staffMailResponse {
+func mapStaffMail(job mailqueue.Job, circleValue staffManagedCircleResponse) staffMailResponse {
 	return staffMailResponse{
+		Circle:      circleValue,
 		ID:          job.ID,
 		Subject:     job.Subject,
 		Body:        job.Body,

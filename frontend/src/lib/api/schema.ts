@@ -172,6 +172,12 @@ export const staffContactCategorySchema = z.object({
 })
 
 export const staffMailSchema = z.object({
+  circle: z
+    .object({
+      id: z.string(),
+      name: z.string()
+    })
+    .default({ id: '', name: '' }),
   id: z.string(),
   subject: z.string(),
   body: z.string(),
@@ -303,7 +309,13 @@ export const formAnswerEnvelopeSchema = z.object({
   answer: formAnswerSchema.nullable()
 })
 
+export const staffManagedCircleSchema = z.object({
+  id: z.string(),
+  name: z.string()
+})
+
 export const staffFormSummarySchema = z.object({
+  circle: staffManagedCircleSchema.default({ id: '', name: '' }),
   id: z.string(),
   name: z.string(),
   description: z.string(),
@@ -314,8 +326,8 @@ export const staffFormSummarySchema = z.object({
   confirmationMessage: z.string(),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.string().default(''),
+  updatedAt: z.string().default(''),
   isParticipationForm: z.boolean().default(false)
 })
 
@@ -391,6 +403,7 @@ export const existingAnswerConflictSchema = z.object({
 })
 
 export const staffPageSummarySchema = z.object({
+  circle: staffManagedCircleSchema.default({ id: '', name: '' }),
   id: z.string(),
   title: z.string(),
   publishedAt: z.string(),
@@ -413,6 +426,7 @@ export const staffPageDetailSchema = staffPageSummarySchema.extend({
 })
 
 export const staffDocumentSummarySchema = z.object({
+  circle: staffManagedCircleSchema.default({ id: '', name: '' }),
   id: z.string(),
   name: z.string(),
   description: z.string(),

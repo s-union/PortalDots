@@ -64,7 +64,7 @@ type existingStaffFormAnswerResponse struct {
 }
 
 func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
-	_, _, formValue, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
+	_, _, formValue, currentCircle, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -97,7 +97,7 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, staffFormAnswersIndexResponse{
-		Form:               h.buildStaffFormDetailResponse(formValue, questions, nil),
+		Form:               h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentCircle), questions, nil),
 		Answers:            answerResponse,
 		Circles:            allCircles,
 		NotAnsweredCircles: notAnswered,
@@ -105,7 +105,7 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
-	_, _, formValue, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
+	_, _, formValue, currentFormCircle, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -127,7 +127,7 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, staffManagedFormAnswerDetailResponse{
-		Form:           h.buildStaffFormDetailResponse(formValue, questions, nil),
+		Form:           h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentFormCircle), questions, nil),
 		Circle:         mapStaffAnswerCircle(currentCircle),
 		Answer:         buildStaffFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(answerValue.ID)),
 		SiblingAnswers: siblingResponse,
@@ -135,7 +135,7 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
-	_, currentSession, formValue, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
+	_, currentSession, formValue, _, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -205,7 +205,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
-	_, currentSession, formValue, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
+	_, currentSession, formValue, _, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -255,7 +255,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
-	_, currentSession, formValue, _, status, ok := h.staffFormContext(c, canDeleteFormAnswers)
+	_, currentSession, formValue, _, _, status, ok := h.staffFormContext(c, canDeleteFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -283,7 +283,7 @@ func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
-	_, currentSession, formValue, _, status, ok := h.staffFormContext(c, canEditFormAnswers)
+	_, currentSession, formValue, _, _, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -342,7 +342,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c echo.Context) error {
-	_, _, formValue, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
+	_, _, formValue, _, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -362,7 +362,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c echo.Context) error 
 }
 
 func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c echo.Context) error {
-	_, _, formValue, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
+	_, _, formValue, _, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -389,7 +389,7 @@ func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c echo.Context) erro
 }
 
 func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
-	_, _, formValue, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
+	_, _, formValue, _, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -450,7 +450,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) error {
-	_, _, formValue, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
+	_, _, formValue, _, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -502,34 +502,36 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 	return c.Blob(http.StatusOK, "application/zip", buffer.Bytes())
 }
 
-func (h *staffFormHandlers) staffFormContext(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, backendform.Form, []formquestion.Question, int, bool) {
-	sessionID, currentSession, selectedCircle, status, ok := h.requireStaffWithCircle(c, h.circles, allowed)
+func (h *staffFormHandlers) staffFormContext(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, backendform.Form, circle.Circle, []formquestion.Question, int, bool) {
+	sessionID, currentSession, status, ok := h.requireStaffCapability(c, allowed)
 	if !ok {
-		return "", session.Session{}, backendform.Form{}, nil, status, false
+		return "", session.Session{}, backendform.Form{}, circle.Circle{}, nil, status, false
 	}
 
-	formValue, found := h.findStaffFormForManagement(selectedCircle.ID, c.Param("formID"), false)
+	formValue, currentCircle, found := h.findManagedStaffForm(c.Param("formID"), false)
 	if !found {
-		return "", session.Session{}, backendform.Form{}, nil, http.StatusNotFound, false
+		return "", session.Session{}, backendform.Form{}, circle.Circle{}, nil, http.StatusNotFound, false
 	}
 	if h.isParticipationForm(formValue.ID) {
-		return "", session.Session{}, backendform.Form{}, nil, http.StatusBadRequest, false
+		return "", session.Session{}, backendform.Form{}, circle.Circle{}, nil, http.StatusBadRequest, false
 	}
 
 	questions, err := h.formQuestions.List(formValue.ID)
 	if err != nil {
-		return "", session.Session{}, backendform.Form{}, nil, http.StatusInternalServerError, false
+		return "", session.Session{}, backendform.Form{}, circle.Circle{}, nil, http.StatusInternalServerError, false
 	}
 
-	return sessionID, currentSession, formValue, questions, http.StatusOK, true
+	return sessionID, currentSession, formValue, currentCircle, questions, http.StatusOK, true
 }
 
 func (h *staffFormHandlers) buildStaffFormDetailResponse(
 	formValue backendform.Form,
+	circleValue staffManagedCircleResponse,
 	questions []formquestion.Question,
 	answerResponse *staffFormAnswerResponse,
 ) staffFormDetailResponse {
 	return staffFormDetailResponse{
+		Circle:              circleValue,
 		ID:                  formValue.ID,
 		Name:                formValue.Name,
 		Description:         formValue.Description,

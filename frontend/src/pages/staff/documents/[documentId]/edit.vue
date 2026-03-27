@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'documents.edit'
   }
 })
@@ -35,9 +34,7 @@ const router = useRouter()
 const sessionStore = useSessionStore()
 const documentId = computed(() => String(route.params.documentId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const detailEnabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null
-)
+const detailEnabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const documentQuery = useStaffDocumentDetailQuery(documentId, detailEnabled)
 const updateDocumentMutation = useUpdateStaffDocumentMutation(documentId)
 const deleteDocumentMutation = useDeleteStaffDocumentMutation(documentId)
@@ -53,6 +50,7 @@ watch(
     }
 
     form.value = {
+      circleId: document.circle.id,
       name: document.name,
       description: document.description,
       notes: document.notes,
@@ -79,6 +77,7 @@ async function handleSaveDocument() {
 
   try {
     await updateDocumentMutation.mutateAsync({
+      circleId: form.value.circleId,
       name: form.value.name,
       description: form.value.description,
       notes: form.value.notes,
@@ -124,7 +123,7 @@ async function handleDeleteDocument() {
         <p class="text-sm text-primary">Document Detail</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">配布資料を編集</h2>
         <div class="mt-3 text-sm text-muted">配布資料ID : {{ documentQuery.data.value.id }}</div>
-        <div class="mt-1 text-sm text-muted">{{ sessionStore.currentCircle?.name }}</div>
+        <div class="mt-1 text-sm text-muted">対象企画 : {{ documentQuery.data.value.circle.name }}</div>
         <div class="mt-3 text-sm text-muted">
           {{ documentQuery.data.value.updatedAt }} 更新 / {{ documentQuery.data.value.extension || 'FILE' }} /
           {{ formatFileSize(documentQuery.data.value.sizeBytes) }}

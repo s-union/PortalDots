@@ -123,7 +123,8 @@ describe('StaffFormAnswerDetailPage', () => {
                   body: '初期本文',
                   createdAt: '2026-03-14T02:00:00Z',
                   updatedAt: '2026-03-14T02:30:00Z',
-                  uploadCount: 0
+                  uploadCount: 0,
+                  details: {}
                 }
               ]
             }),

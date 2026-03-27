@@ -24,16 +24,13 @@ describe('StaffMailsPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('lists and creates staff mails for the current circle', async () => {
+  it('lists and creates staff mails', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: null,
       featureFlags: [],
       roles: ['admin'],
       user: {
@@ -75,6 +72,10 @@ describe('StaffMailsPage', () => {
               created
                 ? [
                     {
+                      circle: {
+                        id: 'circle-b',
+                        name: 'デモ企画B'
+                      },
                       id: 'mail-job-1',
                       subject: '搬入のご案内',
                       body: '9:00 に集合してください。',
@@ -93,10 +94,42 @@ describe('StaffMailsPage', () => {
           )
         }
 
+        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
+          return new Response(
+            JSON.stringify([
+              {
+                id: 'circle-b',
+                name: 'デモ企画B',
+                nameYomi: 'デモキカクビー',
+                groupName: '展示企画B',
+                groupNameYomi: 'テンジキカクビー',
+                participationTypeId: 'type-1',
+                participationTypeName: '一般企画',
+                tags: [],
+                notes: '',
+                submittedAt: null,
+                status: 'approved',
+                statusReason: '',
+                statusSetAt: null,
+                statusSetById: null,
+                places: []
+              }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         if (pathname.endsWith('/staff/mails') && method === 'POST') {
           created = true
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'mail-job-1',
               subject: '搬入のご案内',
               body: '9:00 に集合してください。',
@@ -125,6 +158,7 @@ describe('StaffMailsPage', () => {
 
     expect(wrapper.text()).toContain('モックメールキューはまだありません。')
 
+    await wrapper.get('select[name="circleId"]').setValue('circle-b')
     await wrapper.get('input[name="subject"]').setValue('搬入のご案内')
     await wrapper.get('textarea[name="body"]').setValue('9:00 に集合してください。')
     await wrapper.get('textarea[name="recipients"]').setValue('demo@example.com, sub@example.com')
@@ -133,6 +167,7 @@ describe('StaffMailsPage', () => {
 
     expect(wrapper.text()).toContain('搬入のご案内')
     expect(wrapper.text()).toContain('demo@example.com, sub@example.com')
+    expect(wrapper.text()).toContain('デモ企画B')
     expect(wrapper.text()).toContain('この画面で登録したメールはすべてモック扱いです。')
     expect(wrapper.text()).toContain('モック待機中')
   })

@@ -1183,6 +1183,7 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 		[]byte("%PDF-1.4 demo"),
 		"application/pdf",
 		map[string]string{
+			"circleId":    "circle-b",
 			"name":        "設営ガイド",
 			"description": "当日の設営手順です。",
 			"notes":       "責任者に共有してください。",
@@ -1224,8 +1225,8 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &staffDocuments); err != nil {
 		t.Fatalf("unmarshal staff documents: %v", err)
 	}
-	if len(staffDocuments) != 3 {
-		t.Fatalf("expected 3 staff documents for circle-b, got %#v", staffDocuments)
+	if len(staffDocuments) != 4 {
+		t.Fatalf("expected 4 managed staff documents, got %#v", staffDocuments)
 	}
 
 	recorder = doMultipartRequest(
@@ -1795,11 +1796,12 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &pages); err != nil {
 		t.Fatalf("unmarshal staff pages response: %v", err)
 	}
-	if len(pages) != 2 {
-		t.Fatalf("expected 2 staff pages for circle-b, got %#v", pages)
+	if len(pages) != 4 {
+		t.Fatalf("expected 4 managed staff pages, got %#v", pages)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"circleId":     "circle-b",
 		"title":        "スタッフ向け新着",
 		"body":         "設営順の詳細を更新しました。",
 		"notes":        "展示担当に周知済みです。",
@@ -1933,10 +1935,10 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read pages export csv: %v", err)
 	}
-	if len(rows) != 3 {
-		t.Fatalf("expected 3 csv rows, got %#v", rows)
+	if len(rows) != 5 {
+		t.Fatalf("expected 5 csv rows, got %#v", rows)
 	}
-	if rows[0][0] != "id" || rows[1][1] != "更新済みのお知らせ" {
+	if rows[0][0] != "circle_id" || rows[1][3] == "" {
 		t.Fatalf("unexpected csv rows: %#v", rows)
 	}
 
@@ -2028,8 +2030,8 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &forms); err != nil {
 		t.Fatalf("unmarshal staff forms response: %v", err)
 	}
-	if len(forms) != 3 {
-		t.Fatalf("expected 3 editable staff forms for circle-b, got %#v", forms)
+	if len(forms) != 4 {
+		t.Fatalf("expected 4 editable managed staff forms, got %#v", forms)
 	}
 	if forms[0].MaxAnswers < 1 {
 		t.Fatalf("expected max answers to be populated, got %#v", forms[0])
@@ -2049,8 +2051,8 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal staff form detail: %v", err)
 	}
-	if detail.Answer == nil || detail.Answer.Body != "展示位置は正面入口側を希望します。" {
-		t.Fatalf("unexpected staff form detail: %#v", detail)
+	if detail.Answer != nil {
+		t.Fatalf("expected staff form detail answer to be omitted, got %#v", detail)
 	}
 	if detail.MaxAnswers != 2 || len(detail.AnswerableTags) != 1 || detail.ConfirmationMessage == "" {
 		t.Fatalf("expected extended staff form fields, got %#v", detail)
@@ -2060,6 +2062,7 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
+		"circleId":            "circle-b",
 		"name":                "追加ヒアリング",
 		"openAt":              futureOpenAt,
 		"closeAt":             futureCloseAt,
@@ -2136,7 +2139,7 @@ func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal updated staff form detail: %v", err)
 	}
-	if detail.Name != "更新後フォーム" || detail.Answer == nil || len(detail.Answer.Uploads) != 1 {
+	if detail.Name != "更新後フォーム" || detail.Answer != nil {
 		t.Fatalf("unexpected updated staff form detail: %#v", detail)
 	}
 	if detail.MaxAnswers != 4 || len(detail.AnswerableTags) != 2 || detail.ConfirmationMessage != "更新完了です。" {
@@ -3377,6 +3380,7 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"circleId": "circle-b",
 		"title":    "スタッフ向け新着",
 		"body":     "設営順の詳細を更新しました。",
 		"isPublic": true,
@@ -3386,6 +3390,7 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
+		"circleId":            "circle-b",
 		"name":                "追加ヒアリング",
 		"description":         "当日の搬入担当者を確認します。",
 		"openAt":              openAt,
@@ -3401,6 +3406,7 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
+		"circleId":   "circle-b",
 		"subject":    "搬入のご案内",
 		"body":       "9:00 に集合してください。",
 		"recipients": []string{"demo@example.com"},
@@ -3480,12 +3486,12 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 		"body":     "本文",
 		"isPublic": true,
 	})
-	if recorder.Code != http.StatusConflict {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusConflict, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	selectCircle(t, server, cookies, "circle-b")
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"circleId": "circle-b",
 		"title":    "新着ページ",
 		"body":     "本文",
 		"isPublic": true,
@@ -3554,7 +3560,7 @@ func TestStaffExportsDownloadArtifacts(t *testing.T) {
 	if len(rows) < 5 {
 		t.Fatalf("expected summary csv rows, got %#v", rows)
 	}
-	if rows[0][0] != "resource_type" {
+	if rows[0][0] != "resource_type" || rows[0][1] != "circle_id" || rows[0][2] != "circle_name" {
 		t.Fatalf("unexpected csv header: %#v", rows[0])
 	}
 
@@ -3587,7 +3593,7 @@ func TestStaffExportsDownloadArtifacts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read readme: %v", err)
 	}
-	if !bytes.Contains(readmeBytes, []byte("circle_id=circle-b")) {
+	if !bytes.Contains(readmeBytes, []byte("scope=all_managed_circles")) {
 		t.Fatalf("unexpected readme: %s", string(readmeBytes))
 	}
 }
@@ -3925,6 +3931,7 @@ func TestStaffMailsListAndEnqueue(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
+		"circleId":   "circle-b",
 		"subject":    "搬入のご案内",
 		"body":       "9:00 に集合してください。",
 		"recipients": []string{"demo@example.com", "sub@example.com"},
@@ -3964,6 +3971,7 @@ func TestStaffMailValidation(t *testing.T) {
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
+		"circleId":   "circle-b",
 		"subject":    "   ",
 		"body":       "   ",
 		"recipients": []string{},

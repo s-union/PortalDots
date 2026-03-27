@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'forms.edit'
   }
 })
@@ -18,6 +17,7 @@ import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
 import {
   createDefaultStaffFormPayload,
   extractStaffFormValidationMessage,
@@ -32,6 +32,7 @@ const router = useRouter()
 const createFormMutation = useCreateStaffFormMutation()
 const form = ref(createDefaultStaffFormPayload())
 const errorMessage = ref('')
+const circlesQuery = useAllStaffCirclesQuery(true)
 
 const openAtInput = computed({
   get: () => formatStaffFormDateTimeLocalValue(form.value.openAt),
@@ -83,6 +84,19 @@ async function handleCreateForm() {
       </SurfaceHeader>
 
       <form class="grid gap-4 px-6 py-6" @submit.prevent="handleCreateForm">
+        <label class="grid gap-2 text-sm text-body">
+          <span>
+            対象企画
+            <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
+          </span>
+          <select v-model="form.circleId" name="circleId">
+            <option value="">企画を選択してください</option>
+            <option v-for="circle in circlesQuery.data.value ?? []" :key="circle.id" :value="circle.id">
+              {{ circle.name }}
+            </option>
+          </select>
+        </label>
+
         <label class="grid gap-2 text-sm text-body">
           <span>
             フォーム名

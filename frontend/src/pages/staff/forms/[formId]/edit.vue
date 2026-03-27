@@ -5,7 +5,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'forms.edit'
   }
 })
@@ -44,13 +43,14 @@ const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const formQuery = useStaffFormDetailQuery(
   formId,
-  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+  computed(() => staffStatusQuery.data.value?.authorized === true)
 )
 const updateFormMutation = useUpdateStaffFormMutation(formId)
 const copyFormMutation = useCopyStaffFormMutation()
 const deleteFormMutation = useDeleteStaffFormMutation()
 const errorMessage = ref('')
 const editForm = ref({
+  circleId: '',
   name: '',
   description: '',
   openAt: '',
@@ -93,6 +93,7 @@ watch(
     }
 
     editForm.value = {
+      circleId: value.circle.id,
       name: value.name,
       description: value.description,
       openAt: value.openAt,
@@ -111,6 +112,7 @@ async function handleSaveForm() {
 
   try {
     await updateFormMutation.mutateAsync({
+      circleId: editForm.value.circleId,
       name: editForm.value.name,
       description: editForm.value.description,
       openAt: editForm.value.openAt,
@@ -171,6 +173,7 @@ async function handleDeleteForm() {
         <p class="text-sm text-primary">Form Detail</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">設定</h2>
         <div class="mt-3 text-sm text-muted">フォームID : {{ formQuery.data.value.id }}</div>
+        <div class="mt-1 text-sm text-muted">対象企画 : {{ formQuery.data.value.circle.name || '-' }}</div>
         <p v-if="isParticipationForm" class="mt-3 text-sm text-muted">
           このフォームは参加登録フォームです。基本設定は参加種別画面で管理し、ここでは設問編集のみ行えます。
         </p>

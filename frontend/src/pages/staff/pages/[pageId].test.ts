@@ -92,6 +92,10 @@ describe('StaffPageDetailPage', () => {
           return new Response(
             JSON.stringify([
               {
+                circle: {
+                  id: 'circle-b',
+                  name: 'デモ企画B'
+                },
                 id: 'document-circle-b-1',
                 name: '展示ガイド',
                 description: 'Bブロック向けの展示ガイドです。',
@@ -117,6 +121,10 @@ describe('StaffPageDetailPage', () => {
         if (pathname.endsWith('/staff/pages/page-circle-b-1') && method === 'GET') {
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'page-circle-b-1',
               title: '展示担当向け連絡',
               body: '初期本文です。',
@@ -144,6 +152,10 @@ describe('StaffPageDetailPage', () => {
         if (pathname.endsWith('/staff/pages/page-circle-b-1') && method === 'PUT') {
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'page-circle-b-1',
               title: '展示担当向け更新連絡',
               publishedAt: '2026-03-05T10:00:00Z',
@@ -161,6 +173,10 @@ describe('StaffPageDetailPage', () => {
           currentPinned = true
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'page-circle-b-1',
               title: '展示担当向け更新連絡',
               publishedAt: '2026-03-05T10:00:00Z',

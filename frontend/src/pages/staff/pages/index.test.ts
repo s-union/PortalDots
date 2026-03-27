@@ -26,16 +26,13 @@ describe('StaffPagesIndexPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('lists and creates staff pages for the current circle', async () => {
+  it('lists and creates staff pages', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: null,
       featureFlags: [],
       roles: ['admin'],
       user: {
@@ -118,10 +115,42 @@ describe('StaffPagesIndexPage', () => {
           )
         }
 
+        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
+          return new Response(
+            JSON.stringify([
+              {
+                id: 'circle-b',
+                name: 'デモ企画B',
+                nameYomi: 'デモキカクビー',
+                groupName: '展示企画B',
+                groupNameYomi: 'テンジキカクビー',
+                participationTypeId: 'type-1',
+                participationTypeName: '一般企画',
+                tags: [],
+                notes: '',
+                submittedAt: null,
+                status: 'approved',
+                statusReason: '',
+                statusSetAt: null,
+                statusSetById: null,
+                places: []
+              }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         if (pathname.endsWith('/staff/documents') && method === 'GET') {
           return new Response(
             JSON.stringify([
               {
+                circle: {
+                  id: 'circle-b',
+                  name: 'デモ企画B'
+                },
                 id: 'document-circle-b-1',
                 name: '展示ガイド',
                 description: 'Bブロック向けの展示ガイドです。',
@@ -148,6 +177,10 @@ describe('StaffPagesIndexPage', () => {
           return new Response(
             JSON.stringify([
               {
+                circle: {
+                  id: 'circle-b',
+                  name: 'デモ企画B'
+                },
                 id: 'page-generated-1',
                 title: createdTitle,
                 publishedAt: '2026-03-12T00:00:00Z',
@@ -167,6 +200,10 @@ describe('StaffPagesIndexPage', () => {
             createdTitle === ''
               ? [
                   {
+                    circle: {
+                      id: 'circle-b',
+                      name: 'デモ企画B'
+                    },
                     id: 'page-circle-b-private',
                     title: '非公開メモ',
                     publishedAt: '2026-03-04T09:00:00Z',
@@ -176,6 +213,10 @@ describe('StaffPagesIndexPage', () => {
                 ]
               : [
                   {
+                    circle: {
+                      id: 'circle-b',
+                      name: 'デモ企画B'
+                    },
                     id: 'page-generated-1',
                     title: createdTitle,
                     publishedAt: '2026-03-12T00:00:00Z',
@@ -183,6 +224,10 @@ describe('StaffPagesIndexPage', () => {
                     isPublic: true
                   },
                   {
+                    circle: {
+                      id: 'circle-b',
+                      name: 'デモ企画B'
+                    },
                     id: 'page-circle-b-private',
                     title: '非公開メモ',
                     publishedAt: '2026-03-04T09:00:00Z',
@@ -201,6 +246,10 @@ describe('StaffPagesIndexPage', () => {
           createdTitle = '新着スタッフ連絡'
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'page-generated-1',
               title: createdTitle,
               publishedAt: '2026-03-12T00:00:00Z',
@@ -230,6 +279,7 @@ describe('StaffPagesIndexPage', () => {
     expect(wrapper.text()).toContain('保存後にモックメール配信を予約する')
     expect(wrapper.text()).toContain('配信予約はモックキューへの登録のみ行います。実メール送信は行いません。')
 
+    await wrapper.get('select[name="circleId"]').setValue('circle-b')
     await wrapper.get('input[name="title"]').setValue('新着スタッフ連絡')
     await wrapper.get('textarea[name="body"]').setValue('設営順を更新しました。')
     await wrapper.get('textarea[name="notes"]').setValue('スタッフ向けメモ')

@@ -5,7 +5,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'forms.edit'
   }
 })
@@ -38,7 +37,7 @@ const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const formQuery = useStaffFormDetailQuery(
   formId,
-  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
+  computed(() => staffStatusQuery.data.value?.authorized === true)
 )
 const createQuestionMutation = useCreateStaffFormQuestionMutation(formId)
 const updateQuestionMutation = useUpdateStaffFormQuestionMutation(formId)

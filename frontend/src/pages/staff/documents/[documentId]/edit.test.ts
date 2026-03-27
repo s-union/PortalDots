@@ -99,6 +99,10 @@ describe('StaffDocumentDetailPage', () => {
         if (pathname.endsWith('/staff/documents/document-circle-b-1/edit') && method === 'GET') {
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'document-circle-b-1',
               name: '展示ガイド',
               description: 'Bブロック向けの展示ガイドです。',
@@ -123,6 +127,10 @@ describe('StaffDocumentDetailPage', () => {
         if (pathname.endsWith('/staff/documents/document-circle-b-1') && method === 'PUT') {
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'document-circle-b-1',
               name: '展示ガイド改訂版',
               description: '更新版です。',
@@ -239,6 +247,10 @@ describe('StaffDocumentDetailPage', () => {
         if (pathname.endsWith('/staff/documents/document-circle-b-1/edit') && method === 'GET') {
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'document-circle-b-1',
               name: '展示ガイド',
               description: 'Bブロック向けの展示ガイドです。',

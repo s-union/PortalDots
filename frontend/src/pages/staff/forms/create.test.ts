@@ -31,10 +31,7 @@ describe('StaffFormCreatePage', () => {
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: null,
       featureFlags: [],
       roles: ['admin'],
       user: {
@@ -68,6 +65,10 @@ describe('StaffFormCreatePage', () => {
           createdRequestBody = await parseRequestBody(input, init?.body)
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'form-generated-1',
               name: '追加ヒアリング',
               description: '当日の搬入担当者を確認します。',
@@ -96,6 +97,34 @@ describe('StaffFormCreatePage', () => {
           })
         }
 
+        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
+          return new Response(
+            JSON.stringify([
+              {
+                id: 'circle-b',
+                name: 'デモ企画B',
+                nameYomi: 'デモキカクビー',
+                groupName: '展示企画B',
+                groupNameYomi: 'テンジキカクビー',
+                participationTypeId: 'type-1',
+                participationTypeName: '一般企画',
+                tags: [],
+                notes: '',
+                submittedAt: null,
+                status: 'approved',
+                statusReason: '',
+                statusSetAt: null,
+                statusSetById: null,
+                places: []
+              }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         throw new Error(`Unexpected request: ${method} ${url}`)
       })
     )
@@ -107,6 +136,7 @@ describe('StaffFormCreatePage', () => {
     })
     await flushPromises()
 
+    await wrapper.get('select[name="circleId"]').setValue('circle-b')
     await wrapper.get('input[name="name"]').setValue('追加ヒアリング')
     await wrapper.get('textarea[name="description"]').setValue('当日の搬入担当者を確認します。')
     await wrapper.get('input[name="openAt"]').setValue('2026-03-15T09:00')
@@ -118,6 +148,7 @@ describe('StaffFormCreatePage', () => {
     await flushPromises()
 
     expect(createdRequestBody).toMatchObject({
+      circleId: 'circle-b',
       maxAnswers: 3,
       answerableTags: ['展示', '必須'],
       confirmationMessage: '回答ありがとうございました。'

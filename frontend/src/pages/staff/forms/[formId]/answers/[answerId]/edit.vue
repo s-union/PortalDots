@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'formAnswers.edit'
   }
 })
@@ -39,7 +38,7 @@ const route = useRoute('/staff/forms/[formId]/answers/[answerId]/edit')
 const router = useRouter()
 const formId = computed(() => String(route.params.formId ?? ''))
 const answerId = computed(() => String(route.params.answerId ?? ''))
-const { enabled } = useAuthorizedStaffContext({ requiresCircle: true })
+const { enabled } = useAuthorizedStaffContext()
 const answerQuery = useStaffFormAnswerDetailQuery(formId, answerId, enabled)
 const updateAnswerMutation = useUpdateStaffFormAnswerMutation(formId, answerId)
 const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId)

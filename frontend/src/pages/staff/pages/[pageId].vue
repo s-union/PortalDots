@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'pages.edit'
   }
 })
@@ -37,9 +36,7 @@ const router = useRouter()
 const sessionStore = useSessionStore()
 const pageId = computed(() => String(route.params.pageId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const pageFormEnabled = computed(
-  () => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null
-)
+const pageFormEnabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const pageQuery = useStaffPageDetailQuery(pageId, pageFormEnabled)
 const tagsQuery = useStaffTagsQuery(pageFormEnabled)
 const documentsQuery = useStaffDocumentsQuery(pageFormEnabled)
@@ -50,6 +47,9 @@ const form = useStaffPageForm()
 const errorMessage = ref('')
 const successMessage = ref('')
 const viewableTagsText = ref('')
+const availableDocuments = computed(() =>
+  (documentsQuery.data.value ?? []).filter((document) => document.circle.id === (pageQuery.data.value?.circle.id ?? ''))
+)
 
 watch(
   () => pageQuery.data.value,
@@ -59,6 +59,7 @@ watch(
     }
 
     form.value = {
+      circleId: page.circle.id,
       title: page.title,
       body: page.body,
       notes: page.notes,
@@ -86,6 +87,7 @@ async function handleSavePage() {
 
   try {
     await updatePageMutation.mutateAsync({
+      circleId: form.value.circleId,
       title: form.value.title,
       body: form.value.body,
       notes: form.value.notes,
@@ -173,7 +175,7 @@ function handleDocumentChange(documentId: string, event: Event) {
         <p class="text-sm text-primary">Page Detail</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">お知らせを編集</h2>
         <div class="mt-3 text-sm text-muted">お知らせID : {{ pageQuery.data.value.id }}</div>
-        <div class="mt-1 text-sm text-muted">{{ sessionStore.currentCircle?.name }}</div>
+        <div class="mt-1 text-sm text-muted">対象企画 : {{ pageQuery.data.value.circle.name }}</div>
       </SurfaceCard>
 
       <SettingsSection title="お知らせ内容">
@@ -218,13 +220,13 @@ function handleDocumentChange(documentId: string, event: Event) {
                 配布資料を読み込み中...
               </div>
               <div
-                v-else-if="(documentsQuery.data.value?.length ?? 0) === 0"
+                v-else-if="availableDocuments.length === 0"
                 class="rounded border border-border bg-surface-light px-4 py-3 text-muted"
               >
                 選択できる配布資料はありません。
               </div>
               <div v-else class="grid gap-2 rounded border border-border bg-surface-light p-4">
-                <label v-for="document in documentsQuery.data.value" :key="document.id" class="flex items-start gap-3">
+                <label v-for="document in availableDocuments" :key="document.id" class="flex items-start gap-3">
                   <input
                     :checked="form.documentIds.includes(document.id)"
                     type="checkbox"

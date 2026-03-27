@@ -7,7 +7,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
-	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/staffpermission"
 )
@@ -267,6 +266,14 @@ func canDeleteContactCategories(user *auth.User) bool {
 func canUseMailQueue(user *auth.User) bool     { return canAccessCapability(user, "mailQueue.use") }
 func canUseStaffExports(user *auth.User) bool  { return canAccessCapability(user, "exports.use") }
 func canViewActivityLogs(user *auth.User) bool { return canAccessCapability(user, "activityLogs.read") }
+func canListManagedCircles(user *auth.User) bool {
+	return canReadCircles(user) ||
+		canReadPages(user) ||
+		canReadDocuments(user) ||
+		canReadForms(user) ||
+		canUseMailQueue(user) ||
+		canUseStaffExports(user)
+}
 func canManagePortalSettings(user *auth.User) bool {
 	return userHasAnyRole(user, "admin")
 }
@@ -280,23 +287,6 @@ func (s *sharedDeps) requireStaffCapability(c echo.Context, allowed func(*auth.U
 		return "", session.Session{}, http.StatusForbidden, false
 	}
 	return sessionID, currentSession, http.StatusOK, true
-}
-
-// requireStaffWithCircle combines staff capability check and current circle resolution
-// into a single call, eliminating repeated resolveCurrentCircle + error handling boilerplate.
-func (s *sharedDeps) requireStaffWithCircle(c echo.Context, circles circle.Catalog, allowed func(*auth.User) bool) (string, session.Session, *circleInfo, int, bool) {
-	sessionID, currentSession, status, ok := s.requireStaffCapability(c, allowed)
-	if !ok {
-		return "", session.Session{}, nil, status, false
-	}
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, circles, s.sessions)
-	if err != nil {
-		return "", session.Session{}, nil, http.StatusInternalServerError, false
-	}
-	if selectedCircle == nil {
-		return "", session.Session{}, nil, http.StatusConflict, false
-	}
-	return sessionID, currentSession, selectedCircle, http.StatusOK, true
 }
 
 func userHasAnyRole(user *auth.User, roles ...string) bool {

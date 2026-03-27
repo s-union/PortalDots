@@ -90,6 +90,10 @@ describe('StaffFormEditPage', () => {
         if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'GET') {
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'form-circle-b-1',
               name: updatedName,
               description: '展示レイアウトと機材使用申請を提出してください。',
@@ -127,6 +131,10 @@ describe('StaffFormEditPage', () => {
           updatedConfirmationMessage = '送信が完了しました。'
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'form-circle-b-1',
               name: updatedName,
               description: '更新後の説明',

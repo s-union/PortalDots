@@ -76,6 +76,10 @@ describe('StaffFormsIndexPage', () => {
           return new Response(
             JSON.stringify([
               {
+                circle: {
+                  id: 'circle-b',
+                  name: 'デモ企画B'
+                },
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
                 description: '展示レイアウトと機材使用申請を提出してください。',
@@ -91,6 +95,10 @@ describe('StaffFormsIndexPage', () => {
                 isParticipationForm: false
               },
               {
+                circle: {
+                  id: 'circle-b',
+                  name: 'デモ企画B'
+                },
                 id: 'form-circle-b-closed',
                 name: '締切済みフォーム',
                 description: '',
@@ -183,6 +191,10 @@ describe('StaffFormsIndexPage', () => {
           return new Response(
             JSON.stringify([
               {
+                circle: {
+                  id: 'circle-b',
+                  name: 'デモ企画B'
+                },
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
                 description: '展示レイアウトと機材使用申請を提出してください。',
@@ -285,6 +297,10 @@ describe('StaffFormsIndexPage', () => {
           return new Response(
             JSON.stringify([
               {
+                circle: {
+                  id: 'circle-b',
+                  name: 'デモ企画B'
+                },
                 id: 'form-circle-b-1',
                 name: '展示チェックフォーム',
                 description: '展示レイアウトと機材使用申請を提出してください。',
@@ -310,6 +326,10 @@ describe('StaffFormsIndexPage', () => {
         if (pathname.endsWith('/staff/forms/form-circle-b-1/copy') && method === 'POST') {
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'form-circle-b-copy',
               name: '展示チェックフォームのコピー',
               description: '展示レイアウトと機材使用申請を提出してください。',
@@ -415,6 +435,10 @@ describe('StaffFormsIndexPage', () => {
     await router.isReady()
 
     const forms = Array.from({ length: 11 }, (_, index) => ({
+      circle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
       id: `form-circle-b-${index + 1}`,
       name: index === 10 ? '物品申請フォーム' : `展示チェックフォーム${index + 1}`,
       description: index === 10 ? '備品を申請してください。' : '展示レイアウトと機材使用申請を提出してください。',

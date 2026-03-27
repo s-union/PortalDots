@@ -6,6 +6,10 @@ import { extractValidationMessage, parseValidationError } from '@/lib/api/valida
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffDocumentSummary {
+  circle: {
+    id: string
+    name: string
+  }
   id: string
   name: string
   description: string
@@ -26,6 +30,7 @@ export type StaffDocumentDetail = StaffDocumentSummary & {
 }
 
 export interface MutateStaffDocumentPayload {
+  circleId: string
   name: string
   description: string
   notes: string
@@ -69,6 +74,7 @@ export async function fetchStaffDocument(documentId: string) {
 
 export async function createStaffDocument(payload: MutateStaffDocumentPayload, csrfToken: string) {
   const formData = new FormData()
+  formData.set('circleId', payload.circleId)
   formData.set('name', payload.name)
   formData.set('description', payload.description)
   formData.set('notes', payload.notes)
@@ -98,6 +104,7 @@ export async function createStaffDocument(payload: MutateStaffDocumentPayload, c
 
 export async function updateStaffDocument(documentId: string, payload: MutateStaffDocumentPayload, csrfToken: string) {
   const formData = new FormData()
+  formData.set('circleId', payload.circleId)
   formData.set('name', payload.name)
   formData.set('description', payload.description)
   formData.set('notes', payload.notes)
@@ -240,6 +247,7 @@ export function useDeleteStaffDocumentMutation(documentId: MaybeRefOrGetter<stri
 
 export function useStaffDocumentForm() {
   return ref<MutateStaffDocumentPayload>({
+    circleId: '',
     name: '',
     description: '',
     notes: '',

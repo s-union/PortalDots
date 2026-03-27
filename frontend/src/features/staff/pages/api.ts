@@ -6,6 +6,10 @@ import { extractValidationMessage, parseValidationError } from '@/lib/api/valida
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffPageSummary {
+  circle: {
+    id: string
+    name: string
+  }
   id: string
   title: string
   publishedAt: string
@@ -22,6 +26,7 @@ export type StaffPageDetail = StaffPageSummary & {
 }
 
 export interface MutateStaffPagePayload {
+  circleId: string
   title: string
   body: string
   notes: string
@@ -279,6 +284,7 @@ export function useDeleteStaffPageMutation(pageId: MaybeRefOrGetter<string>) {
 
 export function useStaffPageForm() {
   return ref<MutateStaffPagePayload>({
+    circleId: '',
     title: '',
     body: '',
     notes: '',

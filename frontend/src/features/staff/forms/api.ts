@@ -30,6 +30,7 @@ export const allowedQuestionTypes = [
 ] as const
 
 interface CreateStaffFormPayload {
+  circleId: string
   name: string
   description: string
   openAt: string
@@ -503,6 +504,7 @@ export function createDefaultStaffFormPayload(): CreateStaffFormPayload {
   closeAt.setUTCHours(23, 59, 59, 0)
 
   return {
+    circleId: '',
     name: '',
     description: '',
     openAt: openAt.toISOString(),

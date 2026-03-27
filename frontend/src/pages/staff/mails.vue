@@ -4,7 +4,6 @@ definePage({
     requiresAuth: true,
     requiresStaffRole: true,
     requiresStaffAuthorized: true,
-    requiresCircle: true,
     staffCapability: 'mailQueue.use'
   }
 })
@@ -19,6 +18,7 @@ import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants, formControlVariants } from '@/lib/ui/variants'
+import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractStaffMailValidationMessage,
@@ -31,9 +31,9 @@ import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const mailsQuery = useStaffMailsQuery(
-  computed(() => staffStatusQuery.data.value?.authorized === true && sessionStore.currentCircle !== null)
-)
+const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
+const circlesQuery = useAllStaffCirclesQuery(enabled)
+const mailsQuery = useStaffMailsQuery(enabled)
 const createMailMutation = useCreateStaffMailMutation()
 const form = useStaffMailForm()
 const errorMessage = ref('')
@@ -43,11 +43,13 @@ async function handleCreateMail() {
 
   try {
     await createMailMutation.mutateAsync({
+      circleId: form.value.circleId,
       subject: form.value.subject,
       body: form.value.body,
       recipients: normalizeRecipientList(form.value.recipientsText)
     })
     form.value = {
+      circleId: '',
       subject: '',
       body: '',
       recipientsText: ''
@@ -63,7 +65,7 @@ async function handleCreateMail() {
     <PageHeader
       eyebrow="Staff Mail Queue"
       title="メールキュー"
-      :description="`${sessionStore.currentCircle?.name ?? '企画未選択'} 向けのメールをモックキューに積みます。実メールは送信しません。`"
+      description="対象企画を選んでモックメールをキューに積みます。実メールは送信しません。"
     >
       <template #actions>
         <BackLink to="/staff">Staff top へ戻る</BackLink>
@@ -79,6 +81,15 @@ async function handleCreateMail() {
           <p class="rounded border border-border bg-surface-light px-4 py-3 text-sm text-muted">
             この画面で登録したメールはすべてモック扱いです。宛先や本文は確認できますが、外部送信は行いません。
           </p>
+          <label class="grid gap-2 text-sm text-body">
+            <span class="font-medium">対象企画</span>
+            <select v-model="form.circleId" :class="formControlVariants()" name="circleId">
+              <option value="">企画を選択してください</option>
+              <option v-for="circle in circlesQuery.data.value ?? []" :key="circle.id" :value="circle.id">
+                {{ circle.name }}
+              </option>
+            </select>
+          </label>
           <label class="grid gap-2 text-sm text-body">
             <span class="font-medium">件名</span>
             <input v-model="form.subject" :class="formControlVariants()" name="subject" type="text" />
@@ -131,6 +142,7 @@ async function handleCreateMail() {
                 {{ mail.status === 'sent' ? 'モック送信済み' : 'モック待機中' }}
               </StatusBadge>
             </div>
+            <p class="mt-2 text-sm text-muted-2">circle: {{ mail.circle.name }} ({{ mail.circle.id }})</p>
             <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{ mail.body }}</p>
             <p class="mt-4 text-sm text-muted-2">recipients: {{ mail.recipients.join(', ') }}</p>
             <p class="mt-2 text-xs text-muted-2">

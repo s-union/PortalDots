@@ -27,16 +27,13 @@ describe('StaffDocumentsIndexPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('lists and uploads staff documents for the current circle', async () => {
+  it('lists and uploads staff documents', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: null,
       featureFlags: [],
       roles: ['admin'],
       user: {
@@ -77,10 +74,42 @@ describe('StaffDocumentsIndexPage', () => {
           })
         }
 
+        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
+          return new Response(
+            JSON.stringify([
+              {
+                id: 'circle-b',
+                name: 'デモ企画B',
+                nameYomi: 'デモキカクビー',
+                groupName: '展示企画B',
+                groupNameYomi: 'テンジキカクビー',
+                participationTypeId: 'type-1',
+                participationTypeName: '一般企画',
+                tags: [],
+                notes: '',
+                submittedAt: null,
+                status: 'approved',
+                statusReason: '',
+                statusSetAt: null,
+                statusSetById: null,
+                places: []
+              }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         if (pathname.endsWith('/staff/documents') && method === 'GET') {
           const documents = uploaded
             ? [
                 {
+                  circle: {
+                    id: 'circle-b',
+                    name: 'デモ企画B'
+                  },
                   id: 'document-generated-1',
                   name: '設営チェックシート',
                   description: '当日の確認事項です。',
@@ -96,6 +125,10 @@ describe('StaffDocumentsIndexPage', () => {
                   downloadUrl: '/v1/staff/documents/document-generated-1'
                 },
                 {
+                  circle: {
+                    id: 'circle-b',
+                    name: 'デモ企画B'
+                  },
                   id: 'document-circle-b-private',
                   name: '内部メモ',
                   description: '非公開資料',
@@ -113,6 +146,10 @@ describe('StaffDocumentsIndexPage', () => {
               ]
             : [
                 {
+                  circle: {
+                    id: 'circle-b',
+                    name: 'デモ企画B'
+                  },
                   id: 'document-circle-b-private',
                   name: '内部メモ',
                   description: '非公開資料',
@@ -139,6 +176,10 @@ describe('StaffDocumentsIndexPage', () => {
           uploaded = true
           return new Response(
             JSON.stringify({
+              circle: {
+                id: 'circle-b',
+                name: 'デモ企画B'
+              },
               id: 'document-generated-1',
               name: '設営チェックシート',
               description: '当日の確認事項です。',
@@ -173,6 +214,7 @@ describe('StaffDocumentsIndexPage', () => {
 
     expect(wrapper.text()).toContain('内部メモ')
 
+    await wrapper.get('select[name="circleId"]').setValue('circle-b')
     await wrapper.get('input[name="name"]').setValue('設営チェックシート')
     await wrapper.get('textarea[name="description"]').setValue('当日の確認事項です。')
     await wrapper.get('textarea[name="notes"]').setValue('設営責任者に配布します。')

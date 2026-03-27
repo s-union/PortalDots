@@ -82,7 +82,7 @@ func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 }
 
 func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
-	_, _, status, ok := h.requireCircleRead(c)
+	_, _, status, ok := h.requireStaffCapability(c, canListManagedCircles)
 	if !ok {
 		return statusError(c, status)
 	}
