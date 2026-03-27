@@ -29,7 +29,9 @@ type Circle struct {
 	Tags                  []string
 	InvitationToken       string
 	SubmittedAt           *time.Time
+	UpdatedAt             time.Time
 	Notes                 string
+	CanChangeGroupName    bool
 	Status                string
 	StatusReason          string
 	StatusSetAt           *time.Time
@@ -51,6 +53,7 @@ type CreateCircleParams struct {
 	ParticipationTypeID   string
 	ParticipationTypeName string
 	Notes                 string
+	CanChangeGroupName    bool
 }
 
 type UpdateCircleParams struct {
@@ -81,6 +84,7 @@ type Catalog interface {
 	RemoveMember(requester *auth.User, circleID, targetUserID string) error
 	RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error)
 	JoinByToken(user *auth.User, token string) (Circle, error)
+	FindByInvitationToken(token string) (Circle, error)
 }
 
 type StaticCatalog struct {
@@ -104,6 +108,8 @@ func NewStaticCatalog(cfg []config.Circle, authUser config.AuthUser, users []con
 			ParticipationTypeName: item.ParticipationTypeName,
 			Tags:                  slices.Clone(item.Tags),
 			InvitationToken:       item.ID + "-invite-token",
+			UpdatedAt:             time.Now().UTC(),
+			CanChangeGroupName:    true,
 			Status:                "pending",
 			Places:                []string{},
 		})
@@ -177,6 +183,8 @@ func (c *StaticCatalog) Create(name, nameYomi, groupName, groupNameYomi, partici
 		ParticipationTypeName: participationTypeName,
 		Tags:                  slices.Clone(tags),
 		Notes:                 notes,
+		UpdatedAt:             time.Now().UTC(),
+		CanChangeGroupName:    true,
 		Status:                status,
 		StatusReason:          statusReason,
 		Places:                slices.Clone(placeIDs),
@@ -235,7 +243,22 @@ func (c *StaticCatalog) GetUserCircle(_ *auth.User, circleID string) (Circle, er
 }
 
 func (c *StaticCatalog) CreateForUser(_ *auth.User, params CreateCircleParams) (Circle, error) {
-	return c.Create(params.Name, params.NameYomi, params.GroupName, params.GroupNameYomi, params.ParticipationTypeID, params.ParticipationTypeName, params.Notes, nil, "pending", "", "", nil)
+	created, err := c.Create(params.Name, params.NameYomi, params.GroupName, params.GroupNameYomi, params.ParticipationTypeID, params.ParticipationTypeName, params.Notes, nil, "pending", "", "", nil)
+	if err != nil {
+		return Circle{}, err
+	}
+
+	created.CanChangeGroupName = params.CanChangeGroupName
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for index := range c.circles {
+		if c.circles[index].ID == created.ID {
+			c.circles[index].CanChangeGroupName = params.CanChangeGroupName
+			return cloneCircle(c.circles[index]), nil
+		}
+	}
+
+	return created, nil
 }
 
 func (c *StaticCatalog) UpdateForUser(_ *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
@@ -251,6 +274,7 @@ func (c *StaticCatalog) UpdateForUser(_ *auth.User, circleID string, params Upda
 		c.circles[index].GroupName = params.GroupName
 		c.circles[index].GroupNameYomi = params.GroupNameYomi
 		c.circles[index].Notes = params.Notes
+		c.circles[index].UpdatedAt = time.Now().UTC()
 		return cloneCircle(c.circles[index]), nil
 	}
 
@@ -269,6 +293,9 @@ func (c *StaticCatalog) Submit(_ *auth.User, circleID string) (Circle, error) {
 	for index := range c.circles {
 		if c.circles[index].ID != circleID {
 			continue
+		}
+		if c.circles[index].SubmittedAt != nil {
+			return Circle{}, ErrAlreadySubmitted
 		}
 		c.circles[index].SubmittedAt = &now
 		return cloneCircle(c.circles[index]), nil
@@ -360,13 +387,26 @@ func (c *StaticCatalog) RemoveMember(requester *auth.User, circleID, targetUserI
 	return nil
 }
 
-func (c *StaticCatalog) RegenerateInvitationToken(_ *auth.User, circleID string) (Circle, error) {
+func (c *StaticCatalog) RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	for index := range c.circles {
 		if c.circles[index].ID != circleID {
 			continue
+		}
+		requesterIsLeader := false
+		for _, member := range c.members[circleID] {
+			if member.UserID == user.ID && member.IsLeader {
+				requesterIsLeader = true
+				break
+			}
+		}
+		if !requesterIsLeader {
+			return Circle{}, ErrForbidden
+		}
+		if c.circles[index].SubmittedAt != nil {
+			return Circle{}, ErrAlreadySubmitted
 		}
 		c.circles[index].InvitationToken = c.circles[index].ID + "-invite-token-regenerated"
 		return cloneCircle(c.circles[index]), nil
@@ -376,6 +416,10 @@ func (c *StaticCatalog) RegenerateInvitationToken(_ *auth.User, circleID string)
 }
 
 func (c *StaticCatalog) JoinByToken(_ *auth.User, token string) (Circle, error) {
+	return c.FindByInvitationToken(token)
+}
+
+func (c *StaticCatalog) FindByInvitationToken(token string) (Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 

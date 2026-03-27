@@ -14,8 +14,12 @@ type PublicRoutes struct {
 	UpdateProfile            echo.HandlerFunc
 	UpdatePassword           echo.HandlerFunc
 	DeleteAccount            echo.HandlerFunc
+	Register                 echo.HandlerFunc
 	Login                    echo.HandlerFunc
 	Logout                   echo.HandlerFunc
+	GetAuthVerification      echo.HandlerFunc
+	RequestAuthVerification  echo.HandlerFunc
+	ConfirmAuthVerification  echo.HandlerFunc
 	ListContactCategories    echo.HandlerFunc
 	ListContactHistory       echo.HandlerFunc
 	SubmitContact            echo.HandlerFunc
@@ -126,35 +130,36 @@ type StaffRoutes struct {
 
 // WorkspaceRoutes holds handler function references for workspace endpoints.
 type WorkspaceRoutes struct {
-	ListCircles                echo.HandlerFunc
-	ListParticipationTypes     echo.HandlerFunc
-	CreateCircle               echo.HandlerFunc
-	SetCurrentCircle           echo.HandlerFunc
-	GetCurrentCircleDetail     echo.HandlerFunc
-	UpdateCurrentCircle        echo.HandlerFunc
-	DeleteCurrentCircle        echo.HandlerFunc
-	SubmitCurrentCircle        echo.HandlerFunc
-	ListCurrentCircleMembers   echo.HandlerFunc
-	AddCurrentCircleMember     echo.HandlerFunc
-	RemoveCurrentCircleMember  echo.HandlerFunc
-	RegenerateInvitationToken  echo.HandlerFunc
-	JoinCircleByToken          echo.HandlerFunc
-	ListDocuments              echo.HandlerFunc
-	GetDocument                echo.HandlerFunc
-	ListForms                  echo.HandlerFunc
-	GetForm                    echo.HandlerFunc
-	ListFormAnswers            echo.HandlerFunc
-	CreateFormAnswer           echo.HandlerFunc
-	GetFormAnswerByID          echo.HandlerFunc
-	UpdateFormAnswer           echo.HandlerFunc
-	UploadFormAnswerFileByID   echo.HandlerFunc
-	DownloadFormAnswerFileByID echo.HandlerFunc
-	GetFormAnswer              echo.HandlerFunc
-	UpsertFormAnswer           echo.HandlerFunc
-	UploadFormAnswerFile       echo.HandlerFunc
-	DownloadFormAnswerFile     echo.HandlerFunc
-	ListPages                  echo.HandlerFunc
-	GetPage                    echo.HandlerFunc
+	ListCircles                          echo.HandlerFunc
+	ListParticipationTypes               echo.HandlerFunc
+	GetParticipationTypeRegistrationForm echo.HandlerFunc
+	CreateCircle                         echo.HandlerFunc
+	SetCurrentCircle                     echo.HandlerFunc
+	GetCurrentCircleDetail               echo.HandlerFunc
+	UpdateCurrentCircle                  echo.HandlerFunc
+	DeleteCurrentCircle                  echo.HandlerFunc
+	SubmitCurrentCircle                  echo.HandlerFunc
+	ListCurrentCircleMembers             echo.HandlerFunc
+	AddCurrentCircleMember               echo.HandlerFunc
+	RemoveCurrentCircleMember            echo.HandlerFunc
+	RegenerateInvitationToken            echo.HandlerFunc
+	JoinCircleByToken                    echo.HandlerFunc
+	ListDocuments                        echo.HandlerFunc
+	GetDocument                          echo.HandlerFunc
+	ListForms                            echo.HandlerFunc
+	GetForm                              echo.HandlerFunc
+	ListFormAnswers                      echo.HandlerFunc
+	CreateFormAnswer                     echo.HandlerFunc
+	GetFormAnswerByID                    echo.HandlerFunc
+	UpdateFormAnswer                     echo.HandlerFunc
+	UploadFormAnswerFileByID             echo.HandlerFunc
+	DownloadFormAnswerFileByID           echo.HandlerFunc
+	GetFormAnswer                        echo.HandlerFunc
+	UpsertFormAnswer                     echo.HandlerFunc
+	UploadFormAnswerFile                 echo.HandlerFunc
+	DownloadFormAnswerFile               echo.HandlerFunc
+	ListPages                            echo.HandlerFunc
+	GetPage                              echo.HandlerFunc
 }
 
 // RegisterPublicRoutes registers public API routes on the given group.
@@ -169,8 +174,12 @@ func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
 	v1.PUT("/session/profile", r.UpdateProfile)
 	v1.PUT("/session/password", r.UpdatePassword)
 	v1.DELETE("/session/account", r.DeleteAccount)
+	v1.POST("/auth/register", r.Register)
 	v1.POST("/auth/login", r.Login)
 	v1.POST("/auth/logout", r.Logout)
+	v1.GET("/auth/verification", r.GetAuthVerification)
+	v1.POST("/auth/verification/request", r.RequestAuthVerification)
+	v1.POST("/auth/verification/confirm", r.ConfirmAuthVerification)
 	v1.GET("/contact-categories", r.ListContactCategories)
 	v1.GET("/contact", r.ListContactHistory)
 	v1.POST("/contact", r.SubmitContact)
@@ -277,6 +286,7 @@ func RegisterWorkspaceRoutes(v1 *echo.Group, r WorkspaceRoutes, middlewares ...e
 	workspace := v1.Group("", middlewares...)
 	workspace.GET("/circles", r.ListCircles)
 	workspace.GET("/participation-types", r.ListParticipationTypes)
+	workspace.GET("/participation-types/:typeID/registration-form", r.GetParticipationTypeRegistrationForm)
 	workspace.POST("/circles", r.CreateCircle)
 	workspace.PUT("/circles/current", r.SetCurrentCircle)
 	workspace.GET("/circles/current/detail", r.GetCurrentCircleDetail)

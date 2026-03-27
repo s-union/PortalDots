@@ -56,13 +56,16 @@ func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) 
 // authHandlers handles authentication, session, and contact endpoints.
 type authHandlers struct {
 	sharedDeps
-	activities        activitylog.Repository
-	authenticator     auth.Authenticator
-	passwordChanger   auth.PasswordChanger
-	circles           circle.Catalog
-	contactCategories contactcategory.Repository
-	mails             mailqueue.Repository
-	users             useradmin.Repository
+	activities                activitylog.Repository
+	authenticator             auth.Authenticator
+	passwordChanger           auth.PasswordChanger
+	registrationAuth          auth.RegistrationAuthenticator
+	circles                   circle.Catalog
+	contactCategories         contactcategory.Repository
+	mails                     mailqueue.Repository
+	portalUnivemailDomainPart string
+	users                     useradmin.Repository
+	verifyCodes               *participantVerifyCodeStore
 }
 
 // staffVerifyHandlers handles staff verification endpoints.
@@ -173,7 +176,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 		cfg,
 		activitylog.NewMemoryRepository(),
 		answer.NewMemoryRepository(),
-		auth.NewStaticAuthenticator(cfg.AuthUser),
+		auth.NewStaticAuthenticator(cfg.AuthUser, cfg.Users),
 		booth.NewMemoryRepository(cfg.Booths),
 		circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		contactcategory.NewMemoryRepository(cfg.ContactCategories),
@@ -243,16 +246,23 @@ func NewServerWithDependencies(
 	if pc, ok := authenticator.(auth.PasswordChanger); ok {
 		passwordChanger = pc
 	}
+	var registrationAuth auth.RegistrationAuthenticator
+	if ra, ok := authenticator.(auth.RegistrationAuthenticator); ok {
+		registrationAuth = ra
+	}
 
 	authH := &authHandlers{
-		sharedDeps:        shared,
-		activities:        activities,
-		authenticator:     authenticator,
-		passwordChanger:   passwordChanger,
-		circles:           circles,
-		contactCategories: contactCategories,
-		mails:             mails,
-		users:             users,
+		sharedDeps:                shared,
+		activities:                activities,
+		authenticator:             authenticator,
+		passwordChanger:           passwordChanger,
+		registrationAuth:          registrationAuth,
+		circles:                   circles,
+		contactCategories:         contactCategories,
+		mails:                     mails,
+		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
+		users:                     users,
+		verifyCodes:               newParticipantVerifyCodeStore(),
 	}
 
 	publicHomeH := &publicHomeHandlers{
@@ -383,8 +393,12 @@ func NewServerWithDependencies(
 		UpdateProfile:            authH.updateProfile,
 		UpdatePassword:           authH.updatePassword,
 		DeleteAccount:            authH.deleteAccount,
+		Register:                 authH.register,
 		Login:                    authH.login,
 		Logout:                   authH.logout,
+		GetAuthVerification:      authH.getAuthVerification,
+		RequestAuthVerification:  authH.requestAuthVerification,
+		ConfirmAuthVerification:  authH.confirmAuthVerification,
 		ListContactCategories:    authH.listContactCategories,
 		ListContactHistory:       authH.listContactHistory,
 		SubmitContact:            authH.submitContact,
@@ -493,35 +507,36 @@ func NewServerWithDependencies(
 	}, middlewares.RequireStaffMode(sessionMiddlewareConfig, hasStaffAccess))
 
 	RegisterWorkspaceRoutes(v1, WorkspaceRoutes{
-		ListCircles:                workspaceH.listCircles,
-		ListParticipationTypes:     workspaceH.listParticipationTypes,
-		CreateCircle:               workspaceH.createCircle,
-		SetCurrentCircle:           workspaceH.setCurrentCircle,
-		GetCurrentCircleDetail:     workspaceH.getCurrentCircleDetail,
-		UpdateCurrentCircle:        workspaceH.updateCurrentCircle,
-		DeleteCurrentCircle:        workspaceH.deleteCurrentCircle,
-		SubmitCurrentCircle:        workspaceH.submitCurrentCircle,
-		ListCurrentCircleMembers:   workspaceH.listCurrentCircleMembers,
-		AddCurrentCircleMember:     workspaceH.addCurrentCircleMember,
-		RemoveCurrentCircleMember:  workspaceH.removeCurrentCircleMember,
-		RegenerateInvitationToken:  workspaceH.regenerateInvitationToken,
-		JoinCircleByToken:          workspaceH.joinCircleByToken,
-		ListDocuments:              workspaceH.listDocuments,
-		GetDocument:                workspaceH.getDocument,
-		ListForms:                  workspaceH.listForms,
-		GetForm:                    workspaceH.getForm,
-		ListFormAnswers:            workspaceH.listFormAnswers,
-		CreateFormAnswer:           workspaceH.createFormAnswer,
-		GetFormAnswerByID:          workspaceH.getFormAnswerByID,
-		UpdateFormAnswer:           workspaceH.updateFormAnswer,
-		UploadFormAnswerFileByID:   workspaceH.uploadFormAnswerFileByID,
-		DownloadFormAnswerFileByID: workspaceH.downloadFormAnswerFileByID,
-		GetFormAnswer:              workspaceH.getFormAnswer,
-		UpsertFormAnswer:           workspaceH.upsertFormAnswer,
-		UploadFormAnswerFile:       workspaceH.uploadFormAnswerFile,
-		DownloadFormAnswerFile:     workspaceH.downloadFormAnswerFile,
-		ListPages:                  workspaceH.listPages,
-		GetPage:                    workspaceH.getPage,
+		ListCircles:                          workspaceH.listCircles,
+		ListParticipationTypes:               workspaceH.listParticipationTypes,
+		GetParticipationTypeRegistrationForm: workspaceH.getParticipationTypeRegistrationForm,
+		CreateCircle:                         workspaceH.createCircle,
+		SetCurrentCircle:                     workspaceH.setCurrentCircle,
+		GetCurrentCircleDetail:               workspaceH.getCurrentCircleDetail,
+		UpdateCurrentCircle:                  workspaceH.updateCurrentCircle,
+		DeleteCurrentCircle:                  workspaceH.deleteCurrentCircle,
+		SubmitCurrentCircle:                  workspaceH.submitCurrentCircle,
+		ListCurrentCircleMembers:             workspaceH.listCurrentCircleMembers,
+		AddCurrentCircleMember:               workspaceH.addCurrentCircleMember,
+		RemoveCurrentCircleMember:            workspaceH.removeCurrentCircleMember,
+		RegenerateInvitationToken:            workspaceH.regenerateInvitationToken,
+		JoinCircleByToken:                    workspaceH.joinCircleByToken,
+		ListDocuments:                        workspaceH.listDocuments,
+		GetDocument:                          workspaceH.getDocument,
+		ListForms:                            workspaceH.listForms,
+		GetForm:                              workspaceH.getForm,
+		ListFormAnswers:                      workspaceH.listFormAnswers,
+		CreateFormAnswer:                     workspaceH.createFormAnswer,
+		GetFormAnswerByID:                    workspaceH.getFormAnswerByID,
+		UpdateFormAnswer:                     workspaceH.updateFormAnswer,
+		UploadFormAnswerFileByID:             workspaceH.uploadFormAnswerFileByID,
+		DownloadFormAnswerFileByID:           workspaceH.downloadFormAnswerFileByID,
+		GetFormAnswer:                        workspaceH.getFormAnswer,
+		UpsertFormAnswer:                     workspaceH.upsertFormAnswer,
+		UploadFormAnswerFile:                 workspaceH.uploadFormAnswerFile,
+		DownloadFormAnswerFile:               workspaceH.downloadFormAnswerFile,
+		ListPages:                            workspaceH.listPages,
+		GetPage:                              workspaceH.getPage,
 	}, middlewares.RequireWorkspaceUser(sessionMiddlewareConfig))
 
 	return e

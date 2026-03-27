@@ -19,6 +19,32 @@ function createQueryPlugin() {
   ]
 }
 
+const registrationFormFixture = {
+  id: '',
+  name: '',
+  nameYomi: '',
+  groupName: '',
+  groupNameYomi: '',
+  participationTypeId: 'pt-exhibit',
+  participationTypeName: '展示',
+  formId: 'form-pt-exhibit',
+  notes: '',
+  leaderDisplayName: 'Demo User',
+  canChangeGroupName: true,
+  isLeader: true,
+  lastUpdatedAt: '',
+  usersCountMin: 1,
+  usersCountMax: 4,
+  memberCount: 1,
+  canSubmit: true,
+  formDescription: '展示参加用の設問です',
+  confirmationMessage: '',
+  questions: [],
+  answer: null,
+  invitationToken: '',
+  submittedAt: null
+}
+
 function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
   const { createShouldSucceed = true } = options
 
@@ -77,6 +103,27 @@ function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
       )
     }
 
+    if (pathname.endsWith('/participation-types/pt-exhibit/registration-form') && method === 'GET') {
+      return new Response(JSON.stringify(registrationFormFixture), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (pathname.endsWith('/participation-types/pt-food/registration-form') && method === 'GET') {
+      return new Response(
+        JSON.stringify({
+          ...registrationFormFixture,
+          participationTypeId: 'pt-food',
+          participationTypeName: '模擬店',
+          formId: 'form-pt-food',
+          usersCountMin: 2,
+          usersCountMax: 6
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
     if (pathname.endsWith('/circles') && method === 'POST') {
       if (!createShouldSucceed) {
         return new Response(JSON.stringify({ message: 'Validation failed', errors: { name: ['必須'] } }), {
@@ -86,16 +133,11 @@ function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
       }
       return new Response(
         JSON.stringify({
+          ...registrationFormFixture,
           id: 'new-circle',
           name: 'テスト企画',
-          nameYomi: 'てすときかく',
           groupName: 'テスト大学',
-          groupNameYomi: 'てすとだいがく',
-          participationTypeId: 'pt-exhibit',
-          participationTypeName: '展示',
-          notes: '',
-          invitationToken: 'token-abc',
-          submittedAt: null
+          invitationToken: 'token-abc'
         }),
         { status: 201, headers: { 'Content-Type': 'application/json' } }
       )
@@ -123,7 +165,7 @@ describe('CircleCreatePage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the create form with participation types', async () => {
+  function setupSession() {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -134,13 +176,18 @@ describe('CircleCreatePage', () => {
       roles: ['participant'],
       user: { id: 'demo-user', displayName: 'Demo User' }
     })
+    return pinia
+  }
 
+  it('renders the create form with participation types', async () => {
+    const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: '/workspace', component: { template: '<div>workspace</div>' } },
+        { path: '/', component: { template: '<div>home</div>' } },
         { path: '/circles/new', component: CircleCreatePage },
-        { path: '/workspace/circles/detail', component: { template: '<div>detail</div>' } }
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } },
+        { path: '/workspace/circles/confirm', component: { template: '<div>confirm</div>' } }
       ]
     })
     await router.push('/circles/new')
@@ -154,37 +201,23 @@ describe('CircleCreatePage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('企画を新規作成')
+    expect(wrapper.text()).toContain('企画参加登録 1/3')
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('模擬店')
-    expect(wrapper.text()).toContain('企画を作成する')
-
-    const requestedPathnames = fetchMock.mock.calls.map(([input]) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      return new URL(url, 'http://localhost').pathname
-    })
-    expect(requestedPathnames).toContain('/v1/participation-types')
-    expect(requestedPathnames).not.toContain('/v1/staff/participation-types')
+    expect(wrapper.text()).toContain('保存して確認画面へ')
+    expect(
+      fetchMock.mock.calls.some(([input]) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
+      })
+    ).toBe(true)
   })
 
   it('preselects the participation type from the legacy query parameter', async () => {
-    const pinia = createPinia()
-    setActivePinia(pinia)
-    const sessionStore = useSessionStore()
-    sessionStore.hydrate({
-      csrfToken: 'csrf-token',
-      currentCircle: null,
-      featureFlags: [],
-      roles: ['participant'],
-      user: { id: 'demo-user', displayName: 'Demo User' }
-    })
-
+    const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [
-        { path: '/workspace', component: { template: '<div>workspace</div>' } },
-        { path: '/circles/new', component: CircleCreatePage }
-      ]
+      routes: [{ path: '/circles/new', component: CircleCreatePage }]
     })
     await router.push('/circles/new?participation_type=pt-food')
     await router.isReady()
@@ -196,28 +229,19 @@ describe('CircleCreatePage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('URLパラメータで指定された参加種別を自動選択しています')
-    expect(wrapper.get('input[type="radio"][value="pt-food"]').element.checked).toBe(true)
+    expect(wrapper.text()).toContain('URL パラメータで指定された参加種別を自動選択しています')
+    expect((wrapper.get('select[name="participationTypeId"]').element as HTMLSelectElement).value).toBe('pt-food')
   })
 
-  it('navigates to detail page after successful creation', async () => {
-    const pinia = createPinia()
-    setActivePinia(pinia)
-    const sessionStore = useSessionStore()
-    sessionStore.hydrate({
-      csrfToken: 'csrf-token',
-      currentCircle: null,
-      featureFlags: [],
-      roles: ['participant'],
-      user: { id: 'demo-user', displayName: 'Demo User' }
-    })
-
+  it('navigates to confirm page after successful creation', async () => {
+    const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: '/workspace', component: { template: '<div>workspace</div>' } },
+        { path: '/', component: { template: '<div>home</div>' } },
         { path: '/circles/new', component: CircleCreatePage },
-        { path: '/workspace/circles/detail', component: { template: '<div>detail</div>' } }
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } },
+        { path: '/workspace/circles/confirm', component: { template: '<div>confirm</div>' } }
       ]
     })
     await router.push('/circles/new')
@@ -230,30 +254,24 @@ describe('CircleCreatePage', () => {
     })
     await flushPromises()
 
-    await wrapper.get('input[type="text"]').setValue('テスト企画')
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+    await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('input[name="groupName"]').setValue('テスト大学')
+    await wrapper.get('input[name="groupNameYomi"]').setValue('てすとだいがく')
     await wrapper.get('button[type="button"]').trigger('click')
     await flushPromises()
 
-    expect(router.currentRoute.value.path).toBe('/workspace/circles/detail')
+    expect(router.currentRoute.value.path).toBe('/workspace/circles/members')
   })
 
   it('shows error message when creation fails', async () => {
-    const pinia = createPinia()
-    setActivePinia(pinia)
-    const sessionStore = useSessionStore()
-    sessionStore.hydrate({
-      csrfToken: 'csrf-token',
-      currentCircle: null,
-      featureFlags: [],
-      roles: ['participant'],
-      user: { id: 'demo-user', displayName: 'Demo User' }
-    })
-
+    const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
         { path: '/circles/new', component: CircleCreatePage },
-        { path: '/workspace/circles/detail', component: { template: '<div>detail</div>' } }
+        { path: '/workspace/circles/confirm', component: { template: '<div>confirm</div>' } }
       ]
     })
     await router.push('/circles/new')
@@ -266,10 +284,15 @@ describe('CircleCreatePage', () => {
     })
     await flushPromises()
 
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+    await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('input[name="groupName"]').setValue('テスト大学')
+    await wrapper.get('input[name="groupNameYomi"]').setValue('てすとだいがく')
     await wrapper.get('button[type="button"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('企画の作成に失敗しました')
+    expect(wrapper.text()).toContain('必須')
     expect(router.currentRoute.value.path).toBe('/circles/new')
   })
 })

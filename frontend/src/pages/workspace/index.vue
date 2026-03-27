@@ -10,11 +10,13 @@ import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { useCurrentCircleDetailQuery } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 
 const sessionStore = useSessionStore()
+const circleDetailQuery = useCurrentCircleDetailQuery()
 
 const quickLinks = [
   {
@@ -62,12 +64,43 @@ const quickLinks = [
       <h2 class="mt-2 text-2xl font-semibold text-body">
         {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
       </h2>
+      <p v-if="circleDetailQuery.data.value" class="mt-3 text-sm text-muted">
+        {{
+          circleDetailQuery.data.value.submittedAt
+            ? `参加登録は提出済みです (${new Date(circleDetailQuery.data.value.submittedAt).toLocaleDateString('ja-JP')})`
+            : `参加登録は未提出です。現在 ${circleDetailQuery.data.value.memberCount} 人です。`
+        }}
+      </p>
       <div class="mt-4 flex flex-wrap gap-3">
         <RouterLink :class="cn(buttonVariants({ variant: 'primary', size: 'md' }))" to="/circles/select">
           企画を切り替える
         </RouterLink>
         <RouterLink :class="cn(buttonVariants({ variant: 'secondary', size: 'md' }))" to="/circles/new">
           新しい企画を作成
+        </RouterLink>
+      </div>
+    </SurfaceCard>
+
+    <SurfaceCard v-if="circleDetailQuery.data.value">
+      <p class="text-sm font-semibold text-body">参加登録の状況</p>
+      <div class="mt-3 grid gap-2 text-sm text-muted">
+        <p>参加種別: {{ circleDetailQuery.data.value.participationTypeName }}</p>
+        <p>
+          メンバー数: {{ circleDetailQuery.data.value.memberCount }}人 ({{
+            circleDetailQuery.data.value.usersCountMin
+          }}〜{{ circleDetailQuery.data.value.usersCountMax }}人)
+        </p>
+        <p>代表者: {{ circleDetailQuery.data.value.leaderDisplayName }}</p>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <RouterLink
+          :class="cn(buttonVariants({ variant: 'primary', size: 'md' }))"
+          :to="circleDetailQuery.data.value.submittedAt ? '/workspace/circles/detail' : '/workspace/circles/confirm'"
+        >
+          {{ circleDetailQuery.data.value.submittedAt ? '企画情報を見る' : '参加登録を確認する' }}
+        </RouterLink>
+        <RouterLink :class="cn(buttonVariants({ variant: 'secondary', size: 'md' }))" to="/workspace/circles/members">
+          メンバーを確認する
         </RouterLink>
       </div>
     </SurfaceCard>

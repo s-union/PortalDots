@@ -435,6 +435,34 @@ func TestListParticipationTypesRequiresAuthentication(t *testing.T) {
 	}
 }
 
+func TestCreateCircleReturnsCreated(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles", map[string]any{
+		"name":                "新規企画",
+		"nameYomi":            "しんききかく",
+		"groupName":           "新規団体",
+		"groupNameYomi":       "しんきだんたい",
+		"participationTypeId": "participation-type-food",
+		"notes":               "",
+		"details":             map[string]any{},
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 	t.Parallel()
 
@@ -813,6 +841,40 @@ func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
 	}
 }
 
+func TestAddCurrentCircleMemberAcceptsContactEmail(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:           "contact-email-member",
+		LoginIDs:     []string{"24c0001"},
+		DisplayName:  "Contact Email Member",
+		ContactEmail: "contact-add@example.com",
+		Password:     "password",
+		Roles:        []string{"participant"},
+		IsVerified:   true,
+	})
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "circle-a@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "circle-a")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
+		"loginId": "contact-add@example.com",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
 	t.Parallel()
 
@@ -847,6 +909,45 @@ func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
 	}
 	if len(response.Errors["loginId"]) == 0 || response.Errors["loginId"][0] != "このユーザーはメール認証が完了していません" {
 		t.Fatalf("unexpected validation error: %#v", response.Errors)
+	}
+}
+
+func TestRegenerateInvitationTokenAfterSubmitReturnsConflict(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(circleMemberConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "circle-b@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "circle-b")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/circles/current/detail", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail circleDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal detail response: %v", err)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/submit", map[string]string{
+		"lastUpdatedAt": detail.LastUpdatedAt,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/invitation-token/regenerate", nil)
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusConflict, recorder.Code, recorder.Body.String())
 	}
 }
 

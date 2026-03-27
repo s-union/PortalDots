@@ -49,7 +49,9 @@ func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 			Tags:                  append([]string{}, row.Tags...),
 			InvitationToken:       nullableTextValue(row.InvitationToken),
 			SubmittedAt:           nullableTime(row.SubmittedAt),
+			UpdatedAt:             requiredTime(row.UpdatedAt),
 			Notes:                 row.Notes,
+			CanChangeGroupName:    row.CanChangeGroupName,
 			Status:                row.Status,
 			StatusReason:          row.StatusReason,
 			StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -300,7 +302,9 @@ func (c *SQLCCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, e
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -318,6 +322,7 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 		ParticipationTypeID:   nullableText(params.ParticipationTypeID),
 		ParticipationTypeName: params.ParticipationTypeName,
 		Notes:                 params.Notes,
+		CanChangeGroupName:    params.CanChangeGroupName,
 	})
 	if err != nil {
 		return Circle{}, err
@@ -334,7 +339,9 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -354,14 +361,14 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 }
 
 func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
-	isMember, err := c.queries.IsCircleMember(context.Background(), dbgen.IsCircleMemberParams{
+	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,
 	})
 	if err != nil {
 		return Circle{}, err
 	}
-	if !isMember {
+	if !isLeader {
 		return Circle{}, ErrForbidden
 	}
 
@@ -391,7 +398,9 @@ func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params Upd
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -416,15 +425,22 @@ func (c *SQLCCatalog) DeleteForUser(user *auth.User, circleID string) error {
 }
 
 func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
-	isMember, err := c.queries.IsCircleMember(context.Background(), dbgen.IsCircleMemberParams{
+	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,
 	})
 	if err != nil {
 		return Circle{}, err
 	}
-	if !isMember {
+	if !isLeader {
 		return Circle{}, ErrForbidden
+	}
+	current, err := c.Find(circleID)
+	if err != nil {
+		return Circle{}, err
+	}
+	if current.SubmittedAt != nil {
+		return Circle{}, ErrAlreadySubmitted
 	}
 
 	row, err := c.queries.SubmitCircle(context.Background(), circleID)
@@ -446,7 +462,9 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -551,6 +569,13 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 	if !isLeader {
 		return Circle{}, ErrForbidden
 	}
+	current, err := c.Find(circleID)
+	if err != nil {
+		return Circle{}, err
+	}
+	if current.SubmittedAt != nil {
+		return Circle{}, ErrAlreadySubmitted
+	}
 
 	row, err := c.queries.UpdateCircleInvitationToken(context.Background(), circleID)
 	if err != nil {
@@ -571,7 +596,9 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -619,7 +646,40 @@ func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error)
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		Places:                []string{},
+	}, nil
+}
+
+func (c *SQLCCatalog) FindByInvitationToken(token string) (Circle, error) {
+	row, err := c.queries.GetCircleByInvitationToken(context.Background(), nullableText(token))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Circle{}, ErrNotFound
+		}
+		return Circle{}, err
+	}
+
+	return Circle{
+		ID:                    row.ID,
+		Name:                  row.Name,
+		NameYomi:              row.NameYomi,
+		GroupName:             row.GroupName,
+		GroupNameYomi:         row.GroupNameYomi,
+		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeName: row.ParticipationTypeName,
+		Tags:                  append([]string{}, row.Tags...),
+		InvitationToken:       nullableTextValue(row.InvitationToken),
+		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
+		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -655,7 +715,9 @@ func circleFromListRow(row dbgen.ListCirclesRow) Circle {
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -676,7 +738,9 @@ func circleFromGetByIDRow(row dbgen.GetCircleByIDRow) Circle {
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -697,7 +761,9 @@ func circleFromGetUserCircleRow(row dbgen.GetUserCircleRow) Circle {
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
 		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
 		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
@@ -755,4 +821,11 @@ func nullableTime(value pgtype.Timestamptz) *time.Time {
 	}
 	t := value.Time
 	return &t
+}
+
+func requiredTime(value pgtype.Timestamptz) time.Time {
+	if !value.Valid {
+		return time.Time{}
+	}
+	return value.Time
 }

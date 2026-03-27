@@ -27,7 +27,20 @@ const circleDetailFixture = {
   groupNameYomi: 'てすとだいがく',
   participationTypeId: 'pt-exhibit',
   participationTypeName: '展示',
+  formId: 'form-pt-exhibit',
   notes: '備考テキスト',
+  leaderDisplayName: 'Demo User',
+  canChangeGroupName: true,
+  isLeader: true,
+  lastUpdatedAt: '2026-03-20T00:00:00Z',
+  usersCountMin: 1,
+  usersCountMax: 4,
+  memberCount: 1,
+  canSubmit: true,
+  formDescription: '登録フォーム説明',
+  confirmationMessage: '確認してください',
+  questions: [],
+  answer: null,
   invitationToken: 'token-abc',
   submittedAt: null
 }
@@ -37,7 +50,6 @@ function buildFetchMock(
     detail?: object
     updateShouldSucceed?: boolean
     deleteShouldSucceed?: boolean
-    submitShouldSucceed?: boolean
   } = {}
 ) {
   const { updateShouldSucceed = true, deleteShouldSucceed = true } = overrides
@@ -47,7 +59,6 @@ function buildFetchMock(
     await Promise.resolve()
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
     const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
     const pathname = new URL(url, 'http://localhost').pathname
 
     if (pathname.endsWith('/circles/current/detail') && method === 'GET') {
@@ -59,7 +70,7 @@ function buildFetchMock(
 
     if (pathname.endsWith('/circles/current/detail') && method === 'PUT') {
       if (!updateShouldSucceed) {
-        return new Response(JSON.stringify({ message: 'Validation failed', errors: {} }), {
+        return new Response(JSON.stringify({ message: 'Validation failed', errors: { name: ['保存失敗'] } }), {
           status: 422,
           headers: { 'Content-Type': 'application/json' }
         })
@@ -75,13 +86,6 @@ function buildFetchMock(
         return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 })
       }
       return new Response(null, { status: 204 })
-    }
-
-    if (pathname.endsWith('/circles/current/submit') && method === 'POST') {
-      return new Response(JSON.stringify({ ...detail, submittedAt: '2026-03-15T00:00:00Z' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
     }
 
     if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
@@ -121,12 +125,11 @@ describe('CircleDetailPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
         { path: '/workspace', component: { template: '<div>workspace</div>' } },
         { path: '/workspace/circles/detail', component: CircleDetailPage },
-        {
-          path: '/workspace/circles/members',
-          component: { template: '<div>members</div>' }
-        }
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } },
+        { path: '/workspace/circles/confirm', component: { template: '<div>confirm</div>' } }
       ]
     })
 
@@ -145,13 +148,10 @@ describe('CircleDetailPage', () => {
     })
     await flushPromises()
 
-    // 参加種別名と提出状態はテキストとして表示される
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('未提出')
-    // 企画名・団体名はinput valueにセットされる
-    const inputs = wrapper.findAll('input[type="text"]')
-    expect(inputs[0].element.value).toBe('テスト企画A')
-    expect(inputs[2].element.value).toBe('テスト大学')
+    expect(wrapper.get('input[name="name"]').element.value).toBe('テスト企画A')
+    expect(wrapper.get('input[name="groupName"]').element.value).toBe('テスト大学')
   })
 
   it('shows submitted status when submittedAt is set', async () => {
@@ -172,9 +172,7 @@ describe('CircleDetailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('提出済み')
-    // 提出ボタンは表示されないはず
-    const submitButton = wrapper.findAll('button[type="button"]').find((b) => b.text().includes('参加登録を提出'))
-    expect(submitButton).toBeUndefined()
+    expect(wrapper.text()).not.toContain('保存して確認画面へ')
   })
 
   it('saves circle information successfully', async () => {
@@ -189,14 +187,14 @@ describe('CircleDetailPage', () => {
     })
     await flushPromises()
 
-    const saveButton = wrapper.findAll('button[type="button"]').find((b) => b.text().includes('変更を保存'))
+    const saveButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === '保存する')
     if (!saveButton) {
       throw new Error('save button not found')
     }
     await saveButton.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('企画情報を更新しました')
+    expect(wrapper.text()).toContain('企画参加登録の内容を保存しました')
   })
 
   it('shows error when save fails', async () => {
@@ -211,17 +209,17 @@ describe('CircleDetailPage', () => {
     })
     await flushPromises()
 
-    const saveButton = wrapper.findAll('button[type="button"]').find((b) => b.text().includes('変更を保存'))
+    const saveButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === '保存する')
     if (!saveButton) {
       throw new Error('save button not found')
     }
     await saveButton.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('企画情報の更新に失敗しました')
+    expect(wrapper.text()).toContain('保存失敗')
   })
 
-  it('deletes circle and navigates to workspace', async () => {
+  it('deletes circle and navigates to home', async () => {
     const { pinia, router } = setupTest()
     await router.push('/workspace/circles/detail')
     await router.isReady()
@@ -237,14 +235,14 @@ describe('CircleDetailPage', () => {
     })
     await flushPromises()
 
-    const deleteButton = wrapper.findAll('button[type="button"]').find((b) => b.text().includes('企画を削除'))
+    const deleteButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === '企画を削除')
     if (!deleteButton) {
       throw new Error('delete button not found')
     }
     await deleteButton.trigger('click')
     await flushPromises()
 
-    expect(router.currentRoute.value.path).toBe('/workspace')
+    expect(router.currentRoute.value.path).toBe('/')
   })
 
   it('does not delete when user cancels confirmation', async () => {
@@ -263,7 +261,7 @@ describe('CircleDetailPage', () => {
     })
     await flushPromises()
 
-    const deleteButton = wrapper.findAll('button[type="button"]').find((b) => b.text().includes('企画を削除'))
+    const deleteButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === '企画を削除')
     if (!deleteButton) {
       throw new Error('delete button not found')
     }

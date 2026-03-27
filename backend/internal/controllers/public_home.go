@@ -41,8 +41,11 @@ type publicHomeResponse struct {
 }
 
 type publicConfigResponse struct {
-	IsDemo  bool   `json:"isDemo"`
-	AppName string `json:"appName"`
+	IsDemo                    bool   `json:"isDemo"`
+	AppName                   string `json:"appName"`
+	PortalStudentIDName       string `json:"portalStudentIdName"`
+	PortalUnivemailName       string `json:"portalUnivemailName"`
+	PortalUnivemailDomainPart string `json:"portalUnivemailDomainPart"`
 }
 
 type publicHomeLoginMethodResponse struct {
@@ -115,8 +118,11 @@ func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
 		return internalError(c)
 	}
 	return c.JSON(http.StatusOK, publicConfigResponse{
-		IsDemo:  h.allowInsecureDefaults,
-		AppName: settings.AppName,
+		IsDemo:                    h.allowInsecureDefaults,
+		AppName:                   settings.AppName,
+		PortalStudentIDName:       settings.PortalStudentIDName,
+		PortalUnivemailName:       settings.PortalUnivemailName,
+		PortalUnivemailDomainPart: settings.PortalUnivemailDomainPart,
 	})
 }
 

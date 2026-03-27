@@ -70,7 +70,38 @@ export const circleDetailSchema = z.object({
   groupNameYomi: z.string(),
   participationTypeId: z.string(),
   participationTypeName: z.string(),
+  formId: z.string().default(''),
   notes: z.string(),
+  leaderDisplayName: z.string().default(''),
+  canChangeGroupName: z.boolean().default(true),
+  isLeader: z.boolean().default(false),
+  lastUpdatedAt: z.string().default(''),
+  usersCountMin: z.number().default(1),
+  usersCountMax: z.number().default(1),
+  memberCount: z.number().default(0),
+  canSubmit: z.boolean().default(false),
+  formDescription: z.string().default(''),
+  confirmationMessage: z.string().default(''),
+  questions: z.array(z.lazy(() => formQuestionSchema)).default([]),
+  answer: z
+    .object({
+      id: z.string(),
+      body: z.string(),
+      updatedAt: z.string(),
+      details: z.record(z.string(), z.array(z.string())),
+      uploads: z.array(
+        z.object({
+          id: z.string(),
+          questionId: z.string(),
+          filename: z.string(),
+          mimeType: z.string(),
+          sizeBytes: z.number(),
+          createdAt: z.string()
+        })
+      )
+    })
+    .nullable()
+    .default(null),
   invitationToken: z.string(),
   submittedAt: z.string().nullable()
 })
@@ -140,6 +171,20 @@ export const staffVerifyRequestResultSchema = z.object({
   deliveryMode: z.literal('mock'),
   message: z.string(),
   verifyCode: z.string()
+})
+
+export const authVerificationStatusItemSchema = z.object({
+  type: z.enum(['email', 'univemail']),
+  label: z.string(),
+  address: z.string(),
+  verified: z.boolean()
+})
+
+export const authVerificationStatusSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  completed: z.boolean(),
+  items: z.array(authVerificationStatusItemSchema)
 })
 
 export const staffActivityLogSchema = z.object({
@@ -538,7 +583,10 @@ export const publicHomeDocumentSchema = z.object({
 
 export const publicConfigSchema = z.object({
   isDemo: z.boolean(),
-  appName: z.string()
+  appName: z.string(),
+  portalStudentIdName: z.string(),
+  portalUnivemailName: z.string(),
+  portalUnivemailDomainPart: z.string()
 })
 
 export const publicHomeSchema = z.object({

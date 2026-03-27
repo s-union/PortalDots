@@ -38,6 +38,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register a new participant account */
+        post: operations["postAuthRegister"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return participant verification status */
+        get: operations["getAuthVerification"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verification/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request a participant verification code */
+        post: operations["postAuthVerificationRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verification/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm a participant verification code */
+        post: operations["postAuthVerificationConfirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/contact-categories": {
         parameters: {
             query?: never;
@@ -1162,6 +1230,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/participation-types/{typeID}/registration-form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return the registration form template for a participation type */
+        get: operations["getParticipationTypeRegistrationForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/circles/current": {
         parameters: {
             query?: never;
@@ -1726,6 +1811,169 @@ export interface operations {
         responses: {
             /** @description Logged out */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postAuthRegister: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    studentId: string;
+                    univemailLocalPart: string;
+                    univemailDomainPart: string;
+                    name: string;
+                    nameYomi: string;
+                    contactEmail: string;
+                    phoneNumber: string;
+                    password: string;
+                    passwordConfirmation: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Registered and logged in */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getAuthVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        userId: string;
+                        displayName: string;
+                        completed: boolean;
+                        items: {
+                            /** @enum {string} */
+                            type: "email" | "univemail";
+                            label: string;
+                            address: string;
+                            verified: boolean;
+                        }[];
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postAuthVerificationRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    type: "email" | "univemail";
+                };
+            };
+        };
+        responses: {
+            /** @description Verification code prepared in mock mode */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        deliveryMode: "mock";
+                        message: string;
+                        verifyCode: string;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postAuthVerificationConfirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    type: "email" | "univemail";
+                    verifyCode: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Verification completed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6826,6 +7074,9 @@ export interface operations {
                     groupNameYomi?: string;
                     participationTypeId: string;
                     notes?: string;
+                    details?: {
+                        [key: string]: string | string[];
+                    };
                 };
             };
         };
@@ -6907,6 +7158,44 @@ export interface operations {
             };
             /** @description Unauthenticated */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getParticipationTypeRegistrationForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                typeID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registration form template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Participation type not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7058,6 +7347,9 @@ export interface operations {
                     groupName: string;
                     groupNameYomi?: string;
                     notes?: string;
+                    details?: {
+                        [key: string]: string | string[];
+                    };
                 };
             };
         };
@@ -7119,7 +7411,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date-time */
+                    lastUpdatedAt: string;
+                };
+            };
+        };
         responses: {
             /** @description Submitted current circle */
             200: {

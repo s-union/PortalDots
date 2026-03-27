@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import {
@@ -9,6 +9,8 @@ import {
   circleMemberSchema
 } from '@/lib/api/schema'
 import { extractValidationMessage } from '@/lib/api/validation'
+import type { FormQuestion } from '@/features/forms/api'
+import type { FormAnswer, FormAnswerDraft } from '@/features/forms/answers'
 import { fetchSessionBootstrap } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -27,7 +29,20 @@ export interface CircleDetail {
   groupNameYomi: string
   participationTypeId: string
   participationTypeName: string
+  formId: string
   notes: string
+  leaderDisplayName: string
+  canChangeGroupName: boolean
+  isLeader: boolean
+  lastUpdatedAt: string
+  usersCountMin: number
+  usersCountMax: number
+  memberCount: number
+  canSubmit: boolean
+  formDescription: string
+  confirmationMessage: string
+  questions: FormQuestion[]
+  answer: FormAnswer | null
   invitationToken: string
   submittedAt: string | null
 }
@@ -49,6 +64,7 @@ export interface CreateCircleInput {
   groupNameYomi: string
   participationTypeId: string
   notes: string
+  details: FormAnswerDraft
 }
 
 export interface UpdateCircleInput {
@@ -57,6 +73,11 @@ export interface UpdateCircleInput {
   groupName: string
   groupNameYomi: string
   notes: string
+  details: FormAnswerDraft
+}
+
+export interface SubmitCircleInput {
+  lastUpdatedAt: string
 }
 
 export async function fetchSelectableCircles() {
@@ -69,6 +90,25 @@ export async function fetchSelectableCircles() {
     parseSelectableCircles,
     {
       errorMessage: 'Failed to fetch circles'
+    }
+  )
+}
+
+export async function fetchParticipationTypeRegistrationForm(participationTypeId: string) {
+  return $api.queryData(
+    'get',
+    '/participation-types/{typeID}/registration-form',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          typeID: participationTypeId
+        }
+      }
+    },
+    parseCircleDetail,
+    {
+      errorMessage: '参加登録フォームの取得に失敗しました'
     }
   )
 }
@@ -150,7 +190,8 @@ export function useCreateCircleMutation() {
             groupName: input.groupName,
             groupNameYomi: input.groupNameYomi,
             participationTypeId: input.participationTypeId,
-            notes: input.notes
+            notes: input.notes,
+            details: input.details
           }
         },
         parseCircleDetail,
@@ -179,6 +220,32 @@ export function useCurrentCircleDetailQuery() {
   })
 }
 
+export function useParticipationTypeRegistrationFormQuery(participationTypeId: MaybeRefOrGetter<string>) {
+  const sessionStore = useSessionStore()
+
+  return $api.useQueryData(
+    'get',
+    '/participation-types/{typeID}/registration-form',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          typeID: toValue(participationTypeId)
+        }
+      }
+    }),
+    parseCircleDetail,
+    {
+      queryKey: computed(() => ['participation-types', 'registration-form', toValue(participationTypeId)]),
+      enabled: computed(() => sessionStore.isAuthenticated && toValue(participationTypeId).trim().length > 0),
+      retry: false
+    },
+    {
+      errorMessage: '参加登録フォームの取得に失敗しました'
+    }
+  )
+}
+
 export function useUpdateCircleMutation() {
   const queryClient = useQueryClient()
   const sessionStore = useSessionStore()
@@ -190,7 +257,10 @@ export function useUpdateCircleMutation() {
         '/circles/current/detail',
         {
           headers: createJsonHeaders(sessionStore.csrfToken),
-          body: input
+          body: {
+            ...input,
+            details: input.details
+          }
         },
         parseCircleDetail,
         { errorMessage: '企画情報の更新に失敗しました' }
@@ -227,11 +297,14 @@ export function useSubmitCircleMutation() {
   const sessionStore = useSessionStore()
 
   return useMutation({
-    mutationFn: async () =>
+    mutationFn: async (input: SubmitCircleInput) =>
       $api.queryData(
         'post',
         '/circles/current/submit',
-        { headers: createJsonHeaders(sessionStore.csrfToken) },
+        {
+          headers: createJsonHeaders(sessionStore.csrfToken),
+          body: input
+        },
         parseCircleDetail,
         { errorMessage: '参加登録の提出に失敗しました' }
       ),

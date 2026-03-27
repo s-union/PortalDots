@@ -76,6 +76,8 @@ type Circle struct {
 	StatusReason          string
 	StatusSetAt           pgtype.Timestamptz
 	StatusSetBy           pgtype.Text
+	CanChangeGroupName    bool
+	UpdatedAt             pgtype.Timestamptz
 }
 
 type CircleUser struct {
@@ -120,6 +122,7 @@ type Form struct {
 	MaxAnswers          int32
 	AnswerableTags      []string
 	ConfirmationMessage string
+	UpdatedAt           pgtype.Timestamptz
 }
 
 type FormQuestion struct {
@@ -204,18 +207,19 @@ type Tag struct {
 }
 
 type User struct {
-	ID               string
-	DisplayName      string
-	Password         string
-	CreatedAt        pgtype.Timestamptz
-	IsVerified       bool
-	LastName         string
-	LastNameReading  string
-	FirstName        string
-	FirstNameReading string
-	ContactEmail     string
-	PhoneNumber      string
-	IsEmailVerified  bool
+	ID                  string
+	DisplayName         string
+	Password            string
+	CreatedAt           pgtype.Timestamptz
+	IsVerified          bool
+	LastName            string
+	LastNameReading     string
+	FirstName           string
+	FirstNameReading    string
+	ContactEmail        string
+	PhoneNumber         string
+	IsEmailVerified     bool
+	IsUnivemailVerified bool
 }
 
 type UserLoginID struct {

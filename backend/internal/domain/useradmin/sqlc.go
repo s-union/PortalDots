@@ -31,21 +31,22 @@ func (r *SQLCRepository) List() ([]User, error) {
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:               row.ID,
-			LastName:         row.LastName,
-			LastNameReading:  row.LastNameReading,
-			FirstName:        row.FirstName,
-			FirstNameReading: row.FirstNameReading,
-			DisplayName:      row.DisplayName,
-			LoginIDs:         row.LoginIds,
-			ContactEmail:     row.ContactEmail,
-			PhoneNumber:      row.PhoneNumber,
-			Roles:            row.Roles,
-			Permissions:      row.Permissions,
-			CircleIDs:        row.CircleIds,
-			LeaderCircleIDs:  []string{},
-			IsVerified:       row.IsVerified,
-			IsEmailVerified:  row.IsEmailVerified,
+			ID:                  row.ID,
+			LastName:            row.LastName,
+			LastNameReading:     row.LastNameReading,
+			FirstName:           row.FirstName,
+			FirstNameReading:    row.FirstNameReading,
+			DisplayName:         row.DisplayName,
+			LoginIDs:            row.LoginIds,
+			ContactEmail:        row.ContactEmail,
+			PhoneNumber:         row.PhoneNumber,
+			Roles:               row.Roles,
+			Permissions:         row.Permissions,
+			CircleIDs:           row.CircleIds,
+			LeaderCircleIDs:     row.LeaderCircleIds,
+			IsVerified:          row.IsVerified,
+			IsEmailVerified:     row.IsEmailVerified,
+			IsUnivemailVerified: row.IsUnivemailVerified,
 		})
 	}
 
@@ -61,21 +62,22 @@ func (r *SQLCRepository) ListByQuery(query string) ([]User, error) {
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:               row.ID,
-			LastName:         row.LastName,
-			LastNameReading:  row.LastNameReading,
-			FirstName:        row.FirstName,
-			FirstNameReading: row.FirstNameReading,
-			DisplayName:      row.DisplayName,
-			LoginIDs:         row.LoginIds,
-			ContactEmail:     row.ContactEmail,
-			PhoneNumber:      row.PhoneNumber,
-			Roles:            row.Roles,
-			Permissions:      row.Permissions,
-			CircleIDs:        row.CircleIds,
-			LeaderCircleIDs:  []string{},
-			IsVerified:       row.IsVerified,
-			IsEmailVerified:  row.IsEmailVerified,
+			ID:                  row.ID,
+			LastName:            row.LastName,
+			LastNameReading:     row.LastNameReading,
+			FirstName:           row.FirstName,
+			FirstNameReading:    row.FirstNameReading,
+			DisplayName:         row.DisplayName,
+			LoginIDs:            row.LoginIds,
+			ContactEmail:        row.ContactEmail,
+			PhoneNumber:         row.PhoneNumber,
+			Roles:               row.Roles,
+			Permissions:         row.Permissions,
+			CircleIDs:           row.CircleIds,
+			LeaderCircleIDs:     row.LeaderCircleIds,
+			IsVerified:          row.IsVerified,
+			IsEmailVerified:     row.IsEmailVerified,
+			IsUnivemailVerified: row.IsUnivemailVerified,
 		})
 	}
 
@@ -92,21 +94,22 @@ func (r *SQLCRepository) Find(userID string) (User, error) {
 	}
 
 	return User{
-		ID:               row.ID,
-		LastName:         row.LastName,
-		LastNameReading:  row.LastNameReading,
-		FirstName:        row.FirstName,
-		FirstNameReading: row.FirstNameReading,
-		DisplayName:      row.DisplayName,
-		LoginIDs:         row.LoginIds,
-		ContactEmail:     row.ContactEmail,
-		PhoneNumber:      row.PhoneNumber,
-		Roles:            row.Roles,
-		Permissions:      row.Permissions,
-		CircleIDs:        row.CircleIds,
-		LeaderCircleIDs:  []string{},
-		IsVerified:       row.IsVerified,
-		IsEmailVerified:  row.IsEmailVerified,
+		ID:                  row.ID,
+		LastName:            row.LastName,
+		LastNameReading:     row.LastNameReading,
+		FirstName:           row.FirstName,
+		FirstNameReading:    row.FirstNameReading,
+		DisplayName:         row.DisplayName,
+		LoginIDs:            row.LoginIds,
+		ContactEmail:        row.ContactEmail,
+		PhoneNumber:         row.PhoneNumber,
+		Roles:               row.Roles,
+		Permissions:         row.Permissions,
+		CircleIDs:           row.CircleIds,
+		LeaderCircleIDs:     row.LeaderCircleIds,
+		IsVerified:          row.IsVerified,
+		IsEmailVerified:     row.IsEmailVerified,
+		IsUnivemailVerified: row.IsUnivemailVerified,
 	}, nil
 }
 
@@ -120,6 +123,77 @@ func (r *SQLCRepository) FindByLoginID(loginID string) (User, error) {
 	}
 
 	return r.Find(userRow.ID)
+}
+
+func (r *SQLCRepository) FindByContactEmail(contactEmail string) (User, error) {
+	userRow, err := r.queries.GetUserByContactEmail(context.Background(), contactEmail)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+
+	return r.Find(userRow.ID)
+}
+
+func (r *SQLCRepository) Create(params CreateParams) (User, error) {
+	ctx := context.Background()
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return User{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	queries := r.queries.WithTx(tx)
+	row, err := queries.CreateUser(ctx, dbgen.CreateUserParams{
+		Column1:             params.ID,
+		LastName:            params.LastName,
+		LastNameReading:     params.LastNameReading,
+		FirstName:           params.FirstName,
+		FirstNameReading:    params.FirstNameReading,
+		DisplayName:         params.DisplayName,
+		ContactEmail:        params.ContactEmail,
+		PhoneNumber:         params.PhoneNumber,
+		Password:            params.PasswordHash,
+		IsVerified:          params.IsVerified,
+		IsEmailVerified:     params.IsEmailVerified,
+		IsUnivemailVerified: params.IsUnivemailVerified,
+	})
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, loginID := range params.LoginIDs {
+		if err := queries.AddUserLoginID(ctx, dbgen.AddUserLoginIDParams{
+			LoginID: loginID,
+			UserID:  row.ID,
+		}); err != nil {
+			return User{}, err
+		}
+	}
+	for _, role := range params.Roles {
+		if err := queries.AddUserRole(ctx, dbgen.AddUserRoleParams{
+			UserID: row.ID,
+			Role:   role,
+		}); err != nil {
+			return User{}, err
+		}
+	}
+	for _, permission := range params.Permissions {
+		if err := queries.AddUserPermission(ctx, dbgen.AddUserPermissionParams{
+			UserID:     row.ID,
+			Permission: permission,
+		}); err != nil {
+			return User{}, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return User{}, err
+	}
+
+	return r.Find(row.ID)
 }
 
 func (r *SQLCRepository) UpdateDisplayName(userID, displayName string) (User, error) {
@@ -298,6 +372,36 @@ func (r *SQLCRepository) UpdateVerified(userID string, verified bool) (User, err
 	return r.Find(userID)
 }
 
+func (r *SQLCRepository) UpdateEmailVerified(userID string, verified bool) (User, error) {
+	_, err := r.queries.UpdateUserEmailVerification(context.Background(), dbgen.UpdateUserEmailVerificationParams{
+		ID:              userID,
+		IsEmailVerified: verified,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+
+	return r.Find(userID)
+}
+
+func (r *SQLCRepository) UpdateUnivemailVerified(userID string, verified bool) (User, error) {
+	_, err := r.queries.UpdateUserUnivemailVerification(context.Background(), dbgen.UpdateUserUnivemailVerificationParams{
+		ID:                  userID,
+		IsUnivemailVerified: verified,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+
+	return r.Find(userID)
+}
+
 func (r *SQLCRepository) Delete(userID string) error {
 	err := r.queries.DeleteUser(context.Background(), userID)
 	if err != nil {
@@ -323,21 +427,22 @@ func (r *SQLCRepository) ListByCircleIDs(circleIDs []string) ([]User, error) {
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:               row.ID,
-			LastName:         row.LastName,
-			LastNameReading:  row.LastNameReading,
-			FirstName:        row.FirstName,
-			FirstNameReading: row.FirstNameReading,
-			DisplayName:      row.DisplayName,
-			LoginIDs:         row.LoginIds,
-			ContactEmail:     row.ContactEmail,
-			PhoneNumber:      row.PhoneNumber,
-			Roles:            row.Roles,
-			Permissions:      row.Permissions,
-			CircleIDs:        row.CircleIds,
-			LeaderCircleIDs:  []string{},
-			IsVerified:       row.IsVerified,
-			IsEmailVerified:  row.IsEmailVerified,
+			ID:                  row.ID,
+			LastName:            row.LastName,
+			LastNameReading:     row.LastNameReading,
+			FirstName:           row.FirstName,
+			FirstNameReading:    row.FirstNameReading,
+			DisplayName:         row.DisplayName,
+			LoginIDs:            row.LoginIds,
+			ContactEmail:        row.ContactEmail,
+			PhoneNumber:         row.PhoneNumber,
+			Roles:               row.Roles,
+			Permissions:         row.Permissions,
+			CircleIDs:           row.CircleIds,
+			LeaderCircleIDs:     []string{},
+			IsVerified:          row.IsVerified,
+			IsEmailVerified:     row.IsEmailVerified,
+			IsUnivemailVerified: row.IsUnivemailVerified,
 		})
 	}
 
@@ -357,21 +462,22 @@ func (r *SQLCRepository) ListLeadersByCircleIDs(circleIDs []string) ([]User, err
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:               row.ID,
-			LastName:         row.LastName,
-			LastNameReading:  row.LastNameReading,
-			FirstName:        row.FirstName,
-			FirstNameReading: row.FirstNameReading,
-			DisplayName:      row.DisplayName,
-			LoginIDs:         row.LoginIds,
-			ContactEmail:     row.ContactEmail,
-			PhoneNumber:      row.PhoneNumber,
-			Roles:            row.Roles,
-			Permissions:      row.Permissions,
-			CircleIDs:        row.CircleIds,
-			LeaderCircleIDs:  row.CircleIds,
-			IsVerified:       row.IsVerified,
-			IsEmailVerified:  row.IsEmailVerified,
+			ID:                  row.ID,
+			LastName:            row.LastName,
+			LastNameReading:     row.LastNameReading,
+			FirstName:           row.FirstName,
+			FirstNameReading:    row.FirstNameReading,
+			DisplayName:         row.DisplayName,
+			LoginIDs:            row.LoginIds,
+			ContactEmail:        row.ContactEmail,
+			PhoneNumber:         row.PhoneNumber,
+			Roles:               row.Roles,
+			Permissions:         row.Permissions,
+			CircleIDs:           row.CircleIds,
+			LeaderCircleIDs:     row.CircleIds,
+			IsVerified:          row.IsVerified,
+			IsEmailVerified:     row.IsEmailVerified,
+			IsUnivemailVerified: row.IsUnivemailVerified,
 		})
 	}
 
@@ -398,21 +504,22 @@ func (r *SQLCRepository) ListVerifiedByCircleIDs(circleIDs []string) ([]User, er
 		users := make([]User, 0, len(typed))
 		for _, row := range typed {
 			users = append(users, User{
-				ID:               row.ID,
-				LastName:         row.LastName,
-				LastNameReading:  row.LastNameReading,
-				FirstName:        row.FirstName,
-				FirstNameReading: row.FirstNameReading,
-				DisplayName:      row.DisplayName,
-				LoginIDs:         row.LoginIds,
-				ContactEmail:     row.ContactEmail,
-				PhoneNumber:      row.PhoneNumber,
-				Roles:            row.Roles,
-				Permissions:      row.Permissions,
-				CircleIDs:        row.CircleIds,
-				LeaderCircleIDs:  []string{},
-				IsVerified:       row.IsVerified,
-				IsEmailVerified:  row.IsEmailVerified,
+				ID:                  row.ID,
+				LastName:            row.LastName,
+				LastNameReading:     row.LastNameReading,
+				FirstName:           row.FirstName,
+				FirstNameReading:    row.FirstNameReading,
+				DisplayName:         row.DisplayName,
+				LoginIDs:            row.LoginIds,
+				ContactEmail:        row.ContactEmail,
+				PhoneNumber:         row.PhoneNumber,
+				Roles:               row.Roles,
+				Permissions:         row.Permissions,
+				CircleIDs:           row.CircleIds,
+				LeaderCircleIDs:     []string{},
+				IsVerified:          row.IsVerified,
+				IsEmailVerified:     row.IsEmailVerified,
+				IsUnivemailVerified: row.IsUnivemailVerified,
 			})
 		}
 		return users, nil
@@ -420,21 +527,22 @@ func (r *SQLCRepository) ListVerifiedByCircleIDs(circleIDs []string) ([]User, er
 		users := make([]User, 0, len(typed))
 		for _, row := range typed {
 			users = append(users, User{
-				ID:               row.ID,
-				LastName:         row.LastName,
-				LastNameReading:  row.LastNameReading,
-				FirstName:        row.FirstName,
-				FirstNameReading: row.FirstNameReading,
-				DisplayName:      row.DisplayName,
-				LoginIDs:         row.LoginIds,
-				ContactEmail:     row.ContactEmail,
-				PhoneNumber:      row.PhoneNumber,
-				Roles:            row.Roles,
-				Permissions:      row.Permissions,
-				CircleIDs:        row.CircleIds,
-				LeaderCircleIDs:  []string{},
-				IsVerified:       row.IsVerified,
-				IsEmailVerified:  row.IsEmailVerified,
+				ID:                  row.ID,
+				LastName:            row.LastName,
+				LastNameReading:     row.LastNameReading,
+				FirstName:           row.FirstName,
+				FirstNameReading:    row.FirstNameReading,
+				DisplayName:         row.DisplayName,
+				LoginIDs:            row.LoginIds,
+				ContactEmail:        row.ContactEmail,
+				PhoneNumber:         row.PhoneNumber,
+				Roles:               row.Roles,
+				Permissions:         row.Permissions,
+				CircleIDs:           row.CircleIds,
+				LeaderCircleIDs:     []string{},
+				IsVerified:          row.IsVerified,
+				IsEmailVerified:     row.IsEmailVerified,
+				IsUnivemailVerified: row.IsUnivemailVerified,
 			})
 		}
 		return users, nil
@@ -456,21 +564,22 @@ func (r *SQLCRepository) ListVerifiedLeadersByCircleIDs(circleIDs []string) ([]U
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
 		users = append(users, User{
-			ID:               row.ID,
-			LastName:         row.LastName,
-			LastNameReading:  row.LastNameReading,
-			FirstName:        row.FirstName,
-			FirstNameReading: row.FirstNameReading,
-			DisplayName:      row.DisplayName,
-			LoginIDs:         row.LoginIds,
-			ContactEmail:     row.ContactEmail,
-			PhoneNumber:      row.PhoneNumber,
-			Roles:            row.Roles,
-			Permissions:      row.Permissions,
-			CircleIDs:        row.CircleIds,
-			LeaderCircleIDs:  row.CircleIds,
-			IsVerified:       row.IsVerified,
-			IsEmailVerified:  row.IsEmailVerified,
+			ID:                  row.ID,
+			LastName:            row.LastName,
+			LastNameReading:     row.LastNameReading,
+			FirstName:           row.FirstName,
+			FirstNameReading:    row.FirstNameReading,
+			DisplayName:         row.DisplayName,
+			LoginIDs:            row.LoginIds,
+			ContactEmail:        row.ContactEmail,
+			PhoneNumber:         row.PhoneNumber,
+			Roles:               row.Roles,
+			Permissions:         row.Permissions,
+			CircleIDs:           row.CircleIds,
+			LeaderCircleIDs:     row.CircleIds,
+			IsVerified:          row.IsVerified,
+			IsEmailVerified:     row.IsEmailVerified,
+			IsUnivemailVerified: row.IsUnivemailVerified,
 		})
 	}
 

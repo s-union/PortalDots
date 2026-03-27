@@ -19,7 +19,7 @@ func NewSQLCAuthenticator(queries *dbgen.Queries) *SQLCAuthenticator {
 }
 
 func (a *SQLCAuthenticator) Authenticate(ctx context.Context, loginID, password string) (*User, bool) {
-	userRow, err := a.queries.GetUserByLoginID(ctx, loginID)
+	userRow, err := a.queries.GetUserByAuthIdentifier(ctx, loginID)
 	if err != nil {
 		return nil, false
 	}

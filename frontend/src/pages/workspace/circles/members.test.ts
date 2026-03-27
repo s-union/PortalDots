@@ -27,7 +27,20 @@ const circleDetailFixture = {
   groupNameYomi: 'てすとだいがく',
   participationTypeId: 'pt-exhibit',
   participationTypeName: '展示',
+  formId: 'form-pt-exhibit',
   notes: '',
+  leaderDisplayName: 'Demo User',
+  canChangeGroupName: true,
+  isLeader: true,
+  lastUpdatedAt: '2026-03-20T00:00:00Z',
+  usersCountMin: 1,
+  usersCountMax: 4,
+  memberCount: 2,
+  canSubmit: true,
+  formDescription: '',
+  confirmationMessage: '',
+  questions: [],
+  answer: null,
   invitationToken: 'invite-token-xyz',
   submittedAt: null
 }
@@ -119,6 +132,10 @@ describe('CircleMembersPage', () => {
         {
           path: '/workspace/circles/detail',
           component: { template: '<div>detail</div>' }
+        },
+        {
+          path: '/workspace/circles/confirm',
+          component: { template: '<div>confirm</div>' }
         },
         { path: '/workspace/circles/members', component: CircleMembersPage }
       ]

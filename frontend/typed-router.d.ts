@@ -440,9 +440,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/workspace/circles/confirm': RouteRecordInfo<
+      '/workspace/circles/confirm',
+      '/workspace/circles/confirm',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/workspace/circles/detail': RouteRecordInfo<
       '/workspace/circles/detail',
       '/workspace/circles/detail',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/workspace/circles/done': RouteRecordInfo<
+      '/workspace/circles/done',
+      '/workspace/circles/done',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -895,9 +909,21 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/workspace/circles/confirm.vue': {
+      routes:
+        | '/workspace/circles/confirm'
+      views:
+        | never
+    }
     'src/pages/workspace/circles/detail.vue': {
       routes:
         | '/workspace/circles/detail'
+      views:
+        | never
+    }
+    'src/pages/workspace/circles/done.vue': {
+      routes:
+        | '/workspace/circles/done'
       views:
         | never
     }

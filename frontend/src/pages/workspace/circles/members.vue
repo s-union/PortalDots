@@ -37,6 +37,14 @@ const copySuccess = shallowRef(false)
 const errorMessage = shallowRef('')
 
 const currentUserId = computed(() => sessionStore.user?.id ?? '')
+const memberRequirementText = computed(() => {
+  const detail = detailQuery.data.value
+  if (!detail) {
+    return ''
+  }
+  return `${detail.usersCountMin}〜${detail.usersCountMax}人`
+})
+const canProceedToConfirm = computed(() => detailQuery.data.value?.canSubmit ?? false)
 
 const invitationUrl = computed(() => {
   const token = detailQuery.data.value?.invitationToken
@@ -108,8 +116,24 @@ async function handleRemoveMember(userId: string, displayName: string) {
 
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Circle Members</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">メンバー管理</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">招待リンクの確認やメンバーの管理を行います。</p>
+      <h2 class="mt-3 text-3xl font-semibold text-body">企画参加登録 2/3</h2>
+      <p class="mt-3 text-sm leading-7 text-muted">
+        招待リンクの確認やメンバーの管理を行い、人数条件を満たしたら確認画面へ進みます。
+      </p>
+    </SurfaceCard>
+
+    <SurfaceCard v-if="detailQuery.data.value">
+      <p class="text-sm font-semibold text-body">必要人数</p>
+      <p class="mt-2 text-sm text-muted">
+        現在 {{ detailQuery.data.value.memberCount }} 人 / 条件 {{ memberRequirementText }}
+      </p>
+      <p class="mt-2 text-sm" :class="canProceedToConfirm ? 'text-success' : 'text-warning'">
+        {{
+          canProceedToConfirm
+            ? '人数条件を満たしています。確認画面へ進めます。'
+            : '人数条件を満たしていません。メンバーを追加または整理してください。'
+        }}
+      </p>
     </SurfaceCard>
 
     <!-- 招待 URL -->
@@ -131,7 +155,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
         </div>
       </SettingsRow>
 
-      <template v-if="isCurrentUserLeader" #footer>
+      <template v-if="isCurrentUserLeader && detailQuery.data.value?.submittedAt === null" #footer>
         <div class="flex justify-end">
           <button
             :class="buttonVariants({ variant: 'secondary', size: 'md' })"
@@ -201,5 +225,17 @@ async function handleRemoveMember(userId: string, displayName: string) {
         </AlertMessage>
       </template>
     </SettingsSection>
+
+    <div
+      v-if="detailQuery.data.value?.isLeader && detailQuery.data.value.submittedAt === null"
+      class="flex justify-end"
+    >
+      <RouterLink
+        :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
+        :to="canProceedToConfirm ? '/workspace/circles/confirm' : '/workspace/circles/detail'"
+      >
+        {{ canProceedToConfirm ? '確認画面へ進む' : '入力画面へ戻る' }}
+      </RouterLink>
+    </div>
   </PageLayout>
 </template>

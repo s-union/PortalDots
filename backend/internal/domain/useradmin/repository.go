@@ -3,6 +3,7 @@ package useradmin
 import (
 	"errors"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,21 +14,40 @@ var ErrNotFound = errors.New("user not found")
 var ErrConflict = errors.New("user conflict")
 
 type User struct {
-	ID               string
-	LastName         string
-	LastNameReading  string
-	FirstName        string
-	FirstNameReading string
-	DisplayName      string
-	LoginIDs         []string
-	ContactEmail     string
-	PhoneNumber      string
-	Roles            []string
-	Permissions      []string
-	CircleIDs        []string
-	LeaderCircleIDs  []string
-	IsVerified       bool
-	IsEmailVerified  bool
+	ID                  string
+	LastName            string
+	LastNameReading     string
+	FirstName           string
+	FirstNameReading    string
+	DisplayName         string
+	LoginIDs            []string
+	ContactEmail        string
+	PhoneNumber         string
+	Roles               []string
+	Permissions         []string
+	CircleIDs           []string
+	LeaderCircleIDs     []string
+	IsVerified          bool
+	IsEmailVerified     bool
+	IsUnivemailVerified bool
+}
+
+type CreateParams struct {
+	ID                  string
+	LastName            string
+	LastNameReading     string
+	FirstName           string
+	FirstNameReading    string
+	DisplayName         string
+	LoginIDs            []string
+	ContactEmail        string
+	PhoneNumber         string
+	PasswordHash        string
+	Roles               []string
+	Permissions         []string
+	IsVerified          bool
+	IsEmailVerified     bool
+	IsUnivemailVerified bool
 }
 
 type Repository interface {
@@ -35,12 +55,16 @@ type Repository interface {
 	ListByQuery(query string) ([]User, error)
 	Find(userID string) (User, error)
 	FindByLoginID(loginID string) (User, error)
+	FindByContactEmail(contactEmail string) (User, error)
+	Create(params CreateParams) (User, error)
 	Update(userID, displayName string, loginIDs []string) (User, error)
 	UpdateDisplayName(userID, displayName string) (User, error)
 	UpdateProfile(userID, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error)
 	UpdateRoles(userID string, roles []string) (User, error)
 	UpdatePermissions(userID string, permissions []string) (User, error)
 	UpdateVerified(userID string, verified bool) (User, error)
+	UpdateEmailVerified(userID string, verified bool) (User, error)
+	UpdateUnivemailVerified(userID string, verified bool) (User, error)
 	Delete(userID string) error
 	ListByCircleIDs(circleIDs []string) ([]User, error)
 	ListLeadersByCircleIDs(circleIDs []string) ([]User, error)
@@ -49,8 +73,9 @@ type Repository interface {
 }
 
 type StaticRepository struct {
-	mu    sync.RWMutex
-	users []User
+	mu     sync.RWMutex
+	users  []User
+	nextID int
 }
 
 func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticRepository {
@@ -68,6 +93,7 @@ func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticR
 	authContactEmail := ""
 	authPhoneNumber := ""
 	authIsEmailVerified := false
+	authIsUnivemailVerified := false
 	if matchedAuthUserIndex >= 0 {
 		matched := users[matchedAuthUserIndex]
 		authCircleIDs = slices.Clone(matched.CircleIDs)
@@ -80,48 +106,54 @@ func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticR
 		authContactEmail = matched.ContactEmail
 		authPhoneNumber = matched.PhoneNumber
 		authIsEmailVerified = matched.IsEmailVerified
+		authIsUnivemailVerified = matched.IsUnivemailVerified
 	}
 	built = append(built, User{
-		ID:               authUser.ID,
-		LastName:         authLastName,
-		LastNameReading:  authLastNameReading,
-		FirstName:        authFirstName,
-		FirstNameReading: authFirstNameReading,
-		DisplayName:      authUser.DisplayName,
-		LoginIDs:         slices.Clone(authUser.LoginIDs),
-		ContactEmail:     authContactEmail,
-		PhoneNumber:      authPhoneNumber,
-		Roles:            slices.Clone(authUser.Roles),
-		Permissions:      slices.Clone(authUser.Permissions),
-		CircleIDs:        authCircleIDs,
-		LeaderCircleIDs:  authLeaderCircleIDs,
-		IsVerified:       authIsVerified,
-		IsEmailVerified:  authIsEmailVerified,
+		ID:                  authUser.ID,
+		LastName:            authLastName,
+		LastNameReading:     authLastNameReading,
+		FirstName:           authFirstName,
+		FirstNameReading:    authFirstNameReading,
+		DisplayName:         authUser.DisplayName,
+		LoginIDs:            slices.Clone(authUser.LoginIDs),
+		ContactEmail:        authContactEmail,
+		PhoneNumber:         authPhoneNumber,
+		Roles:               slices.Clone(authUser.Roles),
+		Permissions:         slices.Clone(authUser.Permissions),
+		CircleIDs:           authCircleIDs,
+		LeaderCircleIDs:     authLeaderCircleIDs,
+		IsVerified:          authIsVerified,
+		IsEmailVerified:     authIsEmailVerified,
+		IsUnivemailVerified: authIsUnivemailVerified,
 	})
 	for _, user := range users {
 		if user.ID == authUser.ID {
 			continue
 		}
 		built = append(built, User{
-			ID:               user.ID,
-			LastName:         user.LastName,
-			LastNameReading:  user.LastNameReading,
-			FirstName:        user.FirstName,
-			FirstNameReading: user.FirstNameReading,
-			DisplayName:      user.DisplayName,
-			LoginIDs:         slices.Clone(user.LoginIDs),
-			ContactEmail:     user.ContactEmail,
-			PhoneNumber:      user.PhoneNumber,
-			Roles:            slices.Clone(user.Roles),
-			Permissions:      slices.Clone(user.Permissions),
-			CircleIDs:        slices.Clone(user.CircleIDs),
-			LeaderCircleIDs:  slices.Clone(user.LeaderCircleIDs),
-			IsVerified:       user.IsVerified,
-			IsEmailVerified:  user.IsEmailVerified,
+			ID:                  user.ID,
+			LastName:            user.LastName,
+			LastNameReading:     user.LastNameReading,
+			FirstName:           user.FirstName,
+			FirstNameReading:    user.FirstNameReading,
+			DisplayName:         user.DisplayName,
+			LoginIDs:            slices.Clone(user.LoginIDs),
+			ContactEmail:        user.ContactEmail,
+			PhoneNumber:         user.PhoneNumber,
+			Roles:               slices.Clone(user.Roles),
+			Permissions:         slices.Clone(user.Permissions),
+			CircleIDs:           slices.Clone(user.CircleIDs),
+			LeaderCircleIDs:     slices.Clone(user.LeaderCircleIDs),
+			IsVerified:          user.IsVerified,
+			IsEmailVerified:     user.IsEmailVerified,
+			IsUnivemailVerified: user.IsUnivemailVerified,
 		})
 	}
 
-	return &StaticRepository{users: built}
+	return &StaticRepository{
+		users:  built,
+		nextID: len(built) + 1,
+	}
 }
 
 func (r *StaticRepository) List() ([]User, error) {
@@ -190,6 +222,62 @@ func (r *StaticRepository) FindByLoginID(loginID string) (User, error) {
 	}
 
 	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) FindByContactEmail(contactEmail string) (User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	normalized := strings.TrimSpace(strings.ToLower(contactEmail))
+	for _, user := range r.users {
+		if strings.ToLower(strings.TrimSpace(user.ContactEmail)) == normalized {
+			return cloneUser(user), nil
+		}
+	}
+
+	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) Create(params CreateParams) (User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, current := range r.users {
+		if hasLoginIDConflict(current.LoginIDs, params.LoginIDs) {
+			return User{}, ErrConflict
+		}
+		if strings.EqualFold(strings.TrimSpace(current.ContactEmail), strings.TrimSpace(params.ContactEmail)) {
+			return User{}, ErrConflict
+		}
+	}
+
+	id := strings.TrimSpace(params.ID)
+	if id == "" {
+		id = "user-generated-" + strconv.Itoa(r.nextID)
+		r.nextID++
+	}
+
+	created := User{
+		ID:                  id,
+		LastName:            params.LastName,
+		LastNameReading:     params.LastNameReading,
+		FirstName:           params.FirstName,
+		FirstNameReading:    params.FirstNameReading,
+		DisplayName:         params.DisplayName,
+		LoginIDs:            slices.Clone(params.LoginIDs),
+		ContactEmail:        params.ContactEmail,
+		PhoneNumber:         params.PhoneNumber,
+		Roles:               slices.Clone(params.Roles),
+		Permissions:         slices.Clone(params.Permissions),
+		CircleIDs:           []string{},
+		LeaderCircleIDs:     []string{},
+		IsVerified:          params.IsVerified,
+		IsEmailVerified:     params.IsEmailVerified,
+		IsUnivemailVerified: params.IsUnivemailVerified,
+	}
+
+	r.users = append(r.users, created)
+	return cloneUser(created), nil
 }
 
 func (r *StaticRepository) UpdateRoles(userID string, roles []string) (User, error) {
@@ -289,6 +377,38 @@ func (r *StaticRepository) UpdateVerified(userID string, verified bool) (User, e
 			continue
 		}
 		r.users[index].IsVerified = verified
+		return cloneUser(r.users[index]), nil
+	}
+
+	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) UpdateEmailVerified(userID string, verified bool) (User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for index := range r.users {
+		if r.users[index].ID != userID {
+			continue
+		}
+		r.users[index].IsEmailVerified = verified
+		r.users[index].IsVerified = r.users[index].IsEmailVerified && r.users[index].IsUnivemailVerified
+		return cloneUser(r.users[index]), nil
+	}
+
+	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) UpdateUnivemailVerified(userID string, verified bool) (User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for index := range r.users {
+		if r.users[index].ID != userID {
+			continue
+		}
+		r.users[index].IsUnivemailVerified = verified
+		r.users[index].IsVerified = r.users[index].IsEmailVerified && r.users[index].IsUnivemailVerified
 		return cloneUser(r.users[index]), nil
 	}
 
