@@ -26,8 +26,9 @@ describe('UserSettingsPage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+    window.localStorage.removeItem('ui_theme')
     document.cookie = 'ui_theme=; Path=/; Max-Age=0; SameSite=Lax'
-    document.documentElement.classList.remove('theme-system', 'theme-light', 'theme-dark')
+    document.documentElement.removeAttribute('data-theme')
   })
 
   it('updates the display name', async () => {
@@ -219,7 +220,7 @@ describe('UserSettingsPage', () => {
     expect(tabLinks.some((link) => link.props('to') === '/workspace/settings/delete')).toBe(true)
   })
 
-  it('updates theme preference immediately and stores it in cookie', async () => {
+  it('updates theme preference immediately and stores it in browser storage', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -288,7 +289,8 @@ describe('UserSettingsPage', () => {
 
     await wrapper.get('input[type="radio"][value="dark"]').setValue()
 
-    expect(document.documentElement.classList.contains('theme-dark')).toBe(true)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(window.localStorage.getItem('ui_theme')).toBe('dark')
     expect(document.cookie).toContain('ui_theme=dark')
   })
 

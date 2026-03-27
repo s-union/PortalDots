@@ -5,12 +5,13 @@ export const uiThemeValues = ['system', 'light', 'dark'] as const
 export type UiTheme = (typeof uiThemeValues)[number]
 
 const defaultUiTheme: UiTheme = 'system'
+const uiThemeStorageKey = 'ui_theme'
 const uiThemeCookieName = 'ui_theme'
-const uiThemeClassPrefix = 'theme-'
+const uiThemeDatasetName = 'theme'
 const uiThemePreference = shallowRef<UiTheme>(defaultUiTheme)
 
 export function initializeUiTheme() {
-  const theme = readUiThemeCookie()
+  const theme = readStoredUiTheme()
   uiThemePreference.value = theme
   applyUiTheme(theme)
   return theme
@@ -42,11 +43,7 @@ export function applyUiTheme(theme: UiTheme) {
     return
   }
 
-  const root = document.documentElement
-  for (const value of uiThemeValues) {
-    root.classList.remove(`${uiThemeClassPrefix}${value}`)
-  }
-  root.classList.add(`${uiThemeClassPrefix}${theme}`)
+  document.documentElement.dataset[uiThemeDatasetName] = theme
 }
 
 export function updateUiTheme(theme: UiTheme) {
@@ -56,11 +53,48 @@ export function updateUiTheme(theme: UiTheme) {
 }
 
 function persistUiTheme(theme: UiTheme) {
+  persistUiThemeCookie(theme)
+  persistUiThemeStorage(theme)
+}
+
+function readStoredUiTheme() {
+  const storedTheme = readUiThemeStorage()
+  if (storedTheme !== null) {
+    return storedTheme
+  }
+
+  return readUiThemeCookie()
+}
+
+function readUiThemeStorage(): UiTheme | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    const theme = window.localStorage.getItem(uiThemeStorageKey)
+    return theme && isUiTheme(theme) ? theme : null
+  } catch {
+    return null
+  }
+}
+
+function persistUiThemeCookie(theme: UiTheme) {
   if (typeof document === 'undefined') {
     return
   }
 
   document.cookie = `${uiThemeCookieName}=${encodeURIComponent(theme)}; Path=/; Max-Age=31536000; SameSite=Lax`
+}
+
+function persistUiThemeStorage(theme: UiTheme) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(uiThemeStorageKey, theme)
+  } catch {}
 }
 
 function isUiTheme(value: string): value is UiTheme {

@@ -1,5 +1,17 @@
 @import 'tailwindcss';
 
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme='system'], [data-theme='system'] *) {
+      @slot;
+    }
+  }
+}
+
 @theme {
   /* Primary Color — default: HSL(214, 91%, 53%) from Laravel UIThemeService */
   --color-primary: hsla(214, 91%, 53%, 1);
@@ -78,11 +90,10 @@
     -moz-osx-font-smoothing: grayscale;
     accent-color: var(--color-primary);
     --font-weight-bold: 600;
-  }
 
-  html.theme-light,
-  html.theme-system {
-    color-scheme: light;
+    @variant dark {
+      color-scheme: dark;
+    }
   }
 
   body {
@@ -147,7 +158,7 @@
    Dark mode — matches resources/views/includes/head_ui_theme_dark.blade.php
    ======================================================================== */
 
-html.theme-dark {
+:root[data-theme='dark'] {
   color-scheme: dark;
   --color-primary-light: hsla(214, 81%, 73%, 0.225);
   --color-body: rgb(215, 215, 215);
@@ -184,7 +195,7 @@ html.theme-dark {
 }
 
 @media (prefers-color-scheme: dark) {
-  html.theme-system {
+  :root[data-theme='system'] {
     color-scheme: dark;
     --color-primary-light: hsla(214, 81%, 73%, 0.225);
     --color-body: rgb(215, 215, 215);

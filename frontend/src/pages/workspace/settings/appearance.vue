@@ -42,7 +42,9 @@ const themeOptions: {
       <SettingsRow>
         <div class="flex items-start gap-3 rounded bg-primary-light p-4 text-sm text-body">
           <i class="fas fa-info-circle mt-0.5 flex-none text-primary"></i>
-          <span> 外観設定はお使いのブラウザーに保存されます。Cookie を削除するとこの設定はリセットされます。 </span>
+          <span>
+            外観設定はお使いのブラウザーに保存されます。サイトデータを削除するとこの設定はリセットされます。
+          </span>
         </div>
       </SettingsRow>
       <SettingsRow>
