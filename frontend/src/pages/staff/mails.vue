@@ -18,7 +18,7 @@ import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants, formControlVariants } from '@/lib/ui/variants'
-import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
+import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   extractStaffMailValidationMessage,
@@ -32,7 +32,7 @@ import { useSessionStore } from '@/features/session/store'
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const circlesQuery = useAllStaffCirclesQuery(enabled)
+const circlesQuery = useManagedStaffCirclesQuery(enabled)
 const mailsQuery = useStaffMailsQuery(enabled)
 const createMailMutation = useCreateStaffMailMutation()
 const form = useStaffMailForm()

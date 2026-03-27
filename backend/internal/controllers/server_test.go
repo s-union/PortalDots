@@ -1417,7 +1417,7 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 	}
 }
 
-func TestListFormsUsesCurrentCircle(t *testing.T) {
+func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testConfig())
@@ -1448,15 +1448,24 @@ func TestListFormsUsesCurrentCircle(t *testing.T) {
 		t.Fatalf("unmarshal forms response: %v", err)
 	}
 
-	if len(response) != 1 {
-		t.Fatalf("expected 1 visible form for circle-b, got %d", len(response))
+	if len(response) != 3 {
+		t.Fatalf("expected 3 accessible forms for circle-b, got %d", len(response))
 	}
-	if response[0].ID != "form-circle-b-1" {
-		t.Fatalf("expected circle-b form, got %s", response[0].ID)
+	if response[0].ID != "form-circle-b-closed" {
+		t.Fatalf("expected closed form to be first, got %s", response[0].ID)
+	}
+	if response[1].ID != "form-circle-a-1" || response[2].ID != "form-circle-b-1" {
+		t.Fatalf("unexpected visible forms order: %#v", response)
+	}
+	if !slices.Equal(response[2].AnswerableTags, []string{"展示"}) {
+		t.Fatalf("expected answerable tags to be returned, got %#v", response[2].AnswerableTags)
+	}
+	if response[2].ConfirmationMessage != "展示チェックフォームへの回答を受け付けました。" {
+		t.Fatalf("unexpected confirmation message: %#v", response[2])
 	}
 }
 
-func TestGetFormRequiresOpenVisibleFormInCurrentCircle(t *testing.T) {
+func TestGetFormAllowsClosedAccessibleFormInCurrentCircle(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testConfig())
@@ -1489,8 +1498,47 @@ func TestGetFormRequiresOpenVisibleFormInCurrentCircle(t *testing.T) {
 	if detail.Name != "搬入確認フォーム" {
 		t.Fatalf("unexpected form name: %s", detail.Name)
 	}
+	if len(detail.AnswerableTags) != 0 || detail.ConfirmationMessage != "搬入確認フォームへの回答ありがとうございました。" {
+		t.Fatalf("unexpected form detail metadata: %#v", detail)
+	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/form-circle-b-closed", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal closed form detail: %v", err)
+	}
+	if detail.ID != "form-circle-b-closed" || detail.IsOpen {
+		t.Fatalf("expected closed accessible form detail, got %#v", detail)
+	}
+}
+
+func TestClosedFormAnswerMutationsRemainBlocked(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
+		"circleId": "circle-a",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/form-circle-b-closed/answer", map[string]string{
+		"body": "締切後の更新",
+	})
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -1865,6 +1913,92 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	}
 	if len(pages) != 1 || pages[0].Title != "スタッフ向け新着" {
 		t.Fatalf("unexpected searched staff pages: %#v", pages)
+	}
+}
+
+func TestStaffPageCreateRejectsDocumentsFromDifferentCircle(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"circleId":     "circle-b",
+		"title":        "スタッフ向け新着",
+		"body":         "設営順の詳細を更新しました。",
+		"notes":        "展示担当に周知済みです。",
+		"isPinned":     true,
+		"isPublic":     true,
+		"viewableTags": []string{"展示"},
+		"documentIds":  []string{"document-circle-a-1"},
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal validation response: %v", err)
+	}
+	if len(response.Errors["documentIds"]) == 0 {
+		t.Fatalf("expected documentIds validation error, got %#v", response.Errors)
+	}
+}
+
+func TestStaffPageUpdateAllowsPreservingLegacyDocumentsFromDifferentCircle(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	for index := range cfg.Pages {
+		if cfg.Pages[index].ID != "page-circle-b-private" {
+			continue
+		}
+		cfg.Pages[index].DocumentIDs = []string{"document-circle-b-private", "document-circle-a-1"}
+	}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "circle-b")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/page-circle-b-private", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail staffPageDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal staff page detail: %v", err)
+	}
+	if !slices.Equal(detail.DocumentIDs, []string{"document-circle-b-private", "document-circle-a-1"}) {
+		t.Fatalf("expected legacy document ids to be returned, got %#v", detail.DocumentIDs)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/page-circle-b-private", map[string]any{
+		"title":        "既存資料付きお知らせを更新",
+		"body":         "本文だけ更新します。",
+		"notes":        "legacy documents preserved",
+		"isPinned":     false,
+		"isPublic":     false,
+		"viewableTags": []string{},
+		"documentIds":  detail.DocumentIDs,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var summary staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &summary); err != nil {
+		t.Fatalf("unmarshal updated staff page: %v", err)
+	}
+	if summary.Title != "既存資料付きお知らせを更新" {
+		t.Fatalf("unexpected updated page summary: %#v", summary)
 	}
 }
 
@@ -2363,6 +2497,32 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 	}
 	if len(index.Answers) != 1 || len(index.NotAnsweredCircles) != 1 || index.NotAnsweredCircles[0].ID != "circle-b" {
 		t.Fatalf("unexpected answers index: %#v", index)
+	}
+
+	recorder = doMultipartRequest(
+		t,
+		server,
+		cookies,
+		http.MethodPost,
+		"/v1/staff/forms/form-circle-b-1/answers/"+created.Answer.ID+"/uploads",
+		"file",
+		"layout.exe",
+		[]byte("not allowed"),
+		"application/octet-stream",
+		map[string]string{
+			"questionId": uploadQuestion.ID,
+		},
+	)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var uploadValidation models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &uploadValidation); err != nil {
+		t.Fatalf("unmarshal upload validation response: %v", err)
+	}
+	if len(uploadValidation.Errors["file"]) == 0 {
+		t.Fatalf("expected file validation error, got %#v", uploadValidation.Errors)
 	}
 
 	recorder = doMultipartRequest(
@@ -2871,6 +3031,50 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	}
 	if len(all) != 1 || all[0].ID != "circle-a" {
 		t.Fatalf("unexpected circles after delete: %#v", all)
+	}
+}
+
+func TestManagedStaffCirclesHideCircleDetailsFromNonCircleReaders(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.AuthUser = config.AuthUser{
+		ID:          "content-user",
+		LoginIDs:    []string{"content@example.com"},
+		DisplayName: "Content User",
+		Password:    "password",
+		Roles:       []string{"content_manager"},
+	}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "content@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	authorizeStaff(t, server, cookies)
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/all", nil)
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/managed", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var circles []staffManagedCircleResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &circles); err != nil {
+		t.Fatalf("unmarshal managed circles response: %v", err)
+	}
+	if len(circles) != 2 || circles[0].ID == "" || circles[0].Name == "" {
+		t.Fatalf("unexpected managed circles response: %#v", circles)
 	}
 }
 

@@ -159,6 +159,8 @@ describe('StaffFormPreviewPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('展示チェックフォーム')
+    expect(wrapper.text()).toContain('このフォームから実際に送信することはできません。')
+    expect(wrapper.text()).toContain('展示 のタグを持つ企画に限定公開されます。')
     expect(wrapper.text()).toContain('基本情報')
     expect(wrapper.text()).toContain('責任者名')
     expect(wrapper.text()).toContain('1日目')

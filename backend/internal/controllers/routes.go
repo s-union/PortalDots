@@ -93,6 +93,7 @@ type StaffRoutes struct {
 	DeleteStaffParticipationType             echo.HandlerFunc
 	// Circles
 	ListStaffCircles        echo.HandlerFunc
+	ListManagedStaffCircles echo.HandlerFunc
 	ListAllStaffCircles     echo.HandlerFunc
 	DownloadStaffCirclesCSV echo.HandlerFunc
 	CreateStaffCircle       echo.HandlerFunc
@@ -243,6 +244,7 @@ func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.Midd
 	staff.PUT("/participation-types/:typeID", r.UpdateStaffParticipationType)
 	staff.DELETE("/participation-types/:typeID", r.DeleteStaffParticipationType)
 	staff.GET("/circles", r.ListStaffCircles)
+	staff.GET("/circles/managed", r.ListManagedStaffCircles)
 	staff.GET("/circles/all", r.ListAllStaffCircles)
 	staff.GET("/circles/export", r.DownloadStaffCirclesCSV)
 	staff.POST("/circles", r.CreateStaffCircle)

@@ -55,6 +55,16 @@ const selectedCircleAnswers = computed(
   () => answersQuery.data.value?.answers.filter((answer) => answer.circle.id === selectedCircleId.value) ?? []
 )
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
+const notificationMessage = computed(() => {
+  const form = answersQuery.data.value?.form
+  if (!form) {
+    return ''
+  }
+  if (form.isPublic && !form.isParticipationForm) {
+    return 'この回答を保存すると、対象企画のメンバーへ回答更新通知メールが送信されます。'
+  }
+  return 'このフォームでは、スタッフが回答を保存しても企画メンバーへの通知メールは送信されません。'
+})
 
 async function handleCreateAnswer() {
   errorMessage.value = ''
@@ -100,6 +110,10 @@ async function handleCreateAnswer() {
 
       <section class="rounded border border-border bg-surface p-6 shadow-lv1">
         <div class="grid gap-4">
+          <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+            {{ notificationMessage }}
+          </div>
+
           <label class="grid gap-2 text-sm text-body">
             <span>回答を作成する企画</span>
             <select
@@ -116,13 +130,6 @@ async function handleCreateAnswer() {
           <div v-if="selectedCircle" class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
             <p class="font-semibold text-body">{{ selectedCircle.name }}</p>
             <p class="mt-1">{{ selectedCircle.groupName }} / {{ selectedCircle.participationTypeName }}</p>
-            <p class="mt-3">
-              {{
-                answersQuery.data.value.form.isPublic
-                  ? '公開フォームのため、保存時に確認用モックメールをキューへ追加します。実メールは送信しません。'
-                  : '非公開フォームのため、保存しても確認メールのモック登録は行いません。'
-              }}
-            </p>
           </div>
 
           <div class="flex flex-wrap gap-3">

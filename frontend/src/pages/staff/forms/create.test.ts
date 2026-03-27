@@ -97,25 +97,12 @@ describe('StaffFormCreatePage', () => {
           })
         }
 
-        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
+        if (pathname.endsWith('/staff/circles/managed') && method === 'GET') {
           return new Response(
             JSON.stringify([
               {
                 id: 'circle-b',
-                name: 'デモ企画B',
-                nameYomi: 'デモキカクビー',
-                groupName: '展示企画B',
-                groupNameYomi: 'テンジキカクビー',
-                participationTypeId: 'type-1',
-                participationTypeName: '一般企画',
-                tags: [],
-                notes: '',
-                submittedAt: null,
-                status: 'approved',
-                statusReason: '',
-                statusSetAt: null,
-                statusSetById: null,
-                places: []
+                name: 'デモ企画B'
               }
             ]),
             {

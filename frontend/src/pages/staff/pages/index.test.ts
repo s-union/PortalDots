@@ -42,6 +42,7 @@ describe('StaffPagesIndexPage', () => {
     })
 
     let createdTitle = ''
+    let createdRequestBody: Record<string, unknown> | null = null
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -115,25 +116,16 @@ describe('StaffPagesIndexPage', () => {
           )
         }
 
-        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
+        if (pathname.endsWith('/staff/circles/managed') && method === 'GET') {
           return new Response(
             JSON.stringify([
               {
+                id: 'circle-a',
+                name: 'デモ企画A'
+              },
+              {
                 id: 'circle-b',
-                name: 'デモ企画B',
-                nameYomi: 'デモキカクビー',
-                groupName: '展示企画B',
-                groupNameYomi: 'テンジキカクビー',
-                participationTypeId: 'type-1',
-                participationTypeName: '一般企画',
-                tags: [],
-                notes: '',
-                submittedAt: null,
-                status: 'approved',
-                statusReason: '',
-                statusSetAt: null,
-                statusSetById: null,
-                places: []
+                name: 'デモ企画B'
               }
             ]),
             {
@@ -146,6 +138,25 @@ describe('StaffPagesIndexPage', () => {
         if (pathname.endsWith('/staff/documents') && method === 'GET') {
           return new Response(
             JSON.stringify([
+              {
+                circle: {
+                  id: 'circle-a',
+                  name: 'デモ企画A'
+                },
+                id: 'document-circle-a-1',
+                name: 'A企画ガイド',
+                description: 'Aブロック向けのガイドです。',
+                notes: '',
+                isImportant: false,
+                filename: 'a-guide.txt',
+                extension: 'TXT',
+                mimeType: 'text/plain; charset=utf-8',
+                sizeBytes: 768,
+                isPublic: true,
+                createdAt: '2026-03-02T09:00:00Z',
+                updatedAt: '2026-03-04T09:00:00Z',
+                downloadUrl: '/v1/documents/document-circle-a-1'
+              },
               {
                 circle: {
                   id: 'circle-b',
@@ -243,6 +254,7 @@ describe('StaffPagesIndexPage', () => {
         }
 
         if (pathname.endsWith('/staff/pages') && method === 'POST') {
+          createdRequestBody = await parseRequestBody(input, init?.body)
           createdTitle = '新着スタッフ連絡'
           return new Response(
             JSON.stringify({
@@ -279,7 +291,15 @@ describe('StaffPagesIndexPage', () => {
     expect(wrapper.text()).toContain('保存後にモックメール配信を予約する')
     expect(wrapper.text()).toContain('配信予約はモックキューへの登録のみ行います。実メール送信は行いません。')
 
+    await wrapper.get('select[name="circleId"]').setValue('circle-a')
+    await flushPromises()
+    expect(wrapper.text()).toContain('A企画ガイド')
+    expect(wrapper.text()).not.toContain('展示ガイド')
+    await wrapper.get('fieldset input[type="checkbox"]').setValue(true)
     await wrapper.get('select[name="circleId"]').setValue('circle-b')
+    await flushPromises()
+    expect(wrapper.text()).toContain('展示ガイド')
+    expect(wrapper.text()).not.toContain('A企画ガイド')
     await wrapper.get('input[name="title"]').setValue('新着スタッフ連絡')
     await wrapper.get('textarea[name="body"]').setValue('設営順を更新しました。')
     await wrapper.get('textarea[name="notes"]').setValue('スタッフ向けメモ')
@@ -295,7 +315,37 @@ describe('StaffPagesIndexPage', () => {
     await forms[0].trigger('submit')
     await flushPromises()
 
+    expect(createdRequestBody).toMatchObject({
+      circleId: 'circle-b',
+      documentIds: []
+    })
     expect(wrapper.text()).toContain('新着スタッフ連絡')
     expect(wrapper.text()).toContain('はい')
   })
 })
+
+async function parseRequestBody(
+  input: RequestInfo | URL,
+  body: null | string | ArrayBuffer | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | undefined
+) {
+  if (typeof body !== 'string') {
+    if (typeof Request !== 'undefined' && input instanceof Request) {
+      body = await input.clone().text()
+    }
+  }
+
+  if (typeof body !== 'string') {
+    throw new Error('Request body was not a string')
+  }
+
+  const parsed: unknown = JSON.parse(body)
+  if (!isRecord(parsed)) {
+    throw new Error('Request body was not an object')
+  }
+
+  return parsed
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}

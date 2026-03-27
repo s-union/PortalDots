@@ -97,6 +97,8 @@ describe('FormDetailPage', () => {
             openAt: '2026-03-01T00:00:00Z',
             closeAt: '2026-03-20T23:59:59Z',
             maxAnswers: 2,
+            answerableTags: ['模擬店'],
+            confirmationMessage: '搬入確認フォームへの回答ありがとうございました。',
             isPublic: true,
             isOpen: true,
             questions: [
@@ -271,6 +273,8 @@ describe('FormDetailPage', () => {
     expect(wrapper.text()).toContain('必要設備')
     expect(wrapper.text()).toContain('レイアウト図')
     expect(wrapper.text()).toContain('1企画あたり 2 件まで回答できます。')
+    expect(wrapper.text()).toContain('模擬店')
+    expect(wrapper.text()).toContain('搬入確認フォームへの回答ありがとうございました。')
     expect(
       wrapper
         .get('a[href="/circles/select?redirect=%2Fworkspace%2Fforms%2Fform-circle-a-1%3Fanswer%3Danswer-1"]')
@@ -362,6 +366,8 @@ describe('FormDetailPage', () => {
             openAt: '2026-03-01T00:00:00Z',
             closeAt: '2026-03-20T23:59:59Z',
             maxAnswers: 1,
+            answerableTags: [],
+            confirmationMessage: '',
             isPublic: true,
             isOpen: true,
             questions: [
@@ -470,6 +476,8 @@ describe('FormDetailPage', () => {
             openAt: '2026-03-01T00:00:00Z',
             closeAt: '2026-03-20T23:59:59Z',
             maxAnswers: 2,
+            answerableTags: [],
+            confirmationMessage: '',
             isPublic: true,
             isOpen: true,
             hasAnswer: true,

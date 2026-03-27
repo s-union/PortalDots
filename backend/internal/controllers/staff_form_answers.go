@@ -186,7 +186,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 	}
 
 	created := h.answers.Create(formValue.ID, request.CircleID, body, normalizedDetails)
-	if formValue.IsPublic {
+	if h.shouldNotifyStaffFormAnswer(formValue.ID, formValue.IsPublic) {
 		h.enqueueStaffFormAnswerMail(currentSession.User.ID, formValue, created)
 	}
 	recordActivity(
@@ -237,7 +237,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 	if !ok {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
-	if formValue.IsPublic {
+	if h.shouldNotifyStaffFormAnswer(formValue.ID, formValue.IsPublic) {
 		h.enqueueStaffFormAnswerMail(currentSession.User.ID, formValue, updated)
 	}
 
@@ -283,7 +283,7 @@ func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
 }
 
 func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
-	_, currentSession, formValue, _, _, status, ok := h.staffFormContext(c, canEditFormAnswers)
+	_, currentSession, formValue, _, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -306,6 +306,19 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 			"questionId": {"question_id_required"},
 		})
 	}
+	uploadQuestion, found := findUploadQuestion(questions, questionID)
+	if !found {
+		return validationError(c, map[string][]string{
+			"questionId": {"アップロード先の設問が不正です"},
+		})
+	}
+
+	filename := strings.TrimSpace(fileHeader.Filename)
+	if filename == "" {
+		return validationError(c, map[string][]string{
+			"file": {"ファイル名が不正です"},
+		})
+	}
 
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -313,9 +326,24 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 	}
 	defer file.Close()
 
-	content, err := io.ReadAll(file)
+	content, err := io.ReadAll(io.LimitReader(file, maxAnswerUploadBytes+1))
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "upload_failed")
+	}
+	if len(content) == 0 {
+		return validationError(c, map[string][]string{
+			"file": {"空のファイルはアップロードできません"},
+		})
+	}
+	if len(content) > maxAnswerUploadBytes {
+		return validationError(c, map[string][]string{
+			"file": {"ファイルサイズは 5MB 以下にしてください"},
+		})
+	}
+	if uploadValidationMessage := validateUploadExtension(uploadQuestion, filename); uploadValidationMessage != "" {
+		return validationError(c, map[string][]string{
+			"file": {uploadValidationMessage},
+		})
 	}
 
 	mimeType := strings.TrimSpace(fileHeader.Header.Get(echo.HeaderContentType))
@@ -323,7 +351,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 		mimeType = "application/octet-stream"
 	}
 
-	upload, ok := h.answers.AddUploadToAnswer(answerValue.ID, questionID, fileHeader.Filename, mimeType, content)
+	upload, ok := h.answers.AddUploadToAnswer(answerValue.ID, questionID, filename, mimeType, content)
 	if !ok {
 		return errorJSON(c, http.StatusInternalServerError, "upload_failed")
 	}
@@ -587,6 +615,10 @@ func mapStaffAnswerCircle(circleValue circle.Circle) staffAnswerCircleResponse {
 func (h *staffFormHandlers) isParticipationForm(formID string) bool {
 	_, err := h.participationTypes.FindByFormID(formID)
 	return err == nil
+}
+
+func (h *staffFormHandlers) shouldNotifyStaffFormAnswer(formID string, isPublic bool) bool {
+	return isPublic && !h.isParticipationForm(formID)
 }
 
 func (h *staffFormHandlers) enqueueStaffFormAnswerMail(createdByUserID string, formValue backendform.Form, answerValue answer.Answer) {

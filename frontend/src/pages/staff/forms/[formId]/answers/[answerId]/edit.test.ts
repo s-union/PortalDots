@@ -183,6 +183,7 @@ describe('StaffFormAnswerDetailPage', () => {
     })
 
     await flushPromises()
+    expect(wrapper.text()).toContain('対象企画のメンバーへ回答更新通知メールが送信されます。')
     await wrapper.get('input[type="text"]').setValue('更新後責任者')
     await wrapper.get('button[type="button"]:last-of-type').trigger('click')
     await flushPromises()

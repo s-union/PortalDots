@@ -174,6 +174,7 @@ describe('StaffFormAnswerCreatePage', () => {
 
     await flushPromises()
     expect(wrapper.text()).toContain('前回回答')
+    expect(wrapper.text()).toContain('対象企画のメンバーへ回答更新通知メールが送信されます。')
     await wrapper.get('button').trigger('click')
     await flushPromises()
 

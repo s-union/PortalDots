@@ -461,6 +461,7 @@ func NewServerWithDependencies(
 		DeleteStaffParticipationType:             staffCircleH.deleteStaffParticipationType,
 		// Circles
 		ListStaffCircles:        staffCircleH.listStaffCircles,
+		ListManagedStaffCircles: staffCircleH.listManagedStaffCircles,
 		ListAllStaffCircles:     staffCircleH.listAllStaffCircles,
 		DownloadStaffCirclesCSV: staffCircleH.downloadStaffCirclesCSV,
 		CreateStaffCircle:       staffCircleH.createStaffCircle,

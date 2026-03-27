@@ -62,8 +62,11 @@ const errorMessage = ref('')
 const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
 
+const form = computed(() => formQuery.data.value)
 const isDisabled = computed(() => formQuery.data.value?.isOpen !== true)
 const answers = computed(() => answersQuery.data.value?.answers ?? [])
+const isLimitedPublic = computed(() => (form.value?.answerableTags.length ?? 0) > 0)
+const confirmationMessage = computed(() => form.value?.confirmationMessage?.trim() ?? '')
 const hasReachedAnswerLimit = computed(() => {
   const maxAnswers = formQuery.data.value?.maxAnswers ?? 1
   return answers.value.length >= maxAnswers
@@ -203,6 +206,14 @@ function handleFileChange(questionId: string, event: Event) {
           <p class="whitespace-pre-wrap text-sm leading-7 text-body">
             {{ formQuery.data.value.description }}
           </p>
+          <div
+            v-if="isLimitedPublic"
+            class="mt-4 rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
+          >
+            この申請は
+            <span class="font-semibold">{{ formQuery.data.value.answerableTags.join(' / ') }}</span>
+            のタグを持つ企画に限定公開されています。
+          </div>
         </div>
       </SurfaceCard>
 
@@ -233,6 +244,16 @@ function handleFileChange(questionId: string, event: Event) {
         class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1"
       >
         回答の最終更新日時 : {{ selectedAnswer.updatedAt }}
+      </section>
+
+      <section
+        v-if="selectedAnswer && confirmationMessage"
+        class="rounded border border-success/20 bg-success-light px-6 py-5 text-sm text-body shadow-lv1"
+      >
+        <p class="font-semibold text-success">回答後メッセージ</p>
+        <p class="mt-2 whitespace-pre-wrap leading-7">
+          {{ confirmationMessage }}
+        </p>
       </section>
 
       <SurfaceCard>

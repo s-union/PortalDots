@@ -105,6 +105,9 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 			"circleId": {"企画を選択してください"},
 		})
 	}
+	if documentErrors := h.validateStaffPageDocumentIDs(request.CircleID, request.DocumentIDs, nil); len(documentErrors) > 0 {
+		return validationError(c, documentErrors)
+	}
 
 	created := h.pages.Create(
 		request.CircleID,
@@ -151,6 +154,9 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 	}
 	if request.SendEmails && !canSendPageEmails(currentSession.User) {
 		return errorJSON(c, http.StatusForbidden, "forbidden")
+	}
+	if documentErrors := h.validateStaffPageDocumentIDs(pageValue.CircleID, request.DocumentIDs, pageValue.DocumentIDs); len(documentErrors) > 0 {
+		return validationError(c, documentErrors)
 	}
 
 	updated, found := h.pages.Update(
@@ -416,6 +422,21 @@ func normalizePageDocumentIDs(documentIDs []string) []string {
 	}
 
 	return normalized
+}
+
+func (h *staffPageHandlers) validateStaffPageDocumentIDs(circleID string, documentIDs []string, existingDocumentIDs []string) map[string][]string {
+	for _, documentID := range documentIDs {
+		if slices.Contains(existingDocumentIDs, documentID) {
+			continue
+		}
+		if _, found := h.documents.FindByCircleForStaff(circleID, documentID); !found {
+			return map[string][]string{
+				"documentIds": {"対象企画に存在しない配布資料は選択できません"},
+			}
+		}
+	}
+
+	return nil
 }
 
 func (h *staffPageHandlers) enqueuePageMail(circleID, createdByUserID string, currentPage backendpage.Page) {

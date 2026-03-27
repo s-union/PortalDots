@@ -16,7 +16,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
+import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
@@ -37,7 +37,7 @@ const sessionStore = useSessionStore()
 const searchQuery = ref(String(route.query.query ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const pageFormEnabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const circlesQuery = useAllStaffCirclesQuery(pageFormEnabled)
+const circlesQuery = useManagedStaffCirclesQuery(pageFormEnabled)
 const pagesQuery = useStaffPagesQuery(searchQuery, pageFormEnabled)
 const tagsQuery = useStaffTagsQuery(pageFormEnabled)
 const documentsQuery = useStaffDocumentsQuery(pageFormEnabled)
@@ -48,6 +48,17 @@ const exportHref = computed(() => buildStaffPagesExportUrl())
 const viewableTagsText = ref('')
 const availableDocuments = computed(() =>
   (documentsQuery.data.value ?? []).filter((document) => document.circle.id === form.value.circleId)
+)
+
+watch(
+  () => [form.value.circleId, documentsQuery.data.value] as const,
+  ([circleId, documents]) => {
+    const validDocumentIDs = new Set(
+      (documents ?? []).filter((document) => document.circle.id === circleId).map((document) => document.id)
+    )
+    form.value.documentIds = form.value.documentIds.filter((documentId) => validDocumentIDs.has(documentId))
+  },
+  { immediate: true }
 )
 
 watch(

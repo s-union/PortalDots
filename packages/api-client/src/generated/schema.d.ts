@@ -898,6 +898,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/staff/circles/managed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return minimal circle options for cross-circle staff management */
+        get: operations["getManagedStaffCircles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/staff/circles/export": {
         parameters: {
             query?: never;
@@ -1308,7 +1325,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Return open forms visible in the current circle context */
+        /** Return public forms visible in the current circle context */
         get: operations["getForms"];
         put?: never;
         post?: never;
@@ -1325,7 +1342,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Return an open form visible in the current circle context */
+        /** Return a public form visible in the current circle context */
         get: operations["getForm"];
         put?: never;
         post?: never;
@@ -2397,13 +2414,20 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        description: string;
                         /** Format: date-time */
                         openAt: string;
                         /** Format: date-time */
                         closeAt: string;
                         maxAnswers: number;
+                        answerableTags: string[];
+                        confirmationMessage: string;
                         isPublic: boolean;
                         isOpen: boolean;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        updatedAt: string;
                         isParticipationForm: boolean;
                     }[];
                 };
@@ -2464,13 +2488,20 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        description: string;
                         /** Format: date-time */
                         openAt: string;
                         /** Format: date-time */
                         closeAt: string;
                         maxAnswers: number;
+                        answerableTags: string[];
+                        confirmationMessage: string;
                         isPublic: boolean;
                         isOpen: boolean;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        updatedAt: string;
                         isParticipationForm: boolean;
                     };
                 };
@@ -4246,13 +4277,20 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        description: string;
                         /** Format: date-time */
                         openAt: string;
                         /** Format: date-time */
                         closeAt: string;
                         maxAnswers: number;
+                        answerableTags: string[];
+                        confirmationMessage: string;
                         isPublic: boolean;
                         isOpen: boolean;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        updatedAt: string;
                         isParticipationForm: boolean;
                     };
                 };
@@ -4537,13 +4575,20 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        description: string;
                         /** Format: date-time */
                         openAt: string;
                         /** Format: date-time */
                         closeAt: string;
                         maxAnswers: number;
+                        answerableTags: string[];
+                        confirmationMessage: string;
                         isPublic: boolean;
                         isOpen: boolean;
+                        /** Format: date-time */
+                        createdAt: string;
+                        /** Format: date-time */
+                        updatedAt: string;
                         isParticipationForm: boolean;
                     };
                 };
@@ -5553,6 +5598,43 @@ export interface operations {
                 content?: never;
             };
             /** @description Staff verification or circle admin role is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getManagedStaffCircles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Minimal staff circle list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                    }[];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Staff verification and resource management permission are required */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -7440,6 +7522,8 @@ export interface operations {
                         /** Format: date-time */
                         closeAt: string;
                         maxAnswers: number;
+                        answerableTags: string[];
+                        confirmationMessage: string;
                         isPublic: boolean;
                         isOpen: boolean;
                         hasAnswer: boolean;
@@ -7488,6 +7572,8 @@ export interface operations {
                         /** Format: date-time */
                         closeAt: string;
                         maxAnswers: number;
+                        answerableTags: string[];
+                        confirmationMessage: string;
                         isPublic: boolean;
                         isOpen: boolean;
                         hasAnswer?: boolean;

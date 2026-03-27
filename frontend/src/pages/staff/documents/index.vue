@@ -17,7 +17,7 @@ import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { formatFileSize } from '@/lib/format/fileSize'
-import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
+import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffDocumentsExportUrl,
@@ -32,7 +32,7 @@ import { useSessionStore } from '@/features/session/store'
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const circlesQuery = useAllStaffCirclesQuery(enabled)
+const circlesQuery = useManagedStaffCirclesQuery(enabled)
 const documentsQuery = useStaffDocumentsQuery(enabled)
 const createDocumentMutation = useCreateStaffDocumentMutation()
 const form = useStaffDocumentForm()

@@ -2,13 +2,19 @@ import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import type { z } from 'zod'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, staffCircleMailFormSchema, staffCircleSchema } from '@/lib/api/schema'
+import {
+  parseWithSchema,
+  staffCircleMailFormSchema,
+  staffCircleSchema,
+  staffManagedCircleSchema
+} from '@/lib/api/schema'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { fetchSessionBootstrap } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
 
 export type StaffCircle = z.infer<typeof staffCircleSchema>
+export type StaffManagedCircle = z.infer<typeof staffManagedCircleSchema>
 export type StaffCircleMailForm = z.infer<typeof staffCircleMailFormSchema>
 export type StaffCircleMailRecipient = StaffCircleMailForm['recipients'][number]
 
@@ -70,6 +76,20 @@ export async function fetchAllStaffCircles() {
     parseStaffCircles,
     {
       errorMessage: 'Failed to fetch all staff circles'
+    }
+  )
+}
+
+export async function fetchManagedStaffCircles() {
+  return $api.queryData(
+    'get',
+    '/staff/circles/managed',
+    {
+      headers: createJsonHeaders()
+    },
+    parseManagedStaffCircles,
+    {
+      errorMessage: 'Failed to fetch managed staff circles'
     }
   )
 }
@@ -254,6 +274,25 @@ export function useAllStaffCirclesQuery(enabled: MaybeRefOrGetter<boolean>) {
   )
 }
 
+export function useManagedStaffCirclesQuery(enabled: MaybeRefOrGetter<boolean>) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles/managed',
+    {
+      headers: createJsonHeaders()
+    },
+    parseManagedStaffCircles,
+    {
+      queryKey: ['staff', 'circles', 'managed'],
+      enabled: computed(() => toValue(enabled)),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch managed staff circles'
+    }
+  )
+}
+
 export function useStaffCircleDetailQuery(circleId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
   return $api.useQueryData(
     'get',
@@ -311,6 +350,7 @@ export function useCreateStaffCircleMutation() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['staff', 'circles'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'managed'] }),
         queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'all'] }),
         queryClient.invalidateQueries({ queryKey: ['circles', 'selectable'] })
       ])
@@ -327,6 +367,7 @@ export function useUpdateStaffCircleMutation() {
     onSuccess: async (updatedCircle) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['staff', 'circles'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'managed'] }),
         queryClient.invalidateQueries({
           queryKey: ['staff', 'circles', 'detail', updatedCircle.id]
         }),
@@ -351,6 +392,7 @@ export function useDeleteStaffCircleMutation(circleId: MaybeRefOrGetter<string>)
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['staff', 'circles'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'managed'] }),
         queryClient.invalidateQueries({
           queryKey: ['staff', 'circles', 'detail', toValue(circleId)]
         }),
@@ -415,6 +457,10 @@ export function buildStaffCirclesExportUrl() {
 
 function parseStaffCircles(value: unknown): StaffCircle[] {
   return parseWithSchema(staffCircleSchema.array(), value, 'staff circles')
+}
+
+function parseManagedStaffCircles(value: unknown): StaffManagedCircle[] {
+  return parseWithSchema(staffManagedCircleSchema.array(), value, 'managed staff circles')
 }
 
 function parseStaffCircle(value: unknown): StaffCircle {

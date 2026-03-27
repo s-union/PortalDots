@@ -51,6 +51,16 @@ const errorMessage = ref('')
 const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
+const notificationMessage = computed(() => {
+  const form = answerQuery.data.value?.form
+  if (!form) {
+    return ''
+  }
+  if (form.isPublic && !form.isParticipationForm) {
+    return 'この回答を保存すると、対象企画のメンバーへ回答更新通知メールが送信されます。'
+  }
+  return 'このフォームでは、スタッフが回答を保存しても企画メンバーへの通知メールは送信されません。'
+})
 
 async function handleSaveAnswer() {
   if (!answerQuery.data.value) {
@@ -153,6 +163,10 @@ function handleFileChange(questionId: string, event: Event) {
 
       <section class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1">
         最終更新日時 : {{ answerQuery.data.value.answer.updatedAt }}
+      </section>
+
+      <section class="rounded border border-border bg-surface-light px-6 py-5 text-sm text-muted shadow-lv1">
+        {{ notificationMessage }}
       </section>
 
       <SurfaceCard>

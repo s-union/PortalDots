@@ -66,6 +66,8 @@ describe('FormsIndexPage', () => {
                 openAt: '2026-03-02T00:00:00Z',
                 closeAt: '2026-03-22T23:59:59Z',
                 maxAnswers: 2,
+                answerableTags: ['展示'],
+                confirmationMessage: '回答ありがとうございました。',
                 isPublic: true,
                 isOpen: true,
                 hasAnswer: false
@@ -77,7 +79,9 @@ describe('FormsIndexPage', () => {
                 openAt: '2026-02-01T00:00:00Z',
                 closeAt: '2026-02-20T23:59:59Z',
                 maxAnswers: 1,
-                isPublic: false,
+                answerableTags: [],
+                confirmationMessage: '',
+                isPublic: true,
                 isOpen: false,
                 hasAnswer: true
               }
@@ -135,6 +139,7 @@ describe('FormsIndexPage', () => {
     expect(wrapper.text()).toContain('展示チェックフォーム')
     expect(wrapper.text()).toContain('デモ企画B')
     expect(wrapper.text()).toContain('1企画あたり 2 件まで')
+    expect(wrapper.text()).toContain('限定公開')
     expect(wrapper.text()).not.toContain('備品返却報告')
   })
 

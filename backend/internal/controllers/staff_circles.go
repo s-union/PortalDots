@@ -82,7 +82,7 @@ func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 }
 
 func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
-	_, _, status, ok := h.requireStaffCapability(c, canListManagedCircles)
+	_, _, status, ok := h.requireCircleRead(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -96,6 +96,28 @@ func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
 	for _, currentCircle := range circles {
 		response = append(response, mapStaffCircle(currentCircle))
 	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func (h *staffCircleHandlers) listManagedStaffCircles(c echo.Context) error {
+	_, _, status, ok := h.requireStaffCapability(c, canListManagedCircles)
+	if !ok {
+		return statusError(c, status)
+	}
+
+	_, responseByID, err := listStaffManagedCircles(h.circles)
+	if err != nil {
+		return internalError(c)
+	}
+
+	response := make([]staffManagedCircleResponse, 0, len(responseByID))
+	for _, currentCircle := range responseByID {
+		response = append(response, currentCircle)
+	}
+	slices.SortFunc(response, func(left, right staffManagedCircleResponse) int {
+		return strings.Compare(left.ID, right.ID)
+	})
 
 	return c.JSON(http.StatusOK, response)
 }

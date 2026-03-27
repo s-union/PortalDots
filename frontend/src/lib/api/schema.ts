@@ -269,6 +269,8 @@ export const formSummarySchema = z.object({
   openAt: z.string(),
   closeAt: z.string(),
   maxAnswers: z.number(),
+  answerableTags: stringArraySchema,
+  confirmationMessage: z.string(),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
   hasAnswer: z.boolean()
@@ -281,6 +283,8 @@ export const formDetailSchema = z.object({
   openAt: z.string(),
   closeAt: z.string(),
   maxAnswers: z.number(),
+  answerableTags: stringArraySchema,
+  confirmationMessage: z.string(),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
   questions: z.array(formQuestionSchema)
@@ -352,6 +356,8 @@ export const staffFormPreviewSchema = z.object({
   description: z.string(),
   openAt: z.string(),
   closeAt: z.string(),
+  answerableTags: stringArraySchema,
+  confirmationMessage: z.string(),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
   maxAnswers: z.number(),

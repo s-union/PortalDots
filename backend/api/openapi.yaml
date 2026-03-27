@@ -3684,6 +3684,29 @@ paths:
           description: Unauthenticated
         "403":
           description: Staff verification or circle admin role is required
+  /staff/circles/managed:
+    get:
+      operationId: getManagedStaffCircles
+      summary: Return minimal circle options for cross-circle staff management
+      responses:
+        "200":
+          description: Minimal staff circle list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, name]
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification and resource management permission are required
   /staff/circles/export:
     get:
       operationId: getStaffCirclesExport
@@ -5408,7 +5431,7 @@ paths:
   /forms:
     get:
       operationId: getForms
-      summary: Return open forms visible in the current circle context
+      summary: Return public forms visible in the current circle context
       responses:
         "200":
           description: Form list
@@ -5418,7 +5441,7 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, name, description, openAt, closeAt, maxAnswers, isPublic, isOpen, hasAnswer]
+                  required: [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, hasAnswer]
                   properties:
                     id:
                       type: string
@@ -5434,6 +5457,12 @@ paths:
                       format: date-time
                     maxAnswers:
                       type: integer
+                    answerableTags:
+                      type: array
+                      items:
+                        type: string
+                    confirmationMessage:
+                      type: string
                     isPublic:
                       type: boolean
                     isOpen:
@@ -5447,7 +5476,7 @@ paths:
   /forms/{formID}:
     get:
       operationId: getForm
-      summary: Return an open form visible in the current circle context
+      summary: Return a public form visible in the current circle context
       parameters:
         - in: path
           name: formID
@@ -5461,7 +5490,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, description, openAt, closeAt, maxAnswers, isPublic, isOpen, questions]
+                required: [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, questions]
                 properties:
                   id:
                     type: string
@@ -5477,6 +5506,12 @@ paths:
                     format: date-time
                   maxAnswers:
                     type: integer
+                  answerableTags:
+                    type: array
+                    items:
+                      type: string
+                  confirmationMessage:
+                    type: string
                   isPublic:
                     type: boolean
                   isOpen:

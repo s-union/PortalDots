@@ -18,6 +18,7 @@ import { useSessionStore } from '@/features/session/store'
 import type { TabStripItem } from '@/features/ui/tabStrip'
 
 type FormStatusTab = 'open' | 'closed' | 'all'
+type FormAvailability = 'open' | 'upcoming' | 'closed'
 
 const route = useRoute()
 const sessionStore = useSessionStore()
@@ -32,8 +33,9 @@ const formStatusTab = computed<FormStatusTab>(() => {
   return 'open'
 })
 const allForms = computed(() => formsQuery.data.value ?? [])
-const openForms = computed(() => allForms.value.filter((form) => form.isOpen))
-const closedForms = computed(() => allForms.value.filter((form) => !form.isOpen))
+const openForms = computed(() => allForms.value.filter((form) => getFormAvailability(form) === 'open'))
+const closedForms = computed(() => allForms.value.filter((form) => getFormAvailability(form) === 'closed'))
+const upcomingForms = computed(() => allForms.value.filter((form) => getFormAvailability(form) === 'upcoming'))
 const visibleForms = computed(() => {
   if (formStatusTab.value === 'closed') {
     return closedForms.value
@@ -53,12 +55,35 @@ const tabs = computed<TabStripItem[]>(() => [
 ])
 
 function formMeta(form: FormSummary) {
-  const schedule = form.isOpen ? `${form.closeAt} まで受付` : `${form.openAt} から受付開始`
+  const availability = getFormAvailability(form)
+  const schedule =
+    availability === 'open'
+      ? `${form.closeAt} まで受付`
+      : availability === 'upcoming'
+        ? `${form.openAt} から受付開始`
+        : `${form.closeAt} で受付終了`
   return form.maxAnswers > 1 ? `${schedule} / 1企画あたり ${form.maxAnswers} 件まで` : schedule
 }
 
 function formHref(form: FormSummary) {
   return `/workspace/forms/${form.id}`
+}
+
+function getFormAvailability(form: FormSummary): FormAvailability {
+  if (form.isOpen) {
+    return 'open'
+  }
+
+  const openAt = Date.parse(form.openAt)
+  if (!Number.isNaN(openAt) && openAt > Date.now()) {
+    return 'upcoming'
+  }
+
+  return 'closed'
+}
+
+function isLimitedPublic(form: FormSummary) {
+  return form.answerableTags.length > 0
 }
 </script>
 
@@ -91,13 +116,14 @@ function formHref(form: FormSummary) {
         <ListItemLink v-for="form in visibleForms" :key="form.id" :to="formHref(form)">
           <template #title>{{ form.name }}</template>
           <template #prefix>
-            <StatusBadge :tone="form.isPublic ? 'muted' : 'primary'" appearance="outlined">
-              {{ form.isPublic ? '全員に公開' : '限定公開' }}
+            <StatusBadge :tone="isLimitedPublic(form) ? 'primary' : 'muted'" appearance="outlined">
+              {{ isLimitedPublic(form) ? '限定公開' : '全員に公開' }}
             </StatusBadge>
           </template>
           <template #suffix>
             <StatusBadge v-if="form.hasAnswer" tone="success">提出済</StatusBadge>
-            <StatusBadge v-if="!form.isOpen" tone="muted">受付終了</StatusBadge>
+            <StatusBadge v-if="getFormAvailability(form) === 'upcoming'" tone="primary">受付開始前</StatusBadge>
+            <StatusBadge v-else-if="getFormAvailability(form) === 'closed'" tone="muted">受付終了</StatusBadge>
           </template>
           <template #meta>
             {{ formMeta(form) }}
@@ -107,10 +133,11 @@ function formHref(form: FormSummary) {
       </div>
 
       <div
-        v-if="closedForms.length > 0 || openForms.length > 0"
+        v-if="closedForms.length > 0 || openForms.length > 0 || upcomingForms.length > 0"
         class="border-t border-border px-6 py-4 text-xs text-muted"
       >
-        受付中 {{ openForms.length }} 件 / 受付終了 {{ closedForms.length }} 件
+        受付中 {{ openForms.length }} 件 / 受付開始前 {{ upcomingForms.length }} 件 / 受付終了
+        {{ closedForms.length }} 件
       </div>
     </ListPanel>
   </PageContentContainer>

@@ -17,7 +17,7 @@ import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import { useAllStaffCirclesQuery } from '@/features/staff/circles/api'
+import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
 import {
   createDefaultStaffFormPayload,
   extractStaffFormValidationMessage,
@@ -32,7 +32,7 @@ const router = useRouter()
 const createFormMutation = useCreateStaffFormMutation()
 const form = ref(createDefaultStaffFormPayload())
 const errorMessage = ref('')
-const circlesQuery = useAllStaffCirclesQuery(true)
+const circlesQuery = useManagedStaffCirclesQuery(true)
 
 const openAtInput = computed({
   get: () => formatStaffFormDateTimeLocalValue(form.value.openAt),

@@ -103,7 +103,7 @@ func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
-	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
+	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -122,7 +122,7 @@ func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
-	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
+	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -165,7 +165,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
-	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
+	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -221,7 +221,7 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
-	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
+	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -300,7 +300,7 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
-	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
+	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -419,15 +419,12 @@ func (h *workspaceHandlers) downloadFormAnswerFileByID(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) resolveCurrentForm(c echo.Context) (formDetailResponse, session.Session, int, bool) {
-	_, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return formDetailResponse{}, session.Session{}, http.StatusUnauthorized, false
-	}
-	if currentSession.CurrentCircleID == "" {
-		return formDetailResponse{}, session.Session{}, http.StatusConflict, false
+	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	if !ok {
+		return formDetailResponse{}, session.Session{}, status, false
 	}
 
-	currentForm, found := h.forms.FindByCircle(currentSession.CurrentCircleID, c.Param("formID"))
+	currentForm, found := h.findAccessibleWorkspaceForm(c.Param("formID"), currentCircle)
 	if !found {
 		return formDetailResponse{}, session.Session{}, http.StatusNotFound, false
 	}
@@ -437,18 +434,23 @@ func (h *workspaceHandlers) resolveCurrentForm(c echo.Context) (formDetailRespon
 		return formDetailResponse{}, session.Session{}, http.StatusInternalServerError, false
 	}
 
-	return formDetailResponse{
-		ID:          currentForm.ID,
-		Name:        currentForm.Name,
-		Description: currentForm.Description,
-		OpenAt:      currentForm.OpenAt,
-		CloseAt:     currentForm.CloseAt,
-		IsPublic:    currentForm.IsPublic,
-		IsOpen:      currentForm.IsOpen,
-		MaxAnswers:  currentForm.MaxAnswers,
-		HasAnswer:   len(h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)) > 0,
-		Questions:   mapStaffFormQuestions(questions),
-	}, currentSession, http.StatusOK, true
+	return h.buildWorkspaceFormDetailResponse(
+		currentForm,
+		currentSession.CurrentCircleID,
+		mapStaffFormQuestions(questions),
+	), currentSession, http.StatusOK, true
+}
+
+func (h *workspaceHandlers) resolveWritableCurrentForm(c echo.Context) (formDetailResponse, session.Session, int, bool) {
+	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
+	if !ok {
+		return formDetailResponse{}, session.Session{}, status, false
+	}
+	if !currentForm.IsOpen {
+		return formDetailResponse{}, session.Session{}, http.StatusNotFound, false
+	}
+
+	return currentForm, currentSession, http.StatusOK, true
 }
 
 func buildFormAnswerResponse(answerValue answer.Answer, uploads []answer.Upload) *formAnswerResponse {

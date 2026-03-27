@@ -40,6 +40,8 @@ const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId)
 const exportUrl = computed(() => buildStaffFormAnswersExportUrl(formId.value))
 const uploadsZipUrl = computed(() => buildStaffFormAnswerUploadsZipUrl(formId.value))
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
+const currentForm = computed(() => answersQuery.data.value?.form ?? null)
+const showNotAnsweredLink = computed(() => currentForm.value?.isParticipationForm !== true)
 
 // ページネーション
 const page = ref(1)
@@ -178,6 +180,7 @@ async function handleDelete(answerId: string, groupName: string) {
                 ファイルを一括ダウンロード
               </RouterLink>
               <RouterLink
+                v-if="showNotAnsweredLink"
                 :to="`/staff/forms/${formId}/not_answered`"
                 class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
               >
@@ -186,6 +189,24 @@ async function handleDelete(answerId: string, groupName: string) {
             </div>
           </template>
         </SurfaceHeader>
+        <div class="border-t border-border px-6 py-5 text-sm text-body">
+          <div class="grid gap-2">
+            <p>
+              公開設定 :
+              {{ answersQuery.data.value.form.isPublic ? '公開' : '非公開' }}
+              <span v-if="answersQuery.data.value.form.answerableTags.length > 0">
+                （{{ answersQuery.data.value.form.answerableTags.join(' / ') }} のタグを持つ企画に限定公開）
+              </span>
+            </p>
+            <p>
+              受付状態 :
+              {{ answersQuery.data.value.form.isOpen ? '受付中' : '受付期間外' }}
+            </p>
+            <p class="whitespace-pre-wrap leading-7 text-muted">
+              {{ answersQuery.data.value.form.description }}
+            </p>
+          </div>
+        </div>
       </SurfaceCard>
 
       <SurfaceCard>

@@ -10,6 +10,7 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -29,6 +30,7 @@ const previewQuery = useStaffFormPreviewQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true)
 )
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
+const isLimitedPublic = computed(() => (previewQuery.data.value?.answerableTags.length ?? 0) > 0)
 </script>
 
 <template>
@@ -42,6 +44,10 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
     </div>
 
     <article v-else-if="previewQuery.data.value" class="space-y-6">
+      <AlertMessage tone="danger">
+        このフォームから実際に送信することはできません。質問内容や表示を確認するためのプレビューです。
+      </AlertMessage>
+
       <SurfaceCard>
         <SurfaceHeader>
           <template #title>{{ previewQuery.data.value.name }}</template>
@@ -54,6 +60,14 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
           <p class="whitespace-pre-wrap text-sm leading-7 text-body">
             {{ previewQuery.data.value.description }}
           </p>
+          <div
+            v-if="isLimitedPublic"
+            class="mt-4 rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
+          >
+            このフォームは
+            <span class="font-semibold">{{ previewQuery.data.value.answerableTags.join(' / ') }}</span>
+            のタグを持つ企画に限定公開されます。
+          </div>
         </div>
       </SurfaceCard>
 
