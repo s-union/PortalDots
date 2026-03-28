@@ -13,7 +13,6 @@ import { useRouter } from 'vue-router'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -71,11 +70,7 @@ async function handleCreateForm() {
 
 <template>
   <PageLayout>
-    <PageHeader title="申請フォームを新規作成">
-      <template #actions>
-        <BackLink to="/staff/forms">フォーム管理へ戻る</BackLink>
-      </template>
-    </PageHeader>
+    <PageHeader title="申請フォームを新規作成" />
 
     <SurfaceCard>
       <SurfaceHeader>

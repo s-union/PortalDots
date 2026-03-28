@@ -389,6 +389,9 @@ export function useUpdateStaffFormMutation(formId: MaybeRefOrGetter<string>) {
         }),
         queryClient.invalidateQueries({
           queryKey: ['staff', 'forms', 'detail', toValue(formId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
         })
       ])
     }
@@ -403,9 +406,14 @@ export function useCreateStaffFormQuestionMutation(formId: MaybeRefOrGetter<stri
     mutationFn: async (payload: CreateStaffFormQuestionPayload) =>
       createStaffFormQuestion(toValue(formId), payload, sessionStore.csrfToken),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
+        })
+      ])
     }
   })
 }
@@ -418,9 +426,14 @@ export function useUpdateStaffFormQuestionMutation(formId: MaybeRefOrGetter<stri
     mutationFn: async (payload: UpdateStaffFormQuestionPayload) =>
       updateStaffFormQuestion(toValue(formId), payload, sessionStore.csrfToken),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
+        })
+      ])
     }
   })
 }
@@ -433,9 +446,14 @@ export function useDeleteStaffFormQuestionMutation(formId: MaybeRefOrGetter<stri
     mutationFn: async (questionId: string) =>
       deleteStaffFormQuestion(toValue(formId), questionId, sessionStore.csrfToken),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
+        })
+      ])
     }
   })
 }
@@ -448,9 +466,14 @@ export function useReorderStaffFormQuestionsMutation(formId: MaybeRefOrGetter<st
     mutationFn: async (questionIds: string[]) =>
       reorderStaffFormQuestions(toValue(formId), questionIds, sessionStore.csrfToken),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
+        })
+      ])
     }
   })
 }

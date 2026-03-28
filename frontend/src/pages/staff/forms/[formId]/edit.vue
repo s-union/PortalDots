@@ -13,7 +13,6 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime, formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -159,8 +158,6 @@ async function handleDeleteForm() {
 
 <template>
   <PageLayout>
-    <BackLink to="/staff/forms"> フォーム管理へ戻る </BackLink>
-
     <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>

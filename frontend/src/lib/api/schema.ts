@@ -414,8 +414,11 @@ export const staffFormPreviewSchema = z.object({
   description: z.string(),
   openAt: z.string(),
   closeAt: z.string(),
-  answerableTags: stringArraySchema,
-  confirmationMessage: z.string(),
+  answerableTags: stringArraySchema.nullish().transform((value) => value ?? []),
+  confirmationMessage: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? ''),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
   maxAnswers: z.number(),

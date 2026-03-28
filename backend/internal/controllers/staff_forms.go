@@ -237,7 +237,7 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	formValue, _, found := h.findManagedStaffForm(c.Param("formID"), true)
+	formValue, currentCircle, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
@@ -247,17 +247,7 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 		return internalError(c)
 	}
 
-	return c.JSON(http.StatusOK, formDetailResponse{
-		ID:          formValue.ID,
-		Name:        formValue.Name,
-		Description: formValue.Description,
-		OpenAt:      formValue.OpenAt,
-		CloseAt:     formValue.CloseAt,
-		IsPublic:    formValue.IsPublic,
-		IsOpen:      formValue.IsOpen,
-		MaxAnswers:  formValue.MaxAnswers,
-		Questions:   mapStaffFormQuestions(questions),
-	})
+	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentCircle), questions, nil))
 }
 
 func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {

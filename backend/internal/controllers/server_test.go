@@ -3097,6 +3097,12 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 	if preview.ID != "form-circle-b-1" || len(preview.Questions) != 1 {
 		t.Fatalf("unexpected preview response: %#v", preview)
 	}
+	if !slices.Equal(preview.AnswerableTags, []string{"展示"}) {
+		t.Fatalf("unexpected preview tags: %#v", preview.AnswerableTags)
+	}
+	if preview.ConfirmationMessage != "展示チェックフォームへの回答を受け付けました。" {
+		t.Fatalf("unexpected preview response: %#v", preview)
+	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/copy", map[string]any{})
 	if recorder.Code != http.StatusCreated {
@@ -3182,6 +3188,9 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 	}
 	if preview.ID != "form-participation-exhibit" {
 		t.Fatalf("unexpected participation form preview: %#v", preview)
+	}
+	if len(preview.AnswerableTags) != 0 {
+		t.Fatalf("expected participation preview tags to be empty, got %#v", preview.AnswerableTags)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-participation-exhibit", map[string]any{

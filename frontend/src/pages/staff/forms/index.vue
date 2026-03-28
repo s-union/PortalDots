@@ -14,7 +14,6 @@ import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { canEditForms, canReadFormAnswers } from '@/features/staff/access/capabilities'
@@ -214,11 +213,7 @@ function resolveDescription(form: StaffFormSummary) {
 
 <template>
   <PageLayout>
-    <PageHeader title="申請管理" description="全企画の申請フォームを横断して管理します。">
-      <template #actions>
-        <BackLink to="/staff">Staff top へ戻る</BackLink>
-      </template>
-    </PageHeader>
+    <PageHeader title="申請管理" description="全企画の申請フォームを横断して管理します。" />
 
     <SurfaceCard>
       <SurfaceHeader>

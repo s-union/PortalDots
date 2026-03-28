@@ -10,7 +10,6 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -34,8 +33,6 @@ const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTa
 
 <template>
   <PageLayout>
-    <BackLink v-if="formId.length > 0" :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
-
     <TabStrip v-if="formId.length > 0" :tabs="staffFormTabs" />
 
     <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">

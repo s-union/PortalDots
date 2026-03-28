@@ -11,7 +11,6 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime } from '@/lib/format/datetime'
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
@@ -92,8 +91,6 @@ async function handleCreateAnswer() {
 
 <template>
   <PageLayout>
-    <BackLink :to="`/staff/forms/${formId}/answers`"> 回答一覧へ戻る </BackLink>
-
     <TabStrip :tabs="staffFormTabs" />
 
     <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">

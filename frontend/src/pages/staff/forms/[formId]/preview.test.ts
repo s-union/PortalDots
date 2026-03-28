@@ -11,7 +11,7 @@ describe('StaffFormPreviewPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the staff form preview with representative question types', async () => {
+  it('renders the read-only staff form preview even when answerableTags is null', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -29,9 +29,7 @@ describe('StaffFormPreviewPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: '/staff/forms/:formId/answers', component: { template: '<div>answers</div>' } },
-        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
-        { path: '/staff/forms/:formId/edit', component: { template: '<div>form</div>' } },
+        { path: '/staff/forms/:formId/edit', component: { template: '<div>edit</div>' } },
         { path: '/staff/forms/:formId/preview', component: StaffFormPreviewPage }
       ]
     })
@@ -44,7 +42,6 @@ describe('StaffFormPreviewPage', () => {
         await Promise.resolve()
         const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
         const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
         const pathname = new URL(url, 'http://localhost').pathname
 
         if (pathname.endsWith('/staff/status') && method === 'GET') {
@@ -63,13 +60,10 @@ describe('StaffFormPreviewPage', () => {
               openAt: '2026-03-02T00:00:00Z',
               closeAt: '2026-03-22T23:59:59Z',
               maxAnswers: 2,
-              answerableTags: ['展示'],
+              answerableTags: null,
               confirmationMessage: '回答ありがとうございました。',
               isPublic: true,
-              isOpen: true,
-              createdAt: '2026-03-01T10:00:00Z',
-              updatedAt: '2026-03-01T10:00:00Z',
-              isParticipationForm: false,
+              isOpen: false,
               questions: [
                 {
                   id: 'heading-1',
@@ -158,12 +152,16 @@ describe('StaffFormPreviewPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('展示チェックフォーム')
+    expect(wrapper.text()).toContain('プレビュー')
     expect(wrapper.text()).toContain('このフォームから実際に送信することはできません。')
-    expect(wrapper.text()).toContain('展示 のタグを持つ企画に限定公開されます。')
+    expect(wrapper.text()).toContain('展示チェックフォーム')
+    expect(wrapper.text()).toContain('受付期間外です')
     expect(wrapper.text()).toContain('基本情報')
     expect(wrapper.text()).toContain('責任者名')
     expect(wrapper.text()).toContain('1日目')
     expect(wrapper.text()).toContain('ファイル選択欄が表示されます。')
+    expect(wrapper.get('button[type="button"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).not.toContain('回答')
+    expect(wrapper.text()).not.toContain('設定')
   })
 })
