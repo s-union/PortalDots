@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -149,9 +150,11 @@ function handleFileChange(questionId: string, event: Event) {
           <template #title>{{ answerQuery.data.value.form.name }}</template>
           <template #description>
             企画 : {{ answerQuery.data.value.circle.name }}<br />
-            受付期間 : {{ answerQuery.data.value.form.openAt }}〜{{ answerQuery.data.value.form.closeAt }}<br />
+            受付期間 : {{ formatDateTime(answerQuery.data.value.form.openAt) }}〜{{
+              formatDateTime(answerQuery.data.value.form.closeAt)
+            }}<br />
             回答 ID : {{ answerQuery.data.value.answer.id }}<br />
-            作成日時 : {{ answerQuery.data.value.answer.createdAt }}
+            作成日時 : {{ formatDateTime(answerQuery.data.value.answer.createdAt) }}
           </template>
         </SurfaceHeader>
         <div class="px-6 py-5">
@@ -162,7 +165,7 @@ function handleFileChange(questionId: string, event: Event) {
       </SurfaceCard>
 
       <section class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1">
-        最終更新日時 : {{ answerQuery.data.value.answer.updatedAt }}
+        最終更新日時 : {{ formatDateTime(answerQuery.data.value.answer.updatedAt) }}
       </section>
 
       <section class="rounded border border-border bg-surface-light px-6 py-5 text-sm text-muted shadow-lv1">
@@ -265,7 +268,7 @@ function handleFileChange(questionId: string, event: Event) {
               :to="`/staff/forms/${formId}/answers/${sibling.id}/edit`"
               class="flex items-center justify-between gap-4 text-sm text-body"
             >
-              <span>作成 {{ sibling.createdAt }} / 更新 {{ sibling.updatedAt }}</span>
+              <span>作成 {{ formatDateTime(sibling.createdAt) }} / {{ formatDateTimeUpdated(sibling.updatedAt) }}</span>
               <span class="text-xs text-muted-2">{{ sibling.uploadCount }} files</span>
             </RouterLink>
           </li>

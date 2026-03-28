@@ -29,6 +29,7 @@ import {
   useUpdateFormAnswerMutation
 } from '@/features/forms/answers'
 import { useSessionStore } from '@/features/session/store'
+import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -195,7 +196,9 @@ function handleFileChange(questionId: string, event: Event) {
         <SurfaceHeader>
           <template #title>{{ formQuery.data.value.name }}</template>
           <template #description>
-            受付期間 : {{ formQuery.data.value.openAt }}〜{{ formQuery.data.value.closeAt }}
+            受付期間 : {{ formatDateTime(formQuery.data.value.openAt) }}〜{{
+              formatDateTime(formQuery.data.value.closeAt)
+            }}
             <span v-if="!formQuery.data.value.isOpen" class="font-semibold text-danger"> — 受付期間外です </span>
             <template v-if="formQuery.data.value.maxAnswers > 1">
               <br />1企画あたり {{ formQuery.data.value.maxAnswers }} 件まで回答できます。
@@ -243,7 +246,7 @@ function handleFileChange(questionId: string, event: Event) {
         v-if="selectedAnswer?.updatedAt"
         class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1"
       >
-        回答の最終更新日時 : {{ selectedAnswer.updatedAt }}
+        回答の最終更新日時 : {{ formatDateTime(selectedAnswer.updatedAt) }}
       </section>
 
       <section
@@ -277,7 +280,7 @@ function handleFileChange(questionId: string, event: Event) {
                   : 'border-border bg-surface text-body hover:bg-surface-light'
               "
             >
-              回答 {{ answer.updatedAt }}
+              回答 {{ formatDateTimeUpdated(answer.updatedAt) }}
             </RouterLink>
             <button
               class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"

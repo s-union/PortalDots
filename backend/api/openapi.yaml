@@ -98,6 +98,125 @@ paths:
           description: Registered and logged in
         "422":
           description: Validation error
+  /auth/register/start:
+    post:
+      operationId: postAuthRegisterStart
+      summary: Start participant registration with a university email address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [univemailLocalPart]
+              properties:
+                univemailLocalPart:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Verification email prepared or sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deliveryMode, message]
+                properties:
+                  deliveryMode:
+                    type: string
+                    enum: [email, mock]
+                  message:
+                    type: string
+                  verifyUrl:
+                    type: string
+        "422":
+          description: Validation error
+  /auth/register/verify:
+    post:
+      operationId: postAuthRegisterVerify
+      summary: Verify a pending participant registration URL token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pendingRegistrationId, token]
+              properties:
+                pendingRegistrationId:
+                  type: string
+                  minLength: 1
+                token:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Pending registration verified
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pendingRegistrationId, univemail, studentId, verified]
+                properties:
+                  pendingRegistrationId:
+                    type: string
+                  univemail:
+                    type: string
+                  studentId:
+                    type: string
+                  verified:
+                    type: boolean
+        "422":
+          description: Validation error
+  /auth/register/complete:
+    post:
+      operationId: postAuthRegisterComplete
+      summary: Complete participant registration after university email verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [
+                  pendingRegistrationId,
+                  token,
+                  name,
+                  nameYomi,
+                  phoneNumber,
+                  password,
+                  passwordConfirmation,
+                ]
+              properties:
+                pendingRegistrationId:
+                  type: string
+                  minLength: 1
+                token:
+                  type: string
+                  minLength: 1
+                name:
+                  type: string
+                  minLength: 1
+                nameYomi:
+                  type: string
+                  minLength: 1
+                contactEmail:
+                  type: string
+                phoneNumber:
+                  type: string
+                  minLength: 1
+                password:
+                  type: string
+                  minLength: 1
+                passwordConfirmation:
+                  type: string
+                  minLength: 1
+      responses:
+        "204":
+          description: Registered and logged in
+        "422":
+          description: Validation error
   /auth/verification:
     get:
       operationId: getAuthVerification

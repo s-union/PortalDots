@@ -147,6 +147,29 @@
     margin-bottom: 0;
   }
 
+  label:has(input[required], select[required], textarea[required]) > span:first-child,
+  label:has(input[required], select[required], textarea[required]) > p:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  label:has(input[required], select[required], textarea[required]) > span:first-child::after,
+  label:has(input[required], select[required], textarea[required]) > p:first-child::after {
+    content: '必須';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
   @media screen and (max-width: 350px) {
     :root {
       font-size: 12px;

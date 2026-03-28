@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -17,8 +18,10 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
+	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
 	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
+	"github.com/s-union/PortalDots/backend/internal/domain/registrationmail"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -63,7 +66,12 @@ type authHandlers struct {
 	circles                   circle.Catalog
 	contactCategories         contactcategory.Repository
 	mails                     mailqueue.Repository
+	pendingRegistrations      pendingregistration.Repository
 	portalUnivemailDomainPart string
+	registrationMailSender    registrationmail.Sender
+	registrationVerifyTTL     time.Duration
+	appName                   string
+	appURL                    string
 	users                     useradmin.Repository
 	verifyCodes               *participantVerifyCodeStore
 }
@@ -185,6 +193,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 		formquestion.NewMemoryRepository(),
 		mailqueue.NewMemoryRepository(),
 		page.NewStaticRepository(cfg.Pages),
+		pendingregistration.NewMemoryRepository(),
 		participationtype.NewMemoryRepository(cfg.ParticipationTypes),
 		portalsetting.NewMemoryRepository(portalsetting.Settings{
 			AppName:                   cfg.AppName,
@@ -221,6 +230,7 @@ func NewServerWithDependencies(
 	formQuestions formquestion.Repository,
 	mails mailqueue.Repository,
 	pages page.Repository,
+	pendingRegistrations pendingregistration.Repository,
 	participationTypes participationtype.Repository,
 	portal portalsetting.Repository,
 	places place.Repository,
@@ -251,6 +261,17 @@ func NewServerWithDependencies(
 		registrationAuth = ra
 	}
 
+	var registrationMailSender registrationmail.Sender = registrationmail.NewMockSender()
+	if !cfg.AllowInsecureDefaults && strings.TrimSpace(cfg.SMTPHost) != "" {
+		registrationMailSender = registrationmail.NewSMTPSender(
+			cfg.SMTPHost,
+			cfg.SMTPPort,
+			cfg.SMTPUsername,
+			cfg.SMTPPassword,
+			cfg.SMTPFrom,
+		)
+	}
+
 	authH := &authHandlers{
 		sharedDeps:                shared,
 		activities:                activities,
@@ -260,7 +281,12 @@ func NewServerWithDependencies(
 		circles:                   circles,
 		contactCategories:         contactCategories,
 		mails:                     mails,
+		pendingRegistrations:      pendingRegistrations,
 		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
+		registrationMailSender:    registrationMailSender,
+		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
+		appName:                   cfg.AppName,
+		appURL:                    cfg.AppURL,
 		users:                     users,
 		verifyCodes:               newParticipantVerifyCodeStore(),
 	}
@@ -394,6 +420,9 @@ func NewServerWithDependencies(
 		UpdatePassword:           authH.updatePassword,
 		DeleteAccount:            authH.deleteAccount,
 		Register:                 authH.register,
+		StartRegistration:        authH.startRegistration,
+		VerifyRegistration:       authH.verifyRegistration,
+		CompleteRegistration:     authH.completeRegistration,
 		Login:                    authH.login,
 		Logout:                   authH.logout,
 		GetAuthVerification:      authH.getAuthVerification,

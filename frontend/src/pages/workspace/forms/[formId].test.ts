@@ -299,7 +299,7 @@ describe('FormDetailPage', () => {
     await saveButton.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('回答の最終更新日時 : 2026-03-05T10:00:00Z')
+    expect(wrapper.text()).toContain('回答の最終更新日時 : 2026年3月5日(木) 19:00')
     expect(savedDetails['question-text']).toBe('山田')
     expect(savedDetails['question-checkbox']).toEqual(['机'])
     expect(wrapper.text()).toContain('layout.pdf')
@@ -562,7 +562,7 @@ describe('FormDetailPage', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.query.answer).toBe('answer-2')
-    expect(wrapper.text()).toContain('回答の最終更新日時 : 2026-03-06T10:00:00Z')
+    expect(wrapper.text()).toContain('回答の最終更新日時 : 2026年3月6日(金) 19:00')
     const secondTextInput = wrapper.findAll('input[type="text"]')[1]
     expect(secondTextInput).toBeDefined()
     if (!secondTextInput) {

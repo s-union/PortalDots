@@ -71,22 +71,8 @@
                                 ][$key] }}
                             </template>
                             @if ($key === 'PORTAL_UNIVEMAIL_LOCAL_PART')
-                                <div class="form-radio">
-                                    <label class="form-radio__label">
-                                        <input class="form-radio__input" type="radio" name="{{ $key }}"
-                                            id="localPartRadios1" value="student_id"
-                                            {{ old($key, $value ?? '') === 'student_id' ? 'checked' : '' }}>
-                                        <strong>学籍番号</strong><br>
-                                        <span class="text-muted">アットマーク(@)より前に、学籍番号以外の文字列が含まれない場合のみ、こちらを選択してください</span>
-                                    </label>
-                                    <label class="form-radio__label">
-                                        <input class="form-radio__input" type="radio" name="{{ $key }}"
-                                            id="localPartRadios2" value="user_id"
-                                            {{ old($key, $value ?? '') === 'user_id' ? 'checked' : '' }}>
-                                        <strong>学籍番号ではない文字列</strong><br>
-                                        <span class="text-muted">アットマーク(@)より前の文字列が学籍番号ではない場合は、こちらを選択してください</span>
-                                    </label>
-                                </div>
+                                <input type="hidden" name="{{ $key }}" value="student_id">
+                                <p class="text-muted">新しい登録フローでは、学校メールのローカルパートは学籍番号として扱います。</p>
                             @else
                                 <input id="{{ $key }}" type="text"
                                     class="form-control @error($key) is-invalid @enderror" name="{{ $key }}"

@@ -23,6 +23,7 @@ import {
   useSubmitContactMutation
 } from '@/features/contact/api'
 import { useSessionStore } from '@/features/session/store'
+import { formatDateTime } from '@/lib/format/datetime'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 
@@ -164,7 +165,7 @@ async function handleSubmit() {
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p class="text-sm font-semibold text-body">{{ item.subject }}</p>
-              <p class="mt-2 text-xs text-muted">{{ item.categoryName }} / {{ item.createdAt }}</p>
+              <p class="mt-2 text-xs text-muted">{{ item.categoryName }} / {{ formatDateTime(item.createdAt) }}</p>
             </div>
             <StatusBadge tone="primary">
               {{ item.status }}

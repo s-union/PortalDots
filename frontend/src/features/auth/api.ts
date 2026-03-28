@@ -1,7 +1,13 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
-import { authVerificationStatusSchema, parseWithSchema, staffVerifyRequestResultSchema } from '@/lib/api/schema'
+import {
+  authVerificationStatusSchema,
+  parseWithSchema,
+  registrationStartResultSchema,
+  registrationVerificationSchema,
+  staffVerifyRequestResultSchema
+} from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { fetchSessionBootstrap } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
@@ -19,6 +25,39 @@ export interface RegisterPayload {
   name: string
   nameYomi: string
   contactEmail: string
+  phoneNumber: string
+  password: string
+  passwordConfirmation: string
+}
+
+export interface StartRegistrationPayload {
+  univemailLocalPart: string
+}
+
+export interface RegistrationStartResult {
+  deliveryMode: 'email' | 'mock'
+  message: string
+  verifyUrl?: string
+}
+
+export interface VerifyRegistrationPayload {
+  pendingRegistrationId: string
+  token: string
+}
+
+export interface RegistrationVerificationResult {
+  pendingRegistrationId: string
+  univemail: string
+  studentId: string
+  verified: boolean
+}
+
+export interface CompleteRegistrationPayload {
+  pendingRegistrationId: string
+  token: string
+  name: string
+  nameYomi: string
+  contactEmail?: string
   phoneNumber: string
   password: string
   passwordConfirmation: string
@@ -82,6 +121,62 @@ export async function register(payload: RegisterPayload) {
     },
     {
       errorMessage: 'Failed to register',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'register')
+      }
+    }
+  )
+}
+
+export async function startRegistration(payload: StartRegistrationPayload) {
+  return $api.mutationData(
+    'post',
+    '/auth/register/start',
+    {
+      headers: createJsonHeaders(),
+      body: payload
+    },
+    (value) => parseWithSchema(registrationStartResultSchema, value, 'registration start'),
+    {
+      errorMessage: 'Failed to start registration',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'register')
+      }
+    }
+  )
+}
+
+export async function verifyRegistration(payload: VerifyRegistrationPayload) {
+  return $api.mutationData(
+    'post',
+    '/auth/register/verify',
+    {
+      headers: createJsonHeaders(),
+      body: payload
+    },
+    (value) => parseWithSchema(registrationVerificationSchema, value, 'registration verification'),
+    {
+      errorMessage: 'Failed to verify registration',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'register')
+      }
+    }
+  )
+}
+
+export async function completeRegistration(payload: CompleteRegistrationPayload) {
+  await $api.noContentMutation(
+    'post',
+    '/auth/register/complete',
+    {
+      headers: createJsonHeaders(),
+      body: {
+        ...payload,
+        contactEmail: payload.contactEmail ?? ''
+      }
+    },
+    {
+      errorMessage: 'Failed to complete registration',
       errorParsers: {
         422: (error) => parseValidationError(error, 'register')
       }
@@ -209,6 +304,32 @@ export function useRegisterMutation() {
           }
         }
       ),
+    onSuccess: async () => {
+      const session = await fetchSessionBootstrap()
+      sessionStore.hydrate(session)
+      queryClient.setQueryData(['session', 'bootstrap'], session)
+    }
+  })
+}
+
+export function useStartRegistrationMutation() {
+  return useMutation({
+    mutationFn: async (payload: StartRegistrationPayload) => startRegistration(payload)
+  })
+}
+
+export function useVerifyRegistrationMutation() {
+  return useMutation({
+    mutationFn: async (payload: VerifyRegistrationPayload) => verifyRegistration(payload)
+  })
+}
+
+export function useCompleteRegistrationMutation() {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (payload: CompleteRegistrationPayload) => completeRegistration(payload),
     onSuccess: async () => {
       const session = await fetchSessionBootstrap()
       sessionStore.hydrate(session)

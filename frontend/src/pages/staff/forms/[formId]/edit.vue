@@ -11,6 +11,7 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formatDateTime, formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -22,9 +23,7 @@ import {
   buildCopyStaffFormConfirmMessage,
   buildDeleteStaffFormConfirmMessage,
   extractStaffFormValidationMessage,
-  formatStaffFormDateTimeLocalValue,
   formatStaffFormTags,
-  parseStaffFormDateTimeLocalValue,
   parseStaffFormTags,
   useCopyStaffFormMutation,
   useDeleteStaffFormMutation,
@@ -65,16 +64,16 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
 const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
 
 const openAtInput = computed({
-  get: () => formatStaffFormDateTimeLocalValue(editForm.value.openAt),
+  get: () => formatDateTimeLocalValue(editForm.value.openAt),
   set: (value: string) => {
-    editForm.value.openAt = parseStaffFormDateTimeLocalValue(value, editForm.value.openAt)
+    editForm.value.openAt = parseDateTimeLocalValue(value, editForm.value.openAt)
   }
 })
 
 const closeAtInput = computed({
-  get: () => formatStaffFormDateTimeLocalValue(editForm.value.closeAt),
+  get: () => formatDateTimeLocalValue(editForm.value.closeAt),
   set: (value: string) => {
-    editForm.value.closeAt = parseStaffFormDateTimeLocalValue(value, editForm.value.closeAt)
+    editForm.value.closeAt = parseDateTimeLocalValue(value, editForm.value.closeAt)
   }
 })
 
@@ -183,7 +182,8 @@ async function handleDeleteForm() {
         <SurfaceHeader>
           <template #title>{{ formQuery.data.value.name }}</template>
           <template #description>
-            受付期間 : {{ formQuery.data.value.openAt }} 〜 {{ formQuery.data.value.closeAt }}
+            受付期間 : {{ formatDateTime(formQuery.data.value.openAt) }} 〜
+            {{ formatDateTime(formQuery.data.value.closeAt) }}
           </template>
           <template #actions>
             <div class="flex flex-wrap items-center justify-between gap-4">

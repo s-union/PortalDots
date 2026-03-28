@@ -13,6 +13,7 @@ import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from '@/fea
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { formatDateTime } from '@/lib/format/datetime'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,7 +107,7 @@ watch(
           class="rounded-lg border border-border bg-background px-5 py-5 transition hover:border-primary hover:bg-primary-light"
         >
           <p class="text-base font-semibold text-body">{{ participationType.name }}</p>
-          <p class="mt-2 text-sm text-primary">{{ participationType.form.closeAt }} まで受付</p>
+          <p class="mt-2 text-sm text-primary">{{ formatDateTime(participationType.form.closeAt) }} まで受付</p>
           <p class="mt-2 text-sm leading-6 text-muted">{{ participationType.description }}</p>
         </RouterLink>
       </div>

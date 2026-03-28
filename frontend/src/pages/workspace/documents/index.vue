@@ -15,6 +15,7 @@ import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
+import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useDocumentsPageQuery } from '@/features/documents/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -86,7 +87,7 @@ async function movePage(nextPage: number) {
             <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
           </template>
           <template #meta>
-            {{ document.updatedAt }} 更新
+            {{ formatDateTimeUpdated(document.updatedAt) }}
             <br />
             {{ document.extension || 'FILE' }}ファイル • {{ formatFileSize(document.sizeBytes) }}
           </template>

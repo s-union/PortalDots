@@ -304,7 +304,7 @@ describe('CircleSelectorPage', () => {
 
     expect(wrapper.text()).toContain('別の企画を参加登録する')
     expect(wrapper.text()).toContain('展示企画です')
-    expect(wrapper.text()).toContain('2026-12-31T23:59:59Z まで受付')
+    expect(wrapper.text()).toContain('2027年1月1日(金) 08:59 まで受付')
     expect(wrapper.get('a[href="/circles/new?participation_type=pt-exhibit"]').text()).toContain('展示')
     expect(wrapper.get('a[href="/circles/new?participation_type=pt-food"]').text()).toContain('模擬店')
   })

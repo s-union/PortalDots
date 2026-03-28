@@ -9,6 +9,7 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -146,8 +147,8 @@ async function handleCreateMail() {
             <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{ mail.body }}</p>
             <p class="mt-4 text-sm text-muted-2">recipients: {{ mail.recipients.join(', ') }}</p>
             <p class="mt-2 text-xs text-muted-2">
-              created: {{ mail.createdAt }}
-              <template v-if="mail.deliveredAt"> / delivered: {{ mail.deliveredAt }}</template>
+              created: {{ formatDateTime(mail.createdAt) }}
+              <template v-if="mail.deliveredAt"> / delivered: {{ formatDateTime(mail.deliveredAt) }}</template>
             </p>
           </article>
         </div>

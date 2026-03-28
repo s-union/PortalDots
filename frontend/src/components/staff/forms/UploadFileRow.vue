@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { buildStaffFormUploadDownloadUrl, type StaffFormUpload } from '@/features/staff/forms/api'
+import { formatDateTime } from '@/lib/format/datetime'
 
 const {
   formId,
@@ -27,7 +28,7 @@ const downloadClasses =
     <div>
       <p>{{ upload.filename }}</p>
       <p class="mt-1 text-xs text-muted-2">
-        {{ upload.mimeType }} / {{ upload.sizeBytes }} bytes / {{ upload.createdAt }}
+        {{ upload.mimeType }} / {{ upload.sizeBytes }} bytes / {{ formatDateTime(upload.createdAt) }}
       </p>
     </div>
     <a :href="buildStaffFormUploadDownloadUrl(formId, upload.id)" :class="downloadClasses"> ダウンロード </a>

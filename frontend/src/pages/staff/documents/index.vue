@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -146,7 +147,7 @@ async function handleCreateDocument() {
               <td class="border-b border-border px-4 py-4">
                 {{ formatFileSize(staffDocument.sizeBytes) }}
               </td>
-              <td class="border-b border-border px-4 py-4">{{ staffDocument.updatedAt }}</td>
+              <td class="border-b border-border px-4 py-4">{{ formatDateTime(staffDocument.updatedAt) }}</td>
               <td class="border-b border-border px-4 py-4">
                 <a
                   :href="buildStaffDocumentDownloadUrl(staffDocument.id)"

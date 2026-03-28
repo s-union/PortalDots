@@ -23,6 +23,7 @@ import {
   useFormAnswerUploadMutation
 } from '@/features/forms/answers'
 import { extractValidationMessage } from '@/lib/api/validation'
+import { formatDate } from '@/lib/format/datetime'
 import { buttonVariants } from '@/lib/ui/variants'
 
 const router = useRouter()
@@ -206,7 +207,7 @@ function downloadHref(questionId: string) {
         <p class="text-sm font-semibold">
           {{
             detailQuery.data.value.submittedAt
-              ? `提出済み (${new Date(detailQuery.data.value.submittedAt).toLocaleDateString('ja-JP')})`
+              ? `提出済み (${formatDate(detailQuery.data.value.submittedAt)})`
               : '未提出'
           }}
         </p>

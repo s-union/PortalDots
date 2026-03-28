@@ -6,6 +6,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
+import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePublicHomeQuery, usePublicConfigQuery } from '@/features/public-home/api'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
@@ -79,7 +80,7 @@ const pageDetailPath = (pageId: string) =>
         <div class="border-b border-border px-6 py-[1.2rem] max-[1000px]:px-4">
           <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">{{ page.title }}</h2>
           <div class="mt-px flex flex-wrap items-center gap-2 text-base text-muted">
-            <span>{{ page.publishedAt }} 更新</span>
+            <span>{{ formatDateTimeUpdated(page.publishedAt) }}</span>
             <StatusBadge v-if="page.isLimited" tone="primary" appearance="outlined">限定公開</StatusBadge>
           </div>
         </div>
@@ -154,7 +155,7 @@ const pageDetailPath = (pageId: string) =>
         <div class="divide-y divide-border">
           <ListItemLink v-for="pt in publicParticipationTypes" :key="pt.id" legacy :to="`/register`">
             <template #title>{{ pt.name }}</template>
-            <template #meta>{{ pt.form.closeAt }} まで受付</template>
+            <template #meta>{{ formatDateTime(pt.form.closeAt) }} まで受付</template>
             {{ pt.description }}
           </ListItemLink>
         </div>
@@ -173,7 +174,7 @@ const pageDetailPath = (pageId: string) =>
                 {{ page.isLimited ? '限定公開' : '全員に公開' }}
               </StatusBadge>
             </template>
-            <template #meta>{{ page.publishedAt }}</template>
+            <template #meta>{{ formatDateTime(page.publishedAt) }}</template>
             {{ page.summary }}
           </ListItemLink>
         </div>
@@ -206,7 +207,7 @@ const pageDetailPath = (pageId: string) =>
               <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
             </template>
             <template #meta>
-              {{ document.updatedAt }} 更新
+              {{ formatDateTimeUpdated(document.updatedAt) }}
               <br />
               {{ document.extension || 'FILE' }} • {{ formatFileSize(document.sizeBytes) }}
             </template>

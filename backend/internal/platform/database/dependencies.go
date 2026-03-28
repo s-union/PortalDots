@@ -15,6 +15,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
+	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
 	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
@@ -24,24 +25,25 @@ import (
 )
 
 type Dependencies struct {
-	Activities         activitylog.Repository
-	Answers            answer.Repository
-	Authenticator      auth.Authenticator
-	Booths             booth.Repository
-	Circles            circle.Catalog
-	ContactCategories  contactcategory.Repository
-	Documents          document.Repository
-	Forms              form.Repository
-	FormQuestions      formquestion.Repository
-	Mails              mailqueue.Repository
-	Pages              page.Repository
-	ParticipationTypes participationtype.Repository
-	Portal             portalsetting.Repository
-	Places             place.Repository
-	Sessions           session.Store
-	Tags               tag.Repository
-	Users              useradmin.Repository
-	Close              func()
+	Activities           activitylog.Repository
+	Answers              answer.Repository
+	Authenticator        auth.Authenticator
+	Booths               booth.Repository
+	Circles              circle.Catalog
+	ContactCategories    contactcategory.Repository
+	Documents            document.Repository
+	Forms                form.Repository
+	FormQuestions        formquestion.Repository
+	Mails                mailqueue.Repository
+	Pages                page.Repository
+	PendingRegistrations pendingregistration.Repository
+	ParticipationTypes   participationtype.Repository
+	Portal               portalsetting.Repository
+	Places               place.Repository
+	Sessions             session.Store
+	Tags                 tag.Repository
+	Users                useradmin.Repository
+	Close                func()
 }
 
 func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, error) {
@@ -76,18 +78,19 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 	queries := store.Queries()
 
 	return Dependencies{
-		Activities:         activitylog.NewSQLCRepository(queries),
-		Answers:            answer.NewSQLCRepository(store.Pool(), queries),
-		Authenticator:      auth.NewSQLCAuthenticator(queries),
-		Booths:             booth.NewSQLCRepository(queries),
-		Circles:            circle.NewSQLCCatalog(queries),
-		ContactCategories:  contactcategory.NewSQLCRepository(queries),
-		Documents:          document.NewSQLCRepository(queries),
-		Forms:              form.NewSQLCRepository(queries),
-		FormQuestions:      formquestion.NewSQLCRepository(store.Pool(), queries),
-		Mails:              mailqueue.NewSQLCRepository(queries),
-		Pages:              page.NewSQLCRepository(queries),
-		ParticipationTypes: participationtype.NewSQLCRepository(queries),
+		Activities:           activitylog.NewSQLCRepository(queries),
+		Answers:              answer.NewSQLCRepository(store.Pool(), queries),
+		Authenticator:        auth.NewSQLCAuthenticator(queries),
+		Booths:               booth.NewSQLCRepository(queries),
+		Circles:              circle.NewSQLCCatalog(queries),
+		ContactCategories:    contactcategory.NewSQLCRepository(queries),
+		Documents:            document.NewSQLCRepository(queries),
+		Forms:                form.NewSQLCRepository(queries),
+		FormQuestions:        formquestion.NewSQLCRepository(store.Pool(), queries),
+		Mails:                mailqueue.NewSQLCRepository(queries),
+		Pages:                page.NewSQLCRepository(queries),
+		PendingRegistrations: pendingregistration.NewSQLCRepository(queries),
+		ParticipationTypes:   participationtype.NewSQLCRepository(queries),
 		Portal: portalsetting.NewMemoryRepository(portalsetting.Settings{
 			AppName:                   cfg.AppName,
 			PortalDescription:         cfg.PortalDescription,

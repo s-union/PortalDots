@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -221,7 +222,7 @@ function handleDocumentChange(documentId: string, event: Event) {
                 <strong v-if="page.isPublic">はい</strong>
                 <span v-else>-</span>
               </td>
-              <td class="border-b border-border px-4 py-4">{{ page.publishedAt }}</td>
+              <td class="border-b border-border px-4 py-4">{{ formatDateTime(page.publishedAt) }}</td>
               <td class="border-b border-border px-4 py-4">
                 <RouterLink :to="`/staff/pages/${page.id}`" class="text-primary hover:underline"> 編集 </RouterLink>
               </td>

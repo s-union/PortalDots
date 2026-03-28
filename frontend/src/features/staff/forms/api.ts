@@ -10,6 +10,7 @@ import {
   staffFormSummarySchema
 } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { nowPlusOneHourISO, plusDaysEndOfDayISO } from '@/lib/format/datetime'
 import { useSessionStore } from '@/features/session/store'
 
 export type StaffFormSummary = z.infer<typeof staffFormSummarySchema>
@@ -495,20 +496,15 @@ function parseStaffForms(value: unknown): StaffFormSummary[] {
 }
 
 export function createDefaultStaffFormPayload(): CreateStaffFormPayload {
-  const openAt = new Date()
-  openAt.setUTCMinutes(0, 0, 0)
-  openAt.setUTCHours(openAt.getUTCHours() + 1)
-
-  const closeAt = new Date(openAt)
-  closeAt.setUTCDate(closeAt.getUTCDate() + 14)
-  closeAt.setUTCHours(23, 59, 59, 0)
+  const openAtISO = nowPlusOneHourISO()
+  const closeAtISO = plusDaysEndOfDayISO(openAtISO, 14)
 
   return {
     circleId: '',
     name: '',
     description: '',
-    openAt: openAt.toISOString(),
-    closeAt: closeAt.toISOString(),
+    openAt: openAtISO,
+    closeAt: closeAtISO,
     maxAnswers: 1,
     answerableTags: [],
     confirmationMessage: '',
@@ -529,39 +525,6 @@ export function parseStaffFormTags(value: string) {
 
 export function formatStaffFormTags(tags: string[]) {
   return tags.join('\n')
-}
-
-export function formatStaffFormDateTimeLocalValue(value: string) {
-  if (value.trim().length === 0) {
-    return ''
-  }
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return `${date.getFullYear()}-${padStaffFormDateTimeLocalValue(date.getMonth() + 1)}-${padStaffFormDateTimeLocalValue(date.getDate())}T${padStaffFormDateTimeLocalValue(date.getHours())}:${padStaffFormDateTimeLocalValue(date.getMinutes())}`
-}
-
-export function parseStaffFormDateTimeLocalValue(value: string, previousValue = '') {
-  if (value.trim().length === 0) {
-    return ''
-  }
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  if (previousValue.trim().length > 0 && formatStaffFormDateTimeLocalValue(previousValue) === value) {
-    const previousDate = new Date(previousValue)
-    if (!Number.isNaN(previousDate.getTime())) {
-      date.setSeconds(previousDate.getSeconds(), previousDate.getMilliseconds())
-    }
-  }
-
-  return date.toISOString()
 }
 
 export function buildCopyStaffFormConfirmMessage(formName: string) {
@@ -586,10 +549,6 @@ function parseStaffFormPreview(value: unknown): StaffFormPreview {
 
 function parseStaffFormQuestion(value: unknown): StaffFormQuestion {
   return parseWithSchema(formQuestionSchema, value, 'staff form question')
-}
-
-function padStaffFormDateTimeLocalValue(value: number) {
-  return String(value).padStart(2, '0')
 }
 
 export function buildStaffFormUploadDownloadUrl(formId: string, uploadId: string) {

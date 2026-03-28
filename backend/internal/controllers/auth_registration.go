@@ -2,10 +2,14 @@ package controllers
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -13,11 +17,15 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
+	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
+	"github.com/s-union/PortalDots/backend/internal/domain/registrationmail"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const participantVerifyTTL = 5 * time.Minute
+
+var errInvalidRegistrationToken = errors.New("invalid registration token")
 
 type registerRequest struct {
 	StudentID            string `json:"studentId"`
@@ -49,6 +57,39 @@ type authVerificationRequest struct {
 	Type string `json:"type"`
 }
 
+type startRegistrationRequest struct {
+	UnivemailLocalPart string `json:"univemailLocalPart"`
+}
+
+type startRegistrationResponse struct {
+	DeliveryMode string `json:"deliveryMode"`
+	Message      string `json:"message"`
+	VerifyURL    string `json:"verifyUrl,omitempty"`
+}
+
+type verifyRegistrationRequest struct {
+	PendingRegistrationID string `json:"pendingRegistrationId"`
+	Token                 string `json:"token"`
+}
+
+type verifyRegistrationResponse struct {
+	PendingRegistrationID string `json:"pendingRegistrationId"`
+	Univemail             string `json:"univemail"`
+	StudentID             string `json:"studentId"`
+	Verified              bool   `json:"verified"`
+}
+
+type completeRegistrationRequest struct {
+	PendingRegistrationID string `json:"pendingRegistrationId"`
+	Token                 string `json:"token"`
+	Name                  string `json:"name"`
+	NameYomi              string `json:"nameYomi"`
+	ContactEmail          string `json:"contactEmail"`
+	PhoneNumber           string `json:"phoneNumber"`
+	Password              string `json:"password"`
+	PasswordConfirmation  string `json:"passwordConfirmation"`
+}
+
 type participantVerifyCode struct {
 	Code      string
 	ExpiresAt time.Time
@@ -69,6 +110,8 @@ func (s *participantVerifyCodeStore) Put(sessionID, verificationType, code strin
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.pruneExpiredLocked(time.Now().UTC())
+
 	if _, ok := s.codes[sessionID]; !ok {
 		s.codes[sessionID] = map[string]participantVerifyCode{}
 	}
@@ -79,8 +122,10 @@ func (s *participantVerifyCodeStore) Put(sessionID, verificationType, code strin
 }
 
 func (s *participantVerifyCodeStore) Match(sessionID, verificationType, code string, now time.Time) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.pruneExpiredLocked(now)
 
 	byType, ok := s.codes[sessionID]
 	if !ok {
@@ -98,6 +143,8 @@ func (s *participantVerifyCodeStore) Clear(sessionID, verificationType string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.pruneExpiredLocked(time.Now().UTC())
+
 	byType, ok := s.codes[sessionID]
 	if !ok {
 		return
@@ -105,6 +152,19 @@ func (s *participantVerifyCodeStore) Clear(sessionID, verificationType string) {
 	delete(byType, verificationType)
 	if len(byType) == 0 {
 		delete(s.codes, sessionID)
+	}
+}
+
+func (s *participantVerifyCodeStore) pruneExpiredLocked(now time.Time) {
+	for sessionID, byType := range s.codes {
+		for verificationType, current := range byType {
+			if !now.Before(current.ExpiresAt) {
+				delete(byType, verificationType)
+			}
+		}
+		if len(byType) == 0 {
+			delete(s.codes, sessionID)
+		}
 	}
 }
 
@@ -216,6 +276,210 @@ func (h *authHandlers) register(c echo.Context) error {
 			Roles:        createdUser.Roles,
 			Permissions:  createdUser.Permissions,
 		})
+	}
+
+	return h.loginRegisteredUser(c, createdUser)
+}
+
+func (h *authHandlers) startRegistration(c echo.Context) error {
+	var request startRegistrationRequest
+	if err := c.Bind(&request); err != nil {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	request.UnivemailLocalPart = normalizeRegistrationLocalPart(request.UnivemailLocalPart)
+	studentID := request.UnivemailLocalPart
+	univemail := deriveRegistrationUnivemail(request.UnivemailLocalPart, h.portalUnivemailDomainPart)
+
+	validationErrors := map[string][]string{}
+	if request.UnivemailLocalPart == "" {
+		validationErrors["univemailLocalPart"] = []string{"大学メールアドレスを入力してください"}
+	}
+	if strings.TrimSpace(h.portalUnivemailDomainPart) == "" {
+		validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "大学メールアドレスのドメインが未設定です")
+	}
+	if _, err := h.users.FindByLoginID(studentID); err == nil {
+		validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "この大学メールアドレスはすでに登録されています")
+	}
+	if _, err := h.users.FindByLoginID(univemail); err == nil {
+		validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "この大学メールアドレスはすでに登録されています")
+	}
+	if len(validationErrors) > 0 {
+		return validationError(c, validationErrors)
+	}
+
+	token := generateRegistrationToken()
+	tokenHash := hashRegistrationToken(token)
+	pendingValue, err := h.pendingRegistrations.Save(
+		univemail,
+		studentID,
+		tokenHash,
+		time.Now().UTC().Add(h.registrationVerifyTTL),
+	)
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_prepare_registration")
+	}
+
+	verifyURL := buildRegistrationVerifyURL(h.appURL, pendingValue.ID, token)
+	delivery, err := h.registrationMailSender.SendVerificationMail(registrationMailMessage(h.appName, univemail, verifyURL))
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_send_registration_mail")
+	}
+
+	response := startRegistrationResponse{
+		DeliveryMode: delivery.DeliveryMode,
+		Message:      "大学メールアドレスに認証URLを送信しました。",
+	}
+	if delivery.DeliveryMode == "mock" {
+		response.VerifyURL = delivery.VerifyURL
+		response.Message = "モック中: メールは送信していません。認証URLを開いて登録を続けてください。"
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func (h *authHandlers) verifyRegistration(c echo.Context) error {
+	var request verifyRegistrationRequest
+	if err := c.Bind(&request); err != nil {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	pendingValue, err := h.loadAndValidatePendingRegistration(request.PendingRegistrationID, request.Token)
+	if err != nil {
+		if errors.Is(err, errInvalidRegistrationToken) {
+			return validationError(c, map[string][]string{
+				"token": {"認証URLが無効か期限切れです。もう一度お試しください。"},
+			})
+		}
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_load_registration")
+	}
+
+	if !pendingValue.IsVerified() {
+		pendingValue, err = h.pendingRegistrations.MarkVerified(pendingValue.ID, time.Now().UTC())
+		if err != nil {
+			if errors.Is(err, pendingregistration.ErrNotFound) {
+				return validationError(c, map[string][]string{
+					"token": {"認証URLが無効か期限切れです。もう一度お試しください。"},
+				})
+			}
+			return errorJSON(c, http.StatusInternalServerError, "failed_to_verify_registration")
+		}
+	}
+
+	return c.JSON(http.StatusOK, verifyRegistrationResponse{
+		PendingRegistrationID: pendingValue.ID,
+		Univemail:             pendingValue.Univemail,
+		StudentID:             pendingValue.StudentID,
+		Verified:              true,
+	})
+}
+
+func (h *authHandlers) completeRegistration(c echo.Context) error {
+	var request completeRegistrationRequest
+	if err := c.Bind(&request); err != nil {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	pendingValue, err := h.loadAndValidatePendingRegistration(request.PendingRegistrationID, request.Token)
+	if err != nil {
+		if errors.Is(err, errInvalidRegistrationToken) {
+			return validationError(c, map[string][]string{
+				"token": {"認証URLが無効か期限切れです。もう一度お試しください。"},
+			})
+		}
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_load_registration")
+	}
+	if !pendingValue.IsVerified() {
+		return validationError(c, map[string][]string{
+			"token": {"認証URLを開き直してから登録を完了してください"},
+		})
+	}
+
+	request.Name = strings.TrimSpace(request.Name)
+	request.NameYomi = strings.TrimSpace(request.NameYomi)
+	request.ContactEmail = strings.TrimSpace(strings.ToLower(request.ContactEmail))
+	request.PhoneNumber = strings.TrimSpace(request.PhoneNumber)
+
+	lastName, firstName, normalizedName, ok := splitFullName(request.Name)
+	lastNameReading, firstNameReading, _, yomiOK := splitFullName(request.NameYomi)
+	validationErrors := map[string][]string{}
+	if !ok {
+		validationErrors["name"] = []string{"姓と名の間にはスペースを入れてください"}
+	}
+	if !yomiOK {
+		validationErrors["nameYomi"] = []string{"姓と名の間にはスペースを入れてください"}
+	}
+	if request.ContactEmail != "" && !strings.Contains(request.ContactEmail, "@") {
+		validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}
+	}
+	if request.PhoneNumber == "" {
+		validationErrors["phoneNumber"] = []string{"連絡先電話番号を入力してください"}
+	}
+	if len(request.Password) < 8 {
+		validationErrors["password"] = []string{"パスワードは8文字以上で入力してください"}
+	}
+	if request.Password != request.PasswordConfirmation {
+		validationErrors["passwordConfirmation"] = []string{"確認用パスワードが一致しません"}
+	}
+	if _, err := h.users.FindByLoginID(pendingValue.StudentID); err == nil {
+		validationErrors["univemail"] = append(validationErrors["univemail"], "この大学メールアドレスはすでに登録されています")
+	}
+	if _, err := h.users.FindByLoginID(pendingValue.Univemail); err == nil {
+		validationErrors["univemail"] = append(validationErrors["univemail"], "この大学メールアドレスはすでに登録されています")
+	}
+	if request.ContactEmail != "" {
+		if _, err := h.users.FindByContactEmail(request.ContactEmail); err == nil {
+			validationErrors["contactEmail"] = []string{"入力されたメールアドレスはすでに登録されています"}
+		}
+	}
+	if len(validationErrors) > 0 {
+		return validationError(c, validationErrors)
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_hash_password")
+	}
+
+	createdUser, err := h.users.Create(useradmin.CreateParams{
+		LastName:            lastName,
+		LastNameReading:     lastNameReading,
+		FirstName:           firstName,
+		FirstNameReading:    firstNameReading,
+		DisplayName:         normalizedName,
+		LoginIDs:            []string{pendingValue.StudentID, pendingValue.Univemail},
+		ContactEmail:        request.ContactEmail,
+		PhoneNumber:         request.PhoneNumber,
+		PasswordHash:        string(passwordHash),
+		Roles:               []string{"participant"},
+		Permissions:         []string{},
+		IsVerified:          true,
+		IsEmailVerified:     false,
+		IsUnivemailVerified: true,
+	})
+	if errors.Is(err, useradmin.ErrConflict) {
+		return validationError(c, map[string][]string{
+			"univemail": {"入力内容がすでに登録されています"},
+		})
+	}
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_user")
+	}
+
+	if h.registrationAuth != nil {
+		h.registrationAuth.RegisterUser(auth.RegisterParams{
+			ID:           createdUser.ID,
+			DisplayName:  createdUser.DisplayName,
+			LoginIDs:     createdUser.LoginIDs,
+			ContactEmail: createdUser.ContactEmail,
+			Password:     request.Password,
+			Roles:        createdUser.Roles,
+			Permissions:  createdUser.Permissions,
+		})
+	}
+
+	if err := h.pendingRegistrations.Delete(pendingValue.ID); err != nil && !errors.Is(err, pendingregistration.ErrNotFound) {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_finalize_registration")
 	}
 
 	return h.loginRegisteredUser(c, createdUser)
@@ -403,6 +667,9 @@ func buildAuthVerificationStatus(userValue useradmin.User, univemail string) aut
 
 	completed := true
 	for _, item := range items {
+		if item.Type != "univemail" {
+			continue
+		}
 		if item.Address == "" || !item.Verified {
 			completed = false
 		}
@@ -456,6 +723,82 @@ func deriveUnivemail(userValue useradmin.User, domainPart string) string {
 		}
 	}
 	return ""
+}
+
+func normalizeRegistrationLocalPart(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	normalized = strings.TrimPrefix(normalized, "@")
+	if strings.Contains(normalized, "@") {
+		return ""
+	}
+	return normalized
+}
+
+func deriveRegistrationUnivemail(localPart, domainPart string) string {
+	normalizedLocalPart := normalizeRegistrationLocalPart(localPart)
+	normalizedDomain := strings.ToLower(strings.TrimSpace(domainPart))
+	if normalizedLocalPart == "" || normalizedDomain == "" {
+		return ""
+	}
+	return normalizedLocalPart + "@" + normalizedDomain
+}
+
+func buildRegistrationVerifyURL(appURL, pendingRegistrationID, token string) string {
+	base := strings.TrimRight(strings.TrimSpace(appURL), "/")
+	return fmt.Sprintf("%s/email/verify/univemail/%s?token=%s", base, pendingRegistrationID, url.QueryEscape(token))
+}
+
+func generateRegistrationToken() string {
+	var raw [24]byte
+	if _, err := rand.Read(raw[:]); err == nil {
+		return base64.RawURLEncoding.EncodeToString(raw[:])
+	}
+	return base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf("%d", time.Now().UnixNano())))
+}
+
+func hashRegistrationToken(token string) string {
+	sum := sha256.Sum256([]byte(strings.TrimSpace(token)))
+	return fmt.Sprintf("%x", sum[:])
+}
+
+func pendingRegistrationTokenMatches(pendingValue pendingregistration.PendingRegistration, token string, now time.Time) bool {
+	if !now.Before(pendingValue.ExpiresAt) {
+		return false
+	}
+	return subtle.ConstantTimeCompare(
+		[]byte(strings.TrimSpace(pendingValue.TokenHash)),
+		[]byte(hashRegistrationToken(token)),
+	) == 1
+}
+
+func (h *authHandlers) loadAndValidatePendingRegistration(pendingRegistrationID, token string) (pendingregistration.PendingRegistration, error) {
+	normalizedID := strings.TrimSpace(pendingRegistrationID)
+	normalizedToken := strings.TrimSpace(token)
+	if normalizedID == "" || normalizedToken == "" {
+		return pendingregistration.PendingRegistration{}, errInvalidRegistrationToken
+	}
+
+	pendingValue, err := h.pendingRegistrations.Find(normalizedID)
+	if err != nil {
+		if errors.Is(err, pendingregistration.ErrNotFound) {
+			return pendingregistration.PendingRegistration{}, errInvalidRegistrationToken
+		}
+		return pendingregistration.PendingRegistration{}, err
+	}
+
+	if !pendingRegistrationTokenMatches(pendingValue, normalizedToken, time.Now().UTC()) {
+		return pendingregistration.PendingRegistration{}, errInvalidRegistrationToken
+	}
+
+	return pendingValue, nil
+}
+
+func registrationMailMessage(appName, to, verifyURL string) registrationmail.Message {
+	return registrationmail.Message{
+		AppName:   appName,
+		To:        to,
+		VerifyURL: verifyURL,
+	}
 }
 
 func generateVerificationCode() string {

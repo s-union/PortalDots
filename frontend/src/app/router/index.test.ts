@@ -217,6 +217,22 @@ describe('app router guards', () => {
     expect(router.currentRoute.value.fullPath).toBe('/')
   })
 
+  it('allows unauthenticated signed email verify links', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: '',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      permissions: [],
+      user: null
+    })
+
+    await router.push('/email/verify/univemail/user-123?token=token-abc')
+    await router.isReady()
+
+    expect(router.currentRoute.value.fullPath).toBe('/email/verify/univemail/user-123?token=token-abc')
+  })
+
   it('redirects unauthenticated email verify completed access to login', async () => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
       csrfToken: '',

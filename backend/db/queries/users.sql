@@ -207,15 +207,14 @@ RETURNING id, display_name, password, is_verified, created_at;
 
 -- name: UpdateUserEmailVerification :one
 UPDATE users
-SET is_email_verified = $2,
-    is_verified = $2 AND is_univemail_verified
+SET is_email_verified = $2
 WHERE id = $1
 RETURNING id, last_name, last_name_reading, first_name, first_name_reading, display_name, contact_email, phone_number, password, is_verified, is_email_verified, is_univemail_verified, created_at;
 
 -- name: UpdateUserUnivemailVerification :one
 UPDATE users
 SET is_univemail_verified = $2,
-    is_verified = is_email_verified AND $2
+    is_verified = $2
 WHERE id = $1
 RETURNING id, last_name, last_name_reading, first_name, first_name_reading, display_name, contact_email, phone_number, password, is_verified, is_email_verified, is_univemail_verified, created_at;
 

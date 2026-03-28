@@ -44,10 +44,7 @@ const form = ref<StaffPortalSettings>({
   portalPrimaryColorL: 45
 })
 
-const localPartOptions = [
-  { value: 'student_id', label: 'student_id' },
-  { value: 'user_id', label: 'user_id' }
-]
+const localPartOptions = [{ value: 'student_id', label: 'student_id' }]
 
 const previewStyle = computed(() => ({
   backgroundColor: `hsl(${form.value.portalPrimaryColorH} ${form.value.portalPrimaryColorS}% ${form.value.portalPrimaryColorL}%)`

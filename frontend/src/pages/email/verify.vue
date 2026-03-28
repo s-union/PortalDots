@@ -7,8 +7,8 @@ definePage({
   }
 })
 
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, reactive, ref } from 'vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import {
   extractFirstErrorMessage,
   useAuthVerificationStatusQuery,
@@ -16,8 +16,10 @@ import {
   useRequestAuthVerificationMutation
 } from '@/features/auth/api'
 
+const route = useRoute()
 const router = useRouter()
-const statusQuery = useAuthVerificationStatusQuery()
+const isIndexRoute = computed(() => route.path === '/email/verify')
+const statusQuery = useAuthVerificationStatusQuery(isIndexRoute)
 const requestMutation = useRequestAuthVerificationMutation()
 const confirmMutation = useConfirmAuthVerificationMutation()
 const verifyCode = reactive<Record<'email' | 'univemail', string>>({
@@ -62,7 +64,7 @@ async function handleConfirm(type: 'email' | 'univemail') {
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[880px] space-y-6 px-6 py-8">
+  <section v-if="isIndexRoute" class="mx-auto w-full max-w-[880px] space-y-6 px-6 py-8">
     <section class="rounded border border-border bg-surface shadow-lv1">
       <div class="border-b border-border px-6 py-5">
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">まだユーザー登録は完了していません！</h1>
@@ -148,4 +150,5 @@ async function handleConfirm(type: 'email' | 'univemail') {
       </div>
     </section>
   </section>
+  <RouterView v-else />
 </template>

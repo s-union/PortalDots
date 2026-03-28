@@ -392,7 +392,6 @@ func (r *StaticRepository) UpdateEmailVerified(userID string, verified bool) (Us
 			continue
 		}
 		r.users[index].IsEmailVerified = verified
-		r.users[index].IsVerified = r.users[index].IsEmailVerified && r.users[index].IsUnivemailVerified
 		return cloneUser(r.users[index]), nil
 	}
 
@@ -408,7 +407,7 @@ func (r *StaticRepository) UpdateUnivemailVerified(userID string, verified bool)
 			continue
 		}
 		r.users[index].IsUnivemailVerified = verified
-		r.users[index].IsVerified = r.users[index].IsEmailVerified && r.users[index].IsUnivemailVerified
+		r.users[index].IsVerified = verified
 		return cloneUser(r.users[index]), nil
 	}
 

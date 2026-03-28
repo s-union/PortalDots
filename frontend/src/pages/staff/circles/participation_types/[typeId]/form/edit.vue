@@ -22,10 +22,9 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
+import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
   extractStaffParticipationTypeValidationMessage,
-  formatDateTimeLocalValue,
-  parseDateTimeLocalValue,
   useStaffParticipationTypeDetailQuery,
   useUpdateStaffParticipationTypeMutation
 } from '@/features/staff/participation-types/api'

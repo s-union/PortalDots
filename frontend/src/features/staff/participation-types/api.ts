@@ -335,32 +335,6 @@ export function formatParticipationTypeTags(tags: string[]) {
   return tags.join('\n')
 }
 
-export function formatDateTimeLocalValue(value: string) {
-  if (value.trim().length === 0) {
-    return ''
-  }
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return `${date.getFullYear()}-${padDateTimeLocalValue(date.getMonth() + 1)}-${padDateTimeLocalValue(date.getDate())}T${padDateTimeLocalValue(date.getHours())}:${padDateTimeLocalValue(date.getMinutes())}`
-}
-
-export function parseDateTimeLocalValue(value: string) {
-  if (value.trim().length === 0) {
-    return ''
-  }
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toISOString()
-}
-
 export function extractStaffParticipationTypeValidationMessage(error: unknown) {
   return extractValidationMessage(error, '参加種別の保存に失敗しました。')
 }
@@ -379,10 +353,6 @@ function parseStaffParticipationType(value: unknown): StaffParticipationType {
 
 function parseStaffParticipationTypeCircle(value: unknown): StaffParticipationTypeCircle {
   return parseWithSchema(staffCircleSchema, value, 'participation type circle')
-}
-
-function padDateTimeLocalValue(value: number) {
-  return String(value).padStart(2, '0')
 }
 
 export type StaffParticipationTypeCirclePage = PaginatedResult<StaffParticipationTypeCircle>

@@ -43,8 +43,8 @@ describe('EmailVerifyCompletedPage', () => {
   it('shows completion message and home CTA', async () => {
     const wrapper = await mountAtCompleted()
 
-    expect(wrapper.text()).toContain('メール認証完了')
-    expect(wrapper.text()).toContain('手続きが完了しました！')
+    expect(wrapper.text()).toContain('ユーザー登録完了')
+    expect(wrapper.text()).toContain('登録が完了しました！')
     expect(wrapper.get('a[href="/"]').text()).toContain('ホームにアクセス')
   })
 })

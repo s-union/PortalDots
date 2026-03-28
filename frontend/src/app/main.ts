@@ -5,8 +5,11 @@ import App from '@/app/App.vue'
 import { pinia } from '@/app/providers/pinia'
 import { router } from '@/app/router'
 import { queryClient } from '@/app/providers/queryClient'
+import { initTemporal } from '@/lib/temporal'
 import { initializeUiTheme } from '@/features/session/theme'
 import '@/styles/app.css'
+
+await initTemporal()
 
 initializeUiTheme()
 

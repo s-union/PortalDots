@@ -106,4 +106,41 @@ describe('EmailVerifyPage', () => {
     expect(wrapper.text()).toContain('連絡先メールアドレス')
     expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain('登録情報の変更')
   })
+
+  it('renders nested child routes via RouterView', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: '',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      user: null
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: '/email/verify',
+          component: EmailVerifyPage,
+          children: [{ path: ':type/:userId', component: { template: '<div>signed verify child</div>' } }]
+        }
+      ]
+    })
+
+    await router.push('/email/verify/univemail/user-123')
+    await router.isReady()
+
+    const wrapper = mount(EmailVerifyPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('signed verify child')
+    expect(wrapper.text()).not.toContain('まだユーザー登録は完了していません！')
+  })
 })

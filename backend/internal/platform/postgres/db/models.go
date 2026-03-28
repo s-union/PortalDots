@@ -178,6 +178,17 @@ type ParticipationType struct {
 	UpdatedAt     pgtype.Timestamptz
 }
 
+type PendingRegistration struct {
+	ID         string
+	Univemail  string
+	StudentID  string
+	TokenHash  string
+	ExpiresAt  pgtype.Timestamptz
+	VerifiedAt pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
+}
+
 type Place struct {
 	ID        string
 	Name      string

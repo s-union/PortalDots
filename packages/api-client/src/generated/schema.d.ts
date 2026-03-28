@@ -55,6 +55,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start participant registration with a university email address */
+        post: operations["postAuthRegisterStart"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify a pending participant registration URL token */
+        post: operations["postAuthRegisterVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete participant registration after university email verification */
+        post: operations["postAuthRegisterComplete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/verification": {
         parameters: {
             query?: never;
@@ -1834,6 +1885,121 @@ export interface operations {
                     name: string;
                     nameYomi: string;
                     contactEmail: string;
+                    phoneNumber: string;
+                    password: string;
+                    passwordConfirmation: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Registered and logged in */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postAuthRegisterStart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    univemailLocalPart: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Verification email prepared or sent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        deliveryMode: "email" | "mock";
+                        message: string;
+                        verifyUrl?: string;
+                    };
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postAuthRegisterVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    pendingRegistrationId: string;
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pending registration verified */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pendingRegistrationId: string;
+                        univemail: string;
+                        studentId: string;
+                        verified: boolean;
+                    };
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postAuthRegisterComplete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    pendingRegistrationId: string;
+                    token: string;
+                    name: string;
+                    nameYomi: string;
+                    contactEmail?: string;
                     phoneNumber: string;
                     password: string;
                     passwordConfirmation: string;

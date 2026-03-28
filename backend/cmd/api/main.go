@@ -37,6 +37,7 @@ func main() {
 		dependencies.FormQuestions,
 		dependencies.Mails,
 		dependencies.Pages,
+		dependencies.PendingRegistrations,
 		dependencies.ParticipationTypes,
 		dependencies.Portal,
 		dependencies.Places,

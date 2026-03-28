@@ -10,6 +10,7 @@ import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { formatDateTime } from '@/lib/format/datetime'
 import { usePublicPagesQuery } from '@/features/public-home/api'
 
 const pagesQuery = usePublicPagesQuery(true)
@@ -45,7 +46,7 @@ const pagesQuery = usePublicPagesQuery(true)
           <template v-if="page.isNew" #suffix>
             <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
           </template>
-          <template #meta>{{ page.publishedAt }}</template>
+          <template #meta>{{ formatDateTime(page.publishedAt) }}</template>
           {{ page.summary }}
         </ListItemLink>
       </div>

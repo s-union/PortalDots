@@ -9,6 +9,7 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import { formatDateTime } from '@/lib/format/datetime'
 import BackLink from '@/components/ui/BackLink.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -87,7 +88,7 @@ function movePage(nextPage: number) {
               <td class="px-5 py-4 text-muted">{{ entry.actorUserId }}</td>
               <td class="px-5 py-4 text-muted">{{ entry.targetType }} / {{ entry.targetId }}</td>
               <td class="px-5 py-4 text-muted">{{ entry.circleId || 'global' }}</td>
-              <td class="px-5 py-4 text-muted">{{ entry.createdAt }}</td>
+              <td class="px-5 py-4 text-muted">{{ formatDateTime(entry.createdAt) }}</td>
             </tr>
           </tbody>
         </table>

@@ -17,11 +17,10 @@ import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
   extractStaffParticipationTypeValidationMessage,
-  formatDateTimeLocalValue,
   formatParticipationTypeTags,
-  parseDateTimeLocalValue,
   parseParticipationTypeTags,
   useCreateStaffParticipationTypeMutation,
   useStaffParticipationTypeForm,

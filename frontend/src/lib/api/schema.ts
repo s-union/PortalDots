@@ -187,6 +187,19 @@ export const authVerificationStatusSchema = z.object({
   items: z.array(authVerificationStatusItemSchema)
 })
 
+export const registrationStartResultSchema = z.object({
+  deliveryMode: z.enum(['email', 'mock']),
+  message: z.string(),
+  verifyUrl: z.string().optional()
+})
+
+export const registrationVerificationSchema = z.object({
+  pendingRegistrationId: z.string(),
+  univemail: z.string(),
+  studentId: z.string(),
+  verified: z.boolean()
+})
+
 export const staffActivityLogSchema = z.object({
   id: z.string(),
   actorUserId: z.string(),

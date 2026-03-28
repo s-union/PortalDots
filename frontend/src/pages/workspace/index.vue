@@ -12,6 +12,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useCurrentCircleDetailQuery } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
+import { formatDate } from '@/lib/format/datetime'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 
@@ -67,7 +68,7 @@ const quickLinks = [
       <p v-if="circleDetailQuery.data.value" class="mt-3 text-sm text-muted">
         {{
           circleDetailQuery.data.value.submittedAt
-            ? `参加登録は提出済みです (${new Date(circleDetailQuery.data.value.submittedAt).toLocaleDateString('ja-JP')})`
+            ? `参加登録は提出済みです (${formatDate(circleDetailQuery.data.value.submittedAt)})`
             : `参加登録は未提出です。現在 ${circleDetailQuery.data.value.memberCount} 人です。`
         }}
       </p>

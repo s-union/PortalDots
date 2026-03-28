@@ -14,6 +14,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
+import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePageDetailQuery } from '@/features/pages/api'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 
@@ -34,7 +35,7 @@ const pageQuery = usePageDetailQuery(pageId)
       <SurfaceCard>
         <div class="border-b border-border px-6 py-5">
           <h2 class="text-2xl font-semibold text-body">{{ pageQuery.data.value.title }}</h2>
-          <div class="mt-3 text-sm text-muted">{{ pageQuery.data.value.publishedAt }} 更新</div>
+          <div class="mt-3 text-sm text-muted">{{ formatDateTimeUpdated(pageQuery.data.value.publishedAt) }}</div>
           <div class="mt-3 text-sm text-muted">
             <StatusBadge tone="primary" appearance="outlined">限定公開ではないお知らせ</StatusBadge>
           </div>
@@ -58,7 +59,7 @@ const pageQuery = usePageDetailQuery(pageId)
                   {{ document.name }}
                 </a>
                 <p class="mt-1 text-xs text-muted">
-                  {{ document.updatedAt }} 更新 / {{ document.extension || 'FILE' }} /
+                  {{ formatDateTimeUpdated(document.updatedAt) }} / {{ document.extension || 'FILE' }} /
                   {{ formatFileSize(document.sizeBytes) }}
                 </p>
                 <p v-if="document.description" class="mt-1 text-muted">

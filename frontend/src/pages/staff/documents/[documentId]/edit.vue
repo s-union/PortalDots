@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -125,7 +126,8 @@ async function handleDeleteDocument() {
         <div class="mt-3 text-sm text-muted">配布資料ID : {{ documentQuery.data.value.id }}</div>
         <div class="mt-1 text-sm text-muted">対象企画 : {{ documentQuery.data.value.circle.name }}</div>
         <div class="mt-3 text-sm text-muted">
-          {{ documentQuery.data.value.updatedAt }} 更新 / {{ documentQuery.data.value.extension || 'FILE' }} /
+          {{ formatDateTimeUpdated(documentQuery.data.value.updatedAt) }} /
+          {{ documentQuery.data.value.extension || 'FILE' }} /
           {{ formatFileSize(documentQuery.data.value.sizeBytes) }}
         </div>
       </SurfaceCard>

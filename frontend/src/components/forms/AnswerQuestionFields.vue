@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { buttonVariants } from '@/lib/ui/variants'
+import { formatDateTime } from '@/lib/format/datetime'
 import {
   answerValue,
   createAnswerableQuestionRef,
@@ -156,7 +157,7 @@ function eventTargetChecked(event: Event) {
           <p>{{ upload.filename }}</p>
           <p class="mt-1 text-xs text-muted">
             {{ upload.mimeType }} / {{ upload.sizeBytes }} bytes /
-            {{ upload.createdAt }}
+            {{ formatDateTime(upload.createdAt) }}
           </p>
         </div>
         <a :href="downloadHref(question)" :class="buttonVariants({ variant: 'secondary', size: 'xs' })">

@@ -100,8 +100,8 @@ func (h *staffAdminHandlers) updateStaffPortalSettings(c echo.Context) error {
 	if request.PortalUnivemailName == "" {
 		validationErrors["portalUnivemailName"] = []string{"学校発行メールアドレスの呼び方を入力してください"}
 	}
-	if request.PortalUnivemailLocalPart != "student_id" && request.PortalUnivemailLocalPart != "user_id" {
-		validationErrors["portalUnivemailLocalPart"] = append(validationErrors["portalUnivemailLocalPart"], "ローカルパート種別は student_id または user_id を指定してください")
+	if request.PortalUnivemailLocalPart != "student_id" {
+		validationErrors["portalUnivemailLocalPart"] = append(validationErrors["portalUnivemailLocalPart"], "ローカルパート種別は student_id を指定してください")
 	}
 	if request.PortalPrimaryColorH < 0 || request.PortalPrimaryColorH > 360 {
 		validationErrors["portalPrimaryColorH"] = []string{"アクセントカラー(H) は 0 から 360 の範囲で入力してください"}

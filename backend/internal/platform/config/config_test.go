@@ -31,11 +31,18 @@ func TestValidateForAPIAllowsSecureExplicitConfigurationWithoutDemoAuthSettings(
 	t.Parallel()
 
 	cfg := Config{
-		DatabaseURL:             "postgres://example",
-		MigrationsDir:           "db/migrations",
-		SessionTTL:              time.Hour,
-		StaffVerifyCode:         "654321",
-		staffVerifyCodeProvided: true,
+		DatabaseURL:              "postgres://example",
+		MigrationsDir:            "db/migrations",
+		SessionTTL:               time.Hour,
+		RegistrationVerifyTTL:    time.Hour,
+		PortalUnivemailLocalPart: "student_id",
+		SMTPHost:                 "smtp.example.com",
+		SMTPPort:                 587,
+		SMTPUsername:             "mailer",
+		SMTPPassword:             "super-secret-password",
+		SMTPFrom:                 "noreply@example.com",
+		StaffVerifyCode:          "654321",
+		staffVerifyCodeProvided:  true,
 		AuthUser: AuthUser{
 			Password: "strong-production-password",
 		},

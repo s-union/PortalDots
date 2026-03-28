@@ -411,6 +411,318 @@ func TestLogoutClearsSession(t *testing.T) {
 	}
 }
 
+func TestRegisterCreatesUserAndSession(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
+		"studentId":            "24z9999",
+		"univemailLocalPart":   "24z9999",
+		"univemailDomainPart":  "example.ac.jp",
+		"name":                 "登録 太郎",
+		"nameYomi":             "とうろく たろう",
+		"contactEmail":         "register-user@example.com",
+		"phoneNumber":          "090-1234-5678",
+		"password":             "password123",
+		"passwordConfirmation": "password123",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	if _, ok := cookies["test_session"]; !ok {
+		t.Fatalf("expected session cookie to be set, got %#v", cookies)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/session/bootstrap", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var bootstrap sessionBootstrapResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &bootstrap); err != nil {
+		t.Fatalf("unmarshal bootstrap response: %v", err)
+	}
+	if bootstrap.User == nil {
+		t.Fatal("expected authenticated user after registration")
+	}
+	if bootstrap.User.DisplayName != "登録 太郎" {
+		t.Fatalf("expected registered user display name, got %#v", bootstrap.User)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var verification authVerificationStatusResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &verification); err != nil {
+		t.Fatalf("unmarshal auth verification response: %v", err)
+	}
+	if verification.Completed {
+		t.Fatalf("expected verification to start incomplete, got %#v", verification)
+	}
+}
+
+func TestRegisterValidationAndConflict(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	invalid := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
+		"studentId":            "",
+		"univemailLocalPart":   "",
+		"univemailDomainPart":  "invalid.example.com",
+		"name":                 "単一名",
+		"nameYomi":             "たんめい",
+		"contactEmail":         "invalid-email",
+		"phoneNumber":          "",
+		"password":             "short",
+		"passwordConfirmation": "mismatch",
+	})
+	if invalid.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, invalid.Code, invalid.Body.String())
+	}
+
+	var invalidResponse models.ValidationErrorResponse
+	if err := json.Unmarshal(invalid.Body.Bytes(), &invalidResponse); err != nil {
+		t.Fatalf("unmarshal validation response: %v", err)
+	}
+	for _, key := range []string{
+		"studentId",
+		"univemailLocalPart",
+		"univemailDomainPart",
+		"name",
+		"nameYomi",
+		"contactEmail",
+		"phoneNumber",
+		"password",
+		"passwordConfirmation",
+	} {
+		if len(invalidResponse.Errors[key]) == 0 {
+			t.Fatalf("expected validation error for %s, got %#v", key, invalidResponse.Errors)
+		}
+	}
+
+	duplicateStudentID := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
+		"studentId":            "24a0000",
+		"univemailLocalPart":   "demo",
+		"univemailDomainPart":  "example.ac.jp",
+		"name":                 "重複 太郎",
+		"nameYomi":             "ちょうふく たろう",
+		"contactEmail":         "duplicate-student@example.com",
+		"phoneNumber":          "090-0000-0000",
+		"password":             "password123",
+		"passwordConfirmation": "password123",
+	})
+	if duplicateStudentID.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, duplicateStudentID.Code, duplicateStudentID.Body.String())
+	}
+
+	var duplicateStudentResponse models.ValidationErrorResponse
+	if err := json.Unmarshal(duplicateStudentID.Body.Bytes(), &duplicateStudentResponse); err != nil {
+		t.Fatalf("unmarshal conflict validation response: %v", err)
+	}
+	if len(duplicateStudentResponse.Errors["studentId"]) == 0 {
+		t.Fatalf("expected studentId conflict error, got %#v", duplicateStudentResponse.Errors)
+	}
+
+	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/register", map[string]string{
+		"studentId":            "24z1001",
+		"univemailLocalPart":   "24z1001",
+		"univemailDomainPart":  "example.ac.jp",
+		"name":                 "先行 登録",
+		"nameYomi":             "せんこう とうろく",
+		"contactEmail":         "duplicate-contact@example.com",
+		"phoneNumber":          "090-1111-1111",
+		"password":             "password123",
+		"passwordConfirmation": "password123",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	duplicateContact := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/register", map[string]string{
+		"studentId":            "24z1002",
+		"univemailLocalPart":   "24z1002",
+		"univemailDomainPart":  "example.ac.jp",
+		"name":                 "後続 登録",
+		"nameYomi":             "こうぞく とうろく",
+		"contactEmail":         "duplicate-contact@example.com",
+		"phoneNumber":          "090-2222-2222",
+		"password":             "password123",
+		"passwordConfirmation": "password123",
+	})
+	if duplicateContact.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, duplicateContact.Code, duplicateContact.Body.String())
+	}
+
+	var duplicateContactResponse models.ValidationErrorResponse
+	if err := json.Unmarshal(duplicateContact.Body.Bytes(), &duplicateContactResponse); err != nil {
+		t.Fatalf("unmarshal contact conflict validation response: %v", err)
+	}
+	if len(duplicateContactResponse.Errors["contactEmail"]) == 0 {
+		t.Fatalf("expected contactEmail conflict error, got %#v", duplicateContactResponse.Errors)
+	}
+}
+
+func TestAuthVerificationFlow(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
+		"studentId":            "24v2001",
+		"univemailLocalPart":   "24v2001",
+		"univemailDomainPart":  "example.ac.jp",
+		"name":                 "認証 太郎",
+		"nameYomi":             "にんしょう たろう",
+		"contactEmail":         "auth-flow@example.com",
+		"phoneNumber":          "090-3333-3333",
+		"password":             "password123",
+		"passwordConfirmation": "password123",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	csrf := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/request", map[string]string{
+		"type": "email",
+	}, csrf)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var requestResponse staffVerifyRequestResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
+		t.Fatalf("unmarshal verification request response: %v", err)
+	}
+	if requestResponse.DeliveryMode != "mock" || requestResponse.VerifyCode == "" {
+		t.Fatalf("unexpected verification request response: %#v", requestResponse)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
+		"type":       "email",
+		"verifyCode": requestResponse.VerifyCode,
+	}, csrf)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var status authVerificationStatusResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
+		t.Fatalf("unmarshal verification status response: %v", err)
+	}
+
+	emailItem, found := findVerificationItem(status.Items, "email")
+	if !found || !emailItem.Verified {
+		t.Fatalf("expected email to be verified, got %#v", status.Items)
+	}
+	if status.Completed {
+		t.Fatalf("expected verification to remain incomplete until all items verified, got %#v", status)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/request", map[string]string{
+		"type": "univemail",
+	}, csrf)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var secondRequest staffVerifyRequestResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &secondRequest); err != nil {
+		t.Fatalf("unmarshal univemail verification request response: %v", err)
+	}
+	if secondRequest.VerifyCode == "" {
+		t.Fatalf("expected univemail verification code, got %#v", secondRequest)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
+		"type":       "univemail",
+		"verifyCode": secondRequest.VerifyCode,
+	}, csrf)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
+		t.Fatalf("unmarshal completed verification status response: %v", err)
+	}
+	if !status.Completed {
+		t.Fatalf("expected completed verification status, got %#v", status)
+	}
+}
+
+func TestAuthVerificationRejectsInvalidInputAndWrongCode(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
+		"studentId":            "24v3001",
+		"univemailLocalPart":   "24v3001",
+		"univemailDomainPart":  "example.ac.jp",
+		"name":                 "誤入力 太郎",
+		"nameYomi":             "ごにゅうりょく たろう",
+		"contactEmail":         "auth-errors@example.com",
+		"phoneNumber":          "090-4444-4444",
+		"password":             "password123",
+		"passwordConfirmation": "password123",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	csrf := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/request", map[string]string{
+		"type": "",
+	}, csrf)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var invalidRequest models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &invalidRequest); err != nil {
+		t.Fatalf("unmarshal request validation response: %v", err)
+	}
+	if len(invalidRequest.Errors["type"]) == 0 {
+		t.Fatalf("expected type validation error, got %#v", invalidRequest.Errors)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/request", map[string]string{
+		"type": "email",
+	}, csrf)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
+		"type":       "email",
+		"verifyCode": "999999",
+	}, csrf)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var wrongCode models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &wrongCode); err != nil {
+		t.Fatalf("unmarshal confirm validation response: %v", err)
+	}
+	if len(wrongCode.Errors["verifyCode"]) == 0 {
+		t.Fatalf("expected verifyCode validation error, got %#v", wrongCode.Errors)
+	}
+}
+
 func TestListCirclesRequiresAuthentication(t *testing.T) {
 	t.Parallel()
 
@@ -3951,7 +4263,7 @@ func TestStaffPortalSettingsGetAndUpdate(t *testing.T) {
 		"appForceHttps":             false,
 		"portalAdminName":           "次世代実行委員会",
 		"portalContactEmail":        "next@example.com",
-		"portalUnivemailLocalPart":  "user_id",
+		"portalUnivemailLocalPart":  "student_id",
 		"portalUnivemailDomainPart": "next.example.ac.jp",
 		"portalStudentIdName":       "学生番号",
 		"portalUnivemailName":       "学校メール",
@@ -3967,7 +4279,7 @@ func TestStaffPortalSettingsGetAndUpdate(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
 		t.Fatalf("unmarshal updated portal settings: %v", err)
 	}
-	if updated.AppName != "PortalDots Next" || updated.PortalUnivemailLocalPart != "user_id" || updated.PortalPrimaryColorH != 24 {
+	if updated.AppName != "PortalDots Next" || updated.PortalUnivemailLocalPart != "student_id" || updated.PortalPrimaryColorH != 24 {
 		t.Fatalf("unexpected updated portal settings: %#v", updated)
 	}
 

@@ -12,6 +12,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
+import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePublicDocumentsQuery } from '@/features/public-home/api'
 
 const documentsQuery = usePublicDocumentsQuery(true)
@@ -51,7 +52,7 @@ const documentsQuery = usePublicDocumentsQuery(true)
             <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
           </template>
           <template #meta>
-            {{ document.updatedAt }} 更新
+            {{ formatDateTimeUpdated(document.updatedAt) }}
             <br />
             {{ document.extension || 'FILE' }}ファイル • {{ formatFileSize(document.sizeBytes) }}
           </template>

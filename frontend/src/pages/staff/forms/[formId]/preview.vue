@@ -10,6 +10,7 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -52,7 +53,9 @@ const isLimitedPublic = computed(() => (previewQuery.data.value?.answerableTags.
         <SurfaceHeader>
           <template #title>{{ previewQuery.data.value.name }}</template>
           <template #description>
-            受付期間 : {{ previewQuery.data.value.openAt }}〜{{ previewQuery.data.value.closeAt }}<br />
+            受付期間 : {{ formatDateTime(previewQuery.data.value.openAt) }}〜{{
+              formatDateTime(previewQuery.data.value.closeAt)
+            }}<br />
             {{ previewQuery.data.value.maxAnswers }} 件まで回答可能
           </template>
         </SurfaceHeader>

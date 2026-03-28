@@ -15,6 +15,9 @@ type PublicRoutes struct {
 	UpdatePassword           echo.HandlerFunc
 	DeleteAccount            echo.HandlerFunc
 	Register                 echo.HandlerFunc
+	StartRegistration        echo.HandlerFunc
+	VerifyRegistration       echo.HandlerFunc
+	CompleteRegistration     echo.HandlerFunc
 	Login                    echo.HandlerFunc
 	Logout                   echo.HandlerFunc
 	GetAuthVerification      echo.HandlerFunc
@@ -175,6 +178,9 @@ func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
 	v1.PUT("/session/password", r.UpdatePassword)
 	v1.DELETE("/session/account", r.DeleteAccount)
 	v1.POST("/auth/register", r.Register)
+	v1.POST("/auth/register/start", r.StartRegistration)
+	v1.POST("/auth/register/verify", r.VerifyRegistration)
+	v1.POST("/auth/register/complete", r.CompleteRegistration)
 	v1.POST("/auth/login", r.Login)
 	v1.POST("/auth/logout", r.Logout)
 	v1.GET("/auth/verification", r.GetAuthVerification)

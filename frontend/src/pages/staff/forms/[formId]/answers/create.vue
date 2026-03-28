@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formatDateTime } from '@/lib/format/datetime'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -163,8 +164,8 @@ async function handleCreateAnswer() {
             class="border-b border-border px-6 py-5 last:border-b-0"
           >
             <RouterLink :to="`/staff/forms/${formId}/answers/${answer.id}/edit`" class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">作成 {{ answer.createdAt }} / 回答ID : {{ answer.id }}</span>
-              <span class="text-muted-2">最終更新 {{ answer.updatedAt }}</span>
+              <span class="font-semibold">作成 {{ formatDateTime(answer.createdAt) }} / 回答ID : {{ answer.id }}</span>
+              <span class="text-muted-2">最終更新 {{ formatDateTime(answer.updatedAt) }}</span>
               <span class="line-clamp-2 whitespace-pre-wrap text-muted">
                 {{ answer.body || '本文はまだありません。' }}
               </span>

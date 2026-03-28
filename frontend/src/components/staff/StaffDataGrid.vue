@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { calculateTotalPages } from '@/lib/pagination'
+import { formatDateTime } from '@/lib/format/datetime'
 
 export interface StaffDataGridColumn {
   key: string
@@ -101,6 +102,8 @@ function resolveHeaderButtonAlignClass(column: StaffDataGridColumn) {
   return 'justify-start text-left'
 }
 
+const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+
 function formatValue(value: unknown) {
   if (value === true) {
     return 'はい'
@@ -110,6 +113,9 @@ function formatValue(value: unknown) {
   }
   if (Array.isArray(value)) {
     return value.map((item) => String(item)).join(', ')
+  }
+  if (typeof value === 'string' && ISO_DATETIME_RE.test(value)) {
+    return formatDateTime(value)
   }
   return String(value)
 }

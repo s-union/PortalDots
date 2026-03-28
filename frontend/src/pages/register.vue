@@ -9,132 +9,118 @@ definePage({
 })
 
 import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useRegisterMutation, extractFirstErrorMessage } from '@/features/auth/api'
+import { extractFirstErrorMessage, useStartRegistrationMutation } from '@/features/auth/api'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 
-const router = useRouter()
-const registerMutation = useRegisterMutation()
+const startRegistrationMutation = useStartRegistrationMutation()
 const publicConfigQuery = usePublicConfigQuery()
-const isSubmitting = computed(() => registerMutation.isPending.value)
-const canSubmit = computed(
-  () => !isSubmitting.value && (publicConfigQuery.data.value?.portalUnivemailDomainPart?.trim().length ?? 0) > 0
-)
+const isSubmitting = computed(() => startRegistrationMutation.isPending.value)
 
 const form = reactive({
-  studentId: '',
-  univemailLocalPart: '',
-  name: '',
-  nameYomi: '',
-  contactEmail: '',
-  phoneNumber: '',
-  password: '',
-  passwordConfirmation: ''
+  univemailLocalPart: ''
 })
 
 const errorMessage = ref('')
+const successMessage = ref('')
+const verifyUrl = ref('')
+const canSubmit = computed(
+  () => !isSubmitting.value && (publicConfigQuery.data.value?.portalUnivemailDomainPart?.trim().length ?? 0) > 0
+)
+const resolvedVerifyUrl = computed(() => resolveCurrentAppVerifyUrl(verifyUrl.value))
+const fullUnivemail = computed(() => {
+  const localPart = form.univemailLocalPart.trim()
+  const domainPart = publicConfigQuery.data.value?.portalUnivemailDomainPart?.trim() ?? ''
+  if (localPart === '' || domainPart === '') {
+    return ''
+  }
+  return `${localPart}@${domainPart}`
+})
 
 async function handleSubmit() {
   errorMessage.value = ''
+  successMessage.value = ''
+  verifyUrl.value = ''
 
   try {
-    await registerMutation.mutateAsync({
-      studentId: form.studentId,
-      univemailLocalPart: form.univemailLocalPart,
-      univemailDomainPart: publicConfigQuery.data.value?.portalUnivemailDomainPart ?? '',
-      name: form.name,
-      nameYomi: form.nameYomi,
-      contactEmail: form.contactEmail,
-      phoneNumber: form.phoneNumber,
-      password: form.password,
-      passwordConfirmation: form.passwordConfirmation
+    const result = await startRegistrationMutation.mutateAsync({
+      univemailLocalPart: form.univemailLocalPart.trim()
     })
-    await router.replace('/email/verify')
+    successMessage.value = result.message
+    verifyUrl.value = result.verifyUrl ?? ''
   } catch (error) {
     errorMessage.value = extractFirstErrorMessage(error)
+  }
+}
+
+function resolveCurrentAppVerifyUrl(value: string) {
+  const normalized = value.trim()
+  if (normalized === '') {
+    return ''
+  }
+
+  if (typeof window === 'undefined') {
+    return normalized
+  }
+
+  try {
+    const url = new URL(normalized, window.location.origin)
+    if (!url.pathname.startsWith('/email/verify/')) {
+      return url.toString()
+    }
+    if (url.origin === window.location.origin) {
+      return url.toString()
+    }
+    return new URL(`${url.pathname}${url.search}${url.hash}`, `${window.location.origin}/`).toString()
+  } catch {
+    return normalized
   }
 }
 </script>
 
 <template>
-  <section class="bg-surface px-6 py-10">
+  <section class="flex min-h-[calc(100dvh-5rem)] flex-col justify-center bg-surface px-6 py-10">
     <div class="mx-auto w-full max-w-[760px] space-y-6">
       <header class="space-y-2 text-center">
         <h1 class="text-[2rem] font-semibold text-body">ユーザー登録</h1>
-        <p class="text-sm text-muted">登録後はログインした状態でメール認証へ進みます。</p>
+        <p class="text-sm text-muted">まず大学メールアドレスを確認し、その後に登録情報を入力します。</p>
       </header>
 
       <form class="space-y-6 rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleSubmit">
+        <p v-if="successMessage" class="rounded border border-success bg-success-light px-4 py-3 text-sm text-success">
+          {{ successMessage }}
+        </p>
         <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {{ errorMessage }}
         </p>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">{{ publicConfigQuery.data.value?.portalStudentIdName ?? '学籍番号' }}</span>
-            <input v-model="form.studentId" autocomplete="username" name="studentId" required type="text" />
-          </label>
-
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">{{
-              publicConfigQuery.data.value?.portalUnivemailName ?? '大学メールアドレス'
-            }}</span>
-            <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-              <input v-model="form.univemailLocalPart" name="univemailLocalPart" required type="text" />
-              <span class="text-sm text-muted">
-                @{{ publicConfigQuery.data.value?.portalUnivemailDomainPart ?? 'example.ac.jp' }}
-              </span>
-            </div>
-          </label>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">名前</span>
-            <input v-model="form.name" autocomplete="name" name="name" placeholder="姓 名" required type="text" />
-          </label>
-
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">名前(よみ)</span>
-            <input v-model="form.nameYomi" name="nameYomi" placeholder="せい めい" required type="text" />
-          </label>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">連絡先メールアドレス</span>
-            <input v-model="form.contactEmail" autocomplete="email" name="contactEmail" required type="email" />
-          </label>
-
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">連絡先電話番号</span>
-            <input v-model="form.phoneNumber" autocomplete="tel" name="phoneNumber" required type="tel" />
-          </label>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">パスワード</span>
+        <label class="grid gap-2 text-sm text-body">
+          <span class="font-semibold">{{
+            publicConfigQuery.data.value?.portalUnivemailName ?? '大学メールアドレス'
+          }}</span>
+          <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <input
-              v-model="form.password"
-              autocomplete="new-password"
-              name="password"
-              placeholder="8文字以上"
+              v-model="form.univemailLocalPart"
+              autocomplete="username"
+              name="univemailLocalPart"
+              placeholder="学籍番号"
               required
-              type="password"
+              type="text"
             />
-          </label>
+            <span class="text-sm text-muted">
+              @{{ publicConfigQuery.data.value?.portalUnivemailDomainPart ?? 'example.ac.jp' }}
+            </span>
+          </div>
+        </label>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">パスワード(確認)</span>
-            <input
-              v-model="form.passwordConfirmation"
-              autocomplete="new-password"
-              name="passwordConfirmation"
-              required
-              type="password"
-            />
-          </label>
+        <p v-if="fullUnivemail" class="text-sm text-muted">
+          送信先: <strong>{{ fullUnivemail }}</strong>
+        </p>
+
+        <div v-if="verifyUrl" class="rounded border border-primary/20 bg-primary-light px-4 py-4 text-sm text-body">
+          <p>開発モードのため、認証URLを直接表示しています。</p>
+          <a class="mt-3 inline-flex font-semibold text-primary hover:underline" :href="resolvedVerifyUrl"
+            >認証URLを開く</a
+          >
         </div>
 
         <div class="space-y-3">
@@ -143,7 +129,7 @@ async function handleSubmit() {
             :disabled="!canSubmit"
             type="submit"
           >
-            <strong>{{ isSubmitting ? '登録中...' : 'ユーザー登録' }}</strong>
+            <strong>{{ isSubmitting ? '送信中...' : '認証URLを送信する' }}</strong>
           </button>
 
           <RouterLink

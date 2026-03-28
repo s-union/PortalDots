@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -266,7 +267,7 @@ function handleDocumentChange(documentId: string, event: Event) {
             関連配布資料は参加者画面でもお知らせ詳細に表示されます。
           </div>
 
-          <p class="mt-4 text-sm text-muted">公開日時: {{ pageQuery.data.value.publishedAt }}</p>
+          <p class="mt-4 text-sm text-muted">公開日時: {{ formatDateTime(pageQuery.data.value.publishedAt) }}</p>
 
           <ul
             v-if="pageQuery.data.value.documents.length > 0"

@@ -18,12 +18,11 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
+import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
   createDefaultStaffFormPayload,
   extractStaffFormValidationMessage,
-  formatStaffFormDateTimeLocalValue,
   formatStaffFormTags,
-  parseStaffFormDateTimeLocalValue,
   parseStaffFormTags,
   useCreateStaffFormMutation
 } from '@/features/staff/forms/api'
@@ -35,16 +34,16 @@ const errorMessage = ref('')
 const circlesQuery = useManagedStaffCirclesQuery(true)
 
 const openAtInput = computed({
-  get: () => formatStaffFormDateTimeLocalValue(form.value.openAt),
+  get: () => formatDateTimeLocalValue(form.value.openAt),
   set: (value: string) => {
-    form.value.openAt = parseStaffFormDateTimeLocalValue(value, form.value.openAt)
+    form.value.openAt = parseDateTimeLocalValue(value, form.value.openAt)
   }
 })
 
 const closeAtInput = computed({
-  get: () => formatStaffFormDateTimeLocalValue(form.value.closeAt),
+  get: () => formatDateTimeLocalValue(form.value.closeAt),
   set: (value: string) => {
-    form.value.closeAt = parseStaffFormDateTimeLocalValue(value, form.value.closeAt)
+    form.value.closeAt = parseDateTimeLocalValue(value, form.value.closeAt)
   }
 })
 
