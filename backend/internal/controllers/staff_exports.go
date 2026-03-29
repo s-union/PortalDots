@@ -12,7 +12,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
-	"github.com/s-union/PortalDots/backend/internal/domain/page"
 )
 
 func (h *staffAdminHandlers) downloadStaffSummaryCSV(c echo.Context) error {
@@ -66,19 +65,19 @@ func (h *staffAdminHandlers) buildStaffSummaryCSV() ([]byte, error) {
 		"detail",
 	}}
 
+	for _, currentPage := range h.pages.ListForStaff("") {
+		rows = append(rows, []string{
+			"page",
+			"",
+			"",
+			currentPage.ID,
+			currentPage.Title,
+			visibilityLabel(currentPage.IsPublic),
+			pageStatus(currentPage.IsPinned),
+			currentPage.UpdatedAt,
+		})
+	}
 	for _, currentCircle := range circles {
-		for _, currentPage := range h.pages.ListByCircleForStaff(currentCircle.ID, "") {
-			rows = append(rows, []string{
-				"page",
-				currentCircle.ID,
-				currentCircle.Name,
-				currentPage.ID,
-				currentPage.Title,
-				visibilityLabel(currentPage.IsPublic),
-				pageStatus(currentPage.IsPinned),
-				currentPage.PublishedAt,
-			})
-		}
 		for _, currentDocument := range h.documents.ListByCircleForStaff(currentCircle.ID) {
 			rows = append(rows, []string{
 				"document",
@@ -126,13 +125,12 @@ func (h *staffAdminHandlers) buildStaffBundleZIP() ([]byte, error) {
 		return nil, err
 	}
 	circleNames := make(map[string]string, len(circles))
-	pages := make([]page.Page, 0)
+	pages := h.pages.ListForStaff("")
 	documents := make([]document.Document, 0)
 	forms := make([]form.Form, 0)
 	answers := make([]answer.Answer, 0)
 	for _, currentCircle := range circles {
 		circleNames[currentCircle.ID] = currentCircle.Name
-		pages = append(pages, h.pages.ListByCircleForStaff(currentCircle.ID, "")...)
 		documents = append(documents, h.documents.ListByCircleForStaff(currentCircle.ID)...)
 		forms = append(forms, h.forms.ListByCircleForStaff(currentCircle.ID)...)
 		answers = append(answers, h.answers.ListByCircle(currentCircle.ID)...)
@@ -142,8 +140,8 @@ func (h *staffAdminHandlers) buildStaffBundleZIP() ([]byte, error) {
 	writer := zip.NewWriter(&buffer)
 
 	pagesCSV, err := writeCSV(append([][]string{
-		{"circle_id", "circle_name", "id", "title", "viewable_tags", "body", "is_pinned", "is_public", "notes", "published_at"},
-	}, staffPageRowsWithCircles(pages, circleNames)...))
+		{"お知らせID", "タイトル", "閲覧可能なタグ", "本文", "固定", "公開", "スタッフ用メモ", "作成日時", "更新日時"},
+	}, staffPageRows(pages)...))
 	if err != nil {
 		return nil, err
 	}

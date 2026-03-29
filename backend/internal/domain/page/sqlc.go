@@ -15,43 +15,22 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) ListByCircle(circleID string, circleTags []string, query string) []Page {
-	rows, err := r.queries.ListPublicPagesByCircle(context.Background(), dbgen.ListPublicPagesByCircleParams{
-		CircleID: circleID,
-		Column2:  circleTags,
-		Column3:  query,
-	})
+func (r *SQLCRepository) ListGuest(query string) []Page {
+	rows, err := r.queries.ListGuestPages(context.Background(), query)
 	if err != nil {
 		return nil
 	}
 
 	pages := make([]Page, 0, len(rows))
 	for _, row := range rows {
-		pages = append(pages, mapListPublicPage(row))
+		pages = append(pages, mapGuestPage(row))
 	}
 
 	return pages
 }
 
-func (r *SQLCRepository) ListByCircleForStaff(circleID string, query string) []Page {
-	rows, err := r.queries.ListStaffPagesByCircle(context.Background(), dbgen.ListStaffPagesByCircleParams{
-		CircleID: circleID,
-		Column2:  query,
-	})
-	if err != nil {
-		return nil
-	}
-
-	pages := make([]Page, 0, len(rows))
-	for _, row := range rows {
-		pages = append(pages, mapListStaffPage(row))
-	}
-
-	return pages
-}
-
-func (r *SQLCRepository) ListPublic(circleTags []string, query string) []Page {
-	rows, err := r.queries.ListPublicPages(context.Background(), dbgen.ListPublicPagesParams{
+func (r *SQLCRepository) ListForCircle(circleTags []string, query string) []Page {
+	rows, err := r.queries.ListPagesForCircle(context.Background(), dbgen.ListPagesForCircleParams{
 		Column1: circleTags,
 		Column2: query,
 	})
@@ -61,39 +40,37 @@ func (r *SQLCRepository) ListPublic(circleTags []string, query string) []Page {
 
 	pages := make([]Page, 0, len(rows))
 	for _, row := range rows {
-		pages = append(pages, mapListPublicPagesRow(row))
+		pages = append(pages, mapCirclePage(row))
 	}
 
 	return pages
 }
 
-func (r *SQLCRepository) FindByCircle(circleID string, circleTags []string, pageID string) (Page, bool) {
-	row, err := r.queries.GetPublicPageByID(context.Background(), dbgen.GetPublicPageByIDParams{
-		CircleID: circleID,
-		Column2:  circleTags,
-		ID:       pageID,
-	})
+func (r *SQLCRepository) ListForStaff(query string) []Page {
+	rows, err := r.queries.ListStaffPages(context.Background(), query)
+	if err != nil {
+		return nil
+	}
+
+	pages := make([]Page, 0, len(rows))
+	for _, row := range rows {
+		pages = append(pages, mapStaffPageRow(row))
+	}
+
+	return pages
+}
+
+func (r *SQLCRepository) FindGuest(pageID string) (Page, bool) {
+	row, err := r.queries.GetGuestPageByID(context.Background(), pageID)
 	if err != nil {
 		return Page{}, false
 	}
 
-	return mapPublicPage(row), true
+	return mapGuestPageDetail(row), true
 }
 
-func (r *SQLCRepository) FindByCircleForStaff(circleID, pageID string) (Page, bool) {
-	row, err := r.queries.GetStaffPageByID(context.Background(), dbgen.GetStaffPageByIDParams{
-		CircleID: circleID,
-		ID:       pageID,
-	})
-	if err != nil {
-		return Page{}, false
-	}
-
-	return mapStaffPage(row), true
-}
-
-func (r *SQLCRepository) FindPublic(circleTags []string, pageID string) (Page, bool) {
-	row, err := r.queries.GetPublicPageByIDGlobal(context.Background(), dbgen.GetPublicPageByIDGlobalParams{
+func (r *SQLCRepository) FindForCircle(circleTags []string, pageID string) (Page, bool) {
+	row, err := r.queries.GetPageByIDForCircle(context.Background(), dbgen.GetPageByIDForCircleParams{
 		Column1: circleTags,
 		ID:      pageID,
 	})
@@ -101,11 +78,19 @@ func (r *SQLCRepository) FindPublic(circleTags []string, pageID string) (Page, b
 		return Page{}, false
 	}
 
-	return mapPublicPageGlobal(row), true
+	return mapCirclePageDetail(row), true
+}
+
+func (r *SQLCRepository) FindForStaff(pageID string) (Page, bool) {
+	row, err := r.queries.GetStaffPageByID(context.Background(), pageID)
+	if err != nil {
+		return Page{}, false
+	}
+
+	return mapStaffPage(row), true
 }
 
 func (r *SQLCRepository) Create(
-	circleID,
 	title,
 	body,
 	notes string,
@@ -115,7 +100,6 @@ func (r *SQLCRepository) Create(
 	documentIDs []string,
 ) Page {
 	row, err := r.queries.CreatePage(context.Background(), dbgen.CreatePageParams{
-		CircleID:     circleID,
 		Title:        title,
 		Body:         body,
 		Notes:        notes,
@@ -132,7 +116,6 @@ func (r *SQLCRepository) Create(
 }
 
 func (r *SQLCRepository) Update(
-	circleID,
 	pageID,
 	title,
 	body,
@@ -143,7 +126,6 @@ func (r *SQLCRepository) Update(
 	documentIDs []string,
 ) (Page, bool) {
 	row, err := r.queries.UpdatePage(context.Background(), dbgen.UpdatePageParams{
-		CircleID:     circleID,
 		ID:           pageID,
 		Title:        title,
 		Body:         body,
@@ -156,13 +138,15 @@ func (r *SQLCRepository) Update(
 	if err != nil {
 		return Page{}, false
 	}
+	if err := r.queries.DeletePageReads(context.Background(), pageID); err != nil {
+		return Page{}, false
+	}
 
 	return mapUpdatedPage(row), true
 }
 
-func (r *SQLCRepository) SetPinned(circleID, pageID string, isPinned bool) (Page, bool) {
+func (r *SQLCRepository) SetPinned(pageID string, isPinned bool) (Page, bool) {
 	row, err := r.queries.PatchPagePin(context.Background(), dbgen.PatchPagePinParams{
-		CircleID: circleID,
 		ID:       pageID,
 		IsPinned: isPinned,
 	})
@@ -173,11 +157,8 @@ func (r *SQLCRepository) SetPinned(circleID, pageID string, isPinned bool) (Page
 	return mapPinnedPage(row), true
 }
 
-func (r *SQLCRepository) Delete(circleID, pageID string) bool {
-	rows, err := r.queries.DeletePage(context.Background(), dbgen.DeletePageParams{
-		CircleID: circleID,
-		ID:       pageID,
-	})
+func (r *SQLCRepository) Delete(pageID string) bool {
+	rows, err := r.queries.DeletePage(context.Background(), pageID)
 	if err != nil {
 		return false
 	}
@@ -185,10 +166,32 @@ func (r *SQLCRepository) Delete(circleID, pageID string) bool {
 	return rows > 0
 }
 
-func mapListPublicPage(row dbgen.ListPublicPagesByCircleRow) Page {
+func (r *SQLCRepository) ListReadPageIDs(userID string, pageIDs []string) []string {
+	if len(pageIDs) == 0 {
+		return []string{}
+	}
+
+	rows, err := r.queries.ListReadPageIDsByUser(context.Background(), dbgen.ListReadPageIDsByUserParams{
+		UserID:  userID,
+		Column2: pageIDs,
+	})
+	if err != nil {
+		return nil
+	}
+
+	return rows
+}
+
+func (r *SQLCRepository) MarkRead(pageID, userID string) {
+	_ = r.queries.UpsertPageRead(context.Background(), dbgen.UpsertPageReadParams{
+		PageID: pageID,
+		UserID: userID,
+	})
+}
+
+func mapGuestPage(row dbgen.ListGuestPagesRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -196,14 +199,14 @@ func mapListPublicPage(row dbgen.ListPublicPagesByCircleRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
-func mapListPublicPagesRow(row dbgen.ListPublicPagesRow) Page {
+func mapCirclePage(row dbgen.ListPagesForCircleRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -211,14 +214,14 @@ func mapListPublicPagesRow(row dbgen.ListPublicPagesRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
-func mapListStaffPage(row dbgen.ListStaffPagesByCircleRow) Page {
+func mapStaffPageRow(row dbgen.ListStaffPagesRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -226,14 +229,14 @@ func mapListStaffPage(row dbgen.ListStaffPagesByCircleRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
-func mapPublicPage(row dbgen.GetPublicPageByIDRow) Page {
+func mapGuestPageDetail(row dbgen.GetGuestPageByIDRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -241,14 +244,14 @@ func mapPublicPage(row dbgen.GetPublicPageByIDRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
-func mapPublicPageGlobal(row dbgen.GetPublicPageByIDGlobalRow) Page {
+func mapCirclePageDetail(row dbgen.GetPageByIDForCircleRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -256,14 +259,14 @@ func mapPublicPageGlobal(row dbgen.GetPublicPageByIDGlobalRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
 func mapStaffPage(row dbgen.GetStaffPageByIDRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -271,14 +274,14 @@ func mapStaffPage(row dbgen.GetStaffPageByIDRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
 func mapCreatedPage(row dbgen.CreatePageRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -286,14 +289,14 @@ func mapCreatedPage(row dbgen.CreatePageRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
 func mapUpdatedPage(row dbgen.UpdatePageRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -301,14 +304,14 @@ func mapUpdatedPage(row dbgen.UpdatePageRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }
 
 func mapPinnedPage(row dbgen.PatchPagePinRow) Page {
 	return Page{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Title:        row.Title,
 		Body:         row.Body,
 		Notes:        row.Notes,
@@ -316,6 +319,7 @@ func mapPinnedPage(row dbgen.PatchPagePinRow) Page {
 		IsPublic:     row.IsPublic,
 		ViewableTags: append([]string{}, row.ViewableTags...),
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
-		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
 	}
 }

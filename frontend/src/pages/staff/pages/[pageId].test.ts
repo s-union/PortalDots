@@ -122,15 +122,12 @@ describe('StaffPageDetailPage', () => {
         if (pathname.endsWith('/staff/pages/page-circle-b-1') && method === 'GET') {
           return new Response(
             JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
               id: 'page-circle-b-1',
               title: '展示担当向け連絡',
               body: '初期本文です。',
               notes: '内部メモです。',
-              publishedAt: '2026-03-05T10:00:00Z',
+              createdAt: '2026-03-05T10:00:00Z',
+              updatedAt: '2026-03-05T10:00:00Z',
               isPinned: currentPinned,
               isPublic: true,
               viewableTags: ['展示'],
@@ -139,7 +136,12 @@ describe('StaffPageDetailPage', () => {
                 {
                   id: 'document-circle-b-1',
                   name: '展示ガイド',
-                  description: 'Bブロック向けの展示ガイドです。'
+                  description: 'Bブロック向けの展示ガイドです。',
+                  isImportant: true,
+                  extension: 'TXT',
+                  sizeBytes: 1024,
+                  updatedAt: '2026-03-05T09:00:00Z',
+                  downloadUrl: '/v1/documents/document-circle-b-1'
                 }
               ]
             }),
@@ -154,15 +156,28 @@ describe('StaffPageDetailPage', () => {
           updatedRequestBody = await parseRequestBody(input, init?.body)
           return new Response(
             JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
               id: 'page-circle-b-1',
               title: '展示担当向け更新連絡',
-              publishedAt: '2026-03-05T10:00:00Z',
+              notes: '更新後メモです。',
+              body: '更新後本文です。',
+              createdAt: '2026-03-05T10:00:00Z',
+              updatedAt: '2026-03-06T10:00:00Z',
               isPinned: currentPinned,
-              isPublic: false
+              isPublic: false,
+              viewableTags: ['展示', 'ステージ'],
+              documentIds: ['document-circle-b-1'],
+              documents: [
+                {
+                  id: 'document-circle-b-1',
+                  name: '展示ガイド',
+                  description: 'Bブロック向けの展示ガイドです。',
+                  isImportant: true,
+                  extension: 'TXT',
+                  sizeBytes: 1024,
+                  updatedAt: '2026-03-05T09:00:00Z',
+                  downloadUrl: '/v1/documents/document-circle-b-1'
+                }
+              ]
             }),
             {
               status: 200,
@@ -175,15 +190,27 @@ describe('StaffPageDetailPage', () => {
           currentPinned = true
           return new Response(
             JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
               id: 'page-circle-b-1',
               title: '展示担当向け更新連絡',
-              publishedAt: '2026-03-05T10:00:00Z',
+              notes: '更新後メモです。',
+              createdAt: '2026-03-05T10:00:00Z',
+              updatedAt: '2026-03-06T10:00:00Z',
               isPinned: true,
-              isPublic: false
+              isPublic: false,
+              viewableTags: ['展示', 'ステージ'],
+              documentIds: ['document-circle-b-1'],
+              documents: [
+                {
+                  id: 'document-circle-b-1',
+                  name: '展示ガイド',
+                  description: 'Bブロック向けの展示ガイドです。',
+                  isImportant: true,
+                  extension: 'TXT',
+                  sizeBytes: 1024,
+                  updatedAt: '2026-03-05T09:00:00Z',
+                  downloadUrl: '/v1/documents/document-circle-b-1'
+                }
+              ]
             }),
             {
               status: 200,
@@ -212,8 +239,10 @@ describe('StaffPageDetailPage', () => {
     expect(wrapper.get('input[name="title"]').element).toHaveProperty('value', '展示担当向け連絡')
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('展示ガイド')
-    expect(wrapper.text()).toContain('保存時にモックメール配信を予約する')
-    expect(wrapper.text()).toContain('予約された通知はモックキューに積まれ、実メールは送信しません。')
+    expect(wrapper.text()).toContain('保存後にメール配信を予約する')
+    expect(wrapper.text()).toContain(
+      '実送信ではなくキュー登録のみ行います。不要なら `/staff/mails` で全件キャンセルできます。'
+    )
 
     await wrapper.get('input[name="title"]').setValue('展示担当向け更新連絡')
     await wrapper.get('textarea[name="body"]').setValue('更新後本文です。')

@@ -6,21 +6,28 @@ definePage({
   }
 })
 
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { usePagesQuery } from '@/features/pages/api'
 import { useSessionStore } from '@/features/session/store'
-import { formatDateTime } from '@/lib/format/datetime'
+import { formatDateTimeUpdated } from '@/lib/format/datetime'
 
 const route = useRoute()
 const router = useRouter()
 const sessionStore = useSessionStore()
 const searchQuery = ref(String(route.query.query ?? ''))
-const pagesQuery = usePagesQuery(searchQuery)
+const page = computed(() => Number.parseInt(String(route.query.page ?? '1'), 10) || 1)
+const pageSize = 10
+const pagesQuery = usePagesQuery(
+  searchQuery,
+  computed(() => ({ page: page.value, pageSize }))
+)
+const pageList = computed(() => pagesQuery.data.value ?? { items: [], page: 1, pageSize, total: 0 })
 
 watch(
   () => route.query.query,
@@ -39,6 +46,15 @@ async function handleSearchSubmit() {
 async function handleSearchReset() {
   searchQuery.value = ''
   await router.replace({ query: {} })
+}
+
+async function handlePageChange(nextPage: number) {
+  await router.replace({
+    query: {
+      ...(searchQuery.value.trim() === '' ? {} : { query: searchQuery.value.trim() }),
+      ...(nextPage > 1 ? { page: String(nextPage) } : {})
+    }
+  })
 }
 </script>
 
@@ -72,7 +88,7 @@ async function handleSearchReset() {
     </div>
 
     <div
-      v-else-if="(pagesQuery.data.value?.length ?? 0) === 0"
+      v-else-if="pageList.items.length === 0"
       class="rounded border border-border bg-surface p-10 text-center text-muted shadow-lv1"
     >
       <p class="text-base">
@@ -85,19 +101,29 @@ async function handleSearchReset() {
 
     <ListPanel v-else overflow-hidden>
       <div class="divide-y divide-border">
-        <ListItemLink v-for="page in pagesQuery.data.value" :key="page.id" :to="`/workspace/pages/${page.id}`">
+        <ListItemLink v-for="page in pageList.items" :key="page.id" :to="`/workspace/pages/${page.id}`">
           <template #title>{{ page.title }}</template>
           <template #prefix>
             <StatusBadge :tone="page.isLimited ? 'primary' : 'muted'" appearance="outlined">
               {{ page.isLimited ? '限定公開' : '全員に公開' }}
             </StatusBadge>
           </template>
-          <template v-if="page.isNew" #suffix>
-            <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
+          <template #suffix>
+            <div class="flex items-center gap-2">
+              <StatusBadge v-if="page.isNew" tone="danger" size="sm">NEW</StatusBadge>
+              <StatusBadge v-if="page.isUnread" tone="primary" size="sm">未読</StatusBadge>
+            </div>
           </template>
-          <template #meta>{{ formatDateTime(page.publishedAt) }}</template>
+          <template #meta>{{ formatDateTimeUpdated(page.updatedAt) }}</template>
+          {{ page.summary }}
         </ListItemLink>
       </div>
+      <PaginationFooter
+        :page="pageList.page"
+        :page-size="pageList.pageSize"
+        :total="pageList.total"
+        @update:page="handlePageChange"
+      />
     </ListPanel>
   </PageLayout>
 </template>

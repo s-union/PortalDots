@@ -120,6 +120,7 @@ type StaffRoutes struct {
 	DownloadStaffBundleZIP    echo.HandlerFunc
 	ListStaffMails            echo.HandlerFunc
 	EnqueueStaffMail          echo.HandlerFunc
+	DeleteStaffMails          echo.HandlerFunc
 	// Users
 	ListStaffUsers        echo.HandlerFunc
 	DownloadStaffUsersCSV echo.HandlerFunc
@@ -281,6 +282,7 @@ func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.Midd
 	staff.GET("/exports/bundle.zip", r.DownloadStaffBundleZIP)
 	staff.GET("/mails", r.ListStaffMails)
 	staff.POST("/mails", r.EnqueueStaffMail)
+	staff.DELETE("/mails", r.DeleteStaffMails)
 	staff.GET("/users", r.ListStaffUsers)
 	staff.GET("/users/export", r.DownloadStaffUsersCSV)
 	staff.GET("/users/:userID", r.GetStaffUser)

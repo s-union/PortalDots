@@ -356,6 +356,13 @@ declare module 'vue-router/auto-routes' {
       { pageId: ParamValue<false> },
       | never
     >,
+    '/staff/pages/create': RouteRecordInfo<
+      '/staff/pages/create',
+      '/staff/pages/create',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/staff/participation-types/': RouteRecordInfo<
       '/staff/participation-types/',
       '/staff/participation-types',
@@ -840,6 +847,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/staff/pages/[pageId].vue': {
       routes:
         | '/staff/pages/[pageId]'
+      views:
+        | never
+    }
+    'src/pages/staff/pages/create.vue': {
+      routes:
+        | '/staff/pages/create'
       views:
         | never
     }

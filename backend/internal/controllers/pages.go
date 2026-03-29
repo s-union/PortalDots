@@ -1,25 +1,35 @@
 package controllers
 
 import (
+	"math"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/s-union/PortalDots/backend/internal/domain/circle"
-	"github.com/s-union/PortalDots/backend/internal/domain/document"
+	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
+	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
+	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 type pageSummaryResponse struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	PublishedAt string `json:"publishedAt"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Summary   string `json:"summary"`
+	IsLimited bool   `json:"isLimited"`
+	IsNew     bool   `json:"isNew"`
+	IsUnread  bool   `json:"isUnread"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 type pageDetailResponse struct {
-	ID          string                 `json:"id"`
-	Title       string                 `json:"title"`
-	Body        string                 `json:"body"`
-	PublishedAt string                 `json:"publishedAt"`
-	Documents   []pageDocumentResponse `json:"documents"`
+	ID        string                 `json:"id"`
+	Title     string                 `json:"title"`
+	Body      string                 `json:"body"`
+	IsLimited bool                   `json:"isLimited"`
+	CreatedAt string                 `json:"createdAt"`
+	UpdatedAt string                 `json:"updatedAt"`
+	Documents []pageDocumentResponse `json:"documents"`
 }
 
 type pageDocumentResponse struct {
@@ -42,27 +52,20 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 		return statusError(c, http.StatusConflict)
 	}
 
-	_, err := h.circles.Find(currentSession.CurrentCircleID)
+	currentCircle, err := h.circles.Find(currentSession.CurrentCircleID)
 	if err != nil {
 		return internalError(c)
 	}
 
-	visibleTags, err := h.workspaceVisiblePageTags()
-	if err != nil {
-		return internalError(c)
-	}
+	pages := h.pages.ListForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.QueryParam("query"))
+	readPageIDs := listReadPageIDSet(h.pages, currentSession.User.ID, pages)
 
-	pages := h.pages.ListPublic(visibleTags, c.QueryParam("query"))
 	response := make([]pageSummaryResponse, 0, len(pages))
-	for _, page := range pages {
-		response = append(response, pageSummaryResponse{
-			ID:          page.ID,
-			Title:       page.Title,
-			PublishedAt: page.PublishedAt,
-		})
+	for _, currentPage := range pages {
+		response = append(response, mapPageSummary(currentPage, readPageIDs))
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, paginatePages(response, readPagesPagination(c)))
 }
 
 func (h *workspaceHandlers) getPage(c echo.Context) error {
@@ -74,109 +77,134 @@ func (h *workspaceHandlers) getPage(c echo.Context) error {
 		return statusError(c, http.StatusConflict)
 	}
 
-	_, err := h.circles.Find(currentSession.CurrentCircleID)
+	currentCircle, err := h.circles.Find(currentSession.CurrentCircleID)
 	if err != nil {
 		return internalError(c)
 	}
 
-	visibleTags, err := h.workspaceVisiblePageTags()
-	if err != nil {
-		return internalError(c)
-	}
-
-	page, found := h.pages.FindPublic(visibleTags, c.Param("pageID"))
+	pageValue, found := h.pages.FindForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.Param("pageID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
+	h.pages.MarkRead(pageValue.ID, currentSession.User.ID)
+
 	return c.JSON(http.StatusOK, pageDetailResponse{
-		ID:          page.ID,
-		Title:       page.Title,
-		Body:        page.Body,
-		PublishedAt: page.PublishedAt,
-		Documents:   pageDocuments(h.documents, page.CircleID, page.DocumentIDs, false, false),
+		ID:        pageValue.ID,
+		Title:     pageValue.Title,
+		Body:      pageValue.Body,
+		IsLimited: len(pageValue.ViewableTags) > 0,
+		CreatedAt: pageValue.CreatedAt,
+		UpdatedAt: pageValue.UpdatedAt,
+		Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, false),
 	})
 }
 
-func pageDocuments(docs document.Repository, circleID string, documentIDs []string, forStaff bool, publicDownload bool) []pageDocumentResponse {
+func pageDocuments(
+	docs backenddocument.Repository,
+	documentIDs []string,
+	forStaff bool,
+	publicDownload bool,
+) []pageDocumentResponse {
 	documents := make([]pageDocumentResponse, 0, len(documentIDs))
 	for _, documentID := range documentIDs {
 		var (
-			documentFound bool
-			documentValue pageDocumentResponse
+			docValue    backenddocument.Document
+			found       bool
+			downloadURL string
 		)
 
 		if forStaff {
-			if doc, found := docs.FindByCircleForStaff(circleID, documentID); found {
-				downloadURL := "/v1/documents/" + doc.ID
-				if publicDownload {
-					downloadURL = "/v1/public/documents/" + doc.ID
-				}
-				documentFound = true
-				documentValue = pageDocumentResponse{
-					ID:          doc.ID,
-					Name:        doc.Name,
-					Description: doc.Description,
-					IsImportant: doc.IsImportant,
-					Extension:   doc.Extension,
-					SizeBytes:   doc.SizeBytes,
-					UpdatedAt:   doc.UpdatedAt,
-					DownloadURL: downloadURL,
-				}
-			}
+			docValue, found = docs.FindForStaff(documentID)
+			downloadURL = "/v1/staff/documents/" + documentID
 		} else {
-			if doc, found := docs.FindByCircle(circleID, documentID); found {
-				downloadURL := "/v1/documents/" + doc.ID
-				if publicDownload {
-					downloadURL = "/v1/public/documents/" + doc.ID
-				}
-				documentFound = true
-				documentValue = pageDocumentResponse{
-					ID:          doc.ID,
-					Name:        doc.Name,
-					Description: doc.Description,
-					IsImportant: doc.IsImportant,
-					Extension:   doc.Extension,
-					SizeBytes:   doc.SizeBytes,
-					UpdatedAt:   doc.UpdatedAt,
-					DownloadURL: downloadURL,
-				}
+			docValue, found = docs.FindPublic(documentID)
+			if publicDownload {
+				downloadURL = "/v1/public/documents/" + documentID
+			} else {
+				downloadURL = "/v1/documents/" + documentID
 			}
+		}
+		if !found {
+			continue
 		}
 
-		if documentFound {
-			documents = append(documents, documentValue)
-		}
+		documents = append(documents, pageDocumentResponse{
+			ID:          docValue.ID,
+			Name:        docValue.Name,
+			Description: docValue.Description,
+			IsImportant: docValue.IsImportant,
+			Extension:   docValue.Extension,
+			SizeBytes:   docValue.SizeBytes,
+			UpdatedAt:   docValue.UpdatedAt,
+			DownloadURL: downloadURL,
+		})
 	}
 
 	return documents
 }
 
-func (h *workspaceHandlers) workspaceVisiblePageTags() ([]string, error) {
-	selectableCircles, err := h.circles.ListSelectable(nil)
-	if err != nil {
-		return nil, err
+func mapPageSummary(currentPage backendpage.Page, readPageIDs map[string]struct{}) pageSummaryResponse {
+	_, isRead := readPageIDs[currentPage.ID]
+	return pageSummaryResponse{
+		ID:        currentPage.ID,
+		Title:     currentPage.Title,
+		Summary:   summarizePublicHomeText(currentPage.Body, 120),
+		IsLimited: len(currentPage.ViewableTags) > 0,
+		IsNew:     isPageNew(currentPage),
+		IsUnread:  !isRead,
+		CreatedAt: currentPage.CreatedAt,
+		UpdatedAt: currentPage.UpdatedAt,
 	}
-
-	return collectUniqueCircleTags(selectableCircles), nil
 }
 
-func collectUniqueCircleTags(circles []circle.Circle) []string {
-	seen := map[string]struct{}{}
-	tags := make([]string, 0)
+func isPageNew(currentPage backendpage.Page) bool {
+	createdAt, err := time.Parse(time.RFC3339, currentPage.CreatedAt)
+	if err != nil {
+		return false
+	}
 
-	for _, currentCircle := range circles {
-		for _, tag := range currentCircle.Tags {
-			if tag == "" {
-				continue
-			}
-			if _, exists := seen[tag]; exists {
-				continue
-			}
-			seen[tag] = struct{}{}
-			tags = append(tags, tag)
+	return !createdAt.Add(72 * time.Hour).Before(time.Now().UTC())
+}
+
+func readPagesPagination(c echo.Context) models.PaginationParams {
+	pagination := readPagination(c)
+	if c.QueryParam("pageSize") == "" {
+		pagination.PageSize = 10
+	}
+	return pagination
+}
+
+func paginatePages(items []pageSummaryResponse, pagination models.PaginationParams) models.PaginatedResponse[pageSummaryResponse] {
+	total := len(items)
+	if total == 0 {
+		return models.PaginatedResponse[pageSummaryResponse]{
+			Items:    []pageSummaryResponse{},
+			Page:     1,
+			PageSize: pagination.PageSize,
+			Total:    0,
 		}
 	}
 
-	return tags
+	totalPages := int(math.Ceil(float64(total) / float64(pagination.PageSize)))
+	if pagination.Page > totalPages {
+		pagination.Page = totalPages
+	}
+
+	return paginateItems(items, pagination)
+}
+
+func listReadPageIDSet(repo backendpage.Repository, userID string, pages []backendpage.Page) map[string]struct{} {
+	pageIDs := make([]string, 0, len(pages))
+	for _, currentPage := range pages {
+		pageIDs = append(pageIDs, currentPage.ID)
+	}
+
+	readPageIDs := repo.ListReadPageIDs(userID, pageIDs)
+	readPageIDSet := make(map[string]struct{}, len(readPageIDs))
+	for _, pageID := range readPageIDs {
+		readPageIDSet[pageID] = struct{}{}
+	}
+
+	return readPageIDSet
 }

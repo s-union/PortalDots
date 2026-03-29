@@ -9,6 +9,7 @@ import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePublicHomeQuery, usePublicConfigQuery } from '@/features/public-home/api'
+import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
 
@@ -24,12 +25,24 @@ const publicPages = computed(() => publicHome.value?.pages ?? [])
 const publicDocuments = computed(() => publicHome.value?.documents ?? [])
 const publicLoginMethods = computed(() => publicHome.value?.loginMethods ?? [])
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
+const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
 const pagesIndexPath = computed(() => (sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages'))
 const documentsIndexPath = computed(() => (sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents'))
 const pageDetailPath = (pageId: string) =>
   sessionStore.isAuthenticated
     ? `/workspace/pages/${encodeURIComponent(pageId)}`
     : `/public/pages/${encodeURIComponent(pageId)}`
+const participationTypePath = (participationTypeId: string) => {
+  if (!sessionStore.isAuthenticated) {
+    return '/register'
+  }
+
+  if (!canCreateCircleRegistration.value) {
+    return '/circles/select'
+  }
+
+  return `/circles/new?participation_type=${encodeURIComponent(participationTypeId)}`
+}
 </script>
 
 <template>
@@ -79,12 +92,12 @@ const pageDetailPath = (pageId: string) =>
         <div class="border-b border-border px-6 py-[1.2rem] max-[1000px]:px-4">
           <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">{{ page.title }}</h2>
           <div class="mt-px flex flex-wrap items-center gap-2 text-base text-muted">
-            <span>{{ formatDateTimeUpdated(page.publishedAt) }}</span>
+            <span>{{ formatDateTimeUpdated(page.updatedAt) }}</span>
             <StatusBadge v-if="page.isLimited" tone="primary" appearance="outlined">限定公開</StatusBadge>
           </div>
         </div>
         <div class="px-6 py-[1.2rem] max-[1000px]:px-4">
-          <p class="whitespace-pre-wrap text-base leading-[1.7] text-body">{{ page.body }}</p>
+          <PageMarkdownContent :source="page.body" />
         </div>
         <div v-if="page.documents.length > 0" class="border-t border-border px-6 py-[1.2rem] max-[1000px]:px-4">
           <div class="flex flex-wrap gap-3">
@@ -152,7 +165,7 @@ const pageDetailPath = (pageId: string) =>
 
       <ListPanel v-if="publicParticipationTypes.length > 0" legacy title="企画参加登録">
         <div class="divide-y divide-border">
-          <ListItemLink v-for="pt in publicParticipationTypes" :key="pt.id" legacy :to="`/register`">
+          <ListItemLink v-for="pt in publicParticipationTypes" :key="pt.id" legacy :to="participationTypePath(pt.id)">
             <template #title>{{ pt.name }}</template>
             <template #meta>{{ formatDateTime(pt.form.closeAt) }} まで受付</template>
             {{ pt.description }}
@@ -173,7 +186,7 @@ const pageDetailPath = (pageId: string) =>
                 {{ page.isLimited ? '限定公開' : '全員に公開' }}
               </StatusBadge>
             </template>
-            <template #meta>{{ formatDateTime(page.publishedAt) }}</template>
+            <template #meta>{{ formatDateTimeUpdated(page.updatedAt) }}</template>
             {{ page.summary }}
           </ListItemLink>
         </div>

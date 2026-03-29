@@ -93,7 +93,9 @@ describe('PageDetailPage', () => {
               id: 'page-circle-a-1',
               title: '搬入時間のお知らせ',
               body: 'Aブロックの搬入は 9:00 から開始します。',
-              publishedAt: '2026-03-01T09:00:00Z',
+              isLimited: false,
+              createdAt: '2026-03-01T09:00:00Z',
+              updatedAt: '2026-03-01T09:00:00Z',
               documents: [
                 {
                   id: 'document-circle-a-1',

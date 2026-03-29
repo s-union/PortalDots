@@ -34,6 +34,7 @@ type Repository interface {
 	ListByCircleForStaff(circleID string) []Document
 	FindByCircle(circleID, documentID string) (Document, bool)
 	FindPublic(documentID string) (Document, bool)
+	FindForStaff(documentID string) (Document, bool)
 	FindByCircleForStaff(circleID, documentID string) (Document, bool)
 	Create(circleID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
 	Update(circleID, documentID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
@@ -133,6 +134,18 @@ func (r *StaticRepository) FindPublic(documentID string) (Document, bool) {
 
 	for _, document := range r.documents {
 		if document.ID == documentID && document.IsPublic {
+			return cloneDocument(document), true
+		}
+	}
+	return Document{}, false
+}
+
+func (r *StaticRepository) FindForStaff(documentID string) (Document, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, document := range r.documents {
+		if document.ID == documentID {
 			return cloneDocument(document), true
 		}
 	}

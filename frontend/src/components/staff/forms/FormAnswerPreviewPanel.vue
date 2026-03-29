@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type StaffFormDetail } from '@/features/staff/forms/api'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import UploadFileRow from './UploadFileRow.vue'
 
 const { formId, form, isParticipationForm } = defineProps<{
@@ -22,22 +23,26 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
 
 <template>
   <section id="answer-panel" class="rounded border border-border bg-surface shadow-lv1 scroll-mt-24">
-    <div class="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
-      <h3 class="text-lg font-medium text-body">現在企画の回答</h3>
-      <div class="flex flex-wrap items-center gap-3">
-        <p class="text-xs text-muted-2">
-          {{ form.answer?.updatedAt ? `last updated: ${form.answer.updatedAt}` : '未回答' }}
-        </p>
-        <p v-if="isParticipationForm" class="text-xs text-muted-2">参加登録フォームの回答管理はここでは行えません。</p>
-        <RouterLink
-          v-else
-          :to="`/staff/forms/${formId}/answers`"
-          class="rounded border border-border px-3 py-2 text-xs text-body transition hover:bg-surface-light"
-        >
-          回答管理へ
-        </RouterLink>
+    <SurfaceCardBand class="py-4">
+      <div class="flex items-center justify-between gap-4">
+        <h3 class="text-lg font-medium text-body">現在企画の回答</h3>
+        <div class="flex flex-wrap items-center gap-3">
+          <p class="text-xs text-muted-2">
+            {{ form.answer?.updatedAt ? `last updated: ${form.answer.updatedAt}` : '未回答' }}
+          </p>
+          <p v-if="isParticipationForm" class="text-xs text-muted-2">
+            参加登録フォームの回答管理はここでは行えません。
+          </p>
+          <RouterLink
+            v-else
+            :to="`/staff/forms/${formId}/answers`"
+            class="rounded border border-border px-3 py-2 text-xs text-body transition hover:bg-surface-light"
+          >
+            回答管理へ
+          </RouterLink>
+        </div>
       </div>
-    </div>
+    </SurfaceCardBand>
 
     <div v-if="form.answer" class="m-6 overflow-hidden rounded border border-border bg-surface">
       <template v-for="question in form.questions" :key="question.id">

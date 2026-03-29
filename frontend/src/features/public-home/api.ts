@@ -1,8 +1,9 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { z } from 'zod'
-import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
+import { buildApiUrl, createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import {
   pageDetailSchema,
+  paginatedResultSchema,
   parseWithSchema,
   publicConfigSchema,
   publicHomeDocumentSchema,
@@ -12,6 +13,11 @@ import {
 import { useQuery } from '@tanstack/vue-query'
 
 export type PublicHome = z.infer<typeof publicHomeSchema>
+export type PublicPagesResult = z.infer<ReturnType<typeof paginatedPublicPagesSchema>>
+
+function paginatedPublicPagesSchema() {
+  return paginatedResultSchema(publicHomePageSchema)
+}
 
 export function usePublicConfigQuery() {
   return $api.useQueryData(
@@ -38,18 +44,23 @@ export async function fetchPublicHome() {
   )
 }
 
-export async function fetchPublicPages() {
-  return $api.queryData(
-    'get',
-    '/public/pages',
-    {
-      headers: createJsonHeaders()
-    },
-    (value) => parseWithSchema(z.array(publicHomePageSchema), value, 'public pages'),
-    {
-      errorMessage: 'Failed to fetch public pages'
-    }
-  )
+export async function fetchPublicPages(page = 1, pageSize = 10, query = '') {
+  const url = new URL(buildApiUrl('/public/pages'))
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', String(pageSize))
+  if (query.trim() !== '') {
+    url.searchParams.set('query', query.trim())
+  }
+
+  const response = await fetch(url.toString(), {
+    credentials: 'include',
+    headers: createJsonHeaders()
+  })
+  if (!response.ok) {
+    throw new Error('Failed to fetch public pages')
+  }
+
+  return parseWithSchema(paginatedPublicPagesSchema(), await response.json(), 'public pages')
 }
 
 export async function fetchPublicPage(pageId: string) {
@@ -104,10 +115,15 @@ export function usePublicHomeQuery(enabled: MaybeRefOrGetter<boolean>) {
   )
 }
 
-export function usePublicPagesQuery(enabled: MaybeRefOrGetter<boolean>) {
+export function usePublicPagesQuery(
+  enabled: MaybeRefOrGetter<boolean>,
+  page: MaybeRefOrGetter<number>,
+  pageSize: MaybeRefOrGetter<number>,
+  query: MaybeRefOrGetter<string>
+) {
   return useQuery({
-    queryKey: computed(() => ['public', 'pages']),
-    queryFn: fetchPublicPages,
+    queryKey: computed(() => ['public', 'pages', toValue(page), toValue(pageSize), toValue(query)]),
+    queryFn: () => fetchPublicPages(toValue(page), toValue(pageSize), toValue(query)),
     enabled: computed(() => toValue(enabled)),
     retry: false
   })
@@ -141,21 +157,11 @@ const publicPageDetailSchema = pageDetailSchema
 // Callers should `await query.suspense()` in async setup under a <Suspense> boundary.
 
 export function useSuspensePublicPagesQuery() {
-  return $apiSuspense.useSuspenseQueryData(
-    'get',
-    '/public/pages',
-    {
-      headers: createJsonHeaders()
-    },
-    (value) => parseWithSchema(z.array(publicHomePageSchema), value, 'public pages'),
-    {
-      queryKey: ['public', 'pages'],
-      retry: false
-    },
-    {
-      errorMessage: 'Failed to fetch public pages'
-    }
-  )
+  return useQuery({
+    queryKey: ['public', 'pages', 1, 10, ''],
+    queryFn: () => fetchPublicPages(1, 10, ''),
+    retry: false
+  })
 }
 
 export function useSuspensePublicPageDetailQuery(pageId: MaybeRefOrGetter<string>) {

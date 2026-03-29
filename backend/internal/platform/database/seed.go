@@ -302,14 +302,17 @@ func seedForms(ctx context.Context, q *dbgen.Queries, forms []config.Form) error
 
 func seedPages(ctx context.Context, q *dbgen.Queries, pages []config.Page) error {
 	for _, item := range pages {
-		publishedAt, err := parseRFC3339(item.PublishedAt)
+		createdAt, err := parseRFC3339(item.CreatedAt)
 		if err != nil {
-			return fmt.Errorf("parse page published_at for %s: %w", item.ID, err)
+			return fmt.Errorf("parse page created_at for %s: %w", item.ID, err)
+		}
+		updatedAt, err := parseRFC3339(item.UpdatedAt)
+		if err != nil {
+			return fmt.Errorf("parse page updated_at for %s: %w", item.ID, err)
 		}
 
 		if err := q.SeedUpsertPage(ctx, dbgen.SeedUpsertPageParams{
 			ID:           item.ID,
-			CircleID:     item.CircleID,
 			Title:        item.Title,
 			Body:         item.Body,
 			Notes:        item.Notes,
@@ -317,7 +320,8 @@ func seedPages(ctx context.Context, q *dbgen.Queries, pages []config.Page) error
 			IsPublic:     item.IsPublic,
 			ViewableTags: item.ViewableTags,
 			DocumentIds:  item.DocumentIDs,
-			PublishedAt:  toTimestamptz(publishedAt),
+			CreatedAt:    toTimestamptz(createdAt),
+			UpdatedAt:    toTimestamptz(updatedAt),
 		}); err != nil {
 			return err
 		}

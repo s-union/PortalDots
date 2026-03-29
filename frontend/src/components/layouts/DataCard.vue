@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 
 const {
@@ -23,9 +24,9 @@ const {
       </template>
     </SurfaceHeader>
 
-    <div v-if="$slots.toolbar" class="border-b border-border px-6 py-4">
+    <SurfaceCardBand v-if="$slots.toolbar" class="py-4">
       <slot name="toolbar" />
-    </div>
+    </SurfaceCardBand>
 
     <slot />
 

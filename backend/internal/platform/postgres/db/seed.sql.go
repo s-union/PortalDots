@@ -239,23 +239,23 @@ func (q *Queries) SeedUpsertForm(ctx context.Context, arg SeedUpsertFormParams) 
 }
 
 const seedUpsertPage = `-- name: SeedUpsertPage :exec
-INSERT INTO pages (id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+INSERT INTO pages (id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at, published_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $9)
 ON CONFLICT (id) DO UPDATE
-SET circle_id = EXCLUDED.circle_id,
-    title = EXCLUDED.title,
+SET title = EXCLUDED.title,
     body = EXCLUDED.body,
     notes = EXCLUDED.notes,
     is_pinned = EXCLUDED.is_pinned,
     is_public = EXCLUDED.is_public,
     viewable_tags = EXCLUDED.viewable_tags,
     document_ids = EXCLUDED.document_ids,
+    created_at = EXCLUDED.created_at,
+    updated_at = EXCLUDED.updated_at,
     published_at = EXCLUDED.published_at
 `
 
 type SeedUpsertPageParams struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -263,13 +263,13 @@ type SeedUpsertPageParams struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) SeedUpsertPage(ctx context.Context, arg SeedUpsertPageParams) error {
 	_, err := q.db.Exec(ctx, seedUpsertPage,
 		arg.ID,
-		arg.CircleID,
 		arg.Title,
 		arg.Body,
 		arg.Notes,
@@ -277,7 +277,8 @@ func (q *Queries) SeedUpsertPage(ctx context.Context, arg SeedUpsertPageParams) 
 		arg.IsPublic,
 		arg.ViewableTags,
 		arg.DocumentIds,
-		arg.PublishedAt,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 	)
 	return err
 }

@@ -55,20 +55,24 @@ type publicHomeLoginMethodResponse struct {
 }
 
 type publicHomePageResponse struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Summary     string `json:"summary"`
-	PublishedAt string `json:"publishedAt"`
-	IsLimited   bool   `json:"isLimited"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Summary   string `json:"summary"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+	IsLimited bool   `json:"isLimited"`
+	IsNew     bool   `json:"isNew"`
 }
 
 type publicPinnedPageResponse struct {
-	ID          string                 `json:"id"`
-	Title       string                 `json:"title"`
-	Body        string                 `json:"body"`
-	PublishedAt string                 `json:"publishedAt"`
-	IsLimited   bool                   `json:"isLimited"`
-	Documents   []pageDocumentResponse `json:"documents"`
+	ID        string                 `json:"id"`
+	Title     string                 `json:"title"`
+	Body      string                 `json:"body"`
+	CreatedAt string                 `json:"createdAt"`
+	UpdatedAt string                 `json:"updatedAt"`
+	IsLimited bool                   `json:"isLimited"`
+	IsNew     bool                   `json:"isNew"`
+	Documents []pageDocumentResponse `json:"documents"`
 }
 
 type publicHomeDocumentResponse struct {
@@ -105,9 +109,9 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 		PortalAdminName:    settings.PortalAdminName,
 		PortalContactEmail: settings.PortalContactEmail,
 		LoginMethods:       h.buildPublicHomeLoginMethods(),
-		PinnedPages:        h.collectPinnedPublicPages(selectableCircles),
+		PinnedPages:        h.collectPinnedPublicPages(),
 		ParticipationTypes: participationTypes,
-		Pages:              h.collectPublicPages(selectableCircles, 3),
+		Pages:              h.collectPublicPages(5),
 		Documents:          h.collectPublicDocuments(selectableCircles, 3),
 	})
 }
@@ -127,33 +131,35 @@ func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
 }
 
 func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
-	selectableCircles, err := h.circles.ListSelectable(nil)
-	if err != nil {
-		return internalError(c)
+	pages := h.pages.ListGuest(c.QueryParam("query"))
+	response := make([]pageSummaryResponse, 0, len(pages))
+	for _, currentPage := range pages {
+		response = append(response, pageSummaryResponse{
+			ID:        currentPage.ID,
+			Title:     currentPage.Title,
+			Summary:   summarizePublicHomeText(currentPage.Body, 120),
+			IsLimited: false,
+			IsNew:     isPageNew(currentPage),
+			IsUnread:  false,
+			CreatedAt: currentPage.CreatedAt,
+			UpdatedAt: currentPage.UpdatedAt,
+		})
 	}
 
-	return c.JSON(http.StatusOK, h.collectPublicPages(selectableCircles, 0))
+	return c.JSON(http.StatusOK, paginatePages(response, readPagesPagination(c)))
 }
 
 func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
-	pageID := c.Param("pageID")
-	selectableCircles, err := h.circles.ListSelectable(nil)
-	if err != nil {
-		return internalError(c)
-	}
-
-	for _, currentCircle := range selectableCircles {
-		pageValue, found := h.pages.FindByCircle(currentCircle.ID, currentCircle.Tags, pageID)
-		if !found {
-			continue
-		}
-
+	pageValue, found := h.pages.FindGuest(c.Param("pageID"))
+	if found {
 		return c.JSON(http.StatusOK, pageDetailResponse{
-			ID:          pageValue.ID,
-			Title:       pageValue.Title,
-			Body:        pageValue.Body,
-			PublishedAt: pageValue.PublishedAt,
-			Documents:   pageDocuments(h.documents, pageValue.CircleID, pageValue.DocumentIDs, false, true),
+			ID:        pageValue.ID,
+			Title:     pageValue.Title,
+			Body:      pageValue.Body,
+			IsLimited: false,
+			CreatedAt: pageValue.CreatedAt,
+			UpdatedAt: pageValue.UpdatedAt,
+			Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, true),
 		})
 	}
 
@@ -211,33 +217,20 @@ func (h *publicHomeHandlers) listPublicParticipationTypes() ([]participationType
 	return response, nil
 }
 
-func (h *publicHomeHandlers) collectPublicPages(circles []circle.Circle, limit int) []publicHomePageResponse {
-	pages := make([]publicHomePageResponse, 0)
-	seen := map[string]struct{}{}
-
-	for _, currentCircle := range circles {
-		visiblePages := h.pages.ListByCircle(currentCircle.ID, currentCircle.Tags, "")
-		for _, currentPage := range visiblePages {
-			if _, ok := seen[currentPage.ID]; ok {
-				continue
-			}
-			seen[currentPage.ID] = struct{}{}
-			pages = append(pages, publicHomePageResponse{
-				ID:          currentPage.ID,
-				Title:       currentPage.Title,
-				Summary:     summarizePublicHomeText(currentPage.Body, 120),
-				PublishedAt: currentPage.PublishedAt,
-				IsLimited:   len(currentPage.ViewableTags) > 0,
-			})
-		}
+func (h *publicHomeHandlers) collectPublicPages(limit int) []publicHomePageResponse {
+	visiblePages := h.pages.ListGuest("")
+	pages := make([]publicHomePageResponse, 0, len(visiblePages))
+	for _, currentPage := range visiblePages {
+		pages = append(pages, publicHomePageResponse{
+			ID:        currentPage.ID,
+			Title:     currentPage.Title,
+			Summary:   summarizePublicHomeText(currentPage.Body, 120),
+			CreatedAt: currentPage.CreatedAt,
+			UpdatedAt: currentPage.UpdatedAt,
+			IsLimited: false,
+			IsNew:     isPageNew(currentPage),
+		})
 	}
-
-	slices.SortFunc(pages, func(left, right publicHomePageResponse) int {
-		if left.PublishedAt == right.PublishedAt {
-			return strings.Compare(right.ID, left.ID)
-		}
-		return strings.Compare(right.PublishedAt, left.PublishedAt)
-	})
 
 	if limit > 0 && len(pages) > limit {
 		return slices.Clone(pages[:limit])
@@ -246,37 +239,30 @@ func (h *publicHomeHandlers) collectPublicPages(circles []circle.Circle, limit i
 	return pages
 }
 
-func (h *publicHomeHandlers) collectPinnedPublicPages(circles []circle.Circle) []publicPinnedPageResponse {
-	pages := make([]publicPinnedPageResponse, 0)
-	seen := map[string]struct{}{}
-
-	for _, currentCircle := range circles {
-		visiblePages := h.pages.ListByCircleForStaff(currentCircle.ID, "")
-		for _, currentPage := range visiblePages {
-			if _, ok := seen[currentPage.ID]; ok {
-				continue
-			}
-			if !currentPage.IsPinned || !currentPage.IsPublic || !hasVisibleTags(currentPage.ViewableTags, currentCircle.Tags) {
-				continue
-			}
-
-			seen[currentPage.ID] = struct{}{}
-			pages = append(pages, publicPinnedPageResponse{
-				ID:          currentPage.ID,
-				Title:       currentPage.Title,
-				Body:        currentPage.Body,
-				PublishedAt: currentPage.PublishedAt,
-				IsLimited:   len(currentPage.ViewableTags) > 0,
-				Documents:   pageDocuments(h.documents, currentPage.CircleID, currentPage.DocumentIDs, false, true),
-			})
+func (h *publicHomeHandlers) collectPinnedPublicPages() []publicPinnedPageResponse {
+	allPages := h.pages.ListForStaff("")
+	pages := make([]publicPinnedPageResponse, 0, len(allPages))
+	for _, currentPage := range allPages {
+		if !currentPage.IsPinned || !currentPage.IsPublic || len(currentPage.ViewableTags) > 0 {
+			continue
 		}
+		pages = append(pages, publicPinnedPageResponse{
+			ID:        currentPage.ID,
+			Title:     currentPage.Title,
+			Body:      currentPage.Body,
+			CreatedAt: currentPage.CreatedAt,
+			UpdatedAt: currentPage.UpdatedAt,
+			IsLimited: false,
+			IsNew:     isPageNew(currentPage),
+			Documents: pageDocuments(h.documents, currentPage.DocumentIDs, false, true),
+		})
 	}
 
 	slices.SortFunc(pages, func(left, right publicPinnedPageResponse) int {
-		if left.PublishedAt == right.PublishedAt {
+		if left.UpdatedAt == right.UpdatedAt {
 			return strings.Compare(right.ID, left.ID)
 		}
-		return strings.Compare(right.PublishedAt, left.PublishedAt)
+		return strings.Compare(right.UpdatedAt, left.UpdatedAt)
 	})
 
 	return pages
@@ -332,22 +318,6 @@ func summarizePublicHomeText(value string, maxRunes int) string {
 
 	runes := []rune(normalized)
 	return strings.TrimSpace(string(runes[:maxRunes])) + "..."
-}
-
-func hasVisibleTags(viewableTags []string, currentTags []string) bool {
-	if len(viewableTags) == 0 {
-		return true
-	}
-
-	for _, viewableTag := range viewableTags {
-		for _, currentTag := range currentTags {
-			if viewableTag == currentTag {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func (h *publicHomeHandlers) buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {

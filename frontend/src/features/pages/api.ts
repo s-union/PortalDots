@@ -1,20 +1,40 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { createJsonHeaders, $api } from '@/lib/api/client'
-import { pageDetailSchema, pageSummarySchema, parseWithSchema } from '@/lib/api/schema'
+import { useQuery } from '@tanstack/vue-query'
+import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
+import { pageDetailSchema, pageSummarySchema, paginatedResultSchema, parseWithSchema } from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'
 
 export interface PageSummary {
   id: string
   title: string
-  publishedAt: string
-  summary?: string
-  isLimited?: boolean
-  isNew?: boolean
+  summary: string
+  isLimited: boolean
+  isNew: boolean
+  isUnread: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export type PageDetail = PageSummary & {
+export interface PageDetail {
+  id: string
+  title: string
   body: string
+  isLimited: boolean
+  createdAt: string
+  updatedAt: string
   documents: PageDocument[]
+}
+
+export interface PagesPagination {
+  page: number
+  pageSize: number
+}
+
+export interface PageListResult {
+  items: PageSummary[]
+  page: number
+  pageSize: number
+  total: number
 }
 
 export interface PageDocument {
@@ -28,23 +48,23 @@ export interface PageDocument {
   downloadUrl: string
 }
 
-export async function fetchPages(query = '') {
-  const normalizedQuery = query.trim()
+export async function fetchPages(query = '', pagination: PagesPagination = { page: 1, pageSize: 10 }) {
+  const url = new URL(buildApiUrl('/pages'))
+  url.searchParams.set('page', String(pagination.page))
+  url.searchParams.set('pageSize', String(pagination.pageSize))
+  if (query.trim() !== '') {
+    url.searchParams.set('query', query.trim())
+  }
 
-  return $api.queryData(
-    'get',
-    '/pages',
-    {
-      headers: createJsonHeaders(),
-      params: {
-        query: normalizedQuery === '' ? {} : { query: normalizedQuery }
-      }
-    },
-    parsePages,
-    {
-      errorMessage: 'Failed to fetch pages'
-    }
-  )
+  const response = await fetch(url.toString(), {
+    credentials: 'include',
+    headers: createJsonHeaders()
+  })
+  if (!response.ok) {
+    throw new Error('Failed to fetch pages')
+  }
+
+  return parsePages(await response.json())
 }
 
 export async function fetchPage(pageId: string) {
@@ -66,32 +86,15 @@ export async function fetchPage(pageId: string) {
   )
 }
 
-export function usePagesQuery(query: MaybeRefOrGetter<string>) {
+export function usePagesQuery(query: MaybeRefOrGetter<string>, pagination: MaybeRefOrGetter<PagesPagination>) {
   const sessionStore = useSessionStore()
 
-  return $api.useQueryData(
-    'get',
-    '/pages',
-    () => {
-      const normalizedQuery = toValue(query).trim()
-
-      return {
-        headers: createJsonHeaders(),
-        params: {
-          query: normalizedQuery === '' ? {} : { query: normalizedQuery }
-        }
-      }
-    },
-    parsePages,
-    {
-      queryKey: computed(() => ['pages', sessionStore.currentCircle?.id ?? 'none', toValue(query)]),
-      enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
-      retry: false
-    },
-    {
-      errorMessage: 'Failed to fetch pages'
-    }
-  )
+  return useQuery({
+    queryKey: computed(() => ['pages', sessionStore.currentCircle?.id ?? 'none', toValue(query), toValue(pagination)]),
+    queryFn: () => fetchPages(toValue(query), toValue(pagination)),
+    enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
+    retry: false
+  })
 }
 
 export function usePageDetailQuery(pageId: MaybeRefOrGetter<string>) {
@@ -122,8 +125,8 @@ export function usePageDetailQuery(pageId: MaybeRefOrGetter<string>) {
   )
 }
 
-function parsePages(value: unknown): PageSummary[] {
-  return parseWithSchema(pageSummarySchema.array(), value, 'pages')
+function parsePages(value: unknown): PageListResult {
+  return parseWithSchema(paginatedResultSchema(pageSummarySchema), value, 'pages')
 }
 
 function parsePageDetail(value: unknown): PageDetail {

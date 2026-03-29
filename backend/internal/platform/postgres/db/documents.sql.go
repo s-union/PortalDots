@@ -233,6 +233,48 @@ func (q *Queries) GetStaffDocumentByID(ctx context.Context, arg GetStaffDocument
 	return i, err
 }
 
+const getStaffDocumentByIDGlobal = `-- name: GetStaffDocumentByIDGlobal :one
+SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE id = $1
+LIMIT 1
+`
+
+type GetStaffDocumentByIDGlobalRow struct {
+	ID          string
+	CircleID    string
+	Name        string
+	Description string
+	Notes       string
+	IsPublic    bool
+	IsImportant bool
+	Filename    string
+	MimeType    string
+	Content     []byte
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) GetStaffDocumentByIDGlobal(ctx context.Context, id string) (GetStaffDocumentByIDGlobalRow, error) {
+	row := q.db.QueryRow(ctx, getStaffDocumentByIDGlobal, id)
+	var i GetStaffDocumentByIDGlobalRow
+	err := row.Scan(
+		&i.ID,
+		&i.CircleID,
+		&i.Name,
+		&i.Description,
+		&i.Notes,
+		&i.IsPublic,
+		&i.IsImportant,
+		&i.Filename,
+		&i.MimeType,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listPublicDocuments = `-- name: ListPublicDocuments :many
 SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents

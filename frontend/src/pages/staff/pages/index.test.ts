@@ -26,7 +26,7 @@ describe('StaffPagesIndexPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('lists and creates staff pages', async () => {
+  it('lists staff pages and shows create/mail actions', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -52,6 +52,7 @@ describe('StaffPagesIndexPage', () => {
         { path: '/staff', component: StaffDashboardPage },
         { path: '/staff/verify', component: StaffVerifyPage },
         { path: '/staff/pages', component: StaffPagesIndexPage },
+        { path: '/staff/pages/create', component: { template: '<div>create</div>' } },
         { path: '/staff/pages/:pageId', component: { template: '<div>detail</div>' } },
         { path: '/staff/mails', component: { template: '<div>mails</div>' } }
       ]
@@ -116,25 +117,6 @@ describe('StaffPagesIndexPage', () => {
           )
         }
 
-        if (pathname.endsWith('/staff/circles/managed') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              {
-                id: 'circle-a',
-                name: 'デモ企画A'
-              },
-              {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
         if (pathname.endsWith('/staff/documents') && method === 'GET') {
           return new Response(
             JSON.stringify([
@@ -188,15 +170,27 @@ describe('StaffPagesIndexPage', () => {
           return new Response(
             JSON.stringify([
               {
-                circle: {
-                  id: 'circle-b',
-                  name: 'デモ企画B'
-                },
                 id: 'page-generated-1',
                 title: createdTitle,
-                publishedAt: '2026-03-12T00:00:00Z',
+                notes: '作成済みメモ',
+                createdAt: '2026-03-12T00:00:00Z',
+                updatedAt: '2026-03-12T00:00:00Z',
                 isPinned: true,
-                isPublic: true
+                isPublic: true,
+                viewableTags: ['展示'],
+                documentIds: ['document-circle-b-1'],
+                documents: [
+                  {
+                    id: 'document-circle-b-1',
+                    name: '展示ガイド',
+                    description: 'Bブロック向けの展示ガイドです。',
+                    isImportant: true,
+                    extension: 'TXT',
+                    sizeBytes: 1024,
+                    updatedAt: '2026-03-05T09:00:00Z',
+                    downloadUrl: '/v1/documents/document-circle-b-1'
+                  }
+                ]
               }
             ]),
             {
@@ -211,61 +205,99 @@ describe('StaffPagesIndexPage', () => {
             createdTitle === ''
               ? [
                   {
-                    circle: {
-                      id: 'circle-b',
-                      name: 'デモ企画B'
-                    },
                     id: 'page-circle-b-z',
                     title: '後続メモ',
-                    publishedAt: '2026-03-05T09:00:00Z',
+                    notes: '次の案内です。',
+                    createdAt: '2026-03-05T09:00:00Z',
+                    updatedAt: '2026-03-05T09:00:00Z',
                     isPinned: false,
-                    isPublic: false
+                    isPublic: false,
+                    viewableTags: [],
+                    documentIds: [],
+                    documents: []
                   },
                   {
-                    circle: {
-                      id: 'circle-b',
-                      name: 'デモ企画B'
-                    },
                     id: 'page-circle-b-a',
                     title: '非公開メモ',
-                    publishedAt: '2026-03-04T09:00:00Z',
+                    notes: 'スタッフだけが確認するメモです。',
+                    createdAt: '2026-03-04T09:00:00Z',
+                    updatedAt: '2026-03-04T09:00:00Z',
                     isPinned: false,
-                    isPublic: false
+                    isPublic: false,
+                    viewableTags: ['展示'],
+                    documentIds: ['document-circle-b-1'],
+                    documents: [
+                      {
+                        id: 'document-circle-b-1',
+                        name: '展示ガイド',
+                        description: 'Bブロック向けの展示ガイドです。',
+                        isImportant: true,
+                        extension: 'TXT',
+                        sizeBytes: 1024,
+                        updatedAt: '2026-03-05T09:00:00Z',
+                        downloadUrl: '/v1/documents/document-circle-b-1'
+                      }
+                    ]
                   }
                 ]
               : [
                   {
-                    circle: {
-                      id: 'circle-b',
-                      name: 'デモ企画B'
-                    },
                     id: 'page-generated-1',
                     title: createdTitle,
-                    publishedAt: '2026-03-12T00:00:00Z',
+                    notes: '作成済みメモ',
+                    createdAt: '2026-03-12T00:00:00Z',
+                    updatedAt: '2026-03-12T00:00:00Z',
                     isPinned: true,
-                    isPublic: true
+                    isPublic: true,
+                    viewableTags: ['展示'],
+                    documentIds: ['document-circle-b-1'],
+                    documents: [
+                      {
+                        id: 'document-circle-b-1',
+                        name: '展示ガイド',
+                        description: 'Bブロック向けの展示ガイドです。',
+                        isImportant: true,
+                        extension: 'TXT',
+                        sizeBytes: 1024,
+                        updatedAt: '2026-03-05T09:00:00Z',
+                        downloadUrl: '/v1/documents/document-circle-b-1'
+                      }
+                    ]
                   },
                   {
-                    circle: {
-                      id: 'circle-b',
-                      name: 'デモ企画B'
-                    },
                     id: 'page-circle-b-z',
                     title: '後続メモ',
-                    publishedAt: '2026-03-05T09:00:00Z',
+                    notes: '次の案内です。',
+                    createdAt: '2026-03-05T09:00:00Z',
+                    updatedAt: '2026-03-05T09:00:00Z',
                     isPinned: false,
-                    isPublic: false
+                    isPublic: false,
+                    viewableTags: [],
+                    documentIds: [],
+                    documents: []
                   },
                   {
-                    circle: {
-                      id: 'circle-b',
-                      name: 'デモ企画B'
-                    },
                     id: 'page-circle-b-a',
                     title: '非公開メモ',
-                    publishedAt: '2026-03-04T09:00:00Z',
+                    notes: 'スタッフだけが確認するメモです。',
+                    createdAt: '2026-03-04T09:00:00Z',
+                    updatedAt: '2026-03-04T09:00:00Z',
                     isPinned: false,
-                    isPublic: false
+                    isPublic: false,
+                    viewableTags: ['展示'],
+                    documentIds: ['document-circle-b-1'],
+                    documents: [
+                      {
+                        id: 'document-circle-b-1',
+                        name: '展示ガイド',
+                        description: 'Bブロック向けの展示ガイドです。',
+                        isImportant: true,
+                        extension: 'TXT',
+                        sizeBytes: 1024,
+                        updatedAt: '2026-03-05T09:00:00Z',
+                        downloadUrl: '/v1/documents/document-circle-b-1'
+                      }
+                    ]
                   }
                 ]
 
@@ -273,28 +305,6 @@ describe('StaffPagesIndexPage', () => {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
           })
-        }
-
-        if (pathname.endsWith('/staff/pages') && method === 'POST') {
-          createdRequestBody = await parseRequestBody(input, init?.body)
-          createdTitle = '新着スタッフ連絡'
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: 'page-generated-1',
-              title: createdTitle,
-              publishedAt: '2026-03-12T00:00:00Z',
-              isPinned: true,
-              isPublic: true
-            }),
-            {
-              status: 201,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
         }
 
         throw new Error(`Unexpected request: ${method} ${url}`)
@@ -311,73 +321,17 @@ describe('StaffPagesIndexPage', () => {
     expect(wrapper.text()).toContain('非公開メモ')
     expect(wrapper.text()).toContain('後続メモ')
     expect(wrapper.text()).not.toContain('お知らせID')
-    expect(wrapper.text().indexOf('非公開メモ')).toBeLessThan(wrapper.text().indexOf('後続メモ'))
+    expect(wrapper.text().indexOf('後続メモ')).toBeLessThan(wrapper.text().indexOf('非公開メモ'))
     expect(wrapper.get('a[href="/staff/mails"]').text()).toContain('メール配信設定')
-    expect(wrapper.text()).toContain('保存後にモックメール配信を予約する')
-    expect(wrapper.text()).toContain('配信予約はモックキューへの登録のみ行います。実メール送信は行いません。')
-
-    await wrapper.get('select[name="circleId"]').setValue('circle-a')
-    await flushPromises()
-    expect(wrapper.text()).toContain('A企画ガイド')
-    expect(wrapper.text()).not.toContain('展示ガイド')
-    await wrapper.get('fieldset input[type="checkbox"]').setValue(true)
-    await wrapper.get('select[name="circleId"]').setValue('circle-b')
-    await flushPromises()
     expect(wrapper.text()).toContain('展示ガイド')
-    expect(wrapper.text()).not.toContain('A企画ガイド')
-    await wrapper.get('input[name="title"]').setValue('新着スタッフ連絡')
-    await wrapper.get('textarea[name="body"]').setValue('設営順を更新しました。')
-    await wrapper.get('textarea[name="notes"]').setValue('スタッフ向けメモ')
-    await wrapper.get('input[name="viewableTags"]').setValue('展')
-    const exhibitionTagButton = wrapper.findAll('button').find((button) => button.text() === '展示')
-    if (!exhibitionTagButton) {
-      throw new Error('exhibition tag button not found')
-    }
-    await exhibitionTagButton.trigger('click')
-    await wrapper.get('input[name="isPinned"]').setValue(true)
-    const forms = wrapper.findAll('form')
-    if (forms.length < 2) {
-      throw new Error('missing forms')
-    }
-    await forms[1].trigger('submit')
-    await flushPromises()
+    expect(wrapper.text()).toContain('スタッフだけが確認するメモです。')
+    expect(wrapper.get('a[href="/staff/pages/create"]').text()).toContain('新規作成')
 
+    const forms = wrapper.findAll('form')
     await wrapper.get('input[name="query"]').setValue('新着')
     await forms[0].trigger('submit')
     await flushPromises()
 
-    expect(createdRequestBody).toMatchObject({
-      circleId: 'circle-b',
-      viewableTags: ['展示'],
-      documentIds: []
-    })
-    expect(wrapper.text()).toContain('新着スタッフ連絡')
-    expect(wrapper.text()).toContain('はい')
+    expect(createdRequestBody).toBeNull()
   })
 })
-
-async function parseRequestBody(
-  input: RequestInfo | URL,
-  body: null | string | ArrayBuffer | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | undefined
-) {
-  if (typeof body !== 'string') {
-    if (typeof Request !== 'undefined' && input instanceof Request) {
-      body = await input.clone().text()
-    }
-  }
-
-  if (typeof body !== 'string') {
-    throw new Error('Request body was not a string')
-  }
-
-  const parsed: unknown = JSON.parse(body)
-  if (!isRecord(parsed)) {
-    throw new Error('Request body was not an object')
-  }
-
-  return parsed
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}

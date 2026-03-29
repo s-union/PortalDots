@@ -33,10 +33,12 @@ export const paginatedResultSchema = <TItem extends z.ZodType>(itemSchema: TItem
 export const pageSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
-  publishedAt: z.string(),
-  summary: z.string().optional(),
-  isLimited: z.boolean().optional(),
-  isNew: z.boolean().optional()
+  summary: z.string(),
+  isLimited: z.boolean(),
+  isNew: z.boolean(),
+  isUnread: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string()
 })
 
 export const pageDocumentSchema = z.object({
@@ -50,8 +52,13 @@ export const pageDocumentSchema = z.object({
   downloadUrl: z.string()
 })
 
-export const pageDetailSchema = pageSummarySchema.extend({
+export const pageDetailSchema = z.object({
+  id: z.string(),
+  title: z.string(),
   body: z.string(),
+  isLimited: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   documents: z.array(pageDocumentSchema)
 })
 
@@ -478,26 +485,22 @@ export const existingAnswerConflictSchema = z.object({
 })
 
 export const staffPageSummarySchema = z.object({
-  circle: staffManagedCircleSchema.default({ id: '', name: '' }),
   id: z.string(),
   title: z.string(),
-  publishedAt: z.string(),
-  isPinned: z.boolean(),
-  isPublic: z.boolean()
-})
-
-export const staffPageDocumentSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string()
-})
-
-export const staffPageDetailSchema = staffPageSummarySchema.extend({
-  body: z.string(),
   notes: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  isPinned: z.boolean(),
+  isPublic: z.boolean(),
   viewableTags: stringArraySchema,
   documentIds: stringArraySchema,
-  documents: z.array(staffPageDocumentSchema)
+  documents: z.array(pageDocumentSchema)
+})
+
+export const staffPageDocumentSchema = pageDocumentSchema
+
+export const staffPageDetailSchema = staffPageSummarySchema.extend({
+  body: z.string()
 })
 
 export const staffDocumentSummarySchema = z.object({
@@ -579,17 +582,20 @@ export const publicHomePageSchema = z.object({
   id: z.string(),
   title: z.string(),
   summary: z.string(),
-  publishedAt: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   isLimited: z.boolean(),
-  isNew: z.boolean().optional()
+  isNew: z.boolean()
 })
 
 export const publicPinnedPageSchema = z.object({
   id: z.string(),
   title: z.string(),
   body: z.string(),
-  publishedAt: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   isLimited: z.boolean(),
+  isNew: z.boolean(),
   documents: z.array(pageDocumentSchema)
 })
 

@@ -83,17 +83,18 @@ SET circle_id = EXCLUDED.circle_id,
     updated_at = EXCLUDED.updated_at;
 
 -- name: SeedUpsertPage :exec
-INSERT INTO pages (id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+INSERT INTO pages (id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at, published_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $9)
 ON CONFLICT (id) DO UPDATE
-SET circle_id = EXCLUDED.circle_id,
-    title = EXCLUDED.title,
+SET title = EXCLUDED.title,
     body = EXCLUDED.body,
     notes = EXCLUDED.notes,
     is_pinned = EXCLUDED.is_pinned,
     is_public = EXCLUDED.is_public,
     viewable_tags = EXCLUDED.viewable_tags,
     document_ids = EXCLUDED.document_ids,
+    created_at = EXCLUDED.created_at,
+    updated_at = EXCLUDED.updated_at,
     published_at = EXCLUDED.published_at;
 
 -- name: SeedUpsertPlace :exec

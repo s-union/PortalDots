@@ -5,11 +5,11 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 const publicHomeApiMocks = vi.hoisted(() => ({
-  useSuspensePublicPagesQuery: vi.fn()
+  usePublicPagesQuery: vi.fn()
 }))
 
 vi.mock('@/features/public-home/api', () => ({
-  useSuspensePublicPagesQuery: publicHomeApiMocks.useSuspensePublicPagesQuery
+  usePublicPagesQuery: publicHomeApiMocks.usePublicPagesQuery
 }))
 
 import PublicPagesIndexPage from './index.vue'
@@ -36,19 +36,24 @@ describe('PublicPagesIndexPage', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
 
-    publicHomeApiMocks.useSuspensePublicPagesQuery.mockReturnValue({
-      data: ref([
-        {
-          id: 'page-1',
-          title: 'お知らせサンプル',
-          summary: '公開中のお知らせです。',
-          publishedAt: '2026-03-05T10:00:00Z',
-          isLimited: false,
-          isNew: true
-        }
-      ]),
-      isPending: ref(false),
-      suspense: vi.fn().mockResolvedValue(undefined)
+    publicHomeApiMocks.usePublicPagesQuery.mockReturnValue({
+      data: ref({
+        items: [
+          {
+            id: 'page-1',
+            title: 'お知らせサンプル',
+            summary: '公開中のお知らせです。',
+            createdAt: '2026-03-05T10:00:00Z',
+            updatedAt: '2026-03-05T10:00:00Z',
+            isLimited: false,
+            isNew: true
+          }
+        ],
+        page: 1,
+        pageSize: 10,
+        total: 1
+      }),
+      isPending: ref(false)
     })
 
     const router = createRouter({

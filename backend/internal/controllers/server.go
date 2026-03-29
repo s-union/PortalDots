@@ -117,13 +117,14 @@ type staffFormHandlers struct {
 // staffPageHandlers handles staff page endpoints.
 type staffPageHandlers struct {
 	sharedDeps
-	activities activitylog.Repository
-	circles    circle.Catalog
-	documents  document.Repository
-	mails      mailqueue.Repository
-	pages      page.Repository
-	tags       tag.Repository
-	users      useradmin.Repository
+	activities         activitylog.Repository
+	circles            circle.Catalog
+	documents          document.Repository
+	mails              mailqueue.Repository
+	pages              page.Repository
+	participationTypes participationtype.Repository
+	tags               tag.Repository
+	users              useradmin.Repository
 }
 
 // staffDocumentHandlers handles staff document endpoints.
@@ -338,14 +339,15 @@ func NewServerWithDependencies(
 	}
 
 	staffPageH := &staffPageHandlers{
-		sharedDeps: shared,
-		activities: activities,
-		circles:    circles,
-		documents:  documents,
-		mails:      mails,
-		pages:      pages,
-		tags:       tags,
-		users:      users,
+		sharedDeps:         shared,
+		activities:         activities,
+		circles:            circles,
+		documents:          documents,
+		mails:              mails,
+		pages:              pages,
+		participationTypes: participationTypes,
+		tags:               tags,
+		users:              users,
 	}
 
 	staffDocumentH := &staffDocumentHandlers{
@@ -524,6 +526,7 @@ func NewServerWithDependencies(
 		DownloadStaffBundleZIP:    staffAdminH.downloadStaffBundleZIP,
 		ListStaffMails:            staffAdminH.listStaffMails,
 		EnqueueStaffMail:          staffAdminH.enqueueStaffMail,
+		DeleteStaffMails:          staffAdminH.deleteStaffMails,
 		// Users
 		ListStaffUsers:        staffUsersH.listStaffUsers,
 		DownloadStaffUsersCSV: staffUsersH.downloadStaffUsersCSV,

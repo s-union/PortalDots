@@ -18,7 +18,7 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 
 func (r *SQLCRepository) Enqueue(circleID, createdByUserID, subject, body string, recipients []string) Job {
 	row, err := r.queries.CreateMailJob(context.Background(), dbgen.CreateMailJobParams{
-		CircleID:        circleID,
+		CircleID:        pgutil.Text(circleID),
 		Subject:         subject,
 		Body:            body,
 		Recipients:      recipients,
@@ -31,8 +31,22 @@ func (r *SQLCRepository) Enqueue(circleID, createdByUserID, subject, body string
 	return mapJob(row)
 }
 
+func (r *SQLCRepository) ListAll() []Job {
+	rows, err := r.queries.ListMailJobs(context.Background())
+	if err != nil {
+		return nil
+	}
+
+	jobs := make([]Job, 0, len(rows))
+	for _, row := range rows {
+		jobs = append(jobs, mapJob(row))
+	}
+
+	return jobs
+}
+
 func (r *SQLCRepository) ListByCircle(circleID string) []Job {
-	rows, err := r.queries.ListMailJobsByCircle(context.Background(), circleID)
+	rows, err := r.queries.ListMailJobsByCircle(context.Background(), pgutil.Text(circleID))
 	if err != nil {
 		return nil
 	}
@@ -69,13 +83,17 @@ func (r *SQLCRepository) MarkSent(id string, deliveredAt time.Time) bool {
 }
 
 func (r *SQLCRepository) DeleteByCircle(circleID string) {
-	_ = r.queries.DeleteMailJobsByCircle(context.Background(), circleID)
+	_ = r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.Text(circleID))
+}
+
+func (r *SQLCRepository) DeleteAll() {
+	_ = r.queries.DeleteMailJobs(context.Background())
 }
 
 func mapJob(row dbgen.MailJob) Job {
 	job := Job{
 		ID:              row.ID,
-		CircleID:        row.CircleID,
+		CircleID:        row.CircleID.String,
 		Subject:         row.Subject,
 		Body:            row.Body,
 		Recipients:      row.Recipients,

@@ -7,35 +7,37 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
 )
 
 type staffPageSummaryResponse struct {
-	Circle      staffManagedCircleResponse `json:"circle"`
-	ID          string                     `json:"id"`
-	Title       string                     `json:"title"`
-	PublishedAt string                     `json:"publishedAt"`
-	IsPinned    bool                       `json:"isPinned"`
-	IsPublic    bool                       `json:"isPublic"`
+	ID           string                 `json:"id"`
+	Title        string                 `json:"title"`
+	Notes        string                 `json:"notes"`
+	CreatedAt    string                 `json:"createdAt"`
+	UpdatedAt    string                 `json:"updatedAt"`
+	IsPinned     bool                   `json:"isPinned"`
+	IsPublic     bool                   `json:"isPublic"`
+	ViewableTags []string               `json:"viewableTags"`
+	DocumentIDs  []string               `json:"documentIds"`
+	Documents    []pageDocumentResponse `json:"documents"`
 }
 
 type staffPageDetailResponse struct {
-	Circle       staffManagedCircleResponse `json:"circle"`
-	ID           string                     `json:"id"`
-	Title        string                     `json:"title"`
-	Body         string                     `json:"body"`
-	Notes        string                     `json:"notes"`
-	PublishedAt  string                     `json:"publishedAt"`
-	IsPinned     bool                       `json:"isPinned"`
-	IsPublic     bool                       `json:"isPublic"`
-	ViewableTags []string                   `json:"viewableTags"`
-	DocumentIDs  []string                   `json:"documentIds"`
-	Documents    []pageDocumentResponse     `json:"documents"`
+	ID           string                 `json:"id"`
+	Title        string                 `json:"title"`
+	Body         string                 `json:"body"`
+	Notes        string                 `json:"notes"`
+	CreatedAt    string                 `json:"createdAt"`
+	UpdatedAt    string                 `json:"updatedAt"`
+	IsPinned     bool                   `json:"isPinned"`
+	IsPublic     bool                   `json:"isPublic"`
+	ViewableTags []string               `json:"viewableTags"`
+	DocumentIDs  []string               `json:"documentIds"`
+	Documents    []pageDocumentResponse `json:"documents"`
 }
 
 type mutateStaffPageRequest struct {
-	CircleID     string   `json:"circleId"`
 	Title        string   `json:"title"`
 	Body         string   `json:"body"`
 	Notes        string   `json:"notes"`
@@ -56,13 +58,10 @@ func (h *staffPageHandlers) listStaffPages(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	_, circlesByID, pages, err := h.listManagedStaffPages(c.QueryParam("query"))
-	if err != nil {
-		return internalError(c)
-	}
+	pages := h.pages.ListForStaff(c.QueryParam("query"))
 	response := make([]staffPageSummaryResponse, 0, len(pages))
 	for _, currentPage := range pages {
-		response = append(response, mapStaffPageSummary(currentPage, circlesByID[currentPage.CircleID]))
+		response = append(response, mapStaffPageSummary(currentPage, h.pageDocuments(currentPage.DocumentIDs, true)))
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -74,16 +73,13 @@ func (h *staffPageHandlers) getStaffPage(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	pageValue, circleValue, err := h.findManagedStaffPage(c.Param("pageID"))
-	if err != nil {
-		return internalError(c)
-	}
-	if pageValue.ID == "" {
+	pageValue, found := h.pages.FindForStaff(c.Param("pageID"))
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
-	response := mapStaffPageDetail(pageValue, mapStaffManagedCircle(circleValue))
-	response.Documents = h.pageDocuments(pageValue.CircleID, pageValue.DocumentIDs, true)
+	response := mapStaffPageDetail(pageValue)
+	response.Documents = h.pageDocuments(pageValue.DocumentIDs, true)
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -93,24 +89,18 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	request, validationErrors, valid := bindStaffPageRequest(c, true)
+	request, validationErrors, valid := bindStaffPageRequest(c)
 	if !valid {
 		return validationError(c, validationErrors)
 	}
 	if request.SendEmails && !canSendPageEmails(currentSession.User) {
 		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
-	if _, err := h.circles.Find(request.CircleID); err != nil {
-		return validationError(c, map[string][]string{
-			"circleId": {"企画を選択してください"},
-		})
-	}
-	if documentErrors := h.validateStaffPageDocumentIDs(request.CircleID, request.DocumentIDs, nil); len(documentErrors) > 0 {
+	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, nil); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
 
 	created := h.pages.Create(
-		request.CircleID,
 		request.Title,
 		request.Body,
 		request.Notes,
@@ -125,13 +115,13 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 		"staff.page.created",
 		"page",
 		created.ID,
-		created.CircleID,
+		"",
 		buildActivitySummary("staff がページを作成しました", created.Title),
 	)
 	if request.SendEmails {
-		h.enqueuePageMail(created.CircleID, currentSession.User.ID, created)
+		h.enqueuePageMail(currentSession.User.ID, created)
 	}
-	return c.JSON(http.StatusCreated, mapStaffPageSummary(created, staffManagedCircleResponse{ID: created.CircleID}))
+	return c.JSON(http.StatusCreated, mapStaffPageSummary(created, h.pageDocuments(created.DocumentIDs, true)))
 }
 
 func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
@@ -140,27 +130,23 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	pageValue, circleValue, err := h.findManagedStaffPage(c.Param("pageID"))
-	if err != nil {
-		return internalError(c)
-	}
-	if pageValue.ID == "" {
+	pageValue, found := h.pages.FindForStaff(c.Param("pageID"))
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
-	request, validationErrors, valid := bindStaffPageRequest(c, false)
+	request, validationErrors, valid := bindStaffPageRequest(c)
 	if !valid {
 		return validationError(c, validationErrors)
 	}
 	if request.SendEmails && !canSendPageEmails(currentSession.User) {
 		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
-	if documentErrors := h.validateStaffPageDocumentIDs(pageValue.CircleID, request.DocumentIDs, pageValue.DocumentIDs); len(documentErrors) > 0 {
+	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, pageValue.DocumentIDs); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
 
 	updated, found := h.pages.Update(
-		pageValue.CircleID,
 		c.Param("pageID"),
 		request.Title,
 		request.Body,
@@ -180,14 +166,14 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 		"staff.page.updated",
 		"page",
 		updated.ID,
-		updated.CircleID,
+		"",
 		buildActivitySummary("staff がページを更新しました", updated.Title),
 	)
 	if request.SendEmails {
-		h.enqueuePageMail(updated.CircleID, currentSession.User.ID, updated)
+		h.enqueuePageMail(currentSession.User.ID, updated)
 	}
 
-	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, mapStaffManagedCircle(circleValue)))
+	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
 }
 
 func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
@@ -197,15 +183,12 @@ func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
 	}
 
 	pageID := c.Param("pageID")
-	currentPage, _, err := h.findManagedStaffPage(pageID)
-	if err != nil {
-		return internalError(c)
-	}
-	if currentPage.ID == "" {
+	currentPage, found := h.pages.FindForStaff(pageID)
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
-	if deleted := h.pages.Delete(currentPage.CircleID, pageID); !deleted {
+	if deleted := h.pages.Delete(pageID); !deleted {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
@@ -215,7 +198,7 @@ func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
 		"staff.page.deleted",
 		"page",
 		pageID,
-		currentPage.CircleID,
+		"",
 		buildActivitySummary("staff がページを削除しました", currentPage.Title),
 	)
 
@@ -228,11 +211,8 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	currentPage, circleValue, err := h.findManagedStaffPage(c.Param("pageID"))
-	if err != nil {
-		return internalError(c)
-	}
-	if currentPage.ID == "" {
+	currentPage, found := h.pages.FindForStaff(c.Param("pageID"))
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
@@ -241,7 +221,7 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
-	updated, found := h.pages.SetPinned(currentPage.CircleID, c.Param("pageID"), request.IsPinned)
+	updated, found := h.pages.SetPinned(c.Param("pageID"), request.IsPinned)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
@@ -259,11 +239,15 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 		action,
 		"page",
 		updated.ID,
-		updated.CircleID,
+		"",
 		buildActivitySummary(summary, updated.Title),
 	)
 
-	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, mapStaffManagedCircle(circleValue)))
+	if currentPage.ID == "" {
+		return errorJSON(c, http.StatusNotFound, "page_not_found")
+	}
+
+	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
 }
 
 func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
@@ -272,19 +256,10 @@ func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	circles, _, pages, err := h.listManagedStaffPages("")
-	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "export_failed")
-	}
-
-	circleNames := make(map[string]string, len(circles))
-	for _, currentCircle := range circles {
-		circleNames[currentCircle.ID] = currentCircle.Name
-	}
-
+	pages := h.pages.ListForStaff("")
 	csvBytes, err := writeCSV(append([][]string{
-		{"circle_id", "circle_name", "id", "title", "viewable_tags", "body", "is_pinned", "is_public", "notes", "published_at"},
-	}, staffPageRowsWithCircles(pages, circleNames)...))
+		{"お知らせID", "タイトル", "閲覧可能なタグ", "本文", "固定", "公開", "スタッフ用メモ", "作成日時", "更新日時"},
+	}, staffPageRows(pages)...))
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
@@ -295,7 +270,7 @@ func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
 	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
 }
 
-func bindStaffPageRequest(c echo.Context, circleRequired bool) (mutateStaffPageRequest, map[string][]string, bool) {
+func bindStaffPageRequest(c echo.Context) (mutateStaffPageRequest, map[string][]string, bool) {
 	var request mutateStaffPageRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffPageRequest{}, map[string][]string{
@@ -303,7 +278,6 @@ func bindStaffPageRequest(c echo.Context, circleRequired bool) (mutateStaffPageR
 		}, false
 	}
 
-	request.CircleID = strings.TrimSpace(request.CircleID)
 	request.Title = strings.TrimSpace(request.Title)
 	request.Body = strings.TrimSpace(request.Body)
 	request.Notes = strings.TrimSpace(request.Notes)
@@ -313,9 +287,6 @@ func bindStaffPageRequest(c echo.Context, circleRequired bool) (mutateStaffPageR
 	errors := map[string][]string{}
 	if request.Title == "" {
 		errors["title"] = []string{"タイトルを入力してください"}
-	}
-	if circleRequired && request.CircleID == "" {
-		errors["circleId"] = []string{"企画を選択してください"}
 	}
 	if request.Body == "" {
 		errors["body"] = []string{"本文を入力してください"}
@@ -327,25 +298,29 @@ func bindStaffPageRequest(c echo.Context, circleRequired bool) (mutateStaffPageR
 	return request, nil, true
 }
 
-func mapStaffPageSummary(currentPage backendpage.Page, circleValue staffManagedCircleResponse) staffPageSummaryResponse {
+func mapStaffPageSummary(currentPage backendpage.Page, documents []pageDocumentResponse) staffPageSummaryResponse {
 	return staffPageSummaryResponse{
-		Circle:      circleValue,
-		ID:          currentPage.ID,
-		Title:       currentPage.Title,
-		PublishedAt: currentPage.PublishedAt,
-		IsPinned:    currentPage.IsPinned,
-		IsPublic:    currentPage.IsPublic,
+		ID:           currentPage.ID,
+		Title:        currentPage.Title,
+		Notes:        currentPage.Notes,
+		CreatedAt:    currentPage.CreatedAt,
+		UpdatedAt:    currentPage.UpdatedAt,
+		IsPinned:     currentPage.IsPinned,
+		IsPublic:     currentPage.IsPublic,
+		ViewableTags: slices.Clone(currentPage.ViewableTags),
+		DocumentIDs:  slices.Clone(currentPage.DocumentIDs),
+		Documents:    slices.Clone(documents),
 	}
 }
 
-func mapStaffPageDetail(currentPage backendpage.Page, circleValue staffManagedCircleResponse) staffPageDetailResponse {
+func mapStaffPageDetail(currentPage backendpage.Page) staffPageDetailResponse {
 	return staffPageDetailResponse{
-		Circle:       circleValue,
 		ID:           currentPage.ID,
 		Title:        currentPage.Title,
 		Body:         currentPage.Body,
 		Notes:        currentPage.Notes,
-		PublishedAt:  currentPage.PublishedAt,
+		CreatedAt:    currentPage.CreatedAt,
+		UpdatedAt:    currentPage.UpdatedAt,
 		IsPinned:     currentPage.IsPinned,
 		IsPublic:     currentPage.IsPublic,
 		ViewableTags: slices.Clone(currentPage.ViewableTags),
@@ -354,41 +329,10 @@ func mapStaffPageDetail(currentPage backendpage.Page, circleValue staffManagedCi
 	}
 }
 
-func (h *staffPageHandlers) listManagedStaffPages(query string) ([]circle.Circle, map[string]staffManagedCircleResponse, []backendpage.Page, error) {
-	circles, circlesByID, err := listStaffManagedCircles(h.circles)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	pages := make([]backendpage.Page, 0)
-	for _, currentCircle := range circles {
-		pages = append(pages, h.pages.ListByCircleForStaff(currentCircle.ID, query)...)
-	}
-
-	return circles, circlesByID, pages, nil
-}
-
-func (h *staffPageHandlers) findManagedStaffPage(pageID string) (backendpage.Page, circle.Circle, error) {
-	circles, _, err := listStaffManagedCircles(h.circles)
-	if err != nil {
-		return backendpage.Page{}, circle.Circle{}, err
-	}
-
-	for _, currentCircle := range circles {
-		if currentPage, found := h.pages.FindByCircleForStaff(currentCircle.ID, pageID); found {
-			return currentPage, currentCircle, nil
-		}
-	}
-
-	return backendpage.Page{}, circle.Circle{}, nil
-}
-
-func staffPageRowsWithCircles(pages []backendpage.Page, circleNames map[string]string) [][]string {
+func staffPageRows(pages []backendpage.Page) [][]string {
 	rows := make([][]string, 0, len(pages))
 	for _, currentPage := range pages {
 		rows = append(rows, []string{
-			currentPage.CircleID,
-			circleNames[currentPage.CircleID],
 			currentPage.ID,
 			currentPage.Title,
 			strings.Join(currentPage.ViewableTags, ","),
@@ -396,14 +340,15 @@ func staffPageRowsWithCircles(pages []backendpage.Page, circleNames map[string]s
 			boolString(currentPage.IsPinned),
 			visibilityLabel(currentPage.IsPublic),
 			singleLine(currentPage.Notes),
-			currentPage.PublishedAt,
+			currentPage.CreatedAt,
+			currentPage.UpdatedAt,
 		})
 	}
 	return rows
 }
 
-func (h *staffPageHandlers) pageDocuments(circleID string, documentIDs []string, forStaff bool) []pageDocumentResponse {
-	return pageDocuments(h.documents, circleID, documentIDs, forStaff, false)
+func (h *staffPageHandlers) pageDocuments(documentIDs []string, forStaff bool) []pageDocumentResponse {
+	return pageDocuments(h.documents, documentIDs, forStaff, false)
 }
 
 func normalizePageDocumentIDs(documentIDs []string) []string {
@@ -424,14 +369,14 @@ func normalizePageDocumentIDs(documentIDs []string) []string {
 	return normalized
 }
 
-func (h *staffPageHandlers) validateStaffPageDocumentIDs(circleID string, documentIDs []string, existingDocumentIDs []string) map[string][]string {
+func (h *staffPageHandlers) validateStaffPageDocumentIDs(documentIDs []string, existingDocumentIDs []string) map[string][]string {
 	for _, documentID := range documentIDs {
 		if slices.Contains(existingDocumentIDs, documentID) {
 			continue
 		}
-		if _, found := h.documents.FindByCircleForStaff(circleID, documentID); !found {
+		if _, found := h.documents.FindForStaff(documentID); !found {
 			return map[string][]string{
-				"documentIds": {"対象企画に存在しない配布資料は選択できません"},
+				"documentIds": {"存在しない配布資料は選択できません"},
 			}
 		}
 	}
@@ -439,14 +384,14 @@ func (h *staffPageHandlers) validateStaffPageDocumentIDs(circleID string, docume
 	return nil
 }
 
-func (h *staffPageHandlers) enqueuePageMail(circleID, createdByUserID string, currentPage backendpage.Page) {
+func (h *staffPageHandlers) enqueuePageMail(createdByUserID string, currentPage backendpage.Page) {
 	recipients := h.pageMailRecipients(currentPage.ViewableTags)
 	if len(recipients) == 0 {
 		return
 	}
 
 	body := currentPage.Body
-	documents := h.pageDocuments(circleID, currentPage.DocumentIDs, false)
+	documents := h.pageDocuments(currentPage.DocumentIDs, false)
 	if len(documents) > 0 {
 		lines := make([]string, 0, len(documents)+2)
 		lines = append(lines, "", "", "関連する配布資料")
@@ -460,14 +405,14 @@ func (h *staffPageHandlers) enqueuePageMail(circleID, createdByUserID string, cu
 		body += strings.Join(lines, "\n")
 	}
 
-	job := h.mails.Enqueue(circleID, createdByUserID, currentPage.Title, body, recipients)
+	job := h.mails.Enqueue("", createdByUserID, currentPage.Title, body, recipients)
 	recordActivity(
 		h.activities,
 		createdByUserID,
 		"staff.mail.queued",
 		"mail_job",
 		job.ID,
-		circleID,
+		"",
 		buildActivitySummary("staff がページのお知らせメールをキューに追加しました", currentPage.Title),
 	)
 }
@@ -481,7 +426,7 @@ func (h *staffPageHandlers) pageMailRecipients(viewableTags []string) []string {
 		}
 
 		for _, currentCircle := range circles {
-			if pageVisibleToCircleTags(viewableTags, currentCircle.Tags) {
+			if pageVisibleToCircleTags(viewableTags, effectiveCircleTags(currentCircle, h.participationTypes)) {
 				circleIDs = append(circleIDs, currentCircle.ID)
 			}
 		}

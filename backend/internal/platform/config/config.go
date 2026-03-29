@@ -110,7 +110,6 @@ type ParticipationType struct {
 
 type Page struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -118,7 +117,8 @@ type Page struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIDs  []string
-	PublishedAt  string
+	CreatedAt    string
+	UpdatedAt    string
 }
 
 type Document struct {
@@ -239,8 +239,8 @@ func defaultDemoUsers() []User {
 			PhoneNumber:         "090-0000-0003",
 			Roles:               []string{"participant"},
 			Permissions:         []string{},
-			CircleIDs:           []string{"0195ec00-0021-7000-8000-000000000001"},
-			LeaderCircleIDs:     []string{"0195ec00-0021-7000-8000-000000000001"},
+			CircleIDs:           []string{"0195ec00-0021-7000-8000-000000000001", "0195ec00-0022-7000-8000-000000000001"},
+			LeaderCircleIDs:     []string{"0195ec00-0021-7000-8000-000000000001", "0195ec00-0022-7000-8000-000000000001"},
 			IsVerified:          true,
 			IsEmailVerified:     true,
 			IsUnivemailVerified: true,
@@ -381,7 +381,6 @@ func FromEnv() Config {
 		Pages: []Page{
 			{
 				ID:           "0195ec00-0031-7000-8000-000000000001",
-				CircleID:     "0195ec00-0021-7000-8000-000000000001",
 				Title:        "搬入時間のお知らせ",
 				Body:         "Aブロックの搬入は 9:00 から開始します。",
 				Notes:        "搬入担当向けの補足です。",
@@ -389,11 +388,11 @@ func FromEnv() Config {
 				IsPublic:     true,
 				ViewableTags: []string{"模擬店"},
 				DocumentIDs:  []string{"0195ec00-0041-7000-8000-000000000001"},
-				PublishedAt:  "2026-03-01T09:00:00Z",
+				CreatedAt:    "2026-03-01T09:00:00Z",
+				UpdatedAt:    "2026-03-01T09:00:00Z",
 			},
 			{
 				ID:           "0195ec00-0032-7000-8000-000000000001",
-				CircleID:     "0195ec00-0021-7000-8000-000000000001",
 				Title:        "固定表示の連絡",
 				Body:         "このお知らせは一覧には出しません。",
 				Notes:        "",
@@ -401,11 +400,11 @@ func FromEnv() Config {
 				IsPublic:     true,
 				ViewableTags: []string{},
 				DocumentIDs:  []string{},
-				PublishedAt:  "2026-03-02T09:00:00Z",
+				CreatedAt:    "2026-03-02T09:00:00Z",
+				UpdatedAt:    "2026-03-02T09:00:00Z",
 			},
 			{
 				ID:           "0195ec00-0034-7000-8000-000000000001",
-				CircleID:     "0195ec00-0022-7000-8000-000000000001",
 				Title:        "展示レイアウト更新",
 				Body:         "Bブロックの展示レイアウトを更新しました。",
 				Notes:        "展示班向けの差し替え指示あり。",
@@ -413,11 +412,11 @@ func FromEnv() Config {
 				IsPublic:     true,
 				ViewableTags: []string{"展示"},
 				DocumentIDs:  []string{"0195ec00-0042-7000-8000-000000000001"},
-				PublishedAt:  "2026-03-03T09:00:00Z",
+				CreatedAt:    "2026-03-03T09:00:00Z",
+				UpdatedAt:    "2026-03-03T09:00:00Z",
 			},
 			{
 				ID:           "0195ec00-0035-7000-8000-000000000001",
-				CircleID:     "0195ec00-0022-7000-8000-000000000001",
 				Title:        "非公開メモ",
 				Body:         "このお知らせは公開されません。",
 				Notes:        "スタッフだけが確認するメモです。",
@@ -425,7 +424,8 @@ func FromEnv() Config {
 				IsPublic:     false,
 				ViewableTags: []string{},
 				DocumentIDs:  []string{"0195ec00-0043-7000-8000-000000000001"},
-				PublishedAt:  "2026-03-04T09:00:00Z",
+				CreatedAt:    "2026-03-04T09:00:00Z",
+				UpdatedAt:    "2026-03-04T09:00:00Z",
 			},
 		},
 		Documents: []Document{

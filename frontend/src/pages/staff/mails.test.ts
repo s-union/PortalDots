@@ -24,7 +24,7 @@ describe('StaffMailsPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('lists and creates staff mails', async () => {
+  it('lists queued mails and cancels all jobs', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -39,17 +39,22 @@ describe('StaffMailsPage', () => {
       }
     })
 
-    let created = false
+    let hasQueuedMail = true
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
         { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/pages', component: { template: '<div>pages</div>' } },
         { path: '/staff/mails', component: StaffMailsPage }
       ]
     })
     await router.push('/staff/mails')
     await router.isReady()
 
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true)
+    )
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -69,12 +74,12 @@ describe('StaffMailsPage', () => {
         if (pathname.endsWith('/staff/mails') && method === 'GET') {
           return new Response(
             JSON.stringify(
-              created
+              hasQueuedMail
                 ? [
                     {
                       circle: {
-                        id: 'circle-b',
-                        name: 'デモ企画B'
+                        id: '',
+                        name: '共通'
                       },
                       id: 'mail-job-1',
                       subject: '搬入のご案内',
@@ -94,42 +99,9 @@ describe('StaffMailsPage', () => {
           )
         }
 
-        if (pathname.endsWith('/staff/circles/managed') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/mails') && method === 'POST') {
-          created = true
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: 'mail-job-1',
-              subject: '搬入のご案内',
-              body: '9:00 に集合してください。',
-              recipients: ['demo@example.com', 'sub@example.com'],
-              status: 'queued',
-              createdAt: '2026-03-12T00:00:00Z',
-              deliveredAt: ''
-            }),
-            {
-              status: 201,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
+        if (pathname.endsWith('/staff/mails') && method === 'DELETE') {
+          hasQueuedMail = false
+          return new Response(null, { status: 204 })
         }
 
         throw new Error(`Unexpected request: ${method} ${url}`)
@@ -143,19 +115,15 @@ describe('StaffMailsPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('モックメールキューはまだありません。')
-
-    await wrapper.get('select[name="circleId"]').setValue('circle-b')
-    await wrapper.get('input[name="subject"]').setValue('搬入のご案内')
-    await wrapper.get('textarea[name="body"]').setValue('9:00 に集合してください。')
-    await wrapper.get('textarea[name="recipients"]').setValue('demo@example.com, sub@example.com')
-    await wrapper.get('button[type="submit"]').trigger('submit')
-    await flushPromises()
-
     expect(wrapper.text()).toContain('搬入のご案内')
     expect(wrapper.text()).toContain('demo@example.com, sub@example.com')
-    expect(wrapper.text()).toContain('デモ企画B')
-    expect(wrapper.text()).toContain('この画面で登録したメールはすべてモック扱いです。')
-    expect(wrapper.text()).toContain('モック待機中')
+    expect(wrapper.text()).toContain('待機中')
+    expect(wrapper.text()).toContain('キューを全件キャンセル')
+
+    await wrapper.get('button[type="button"]').trigger('click')
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('メールキューはありません。')
   })
 })

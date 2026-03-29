@@ -960,20 +960,14 @@ func TestGetPublicHomeReturnsGuestContent(t *testing.T) {
 	if len(response.ParticipationTypes) != 2 {
 		t.Fatalf("expected 2 public participation types, got %#v", response.ParticipationTypes)
 	}
-	if len(response.Pages) != 2 || response.Pages[0].ID != "0195ec00-0034-7000-8000-000000000001" {
-		t.Fatalf("expected public pages sorted desc, got %#v", response.Pages)
-	}
-	if !response.Pages[0].IsLimited {
-		t.Fatalf("expected tagged public page to be marked limited, got %#v", response.Pages[0])
+	if len(response.Pages) != 0 {
+		t.Fatalf("expected guest home to hide limited notices, got %#v", response.Pages)
 	}
 	if len(response.Documents) != 2 || response.Documents[0].ID != "0195ec00-0042-7000-8000-000000000001" {
 		t.Fatalf("expected public documents sorted desc, got %#v", response.Documents)
 	}
 	if response.Documents[0].DownloadURL != "/v1/public/documents/0195ec00-0042-7000-8000-000000000001" {
 		t.Fatalf("unexpected public download url: %#v", response.Documents[0])
-	}
-	if strings.Contains(response.Pages[0].Summary, "\n") {
-		t.Fatalf("expected flattened page summary, got %q", response.Pages[0].Summary)
 	}
 }
 
@@ -988,16 +982,16 @@ func TestListPublicPagesReturnsGuestPageCollection(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response []publicHomePageResponse
+	var response models.PaginatedResponse[pageSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal public pages response: %v", err)
 	}
 
-	if len(response) != 2 {
-		t.Fatalf("expected 2 public pages, got %#v", response)
+	if len(response.Items) != 0 || response.Total != 0 {
+		t.Fatalf("expected guest public pages to be empty, got %#v", response)
 	}
-	if response[0].ID != "0195ec00-0034-7000-8000-000000000001" || response[1].ID != "0195ec00-0031-7000-8000-000000000001" {
-		t.Fatalf("expected sorted public pages, got %#v", response)
+	if response.Page != 1 || response.PageSize != 10 {
+		t.Fatalf("unexpected public pages pagination: %#v", response)
 	}
 }
 
@@ -1008,20 +1002,8 @@ func TestGetPublicPageReturnsGuestPageDetail(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/0195ec00-0031-7000-8000-000000000001", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var response pageDetailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
-		t.Fatalf("unmarshal public page detail response: %v", err)
-	}
-
-	if response.ID != "0195ec00-0031-7000-8000-000000000001" || response.Title != "搬入時間のお知らせ" {
-		t.Fatalf("unexpected public page detail: %#v", response)
-	}
-	if len(response.Documents) != 1 || response.Documents[0].DownloadURL != "/v1/public/documents/0195ec00-0041-7000-8000-000000000001" {
-		t.Fatalf("expected public page document urls, got %#v", response.Documents)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/0195ec00-0032-7000-8000-000000000001", nil)
@@ -1334,7 +1316,6 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	cfg := testConfig()
 	cfg.Pages = append(cfg.Pages, config.Page{
 		ID:           "0195ec00-0033-7000-8000-000000000001",
-		CircleID:     "0195ec00-0021-7000-8000-000000000001",
 		Title:        "展示向け共通連絡",
 		Body:         "展示企画全体への連絡です。",
 		Notes:        "",
@@ -1342,7 +1323,8 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 		IsPublic:     true,
 		ViewableTags: []string{"展示"},
 		DocumentIDs:  []string{},
-		PublishedAt:  "2026-03-06T09:00:00Z",
+		CreatedAt:    "2026-03-06T09:00:00Z",
+		UpdatedAt:    "2026-03-06T09:00:00Z",
 	})
 	server := NewServer(cfg)
 	cookies := map[string]*http.Cookie{}
@@ -1367,16 +1349,19 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response []pageSummaryResponse
+	var response models.PaginatedResponse[pageSummaryResponse]
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal pages response: %v", err)
 	}
 
-	if len(response) != 3 {
-		t.Fatalf("expected 3 public pages across circles, got %d", len(response))
+	if len(response.Items) != 2 {
+		t.Fatalf("expected 2 visible pages for selected circle tags, got %#v", response)
 	}
-	if response[0].ID != "0195ec00-0033-7000-8000-000000000001" || response[1].ID != "0195ec00-0034-7000-8000-000000000001" || response[2].ID != "0195ec00-0031-7000-8000-000000000001" {
+	if response.Items[0].ID != "0195ec00-0033-7000-8000-000000000001" || response.Items[1].ID != "0195ec00-0034-7000-8000-000000000001" {
 		t.Fatalf("expected public pages sorted desc, got %#v", response)
+	}
+	if !response.Items[0].IsLimited || !response.Items[0].IsUnread {
+		t.Fatalf("expected limited unread page metadata, got %#v", response.Items[0])
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages?query=レイアウト", nil)
@@ -1387,7 +1372,7 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal searched pages response: %v", err)
 	}
-	if len(response) != 1 || response[0].ID != "0195ec00-0034-7000-8000-000000000001" {
+	if len(response.Items) != 1 || response.Items[0].ID != "0195ec00-0034-7000-8000-000000000001" {
 		t.Fatalf("unexpected search result: %#v", response)
 	}
 
@@ -1399,8 +1384,49 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal empty search response: %v", err)
 	}
-	if len(response) != 0 {
+	if len(response.Items) != 0 || response.Total != 0 {
 		t.Fatalf("expected no search result, got %#v", response)
+	}
+}
+
+func TestListPagesUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	for index := range cfg.Circles {
+		if cfg.Circles[index].ID == "0195ec00-0022-7000-8000-000000000001" {
+			cfg.Circles[index].Tags = []string{}
+		}
+	}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response models.PaginatedResponse[pageSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal pages response: %v", err)
+	}
+
+	if len(response.Items) != 1 {
+		t.Fatalf("expected 1 visible page from participation type tags, got %#v", response)
+	}
+	if response.Items[0].ID != "0195ec00-0034-7000-8000-000000000001" {
+		t.Fatalf("unexpected page visibility from participation type tags: %#v", response)
 	}
 }
 
@@ -1437,6 +1463,9 @@ func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 	if detail.Title != "搬入時間のお知らせ" {
 		t.Fatalf("unexpected title: %s", detail.Title)
 	}
+	if detail.IsLimited != true {
+		t.Fatalf("expected limited detail metadata, got %#v", detail)
+	}
 	if len(detail.Documents) != 1 || detail.Documents[0].ID != "0195ec00-0041-7000-8000-000000000001" {
 		t.Fatalf("unexpected page documents: %#v", detail.Documents)
 	}
@@ -1447,14 +1476,8 @@ func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/0195ec00-0034-7000-8000-000000000001", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
-		t.Fatalf("unmarshal cross-circle page detail: %v", err)
-	}
-	if detail.ID != "0195ec00-0034-7000-8000-000000000001" || detail.Title != "展示レイアウト更新" {
-		t.Fatalf("unexpected cross-circle page detail: %#v", detail)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
 }
 
@@ -1464,7 +1487,6 @@ func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
 	cfg := testConfig()
 	cfg.Pages = append(cfg.Pages, config.Page{
 		ID:           "0195ec00-0033-7000-8000-000000000001",
-		CircleID:     "0195ec00-0021-7000-8000-000000000001",
 		Title:        "展示向け共通連絡",
 		Body:         "展示企画全体への連絡です。",
 		Notes:        "",
@@ -1472,7 +1494,8 @@ func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
 		IsPublic:     true,
 		ViewableTags: []string{"展示"},
 		DocumentIDs:  []string{"0195ec00-0041-7000-8000-000000000001"},
-		PublishedAt:  "2026-03-06T09:00:00Z",
+		CreatedAt:    "2026-03-06T09:00:00Z",
+		UpdatedAt:    "2026-03-06T09:00:00Z",
 	})
 	server := NewServer(cfg)
 	cookies := map[string]*http.Cookie{}
@@ -1943,6 +1966,47 @@ func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 	}
 }
 
+func TestListFormsUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	for index := range cfg.Circles {
+		if cfg.Circles[index].ID == "0195ec00-0022-7000-8000-000000000001" {
+			cfg.Circles[index].Tags = []string{}
+		}
+	}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response []formSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal forms response: %v", err)
+	}
+
+	if len(response) != 3 {
+		t.Fatalf("expected 3 accessible forms from participation type tags, got %#v", response)
+	}
+	if !slices.Equal(response[2].AnswerableTags, []string{"展示"}) {
+		t.Fatalf("expected limited form to remain visible, got %#v", response[2])
+	}
+}
+
 func TestGetFormAllowsClosedAccessibleFormInCurrentCircle(t *testing.T) {
 	t.Parallel()
 
@@ -2327,7 +2391,6 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId":     "0195ec00-0022-7000-8000-000000000001",
 		"title":        "スタッフ向け新着",
 		"body":         "設営順の詳細を更新しました。",
 		"notes":        "展示担当に周知済みです。",
@@ -2348,6 +2411,9 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	if created.ID == "" || created.Title != "スタッフ向け新着" || !created.IsPublic || !created.IsPinned {
 		t.Fatalf("unexpected created staff page: %#v", created)
 	}
+	if created.CreatedAt == "" || created.UpdatedAt == "" {
+		t.Fatalf("expected timestamps to be populated, got %#v", created)
+	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/"+created.ID, nil)
 	if recorder.Code != http.StatusOK {
@@ -2360,6 +2426,9 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	}
 	if detail.Notes != "展示担当に周知済みです。" || len(detail.ViewableTags) != 1 || len(detail.DocumentIDs) != 1 {
 		t.Fatalf("unexpected staff page detail: %#v", detail)
+	}
+	if detail.CreatedAt == "" || detail.UpdatedAt == "" {
+		t.Fatalf("expected detail timestamps to be populated, got %#v", detail)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
@@ -2394,7 +2463,7 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	}
 }
 
-func TestStaffPageCreateRejectsDocumentsFromDifferentCircle(t *testing.T) {
+func TestStaffPageCreateAllowsDocumentsFromDifferentCircle(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testStaffConfig())
@@ -2405,7 +2474,6 @@ func TestStaffPageCreateRejectsDocumentsFromDifferentCircle(t *testing.T) {
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId":     "0195ec00-0022-7000-8000-000000000001",
 		"title":        "スタッフ向け新着",
 		"body":         "設営順の詳細を更新しました。",
 		"notes":        "展示担当に周知済みです。",
@@ -2414,16 +2482,16 @@ func TestStaffPageCreateRejectsDocumentsFromDifferentCircle(t *testing.T) {
 		"viewableTags": []string{"展示"},
 		"documentIds":  []string{"0195ec00-0041-7000-8000-000000000001"},
 	})
-	if recorder.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
 
-	var response models.ValidationErrorResponse
+	var response staffPageSummaryResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
-		t.Fatalf("unmarshal validation response: %v", err)
+		t.Fatalf("unmarshal created response: %v", err)
 	}
-	if len(response.Errors["documentIds"]) == 0 {
-		t.Fatalf("expected documentIds validation error, got %#v", response.Errors)
+	if len(response.DocumentIDs) != 1 || response.DocumentIDs[0] != "0195ec00-0041-7000-8000-000000000001" {
+		t.Fatalf("expected cross-circle document to be accepted, got %#v", response)
 	}
 }
 
@@ -2502,12 +2570,16 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	if detail.ID != "0195ec00-0035-7000-8000-000000000001" || detail.Title != "非公開メモ" || detail.IsPublic {
 		t.Fatalf("unexpected staff page detail: %#v", detail)
 	}
+	originalUpdatedAt := detail.UpdatedAt
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001", map[string]any{
-		"title":    "更新済みのお知らせ",
-		"body":     "公開向けの本文に更新しました。",
-		"isPinned": true,
-		"isPublic": true,
+		"title":        "更新済みのお知らせ",
+		"body":         "公開向けの本文に更新しました。",
+		"notes":        "更新後メモ",
+		"isPinned":     true,
+		"isPublic":     true,
+		"viewableTags": []string{"展示"},
+		"documentIds":  []string{"0195ec00-0042-7000-8000-000000000001"},
 	})
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -2520,6 +2592,10 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	if summary.Title != "更新済みのお知らせ" || !summary.IsPinned || !summary.IsPublic {
 		t.Fatalf("unexpected updated staff page: %#v", summary)
 	}
+	if summary.UpdatedAt == originalUpdatedAt {
+		t.Fatalf("expected content update to refresh updatedAt, got %#v", summary)
+	}
+	updatedAtAfterEdit := summary.UpdatedAt
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPatch, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001/pin", map[string]any{
 		"isPinned": false,
@@ -2533,6 +2609,9 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	}
 	if summary.IsPinned {
 		t.Fatalf("expected pin to be removed, got %#v", summary)
+	}
+	if summary.UpdatedAt != updatedAtAfterEdit {
+		t.Fatalf("expected pin toggle not to refresh updatedAt, got %#v", summary)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/export.csv", nil)
@@ -2550,7 +2629,10 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	if len(rows) != 5 {
 		t.Fatalf("expected 5 csv rows, got %#v", rows)
 	}
-	if rows[0][0] != "circle_id" || rows[1][3] == "" {
+	if rows[0][0] != "お知らせID" || rows[0][1] != "タイトル" || rows[0][7] != "作成日時" || rows[0][8] != "更新日時" {
+		t.Fatalf("unexpected csv header: %#v", rows[0])
+	}
+	if rows[1][3] == "" {
 		t.Fatalf("unexpected csv rows: %#v", rows)
 	}
 
@@ -4341,15 +4423,15 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 		"body":     "本文",
 		"isPublic": true,
 	})
-	if recorder.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId": "0195ec00-0022-7000-8000-000000000001",
-		"title":    "新着ページ",
-		"body":     "本文",
-		"isPublic": true,
+		"title":        "別の新着ページ",
+		"body":         "本文",
+		"isPublic":     true,
+		"viewableTags": []string{"展示"},
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
@@ -4813,6 +4895,22 @@ func TestStaffMailsListAndEnqueue(t *testing.T) {
 	if len(jobs) != 1 || jobs[0].Subject != "搬入のご案内" {
 		t.Fatalf("unexpected mail list: %#v", jobs)
 	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &jobs); err != nil {
+		t.Fatalf("unmarshal empty mail list after delete: %v", err)
+	}
+	if len(jobs) != 0 {
+		t.Fatalf("expected empty mail list after delete, got %#v", jobs)
+	}
 }
 
 func TestStaffMailValidation(t *testing.T) {
@@ -5012,7 +5110,6 @@ func testConfig() config.Config {
 		Pages: []config.Page{
 			{
 				ID:           "0195ec00-0031-7000-8000-000000000001",
-				CircleID:     "0195ec00-0021-7000-8000-000000000001",
 				Title:        "搬入時間のお知らせ",
 				Body:         "Aブロックの搬入は 9:00 から開始します。",
 				Notes:        "搬入担当向けの補足です。",
@@ -5020,11 +5117,11 @@ func testConfig() config.Config {
 				IsPublic:     true,
 				ViewableTags: []string{"模擬店"},
 				DocumentIDs:  []string{"0195ec00-0041-7000-8000-000000000001"},
-				PublishedAt:  "2026-03-01T09:00:00Z",
+				CreatedAt:    "2026-03-01T09:00:00Z",
+				UpdatedAt:    "2026-03-01T09:00:00Z",
 			},
 			{
 				ID:           "0195ec00-0032-7000-8000-000000000001",
-				CircleID:     "0195ec00-0021-7000-8000-000000000001",
 				Title:        "固定表示の連絡",
 				Body:         "このお知らせは一覧には出しません。",
 				Notes:        "",
@@ -5032,11 +5129,11 @@ func testConfig() config.Config {
 				IsPublic:     true,
 				ViewableTags: []string{},
 				DocumentIDs:  []string{},
-				PublishedAt:  "2026-03-02T09:00:00Z",
+				CreatedAt:    "2026-03-02T09:00:00Z",
+				UpdatedAt:    "2026-03-02T09:00:00Z",
 			},
 			{
 				ID:           "0195ec00-0034-7000-8000-000000000001",
-				CircleID:     "0195ec00-0022-7000-8000-000000000001",
 				Title:        "展示レイアウト更新",
 				Body:         "Bブロックの展示レイアウトを更新しました。",
 				Notes:        "展示班向けの差し替え指示あり。",
@@ -5044,11 +5141,11 @@ func testConfig() config.Config {
 				IsPublic:     true,
 				ViewableTags: []string{"展示"},
 				DocumentIDs:  []string{"0195ec00-0042-7000-8000-000000000001"},
-				PublishedAt:  "2026-03-03T09:00:00Z",
+				CreatedAt:    "2026-03-03T09:00:00Z",
+				UpdatedAt:    "2026-03-03T09:00:00Z",
 			},
 			{
 				ID:           "0195ec00-0035-7000-8000-000000000001",
-				CircleID:     "0195ec00-0022-7000-8000-000000000001",
 				Title:        "非公開メモ",
 				Body:         "このお知らせは公開されません。",
 				Notes:        "スタッフだけが確認するメモです。",
@@ -5056,7 +5153,8 @@ func testConfig() config.Config {
 				IsPublic:     false,
 				ViewableTags: []string{},
 				DocumentIDs:  []string{"0195ec00-0043-7000-8000-000000000001"},
-				PublishedAt:  "2026-03-04T09:00:00Z",
+				CreatedAt:    "2026-03-04T09:00:00Z",
+				UpdatedAt:    "2026-03-04T09:00:00Z",
 			},
 		},
 		Documents: []config.Document{

@@ -6,14 +6,17 @@ definePage({
   }
 })
 
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watchEffect } from 'vue'
+import { renderSVG } from 'uqr'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import {
   extractAddCircleMemberValidationMessage,
   useAddCircleMemberMutation,
@@ -59,6 +62,33 @@ const invitationUrl = computed(() => {
 const isCurrentUserLeader = computed(() => {
   return membersQuery.data.value?.some((m) => m.userId === currentUserId.value && m.isLeader) ?? false
 })
+
+const invitationQrSvg = shallowRef('')
+watchEffect(() => {
+  const url = invitationUrl.value
+  if (!url) {
+    invitationQrSvg.value = ''
+    return
+  }
+  invitationQrSvg.value = renderSVG(url)
+})
+
+const canShare = computed(
+  () =>
+    Boolean(invitationUrl.value) &&
+    typeof navigator.share === 'function' &&
+    (navigator.canShare?.({ url: invitationUrl.value }) ?? true)
+)
+
+async function handleShare() {
+  try {
+    await navigator.share({ url: invitationUrl.value })
+  } catch (err) {
+    if (err instanceof Error && err.name !== 'AbortError') {
+      errorMessage.value = 'URLの共有に失敗しました。'
+    }
+  }
+}
 
 async function handleCopyUrl() {
   if (!invitationUrl.value) {
@@ -116,11 +146,12 @@ async function handleRemoveMember(userId: string, displayName: string) {
     <BackLink to="/workspace/circles/detail"> 企画情報へ戻る </BackLink>
 
     <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Circle Members</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">企画参加登録 2/3</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">
-        招待リンクの確認やメンバーの管理を行い、人数条件を満たしたら確認画面へ進みます。
-      </p>
+      <SurfaceCardBand borderless>
+        <CircleRegistrationSteps :current-step="2" :requires-member-step="true" />
+        <p class="mt-3 text-sm leading-7 text-muted">
+          招待リンクの確認やメンバーの管理を行い、人数条件を満たしたら確認画面へ進みます。
+        </p>
+      </SurfaceCardBand>
     </SurfaceCard>
 
     <SurfaceCard v-if="detailQuery.data.value">
@@ -142,16 +173,27 @@ async function handleRemoveMember(userId: string, displayName: string) {
         <div class="grid gap-3">
           <p class="text-sm text-muted">このリンクを共有することで、メンバーを招待できます。</p>
           <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>
-          <div v-else class="flex items-center gap-2">
-            <input :value="invitationUrl" type="text" readonly class="flex-1 font-mono text-xs" />
-            <button
-              :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
-              type="button"
-              @click="handleCopyUrl"
-            >
-              {{ copySuccess ? 'コピー完了!' : 'コピー' }}
-            </button>
-          </div>
+          <template v-else>
+            <div class="flex items-center gap-2">
+              <input :value="invitationUrl" type="text" readonly class="flex-1 font-mono text-xs" />
+              <button
+                :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
+                type="button"
+                @click="handleCopyUrl"
+              >
+                {{ copySuccess ? 'コピー完了!' : 'コピー' }}
+              </button>
+              <button
+                v-if="canShare"
+                :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
+                type="button"
+                @click="handleShare"
+              >
+                共有
+              </button>
+            </div>
+            <div v-if="invitationQrSvg" class="flex justify-center" v-html="invitationQrSvg" />
+          </template>
         </div>
       </SettingsRow>
 

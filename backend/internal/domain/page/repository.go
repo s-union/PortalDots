@@ -1,7 +1,6 @@
 package page
 
 import (
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,7 +12,6 @@ import (
 
 type Page struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -21,26 +19,30 @@ type Page struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIDs  []string
-	PublishedAt  string
+	CreatedAt    string
+	UpdatedAt    string
 }
 
 type Repository interface {
-	ListByCircle(circleID string, circleTags []string, query string) []Page
-	ListByCircleForStaff(circleID string, query string) []Page
-	ListPublic(circleTags []string, query string) []Page
-	FindByCircle(circleID string, circleTags []string, pageID string) (Page, bool)
-	FindByCircleForStaff(circleID, pageID string) (Page, bool)
-	FindPublic(circleTags []string, pageID string) (Page, bool)
-	Create(circleID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) Page
-	Update(circleID, pageID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) (Page, bool)
-	SetPinned(circleID, pageID string, isPinned bool) (Page, bool)
-	Delete(circleID, pageID string) bool
+	ListGuest(query string) []Page
+	ListForCircle(circleTags []string, query string) []Page
+	ListForStaff(query string) []Page
+	FindGuest(pageID string) (Page, bool)
+	FindForCircle(circleTags []string, pageID string) (Page, bool)
+	FindForStaff(pageID string) (Page, bool)
+	Create(title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) Page
+	Update(pageID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) (Page, bool)
+	SetPinned(pageID string, isPinned bool) (Page, bool)
+	Delete(pageID string) bool
+	ListReadPageIDs(userID string, pageIDs []string) []string
+	MarkRead(pageID, userID string)
 }
 
 type StaticRepository struct {
 	mu     sync.RWMutex
 	nextID int
 	pages  []Page
+	reads  map[string]map[string]struct{}
 }
 
 func NewStaticRepository(cfg []config.Page) *StaticRepository {
@@ -48,7 +50,6 @@ func NewStaticRepository(cfg []config.Page) *StaticRepository {
 	for _, item := range cfg {
 		pages = append(pages, Page{
 			ID:           item.ID,
-			CircleID:     item.CircleID,
 			Title:        item.Title,
 			Body:         item.Body,
 			Notes:        item.Notes,
@@ -56,151 +57,65 @@ func NewStaticRepository(cfg []config.Page) *StaticRepository {
 			IsPublic:     item.IsPublic,
 			ViewableTags: append([]string{}, item.ViewableTags...),
 			DocumentIDs:  append([]string{}, item.DocumentIDs...),
-			PublishedAt:  item.PublishedAt,
+			CreatedAt:    item.CreatedAt,
+			UpdatedAt:    item.UpdatedAt,
 		})
 	}
+
 	return &StaticRepository{
 		nextID: len(pages) + 1,
 		pages:  pages,
+		reads:  map[string]map[string]struct{}{},
 	}
 }
 
-func (r *StaticRepository) ListByCircle(circleID string, circleTags []string, query string) []Page {
+func (r *StaticRepository) ListGuest(query string) []Page {
+	return r.listPages(query, []string{}, true)
+}
+
+func (r *StaticRepository) ListForCircle(circleTags []string, query string) []Page {
+	return r.listPages(query, circleTags, false)
+}
+
+func (r *StaticRepository) ListForStaff(query string) []Page {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	filtered := make([]Page, 0, len(r.pages))
-	normalizedQuery := strings.TrimSpace(strings.ToLower(query))
-	for _, page := range r.pages {
-		if page.CircleID != circleID {
+	normalizedQuery := normalizePageQuery(query)
+	for _, currentPage := range r.pages {
+		if !matchesPageQuery(currentPage, normalizedQuery) {
 			continue
 		}
-		if page.IsPinned || !page.IsPublic {
-			continue
-		}
-		if !canViewPage(page.ViewableTags, circleTags) {
-			continue
-		}
-		if normalizedQuery != "" {
-			searchTarget := strings.ToLower(page.Title + "\n" + page.Body)
-			if !strings.Contains(searchTarget, normalizedQuery) {
-				continue
-			}
-		}
-		filtered = append(filtered, page)
+		filtered = append(filtered, clonePage(currentPage))
 	}
 
-	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].PublishedAt > filtered[j].PublishedAt
-	})
-
-	return slices.Clone(filtered)
+	sortPages(filtered)
+	return filtered
 }
 
-func (r *StaticRepository) ListByCircleForStaff(circleID string, query string) []Page {
+func (r *StaticRepository) FindGuest(pageID string) (Page, bool) {
+	return r.findPage(pageID, []string{}, true)
+}
+
+func (r *StaticRepository) FindForCircle(circleTags []string, pageID string) (Page, bool) {
+	return r.findPage(pageID, circleTags, false)
+}
+
+func (r *StaticRepository) FindForStaff(pageID string) (Page, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	filtered := make([]Page, 0, len(r.pages))
-	normalizedQuery := strings.TrimSpace(strings.ToLower(query))
-	for _, page := range r.pages {
-		if page.CircleID != circleID {
-			continue
+	for _, currentPage := range r.pages {
+		if currentPage.ID == pageID {
+			return clonePage(currentPage), true
 		}
-		if normalizedQuery != "" {
-			searchTarget := strings.ToLower(page.Title + "\n" + page.Body)
-			if !strings.Contains(searchTarget, normalizedQuery) {
-				continue
-			}
-		}
-		filtered = append(filtered, page)
-	}
-
-	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].PublishedAt > filtered[j].PublishedAt
-	})
-
-	return slices.Clone(filtered)
-}
-
-func (r *StaticRepository) ListPublic(circleTags []string, query string) []Page {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	filtered := make([]Page, 0, len(r.pages))
-	normalizedQuery := strings.TrimSpace(strings.ToLower(query))
-	for _, page := range r.pages {
-		if page.IsPinned || !page.IsPublic {
-			continue
-		}
-		if !canViewPage(page.ViewableTags, circleTags) {
-			continue
-		}
-		if normalizedQuery != "" {
-			searchTarget := strings.ToLower(page.Title + "\n" + page.Body)
-			if !strings.Contains(searchTarget, normalizedQuery) {
-				continue
-			}
-		}
-		filtered = append(filtered, page)
-	}
-
-	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].PublishedAt > filtered[j].PublishedAt
-	})
-
-	return slices.Clone(filtered)
-}
-
-func (r *StaticRepository) FindByCircle(circleID string, circleTags []string, pageID string) (Page, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	for _, page := range r.pages {
-		if page.CircleID != circleID || page.ID != pageID {
-			continue
-		}
-		if page.IsPinned || !page.IsPublic || !canViewPage(page.ViewableTags, circleTags) {
-			return Page{}, false
-		}
-		return clonePage(page), true
-	}
-
-	return Page{}, false
-}
-
-func (r *StaticRepository) FindByCircleForStaff(circleID, pageID string) (Page, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	for _, page := range r.pages {
-		if page.CircleID == circleID && page.ID == pageID {
-			return clonePage(page), true
-		}
-	}
-
-	return Page{}, false
-}
-
-func (r *StaticRepository) FindPublic(circleTags []string, pageID string) (Page, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	for _, page := range r.pages {
-		if page.ID != pageID {
-			continue
-		}
-		if page.IsPinned || !page.IsPublic || !canViewPage(page.ViewableTags, circleTags) {
-			return Page{}, false
-		}
-		return clonePage(page), true
 	}
 
 	return Page{}, false
 }
 
 func (r *StaticRepository) Create(
-	circleID,
 	title,
 	body,
 	notes string,
@@ -212,9 +127,9 @@ func (r *StaticRepository) Create(
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	now := time.Now().UTC().Format(time.RFC3339)
 	page := Page{
 		ID:           "page-generated-" + strconv.Itoa(r.nextID),
-		CircleID:     circleID,
 		Title:        title,
 		Body:         body,
 		Notes:        notes,
@@ -222,7 +137,8 @@ func (r *StaticRepository) Create(
 		IsPublic:     isPublic,
 		ViewableTags: append([]string{}, viewableTags...),
 		DocumentIDs:  append([]string{}, documentIDs...),
-		PublishedAt:  time.Now().UTC().Format(time.RFC3339),
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 	r.nextID++
 	r.pages = append(r.pages, page)
@@ -231,7 +147,6 @@ func (r *StaticRepository) Create(
 }
 
 func (r *StaticRepository) Update(
-	circleID,
 	pageID,
 	title,
 	body,
@@ -245,7 +160,7 @@ func (r *StaticRepository) Update(
 	defer r.mu.Unlock()
 
 	for index := range r.pages {
-		if r.pages[index].CircleID != circleID || r.pages[index].ID != pageID {
+		if r.pages[index].ID != pageID {
 			continue
 		}
 
@@ -256,18 +171,20 @@ func (r *StaticRepository) Update(
 		r.pages[index].IsPinned = isPinned
 		r.pages[index].ViewableTags = append([]string{}, viewableTags...)
 		r.pages[index].DocumentIDs = append([]string{}, documentIDs...)
+		r.pages[index].UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+		delete(r.reads, pageID)
 		return clonePage(r.pages[index]), true
 	}
 
 	return Page{}, false
 }
 
-func (r *StaticRepository) SetPinned(circleID, pageID string, isPinned bool) (Page, bool) {
+func (r *StaticRepository) SetPinned(pageID string, isPinned bool) (Page, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	for index := range r.pages {
-		if r.pages[index].CircleID != circleID || r.pages[index].ID != pageID {
+		if r.pages[index].ID != pageID {
 			continue
 		}
 
@@ -278,26 +195,133 @@ func (r *StaticRepository) SetPinned(circleID, pageID string, isPinned bool) (Pa
 	return Page{}, false
 }
 
-func (r *StaticRepository) Delete(circleID, pageID string) bool {
+func (r *StaticRepository) Delete(pageID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	for index := range r.pages {
-		if r.pages[index].CircleID != circleID || r.pages[index].ID != pageID {
+		if r.pages[index].ID != pageID {
 			continue
 		}
 
 		r.pages = append(r.pages[:index], r.pages[index+1:]...)
+		delete(r.reads, pageID)
 		return true
 	}
 
 	return false
 }
 
+func (r *StaticRepository) ListReadPageIDs(userID string, pageIDs []string) []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	readPageIDs := make([]string, 0, len(pageIDs))
+	for _, pageID := range pageIDs {
+		if users, ok := r.reads[pageID]; ok {
+			if _, read := users[userID]; read {
+				readPageIDs = append(readPageIDs, pageID)
+			}
+		}
+	}
+
+	return readPageIDs
+}
+
+func (r *StaticRepository) MarkRead(pageID, userID string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, currentPage := range r.pages {
+		if currentPage.ID != pageID {
+			continue
+		}
+		if _, ok := r.reads[pageID]; !ok {
+			r.reads[pageID] = map[string]struct{}{}
+		}
+		r.reads[pageID][userID] = struct{}{}
+		return
+	}
+}
+
+func (r *StaticRepository) listPages(query string, circleTags []string, guestOnly bool) []Page {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	filtered := make([]Page, 0, len(r.pages))
+	normalizedQuery := normalizePageQuery(query)
+	for _, currentPage := range r.pages {
+		if currentPage.IsPinned || !currentPage.IsPublic {
+			continue
+		}
+		if guestOnly {
+			if len(currentPage.ViewableTags) > 0 {
+				continue
+			}
+		} else if !canViewPage(currentPage.ViewableTags, circleTags) {
+			continue
+		}
+		if !matchesPageQuery(currentPage, normalizedQuery) {
+			continue
+		}
+		filtered = append(filtered, clonePage(currentPage))
+	}
+
+	sortPages(filtered)
+	return filtered
+}
+
+func (r *StaticRepository) findPage(pageID string, circleTags []string, guestOnly bool) (Page, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, currentPage := range r.pages {
+		if currentPage.ID != pageID {
+			continue
+		}
+		if currentPage.IsPinned || !currentPage.IsPublic {
+			return Page{}, false
+		}
+		if guestOnly {
+			if len(currentPage.ViewableTags) > 0 {
+				return Page{}, false
+			}
+		} else if !canViewPage(currentPage.ViewableTags, circleTags) {
+			return Page{}, false
+		}
+
+		return clonePage(currentPage), true
+	}
+
+	return Page{}, false
+}
+
 func clonePage(page Page) Page {
 	page.ViewableTags = append([]string{}, page.ViewableTags...)
 	page.DocumentIDs = append([]string{}, page.DocumentIDs...)
 	return page
+}
+
+func normalizePageQuery(query string) string {
+	return strings.TrimSpace(strings.ToLower(query))
+}
+
+func matchesPageQuery(page Page, query string) bool {
+	if query == "" {
+		return true
+	}
+
+	searchTarget := strings.ToLower(page.Title + "\n" + page.Body)
+	return strings.Contains(searchTarget, query)
+}
+
+func sortPages(pages []Page) {
+	sort.SliceStable(pages, func(i, j int) bool {
+		if pages[i].UpdatedAt == pages[j].UpdatedAt {
+			return pages[i].ID > pages[j].ID
+		}
+		return pages[i].UpdatedAt > pages[j].UpdatedAt
+	})
 }
 
 func canViewPage(viewableTags []string, circleTags []string) bool {

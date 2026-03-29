@@ -1,6 +1,6 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { createJsonHeaders, $api } from '@/lib/api/client'
+import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, staffMailSchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { useSessionStore } from '@/features/session/store'
@@ -58,6 +58,17 @@ export async function createStaffMail(payload: CreateStaffMailPayload, csrfToken
   )
 }
 
+export async function deleteStaffMails(csrfToken: string) {
+  const response = await fetch(buildApiUrl('/staff/mails'), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: createJsonHeaders(csrfToken)
+  })
+  if (!response.ok) {
+    throw new Error('Failed to delete staff mails')
+  }
+}
+
 export function useStaffMailsQuery(enabled: MaybeRefOrGetter<boolean>) {
   return $api.useQueryData(
     'get',
@@ -83,6 +94,20 @@ export function useCreateStaffMailMutation() {
 
   return useMutation({
     mutationFn: async (payload: CreateStaffMailPayload) => createStaffMail(payload, sessionStore.csrfToken),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['staff', 'mails']
+      })
+    }
+  })
+}
+
+export function useDeleteStaffMailsMutation() {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async () => deleteStaffMails(sessionStore.csrfToken),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['staff', 'mails']

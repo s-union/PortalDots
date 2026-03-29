@@ -141,7 +141,7 @@ func (h *workspaceHandlers) canAccessWorkspaceForm(currentCircle circle.Circle, 
 		return true
 	}
 
-	for _, circleTag := range currentCircle.Tags {
+	for _, circleTag := range effectiveCircleTags(currentCircle, h.participationTypes) {
 		if slices.Contains(formValue.AnswerableTags, circleTag) {
 			return true
 		}

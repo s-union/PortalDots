@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 interface Action {
   label: string
@@ -30,10 +31,10 @@ function actionClasses(variant: Action['variant'] = 'secondary') {
 <template>
   <section class="mx-auto max-w-3xl space-y-6 py-8">
     <SurfaceCard>
-      <div class="border-b border-border px-6 py-5">
+      <SurfaceCardBand>
         <p class="text-sm text-primary">{{ eyebrow }}</p>
         <h2 class="mt-2 text-2xl font-semibold text-body">{{ title }}</h2>
-      </div>
+      </SurfaceCardBand>
 
       <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
         <p>{{ lead }}</p>

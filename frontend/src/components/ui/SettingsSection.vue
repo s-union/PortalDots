@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const { id, title, titleOutside } = defineProps<{
   id?: string
@@ -14,9 +15,9 @@ const { id, title, titleOutside } = defineProps<{
       {{ title }}
     </h2>
     <SurfaceCard>
-      <div v-if="!titleOutside" class="border-b border-border px-6 py-4">
+      <SurfaceCardBand v-if="!titleOutside" class="py-4">
         <h3 class="text-lg font-semibold text-body">{{ title }}</h3>
-      </div>
+      </SurfaceCardBand>
       <div class="divide-y divide-border">
         <slot />
       </div>

@@ -1,81 +1,90 @@
--- name: ListPublicPagesByCircle :many
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+-- name: ListGuestPages :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE circle_id = $1
-  AND is_public = true
+WHERE is_public = true
   AND is_pinned = false
-  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
-  AND ($3 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($3) || '%')
-ORDER BY published_at DESC;
+  AND cardinality(viewable_tags) = 0
+  AND ($1 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($1) || '%')
+ORDER BY updated_at DESC, id DESC;
 
--- name: ListPublicPages :many
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+-- name: ListPagesForCircle :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
 WHERE is_public = true
   AND is_pinned = false
   AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
   AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%')
-ORDER BY published_at DESC;
+ORDER BY updated_at DESC, id DESC;
 
--- name: ListStaffPagesByCircle :many
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+-- name: ListStaffPages :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE circle_id = $1
-  AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%')
-ORDER BY published_at DESC;
+WHERE ($1 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($1) || '%')
+ORDER BY updated_at DESC, id DESC;
 
--- name: GetPublicPageByID :one
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+-- name: GetGuestPageByID :one
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE circle_id = $1
-  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
-  AND id = $3
+WHERE id = $1
   AND is_public = true
   AND is_pinned = false
+  AND cardinality(viewable_tags) = 0
 LIMIT 1;
 
--- name: GetPublicPageByIDGlobal :one
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+-- name: GetPageByIDForCircle :one
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
-  AND id = $2
+WHERE id = $2
   AND is_public = true
   AND is_pinned = false
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
+LIMIT 1;
+
+-- name: GetStaffPageByID :one
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
+FROM pages
+WHERE id = $1
 LIMIT 1;
 
 -- name: CreatePage :one
-INSERT INTO pages (circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at;
-
--- name: GetStaffPageByID :one
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
-FROM pages
-WHERE circle_id = $1
-  AND id = $2
-LIMIT 1;
+INSERT INTO pages (title, body, notes, is_pinned, is_public, viewable_tags, document_ids)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at;
 
 -- name: UpdatePage :one
 UPDATE pages
-SET title = $3,
-    body = $4,
-    notes = $5,
-    is_pinned = $6,
-    is_public = $7,
-    viewable_tags = $8,
-    document_ids = $9
-WHERE circle_id = $1
-  AND id = $2
-RETURNING id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at;
+SET title = $2,
+    body = $3,
+    notes = $4,
+    is_pinned = $5,
+    is_public = $6,
+    viewable_tags = $7,
+    document_ids = $8,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at;
 
 -- name: PatchPagePin :one
 UPDATE pages
-SET is_pinned = $3
-WHERE circle_id = $1
-  AND id = $2
-RETURNING id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at;
+SET is_pinned = $2
+WHERE id = $1
+RETURNING id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at;
 
 -- name: DeletePage :execrows
 DELETE FROM pages
-WHERE circle_id = $1
-  AND id = $2;
+WHERE id = $1;
+
+-- name: DeletePageReads :exec
+DELETE FROM reads
+WHERE page_id = $1;
+
+-- name: ListReadPageIDsByUser :many
+SELECT page_id
+FROM reads
+WHERE user_id = $1
+  AND page_id = ANY($2::text[]);
+
+-- name: UpsertPageRead :exec
+INSERT INTO reads (page_id, user_id)
+VALUES ($1, $2)
+ON CONFLICT (page_id, user_id) DO NOTHING;

@@ -5,6 +5,8 @@ import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useSuspensePublicPageDetailQuery } from '@/features/public-home/api'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 
 const { pageId } = defineProps<{
   pageId: MaybeRefOrGetter<string>
@@ -20,12 +22,13 @@ const page = pageQuery.data
     <SurfaceCard>
       <div class="border-b border-border px-6 py-5">
         <h2 class="text-2xl font-semibold text-body">{{ page.title }}</h2>
-        <div class="mt-3 text-sm text-muted">{{ formatDateTimeUpdated(page.publishedAt) }}</div>
+        <div class="mt-3 text-sm text-muted">{{ formatDateTimeUpdated(page.updatedAt) }}</div>
+        <div v-if="page.isLimited" class="mt-3">
+          <StatusBadge tone="primary" appearance="outlined">限定公開</StatusBadge>
+        </div>
       </div>
       <div class="px-6 py-6">
-        <p class="whitespace-pre-wrap text-sm leading-8 text-body">
-          {{ page.body }}
-        </p>
+        <PageMarkdownContent :source="page.body" />
 
         <div v-if="page.documents && page.documents.length > 0" class="mt-8 border-t border-border pt-6">
           <h3 class="text-base font-semibold text-body">関連する配布資料</h3>

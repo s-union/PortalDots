@@ -21,9 +21,11 @@ type Job struct {
 
 type Repository interface {
 	Enqueue(circleID, createdByUserID, subject, body string, recipients []string) Job
+	ListAll() []Job
 	ListByCircle(circleID string) []Job
 	ListQueued(limit int) []Job
 	MarkSent(id string, deliveredAt time.Time) bool
+	DeleteAll()
 	DeleteByCircle(circleID string)
 }
 
@@ -69,6 +71,18 @@ func (r *MemoryRepository) ListByCircle(circleID string) []Job {
 		if job.CircleID == circleID {
 			jobs = append(jobs, cloneJob(job))
 		}
+	}
+
+	return jobs
+}
+
+func (r *MemoryRepository) ListAll() []Job {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	jobs := make([]Job, 0, len(r.jobs))
+	for _, job := range r.jobs {
+		jobs = append(jobs, cloneJob(job))
 	}
 
 	return jobs
@@ -120,6 +134,13 @@ func (r *MemoryRepository) DeleteByCircle(circleID string) {
 		filtered = append(filtered, job)
 	}
 	r.jobs = filtered
+}
+
+func (r *MemoryRepository) DeleteAll() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.jobs = []Job{}
 }
 
 func cloneJob(job Job) Job {

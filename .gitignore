@@ -47,6 +47,7 @@ yarn-error.log
 pnpm-debug.log
 /frontend/.env
 /backend/.env
+/backend/tmp
 
 # Generated files (do not edit manually)
 /packages/api-client/src/generated/

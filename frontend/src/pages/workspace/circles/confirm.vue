@@ -11,7 +11,9 @@ import { useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import { useCurrentCircleDetailQuery, useSubmitCircleMutation } from '@/features/circles/api'
 import { extractValidationMessage } from '@/lib/api/validation'
 import { buttonVariants } from '@/lib/ui/variants'
@@ -68,9 +70,10 @@ function uploadNames(questionId: string) {
     </BackLink>
 
     <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Circle Registration</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">企画参加登録 3/3</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">入力内容を確認し、問題なければ参加登録を提出してください。</p>
+      <SurfaceCardBand borderless>
+        <CircleRegistrationSteps :current-step="3" :requires-member-step="requiresMemberStep" />
+        <p class="mt-3 text-sm leading-7 text-muted">入力内容を確認し、問題なければ参加登録を提出してください。</p>
+      </SurfaceCardBand>
     </SurfaceCard>
 
     <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>

@@ -79,6 +79,15 @@ func (r *SQLCRepository) FindPublic(documentID string) (Document, bool) {
 	return mapPublicDocumentGlobal(row), true
 }
 
+func (r *SQLCRepository) FindForStaff(documentID string) (Document, bool) {
+	row, err := r.queries.GetStaffDocumentByIDGlobal(context.Background(), documentID)
+	if err != nil {
+		return Document{}, false
+	}
+
+	return mapStaffDocumentByIDGlobal(row), true
+}
+
 func (r *SQLCRepository) FindByCircleForStaff(circleID, documentID string) (Document, bool) {
 	row, err := r.queries.GetStaffDocumentByID(context.Background(), dbgen.GetStaffDocumentByIDParams{
 		CircleID: circleID,
@@ -258,6 +267,25 @@ func mapStaffDocument(row dbgen.ListStaffDocumentsByCircleRow) Document {
 }
 
 func mapPublicDocumentByID(row dbgen.GetPublicDocumentByIDRow) Document {
+	return Document{
+		ID:          row.ID,
+		CircleID:    row.CircleID,
+		Name:        row.Name,
+		Description: row.Description,
+		Notes:       row.Notes,
+		IsPublic:    row.IsPublic,
+		IsImportant: row.IsImportant,
+		Filename:    row.Filename,
+		Extension:   normalizeDocumentExtension(row.Filename),
+		MimeType:    row.MimeType,
+		SizeBytes:   int64(len(row.Content)),
+		CreatedAt:   formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:   formatDocumentTimestamp(row.UpdatedAt),
+		Content:     append([]byte(nil), row.Content...),
+	}
+}
+
+func mapStaffDocumentByIDGlobal(row dbgen.GetStaffDocumentByIDGlobalRow) Document {
 	return Document{
 		ID:          row.ID,
 		CircleID:    row.CircleID,

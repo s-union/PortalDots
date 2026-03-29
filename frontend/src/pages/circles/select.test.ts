@@ -20,8 +20,24 @@ function createQueryPlugin() {
   ]
 }
 
-function buildFetchMock() {
+function buildFetchMock(options?: {
+  circles?: Array<{ id: string; name: string; groupName: string; participationTypeName: string }>
+}) {
   let selected = false
+  const circles = options?.circles ?? [
+    {
+      id: 'circle-a',
+      name: 'デモ企画A',
+      groupName: 'Aブロック',
+      participationTypeName: '模擬店'
+    },
+    {
+      id: 'circle-b',
+      name: 'デモ企画B',
+      groupName: 'Bブロック',
+      participationTypeName: '展示'
+    }
+  ]
 
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     await Promise.resolve()
@@ -55,26 +71,10 @@ function buildFetchMock() {
     }
 
     if (pathname.endsWith('/circles') && method === 'GET') {
-      return new Response(
-        JSON.stringify([
-          {
-            id: 'circle-a',
-            name: 'デモ企画A',
-            groupName: 'Aブロック',
-            participationTypeName: '模擬店'
-          },
-          {
-            id: 'circle-b',
-            name: 'デモ企画B',
-            groupName: 'Bブロック',
-            participationTypeName: '展示'
-          }
-        ]),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
+      return new Response(JSON.stringify(circles), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
     if (pathname.endsWith('/participation-types') && method === 'GET') {
@@ -349,5 +349,40 @@ describe('CircleSelectorPage', () => {
         return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
       })
     ).toBe(false)
+  })
+
+  it('shows an empty message when no circles are selectable', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canCreateCircleRegistration: false
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/circles/select', component: CircleSelectorPage }]
+    })
+    await router.push('/circles/select')
+    await router.isReady()
+
+    vi.stubGlobal('fetch', buildFetchMock({ circles: [] }))
+
+    const wrapper = mount(CircleSelectorPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('該当する企画はありません。')
   })
 })

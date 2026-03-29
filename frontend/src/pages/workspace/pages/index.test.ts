@@ -48,15 +48,23 @@ describe('PagesIndexPage', () => {
     setActivePinia(pinia)
 
     pagesApiMocks.usePagesQuery.mockReturnValue({
-      data: ref([
-        {
-          id: 'page-circle-b-1',
-          title: '展示レイアウト更新',
-          publishedAt: '2026-03-03T09:00:00Z',
-          isLimited: true,
-          isNew: true
-        }
-      ]),
+      data: ref({
+        items: [
+          {
+            id: 'page-circle-b-1',
+            title: '展示レイアウト更新',
+            summary: 'Bブロックの展示レイアウトを更新しました。',
+            createdAt: '2026-03-03T09:00:00Z',
+            updatedAt: '2026-03-03T09:00:00Z',
+            isLimited: true,
+            isNew: true,
+            isUnread: true
+          }
+        ],
+        page: 1,
+        pageSize: 10,
+        total: 1
+      }),
       isPending: ref(false)
     })
 
@@ -74,6 +82,8 @@ describe('PagesIndexPage', () => {
     expect(wrapper.text()).toContain('展示レイアウト更新')
     expect(wrapper.text()).toContain('限定公開')
     expect(wrapper.text()).toContain('NEW')
+    expect(wrapper.text()).toContain('未読')
+    expect(wrapper.text()).toContain('Bブロックの展示レイアウトを更新しました。')
   })
 
   it('updates router query when searching', async () => {
@@ -81,7 +91,12 @@ describe('PagesIndexPage', () => {
     setActivePinia(pinia)
 
     pagesApiMocks.usePagesQuery.mockReturnValue({
-      data: ref([]),
+      data: ref({
+        items: [],
+        page: 1,
+        pageSize: 10,
+        total: 0
+      }),
       isPending: ref(false)
     })
 

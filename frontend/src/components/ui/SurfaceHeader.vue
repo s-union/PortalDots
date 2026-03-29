@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
+
 const { borderless } = defineProps<{
   borderless?: boolean
 }>()
 </script>
 
 <template>
-  <div :class="['px-6 py-4', borderless ? '' : 'border-b border-border']">
+  <SurfaceCardBand class="py-4" :borderless="borderless">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
         <div v-if="$slots.eyebrow" class="text-sm text-primary">
@@ -22,5 +24,5 @@ const { borderless } = defineProps<{
         <slot name="actions" />
       </div>
     </div>
-  </div>
+  </SurfaceCardBand>
 </template>

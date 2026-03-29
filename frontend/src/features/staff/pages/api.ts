@@ -6,27 +6,23 @@ import { extractValidationMessage, parseValidationError } from '@/lib/api/valida
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffPageSummary {
-  circle: {
-    id: string
-    name: string
-  }
   id: string
   title: string
-  publishedAt: string
+  notes: string
+  createdAt: string
+  updatedAt: string
   isPinned: boolean
   isPublic: boolean
-}
-
-export type StaffPageDetail = StaffPageSummary & {
-  body: string
-  notes: string
   viewableTags: string[]
   documentIds: string[]
   documents: StaffPageDocument[]
 }
 
+export type StaffPageDetail = StaffPageSummary & {
+  body: string
+}
+
 export interface MutateStaffPagePayload {
-  circleId: string
   title: string
   body: string
   notes: string
@@ -41,6 +37,11 @@ export interface StaffPageDocument {
   id: string
   name: string
   description: string
+  isImportant: boolean
+  extension: string
+  sizeBytes: number
+  updatedAt: string
+  downloadUrl: string
 }
 
 export async function fetchStaffPages(query = '') {
@@ -284,7 +285,6 @@ export function useDeleteStaffPageMutation(pageId: MaybeRefOrGetter<string>) {
 
 export function useStaffPageForm() {
   return ref<MutateStaffPagePayload>({
-    circleId: '',
     title: '',
     body: '',
     notes: '',

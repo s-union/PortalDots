@@ -9,11 +9,12 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import { useCreateCircleMutation, useParticipationTypeRegistrationFormQuery } from '@/features/circles/api'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
 import { useFormAnswerEditorDraft } from '@/features/forms/answers'
@@ -123,17 +124,16 @@ async function handleSubmit() {
 
 <template>
   <PageLayout>
-    <BackLink to="/">ホームへ戻る</BackLink>
-
     <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Circle Registration</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">企画参加登録 1/3</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">
-        まず企画情報と参加登録フォームの回答を入力します。保存後にメンバー確認または確認画面へ進みます。
-      </p>
-      <p v-if="requestedParticipationTypeId" class="mt-2 text-sm text-muted">
-        URL パラメータで指定された参加種別を自動選択しています。
-      </p>
+      <SurfaceCardBand borderless>
+        <CircleRegistrationSteps :current-step="1" :requires-member-step="requiresMemberStep" />
+        <p class="mt-3 text-sm leading-7 text-muted">
+          まず企画情報と参加登録フォームの回答を入力します。保存後にメンバー確認または確認画面へ進みます。
+        </p>
+        <p v-if="requestedParticipationTypeId" class="mt-2 text-sm text-muted">
+          URL パラメータで指定された参加種別を自動選択しています。
+        </p>
+      </SurfaceCardBand>
     </SurfaceCard>
 
     <AlertMessage v-if="!canCreateCircleRegistration" tone="danger">
@@ -178,7 +178,7 @@ async function handleSubmit() {
               :disabled="!canChangeGroupName"
               name="groupName"
               type="text"
-              placeholder="例: ○○大学○○学部"
+              placeholder="例: ○○サークル"
             />
           </label>
 

@@ -143,7 +143,7 @@ type FormQuestion struct {
 
 type MailJob struct {
 	ID              string
-	CircleID        string
+	CircleID        pgtype.Text
 	Subject         string
 	Body            string
 	Recipients      []string
@@ -155,7 +155,6 @@ type MailJob struct {
 
 type Page struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	IsPinned     bool
@@ -164,6 +163,8 @@ type Page struct {
 	Notes        string
 	ViewableTags []string
 	DocumentIds  []string
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 type ParticipationType struct {
@@ -196,6 +197,12 @@ type Place struct {
 	Notes     string
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
+}
+
+type Read struct {
+	PageID    string
+	UserID    string
+	CreatedAt pgtype.Timestamptz
 }
 
 type Session struct {

@@ -117,15 +117,7 @@ func (h *workspaceHandlers) listCircles(c echo.Context) error {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
-	var (
-		circles []circle.Circle
-		err     error
-	)
-	if hasStaffAccess(currentSession.User.Roles, currentSession.User.Permissions) {
-		circles, err = h.circles.ListForStaff()
-	} else {
-		circles, err = h.circles.ListSelectable(currentSession.User)
-	}
+	circles, err := h.circles.ListSelectable(currentSession.User)
 	if err != nil {
 		return internalError(c)
 	}

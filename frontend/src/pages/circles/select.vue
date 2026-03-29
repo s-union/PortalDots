@@ -76,6 +76,10 @@ watch(
     >
       <LoadingMessage v-if="circlesQuery.isPending.value" />
 
+      <div v-else-if="(circlesQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm leading-7 text-muted">
+        該当する企画はありません。
+      </div>
+
       <div v-else class="divide-y divide-border">
         <button
           v-for="circle in circlesQuery.data.value"

@@ -12,13 +12,12 @@ import (
 )
 
 const createPage = `-- name: CreatePage :one
-INSERT INTO pages (circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+INSERT INTO pages (title, body, notes, is_pinned, is_public, viewable_tags, document_ids)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 `
 
 type CreatePageParams struct {
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -30,7 +29,6 @@ type CreatePageParams struct {
 
 type CreatePageRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -38,12 +36,12 @@ type CreatePageRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) CreatePage(ctx context.Context, arg CreatePageParams) (CreatePageRow, error) {
 	row := q.db.QueryRow(ctx, createPage,
-		arg.CircleID,
 		arg.Title,
 		arg.Body,
 		arg.Notes,
@@ -55,7 +53,6 @@ func (q *Queries) CreatePage(ctx context.Context, arg CreatePageParams) (CreateP
 	var i CreatePageRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Title,
 		&i.Body,
 		&i.Notes,
@@ -63,50 +60,47 @@ func (q *Queries) CreatePage(ctx context.Context, arg CreatePageParams) (CreateP
 		&i.IsPublic,
 		&i.ViewableTags,
 		&i.DocumentIds,
-		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const deletePage = `-- name: DeletePage :execrows
 DELETE FROM pages
-WHERE circle_id = $1
-  AND id = $2
+WHERE id = $1
 `
 
-type DeletePageParams struct {
-	CircleID string
-	ID       string
-}
-
-func (q *Queries) DeletePage(ctx context.Context, arg DeletePageParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deletePage, arg.CircleID, arg.ID)
+func (q *Queries) DeletePage(ctx context.Context, id string) (int64, error) {
+	result, err := q.db.Exec(ctx, deletePage, id)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected(), nil
 }
 
-const getPublicPageByID = `-- name: GetPublicPageByID :one
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+const deletePageReads = `-- name: DeletePageReads :exec
+DELETE FROM reads
+WHERE page_id = $1
+`
+
+func (q *Queries) DeletePageReads(ctx context.Context, pageID string) error {
+	_, err := q.db.Exec(ctx, deletePageReads, pageID)
+	return err
+}
+
+const getGuestPageByID = `-- name: GetGuestPageByID :one
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE circle_id = $1
-  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
-  AND id = $3
+WHERE id = $1
   AND is_public = true
   AND is_pinned = false
+  AND cardinality(viewable_tags) = 0
 LIMIT 1
 `
 
-type GetPublicPageByIDParams struct {
-	CircleID string
-	Column2  []string
-	ID       string
-}
-
-type GetPublicPageByIDRow struct {
+type GetGuestPageByIDRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -114,15 +108,15 @@ type GetPublicPageByIDRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) GetPublicPageByID(ctx context.Context, arg GetPublicPageByIDParams) (GetPublicPageByIDRow, error) {
-	row := q.db.QueryRow(ctx, getPublicPageByID, arg.CircleID, arg.Column2, arg.ID)
-	var i GetPublicPageByIDRow
+func (q *Queries) GetGuestPageByID(ctx context.Context, id string) (GetGuestPageByIDRow, error) {
+	row := q.db.QueryRow(ctx, getGuestPageByID, id)
+	var i GetGuestPageByIDRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Title,
 		&i.Body,
 		&i.Notes,
@@ -130,29 +124,29 @@ func (q *Queries) GetPublicPageByID(ctx context.Context, arg GetPublicPageByIDPa
 		&i.IsPublic,
 		&i.ViewableTags,
 		&i.DocumentIds,
-		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const getPublicPageByIDGlobal = `-- name: GetPublicPageByIDGlobal :one
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+const getPageByIDForCircle = `-- name: GetPageByIDForCircle :one
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
-  AND id = $2
+WHERE id = $2
   AND is_public = true
   AND is_pinned = false
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
 LIMIT 1
 `
 
-type GetPublicPageByIDGlobalParams struct {
+type GetPageByIDForCircleParams struct {
 	Column1 []string
 	ID      string
 }
 
-type GetPublicPageByIDGlobalRow struct {
+type GetPageByIDForCircleRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -160,15 +154,15 @@ type GetPublicPageByIDGlobalRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) GetPublicPageByIDGlobal(ctx context.Context, arg GetPublicPageByIDGlobalParams) (GetPublicPageByIDGlobalRow, error) {
-	row := q.db.QueryRow(ctx, getPublicPageByIDGlobal, arg.Column1, arg.ID)
-	var i GetPublicPageByIDGlobalRow
+func (q *Queries) GetPageByIDForCircle(ctx context.Context, arg GetPageByIDForCircleParams) (GetPageByIDForCircleRow, error) {
+	row := q.db.QueryRow(ctx, getPageByIDForCircle, arg.Column1, arg.ID)
+	var i GetPageByIDForCircleRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Title,
 		&i.Body,
 		&i.Notes,
@@ -176,27 +170,21 @@ func (q *Queries) GetPublicPageByIDGlobal(ctx context.Context, arg GetPublicPage
 		&i.IsPublic,
 		&i.ViewableTags,
 		&i.DocumentIds,
-		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getStaffPageByID = `-- name: GetStaffPageByID :one
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE circle_id = $1
-  AND id = $2
+WHERE id = $1
 LIMIT 1
 `
 
-type GetStaffPageByIDParams struct {
-	CircleID string
-	ID       string
-}
-
 type GetStaffPageByIDRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -204,15 +192,15 @@ type GetStaffPageByIDRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) GetStaffPageByID(ctx context.Context, arg GetStaffPageByIDParams) (GetStaffPageByIDRow, error) {
-	row := q.db.QueryRow(ctx, getStaffPageByID, arg.CircleID, arg.ID)
+func (q *Queries) GetStaffPageByID(ctx context.Context, id string) (GetStaffPageByIDRow, error) {
+	row := q.db.QueryRow(ctx, getStaffPageByID, id)
 	var i GetStaffPageByIDRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Title,
 		&i.Body,
 		&i.Notes,
@@ -220,29 +208,83 @@ func (q *Queries) GetStaffPageByID(ctx context.Context, arg GetStaffPageByIDPara
 		&i.IsPublic,
 		&i.ViewableTags,
 		&i.DocumentIds,
-		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const listPublicPages = `-- name: ListPublicPages :many
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+const listGuestPages = `-- name: ListGuestPages :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
+FROM pages
+WHERE is_public = true
+  AND is_pinned = false
+  AND cardinality(viewable_tags) = 0
+  AND ($1 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($1) || '%')
+ORDER BY updated_at DESC, id DESC
+`
+
+type ListGuestPagesRow struct {
+	ID           string
+	Title        string
+	Body         string
+	Notes        string
+	IsPinned     bool
+	IsPublic     bool
+	ViewableTags []string
+	DocumentIds  []string
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+func (q *Queries) ListGuestPages(ctx context.Context, dollar_1 interface{}) ([]ListGuestPagesRow, error) {
+	rows, err := q.db.Query(ctx, listGuestPages, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListGuestPagesRow
+	for rows.Next() {
+		var i ListGuestPagesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Body,
+			&i.Notes,
+			&i.IsPinned,
+			&i.IsPublic,
+			&i.ViewableTags,
+			&i.DocumentIds,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPagesForCircle = `-- name: ListPagesForCircle :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
 WHERE is_public = true
   AND is_pinned = false
   AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
   AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%')
-ORDER BY published_at DESC
+ORDER BY updated_at DESC, id DESC
 `
 
-type ListPublicPagesParams struct {
+type ListPagesForCircleParams struct {
 	Column1 []string
 	Column2 interface{}
 }
 
-type ListPublicPagesRow struct {
+type ListPagesForCircleRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -250,21 +292,21 @@ type ListPublicPagesRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) ListPublicPages(ctx context.Context, arg ListPublicPagesParams) ([]ListPublicPagesRow, error) {
-	rows, err := q.db.Query(ctx, listPublicPages, arg.Column1, arg.Column2)
+func (q *Queries) ListPagesForCircle(ctx context.Context, arg ListPagesForCircleParams) ([]ListPagesForCircleRow, error) {
+	rows, err := q.db.Query(ctx, listPagesForCircle, arg.Column1, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListPublicPagesRow
+	var items []ListPagesForCircleRow
 	for rows.Next() {
-		var i ListPublicPagesRow
+		var i ListPagesForCircleRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.CircleID,
 			&i.Title,
 			&i.Body,
 			&i.Notes,
@@ -272,7 +314,8 @@ func (q *Queries) ListPublicPages(ctx context.Context, arg ListPublicPagesParams
 			&i.IsPublic,
 			&i.ViewableTags,
 			&i.DocumentIds,
-			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -284,60 +327,31 @@ func (q *Queries) ListPublicPages(ctx context.Context, arg ListPublicPagesParams
 	return items, nil
 }
 
-const listPublicPagesByCircle = `-- name: ListPublicPagesByCircle :many
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
-FROM pages
-WHERE circle_id = $1
-  AND is_public = true
-  AND is_pinned = false
-  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
-  AND ($3 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($3) || '%')
-ORDER BY published_at DESC
+const listReadPageIDsByUser = `-- name: ListReadPageIDsByUser :many
+SELECT page_id
+FROM reads
+WHERE user_id = $1
+  AND page_id = ANY($2::text[])
 `
 
-type ListPublicPagesByCircleParams struct {
-	CircleID string
-	Column2  []string
-	Column3  interface{}
+type ListReadPageIDsByUserParams struct {
+	UserID  string
+	Column2 []string
 }
 
-type ListPublicPagesByCircleRow struct {
-	ID           string
-	CircleID     string
-	Title        string
-	Body         string
-	Notes        string
-	IsPinned     bool
-	IsPublic     bool
-	ViewableTags []string
-	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
-}
-
-func (q *Queries) ListPublicPagesByCircle(ctx context.Context, arg ListPublicPagesByCircleParams) ([]ListPublicPagesByCircleRow, error) {
-	rows, err := q.db.Query(ctx, listPublicPagesByCircle, arg.CircleID, arg.Column2, arg.Column3)
+func (q *Queries) ListReadPageIDsByUser(ctx context.Context, arg ListReadPageIDsByUserParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listReadPageIDsByUser, arg.UserID, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListPublicPagesByCircleRow
+	var items []string
 	for rows.Next() {
-		var i ListPublicPagesByCircleRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.CircleID,
-			&i.Title,
-			&i.Body,
-			&i.Notes,
-			&i.IsPinned,
-			&i.IsPublic,
-			&i.ViewableTags,
-			&i.DocumentIds,
-			&i.PublishedAt,
-		); err != nil {
+		var page_id string
+		if err := rows.Scan(&page_id); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, page_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -345,22 +359,15 @@ func (q *Queries) ListPublicPagesByCircle(ctx context.Context, arg ListPublicPag
 	return items, nil
 }
 
-const listStaffPagesByCircle = `-- name: ListStaffPagesByCircle :many
-SELECT id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+const listStaffPages = `-- name: ListStaffPages :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
-WHERE circle_id = $1
-  AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%')
-ORDER BY published_at DESC
+WHERE ($1 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($1) || '%')
+ORDER BY updated_at DESC, id DESC
 `
 
-type ListStaffPagesByCircleParams struct {
-	CircleID string
-	Column2  interface{}
-}
-
-type ListStaffPagesByCircleRow struct {
+type ListStaffPagesRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -368,21 +375,21 @@ type ListStaffPagesByCircleRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) ListStaffPagesByCircle(ctx context.Context, arg ListStaffPagesByCircleParams) ([]ListStaffPagesByCircleRow, error) {
-	rows, err := q.db.Query(ctx, listStaffPagesByCircle, arg.CircleID, arg.Column2)
+func (q *Queries) ListStaffPages(ctx context.Context, dollar_1 interface{}) ([]ListStaffPagesRow, error) {
+	rows, err := q.db.Query(ctx, listStaffPages, dollar_1)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListStaffPagesByCircleRow
+	var items []ListStaffPagesRow
 	for rows.Next() {
-		var i ListStaffPagesByCircleRow
+		var i ListStaffPagesRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.CircleID,
 			&i.Title,
 			&i.Body,
 			&i.Notes,
@@ -390,7 +397,8 @@ func (q *Queries) ListStaffPagesByCircle(ctx context.Context, arg ListStaffPages
 			&i.IsPublic,
 			&i.ViewableTags,
 			&i.DocumentIds,
-			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -404,21 +412,18 @@ func (q *Queries) ListStaffPagesByCircle(ctx context.Context, arg ListStaffPages
 
 const patchPagePin = `-- name: PatchPagePin :one
 UPDATE pages
-SET is_pinned = $3
-WHERE circle_id = $1
-  AND id = $2
-RETURNING id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+SET is_pinned = $2
+WHERE id = $1
+RETURNING id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 `
 
 type PatchPagePinParams struct {
-	CircleID string
 	ID       string
 	IsPinned bool
 }
 
 type PatchPagePinRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -426,15 +431,15 @@ type PatchPagePinRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) PatchPagePin(ctx context.Context, arg PatchPagePinParams) (PatchPagePinRow, error) {
-	row := q.db.QueryRow(ctx, patchPagePin, arg.CircleID, arg.ID, arg.IsPinned)
+	row := q.db.QueryRow(ctx, patchPagePin, arg.ID, arg.IsPinned)
 	var i PatchPagePinRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Title,
 		&i.Body,
 		&i.Notes,
@@ -442,27 +447,27 @@ func (q *Queries) PatchPagePin(ctx context.Context, arg PatchPagePinParams) (Pat
 		&i.IsPublic,
 		&i.ViewableTags,
 		&i.DocumentIds,
-		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const updatePage = `-- name: UpdatePage :one
 UPDATE pages
-SET title = $3,
-    body = $4,
-    notes = $5,
-    is_pinned = $6,
-    is_public = $7,
-    viewable_tags = $8,
-    document_ids = $9
-WHERE circle_id = $1
-  AND id = $2
-RETURNING id, circle_id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, published_at
+SET title = $2,
+    body = $3,
+    notes = $4,
+    is_pinned = $5,
+    is_public = $6,
+    viewable_tags = $7,
+    document_ids = $8,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 `
 
 type UpdatePageParams struct {
-	CircleID     string
 	ID           string
 	Title        string
 	Body         string
@@ -475,7 +480,6 @@ type UpdatePageParams struct {
 
 type UpdatePageRow struct {
 	ID           string
-	CircleID     string
 	Title        string
 	Body         string
 	Notes        string
@@ -483,12 +487,12 @@ type UpdatePageRow struct {
 	IsPublic     bool
 	ViewableTags []string
 	DocumentIds  []string
-	PublishedAt  pgtype.Timestamptz
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) UpdatePage(ctx context.Context, arg UpdatePageParams) (UpdatePageRow, error) {
 	row := q.db.QueryRow(ctx, updatePage,
-		arg.CircleID,
 		arg.ID,
 		arg.Title,
 		arg.Body,
@@ -501,7 +505,6 @@ func (q *Queries) UpdatePage(ctx context.Context, arg UpdatePageParams) (UpdateP
 	var i UpdatePageRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Title,
 		&i.Body,
 		&i.Notes,
@@ -509,7 +512,24 @@ func (q *Queries) UpdatePage(ctx context.Context, arg UpdatePageParams) (UpdateP
 		&i.IsPublic,
 		&i.ViewableTags,
 		&i.DocumentIds,
-		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const upsertPageRead = `-- name: UpsertPageRead :exec
+INSERT INTO reads (page_id, user_id)
+VALUES ($1, $2)
+ON CONFLICT (page_id, user_id) DO NOTHING
+`
+
+type UpsertPageReadParams struct {
+	PageID string
+	UserID string
+}
+
+func (q *Queries) UpsertPageRead(ctx context.Context, arg UpsertPageReadParams) error {
+	_, err := q.db.Exec(ctx, upsertPageRead, arg.PageID, arg.UserID)
+	return err
 }

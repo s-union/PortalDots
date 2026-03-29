@@ -39,6 +39,12 @@ WHERE circle_id = $1
   AND id = $2
 LIMIT 1;
 
+-- name: GetStaffDocumentByIDGlobal :one
+SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE id = $1
+LIMIT 1;
+
 -- name: CreateStaffDocument :one
 INSERT INTO documents (circle_id, name, description, notes, is_public, is_important, filename, mime_type, content)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)

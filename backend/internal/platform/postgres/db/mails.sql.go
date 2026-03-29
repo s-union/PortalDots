@@ -18,7 +18,7 @@ RETURNING id, circle_id, subject, body, recipients, status, created_by_user_id, 
 `
 
 type CreateMailJobParams struct {
-	CircleID        string
+	CircleID        pgtype.Text
 	Subject         string
 	Body            string
 	Recipients      []string
@@ -48,14 +48,59 @@ func (q *Queries) CreateMailJob(ctx context.Context, arg CreateMailJobParams) (M
 	return i, err
 }
 
+const deleteMailJobs = `-- name: DeleteMailJobs :exec
+DELETE FROM mail_jobs
+`
+
+func (q *Queries) DeleteMailJobs(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteMailJobs)
+	return err
+}
+
 const deleteMailJobsByCircle = `-- name: DeleteMailJobsByCircle :exec
 DELETE FROM mail_jobs
 WHERE circle_id = $1
 `
 
-func (q *Queries) DeleteMailJobsByCircle(ctx context.Context, circleID string) error {
+func (q *Queries) DeleteMailJobsByCircle(ctx context.Context, circleID pgtype.Text) error {
 	_, err := q.db.Exec(ctx, deleteMailJobsByCircle, circleID)
 	return err
+}
+
+const listMailJobs = `-- name: ListMailJobs :many
+SELECT id, circle_id, subject, body, recipients, status, created_by_user_id, created_at, delivered_at
+FROM mail_jobs
+ORDER BY created_at DESC, id DESC
+`
+
+func (q *Queries) ListMailJobs(ctx context.Context) ([]MailJob, error) {
+	rows, err := q.db.Query(ctx, listMailJobs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MailJob
+	for rows.Next() {
+		var i MailJob
+		if err := rows.Scan(
+			&i.ID,
+			&i.CircleID,
+			&i.Subject,
+			&i.Body,
+			&i.Recipients,
+			&i.Status,
+			&i.CreatedByUserID,
+			&i.CreatedAt,
+			&i.DeliveredAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listMailJobsByCircle = `-- name: ListMailJobsByCircle :many
@@ -65,7 +110,7 @@ WHERE circle_id = $1
 ORDER BY created_at DESC, id DESC
 `
 
-func (q *Queries) ListMailJobsByCircle(ctx context.Context, circleID string) ([]MailJob, error) {
+func (q *Queries) ListMailJobsByCircle(ctx context.Context, circleID pgtype.Text) ([]MailJob, error) {
 	rows, err := q.db.Query(ctx, listMailJobsByCircle, circleID)
 	if err != nil {
 		return nil, err

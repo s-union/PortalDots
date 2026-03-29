@@ -485,7 +485,7 @@ paths:
   /staff/pages:
     get:
       operationId: getStaffPages
-      summary: Return current-circle pages visible from staff mode
+      summary: Return globally managed notices from staff mode
       parameters:
         - in: query
           name: query
@@ -501,28 +501,63 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, title, publishedAt, isPinned, isPublic]
+                  required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                   properties:
                     id:
                       type: string
                     title:
                       type: string
-                    publishedAt:
+                    notes:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                    updatedAt:
                       type: string
                       format: date-time
                     isPinned:
                       type: boolean
                     isPublic:
                       type: boolean
+                    viewableTags:
+                      type: array
+                      items:
+                        type: string
+                    documentIds:
+                      type: array
+                      items:
+                        type: string
+                    documents:
+                      type: array
+                      items:
+                        type: object
+                        required: [id, name, description, isImportant, extension, sizeBytes, updatedAt, downloadUrl]
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          description:
+                            type: string
+                          isImportant:
+                            type: boolean
+                          extension:
+                            type: string
+                          sizeBytes:
+                            type: integer
+                            format: int64
+                          updatedAt:
+                            type: string
+                            format: date-time
+                          downloadUrl:
+                            type: string
         "401":
           description: Unauthenticated
         "403":
           description: Staff verification is required
-        "409":
-          description: Current circle is not selected
     post:
       operationId: postStaffPages
-      summary: Create a page in the current circle from staff mode
+      summary: Create a globally managed notice from staff mode
       requestBody:
         required: true
         content:
@@ -560,31 +595,66 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, publishedAt, isPinned, isPublic]
+                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
                   title:
                     type: string
-                  publishedAt:
+                  notes:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
                     type: string
                     format: date-time
                   isPinned:
                     type: boolean
                   isPublic:
                     type: boolean
+                  viewableTags:
+                    type: array
+                    items:
+                      type: string
+                  documentIds:
+                    type: array
+                    items:
+                      type: string
+                  documents:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, description, isImportant, extension, sizeBytes, updatedAt, downloadUrl]
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        isImportant:
+                          type: boolean
+                        extension:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          format: int64
+                        updatedAt:
+                          type: string
+                          format: date-time
+                        downloadUrl:
+                          type: string
         "401":
           description: Unauthenticated
         "403":
           description: Staff verification is required
-        "409":
-          description: Current circle is not selected
         "422":
           description: Validation error
   /staff/pages/export.csv:
     get:
       operationId: getStaffPagesExportCsv
-      summary: Export current-circle pages from staff mode as CSV
+      summary: Export globally managed notices from staff mode as CSV
       responses:
         "200":
           description: Staff pages CSV
@@ -597,8 +667,6 @@ paths:
           description: Unauthenticated
         "403":
           description: Staff verification is required
-        "409":
-          description: Current circle is not selected
   /staff/pages/{pageID}:
     parameters:
       - in: path
@@ -608,7 +676,7 @@ paths:
           type: string
     get:
       operationId: getStaffPageById
-      summary: Return a page in the current circle from staff mode
+      summary: Return a globally managed notice from staff mode
       responses:
         "200":
           description: Staff page detail
@@ -617,7 +685,7 @@ paths:
               schema:
                 type: object
                 required:
-                  [id, title, body, notes, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                  [id, title, body, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -627,7 +695,10 @@ paths:
                     type: string
                   notes:
                     type: string
-                  publishedAt:
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
                     type: string
                     format: date-time
                   isPinned:
@@ -672,11 +743,9 @@ paths:
           description: Staff verification is required
         "404":
           description: Page not found
-        "409":
-          description: Current circle is not selected
     put:
       operationId: putStaffPageById
-      summary: Update a page in the current circle from staff mode
+      summary: Update a globally managed notice from staff mode
       requestBody:
         required: true
         content:
@@ -714,32 +783,67 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, publishedAt, isPinned, isPublic]
+                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
                   title:
                     type: string
-                  publishedAt:
+                  notes:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
                     type: string
                     format: date-time
                   isPinned:
                     type: boolean
                   isPublic:
                     type: boolean
+                  viewableTags:
+                    type: array
+                    items:
+                      type: string
+                  documentIds:
+                    type: array
+                    items:
+                      type: string
+                  documents:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, description, isImportant, extension, sizeBytes, updatedAt, downloadUrl]
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        isImportant:
+                          type: boolean
+                        extension:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          format: int64
+                        updatedAt:
+                          type: string
+                          format: date-time
+                        downloadUrl:
+                          type: string
         "401":
           description: Unauthenticated
         "403":
           description: Staff verification is required
         "404":
           description: Page not found
-        "409":
-          description: Current circle is not selected
         "422":
           description: Validation error
     delete:
       operationId: deleteStaffPageById
-      summary: Delete a page in the current circle from staff mode
+      summary: Delete a globally managed notice from staff mode
       responses:
         "204":
           description: Page deleted
@@ -749,8 +853,6 @@ paths:
           description: Staff verification is required
         "404":
           description: Page not found
-        "409":
-          description: Current circle is not selected
   /staff/pages/{pageID}/pin:
     parameters:
       - in: path
@@ -760,7 +862,7 @@ paths:
           type: string
     patch:
       operationId: patchStaffPagePin
-      summary: Update page pin status in the current circle from staff mode
+      summary: Update global notice pin status from staff mode
       requestBody:
         required: true
         content:
@@ -777,19 +879,56 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, publishedAt, isPinned, isPublic]
+                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
                   title:
                     type: string
-                  publishedAt:
+                  notes:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
                     type: string
                     format: date-time
                   isPinned:
                     type: boolean
                   isPublic:
                     type: boolean
+                  viewableTags:
+                    type: array
+                    items:
+                      type: string
+                  documentIds:
+                    type: array
+                    items:
+                      type: string
+                  documents:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, description, isImportant, extension, sizeBytes, updatedAt, downloadUrl]
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        isImportant:
+                          type: boolean
+                        extension:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          format: int64
+                        updatedAt:
+                          type: string
+                          format: date-time
+                        downloadUrl:
+                          type: string
         "401":
           description: Unauthenticated
         "403":
@@ -5063,7 +5202,7 @@ paths:
   /staff/mails:
     get:
       operationId: getStaffMails
-      summary: Return queued and sent staff mails for the current circle
+      summary: Return queued and sent staff mails from the global mail queue
       responses:
         "200":
           description: Staff mail list
@@ -5073,8 +5212,16 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, subject, body, recipients, status, createdAt, deliveredAt]
+                  required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
                   properties:
+                    circle:
+                      type: object
+                      required: [id, name]
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
                     id:
                       type: string
                     subject:
@@ -5096,19 +5243,29 @@ paths:
           description: Unauthenticated
         "403":
           description: Staff verification is required
-        "409":
-          description: Current circle is not selected
+    delete:
+      operationId: deleteStaffMails
+      summary: Delete all queued and sent staff mails from the global mail queue
+      responses:
+        "204":
+          description: Staff mails deleted
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
     post:
       operationId: postStaffMails
-      summary: Enqueue a staff mail for the current circle
+      summary: Enqueue a manual staff mail for a selected circle
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [subject, body, recipients]
+              required: [circleId, subject, body, recipients]
               properties:
+                circleId:
+                  type: string
                 subject:
                   type: string
                 body:
@@ -5124,8 +5281,16 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, subject, body, recipients, status, createdAt, deliveredAt]
+                required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
                 properties:
+                  circle:
+                    type: object
+                    required: [id, name]
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
                   id:
                     type: string
                   subject:
@@ -5147,8 +5312,6 @@ paths:
           description: Unauthenticated
         "403":
           description: Staff verification is required
-        "409":
-          description: Current circle is not selected
         "422":
           description: Validation error
   /circles:
@@ -6568,30 +6731,64 @@ paths:
   /pages:
     get:
       operationId: getPages
-      summary: Return pages visible in the current circle context
+      summary: Return notices visible for the currently selected circle
       parameters:
         - in: query
           name: query
           required: false
           schema:
             type: string
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
       responses:
         "200":
           description: Page list
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  required: [id, title, publishedAt]
-                  properties:
-                    id:
-                      type: string
-                    title:
-                      type: string
-                    publishedAt:
-                      type: string
+                type: object
+                required: [items, page, pageSize, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, title, summary, isLimited, isNew, isUnread, createdAt, updatedAt]
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        summary:
+                          type: string
+                        isLimited:
+                          type: boolean
+                        isNew:
+                          type: boolean
+                        isUnread:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  total:
+                    type: integer
         "401":
           description: Unauthenticated
         "409":
@@ -6613,7 +6810,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, body, publishedAt, documents]
+                required: [id, title, body, isLimited, createdAt, updatedAt, documents]
                 properties:
                   id:
                     type: string
@@ -6621,8 +6818,14 @@ paths:
                     type: string
                   body:
                     type: string
-                  publishedAt:
+                  isLimited:
+                    type: boolean
+                  createdAt:
                     type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
                   documents:
                     type: array
                     items:
@@ -6775,7 +6978,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [id, title, body, publishedAt, isLimited, documents]
+                      required: [id, title, body, createdAt, updatedAt, isLimited, isNew, documents]
                       properties:
                         id:
                           type: string
@@ -6783,10 +6986,15 @@ paths:
                           type: string
                         body:
                           type: string
-                        publishedAt:
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
                           type: string
                           format: date-time
                         isLimited:
+                          type: boolean
+                        isNew:
                           type: boolean
                         documents:
                           type: array
@@ -6889,7 +7097,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [id, title, summary, publishedAt, isLimited]
+                      required: [id, title, summary, createdAt, updatedAt, isLimited, isNew]
                       properties:
                         id:
                           type: string
@@ -6897,10 +7105,15 @@ paths:
                           type: string
                         summary:
                           type: string
-                        publishedAt:
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
                           type: string
                           format: date-time
                         isLimited:
+                          type: boolean
+                        isNew:
                           type: boolean
                   documents:
                     type: array
@@ -6941,28 +7154,63 @@ paths:
     get:
       operationId: listPublicPages
       summary: Return the guest page list
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
       responses:
         "200":
           description: Public page list
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  required: [id, title, summary, publishedAt, isLimited]
-                  properties:
-                    id:
-                      type: string
-                    title:
-                      type: string
-                    summary:
-                      type: string
-                    publishedAt:
-                      type: string
-                      format: date-time
-                    isLimited:
-                      type: boolean
+                type: object
+                required: [items, page, pageSize, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, title, summary, isLimited, isNew, isUnread, createdAt, updatedAt]
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        summary:
+                          type: string
+                        isLimited:
+                          type: boolean
+                        isNew:
+                          type: boolean
+                        isUnread:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  total:
+                    type: integer
   /public/pages/{pageID}:
     get:
       operationId: getPublicPage
@@ -6980,7 +7228,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, body, publishedAt, documents]
+                required: [id, title, body, isLimited, createdAt, updatedAt, documents]
                 properties:
                   id:
                     type: string
@@ -6988,7 +7236,12 @@ paths:
                     type: string
                   body:
                     type: string
-                  publishedAt:
+                  isLimited:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
                     type: string
                     format: date-time
                   documents:

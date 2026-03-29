@@ -35,14 +35,11 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	circles, circlesByID, err := listStaffManagedCircles(h.circles)
+	_, circlesByID, err := listStaffManagedCircles(h.circles)
 	if err != nil {
 		return internalError(c)
 	}
-	jobs := make([]mailqueue.Job, 0)
-	for _, currentCircle := range circles {
-		jobs = append(jobs, h.mails.ListByCircle(currentCircle.ID)...)
-	}
+	jobs := h.mails.ListAll()
 	sort.SliceStable(jobs, func(i, j int) bool {
 		if jobs[i].CreatedAt == jobs[j].CreatedAt {
 			return jobs[i].ID > jobs[j].ID
@@ -55,6 +52,26 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+func (h *staffAdminHandlers) deleteStaffMails(c echo.Context) error {
+	_, currentSession, status, ok := h.requireStaffCapability(c, canUseMailQueue)
+	if !ok {
+		return statusError(c, status)
+	}
+
+	h.mails.DeleteAll()
+	recordActivity(
+		h.activities,
+		currentSession.User.ID,
+		"staff.mail.deleted_all",
+		"mail_job",
+		"",
+		"",
+		"staff がメールキューを全件キャンセルしました",
+	)
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
