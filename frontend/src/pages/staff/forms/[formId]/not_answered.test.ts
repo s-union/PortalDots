@@ -137,7 +137,8 @@ describe('StaffFormNotAnsweredPage', () => {
 
     const links = wrapper.findAllComponents({ name: 'RouterLink' })
     const circleLink = links.find((link) => link.props('to') === '/staff/circles/circle-a')
-    expect(circleLink?.text()).toContain('企画ID: circle-a')
+    expect(circleLink?.text()).toContain('デモ企画A')
+    expect(circleLink?.text()).not.toContain('circle-a')
 
     await circleLink?.trigger('click')
     await flushPromises()

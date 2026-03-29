@@ -72,6 +72,15 @@ describe('StaffParticipationTypesIndexPage', () => {
           return jsonResponse({ allowed: true, authorized: true })
         }
 
+        if (pathname.endsWith('/staff/tags') && method === 'GET') {
+          return jsonResponse([
+            { id: 'tag-food', name: '模擬店' },
+            { id: 'tag-exhibit', name: '展示' },
+            { id: 'tag-stage', name: 'ステージ' },
+            { id: 'tag-sound', name: '音響' }
+          ])
+        }
+
         if (pathname.endsWith('/staff/participation-types') && method === 'GET') {
           return jsonResponse(
             created
@@ -145,7 +154,18 @@ describe('StaffParticipationTypesIndexPage', () => {
     await wrapper.get('textarea[name="description"]').setValue('ステージ企画向けの参加種別です。')
     await wrapper.get('input[name="usersCountMin"]').setValue('2')
     await wrapper.get('input[name="usersCountMax"]').setValue('8')
-    await wrapper.get('textarea[name="tags"]').setValue('ステージ\n音響')
+    await wrapper.get('input[name="tags"]').setValue('ステ')
+    const stageTagButton = wrapper.findAll('button').find((button) => button.text() === 'ステージ')
+    if (!stageTagButton) {
+      throw new Error('stage tag button not found')
+    }
+    await stageTagButton.trigger('click')
+    await wrapper.get('input[name="tags"]').setValue('音')
+    const soundTagButton = wrapper.findAll('button').find((button) => button.text() === '音響')
+    if (!soundTagButton) {
+      throw new Error('sound tag button not found')
+    }
+    await soundTagButton.trigger('click')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 

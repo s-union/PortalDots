@@ -33,11 +33,11 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
         ARRAY[]::text[]
     )::text[] AS leader_circle_ids
 FROM users
@@ -81,11 +81,11 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
         ARRAY[]::text[]
     )::text[] AS leader_circle_ids
 FROM users
@@ -254,11 +254,11 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
         ARRAY[]::text[]
     )::text[] AS leader_circle_ids
 FROM users
@@ -298,11 +298,11 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
         ARRAY[]::text[]
     )::text[] AS leader_circle_ids
 FROM users
@@ -310,7 +310,7 @@ LEFT JOIN user_login_ids ON user_login_ids.user_id = users.id
 LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
-WHERE circle_user.circle_id = ANY($1::text[])
+WHERE circle_user.circle_id = ANY($1::uuid[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified
@@ -342,7 +342,7 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids
 FROM users
@@ -351,7 +351,7 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.is_verified = true
-  AND circle_user.circle_id = ANY($1::text[])
+  AND circle_user.circle_id = ANY($1::uuid[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified
@@ -383,7 +383,7 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids
 FROM users
@@ -393,7 +393,7 @@ LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.is_verified = true
   AND circle_user.is_leader = true
-  AND circle_user.circle_id = ANY($1::text[])
+  AND circle_user.circle_id = ANY($1::uuid[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified
@@ -425,7 +425,7 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids
 FROM users
@@ -434,7 +434,7 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE circle_user.is_leader = true
-  AND circle_user.circle_id = ANY($1::text[])
+  AND circle_user.circle_id = ANY($1::uuid[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified
@@ -466,11 +466,11 @@ SELECT
         ARRAY[]::text[]
     )::text[] AS permissions,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL),
         ARRAY[]::text[]
     )::text[] AS circle_ids,
     COALESCE(
-        array_agg(DISTINCT circle_user.circle_id) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
+        array_agg(DISTINCT circle_user.circle_id::text) FILTER (WHERE circle_user.circle_id IS NOT NULL AND circle_user.is_leader),
         ARRAY[]::text[]
     )::text[] AS leader_circle_ids
 FROM users

@@ -181,9 +181,16 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/staff/circles/[circleId]': RouteRecordInfo<
-      '/staff/circles/[circleId]',
+    '/staff/circles/[circleId]/': RouteRecordInfo<
+      '/staff/circles/[circleId]/',
       '/staff/circles/:circleId',
+      { circleId: ParamValue<true> },
+      { circleId: ParamValue<false> },
+      | never
+    >,
+    '/staff/circles/[circleId]/email': RouteRecordInfo<
+      '/staff/circles/[circleId]/email',
+      '/staff/circles/:circleId/email',
       { circleId: ParamValue<true> },
       { circleId: ParamValue<false> },
       | never
@@ -686,9 +693,15 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
-    'src/pages/staff/circles/[circleId].vue': {
+    'src/pages/staff/circles/[circleId]/index.vue': {
       routes:
-        | '/staff/circles/[circleId]'
+        | '/staff/circles/[circleId]/'
+      views:
+        | never
+    }
+    'src/pages/staff/circles/[circleId]/email.vue': {
+      routes:
+        | '/staff/circles/[circleId]/email'
       views:
         | never
     }

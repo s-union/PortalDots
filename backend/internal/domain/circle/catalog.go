@@ -80,6 +80,8 @@ type Catalog interface {
 	DeleteForUser(user *auth.User, circleID string) error
 	Submit(user *auth.User, circleID string) (Circle, error)
 	ListMembers(circleID string) ([]CircleMember, error)
+	AddMemberAsStaff(circleID, targetUserID, targetDisplayName string) error
+	RemoveMemberAsStaff(circleID, targetUserID string) error
 	AddMember(requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error
 	RemoveMember(requester *auth.User, circleID, targetUserID string) error
 	RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error)
@@ -311,6 +313,60 @@ func (c *StaticCatalog) ListMembers(circleID string) ([]CircleMember, error) {
 	return cloneMembers(c.members[circleID]), nil
 }
 
+func sortMembersForDisplay(members []CircleMember) {
+	slices.SortFunc(members, func(left, right CircleMember) int {
+		if left.IsLeader != right.IsLeader {
+			if left.IsLeader {
+				return -1
+			}
+			return 1
+		}
+		if left.DisplayName < right.DisplayName {
+			return -1
+		}
+		if left.DisplayName > right.DisplayName {
+			return 1
+		}
+		return 0
+	})
+}
+
+func (c *StaticCatalog) AddMemberAsStaff(circleID, targetUserID, targetDisplayName string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, member := range c.members[circleID] {
+		if member.UserID == targetUserID {
+			return ErrAlreadyMember
+		}
+	}
+
+	c.members[circleID] = append(c.members[circleID], CircleMember{
+		UserID:      targetUserID,
+		DisplayName: targetDisplayName,
+		IsLeader:    false,
+	})
+	sortMembersForDisplay(c.members[circleID])
+	return nil
+}
+
+func (c *StaticCatalog) RemoveMemberAsStaff(circleID, targetUserID string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for index, member := range c.members[circleID] {
+		if member.UserID != targetUserID {
+			continue
+		}
+		if member.IsLeader {
+			return ErrForbidden
+		}
+		c.members[circleID] = append(c.members[circleID][:index], c.members[circleID][index+1:]...)
+		return nil
+	}
+	return nil
+}
+
 func (c *StaticCatalog) AddMember(requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -339,21 +395,7 @@ func (c *StaticCatalog) AddMember(requester *auth.User, circleID, targetUserID, 
 		DisplayName: targetDisplayName,
 		IsLeader:    false,
 	})
-	slices.SortFunc(c.members[circleID], func(left, right CircleMember) int {
-		if left.IsLeader != right.IsLeader {
-			if left.IsLeader {
-				return -1
-			}
-			return 1
-		}
-		if left.DisplayName < right.DisplayName {
-			return -1
-		}
-		if left.DisplayName > right.DisplayName {
-			return 1
-		}
-		return 0
-	})
+	sortMembersForDisplay(c.members[circleID])
 	return nil
 }
 

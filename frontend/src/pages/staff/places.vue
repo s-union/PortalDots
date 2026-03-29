@@ -44,6 +44,9 @@ const form = ref<Omit<StaffPlace, 'id'>>({
   notes: ''
 })
 const editing = ref<Record<string, StaffPlace>>({})
+const sortedPlaces = computed(() =>
+  [...(placesQuery.data.value ?? [])].sort((left, right) => left.id.localeCompare(right.id))
+)
 
 async function handleCreatePlace() {
   errorMessage.value = ''
@@ -135,7 +138,6 @@ async function handleDeletePlace(placeId: string) {
         <table class="min-w-full divide-y divide-border text-sm">
           <thead class="bg-surface-light text-left text-muted-2">
             <tr>
-              <th class="px-5 py-3 font-medium">場所ID</th>
               <th class="px-5 py-3 font-medium">場所名</th>
               <th class="px-5 py-3 font-medium">タイプ</th>
               <th class="px-5 py-3 font-medium">スタッフ用メモ</th>
@@ -143,8 +145,7 @@ async function handleDeletePlace(placeId: string) {
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
-            <tr v-for="place in placesQuery.data.value" :key="place.id">
-              <td class="px-5 py-4 text-muted">{{ place.id }}</td>
+            <tr v-for="place in sortedPlaces" :key="place.id">
               <td class="px-5 py-4">
                 <input
                   v-model="(editing[place.id] ??= { ...place }).name"

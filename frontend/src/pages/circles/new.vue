@@ -17,12 +17,15 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useCreateCircleMutation, useParticipationTypeRegistrationFormQuery } from '@/features/circles/api'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
 import { useFormAnswerEditorDraft } from '@/features/forms/answers'
+import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage } from '@/lib/api/validation'
 
 const route = useRoute()
 const router = useRouter()
+const sessionStore = useSessionStore()
 const createMutation = useCreateCircleMutation()
-const participationTypesQuery = useParticipationTypesQuery(true)
+const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
+const participationTypesQuery = useParticipationTypesQuery(canCreateCircleRegistration)
 
 const form = reactive({
   name: '',
@@ -94,6 +97,11 @@ watch(
 )
 
 async function handleSubmit() {
+  if (!canCreateCircleRegistration.value) {
+    errorMessage.value = 'このアカウントでは新しい企画を登録できません。'
+    return
+  }
+
   errorMessage.value = ''
 
   try {
@@ -128,7 +136,11 @@ async function handleSubmit() {
       </p>
     </SurfaceCard>
 
-    <SettingsSection title="企画基本情報">
+    <AlertMessage v-if="!canCreateCircleRegistration" tone="danger">
+      このアカウントでは新しい企画を登録できません。所属中の企画を選択して作業してください。
+    </AlertMessage>
+
+    <SettingsSection v-if="canCreateCircleRegistration" title="企画基本情報">
       <SettingsRow>
         <div class="grid gap-4">
           <label class="grid gap-2 text-sm text-body">
@@ -193,7 +205,7 @@ async function handleSubmit() {
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection title="参加登録フォーム">
+    <SettingsSection v-if="canCreateCircleRegistration" title="参加登録フォーム">
       <div v-if="form.participationTypeId === ''" class="px-6 py-6 text-sm text-muted">
         先に参加種別を選択してください。
       </div>

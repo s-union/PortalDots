@@ -17,7 +17,7 @@ INSERT INTO circles (
     participation_type_name,
     tags
 ) VALUES (
-    gen_random_uuid()::text,
+    uuidv7(),
     $1,
     $2,
     $3,
@@ -71,7 +71,7 @@ INSERT INTO circles (
     can_change_group_name,
     invitation_token
 ) VALUES (
-    gen_random_uuid()::text,
+    uuidv7(),
     $1,
     $2,
     $3,
@@ -118,7 +118,7 @@ RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_i
 SELECT b.circle_id, p.name
 FROM booths b
 JOIN places p ON p.id = b.place_id
-WHERE b.circle_id = ANY($1::text[])
+WHERE b.circle_id = ANY($1::uuid[])
 ORDER BY b.circle_id, p.name;
 
 -- name: ListCircleMembers :many

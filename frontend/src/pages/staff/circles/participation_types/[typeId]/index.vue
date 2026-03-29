@@ -23,11 +23,10 @@ import StaffFilterDrawer, {
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
-import { canDeleteCircles, canEditCircles, canSendCircleEmails } from '@/features/staff/access/capabilities'
+import { canAccessCircleMail, canDeleteCircles, canEditCircles } from '@/features/staff/access/capabilities'
 import { extractStaffCircleValidationMessage, useDeleteStaffCircleMutation } from '@/features/staff/circles/api'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
@@ -77,10 +76,9 @@ const participationTypeTabs = computed(() =>
 
 const canEdit = computed(() => canEditCircles(sessionStore.roles, sessionStore.permissions))
 const canDelete = computed(() => canDeleteCircles(sessionStore.roles, sessionStore.permissions))
-const canSendEmail = computed(() => canSendCircleEmails(sessionStore.roles, sessionStore.permissions))
+const canSendEmail = computed(() => canAccessCircleMail(sessionStore.roles, sessionStore.permissions))
 
 const circlesColumns: StaffDataGridColumn[] = [
-  { key: 'id', label: '企画ID', sortable: true },
   { key: 'name', label: '企画名', sortable: true },
   { key: 'groupName', label: '企画グループ名', sortable: true },
   { key: 'status', label: '受理状況', sortable: true },
@@ -417,8 +415,6 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
 <template>
   <StaffSideWindowContainer :is-open="isFilterOpen">
     <PageLayout class="max-w-full">
-      <BackLink to="/staff/circles/participation_types"> 参加種別管理へ戻る </BackLink>
-
       <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
 
       <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -427,8 +423,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
 
       <template v-else-if="detailQuery.data.value">
         <SurfaceCard tag="header">
-          <p class="text-sm text-primary">Participation Type Circles</p>
-          <h2 class="mt-3 text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
+          <h2 class="text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
           <p class="mt-3 text-sm text-muted">{{ detailQuery.data.value.description || '説明は未設定です。' }}</p>
         </SurfaceCard>
 
@@ -482,7 +477,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
                   <input
                     v-model="searchQuery"
                     type="search"
-                    placeholder="企画ID・企画名・団体名で絞り込み"
+                    placeholder="企画名・団体名・使用場所で絞り込み"
                     class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <button
@@ -512,7 +507,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
                 </RouterLink>
                 <RouterLink
                   v-if="canSendEmail"
-                  :to="`/staff/circles/${encodeURIComponent(String(row.id))}#mail`"
+                  :to="`/staff/circles/${encodeURIComponent(String(row.id))}/email`"
                   class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
                   title="メール送信"
                 >

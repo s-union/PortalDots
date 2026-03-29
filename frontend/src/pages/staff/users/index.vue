@@ -89,11 +89,6 @@ const filterFields: StaffFilterField[] = [
 
 const columns: StaffDataGridColumn[] = [
   {
-    key: 'id',
-    label: 'ユーザーID',
-    sortable: true
-  },
-  {
     key: 'lastName',
     label: '姓',
     sortable: true

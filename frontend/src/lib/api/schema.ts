@@ -124,7 +124,8 @@ export const sessionCircleSchema = z.object({
 export const sessionUserSchema = z.object({
   id: z.string(),
   displayName: z.string(),
-  canDeleteAccount: z.boolean().default(false)
+  canDeleteAccount: z.boolean().default(false),
+  canCreateCircleRegistration: z.boolean().default(true)
 })
 
 export const sessionBootstrapSchema = z.object({
@@ -298,6 +299,13 @@ export const staffCircleMailRecipientSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   loginIds: stringArraySchema
+})
+
+export const staffCircleMemberSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  loginIds: stringArraySchema,
+  isLeader: z.boolean()
 })
 
 export const staffCircleMailFormSchema = z.object({

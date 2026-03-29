@@ -1070,6 +1070,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/staff/circles/{circleID}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return circle members from staff mode */
+        get: operations["getStaffCircleMembers"];
+        put?: never;
+        /** Add a member to a circle from staff mode */
+        post: operations["postStaffCircleMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff/circles/{circleID}/members/{userID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a member from a circle in staff mode */
+        delete: operations["deleteStaffCircleMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/staff/circles/{circleID}/email": {
         parameters: {
             query?: never;
@@ -2093,6 +2128,13 @@ export interface operations {
             };
             /** @description Unauthenticated */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Creating a new circle is not allowed for this user */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3955,7 +3997,17 @@ export interface operations {
                 /** @description 名前・ログインID・連絡先メールアドレスで絞り込む */
                 query?: string;
                 /** @description ソート対象のキー */
-                sortKey?: "id" | "lastName" | "firstName" | "loginIds" | "contactEmail" | "phoneNumber" | "isStaff" | "isAdmin" | "isEmailVerified" | "isVerified";
+                sortKey?:
+                    | "id"
+                    | "lastName"
+                    | "firstName"
+                    | "loginIds"
+                    | "contactEmail"
+                    | "phoneNumber"
+                    | "isStaff"
+                    | "isAdmin"
+                    | "isEmailVerified"
+                    | "isVerified";
                 /** @description ソート方向 */
                 sortDirection?: "asc" | "desc";
                 /** @description 絞り込み条件のJSON文字列 */
@@ -6265,6 +6317,157 @@ export interface operations {
             };
             /** @description Circle not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getStaffCircleMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                circleID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Staff circle members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        userId: string;
+                        displayName: string;
+                        loginIds: string[];
+                        isLeader: boolean;
+                    }[];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Staff verification or circle admin role is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Circle not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postStaffCircleMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                circleID: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    loginId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Member added */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Staff verification or circle admin role is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Circle not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deleteStaffCircleMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                circleID: string;
+                userID: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Member removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Staff verification or circle admin role is required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Circle or user not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8854,6 +9057,7 @@ export interface operations {
                             id: string;
                             displayName: string;
                             canDeleteAccount: boolean;
+                            canCreateCircleRegistration: boolean;
                         };
                     };
                 };

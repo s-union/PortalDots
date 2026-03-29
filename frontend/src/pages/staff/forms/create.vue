@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
@@ -17,12 +18,11 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
   createDefaultStaffFormPayload,
   extractStaffFormValidationMessage,
-  formatStaffFormTags,
-  parseStaffFormTags,
   useCreateStaffFormMutation
 } from '@/features/staff/forms/api'
 
@@ -31,6 +31,8 @@ const createFormMutation = useCreateStaffFormMutation()
 const form = ref(createDefaultStaffFormPayload())
 const errorMessage = ref('')
 const circlesQuery = useManagedStaffCirclesQuery(true)
+const tagsQuery = useStaffTagsQuery(true)
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 
 const openAtInput = computed({
   get: () => formatDateTimeLocalValue(form.value.openAt),
@@ -43,13 +45,6 @@ const closeAtInput = computed({
   get: () => formatDateTimeLocalValue(form.value.closeAt),
   set: (value: string) => {
     form.value.closeAt = parseDateTimeLocalValue(value, form.value.closeAt)
-  }
-})
-
-const answerableTagsInput = computed({
-  get: () => formatStaffFormTags(form.value.answerableTags),
-  set: (value: string) => {
-    form.value.answerableTags = parseStaffFormTags(value)
   }
 })
 
@@ -123,7 +118,7 @@ async function handleCreateForm() {
 
         <label class="grid gap-2 text-sm text-body">
           <span>回答可能タグ</span>
-          <textarea v-model="answerableTagsInput" class="min-h-24" name="answerableTags" />
+          <StaffTagPicker v-model="form.answerableTags" :available-tags="availableTags" name="answerableTags" />
         </label>
 
         <label class="grid gap-2 text-sm text-body">

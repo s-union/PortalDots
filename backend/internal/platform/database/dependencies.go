@@ -57,22 +57,9 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 		return Dependencies{}, err
 	}
 
-	userCount, err := store.CountUsers(ctx)
-	if err != nil {
+	if err := EnsureSeedData(ctx, store, cfg); err != nil {
 		store.Close()
 		return Dependencies{}, err
-	}
-
-	if userCount == 0 {
-		if err := Seed(ctx, store.Pool(), cfg); err != nil {
-			store.Close()
-			return Dependencies{}, err
-		}
-	} else if cfg.AllowInsecureDefaults && cfg.SyncAuthUserOnStartup {
-		if err := SyncConfiguredUsers(ctx, store.Pool(), cfg.AuthUser, cfg.Users); err != nil {
-			store.Close()
-			return Dependencies{}, err
-		}
 	}
 
 	queries := store.Queries()
@@ -112,4 +99,23 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 		Users:    useradmin.NewSQLCRepository(store.Pool(), queries),
 		Close:    store.Close,
 	}, nil
+}
+
+func EnsureSeedData(ctx context.Context, store *SQLCStore, cfg config.Config) error {
+	userCount, err := store.CountUsers(ctx)
+	if err != nil {
+		return err
+	}
+
+	if userCount == 0 {
+		if err := Seed(ctx, store.Pool(), cfg); err != nil {
+			return err
+		}
+	} else if cfg.AllowInsecureDefaults && cfg.SyncAuthUserOnStartup {
+		if err := SyncConfiguredUsers(ctx, store.Pool(), cfg.AuthUser, cfg.Users); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

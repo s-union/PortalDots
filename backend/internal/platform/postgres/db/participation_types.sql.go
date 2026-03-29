@@ -11,7 +11,7 @@ import (
 
 const createParticipationType = `-- name: CreateParticipationType :one
 INSERT INTO participation_types (id, name, description, users_count_min, users_count_max, tags, form_id)
-VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6)
+VALUES (uuidv7(), $1, $2, $3, $4, $5, $6)
 RETURNING id, name, description, users_count_min, users_count_max, tags, form_id, created_at, updated_at
 `
 

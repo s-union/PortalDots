@@ -64,6 +64,11 @@ Useful commands:
 - `PORTALDOTS_DATABASE_URL=postgres://... mise run backend-sqlc-smoke`
 - `PORTALDOTS_DATABASE_URL=postgres://... PORTALDOTS_STAFF_VERIFY_CODE=... go run ./cmd/api`
 
+Local development notes:
+
+- Docker のローカル PostgreSQL は `postgres:18` 前提です。UUID 採番は `uuidv7()` を使います。
+- `mise run dev` は起動前に `docker compose -f docker-compose.postgres.yml down -v` を実行し、ローカル DB volume を毎回破棄してから migrate と demo seed を再作成します。
+
 Behavior notes:
 
 - `cmd/api` runs SQL migrations on startup before wiring repositories.

@@ -25,9 +25,10 @@ type circleInfo struct {
 }
 
 type sessionBootstrapUserInfo struct {
-	ID               string `json:"id"`
-	DisplayName      string `json:"displayName"`
-	CanDeleteAccount bool   `json:"canDeleteAccount"`
+	ID                          string `json:"id"`
+	DisplayName                 string `json:"displayName"`
+	CanDeleteAccount            bool   `json:"canDeleteAccount"`
+	CanCreateCircleRegistration bool   `json:"canCreateCircleRegistration"`
 }
 
 func (h *authHandlers) sessionBootstrap(c echo.Context) error {
@@ -75,11 +76,19 @@ func (h *authHandlers) sessionBootstrap(c echo.Context) error {
 		Roles:         append([]string{}, managedUser.Roles...),
 		Permissions:   append([]string{}, managedUser.Permissions...),
 		User: &sessionBootstrapUserInfo{
-			ID:               managedUser.ID,
-			DisplayName:      managedUser.DisplayName,
-			CanDeleteAccount: !hasStaffAccess(managedUser.Roles, managedUser.Permissions) && len(managedUser.CircleIDs) == 0,
+			ID:                          managedUser.ID,
+			DisplayName:                 managedUser.DisplayName,
+			CanDeleteAccount:            !hasStaffAccess(managedUser.Roles, managedUser.Permissions) && len(managedUser.CircleIDs) == 0,
+			CanCreateCircleRegistration: canCreateCircleRegistration(managedUser),
 		},
 	})
+}
+
+func canCreateCircleRegistration(userValue useradmin.User) bool {
+	if len(userValue.CircleIDs) == 0 {
+		return true
+	}
+	return len(userValue.LeaderCircleIDs) > 0
 }
 
 func resolveCurrentCircle(sessionID string, currentSession session.Session, circles circle.Catalog, store session.Store) (*circleInfo, error) {

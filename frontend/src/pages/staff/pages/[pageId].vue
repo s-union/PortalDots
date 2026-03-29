@@ -11,6 +11,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime } from '@/lib/format/datetime'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -22,8 +23,6 @@ import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import {
   extractStaffPageValidationMessage,
-  formatStaffPageTags,
-  parseStaffPageTags,
   useDeleteStaffPageMutation,
   usePatchStaffPagePinMutation,
   useStaffPageDetailQuery,
@@ -47,7 +46,7 @@ const patchPinMutation = usePatchStaffPagePinMutation(pageId)
 const form = useStaffPageForm()
 const errorMessage = ref('')
 const successMessage = ref('')
-const viewableTagsText = ref('')
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const availableDocuments = computed(() =>
   (documentsQuery.data.value ?? []).filter((document) => document.circle.id === (pageQuery.data.value?.circle.id ?? ''))
 )
@@ -70,14 +69,6 @@ watch(
       documentIds: [...page.documentIds],
       sendEmails: false
     }
-  },
-  { immediate: true }
-)
-
-watch(
-  () => form.value.viewableTags,
-  (value) => {
-    viewableTagsText.value = formatStaffPageTags(value)
   },
   { immediate: true }
 )
@@ -139,15 +130,6 @@ async function handleDeletePage() {
   }
 }
 
-function handleViewableTagsInput(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLTextAreaElement)) {
-    return
-  }
-
-  form.value.viewableTags = parseStaffPageTags(target.value)
-}
-
 function handleDocumentChange(documentId: string, event: Event) {
   const target = event.target
   if (!(target instanceof HTMLInputElement)) {
@@ -199,17 +181,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 
             <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">閲覧可能なタグ</span>
-              <textarea
-                :value="viewableTagsText"
-                class="min-h-24"
-                name="viewableTags"
-                placeholder="1 行に 1 つ、またはカンマ区切りで入力"
-                @input="handleViewableTagsInput"
-              />
-              <span class="text-xs text-muted">
-                登録済みタグ:
-                {{ (tagsQuery.data.value ?? []).map((tag) => tag.name).join(' / ') || '-' }}
-              </span>
+              <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
             </label>
 
             <fieldset class="grid gap-2 text-sm text-body">

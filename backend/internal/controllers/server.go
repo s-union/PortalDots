@@ -511,6 +511,9 @@ func NewServerWithDependencies(
 		GetStaffCircle:          staffCircleH.getStaffCircle,
 		UpdateStaffCircle:       staffCircleH.updateStaffCircle,
 		DeleteStaffCircle:       staffCircleH.deleteStaffCircle,
+		ListStaffCircleMembers:  staffCircleH.listStaffCircleMembers,
+		AddStaffCircleMember:    staffCircleH.addStaffCircleMember,
+		DeleteStaffCircleMember: staffCircleH.deleteStaffCircleMember,
 		GetStaffCircleMailForm:  staffCircleH.getStaffCircleMailForm,
 		SendStaffCircleMail:     staffCircleH.sendStaffCircleMail,
 		// Admin

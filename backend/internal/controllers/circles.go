@@ -285,6 +285,9 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	if !canCreateCircleRegistration(managedUser) {
+		return errorJSON(c, http.StatusForbidden, "forbidden")
+	}
 
 	pt, formValue, questions, err := h.resolveParticipationRegistrationForm(req.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {

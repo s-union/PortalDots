@@ -47,13 +47,12 @@ const page = ref(1)
 const pageSize = ref(25)
 
 // ソート
-const sortKey = ref('createdAt')
-const sortDirection = ref<'asc' | 'desc'>('desc')
+const sortKey = ref('id')
+const sortDirection = ref<'asc' | 'desc'>('asc')
 
 // 動的列定義（フォーム設問を含む）
 const columns = computed<StaffDataGridColumn[]>(() => {
   const base: StaffDataGridColumn[] = [
-    { key: 'id', label: '回答ID', sortable: true },
     { key: 'circle', label: '提出した企画', sortable: false },
     { key: 'createdAt', label: '作成日時', sortable: true },
     { key: 'updatedAt', label: '更新日時', sortable: true }
@@ -149,7 +148,6 @@ async function handleDelete(answerId: string, groupName: string) {
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
       <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Form Answers</p>
         <SurfaceHeader>
           <template #title>{{ answersQuery.data.value.form.name }}</template>
           <template #description>
@@ -255,10 +253,7 @@ async function handleDelete(answerId: string, groupName: string) {
           <template #cell-circle="{ value }">
             <span v-if="value && typeof value === 'object' && 'name' in value">
               <span class="font-semibold">{{ (value as unknown as { name: string }).name }}</span>
-              <span class="ml-1 text-muted-2">
-                — {{ (value as unknown as { groupName: string }).groupName }} (企画ID:
-                {{ (value as unknown as { id: string }).id }})
-              </span>
+              <span class="ml-1 text-muted-2"> — {{ (value as unknown as { groupName: string }).groupName }} </span>
             </span>
           </template>
         </StaffDataGrid>

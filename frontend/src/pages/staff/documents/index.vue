@@ -38,6 +38,9 @@ const documentsQuery = useStaffDocumentsQuery(enabled)
 const createDocumentMutation = useCreateStaffDocumentMutation()
 const form = useStaffDocumentForm()
 const errorMessage = ref('')
+const sortedDocuments = computed(() =>
+  [...(documentsQuery.data.value ?? [])].sort((left, right) => left.id.localeCompare(right.id))
+)
 
 function handleFileChange(event: Event) {
   const target = event.target
@@ -108,7 +111,6 @@ async function handleCreateDocument() {
           <thead class="bg-form-control">
             <tr class="text-left text-muted">
               <th class="border-b border-border px-4 py-3 font-semibold">企画</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">配布資料ID</th>
               <th class="border-b border-border px-4 py-3 font-semibold">配布資料名</th>
               <th class="border-b border-border px-4 py-3 font-semibold">説明</th>
               <th class="border-b border-border px-4 py-3 font-semibold">スタッフ用メモ</th>
@@ -122,12 +124,11 @@ async function handleCreateDocument() {
           </thead>
           <tbody>
             <tr
-              v-for="staffDocument in documentsQuery.data.value"
+              v-for="staffDocument in sortedDocuments"
               :key="staffDocument.id"
               class="transition hover:bg-form-control"
             >
               <td class="border-b border-border px-4 py-4">{{ staffDocument.circle.name }}</td>
-              <td class="border-b border-border px-4 py-4">{{ staffDocument.id }}</td>
               <td class="border-b border-border px-4 py-4 font-medium text-body">
                 <RouterLink :to="`/staff/documents/${staffDocument.id}/edit`" class="text-primary">
                   {{ staffDocument.name }}

@@ -38,6 +38,13 @@ type staffCircleMailRecipientResponse struct {
 	LoginIDs    []string `json:"loginIds"`
 }
 
+type staffCircleMemberResponse struct {
+	UserID      string   `json:"userId"`
+	DisplayName string   `json:"displayName"`
+	LoginIDs    []string `json:"loginIds"`
+	IsLeader    bool     `json:"isLeader"`
+}
+
 type staffCircleMailFormResponse struct {
 	Circle     staffCircleResponse                `json:"circle"`
 	Recipients []staffCircleMailRecipientResponse `json:"recipients"`
@@ -59,6 +66,10 @@ type sendStaffCircleMailRequest struct {
 	Recipient string `json:"recipient"`
 	Subject   string `json:"subject"`
 	Body      string `json:"body"`
+}
+
+type addStaffCircleMemberRequest struct {
+	LoginID string `json:"loginId"`
 }
 
 func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
@@ -329,8 +340,127 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+func (h *staffCircleHandlers) listStaffCircleMembers(c echo.Context) error {
+	_, _, status, ok := h.requireCircleEdit(c)
+	if !ok {
+		return statusError(c, status)
+	}
+
+	response, err := h.loadStaffCircleMembers(c.Param("circleID"))
+	if errors.Is(err, circle.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func (h *staffCircleHandlers) addStaffCircleMember(c echo.Context) error {
+	_, currentSession, status, ok := h.requireCircleEdit(c)
+	if !ok {
+		return statusError(c, status)
+	}
+
+	circleID := c.Param("circleID")
+	if _, err := h.circles.Find(circleID); errors.Is(err, circle.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
+	} else if err != nil {
+		return internalError(c)
+	}
+
+	var request addStaffCircleMemberRequest
+	if err := c.Bind(&request); err != nil {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	request.LoginID = strings.TrimSpace(request.LoginID)
+	if request.LoginID == "" {
+		return validationError(c, map[string][]string{
+			"loginId": {"学籍番号または連絡先メールアドレスを入力してください"},
+		})
+	}
+
+	targetUser, err := h.users.FindByLoginID(request.LoginID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		targetUser, err = h.users.FindByContactEmail(request.LoginID)
+	}
+	if err != nil {
+		return validationError(c, map[string][]string{
+			"loginId": {"この学籍番号または連絡先メールアドレスは登録されていません"},
+		})
+	}
+
+	if err := h.circles.AddMemberAsStaff(circleID, targetUser.ID, targetUser.DisplayName); errors.Is(err, circle.ErrAlreadyMember) {
+		return validationError(c, map[string][]string{
+			"loginId": {"このユーザーは既に所属しています"},
+		})
+	} else if err != nil {
+		return internalError(c)
+	}
+
+	recordActivity(
+		h.activities,
+		currentSession.User.ID,
+		"staff.circle.member_added",
+		"circle",
+		circleID,
+		circleID,
+		buildActivitySummary("staff が企画所属者を追加しました", targetUser.DisplayName),
+	)
+
+	return c.NoContent(http.StatusCreated)
+}
+
+func (h *staffCircleHandlers) deleteStaffCircleMember(c echo.Context) error {
+	_, currentSession, status, ok := h.requireCircleEdit(c)
+	if !ok {
+		return statusError(c, status)
+	}
+
+	circleID := c.Param("circleID")
+	targetUserID := c.Param("userID")
+	if targetUserID == "" {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+	if _, err := h.circles.Find(circleID); errors.Is(err, circle.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
+	} else if err != nil {
+		return internalError(c)
+	}
+
+	targetUser, err := h.users.Find(targetUserID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	if err := h.circles.RemoveMemberAsStaff(circleID, targetUserID); errors.Is(err, circle.ErrForbidden) {
+		return validationError(c, map[string][]string{
+			"userId": {"責任者はこの画面から削除できません"},
+		})
+	} else if err != nil {
+		return internalError(c)
+	}
+
+	recordActivity(
+		h.activities,
+		currentSession.User.ID,
+		"staff.circle.member_removed",
+		"circle",
+		circleID,
+		circleID,
+		buildActivitySummary("staff が企画所属者を削除しました", targetUser.DisplayName),
+	)
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *staffCircleHandlers) getStaffCircleMailForm(c echo.Context) error {
-	_, _, status, ok := h.requireStaffCapability(c, canSendCircleEmails)
+	_, _, status, ok := h.requireStaffCapability(c, canAccessCircleMail)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -355,7 +485,7 @@ func (h *staffCircleHandlers) getStaffCircleMailForm(c echo.Context) error {
 }
 
 func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
-	_, currentSession, status, ok := h.requireStaffCapability(c, canSendCircleEmails)
+	_, currentSession, status, ok := h.requireStaffCapability(c, canAccessCircleMail)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -410,6 +540,37 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 	)
 
 	return c.NoContent(http.StatusCreated)
+}
+
+func (h *staffCircleHandlers) loadStaffCircleMembers(circleID string) ([]staffCircleMemberResponse, error) {
+	if _, err := h.circles.Find(circleID); err != nil {
+		return nil, err
+	}
+
+	members, err := h.circles.ListMembers(circleID)
+	if err != nil {
+		return nil, err
+	}
+	if len(members) == 0 {
+		return []staffCircleMemberResponse{}, nil
+	}
+
+	response := make([]staffCircleMemberResponse, 0, len(members))
+	for _, member := range members {
+		loginIDs := []string{}
+		userValue, err := h.users.Find(member.UserID)
+		if err == nil {
+			loginIDs = slices.Clone(userValue.LoginIDs)
+		}
+		response = append(response, staffCircleMemberResponse{
+			UserID:      member.UserID,
+			DisplayName: member.DisplayName,
+			LoginIDs:    loginIDs,
+			IsLeader:    member.IsLeader,
+		})
+	}
+
+	return response, nil
 }
 
 func (h *staffCircleHandlers) requireCircleRead(c echo.Context) (string, session.Session, int, bool) {
@@ -475,13 +636,24 @@ func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, lea
 		return circle.Circle{}, nil, err
 	}
 
-	if leadersOnly {
-		users, listErr := h.users.ListLeadersByCircleIDs([]string{circleID})
-		return circleValue, users, listErr
+	members, err := h.circles.ListMembers(circleID)
+	if err != nil {
+		return circleValue, nil, err
 	}
 
-	users, listErr := h.users.ListByCircleIDs([]string{circleID})
-	return circleValue, users, listErr
+	recipients := make([]useradmin.User, 0, len(members))
+	for _, member := range members {
+		if leadersOnly && !member.IsLeader {
+			continue
+		}
+		userValue, findErr := h.users.Find(member.UserID)
+		if findErr != nil {
+			continue
+		}
+		recipients = append(recipients, userValue)
+	}
+
+	return circleValue, recipients, nil
 }
 
 func collectRecipientLoginIDs(users []useradmin.User) []string {

@@ -9,6 +9,7 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -16,12 +17,11 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
   extractStaffParticipationTypeValidationMessage,
-  formatParticipationTypeTags,
-  parseParticipationTypeTags,
   useCreateStaffParticipationTypeMutation,
   useStaffParticipationTypeForm,
   useStaffParticipationTypesQuery
@@ -33,17 +33,11 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const participationTypesQuery = useStaffParticipationTypesQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true)
 )
+const tagsQuery = useStaffTagsQuery(computed(() => staffStatusQuery.data.value?.authorized === true))
 const createMutation = useCreateStaffParticipationTypeMutation()
 const form = useStaffParticipationTypeForm()
 const errorMessage = ref('')
-
-function handleTagsInput(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLTextAreaElement)) {
-    return
-  }
-  form.value.tags = parseParticipationTypeTags(target.value)
-}
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 
 function handleOpenAtInput(event: Event) {
   const target = event.target
@@ -135,12 +129,7 @@ async function handleCreate() {
         </div>
         <label class="grid gap-2 text-sm text-body">
           <span>付与タグ</span>
-          <textarea
-            :value="formatParticipationTypeTags(form.tags)"
-            class="min-h-24"
-            name="tags"
-            @input="handleTagsInput"
-          />
+          <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
         </label>
         <div class="grid gap-4 md:grid-cols-2">
           <label class="grid gap-2 text-sm text-body">

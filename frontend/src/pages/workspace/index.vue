@@ -6,6 +6,7 @@ definePage({
   }
 })
 
+import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -18,6 +19,7 @@ import { buttonVariants } from '@/lib/ui/variants'
 
 const sessionStore = useSessionStore()
 const circleDetailQuery = useCurrentCircleDetailQuery()
+const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
 
 const quickLinks = [
   {
@@ -76,7 +78,11 @@ const quickLinks = [
         <RouterLink :class="cn(buttonVariants({ variant: 'primary', size: 'md' }))" to="/circles/select">
           企画を切り替える
         </RouterLink>
-        <RouterLink :class="cn(buttonVariants({ variant: 'secondary', size: 'md' }))" to="/circles/new">
+        <RouterLink
+          v-if="canCreateCircleRegistration"
+          :class="cn(buttonVariants({ variant: 'secondary', size: 'md' }))"
+          to="/circles/new"
+        >
           新しい企画を作成
         </RouterLink>
       </div>

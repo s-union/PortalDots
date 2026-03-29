@@ -117,4 +117,55 @@ describe('WorkspacePage', () => {
     expect(wrapper.text()).toContain('メンバーを確認する')
     expect(wrapper.text()).toContain('お問い合わせ')
   })
+
+  it('hides new circle link for member-only users', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canCreateCircleRegistration: false
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/workspace', component: WorkspacePage },
+        { path: '/workspace/pages', component: { template: '<div>pages</div>' } },
+        { path: '/workspace/documents', component: { template: '<div>documents</div>' } },
+        { path: '/workspace/forms', component: { template: '<div>forms</div>' } },
+        { path: '/workspace/contact', component: { template: '<div>contact</div>' } },
+        { path: '/workspace/settings', component: { template: '<div>settings</div>' } },
+        { path: '/workspace/circles/confirm', component: { template: '<div>confirm</div>' } },
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } },
+        { path: '/circles/select', component: { template: '<div>circle selector</div>' } },
+        { path: '/circles/new', component: { template: '<div>new circle</div>' } }
+      ]
+    })
+    await router.push('/workspace')
+    await router.isReady()
+
+    vi.stubGlobal('fetch', buildFetchMock())
+
+    const wrapper = mount(WorkspacePage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('企画を切り替える')
+    expect(wrapper.text()).not.toContain('新しい企画を作成')
+    expect(wrapper.find('a[href="/circles/new"]').exists()).toBe(false)
+  })
 })

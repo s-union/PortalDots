@@ -16,10 +16,16 @@ export interface SessionUser {
   id: string
   displayName: string
   canDeleteAccount: boolean
+  canCreateCircleRegistration: boolean
 }
 
 type SessionBootstrapPayload = Omit<SessionBootstrap, 'user'> & {
-  user: null | (Omit<SessionUser, 'canDeleteAccount'> & { canDeleteAccount?: boolean })
+  user:
+    | null
+    | (Omit<SessionUser, 'canDeleteAccount' | 'canCreateCircleRegistration'> & {
+        canDeleteAccount?: boolean
+        canCreateCircleRegistration?: boolean
+      })
 }
 
 const emptySession: SessionBootstrap = {
@@ -46,7 +52,8 @@ export const useSessionStore = defineStore('session', {
       this.user = payload.user
         ? {
             ...payload.user,
-            canDeleteAccount: payload.user.canDeleteAccount ?? false
+            canDeleteAccount: payload.user.canDeleteAccount ?? false,
+            canCreateCircleRegistration: payload.user.canCreateCircleRegistration ?? true
           }
         : null
     },

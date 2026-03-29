@@ -165,7 +165,8 @@ describe('CircleCreatePage', () => {
     vi.unstubAllGlobals()
   })
 
-  function setupSession() {
+  function setupSession(options: { canCreateCircleRegistration?: boolean } = {}) {
+    const { canCreateCircleRegistration = true } = options
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -174,7 +175,7 @@ describe('CircleCreatePage', () => {
       currentCircle: null,
       featureFlags: [],
       roles: ['participant'],
-      user: { id: 'demo-user', displayName: 'Demo User' }
+      user: { id: 'demo-user', displayName: 'Demo User', canCreateCircleRegistration }
     })
     return pinia
   }
@@ -294,5 +295,32 @@ describe('CircleCreatePage', () => {
 
     expect(wrapper.text()).toContain('必須')
     expect(router.currentRoute.value.path).toBe('/circles/new')
+  })
+
+  it('shows denied state for member-only users', async () => {
+    const pinia = setupSession({ canCreateCircleRegistration: false })
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/circles/new', component: CircleCreatePage }]
+    })
+    await router.push('/circles/new')
+    await router.isReady()
+
+    const fetchMock = buildFetchMock()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(CircleCreatePage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('このアカウントでは新しい企画を登録できません。')
+    expect(wrapper.find('select[name="participationTypeId"]').exists()).toBe(false)
+    expect(
+      fetchMock.mock.calls.some(([input]) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
+      })
+    ).toBe(false)
   })
 })

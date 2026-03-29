@@ -41,8 +41,7 @@ const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTa
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
       <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Not Answered Circles</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">未回答企画一覧</h2>
+        <h2 class="text-3xl font-semibold text-body">未回答企画一覧</h2>
         <p class="mt-3 text-sm leading-7 text-muted">
           {{ answersQuery.data.value.form.name }} に未回答の企画を確認します。
         </p>
@@ -63,7 +62,7 @@ const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTa
             :key="circle.id"
             :to="`/staff/circles/${circle.id}`"
           >
-            <template #title>企画ID: {{ circle.id }} {{ circle.name }}</template>
+            <template #title>{{ circle.name }}</template>
             <template #meta> {{ circle.groupName }} / {{ circle.participationTypeName }} </template>
             企画詳細を開いて、担当企画の状況確認や連絡導線へ進めます。
           </ListItemLink>

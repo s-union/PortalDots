@@ -11,7 +11,7 @@ describe('StaffFormPreviewPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the read-only staff form preview even when answerableTags is null', async () => {
+  it('renders the interactive staff form preview without submitting even when answerableTags is null', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -43,6 +43,13 @@ describe('StaffFormPreviewPage', () => {
         const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
         const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
         const pathname = new URL(url, 'http://localhost').pathname
+
+        if (pathname.endsWith('/public/config') && method === 'GET') {
+          return new Response(JSON.stringify({ isDemo: true, appName: 'PortalDots' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
 
         if (pathname.endsWith('/staff/status') && method === 'GET') {
           return new Response(JSON.stringify({ allowed: true, authorized: true }), {
@@ -160,7 +167,12 @@ describe('StaffFormPreviewPage', () => {
     expect(wrapper.text()).toContain('責任者名')
     expect(wrapper.text()).toContain('1日目')
     expect(wrapper.text()).toContain('ファイル選択欄が表示されます。')
-    expect(wrapper.get('button[type="button"]').attributes('disabled')).toBeDefined()
+    expect(document.title).toBe('展示チェックフォーム - プレビュー — PortalDots')
+    await wrapper.get('input[type="text"]').setValue('山田太郎')
+    await wrapper.get('input[type="radio"]').setValue(true)
+    await wrapper.get('button[type="submit"]').trigger('submit')
+    await flushPromises()
+    expect(wrapper.text()).toContain('プレビューのため送信は行われません。')
     expect(wrapper.text()).not.toContain('回答')
     expect(wrapper.text()).not.toContain('設定')
   })

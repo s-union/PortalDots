@@ -9,11 +9,12 @@ definePage({
   }
 })
 
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import FormEditorSidebar from '@/components/staff/forms/editor/FormEditorSidebar.vue'
 import FormQuestionPreviewItem from '@/components/staff/forms/editor/FormQuestionPreviewItem.vue'
+import { usePublicConfigQuery } from '@/features/public-home/api'
 import {
   extractStaffFormValidationMessage,
   useCreateStaffFormQuestionMutation,
@@ -32,6 +33,7 @@ import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 const route = useRoute('/staff/forms/[formId]/editor')
 const router = useRouter()
 const sessionStore = useSessionStore()
+const publicConfigQuery = usePublicConfigQuery()
 
 const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -58,6 +60,10 @@ const isParticipationForm = computed(() => formQuery.data.value?.isParticipation
 const isPublic = computed(() => formQuery.data.value?.isPublic ?? false)
 const previewUrl = computed(() => `/staff/forms/${formId.value}/preview`)
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'editor'))
+const editorPageTitle = computed(() => {
+  const formName = formQuery.data.value?.name?.trim()
+  return formName ? `${formName} - フォームエディター` : 'フォームエディター'
+})
 const isSaving = computed(
   () =>
     createQuestionMutation.isPending.value ||
@@ -119,6 +125,15 @@ watch(
   },
   { immediate: true }
 )
+
+watchEffect(() => {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  const appName = publicConfigQuery.data.value?.appName ?? 'PortalDots'
+  document.title = `${editorPageTitle.value} — ${appName}`
+})
 
 onBeforeUnmount(() => {
   if (savedMessageTimer !== undefined) {

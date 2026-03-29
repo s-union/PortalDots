@@ -308,4 +308,46 @@ describe('CircleSelectorPage', () => {
     expect(wrapper.get('a[href="/circles/new?participation_type=pt-exhibit"]').text()).toContain('展示')
     expect(wrapper.get('a[href="/circles/new?participation_type=pt-food"]').text()).toContain('模擬店')
   })
+
+  it('hides circle creation panel for member-only users', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canCreateCircleRegistration: false
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/circles/select', component: CircleSelectorPage }]
+    })
+    await router.push('/circles/select')
+    await router.isReady()
+
+    const fetchMock = buildFetchMock()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(CircleSelectorPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('別の企画を参加登録する')
+    expect(
+      fetchMock.mock.calls.some(([input]) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
+      })
+    ).toBe(false)
+  })
 })

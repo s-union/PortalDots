@@ -107,8 +107,8 @@ describe('StaffUsersIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('staff-user')
-    expect(wrapper.text()).toContain('demo-user')
+    expect(wrapper.text()).not.toContain('staff-user')
+    expect(wrapper.text()).not.toContain('demo-user')
     expect(wrapper.text()).toContain('staff@example.com')
     expect(wrapper.text()).toContain('確認済み')
     expect(wrapper.text()).toContain('未確認')
@@ -118,7 +118,12 @@ describe('StaffUsersIndexPage', () => {
     expect(wrapper.get('a[href="http://127.0.0.1:8080/v1/staff/users/export"]').text()).toContain('CSVで出力')
 
     await wrapper.get('thead button').trigger('click')
-    expect(wrapper.text()).toContain('demo-user')
+    const sortArgAfterHeaderClick = usersApiMocks.useStaffUsersQuery.mock.calls.at(-1)?.[1]
+    if (!sortArgAfterHeaderClick) {
+      throw new Error('expected sort argument')
+    }
+    expect(sortArgAfterHeaderClick.value.sortKey).toBe('lastName')
+    expect(sortArgAfterHeaderClick.value.sortDirection).toBe('asc')
 
     await wrapper.get('select').setValue('50')
     await flushPromises()

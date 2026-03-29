@@ -215,7 +215,18 @@ describe('StaffPagesIndexPage', () => {
                       id: 'circle-b',
                       name: 'デモ企画B'
                     },
-                    id: 'page-circle-b-private',
+                    id: 'page-circle-b-z',
+                    title: '後続メモ',
+                    publishedAt: '2026-03-05T09:00:00Z',
+                    isPinned: false,
+                    isPublic: false
+                  },
+                  {
+                    circle: {
+                      id: 'circle-b',
+                      name: 'デモ企画B'
+                    },
+                    id: 'page-circle-b-a',
                     title: '非公開メモ',
                     publishedAt: '2026-03-04T09:00:00Z',
                     isPinned: false,
@@ -239,7 +250,18 @@ describe('StaffPagesIndexPage', () => {
                       id: 'circle-b',
                       name: 'デモ企画B'
                     },
-                    id: 'page-circle-b-private',
+                    id: 'page-circle-b-z',
+                    title: '後続メモ',
+                    publishedAt: '2026-03-05T09:00:00Z',
+                    isPinned: false,
+                    isPublic: false
+                  },
+                  {
+                    circle: {
+                      id: 'circle-b',
+                      name: 'デモ企画B'
+                    },
+                    id: 'page-circle-b-a',
                     title: '非公開メモ',
                     publishedAt: '2026-03-04T09:00:00Z',
                     isPinned: false,
@@ -287,6 +309,9 @@ describe('StaffPagesIndexPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('非公開メモ')
+    expect(wrapper.text()).toContain('後続メモ')
+    expect(wrapper.text()).not.toContain('お知らせID')
+    expect(wrapper.text().indexOf('非公開メモ')).toBeLessThan(wrapper.text().indexOf('後続メモ'))
     expect(wrapper.get('a[href="/staff/mails"]').text()).toContain('メール配信設定')
     expect(wrapper.text()).toContain('保存後にモックメール配信を予約する')
     expect(wrapper.text()).toContain('配信予約はモックキューへの登録のみ行います。実メール送信は行いません。')
@@ -303,6 +328,12 @@ describe('StaffPagesIndexPage', () => {
     await wrapper.get('input[name="title"]').setValue('新着スタッフ連絡')
     await wrapper.get('textarea[name="body"]').setValue('設営順を更新しました。')
     await wrapper.get('textarea[name="notes"]').setValue('スタッフ向けメモ')
+    await wrapper.get('input[name="viewableTags"]').setValue('展')
+    const exhibitionTagButton = wrapper.findAll('button').find((button) => button.text() === '展示')
+    if (!exhibitionTagButton) {
+      throw new Error('exhibition tag button not found')
+    }
+    await exhibitionTagButton.trigger('click')
     await wrapper.get('input[name="isPinned"]').setValue(true)
     const forms = wrapper.findAll('form')
     if (forms.length < 2) {
@@ -317,6 +348,7 @@ describe('StaffPagesIndexPage', () => {
 
     expect(createdRequestBody).toMatchObject({
       circleId: 'circle-b',
+      viewableTags: ['展示'],
       documentIds: []
     })
     expect(wrapper.text()).toContain('新着スタッフ連絡')

@@ -32,7 +32,7 @@ describe('StaffFormsIndexPage', () => {
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
       currentCircle: {
-        id: 'circle-b',
+        id: '0195ec00-0022-7000-8000-000000000001',
         name: 'デモ企画B'
       },
       featureFlags: [],
@@ -77,10 +77,10 @@ describe('StaffFormsIndexPage', () => {
             JSON.stringify([
               {
                 circle: {
-                  id: 'circle-b',
+                  id: '0195ec00-0022-7000-8000-000000000001',
                   name: 'デモ企画B'
                 },
-                id: 'form-circle-b-1',
+                id: '0195ec00-0014-7000-8000-000000000001',
                 name: '展示チェックフォーム',
                 description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
@@ -96,10 +96,10 @@ describe('StaffFormsIndexPage', () => {
               },
               {
                 circle: {
-                  id: 'circle-b',
+                  id: '0195ec00-0022-7000-8000-000000000001',
                   name: 'デモ企画B'
                 },
-                id: 'form-circle-b-closed',
+                id: '0195ec00-0010-7000-8000-000000000001',
                 name: '締切済みフォーム',
                 description: '',
                 openAt: '2026-02-01T00:00:00Z',
@@ -134,10 +134,12 @@ describe('StaffFormsIndexPage', () => {
 
     expect(wrapper.text()).toContain('展示チェックフォーム')
     expect(wrapper.text()).toContain('締切済みフォーム')
+    expect(wrapper.text().indexOf('締切済みフォーム')).toBeLessThan(wrapper.text().indexOf('展示チェックフォーム'))
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('全体に公開')
+    expect(wrapper.text()).not.toContain('フォームID')
     expect(wrapper.get('a[href="/staff/forms/create"]').text()).toContain('新規フォーム')
-    expect(wrapper.get('a[href="/staff/forms/form-circle-b-1/answers"]').exists()).toBe(true)
+    expect(wrapper.get('a[href="/staff/forms/0195ec00-0014-7000-8000-000000000001/answers"]').exists()).toBe(true)
   })
 
   it('links edit-only staff to the form settings page', async () => {
@@ -147,7 +149,7 @@ describe('StaffFormsIndexPage', () => {
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
       currentCircle: {
-        id: 'circle-b',
+        id: '0195ec00-0022-7000-8000-000000000001',
         name: 'デモ企画B'
       },
       featureFlags: [],
@@ -192,10 +194,10 @@ describe('StaffFormsIndexPage', () => {
             JSON.stringify([
               {
                 circle: {
-                  id: 'circle-b',
+                  id: '0195ec00-0022-7000-8000-000000000001',
                   name: 'デモ企画B'
                 },
-                id: 'form-circle-b-1',
+                id: '0195ec00-0014-7000-8000-000000000001',
                 name: '展示チェックフォーム',
                 description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
@@ -230,10 +232,10 @@ describe('StaffFormsIndexPage', () => {
 
     expect(
       wrapper
-        .findAll('a[href="/staff/forms/form-circle-b-1/edit"]')
+        .findAll('a[href="/staff/forms/0195ec00-0014-7000-8000-000000000001/edit"]')
         .some((link) => link.text().includes('展示チェックフォーム'))
     ).toBe(true)
-    expect(wrapper.find('a[href="/staff/forms/form-circle-b-1/answers"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/staff/forms/0195ec00-0014-7000-8000-000000000001/answers"]').exists()).toBe(false)
     expect(wrapper.get('a[title="設定"]').exists()).toBe(true)
   })
 
@@ -244,7 +246,7 @@ describe('StaffFormsIndexPage', () => {
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
       currentCircle: {
-        id: 'circle-b',
+        id: '0195ec00-0022-7000-8000-000000000001',
         name: 'デモ企画B'
       },
       featureFlags: [],
@@ -298,10 +300,10 @@ describe('StaffFormsIndexPage', () => {
             JSON.stringify([
               {
                 circle: {
-                  id: 'circle-b',
+                  id: '0195ec00-0022-7000-8000-000000000001',
                   name: 'デモ企画B'
                 },
-                id: 'form-circle-b-1',
+                id: '0195ec00-0014-7000-8000-000000000001',
                 name: '展示チェックフォーム',
                 description: '展示レイアウトと機材使用申請を提出してください。',
                 openAt: '2026-03-02T00:00:00Z',
@@ -323,14 +325,14 @@ describe('StaffFormsIndexPage', () => {
           )
         }
 
-        if (pathname.endsWith('/staff/forms/form-circle-b-1/copy') && method === 'POST') {
+        if (pathname.endsWith('/staff/forms/0195ec00-0014-7000-8000-000000000001/copy') && method === 'POST') {
           return new Response(
             JSON.stringify({
               circle: {
-                id: 'circle-b',
+                id: '0195ec00-0022-7000-8000-000000000001',
                 name: 'デモ企画B'
               },
-              id: 'form-circle-b-copy',
+              id: 'form-0195ec00-0022-7000-8000-000000000001-copy',
               name: '展示チェックフォームのコピー',
               description: '展示レイアウトと機材使用申請を提出してください。',
               openAt: '2026-03-02T00:00:00Z',
@@ -351,7 +353,7 @@ describe('StaffFormsIndexPage', () => {
           )
         }
 
-        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'DELETE') {
+        if (pathname.endsWith('/staff/forms/0195ec00-0014-7000-8000-000000000001') && method === 'DELETE') {
           deleteRequests.push(url)
           return new Response(null, { status: 204 })
         }
@@ -383,7 +385,9 @@ describe('StaffFormsIndexPage', () => {
       2,
       expect.stringContaining('非公開です。後から必要に応じて設定を変更してください')
     )
-    expect(router.currentRoute.value.fullPath).toBe('/staff/forms/form-circle-b-copy/editor')
+    expect(router.currentRoute.value.fullPath).toBe(
+      '/staff/forms/form-0195ec00-0022-7000-8000-000000000001-copy/editor'
+    )
 
     await router.push('/staff/forms')
     await flushPromises()
@@ -410,7 +414,7 @@ describe('StaffFormsIndexPage', () => {
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
       currentCircle: {
-        id: 'circle-b',
+        id: '0195ec00-0022-7000-8000-000000000001',
         name: 'デモ企画B'
       },
       featureFlags: [],
@@ -436,10 +440,10 @@ describe('StaffFormsIndexPage', () => {
 
     const forms = Array.from({ length: 11 }, (_, index) => ({
       circle: {
-        id: 'circle-b',
+        id: '0195ec00-0022-7000-8000-000000000001',
         name: 'デモ企画B'
       },
-      id: `form-circle-b-${index + 1}`,
+      id: `0195ec00-${String(100 + index).padStart(4, '0')}-7000-8000-000000000001`,
       name: index === 10 ? '物品申請フォーム' : `展示チェックフォーム${index + 1}`,
       description: index === 10 ? '備品を申請してください。' : '展示レイアウトと機材使用申請を提出してください。',
       openAt: '2026-03-02T00:00:00Z',
@@ -477,9 +481,9 @@ describe('StaffFormsIndexPage', () => {
           })
         }
 
-        if (pathname.endsWith('/staff/forms/form-circle-b-11') && method === 'DELETE') {
+        if (pathname.endsWith('/staff/forms/0195ec00-0110-7000-8000-000000000001') && method === 'DELETE') {
           forms.splice(
-            forms.findIndex((form) => form.id === 'form-circle-b-11'),
+            forms.findIndex((form) => form.id === '0195ec00-0110-7000-8000-000000000001'),
             1
           )
           return new Response(null, { status: 204 })

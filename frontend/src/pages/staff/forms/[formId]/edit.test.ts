@@ -87,6 +87,19 @@ describe('StaffFormEditPage', () => {
           })
         }
 
+        if (pathname.endsWith('/staff/tags') && method === 'GET') {
+          return new Response(
+            JSON.stringify([
+              { id: 'tag-exhibit', name: '展示' },
+              { id: 'tag-required', name: '必須' }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'GET') {
           return new Response(
             JSON.stringify({
@@ -173,7 +186,12 @@ describe('StaffFormEditPage', () => {
     await wrapper.get('input[name="openAt"]').setValue('2026-03-02T09:30')
     await wrapper.get('input[name="closeAt"]').setValue('2026-03-22T18:45')
     await wrapper.get('input[name="maxAnswers"]').setValue('3')
-    await wrapper.get('textarea[name="answerableTags"]').setValue('展示\n必須')
+    await wrapper.get('input[name="answerableTags"]').setValue('必')
+    const requiredTagButton = wrapper.findAll('button').find((button) => button.text() === '必須')
+    if (!requiredTagButton) {
+      throw new Error('required tag button not found')
+    }
+    await requiredTagButton.trigger('click')
     await wrapper.get('textarea[name="confirmationMessage"]').setValue('送信が完了しました。')
     const saveFormButton = wrapper
       .findAll('button[type="button"]')
@@ -250,6 +268,13 @@ describe('StaffFormEditPage', () => {
 
         if (pathname.endsWith('/staff/status') && method === 'GET') {
           return new Response(JSON.stringify({ allowed: true, authorized: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (pathname.endsWith('/staff/tags') && method === 'GET') {
+          return new Response(JSON.stringify([{ id: 'tag-exhibit', name: '展示' }]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
           })

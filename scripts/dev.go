@@ -37,6 +37,9 @@ func main() {
 func run(rootDir string) error {
 	composeFile := filepath.Join(rootDir, "docker-compose.postgres.yml")
 
+	if err := resetDatabase(rootDir, composeFile); err != nil {
+		return err
+	}
 	if err := runCommand(rootDir, "docker", "compose", "-f", composeFile, "up", "-d", "postgres"); err != nil {
 		return err
 	}
@@ -47,6 +50,9 @@ func run(rootDir string) error {
 	}
 
 	if err := runCommand(rootDir, "mise", "run", "backend-migrate"); err != nil {
+		return err
+	}
+	if err := runCommand(rootDir, "mise", "run", "backend-seed"); err != nil {
 		return err
 	}
 
@@ -200,6 +206,10 @@ func shutdownDatabase(rootDir string, composeFile string) {
 	if err := runCommand(rootDir, "docker", "compose", "-f", composeFile, "down"); err != nil {
 		log.Printf("db-down failed: %v", err)
 	}
+}
+
+func resetDatabase(rootDir string, composeFile string) error {
+	return runCommand(rootDir, "docker", "compose", "-f", composeFile, "down", "-v")
 }
 
 func runCommand(dir string, name string, args ...string) error {

@@ -2,9 +2,11 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
@@ -84,6 +86,40 @@ func SyncConfiguredUsers(
 	return tx.Commit(ctx)
 }
 
+type configuredUserConflictResolver interface {
+	GetUserByLoginID(ctx context.Context, loginID string) (dbgen.GetUserByLoginIDRow, error)
+	DeleteUser(ctx context.Context, id string) error
+}
+
+func deleteUsersConflictingWithConfiguredLoginIDs(
+	ctx context.Context,
+	q configuredUserConflictResolver,
+	user config.User,
+) error {
+	deleted := make(map[string]struct{}, len(user.LoginIDs))
+	for _, loginID := range user.LoginIDs {
+		matched, err := q.GetUserByLoginID(ctx, loginID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				continue
+			}
+			return err
+		}
+		if matched.ID == user.ID {
+			continue
+		}
+		if _, ok := deleted[matched.ID]; ok {
+			continue
+		}
+		if err := q.DeleteUser(ctx, matched.ID); err != nil {
+			return err
+		}
+		deleted[matched.ID] = struct{}{}
+	}
+
+	return nil
+}
+
 func seedUsers(ctx context.Context, q *dbgen.Queries, authUser config.AuthUser, users []config.User) error {
 	seedUsers := make([]config.User, 0, len(users)+1)
 	seedUsers = append(seedUsers, config.User{
@@ -100,6 +136,10 @@ func seedUsers(ctx context.Context, q *dbgen.Queries, authUser config.AuthUser, 
 	seedUsers = append(seedUsers, users...)
 
 	for _, user := range seedUsers {
+		if err := deleteUsersConflictingWithConfiguredLoginIDs(ctx, q, user); err != nil {
+			return fmt.Errorf("delete conflicting configured users for %s: %w", user.ID, err)
+		}
+
 		passwordHash, err := hashPassword(user.Password)
 		if err != nil {
 			return fmt.Errorf("hash user password: %w", err)

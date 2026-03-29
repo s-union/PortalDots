@@ -8,3 +8,11 @@ sql:
         package: "db"
         out: "internal/platform/postgres/db"
         sql_package: "pgx/v5"
+        overrides:
+          - db_type: "uuid"
+            go_type: "string"
+          - db_type: "uuid"
+            nullable: true
+            go_type:
+              import: "github.com/jackc/pgx/v5/pgtype"
+              type: "Text"

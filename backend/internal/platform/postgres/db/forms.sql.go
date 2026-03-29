@@ -13,7 +13,7 @@ import (
 
 const createForm = `-- name: CreateForm :one
 INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message)
-VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+VALUES (uuidv7(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 `
 

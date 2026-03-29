@@ -23,7 +23,7 @@ import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import { canDeleteCircles, canEditCircles, canSendCircleEmails } from '@/features/staff/access/capabilities'
+import { canAccessCircleMail, canDeleteCircles, canEditCircles } from '@/features/staff/access/capabilities'
 import {
   buildStaffCirclesExportUrl,
   extractStaffCircleValidationMessage,
@@ -66,7 +66,7 @@ const exportUrl = buildStaffCirclesExportUrl()
 
 const canEdit = computed(() => canEditCircles(sessionStore.roles, sessionStore.permissions))
 const canDelete = computed(() => canDeleteCircles(sessionStore.roles, sessionStore.permissions))
-const canSendEmail = computed(() => canSendCircleEmails(sessionStore.roles, sessionStore.permissions))
+const canSendEmail = computed(() => canAccessCircleMail(sessionStore.roles, sessionStore.permissions))
 
 const filterFields: StaffFilterField[] = [
   { key: 'id', label: '企画ID', type: 'string' },
@@ -81,7 +81,6 @@ const filterFields: StaffFilterField[] = [
 ]
 
 const columns: StaffDataGridColumn[] = [
-  { key: 'id', label: '企画ID', sortable: true },
   { key: 'participationTypeName', label: '参加種別', sortable: true },
   { key: 'name', label: '企画名', sortable: true },
   { key: 'nameYomi', label: '企画名(よみ)', sortable: true },
@@ -573,7 +572,7 @@ function matchesFilterQuery(circle: StaffCircleRow, query: StaffFilterQuery) {
               </RouterLink>
               <RouterLink
                 v-if="canSendEmail"
-                :to="`/staff/circles/${encodeURIComponent(String(row.id))}#mail`"
+                :to="`/staff/circles/${encodeURIComponent(String(row.id))}/email`"
                 class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
                 title="メール送信"
               >

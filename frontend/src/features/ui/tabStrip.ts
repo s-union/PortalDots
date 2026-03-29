@@ -48,6 +48,34 @@ export function buildUserSettingsTabs(activeTab: UserSettingsTab, isAuthenticate
 }
 
 export type StaffParticipationTypeTab = 'circles' | 'edit' | 'form'
+export type StaffCircleTab = 'edit' | 'mail'
+
+export function buildStaffCircleTabs(
+  circleId: string,
+  activeTab: StaffCircleTab,
+  options?: { canEdit?: boolean; canSendEmails?: boolean }
+): TabStripItem[] {
+  const encodedCircleId = encodeURIComponent(circleId)
+  const tabs: TabStripItem[] = []
+
+  if (options?.canEdit !== false) {
+    tabs.push({
+      label: '企画情報',
+      to: `/staff/circles/${encodedCircleId}`,
+      active: activeTab === 'edit'
+    })
+  }
+
+  if (options?.canSendEmails !== false) {
+    tabs.push({
+      label: 'メール送信',
+      to: `/staff/circles/${encodedCircleId}/email`,
+      active: activeTab === 'mail'
+    })
+  }
+
+  return tabs
+}
 
 export function buildStaffParticipationTypeTabs(
   typeId: string,

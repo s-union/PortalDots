@@ -11,22 +11,21 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   buildDeleteStaffParticipationTypeConfirmMessage,
   extractStaffParticipationTypeValidationMessage,
-  formatParticipationTypeTags,
-  parseParticipationTypeTags,
   useDeleteStaffParticipationTypeMutation,
   useStaffParticipationTypeDetailQuery,
   useUpdateStaffParticipationTypeMutation
@@ -38,8 +37,10 @@ const router = useRouter()
 const typeId = computed(() => String(route.params.typeId ?? ''))
 const { enabled } = useAuthorizedStaffContext({ capability: 'circles.participationTypes' })
 const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled)
+const tagsQuery = useStaffTagsQuery(enabled)
 const updateMutation = useUpdateStaffParticipationTypeMutation(typeId)
 const deleteMutation = useDeleteStaffParticipationTypeMutation(typeId)
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 
 const form = ref({
   name: '',
@@ -83,14 +84,6 @@ watch(
   { immediate: true }
 )
 
-function handleTagsInput(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLTextAreaElement)) {
-    return
-  }
-  form.value.tags = parseParticipationTypeTags(target.value)
-}
-
 async function handleSave() {
   errorMessage.value = ''
   successMessage.value = ''
@@ -122,8 +115,6 @@ async function handleDelete() {
 
 <template>
   <PageLayout class="max-w-full">
-    <BackLink to="/staff/circles/participation_types"> 参加種別管理へ戻る </BackLink>
-
     <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
 
     <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -132,9 +123,7 @@ async function handleDelete() {
 
     <form v-else-if="detailQuery.data.value" class="space-y-6" @submit.prevent="handleSave">
       <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Participation Type Detail</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
-        <div class="mt-3 text-sm text-muted">参加種別ID : {{ detailQuery.data.value.id }}</div>
+        <h2 class="text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
         <div class="mt-4 flex flex-wrap gap-3">
           <button
             class="rounded border border-danger px-4 py-2 text-sm text-danger transition hover:bg-danger-light disabled:opacity-60"
@@ -215,16 +204,9 @@ async function handleDelete() {
             <div class="grid gap-3">
               <label class="grid gap-2 text-sm text-body">
                 <span class="sr-only">付与タグ</span>
-                <textarea
-                  :value="formatParticipationTypeTags(form.tags)"
-                  class="min-h-24"
-                  name="tags"
-                  @input="handleTagsInput"
-                />
+                <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
               </label>
-              <p class="text-xs text-muted-2">
-                タグ編集権限がなくても、この画面では既存タグを含めた構成をまとめて管理できます。
-              </p>
+              <p class="text-xs text-muted-2">候補から追加しつつ、必要なら未登録タグもそのまま追加できます。</p>
             </div>
           </div>
         </SettingsRow>

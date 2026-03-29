@@ -11,7 +11,7 @@ description = "Install dependencies for the new frontend workspace"
 run = "pnpm install"
 
 [tasks.dev]
-description = "Start db, backend, and frontend dev servers"
+description = "Reset local db, then start backend and frontend dev servers"
 run = "go run ./scripts/dev.go"
 
 [tasks.frontend-dev]
@@ -53,6 +53,11 @@ run = "docker compose -f docker-compose.postgres.yml down -v"
 description = "Apply backend SQL migrations against PORTALDOTS_DATABASE_URL"
 dir = "backend"
 run = "go run ./cmd/migrate"
+
+[tasks.backend-seed]
+description = "Seed or sync demo data against PORTALDOTS_DATABASE_URL"
+dir = "backend"
+run = "go run ./cmd/seed"
 
 [tasks.backend-test]
 description = "Run Go tests for backend"

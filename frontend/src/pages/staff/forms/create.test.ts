@@ -112,6 +112,19 @@ describe('StaffFormCreatePage', () => {
           )
         }
 
+        if (pathname.endsWith('/staff/tags') && method === 'GET') {
+          return new Response(
+            JSON.stringify([
+              { id: 'tag-exhibit', name: '展示' },
+              { id: 'tag-required', name: '必須' }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         throw new Error(`Unexpected request: ${method} ${url}`)
       })
     )
@@ -129,7 +142,18 @@ describe('StaffFormCreatePage', () => {
     await wrapper.get('input[name="openAt"]').setValue('2026-03-15T09:00')
     await wrapper.get('input[name="closeAt"]').setValue('2026-03-30T18:45')
     await wrapper.get('input[name="maxAnswers"]').setValue('3')
-    await wrapper.get('textarea[name="answerableTags"]').setValue('展示\n必須')
+    await wrapper.get('input[name="answerableTags"]').setValue('展')
+    const exhibitTagButton = wrapper.findAll('button').find((button) => button.text() === '展示')
+    if (!exhibitTagButton) {
+      throw new Error('exhibit tag button not found')
+    }
+    await exhibitTagButton.trigger('click')
+    await wrapper.get('input[name="answerableTags"]').setValue('必')
+    const requiredTagButton = wrapper.findAll('button').find((button) => button.text() === '必須')
+    if (!requiredTagButton) {
+      throw new Error('required tag button not found')
+    }
+    await requiredTagButton.trigger('click')
     await wrapper.get('textarea[name="confirmationMessage"]').setValue('回答ありがとうございました。')
     await wrapper.get('button[type="submit"]').trigger('submit')
     await flushPromises()

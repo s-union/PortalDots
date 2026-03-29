@@ -319,6 +319,28 @@ describe('app router guards', () => {
     expect(router.currentRoute.value.fullPath).toBe('/staff')
   })
 
+  it('allows staff circle mail access with circle edit permission', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: [],
+      permissions: ['staff.circles.read,edit'],
+      user: {
+        id: 'circle-user',
+        displayName: 'Circle User',
+        canDeleteAccount: false
+      }
+    })
+
+    await router.push('/staff/circles/circle-a/email')
+
+    expect(router.currentRoute.value.fullPath).toBe('/staff/circles/circle-a/email')
+  })
+
   it('resolves unknown routes to the not-found page', async () => {
     await router.push('/definitely-missing')
 

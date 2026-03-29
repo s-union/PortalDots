@@ -5,6 +5,8 @@ export type StaffCapability =
   | 'permissions.edit'
   | 'circles.read'
   | 'circles.edit'
+  | 'circles.sendEmails'
+  | 'circles.mail'
   | 'circles.participationTypes'
   | 'pages.read'
   | 'pages.edit'
@@ -111,6 +113,10 @@ export function canSendCircleEmails(roles: string[], permissions: string[] = [])
     hasAnyRole(roles, 'admin', 'circle_manager') ||
     hasAnyPermission(permissions, 'staff.circles', 'staff.circles.read,send_email')
   )
+}
+
+export function canAccessCircleMail(roles: string[], permissions: string[] = []) {
+  return canEditCircles(roles, permissions) || canSendCircleEmails(roles, permissions)
 }
 
 export function canManageParticipationTypes(roles: string[], permissions: string[] = []) {
@@ -428,6 +434,10 @@ export function canAccessStaffCapability(capability: StaffCapability, roles: str
       return canReadCircles(roles, permissions)
     case 'circles.edit':
       return canEditCircles(roles, permissions)
+    case 'circles.sendEmails':
+      return canSendCircleEmails(roles, permissions)
+    case 'circles.mail':
+      return canAccessCircleMail(roles, permissions)
     case 'circles.participationTypes':
       return canManageParticipationTypes(roles, permissions)
     case 'pages.read':

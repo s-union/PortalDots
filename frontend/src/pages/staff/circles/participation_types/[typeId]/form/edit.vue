@@ -12,7 +12,6 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -105,8 +104,6 @@ async function handleSave() {
 
 <template>
   <PageLayout class="max-w-full">
-    <BackLink to="/staff/circles/participation_types"> 参加種別管理へ戻る </BackLink>
-
     <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
 
     <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
@@ -115,8 +112,7 @@ async function handleSave() {
 
     <form v-else-if="detailQuery.data.value" class="space-y-6" @submit.prevent="handleSave">
       <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Participation Form Settings</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
+        <h2 class="text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
         <p class="mt-3 text-sm text-muted">参加登録フォームの公開状態と文面を管理します。</p>
       </SurfaceCard>
 

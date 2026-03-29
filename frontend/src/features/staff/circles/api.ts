@@ -4,6 +4,7 @@ import type { z } from 'zod'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import {
   parseWithSchema,
+  staffCircleMemberSchema,
   staffCircleMailFormSchema,
   staffCircleSchema,
   staffManagedCircleSchema
@@ -17,6 +18,7 @@ export type StaffCircle = z.infer<typeof staffCircleSchema>
 export type StaffManagedCircle = z.infer<typeof staffManagedCircleSchema>
 export type StaffCircleMailForm = z.infer<typeof staffCircleMailFormSchema>
 export type StaffCircleMailRecipient = StaffCircleMailForm['recipients'][number]
+export type StaffCircleMember = z.infer<typeof staffCircleMemberSchema>
 
 export interface MutateStaffCirclePayload {
   name: string
@@ -39,6 +41,11 @@ interface SendStaffCircleMailPayload {
   recipient: 'all' | 'leader'
   subject: string
   body: string
+}
+
+interface AddStaffCircleMemberPayload {
+  circleId: string
+  loginId: string
 }
 
 interface StaffCirclesPagination {
@@ -128,6 +135,25 @@ export async function fetchStaffCircleMailForm(circleId: string) {
     parseStaffCircleMailForm,
     {
       errorMessage: 'Failed to fetch staff circle mail form'
+    }
+  )
+}
+
+export async function fetchStaffCircleMembers(circleId: string) {
+  return $api.queryData(
+    'get',
+    '/staff/circles/{circleID}/members',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: circleId
+        }
+      }
+    },
+    parseStaffCircleMembers,
+    {
+      errorMessage: 'Failed to fetch staff circle members'
     }
   )
 }
@@ -222,6 +248,52 @@ export async function sendStaffCircleMail(payload: SendStaffCircleMailPayload, c
       errorMessage: 'Failed to queue staff circle mail',
       errorParsers: {
         422: (error) => parseValidationError(error, 'staff circle mail')
+      }
+    }
+  )
+}
+
+export async function addStaffCircleMember(payload: AddStaffCircleMemberPayload, csrfToken: string) {
+  await $api.noContentMutation(
+    'post',
+    '/staff/circles/{circleID}/members',
+    {
+      headers: createJsonHeaders(csrfToken),
+      params: {
+        path: {
+          circleID: payload.circleId
+        }
+      },
+      body: {
+        loginId: payload.loginId
+      }
+    },
+    {
+      errorMessage: 'Failed to add staff circle member',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'staff circle member')
+      }
+    }
+  )
+}
+
+export async function deleteStaffCircleMember(circleId: string, userId: string, csrfToken: string) {
+  await $api.noContentMutation(
+    'delete',
+    '/staff/circles/{circleID}/members/{userID}',
+    {
+      headers: createJsonHeaders(csrfToken),
+      params: {
+        path: {
+          circleID: circleId,
+          userID: userId
+        }
+      }
+    },
+    {
+      errorMessage: 'Failed to delete staff circle member',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'staff circle member')
       }
     }
   )
@@ -341,6 +413,30 @@ export function useStaffCircleMailFormQuery(circleId: MaybeRefOrGetter<string>, 
   )
 }
 
+export function useStaffCircleMembersQuery(circleId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles/{circleID}/members',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: toValue(circleId)
+        }
+      }
+    }),
+    parseStaffCircleMembers,
+    {
+      queryKey: computed(() => ['staff', 'circles', 'members', toValue(circleId)]),
+      enabled: computed(() => toValue(enabled) && toValue(circleId).trim().length > 0),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch staff circle members'
+    }
+  )
+}
+
 export function useCreateStaffCircleMutation() {
   const queryClient = useQueryClient()
   const sessionStore = useSessionStore()
@@ -421,6 +517,45 @@ export function useSendStaffCircleMailMutation(circleId: MaybeRefOrGetter<string
   })
 }
 
+export function useAddStaffCircleMemberMutation(circleId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (loginId: string) =>
+      addStaffCircleMember({ circleId: toValue(circleId), loginId }, sessionStore.csrfToken),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'members', toValue(circleId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'mail', toValue(circleId)]
+        })
+      ])
+    }
+  })
+}
+
+export function useDeleteStaffCircleMemberMutation(circleId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (userId: string) => deleteStaffCircleMember(toValue(circleId), userId, sessionStore.csrfToken),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'members', toValue(circleId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'mail', toValue(circleId)]
+        })
+      ])
+    }
+  })
+}
+
 export function useStaffCircleForm() {
   return ref<MutateStaffCirclePayload>({
     name: '',
@@ -451,6 +586,10 @@ export function extractStaffCircleMailValidationMessage(error: unknown) {
   return extractValidationMessage(error, '企画向けメールの登録に失敗しました。')
 }
 
+export function extractStaffCircleMemberValidationMessage(error: unknown) {
+  return extractValidationMessage(error, '企画所属者の更新に失敗しました。')
+}
+
 export function buildStaffCirclesExportUrl() {
   return buildApiUrl('/staff/circles/export')
 }
@@ -469,6 +608,10 @@ function parseStaffCircle(value: unknown): StaffCircle {
 
 function parseStaffCircleMailForm(value: unknown): StaffCircleMailForm {
   return parseWithSchema(staffCircleMailFormSchema, value, 'staff circle mail form')
+}
+
+function parseStaffCircleMembers(value: unknown): StaffCircleMember[] {
+  return parseWithSchema(staffCircleMemberSchema.array(), value, 'staff circle members')
 }
 
 export type StaffCirclePage = PaginatedResult<StaffCircle>

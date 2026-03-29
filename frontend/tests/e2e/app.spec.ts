@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
   let staffAuthorized = false
   let staffPages = [
     {
-      id: 'page-circle-b-private',
+      id: '0195ec00-0035-7000-8000-000000000001',
       title: '非公開メモ',
       publishedAt: '2026-03-04T09:00:00Z',
       isPinned: false,
@@ -130,13 +130,13 @@ test.beforeEach(async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify([
         {
-          id: 'circle-a',
+          id: '0195ec00-0021-7000-8000-000000000001',
           name: 'デモ企画A',
           groupName: 'Aブロック',
           participationTypeName: '模擬店'
         },
         {
-          id: 'circle-b',
+          id: '0195ec00-0022-7000-8000-000000000001',
           name: 'デモ企画B',
           groupName: 'Bブロック',
           participationTypeName: '展示'
@@ -147,7 +147,7 @@ test.beforeEach(async ({ page }) => {
 
   await page.route('**/v1/circles/current', async (route) => {
     currentCircle = {
-      id: 'circle-b',
+      id: '0195ec00-0022-7000-8000-000000000001',
       name: 'デモ企画B'
     }
     await route.fulfill({ status: 204 })
@@ -161,7 +161,7 @@ test.beforeEach(async ({ page }) => {
       query === '' || query === 'レイアウト'
         ? [
             {
-              id: 'page-circle-b-1',
+              id: '0195ec00-0034-7000-8000-000000000001',
               title: '展示レイアウト更新',
               publishedAt: '2026-03-03T09:00:00Z'
             }
@@ -175,12 +175,12 @@ test.beforeEach(async ({ page }) => {
     })
   })
 
-  await page.route('**/v1/pages/page-circle-b-1', async (route) => {
+  await page.route('**/v1/pages/0195ec00-0034-7000-8000-000000000001', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        id: 'page-circle-b-1',
+        id: '0195ec00-0034-7000-8000-000000000001',
         title: '展示レイアウト更新',
         body: 'Bブロックの展示レイアウトを更新しました。',
         publishedAt: '2026-03-03T09:00:00Z'
@@ -194,7 +194,7 @@ test.beforeEach(async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify([
         {
-          id: 'document-circle-b-1',
+          id: '0195ec00-0042-7000-8000-000000000001',
           name: '展示ガイド',
           description: 'Bブロック向けの展示ガイドです。'
         }
@@ -202,17 +202,17 @@ test.beforeEach(async ({ page }) => {
     })
   })
 
-  await page.route('**/v1/documents/document-circle-b-1', async (route) => {
+  await page.route('**/v1/documents/0195ec00-0042-7000-8000-000000000001', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        id: 'document-circle-b-1',
+        id: '0195ec00-0042-7000-8000-000000000001',
         name: '展示ガイド',
         description: 'Bブロック向けの展示ガイドです。',
         filename: 'b-exhibition-guide.txt',
         mimeType: 'text/plain; charset=utf-8',
-        downloadUrl: '/v1/documents/document-circle-b-1/file'
+        downloadUrl: '/v1/documents/0195ec00-0042-7000-8000-000000000001/file'
       })
     })
   })
@@ -223,7 +223,7 @@ test.beforeEach(async ({ page }) => {
       contentType: 'application/json',
       body: JSON.stringify([
         {
-          id: 'form-circle-b-1',
+          id: '0195ec00-0014-7000-8000-000000000001',
           name: '展示チェックフォーム',
           closeAt: '2026-03-22T23:59:59Z'
         }
@@ -231,12 +231,12 @@ test.beforeEach(async ({ page }) => {
     })
   })
 
-  await page.route('**/v1/forms/form-circle-b-1', async (route) => {
+  await page.route('**/v1/forms/0195ec00-0014-7000-8000-000000000001', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        id: 'form-circle-b-1',
+        id: '0195ec00-0014-7000-8000-000000000001',
         name: '展示チェックフォーム',
         description: '展示レイアウトと機材使用申請を提出してください。',
         openAt: '2026-03-02T00:00:00Z',
@@ -245,7 +245,7 @@ test.beforeEach(async ({ page }) => {
     })
   })
 
-  await page.route('**/v1/forms/form-circle-b-1/answer', async (route) => {
+  await page.route('**/v1/forms/0195ec00-0014-7000-8000-000000000001/answer', async (route) => {
     if (route.request().method() === 'PUT') {
       const payload = parseJsonObject(route.request().postData())
       formAnswerBody = typeof payload.body === 'string' ? payload.body : ''
@@ -313,7 +313,7 @@ test('login to workspace pages flow renders', async ({ page }) => {
   await expect(page.getByText('展示レイアウト更新')).toBeVisible()
 
   await page.getByRole('link', { name: '展示レイアウト更新' }).click()
-  await expect(page).toHaveURL(/\/workspace\/pages\/page-circle-b-1$/)
+  await expect(page).toHaveURL(/\/workspace\/pages\/0195ec00-0034-7000-8000-000000000001$/)
   await expect(page.getByText('Bブロックの展示レイアウトを更新しました。')).toBeVisible()
 })
 
@@ -350,11 +350,11 @@ test('documents flow renders download metadata', async ({ page }) => {
   await expect(page.getByRole('link', { name: '展示ガイド Bブロック向けの展示ガイドです。' })).toBeVisible()
 
   await page.getByRole('link', { name: '展示ガイド Bブロック向けの展示ガイドです。' }).click()
-  await expect(page).toHaveURL(/\/workspace\/documents\/document-circle-b-1$/)
+  await expect(page).toHaveURL(/\/workspace\/documents\/0195ec00-0042-7000-8000-000000000001$/)
   await expect(page.getByText('b-exhibition-guide.txt')).toBeVisible()
   await expect(page.getByRole('link', { name: 'ダウンロード' })).toHaveAttribute(
     'href',
-    /\/v1\/documents\/document-circle-b-1\/file$/
+    /\/v1\/documents\/0195ec00-0042-7000-8000-000000000001\/file$/
   )
 })
 
@@ -369,7 +369,7 @@ test('forms flow renders open forms', async ({ page }) => {
 
   await expect(page.getByText('展示チェックフォーム')).toBeVisible()
   await page.getByRole('link', { name: /展示チェックフォーム/ }).click()
-  await expect(page).toHaveURL(/\/workspace\/forms\/form-circle-b-1$/)
+  await expect(page).toHaveURL(/\/workspace\/forms\/0195ec00-0014-7000-8000-000000000001$/)
   await expect(page.getByText('展示レイアウトと機材使用申請を提出してください。')).toBeVisible()
   await page.locator('textarea[name="answer-body"]').fill('電源は 2 口必要です。')
   await page.getByRole('button', { name: '回答を保存' }).click()
@@ -383,7 +383,7 @@ test('forms flow renders validation errors when answer is blank', async ({ page 
   await page.getByRole('button', { name: 'ログイン' }).click()
 
   await page.getByRole('button', { name: 'デモ企画B' }).click()
-  await page.goto('/workspace/forms/form-circle-b-1')
+  await page.goto('/workspace/forms/0195ec00-0014-7000-8000-000000000001')
 
   await page.getByRole('button', { name: '回答を保存' }).click()
   await expect(page.getByText('回答を入力してください')).toBeVisible()

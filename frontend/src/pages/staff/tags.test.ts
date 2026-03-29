@@ -37,8 +37,8 @@ describe('StaffTagsPage', () => {
     })
 
     const tags = [
-      { id: 'tag-1', name: '飲食' },
-      { id: 'tag-2', name: '展示' }
+      { id: 'tag-2', name: '展示' },
+      { id: 'tag-1', name: '飲食' }
     ]
 
     const router = createRouter({
@@ -82,14 +82,18 @@ describe('StaffTagsPage', () => {
           })
         }
         if (pathname.endsWith('/staff/tags/tag-1') && method === 'PUT') {
-          tags[0] = { id: 'tag-1', name: '更新タグ' }
-          return new Response(JSON.stringify(tags[0]), {
+          const targetIndex = tags.findIndex((tag) => tag.id === 'tag-1')
+          tags[targetIndex] = { id: 'tag-1', name: '更新タグ' }
+          return new Response(JSON.stringify(tags[targetIndex]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
           })
         }
-        if (pathname.endsWith('/staff/tags/tag-2') && method === 'DELETE') {
-          tags.splice(1, 1)
+        if (pathname.endsWith('/staff/tags/tag-1') && method === 'DELETE') {
+          tags.splice(
+            tags.findIndex((tag) => tag.id === 'tag-1'),
+            1
+          )
           return new Response(null, { status: 204 })
         }
 
@@ -98,31 +102,69 @@ describe('StaffTagsPage', () => {
     )
 
     const wrapper = mount(StaffTagsPage, {
+      attachTo: document.body,
       global: { plugins: [pinia, router, createQueryPlugin()] }
     })
     await flushPromises()
 
     expect(wrapper.text()).toContain('飲食')
+    expect(wrapper.text()).not.toContain('タグID')
+    expect(wrapper.text().indexOf('飲食')).toBeLessThan(wrapper.text().indexOf('展示'))
     expect(wrapper.get('a[href$="/staff/tags/export"]').text()).toContain('CSVで出力')
 
-    await wrapper.get('input[name="name"]').setValue('新規タグ')
-    await wrapper.get('form').trigger('submit')
+    await wrapper.get('button[type="button"]').trigger('click')
+    await flushPromises()
+
+    const createNameInput = document.body.querySelector('input[name="name"]')
+    if (!(createNameInput instanceof HTMLInputElement)) {
+      throw new Error('create name input not found')
+    }
+    createNameInput.value = '新規タグ'
+    createNameInput.dispatchEvent(new Event('input'))
+    const createSubmitButton = document.body.querySelector('button[type="submit"]')
+    if (!(createSubmitButton instanceof HTMLButtonElement)) {
+      throw new Error('create submit button not found')
+    }
+    createSubmitButton.click()
     await flushPromises()
 
     expect(wrapper.text()).toContain('新規タグ')
 
-    const textInputs = wrapper.findAll('input[type="text"]')
-    await textInputs[1].setValue('更新タグ')
-    const buttons = wrapper.findAll('button[type="button"]')
-    await buttons[0].trigger('click')
+    const editButtons = wrapper.findAll('button[type="button"]').filter((button) => button.text().includes('編集'))
+    await editButtons[0]?.trigger('click')
+    await flushPromises()
+
+    const editNameInput = document.body.querySelector('input[name="name"]')
+    if (!(editNameInput instanceof HTMLInputElement)) {
+      throw new Error('edit name input not found')
+    }
+    editNameInput.value = '更新タグ'
+    editNameInput.dispatchEvent(new Event('input'))
+    const saveButton = document.body.querySelector('button[type="submit"]')
+    if (!(saveButton instanceof HTMLButtonElement)) {
+      throw new Error('save button not found')
+    }
+    saveButton.click()
     await flushPromises()
     expect(wrapper.text()).toContain('更新タグ')
 
-    await buttons[3].trigger('click')
+    const reopenEditButtons = wrapper
+      .findAll('button[type="button"]')
+      .filter((button) => button.text().includes('編集'))
+    await reopenEditButtons[0]?.trigger('click')
     await flushPromises()
-    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('本当に「展示」タグを削除しますか？'))
+
+    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
+      button.textContent?.includes('削除')
+    )
+    if (!(deleteButton instanceof HTMLButtonElement)) {
+      throw new Error('delete button not found')
+    }
+    deleteButton.click()
+    await flushPromises()
+    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('本当に「更新タグ」タグを削除しますか？'))
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('全ユーザー公開になります'))
-    expect(wrapper.text()).not.toContain('展示')
+    expect(wrapper.findAll('button[class*="border-danger"]').length).toBe(0)
   })
 
   it('loads tags without current circle', async () => {

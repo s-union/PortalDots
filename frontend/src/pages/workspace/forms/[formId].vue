@@ -30,8 +30,6 @@ import {
 } from '@/features/forms/answers'
 import { useSessionStore } from '@/features/session/store'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
-import { cn } from '@/lib/ui/cn'
-import { buttonVariants } from '@/lib/ui/variants'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/workspace/forms/[formId]')
@@ -192,33 +190,37 @@ function handleFileChange(questionId: string, event: Event) {
     </div>
 
     <article v-else-if="formQuery.data.value" class="space-y-6">
-      <SurfaceCard>
-        <SurfaceHeader>
-          <template #title>{{ formQuery.data.value.name }}</template>
-          <template #description>
+      <section class="space-y-4 rounded border border-border bg-surface px-6 py-6 shadow-lv1">
+        <div>
+          <h1 class="text-3xl font-semibold text-body">{{ formQuery.data.value.name }}</h1>
+          <p class="mt-3 text-sm text-muted">
             受付期間 : {{ formatDateTime(formQuery.data.value.openAt) }}〜{{
               formatDateTime(formQuery.data.value.closeAt)
             }}
-            <span v-if="!formQuery.data.value.isOpen" class="font-semibold text-danger"> — 受付期間外です </span>
-            <template v-if="formQuery.data.value.maxAnswers > 1">
-              <br />1企画あたり {{ formQuery.data.value.maxAnswers }} 件まで回答できます。
-            </template>
-          </template>
-        </SurfaceHeader>
-        <div class="px-6 py-5">
-          <p class="whitespace-pre-wrap text-sm leading-7 text-body">
-            {{ formQuery.data.value.description }}
           </p>
-          <div
-            v-if="isLimitedPublic"
-            class="mt-4 rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
-          >
-            この申請は
-            <span class="font-semibold">{{ formQuery.data.value.answerableTags.join(' / ') }}</span>
-            のタグを持つ企画に限定公開されています。
-          </div>
+          <p v-if="!formQuery.data.value.isOpen" class="mt-1 text-sm font-semibold text-danger">受付期間外です</p>
+          <p v-if="formQuery.data.value.maxAnswers > 1" class="mt-1 text-sm text-muted">
+            1企画あたり {{ formQuery.data.value.maxAnswers }} 件まで回答できます。
+          </p>
         </div>
-      </SurfaceCard>
+
+        <p class="whitespace-pre-wrap text-sm leading-7 text-body">
+          {{ formQuery.data.value.description }}
+        </p>
+
+        <div
+          v-if="isLimitedPublic"
+          class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
+        >
+          <span
+            class="mr-2 inline-flex rounded border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"
+          >
+            限定公開
+          </span>
+          このフォームは、{{ formQuery.data.value.answerableTags.join(' / ') }}
+          のタグを持つ企画に限定公開されます。
+        </div>
+      </section>
 
       <SurfaceCard>
         <SurfaceHeader>
@@ -297,10 +299,12 @@ function handleFileChange(questionId: string, event: Event) {
         </div>
       </SurfaceCard>
 
-      <SurfaceCard>
-        <SurfaceHeader>
-          <template #title>{{ formQuery.data.value.questions.length > 0 ? '回答を入力' : '回答内容' }}</template>
-        </SurfaceHeader>
+      <div class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
+        <div class="border-b border-border px-6 py-4">
+          <h2 class="text-lg font-semibold text-body">
+            {{ formQuery.data.value.questions.length > 0 ? '回答を入力' : '回答内容' }}
+          </h2>
+        </div>
 
         <div class="grid gap-0">
           <template v-if="formQuery.data.value.questions.length === 0">
@@ -321,7 +325,7 @@ function handleFileChange(questionId: string, event: Event) {
 
           <template v-for="question in formQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
-              <h4 class="text-lg font-semibold text-body">{{ question.name }}</h4>
+              <h2 class="text-lg font-semibold text-body">{{ question.name }}</h2>
               <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
                 {{ question.description }}
               </p>
@@ -332,7 +336,7 @@ function handleFileChange(questionId: string, event: Event) {
                 <div>
                   <p class="text-sm font-semibold text-body">
                     {{ question.name }}
-                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger"> 必須 </span>
+                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
                   </p>
                   <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
                     {{ question.description }}
@@ -365,7 +369,7 @@ function handleFileChange(questionId: string, event: Event) {
             </div>
           </template>
         </div>
-      </SurfaceCard>
+      </div>
 
       <AlertMessage v-if="errorMessage" tone="danger">
         {{ errorMessage }}
@@ -373,7 +377,7 @@ function handleFileChange(questionId: string, event: Event) {
 
       <div class="flex justify-center">
         <button
-          :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
+          class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover"
           :disabled="isDisabled || isSavingAnswer"
           type="button"
           @click="handleSaveAnswer"

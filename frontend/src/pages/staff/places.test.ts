@@ -38,8 +38,8 @@ describe('StaffPlacesPage', () => {
     })
 
     const places = [
-      { id: 'place-1', name: '1号館', type: 1, notes: '屋内' },
-      { id: 'place-2', name: '中庭', type: 2, notes: '屋外' }
+      { id: 'place-2', name: '中庭', type: 2, notes: '屋外' },
+      { id: 'place-1', name: '1号館', type: 1, notes: '屋内' }
     ]
 
     const router = createRouter({
@@ -83,14 +83,14 @@ describe('StaffPlacesPage', () => {
           })
         }
         if (pathname.endsWith('/staff/places/place-1') && method === 'PUT') {
-          places[0] = { id: 'place-1', name: '更新後 1号館', type: 1, notes: '更新' }
-          return new Response(JSON.stringify(places[0]), {
+          places[1] = { id: 'place-1', name: '更新後 1号館', type: 1, notes: '更新' }
+          return new Response(JSON.stringify(places[1]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
           })
         }
         if (pathname.endsWith('/staff/places/place-2') && method === 'DELETE') {
-          places.splice(1, 1)
+          places.splice(0, 1)
           return new Response(null, { status: 204 })
         }
 
@@ -104,6 +104,10 @@ describe('StaffPlacesPage', () => {
     await flushPromises()
 
     expect(wrapper.get('a[href$="/v1/staff/places/export"]').text()).toContain('CSVで出力(場所別企画一覧)')
+    expect(wrapper.text()).not.toContain('場所ID')
+    expect(wrapper.text()).not.toContain('place-1')
+    expect(wrapper.text()).not.toContain('place-2')
+    expect(wrapper.text().indexOf('1号館')).toBeLessThan(wrapper.text().indexOf('中庭'))
     expect(wrapper.text()).toContain('1号館')
 
     const createInputs = wrapper.findAll('input[name]')

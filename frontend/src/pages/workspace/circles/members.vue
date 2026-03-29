@@ -136,7 +136,6 @@ async function handleRemoveMember(userId: string, displayName: string) {
       </p>
     </SurfaceCard>
 
-    <!-- 招待 URL -->
     <SettingsSection title="招待リンク">
       <SettingsRow>
         <div class="grid gap-3">
@@ -187,7 +186,6 @@ async function handleRemoveMember(userId: string, displayName: string) {
       </form>
     </SettingsSection>
 
-    <!-- メンバー一覧 -->
     <SettingsSection title="メンバー一覧">
       <div v-if="membersQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
 

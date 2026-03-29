@@ -35,7 +35,6 @@ const pageDetailPath = (pageId: string) =>
   <section class="space-y-6">
     <HomeModeTabs v-if="sessionStore.isAuthenticated && canAccessStaff" :is-staff-page="false" />
 
-    <!-- 未ログインのみ表示するヒーローヘッダー -->
     <header v-if="!sessionStore.isAuthenticated" class="border-b border-border bg-surface">
       <div
         class="mx-auto grid max-w-[1024px] gap-6 px-6 py-8 max-[1000px]:px-4 min-[1201px]:grid-cols-[minmax(0,1fr)_17.1rem]"
@@ -74,7 +73,6 @@ const pageDetailPath = (pageId: string) =>
       </div>
     </header>
 
-    <!-- 公開コンテンツ（認証状態に関わらず表示） -->
     <div class="mx-auto max-w-[1024px] px-6 max-[1000px]:px-4">
       <ListPanel v-for="page in publicPinnedPages" :key="page.id" legacy overflow-hidden>
         <div class="border-b border-border px-6 py-[1.2rem] max-[1000px]:px-4">

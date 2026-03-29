@@ -12,6 +12,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime, formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -22,13 +23,12 @@ import {
   buildCopyStaffFormConfirmMessage,
   buildDeleteStaffFormConfirmMessage,
   extractStaffFormValidationMessage,
-  formatStaffFormTags,
-  parseStaffFormTags,
   useCopyStaffFormMutation,
   useDeleteStaffFormMutation,
   useStaffFormDetailQuery,
   useUpdateStaffFormMutation
 } from '@/features/staff/forms/api'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
@@ -43,6 +43,7 @@ const formQuery = useStaffFormDetailQuery(
   formId,
   computed(() => staffStatusQuery.data.value?.authorized === true)
 )
+const tagsQuery = useStaffTagsQuery(computed(() => staffStatusQuery.data.value?.authorized === true))
 const updateFormMutation = useUpdateStaffFormMutation(formId)
 const copyFormMutation = useCopyStaffFormMutation()
 const deleteFormMutation = useDeleteStaffFormMutation()
@@ -61,6 +62,7 @@ const editForm = ref({
 
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
 const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 
 const openAtInput = computed({
   get: () => formatDateTimeLocalValue(editForm.value.openAt),
@@ -73,13 +75,6 @@ const closeAtInput = computed({
   get: () => formatDateTimeLocalValue(editForm.value.closeAt),
   set: (value: string) => {
     editForm.value.closeAt = parseDateTimeLocalValue(value, editForm.value.closeAt)
-  }
-})
-
-const answerableTagsInput = computed({
-  get: () => formatStaffFormTags(editForm.value.answerableTags),
-  set: (value: string) => {
-    editForm.value.answerableTags = parseStaffFormTags(value)
   }
 })
 
@@ -320,10 +315,10 @@ async function handleDeleteForm() {
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span>回答可能タグ</span>
-                <textarea
-                  v-model="answerableTagsInput"
+                <StaffTagPicker
+                  v-model="editForm.answerableTags"
+                  :available-tags="availableTags"
                   :disabled="isParticipationForm"
-                  class="min-h-24 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   name="answerableTags"
                 />
               </label>

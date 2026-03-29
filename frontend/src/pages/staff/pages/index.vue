@@ -11,6 +11,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime } from '@/lib/format/datetime'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -24,8 +25,6 @@ import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import {
   buildStaffPagesExportUrl,
   extractStaffPageValidationMessage,
-  formatStaffPageTags,
-  parseStaffPageTags,
   useCreateStaffPageMutation,
   useStaffPageForm,
   useStaffPagesQuery
@@ -46,7 +45,10 @@ const createPageMutation = useCreateStaffPageMutation()
 const form = useStaffPageForm()
 const errorMessage = ref('')
 const exportHref = computed(() => buildStaffPagesExportUrl())
-const viewableTagsText = ref('')
+const sortedPages = computed(() =>
+  [...(pagesQuery.data.value ?? [])].sort((left, right) => left.id.localeCompare(right.id))
+)
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const availableDocuments = computed(() =>
   (documentsQuery.data.value ?? []).filter((document) => document.circle.id === form.value.circleId)
 )
@@ -67,14 +69,6 @@ watch(
   (value) => {
     searchQuery.value = String(value ?? '')
   }
-)
-
-watch(
-  () => form.value.viewableTags,
-  (value) => {
-    viewableTagsText.value = formatStaffPageTags(value)
-  },
-  { immediate: true }
 )
 
 async function handleSearchSubmit() {
@@ -110,19 +104,9 @@ async function handleCreatePage() {
       documentIds: [],
       sendEmails: false
     }
-    viewableTagsText.value = ''
   } catch (error) {
     errorMessage.value = extractStaffPageValidationMessage(error)
   }
-}
-
-function handleViewableTagsInput(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLTextAreaElement)) {
-    return
-  }
-
-  form.value.viewableTags = parseStaffPageTags(target.value)
 }
 
 function handleDocumentChange(documentId: string, event: Event) {
@@ -197,7 +181,6 @@ function handleDocumentChange(documentId: string, event: Event) {
           <thead class="bg-form-control">
             <tr class="text-left text-muted">
               <th class="border-b border-border px-4 py-3 font-semibold">企画</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">お知らせID</th>
               <th class="border-b border-border px-4 py-3 font-semibold">タイトル</th>
               <th class="border-b border-border px-4 py-3 font-semibold">固定</th>
               <th class="border-b border-border px-4 py-3 font-semibold">公開</th>
@@ -206,9 +189,8 @@ function handleDocumentChange(documentId: string, event: Event) {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="page in pagesQuery.data.value" :key="page.id" class="transition hover:bg-form-control">
+            <tr v-for="page in sortedPages" :key="page.id" class="transition hover:bg-form-control">
               <td class="border-b border-border px-4 py-4">{{ page.circle.name }}</td>
-              <td class="border-b border-border px-4 py-4">{{ page.id }}</td>
               <td class="border-b border-border px-4 py-4 font-medium text-body">
                 <RouterLink :to="`/staff/pages/${page.id}`" class="text-primary hover:underline">
                   {{ page.title }}
@@ -262,17 +244,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 
         <label class="grid gap-2 text-sm text-body">
           <span>閲覧可能なタグ</span>
-          <textarea
-            :value="viewableTagsText"
-            class="min-h-24"
-            name="viewableTags"
-            placeholder="1 行に 1 つ、またはカンマ区切りで入力"
-            @input="handleViewableTagsInput"
-          />
-          <span class="text-xs text-muted">
-            登録済みタグ:
-            {{ (tagsQuery.data.value ?? []).map((tag) => tag.name).join(' / ') || '-' }}
-          </span>
+          <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
         </label>
 
         <fieldset class="grid gap-2 text-sm text-body">

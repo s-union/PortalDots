@@ -129,6 +129,25 @@ describe('StaffDocumentsIndexPage', () => {
                   createdAt: '2026-03-04T09:00:00Z',
                   updatedAt: '2026-03-04T09:00:00Z',
                   downloadUrl: '/v1/staff/documents/document-circle-b-private'
+                },
+                {
+                  circle: {
+                    id: 'circle-b',
+                    name: 'デモ企画B'
+                  },
+                  id: 'document-circle-b-checklist',
+                  name: 'チェック事項',
+                  description: '事前確認用',
+                  notes: '先に確認',
+                  isImportant: false,
+                  filename: 'check.txt',
+                  extension: 'TXT',
+                  mimeType: 'text/plain',
+                  sizeBytes: 256,
+                  isPublic: true,
+                  createdAt: '2026-03-03T09:00:00Z',
+                  updatedAt: '2026-03-03T09:00:00Z',
+                  downloadUrl: '/v1/staff/documents/document-circle-b-checklist'
                 }
               ]
             : [
@@ -150,6 +169,25 @@ describe('StaffDocumentsIndexPage', () => {
                   createdAt: '2026-03-04T09:00:00Z',
                   updatedAt: '2026-03-04T09:00:00Z',
                   downloadUrl: '/v1/staff/documents/document-circle-b-private'
+                },
+                {
+                  circle: {
+                    id: 'circle-b',
+                    name: 'デモ企画B'
+                  },
+                  id: 'document-circle-b-checklist',
+                  name: 'チェック事項',
+                  description: '事前確認用',
+                  notes: '先に確認',
+                  isImportant: false,
+                  filename: 'check.txt',
+                  extension: 'TXT',
+                  mimeType: 'text/plain',
+                  sizeBytes: 256,
+                  isPublic: true,
+                  createdAt: '2026-03-03T09:00:00Z',
+                  updatedAt: '2026-03-03T09:00:00Z',
+                  downloadUrl: '/v1/staff/documents/document-circle-b-checklist'
                 }
               ]
 
@@ -200,6 +238,9 @@ describe('StaffDocumentsIndexPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('内部メモ')
+    expect(wrapper.text()).toContain('チェック事項')
+    expect(wrapper.text()).not.toContain('配布資料ID')
+    expect(wrapper.text().indexOf('チェック事項')).toBeLessThan(wrapper.text().indexOf('内部メモ'))
 
     await wrapper.get('select[name="circleId"]').setValue('circle-b')
     await wrapper.get('input[name="name"]').setValue('設営チェックシート')

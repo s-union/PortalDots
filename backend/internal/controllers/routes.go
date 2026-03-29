@@ -107,6 +107,9 @@ type StaffRoutes struct {
 	GetStaffCircle          echo.HandlerFunc
 	UpdateStaffCircle       echo.HandlerFunc
 	DeleteStaffCircle       echo.HandlerFunc
+	ListStaffCircleMembers  echo.HandlerFunc
+	AddStaffCircleMember    echo.HandlerFunc
+	DeleteStaffCircleMember echo.HandlerFunc
 	GetStaffCircleMailForm  echo.HandlerFunc
 	SendStaffCircleMail     echo.HandlerFunc
 	// Admin
@@ -266,6 +269,9 @@ func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.Midd
 	staff.GET("/circles/:circleID", r.GetStaffCircle)
 	staff.PUT("/circles/:circleID", r.UpdateStaffCircle)
 	staff.DELETE("/circles/:circleID", r.DeleteStaffCircle)
+	staff.GET("/circles/:circleID/members", r.ListStaffCircleMembers)
+	staff.POST("/circles/:circleID/members", r.AddStaffCircleMember)
+	staff.DELETE("/circles/:circleID/members/:userID", r.DeleteStaffCircleMember)
 	staff.GET("/circles/:circleID/email", r.GetStaffCircleMailForm)
 	staff.POST("/circles/:circleID/email", r.SendStaffCircleMail)
 	staff.GET("/activity-logs", r.ListStaffActivityLogs)

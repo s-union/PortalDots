@@ -45,7 +45,7 @@ const detailActionIconClass = computed(() => (canReadAnswers.value ? 'far fa-eye
 
 const page = ref(1)
 const pageSize = ref(25)
-const sortKey = ref<StaffFormSortKey>('closeAt')
+const sortKey = ref<StaffFormSortKey>('id')
 const sortDirection = ref<'asc' | 'desc'>('asc')
 
 const sortKeys = ['id', 'name', 'isPublic', 'openAt', 'closeAt', 'createdAt', 'updatedAt', 'maxAnswers'] as const
@@ -54,7 +54,6 @@ type StaffFormSortKey = (typeof sortKeys)[number]
 
 const columns: StaffDataGridColumn[] = [
   { key: 'circle', label: '企画' },
-  { key: 'id', label: 'フォームID', sortable: true },
   { key: 'name', label: 'フォーム名', sortable: true },
   { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
   { key: 'answerableTags', label: '回答可能なタグ' },

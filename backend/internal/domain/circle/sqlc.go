@@ -490,6 +490,47 @@ func (c *SQLCCatalog) ListMembers(circleID string) ([]CircleMember, error) {
 	return members, nil
 }
 
+func (c *SQLCCatalog) AddMemberAsStaff(circleID, targetUserID, _ string) error {
+	isMember, err := c.queries.IsCircleMember(context.Background(), dbgen.IsCircleMemberParams{
+		CircleID: circleID,
+		UserID:   targetUserID,
+	})
+	if err != nil {
+		return err
+	}
+	if isMember {
+		return ErrAlreadyMember
+	}
+
+	if err := c.queries.CreateCircleUser(context.Background(), dbgen.CreateCircleUserParams{
+		CircleID: circleID,
+		UserID:   targetUserID,
+		IsLeader: false,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *SQLCCatalog) RemoveMemberAsStaff(circleID, targetUserID string) error {
+	targetIsLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+		CircleID: circleID,
+		UserID:   targetUserID,
+	})
+	if err != nil {
+		return err
+	}
+	if targetIsLeader {
+		return ErrForbidden
+	}
+
+	return c.queries.RemoveCircleMember(context.Background(), dbgen.RemoveCircleMemberParams{
+		CircleID: circleID,
+		UserID:   targetUserID,
+	})
+}
+
 func (c *SQLCCatalog) AddMember(requester *auth.User, circleID, targetUserID, _ string, verified bool) error {
 	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
 		CircleID: circleID,

@@ -31,7 +31,7 @@ describe('StaffCirclesAllPage', () => {
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
       currentCircle: {
-        id: 'circle-a',
+        id: '0195ec00-0021-7000-8000-000000000001',
         name: '屋台企画A'
       },
       featureFlags: [],
@@ -76,12 +76,12 @@ describe('StaffCirclesAllPage', () => {
         if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
           return jsonResponse([
             {
-              id: 'circle-a',
+              id: '0195ec00-0021-7000-8000-000000000001',
               name: '屋台企画A',
               nameYomi: 'ヤタイキカクエー',
               groupName: 'Aブロック',
               groupNameYomi: 'エーブロック',
-              participationTypeId: 'participation-type-food',
+              participationTypeId: '0195ec00-0001-7000-8000-000000000001',
               participationTypeName: '模擬店',
               tags: ['模擬店'],
               notes: '',
@@ -93,12 +93,12 @@ describe('StaffCirclesAllPage', () => {
               places: ['第一会場']
             },
             {
-              id: 'circle-b',
+              id: '0195ec00-0022-7000-8000-000000000001',
               name: '展示企画B',
               nameYomi: 'テンジキカクビー',
               groupName: 'Bブロック',
               groupNameYomi: 'ビーブロック',
-              participationTypeId: 'participation-type-exhibit',
+              participationTypeId: '0195ec00-0002-7000-8000-000000000001',
               participationTypeName: '展示',
               tags: ['展示'],
               notes: 'メモ',
@@ -115,14 +115,14 @@ describe('StaffCirclesAllPage', () => {
         if (pathname.endsWith('/staff/participation-types') && method === 'GET') {
           return jsonResponse([
             {
-              id: 'participation-type-food',
+              id: '0195ec00-0001-7000-8000-000000000001',
               name: '模擬店',
               description: '',
               usersCountMin: 1,
               usersCountMax: 4,
               tags: ['模擬店'],
               form: {
-                id: 'form-participation-food',
+                id: '0195ec00-0011-7000-8000-000000000001',
                 name: '企画参加登録',
                 description: '',
                 openAt: '2026-03-01T00:00:00Z',
@@ -150,7 +150,7 @@ describe('StaffCirclesAllPage', () => {
               nameYomi: 'シンキキカク',
               groupName: 'Cブロック',
               groupNameYomi: 'シーブロック',
-              participationTypeId: 'participation-type-food',
+              participationTypeId: '0195ec00-0001-7000-8000-000000000001',
               participationTypeName: '模擬店',
               tags: ['模擬店'],
               notes: '',
@@ -166,7 +166,8 @@ describe('StaffCirclesAllPage', () => {
         }
 
         if (
-          (pathname.endsWith('/staff/circles/circle-a') || pathname.endsWith('/staff/circles/circle-b')) &&
+          (pathname.endsWith('/staff/circles/0195ec00-0021-7000-8000-000000000001') ||
+            pathname.endsWith('/staff/circles/0195ec00-0022-7000-8000-000000000001')) &&
           method === 'DELETE'
         ) {
           return new Response(null, { status: 204 })
@@ -195,9 +196,11 @@ describe('StaffCirclesAllPage', () => {
     expect(wrapper.text()).toContain('絞り込み')
     expect(wrapper.text()).toContain('表示件数:')
     expect(wrapper.text()).toContain('第一会場')
+    expect(wrapper.text()).not.toContain('企画ID')
+    expect(wrapper.text().indexOf('屋台企画A')).toBeLessThan(wrapper.text().indexOf('展示企画B'))
 
     const emailLink = wrapper.get('a[title="メール送信"]')
-    expect(emailLink.attributes('href')).toBe('/staff/circles/circle-a#mail')
+    expect(emailLink.attributes('href')).toBe('/staff/circles/0195ec00-0021-7000-8000-000000000001/email')
 
     await wrapper.get('button[title="絞り込み"]').trigger('click')
     await flushPromises()
@@ -224,7 +227,7 @@ describe('StaffCirclesAllPage', () => {
       const init = call[1]
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
       const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-      return method === 'DELETE' && url.includes('/staff/circles/circle-')
+      return method === 'DELETE' && url.includes('/staff/circles/0195ec00-002')
     })
     expect(deleteCalls.length).toBe(1)
   })

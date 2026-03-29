@@ -286,6 +286,8 @@ paths:
                     type: string
         "401":
           description: Unauthenticated
+        "403":
+          description: Creating a new circle is not allowed for this user
         "422":
           description: Validation error
   /auth/verification/confirm:
@@ -4158,6 +4160,100 @@ paths:
           description: Circle not found
         "422":
           description: Validation error
+  /staff/circles/{circleID}/members:
+    get:
+      operationId: getStaffCircleMembers
+      summary: Return circle members from staff mode
+      parameters:
+        - in: path
+          name: circleID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Staff circle members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [userId, displayName, loginIds, isLeader]
+                  properties:
+                    userId:
+                      type: string
+                    displayName:
+                      type: string
+                    loginIds:
+                      type: array
+                      items:
+                        type: string
+                    isLeader:
+                      type: boolean
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification or circle admin role is required
+        "404":
+          description: Circle not found
+    post:
+      operationId: postStaffCircleMember
+      summary: Add a member to a circle from staff mode
+      parameters:
+        - in: path
+          name: circleID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loginId]
+              properties:
+                loginId:
+                  type: string
+                  minLength: 1
+      responses:
+        "201":
+          description: Member added
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification or circle admin role is required
+        "404":
+          description: Circle not found
+        "422":
+          description: Validation error
+  /staff/circles/{circleID}/members/{userID}:
+    delete:
+      operationId: deleteStaffCircleMember
+      summary: Remove a member from a circle in staff mode
+      parameters:
+        - in: path
+          name: circleID
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userID
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Member removed
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification or circle admin role is required
+        "404":
+          description: Circle or user not found
+        "422":
+          description: Validation error
   /staff/circles/{circleID}/email:
     get:
       operationId: getStaffCircleEmailForm
@@ -6604,13 +6700,15 @@ paths:
                     anyOf:
                       - type: "null"
                       - type: object
-                        required: [id, displayName, canDeleteAccount]
+                        required: [id, displayName, canDeleteAccount, canCreateCircleRegistration]
                         properties:
                           id:
                             type: string
                           displayName:
                             type: string
                           canDeleteAccount:
+                            type: boolean
+                          canCreateCircleRegistration:
                             type: boolean
   /public/config:
     get:

@@ -70,6 +70,13 @@ describe('StaffParticipationTypeEditPage', () => {
           return jsonResponse({ allowed: true, authorized: true })
         }
 
+        if (pathname.endsWith('/staff/tags') && method === 'GET') {
+          return jsonResponse([
+            { id: 'tag-food', name: '模擬店' },
+            { id: 'tag-outdoor', name: '屋外' }
+          ])
+        }
+
         if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'GET') {
           return jsonResponse(participationTypeResponse())
         }
@@ -120,7 +127,12 @@ describe('StaffParticipationTypeEditPage', () => {
 
     await wrapper.get('input[name="name"]').setValue('更新後模擬店')
     await wrapper.get('textarea[name="description"]').setValue('更新後説明')
-    await wrapper.get('textarea[name="tags"]').setValue('模擬店\n屋外')
+    await wrapper.get('input[name="tags"]').setValue('屋')
+    const outdoorTagButton = wrapper.findAll('button').find((button) => button.text() === '屋外')
+    if (!outdoorTagButton) {
+      throw new Error('outdoor tag button not found')
+    }
+    await outdoorTagButton.trigger('click')
     await wrapper.get('button[type="submit"]').trigger('submit')
     await flushPromises()
 
@@ -175,6 +187,10 @@ describe('StaffParticipationTypeEditPage', () => {
 
         if (pathname.endsWith('/staff/status') && method === 'GET') {
           return jsonResponse({ allowed: true, authorized: true })
+        }
+
+        if (pathname.endsWith('/staff/tags') && method === 'GET') {
+          return jsonResponse([{ id: 'tag-food', name: '模擬店' }])
         }
 
         if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'GET') {
@@ -256,6 +272,10 @@ describe('StaffParticipationTypeEditPage', () => {
 
         if (pathname.endsWith('/staff/status') && method === 'GET') {
           return jsonResponse({ allowed: true, authorized: true })
+        }
+
+        if (pathname.endsWith('/staff/tags') && method === 'GET') {
+          return jsonResponse([{ id: 'tag-food', name: '模擬店' }])
         }
 
         if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'GET') {

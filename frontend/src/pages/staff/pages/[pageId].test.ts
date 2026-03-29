@@ -44,6 +44,7 @@ describe('StaffPageDetailPage', () => {
 
     let currentPinned = false
     let deleted = false
+    let updatedRequestBody: Record<string, unknown> | null = null
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -150,6 +151,7 @@ describe('StaffPageDetailPage', () => {
         }
 
         if (pathname.endsWith('/staff/pages/page-circle-b-1') && method === 'PUT') {
+          updatedRequestBody = await parseRequestBody(input, init?.body)
           return new Response(
             JSON.stringify({
               circle: {
@@ -208,7 +210,7 @@ describe('StaffPageDetailPage', () => {
     await flushPromises()
 
     expect(wrapper.get('input[name="title"]').element).toHaveProperty('value', '展示担当向け連絡')
-    expect(wrapper.get('textarea[name="viewableTags"]').element).toHaveProperty('value', '展示')
+    expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('展示ガイド')
     expect(wrapper.text()).toContain('保存時にモックメール配信を予約する')
     expect(wrapper.text()).toContain('予約された通知はモックキューに積まれ、実メールは送信しません。')
@@ -216,7 +218,12 @@ describe('StaffPageDetailPage', () => {
     await wrapper.get('input[name="title"]').setValue('展示担当向け更新連絡')
     await wrapper.get('textarea[name="body"]').setValue('更新後本文です。')
     await wrapper.get('textarea[name="notes"]').setValue('更新後メモです。')
-    await wrapper.get('textarea[name="viewableTags"]').setValue('展示\nステージ')
+    await wrapper.get('input[name="viewableTags"]').setValue('ステ')
+    const stageTagButton = wrapper.findAll('button').find((button) => button.text() === 'ステージ')
+    if (!stageTagButton) {
+      throw new Error('stage tag button not found')
+    }
+    await stageTagButton.trigger('click')
     await wrapper.get('input[name="isPublic"]').setValue(false)
     await wrapper.get('input[name="sendEmails"]').setValue(true)
     await wrapper.get('form').trigger('submit')
@@ -224,18 +231,55 @@ describe('StaffPageDetailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('お知らせを更新しました。')
+    expect(updatedRequestBody).toMatchObject({
+      viewableTags: ['展示', 'ステージ'],
+      sendEmails: true
+    })
 
-    const buttons = wrapper.findAll('button[type="button"]')
-    await buttons[1]?.trigger('click')
+    const pinButton = wrapper.findAll('button[type="button"]').find((button) => button.text().includes('固定表示'))
+    if (!pinButton) {
+      throw new Error('pin button not found')
+    }
+    await pinButton.trigger('click')
     await flushPromises()
     await flushPromises()
 
     expect(wrapper.text()).toContain('お知らせを固定表示しました。')
 
-    await buttons[0]?.trigger('click')
+    const deleteButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === '削除')
+    if (!deleteButton) {
+      throw new Error('delete button not found')
+    }
+    await deleteButton.trigger('click')
     await flushPromises()
 
     expect(deleted).toBe(true)
     expect(router.currentRoute.value.fullPath).toBe('/staff/pages')
   })
 })
+
+async function parseRequestBody(
+  input: RequestInfo | URL,
+  body: null | string | ArrayBuffer | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | undefined
+) {
+  if (typeof body !== 'string') {
+    if (typeof Request !== 'undefined' && input instanceof Request) {
+      body = await input.clone().text()
+    }
+  }
+
+  if (typeof body !== 'string') {
+    throw new Error('Request body was not a string')
+  }
+
+  const parsed: unknown = JSON.parse(body)
+  if (!isRecord(parsed)) {
+    throw new Error('Request body was not an object')
+  }
+
+  return parsed
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}

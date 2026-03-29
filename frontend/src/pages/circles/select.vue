@@ -19,7 +19,8 @@ const route = useRoute()
 const router = useRouter()
 const sessionStore = useSessionStore()
 const circlesQuery = useSelectableCirclesQuery()
-const participationTypesQuery = useParticipationTypesQuery(true)
+const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
+const participationTypesQuery = useParticipationTypesQuery(canCreateCircleRegistration)
 const selectCircleMutation = useSelectCurrentCircleMutation()
 
 const isSelecting = computed(() => selectCircleMutation.isPending.value)
@@ -32,7 +33,9 @@ const requestedCircleId = computed(() => {
   return sanitizeCircleSelectorCircleId(typeof circle === 'string' ? circle : undefined)
 })
 const hasTriedAutoSelect = ref(false)
-const participationTypeCards = computed(() => participationTypesQuery.data.value ?? [])
+const participationTypeCards = computed(() =>
+  canCreateCircleRegistration.value ? (participationTypesQuery.data.value ?? []) : []
+)
 
 async function handleSelectCircle(circleId: string) {
   await selectCircleMutation.mutateAsync(circleId)
@@ -89,6 +92,7 @@ watch(
     </ListPanel>
 
     <ListPanel
+      v-if="canCreateCircleRegistration"
       title="別の企画を参加登録する"
       description="参加種別ごとに新しい企画を作成します。作成後はワークスペースで続けて編集できます。"
     >

@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      allowedHosts: true,
       proxy: env.VITE_API_PROXY_TARGET
         ? {
             '/v1': {

@@ -5,6 +5,10 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 )
 
 func TestOpenReturnsDisabledWithoutDatabaseURL(t *testing.T) {
@@ -66,5 +70,50 @@ func TestHashPasswordHashesPlainInput(t *testing.T) {
 	}
 	if hashed == "password" {
 		t.Fatal("expected hashPassword to return a bcrypt hash")
+	}
+}
+
+type fakeConfiguredUserConflictResolver struct {
+	loginUsers map[string]dbgen.GetUserByLoginIDRow
+	deletedIDs []string
+	deleteErr  error
+}
+
+func (f *fakeConfiguredUserConflictResolver) GetUserByLoginID(_ context.Context, loginID string) (dbgen.GetUserByLoginIDRow, error) {
+	row, ok := f.loginUsers[loginID]
+	if !ok {
+		return dbgen.GetUserByLoginIDRow{}, pgx.ErrNoRows
+	}
+	return row, nil
+}
+
+func (f *fakeConfiguredUserConflictResolver) DeleteUser(_ context.Context, id string) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+	f.deletedIDs = append(f.deletedIDs, id)
+	return nil
+}
+
+func TestDeleteUsersConflictingWithConfiguredLoginIDsDeletesOldUserOnce(t *testing.T) {
+	t.Parallel()
+
+	resolver := &fakeConfiguredUserConflictResolver{
+		loginUsers: map[string]dbgen.GetUserByLoginIDRow{
+			"demo-circle-unverified@example.com": {ID: "member-0195ec00-0022-7000-8000-000000000001-unverified"},
+			"legacy-alias@example.com":           {ID: "member-0195ec00-0022-7000-8000-000000000001-unverified"},
+			"current@example.com":                {ID: "demo-circle-unverified"},
+		},
+	}
+
+	err := deleteUsersConflictingWithConfiguredLoginIDs(context.Background(), resolver, config.User{
+		ID:       "demo-circle-unverified",
+		LoginIDs: []string{"demo-circle-unverified@example.com", "legacy-alias@example.com", "current@example.com"},
+	})
+	if err != nil {
+		t.Fatalf("expected conflict cleanup to succeed, got %v", err)
+	}
+	if len(resolver.deletedIDs) != 1 || resolver.deletedIDs[0] != "member-0195ec00-0022-7000-8000-000000000001-unverified" {
+		t.Fatalf("expected old configured user to be deleted once, got %#v", resolver.deletedIDs)
 	}
 }

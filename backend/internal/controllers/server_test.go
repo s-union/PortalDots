@@ -56,6 +56,9 @@ func TestLoginAndBootstrap(t *testing.T) {
 	if !response.User.CanDeleteAccount {
 		t.Fatal("expected bootstrap to allow account deletion for demo user")
 	}
+	if !response.User.CanCreateCircleRegistration {
+		t.Fatal("expected bootstrap to allow creating circle registrations for demo user")
+	}
 	if len(response.Roles) != 1 || response.Roles[0] != "participant" {
 		t.Fatalf("expected participant role, got %#v", response.Roles)
 	}
@@ -92,7 +95,7 @@ func TestContactCategoriesAndSubmitContact(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.ContactCategories = []config.ContactCategory{
-		{ID: "contact-general", Name: "総合窓口", Email: "general@example.com"},
+		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
 	}
 	server := NewServer(cfg)
 	cookies := map[string]*http.Cookie{}
@@ -105,7 +108,7 @@ func TestContactCategoriesAndSubmitContact(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	selectCircle(t, server, cookies, "circle-a")
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/contact-categories", nil)
 	if recorder.Code != http.StatusOK {
@@ -282,7 +285,7 @@ func TestDeleteOwnAccountRejectsCircleMembers(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "circle-b@example.com",
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -766,12 +769,71 @@ func TestCreateCircleReturnsCreated(t *testing.T) {
 		"nameYomi":            "しんききかく",
 		"groupName":           "新規団体",
 		"groupNameYomi":       "しんきだんたい",
-		"participationTypeId": "participation-type-food",
+		"participationTypeId": "0195ec00-0001-7000-8000-000000000001",
 		"notes":               "",
 		"details":             map[string]any{},
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestCreateCircleReturnsForbiddenForMemberOnlyUser(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(memberOnlyConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "member-only@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles", map[string]any{
+		"name":                "新規企画",
+		"nameYomi":            "しんききかく",
+		"groupName":           "新規団体",
+		"groupNameYomi":       "しんきだんたい",
+		"participationTypeId": "0195ec00-0001-7000-8000-000000000001",
+		"notes":               "",
+		"details":             map[string]any{},
+	})
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestBootstrapReturnsCanCreateCircleRegistrationFalseForMemberOnlyUser(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(memberOnlyConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "member-only@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/session/bootstrap", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response sessionBootstrapResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal bootstrap response: %v", err)
+	}
+	if response.User == nil {
+		t.Fatal("expected authenticated user")
+	}
+	if response.User.CanCreateCircleRegistration {
+		t.Fatal("expected member-only user to be blocked from creating a new circle")
 	}
 }
 
@@ -787,27 +849,27 @@ func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 	cfg := testConfig()
 	cfg.ParticipationTypes = append(cfg.ParticipationTypes,
 		config.ParticipationType{
-			ID:            "participation-type-private",
+			ID:            "0195ec00-0003-7000-8000-000000000001",
 			Name:          "非公開企画",
 			Description:   "非公開フォームに紐づく参加種別",
 			UsersCountMin: 1,
 			UsersCountMax: 2,
 			Tags:          []string{"限定"},
-			FormID:        "form-participation-private",
+			FormID:        "0195ec00-0016-7000-8000-000000000001",
 		},
 		config.ParticipationType{
-			ID:            "participation-type-closed",
+			ID:            "0195ec00-0004-7000-8000-000000000001",
 			Name:          "締切済み企画",
 			Description:   "締切済みフォームに紐づく参加種別",
 			UsersCountMin: 1,
 			UsersCountMax: 3,
 			Tags:          []string{"締切"},
-			FormID:        "form-participation-closed",
+			FormID:        "0195ec00-0017-7000-8000-000000000001",
 		},
 	)
 	cfg.Forms = append(cfg.Forms,
 		config.Form{
-			ID:                  "form-participation-private",
+			ID:                  "0195ec00-0016-7000-8000-000000000001",
 			CircleID:            "",
 			Name:                "企画参加登録",
 			Description:         "非公開の参加登録フォームです。",
@@ -822,7 +884,7 @@ func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 			ConfirmationMessage: "",
 		},
 		config.Form{
-			ID:                  "form-participation-closed",
+			ID:                  "0195ec00-0017-7000-8000-000000000001",
 			CircleID:            "",
 			Name:                "企画参加登録",
 			Description:         "締切済みの参加登録フォームです。",
@@ -862,7 +924,7 @@ func TestListParticipationTypesReturnsOnlyOpenPublicItems(t *testing.T) {
 	if len(response) != 2 {
 		t.Fatalf("expected 2 public open participation types, got %#v", response)
 	}
-	if response[0].ID != "participation-type-exhibit" || response[1].ID != "participation-type-food" {
+	if response[0].ID != "0195ec00-0002-7000-8000-000000000001" || response[1].ID != "0195ec00-0001-7000-8000-000000000001" {
 		t.Fatalf("expected sorted public participation types, got %#v", response)
 	}
 	if !response[0].Form.IsPublic || !response[0].Form.IsOpen {
@@ -892,22 +954,22 @@ func TestGetPublicHomeReturnsGuestContent(t *testing.T) {
 	if len(response.LoginMethods) != 3 {
 		t.Fatalf("expected 3 login methods, got %#v", response.LoginMethods)
 	}
-	if len(response.PinnedPages) != 1 || response.PinnedPages[0].ID != "page-circle-a-pinned" {
+	if len(response.PinnedPages) != 1 || response.PinnedPages[0].ID != "0195ec00-0032-7000-8000-000000000001" {
 		t.Fatalf("expected pinned public page in default fixtures, got %#v", response.PinnedPages)
 	}
 	if len(response.ParticipationTypes) != 2 {
 		t.Fatalf("expected 2 public participation types, got %#v", response.ParticipationTypes)
 	}
-	if len(response.Pages) != 2 || response.Pages[0].ID != "page-circle-b-1" {
+	if len(response.Pages) != 2 || response.Pages[0].ID != "0195ec00-0034-7000-8000-000000000001" {
 		t.Fatalf("expected public pages sorted desc, got %#v", response.Pages)
 	}
 	if !response.Pages[0].IsLimited {
 		t.Fatalf("expected tagged public page to be marked limited, got %#v", response.Pages[0])
 	}
-	if len(response.Documents) != 2 || response.Documents[0].ID != "document-circle-b-1" {
+	if len(response.Documents) != 2 || response.Documents[0].ID != "0195ec00-0042-7000-8000-000000000001" {
 		t.Fatalf("expected public documents sorted desc, got %#v", response.Documents)
 	}
-	if response.Documents[0].DownloadURL != "/v1/public/documents/document-circle-b-1" {
+	if response.Documents[0].DownloadURL != "/v1/public/documents/0195ec00-0042-7000-8000-000000000001" {
 		t.Fatalf("unexpected public download url: %#v", response.Documents[0])
 	}
 	if strings.Contains(response.Pages[0].Summary, "\n") {
@@ -934,7 +996,7 @@ func TestListPublicPagesReturnsGuestPageCollection(t *testing.T) {
 	if len(response) != 2 {
 		t.Fatalf("expected 2 public pages, got %#v", response)
 	}
-	if response[0].ID != "page-circle-b-1" || response[1].ID != "page-circle-a-1" {
+	if response[0].ID != "0195ec00-0034-7000-8000-000000000001" || response[1].ID != "0195ec00-0031-7000-8000-000000000001" {
 		t.Fatalf("expected sorted public pages, got %#v", response)
 	}
 }
@@ -945,7 +1007,7 @@ func TestGetPublicPageReturnsGuestPageDetail(t *testing.T) {
 	server := NewServer(testConfig())
 	cookies := map[string]*http.Cookie{}
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/page-circle-a-1", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/0195ec00-0031-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -955,14 +1017,14 @@ func TestGetPublicPageReturnsGuestPageDetail(t *testing.T) {
 		t.Fatalf("unmarshal public page detail response: %v", err)
 	}
 
-	if response.ID != "page-circle-a-1" || response.Title != "搬入時間のお知らせ" {
+	if response.ID != "0195ec00-0031-7000-8000-000000000001" || response.Title != "搬入時間のお知らせ" {
 		t.Fatalf("unexpected public page detail: %#v", response)
 	}
-	if len(response.Documents) != 1 || response.Documents[0].DownloadURL != "/v1/public/documents/document-circle-a-1" {
+	if len(response.Documents) != 1 || response.Documents[0].DownloadURL != "/v1/public/documents/0195ec00-0041-7000-8000-000000000001" {
 		t.Fatalf("expected public page document urls, got %#v", response.Documents)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/page-circle-a-pinned", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/pages/0195ec00-0032-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -984,7 +1046,7 @@ func TestListPublicDocumentsReturnsGuestDocumentCollection(t *testing.T) {
 		t.Fatalf("unmarshal public documents response: %v", err)
 	}
 
-	if len(response) != 2 || response[0].ID != "document-circle-b-1" {
+	if len(response) != 2 || response[0].ID != "0195ec00-0042-7000-8000-000000000001" {
 		t.Fatalf("expected public documents sorted desc, got %#v", response)
 	}
 }
@@ -995,7 +1057,7 @@ func TestGetPublicDocumentDownloadsGuestFile(t *testing.T) {
 	server := NewServer(testConfig())
 	cookies := map[string]*http.Cookie{}
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents/document-circle-a-1", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents/0195ec00-0041-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1003,7 +1065,7 @@ func TestGetPublicDocumentDownloadsGuestFile(t *testing.T) {
 		t.Fatalf("unexpected public document body: %s", recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents/document-circle-b-private", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents/0195ec00-0043-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -1024,7 +1086,7 @@ func TestSetCurrentCircleUpdatesBootstrap(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1042,8 +1104,11 @@ func TestSetCurrentCircleUpdatesBootstrap(t *testing.T) {
 	if response.CurrentCircle == nil {
 		t.Fatal("expected current circle to be set")
 	}
-	if response.CurrentCircle.ID != "circle-b" {
-		t.Fatalf("expected selected circle circle-b, got %s", response.CurrentCircle.ID)
+	if response.CurrentCircle.ID != "0195ec00-0022-7000-8000-000000000001" {
+		t.Fatalf("expected selected circle 0195ec00-0022-7000-8000-000000000001, got %s", response.CurrentCircle.ID)
+	}
+	if !response.User.CanCreateCircleRegistration {
+		t.Fatal("expected selected demo user to still be allowed to create a new circle")
 	}
 }
 
@@ -1052,8 +1117,8 @@ func TestAddCurrentCircleMemberByLoginID(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "member-circle-a",
-		LoginIDs:    []string{"circle-a@example.com"},
+		ID:          "member-0195ec00-0021-7000-8000-000000000001",
+		LoginIDs:    []string{"0195ec00-0021-7000-8000-000000000001@example.com"},
 		DisplayName: "Circle A Member",
 		Password:    "password",
 		Roles:       []string{"participant"},
@@ -1070,7 +1135,7 @@ func TestAddCurrentCircleMemberByLoginID(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "circle-a@example.com",
+		"loginId":  "0195ec00-0021-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -1078,7 +1143,7 @@ func TestAddCurrentCircleMemberByLoginID(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-a",
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1113,8 +1178,8 @@ func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "member-circle-a",
-		LoginIDs:    []string{"circle-a@example.com"},
+		ID:          "member-0195ec00-0021-7000-8000-000000000001",
+		LoginIDs:    []string{"0195ec00-0021-7000-8000-000000000001@example.com"},
 		DisplayName: "Circle A Member",
 		Password:    "password",
 		Roles:       []string{"participant"},
@@ -1123,7 +1188,7 @@ func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "circle-a@example.com",
+		"loginId":  "0195ec00-0021-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -1131,7 +1196,7 @@ func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-a",
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1170,14 +1235,14 @@ func TestAddCurrentCircleMemberAcceptsContactEmail(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "circle-a@example.com",
+		"loginId":  "0195ec00-0021-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	selectCircle(t, server, cookies, "circle-a")
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
 		"loginId": "contact-add@example.com",
@@ -1194,7 +1259,7 @@ func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "circle-b@example.com",
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -1202,14 +1267,14 @@ func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
-		"loginId": "circle-b-unverified@example.com",
+		"loginId": "0195ec00-0022-7000-8000-000000000001-unverified@example.com",
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
@@ -1231,14 +1296,14 @@ func TestRegenerateInvitationTokenAfterSubmitReturnsConflict(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "circle-b@example.com",
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/circles/current/detail", nil)
 	if recorder.Code != http.StatusOK {
@@ -1268,8 +1333,8 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Pages = append(cfg.Pages, config.Page{
-		ID:           "page-circle-a-shared",
-		CircleID:     "circle-a",
+		ID:           "0195ec00-0033-7000-8000-000000000001",
+		CircleID:     "0195ec00-0021-7000-8000-000000000001",
 		Title:        "展示向け共通連絡",
 		Body:         "展示企画全体への連絡です。",
 		Notes:        "",
@@ -1291,7 +1356,7 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1310,7 +1375,7 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	if len(response) != 3 {
 		t.Fatalf("expected 3 public pages across circles, got %d", len(response))
 	}
-	if response[0].ID != "page-circle-a-shared" || response[1].ID != "page-circle-b-1" || response[2].ID != "page-circle-a-1" {
+	if response[0].ID != "0195ec00-0033-7000-8000-000000000001" || response[1].ID != "0195ec00-0034-7000-8000-000000000001" || response[2].ID != "0195ec00-0031-7000-8000-000000000001" {
 		t.Fatalf("expected public pages sorted desc, got %#v", response)
 	}
 
@@ -1322,7 +1387,7 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal searched pages response: %v", err)
 	}
-	if len(response) != 1 || response[0].ID != "page-circle-b-1" {
+	if len(response) != 1 || response[0].ID != "0195ec00-0034-7000-8000-000000000001" {
 		t.Fatalf("unexpected search result: %#v", response)
 	}
 
@@ -1354,13 +1419,13 @@ func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-a",
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/page-circle-a-1", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/0195ec00-0031-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1372,23 +1437,23 @@ func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 	if detail.Title != "搬入時間のお知らせ" {
 		t.Fatalf("unexpected title: %s", detail.Title)
 	}
-	if len(detail.Documents) != 1 || detail.Documents[0].ID != "document-circle-a-1" {
+	if len(detail.Documents) != 1 || detail.Documents[0].ID != "0195ec00-0041-7000-8000-000000000001" {
 		t.Fatalf("unexpected page documents: %#v", detail.Documents)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/page-circle-a-pinned", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/0195ec00-0032-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/page-circle-b-1", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/0195ec00-0034-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal cross-circle page detail: %v", err)
 	}
-	if detail.ID != "page-circle-b-1" || detail.Title != "展示レイアウト更新" {
+	if detail.ID != "0195ec00-0034-7000-8000-000000000001" || detail.Title != "展示レイアウト更新" {
 		t.Fatalf("unexpected cross-circle page detail: %#v", detail)
 	}
 }
@@ -1398,15 +1463,15 @@ func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Pages = append(cfg.Pages, config.Page{
-		ID:           "page-circle-a-shared",
-		CircleID:     "circle-a",
+		ID:           "0195ec00-0033-7000-8000-000000000001",
+		CircleID:     "0195ec00-0021-7000-8000-000000000001",
 		Title:        "展示向け共通連絡",
 		Body:         "展示企画全体への連絡です。",
 		Notes:        "",
 		IsPinned:     false,
 		IsPublic:     true,
 		ViewableTags: []string{"展示"},
-		DocumentIDs:  []string{"document-circle-a-1"},
+		DocumentIDs:  []string{"0195ec00-0041-7000-8000-000000000001"},
 		PublishedAt:  "2026-03-06T09:00:00Z",
 	})
 	server := NewServer(cfg)
@@ -1421,13 +1486,13 @@ func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/page-circle-a-shared", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/0195ec00-0033-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1436,10 +1501,10 @@ func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal page detail: %v", err)
 	}
-	if detail.ID != "page-circle-a-shared" || detail.Title != "展示向け共通連絡" {
+	if detail.ID != "0195ec00-0033-7000-8000-000000000001" || detail.Title != "展示向け共通連絡" {
 		t.Fatalf("unexpected cross-circle page detail: %#v", detail)
 	}
-	if len(detail.Documents) != 1 || detail.Documents[0].ID != "document-circle-a-1" {
+	if len(detail.Documents) != 1 || detail.Documents[0].ID != "0195ec00-0041-7000-8000-000000000001" {
 		t.Fatalf("unexpected cross-circle page documents: %#v", detail.Documents)
 	}
 }
@@ -1459,7 +1524,7 @@ func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1481,10 +1546,10 @@ func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 	if response.Page != 1 || response.PageSize != 10 || response.Total != 2 {
 		t.Fatalf("unexpected documents pagination: %#v", response)
 	}
-	if response.Items[0].ID != "document-circle-b-1" {
+	if response.Items[0].ID != "0195ec00-0042-7000-8000-000000000001" {
 		t.Fatalf("expected first document to be latest public doc, got %s", response.Items[0].ID)
 	}
-	if response.Items[1].ID != "document-circle-a-1" {
+	if response.Items[1].ID != "0195ec00-0041-7000-8000-000000000001" {
 		t.Fatalf("expected second document to include cross-circle doc, got %s", response.Items[1].ID)
 	}
 	if !response.Items[0].IsImportant || response.Items[0].Extension != "TXT" || response.Items[0].SizeBytes == 0 {
@@ -1499,7 +1564,7 @@ func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal paginated documents response: %v", err)
 	}
-	if response.Page != 2 || len(response.Items) != 1 || response.Items[0].ID != "document-circle-a-1" {
+	if response.Page != 2 || len(response.Items) != 1 || response.Items[0].ID != "0195ec00-0041-7000-8000-000000000001" {
 		t.Fatalf("expected documents pagination to clamp to last page, got %#v", response)
 	}
 }
@@ -1519,7 +1584,7 @@ func TestDownloadDocumentFileRequiresVisiblePublicDocument(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-a",
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1534,11 +1599,11 @@ func TestDownloadDocumentFileRequiresVisiblePublicDocument(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detailPage); err != nil {
 		t.Fatalf("unmarshal document list for download url: %v", err)
 	}
-	if len(detailPage.Items) != 2 || detailPage.Items[1].DownloadURL != "/v1/documents/document-circle-a-1" {
+	if len(detailPage.Items) != 2 || detailPage.Items[1].DownloadURL != "/v1/documents/0195ec00-0041-7000-8000-000000000001" {
 		t.Fatalf("unexpected document list metadata: %#v", detailPage)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/documents/document-circle-a-1", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/documents/0195ec00-0041-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1546,7 +1611,7 @@ func TestDownloadDocumentFileRequiresVisiblePublicDocument(t *testing.T) {
 		t.Fatalf("unexpected file content: %s", recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/documents/document-circle-b-private", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/documents/0195ec00-0043-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -1567,7 +1632,7 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1592,11 +1657,11 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 		http.MethodPost,
 		"/v1/staff/documents",
 		"file",
-		"circle-b-guide.pdf",
+		"0195ec00-0022-7000-8000-000000000001-guide.pdf",
 		[]byte("%PDF-1.4 demo"),
 		"application/pdf",
 		map[string]string{
-			"circleId":    "circle-b",
+			"circleId":    "0195ec00-0022-7000-8000-000000000001",
 			"name":        "設営ガイド",
 			"description": "当日の設営手順です。",
 			"notes":       "責任者に共有してください。",
@@ -1649,7 +1714,7 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 		http.MethodPut,
 		"/v1/staff/documents/"+created.ID,
 		"file",
-		"circle-b-guide-v2.pdf",
+		"0195ec00-0022-7000-8000-000000000001-guide-v2.pdf",
 		[]byte("%PDF-1.4 revised"),
 		"application/pdf",
 		map[string]string{
@@ -1727,7 +1792,7 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1845,7 +1910,7 @@ func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1862,12 +1927,12 @@ func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 	}
 
 	if len(response) != 3 {
-		t.Fatalf("expected 3 accessible forms for circle-b, got %d", len(response))
+		t.Fatalf("expected 3 accessible forms for 0195ec00-0022-7000-8000-000000000001, got %d", len(response))
 	}
-	if response[0].ID != "form-circle-b-closed" {
+	if response[0].ID != "0195ec00-0010-7000-8000-000000000001" {
 		t.Fatalf("expected closed form to be first, got %s", response[0].ID)
 	}
-	if response[1].ID != "form-circle-a-1" || response[2].ID != "form-circle-b-1" {
+	if response[1].ID != "0195ec00-0013-7000-8000-000000000001" || response[2].ID != "0195ec00-0014-7000-8000-000000000001" {
 		t.Fatalf("unexpected visible forms order: %#v", response)
 	}
 	if !slices.Equal(response[2].AnswerableTags, []string{"展示"}) {
@@ -1893,13 +1958,13 @@ func TestGetFormAllowsClosedAccessibleFormInCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-a",
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/form-circle-a-1", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0013-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1915,7 +1980,7 @@ func TestGetFormAllowsClosedAccessibleFormInCurrentCircle(t *testing.T) {
 		t.Fatalf("unexpected form detail metadata: %#v", detail)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/form-circle-b-closed", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0010-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1923,7 +1988,7 @@ func TestGetFormAllowsClosedAccessibleFormInCurrentCircle(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal closed form detail: %v", err)
 	}
-	if detail.ID != "form-circle-b-closed" || detail.IsOpen {
+	if detail.ID != "0195ec00-0010-7000-8000-000000000001" || detail.IsOpen {
 		t.Fatalf("expected closed accessible form detail, got %#v", detail)
 	}
 }
@@ -1943,13 +2008,13 @@ func TestClosedFormAnswerMutationsRemainBlocked(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-a",
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/form-circle-b-closed/answer", map[string]string{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/0195ec00-0010-7000-8000-000000000001/answer", map[string]string{
 		"body": "締切後の更新",
 	})
 	if recorder.Code != http.StatusNotFound {
@@ -1972,13 +2037,13 @@ func TestGetAndUpsertFormAnswerUsesCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/form-circle-b-1/answer", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -1991,7 +2056,7 @@ func TestGetAndUpsertFormAnswerUsesCurrentCircle(t *testing.T) {
 		t.Fatalf("expected no answer, got %#v", emptyResponse.Answer)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/form-circle-b-1/answer", map[string]string{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", map[string]string{
 		"body": "展示位置は正面入口側を希望します。",
 	})
 	if recorder.Code != http.StatusOK {
@@ -2006,7 +2071,7 @@ func TestGetAndUpsertFormAnswerUsesCurrentCircle(t *testing.T) {
 		t.Fatalf("unexpected saved answer: %#v", savedResponse.Answer)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/form-circle-b-1/answer", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2035,13 +2100,13 @@ func TestUploadAndDownloadFormAnswerFile(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doMultipartRequest(t, server, cookies, http.MethodPost, "/v1/forms/form-circle-b-1/answer/uploads", "file", "layout.txt", []byte("layout content"), "text/plain", nil)
+	recorder = doMultipartRequest(t, server, cookies, http.MethodPost, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer/uploads", "file", "layout.txt", []byte("layout content"), "text/plain", nil)
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
@@ -2054,7 +2119,7 @@ func TestUploadAndDownloadFormAnswerFile(t *testing.T) {
 		t.Fatalf("unexpected upload response: %#v", upload)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/form-circle-b-1/answer", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2067,7 +2132,7 @@ func TestUploadAndDownloadFormAnswerFile(t *testing.T) {
 		t.Fatalf("expected upload to be attached, got %#v", answerEnvelope.Answer)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/form-circle-b-1/answer/uploads/"+upload.ID+"/file", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer/uploads/"+upload.ID+"/file", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2091,13 +2156,13 @@ func TestUpsertFormAnswerRejectsBlankBody(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/form-circle-b-1/answer", map[string]string{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", map[string]string{
 		"body": "   ",
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -2230,7 +2295,7 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -2262,14 +2327,14 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId":     "circle-b",
+		"circleId":     "0195ec00-0022-7000-8000-000000000001",
 		"title":        "スタッフ向け新着",
 		"body":         "設営順の詳細を更新しました。",
 		"notes":        "展示担当に周知済みです。",
 		"isPinned":     true,
 		"isPublic":     true,
 		"viewableTags": []string{"展示"},
-		"documentIds":  []string{"document-circle-b-1"},
+		"documentIds":  []string{"0195ec00-0042-7000-8000-000000000001"},
 		"sendEmails":   true,
 	})
 	if recorder.Code != http.StatusCreated {
@@ -2309,7 +2374,7 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	if len(mails) != 1 || mails[0].Subject != "スタッフ向け新着" {
 		t.Fatalf("unexpected queued mails: %#v", mails)
 	}
-	if len(mails[0].Recipients) != 1 || mails[0].Recipients[0] != "circle-b@example.com" {
+	if len(mails[0].Recipients) != 1 || mails[0].Recipients[0] != "0195ec00-0022-7000-8000-000000000001@example.com" {
 		t.Fatalf("unexpected mail recipients: %#v", mails[0].Recipients)
 	}
 	if !strings.Contains(mails[0].Body, "関連する配布資料") {
@@ -2336,18 +2401,18 @@ func TestStaffPageCreateRejectsDocumentsFromDifferentCircle(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId":     "circle-b",
+		"circleId":     "0195ec00-0022-7000-8000-000000000001",
 		"title":        "スタッフ向け新着",
 		"body":         "設営順の詳細を更新しました。",
 		"notes":        "展示担当に周知済みです。",
 		"isPinned":     true,
 		"isPublic":     true,
 		"viewableTags": []string{"展示"},
-		"documentIds":  []string{"document-circle-a-1"},
+		"documentIds":  []string{"0195ec00-0041-7000-8000-000000000001"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
@@ -2367,20 +2432,20 @@ func TestStaffPageUpdateAllowsPreservingLegacyDocumentsFromDifferentCircle(t *te
 
 	cfg := testStaffConfig()
 	for index := range cfg.Pages {
-		if cfg.Pages[index].ID != "page-circle-b-private" {
+		if cfg.Pages[index].ID != "0195ec00-0035-7000-8000-000000000001" {
 			continue
 		}
-		cfg.Pages[index].DocumentIDs = []string{"document-circle-b-private", "document-circle-a-1"}
+		cfg.Pages[index].DocumentIDs = []string{"0195ec00-0043-7000-8000-000000000001", "0195ec00-0041-7000-8000-000000000001"}
 	}
 
 	server := NewServer(cfg)
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/page-circle-b-private", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2389,11 +2454,11 @@ func TestStaffPageUpdateAllowsPreservingLegacyDocumentsFromDifferentCircle(t *te
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal staff page detail: %v", err)
 	}
-	if !slices.Equal(detail.DocumentIDs, []string{"document-circle-b-private", "document-circle-a-1"}) {
+	if !slices.Equal(detail.DocumentIDs, []string{"0195ec00-0043-7000-8000-000000000001", "0195ec00-0041-7000-8000-000000000001"}) {
 		t.Fatalf("expected legacy document ids to be returned, got %#v", detail.DocumentIDs)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/page-circle-b-private", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001", map[string]any{
 		"title":        "既存資料付きお知らせを更新",
 		"body":         "本文だけ更新します。",
 		"notes":        "legacy documents preserved",
@@ -2422,10 +2487,10 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/page-circle-b-private", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2434,11 +2499,11 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal staff page detail: %v", err)
 	}
-	if detail.ID != "page-circle-b-private" || detail.Title != "非公開メモ" || detail.IsPublic {
+	if detail.ID != "0195ec00-0035-7000-8000-000000000001" || detail.Title != "非公開メモ" || detail.IsPublic {
 		t.Fatalf("unexpected staff page detail: %#v", detail)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/page-circle-b-private", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001", map[string]any{
 		"title":    "更新済みのお知らせ",
 		"body":     "公開向けの本文に更新しました。",
 		"isPinned": true,
@@ -2456,7 +2521,7 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 		t.Fatalf("unexpected updated staff page: %#v", summary)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPatch, "/v1/staff/pages/page-circle-b-private/pin", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPatch, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001/pin", map[string]any{
 		"isPinned": false,
 	})
 	if recorder.Code != http.StatusOK {
@@ -2489,12 +2554,12 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 		t.Fatalf("unexpected csv rows: %#v", rows)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/pages/page-circle-b-private", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/page-circle-b-private", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/0195ec00-0035-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -2558,10 +2623,10 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/form-circle-b-1/answer", map[string]string{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", map[string]string{
 		"body": "展示位置は正面入口側を希望します。",
 	})
 	if recorder.Code != http.StatusOK {
@@ -2584,12 +2649,12 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 		t.Fatalf("expected max answers to be populated, got %#v", forms[0])
 	}
 	if slices.ContainsFunc(forms, func(form staffFormSummaryResponse) bool {
-		return form.ID == "form-participation-exhibit"
+		return form.ID == "0195ec00-0012-7000-8000-000000000001"
 	}) {
 		t.Fatalf("expected participation form to stay out of staff forms index, got %#v", forms)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2609,7 +2674,7 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
-		"circleId":            "circle-b",
+		"circleId":            "0195ec00-0022-7000-8000-000000000001",
 		"name":                "追加ヒアリング",
 		"openAt":              futureOpenAt,
 		"closeAt":             futureCloseAt,
@@ -2642,10 +2707,10 @@ func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doMultipartRequest(t, server, cookies, http.MethodPost, "/v1/forms/form-circle-b-1/answer/uploads", "file", "layout.txt", []byte("layout content"), "text/plain", nil)
+	recorder := doMultipartRequest(t, server, cookies, http.MethodPost, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer/uploads", "file", "layout.txt", []byte("layout content"), "text/plain", nil)
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
@@ -2655,7 +2720,7 @@ func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 		t.Fatalf("unmarshal upload response: %v", err)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001", map[string]any{
 		"name":                "更新後フォーム",
 		"description":         "更新後の説明です。",
 		"openAt":              openAt,
@@ -2677,7 +2742,7 @@ func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 		t.Fatalf("unexpected updated staff form: %#v", updated)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2693,7 +2758,7 @@ func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 		t.Fatalf("unexpected extended updated staff form detail: %#v", detail)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/uploads/"+upload.ID+"/file", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/uploads/"+upload.ID+"/file", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2709,10 +2774,10 @@ func TestStaffFormQuestionEditorCRUD(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/questions", map[string]string{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions", map[string]string{
 		"type": "text",
 	})
 	if recorder.Code != http.StatusCreated {
@@ -2724,7 +2789,7 @@ func TestStaffFormQuestionEditorCRUD(t *testing.T) {
 		t.Fatalf("unmarshal created question: %v", err)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1/questions/"+created.ID, map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions/"+created.ID, map[string]any{
 		"name":         "責任者名",
 		"description":  "当日の責任者を入力してください",
 		"type":         "text",
@@ -2739,7 +2804,7 @@ func TestStaffFormQuestionEditorCRUD(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/questions", map[string]string{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions", map[string]string{
 		"type": "radio",
 	})
 	if recorder.Code != http.StatusCreated {
@@ -2751,7 +2816,7 @@ func TestStaffFormQuestionEditorCRUD(t *testing.T) {
 		t.Fatalf("unmarshal second question: %v", err)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1/questions/"+second.ID, map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions/"+second.ID, map[string]any{
 		"name":         "参加日",
 		"description":  "参加希望日を選択してください",
 		"type":         "radio",
@@ -2766,14 +2831,14 @@ func TestStaffFormQuestionEditorCRUD(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1/questions/order", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions/order", map[string]any{
 		"questionIds": []string{second.ID, created.ID},
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2792,7 +2857,7 @@ func TestStaffFormQuestionEditorCRUD(t *testing.T) {
 		t.Fatalf("expected options to be saved, got %#v", detail.Questions[0])
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/forms/form-circle-b-1/questions/"+created.ID, nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions/"+created.ID, nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
@@ -2805,10 +2870,10 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/questions", map[string]string{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions", map[string]string{
 		"type": "text",
 	})
 	if recorder.Code != http.StatusCreated {
@@ -2820,7 +2885,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("unmarshal created text question: %v", err)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1/questions/"+textQuestion.ID, map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions/"+textQuestion.ID, map[string]any{
 		"name":         "責任者名",
 		"description":  "代表者名を入力してください",
 		"type":         "text",
@@ -2835,7 +2900,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/questions", map[string]string{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions", map[string]string{
 		"type": "upload",
 	})
 	if recorder.Code != http.StatusCreated {
@@ -2847,7 +2912,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("unmarshal created upload question: %v", err)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1/questions/"+uploadQuestion.ID, map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions/"+uploadQuestion.ID, map[string]any{
 		"name":         "レイアウト図",
 		"description":  "PDF を添付してください",
 		"type":         "upload",
@@ -2862,8 +2927,8 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/answers", map[string]any{
-		"circleId": "circle-a",
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers", map[string]any{
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
 		"details": map[string]any{
 			textQuestion.ID: "企画A責任者",
 		},
@@ -2876,7 +2941,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
 		t.Fatalf("unmarshal created answer: %v", err)
 	}
-	if created.Answer.ID == "" || created.Answer.Circle.ID != "circle-a" {
+	if created.Answer.ID == "" || created.Answer.Circle.ID != "0195ec00-0021-7000-8000-000000000001" {
 		t.Fatalf("unexpected created answer: %#v", created)
 	}
 	if created.Answer.CreatedAt == "" {
@@ -2895,11 +2960,11 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 	if len(mails) != 1 || !strings.Contains(mails[0].Subject, "展示チェックフォーム") {
 		t.Fatalf("unexpected mail queue: %#v", mails)
 	}
-	if !slices.Contains(mails[0].Recipients, "circle-a@example.com") || !slices.Contains(mails[0].Recipients, "staff@example.com") {
+	if !slices.Contains(mails[0].Recipients, "0195ec00-0021-7000-8000-000000000001@example.com") || !slices.Contains(mails[0].Recipients, "staff@example.com") {
 		t.Fatalf("unexpected mail recipients: %#v", mails[0].Recipients)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/answers", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2908,7 +2973,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &index); err != nil {
 		t.Fatalf("unmarshal answers index: %v", err)
 	}
-	if len(index.Answers) != 1 || len(index.NotAnsweredCircles) != 1 || index.NotAnsweredCircles[0].ID != "circle-b" {
+	if len(index.Answers) != 1 || len(index.NotAnsweredCircles) != 1 || index.NotAnsweredCircles[0].ID != "0195ec00-0022-7000-8000-000000000001" {
 		t.Fatalf("unexpected answers index: %#v", index)
 	}
 
@@ -2917,7 +2982,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		server,
 		cookies,
 		http.MethodPost,
-		"/v1/staff/forms/form-circle-b-1/answers/"+created.Answer.ID+"/uploads",
+		"/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/"+created.Answer.ID+"/uploads",
 		"file",
 		"layout.exe",
 		[]byte("not allowed"),
@@ -2943,7 +3008,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		server,
 		cookies,
 		http.MethodPost,
-		"/v1/staff/forms/form-circle-b-1/answers/"+created.Answer.ID+"/uploads",
+		"/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/"+created.Answer.ID+"/uploads",
 		"file",
 		"layout.pdf",
 		[]byte("%PDF-1.4 staff-layout"),
@@ -2956,7 +3021,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/answers/"+created.Answer.ID+"/edit", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/"+created.Answer.ID+"/edit", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2969,7 +3034,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("unexpected answer detail: %#v", detail)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/answers/"+created.Answer.ID+"/uploads/"+uploadQuestion.ID+"/file", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/"+created.Answer.ID+"/uploads/"+uploadQuestion.ID+"/file", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2977,7 +3042,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("unexpected uploaded content: %q", recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/answers/export", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/export", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2988,7 +3053,7 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("unexpected csv content: %s", recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/answers/uploads.zip", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/uploads.zip", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -2996,12 +3061,12 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("unexpected zip content type: %s", got)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/forms/form-circle-b-1/answers/"+created.Answer.ID, nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/"+created.Answer.ID, nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/answers/not_answered", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers/not_answered", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -3024,7 +3089,7 @@ func TestStaffFormsValidation(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
@@ -3058,10 +3123,10 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/questions", map[string]string{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions", map[string]string{
 		"type": "text",
 	})
 	if recorder.Code != http.StatusCreated {
@@ -3071,7 +3136,7 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &createdQuestion); err != nil {
 		t.Fatalf("unmarshal created question: %v", err)
 	}
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-circle-b-1/questions/"+createdQuestion.ID, map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/questions/"+createdQuestion.ID, map[string]any{
 		"name":         "責任者名",
 		"description":  "入力してください",
 		"type":         "text",
@@ -3086,7 +3151,7 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-circle-b-1/preview", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/preview", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -3094,7 +3159,7 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &preview); err != nil {
 		t.Fatalf("unmarshal preview: %v", err)
 	}
-	if preview.ID != "form-circle-b-1" || len(preview.Questions) != 1 {
+	if preview.ID != "0195ec00-0014-7000-8000-000000000001" || len(preview.Questions) != 1 {
 		t.Fatalf("unexpected preview response: %#v", preview)
 	}
 	if !slices.Equal(preview.AnswerableTags, []string{"展示"}) {
@@ -3104,7 +3169,7 @@ func TestStaffFormsPreviewCopyExportAndDelete(t *testing.T) {
 		t.Fatalf("unexpected preview response: %#v", preview)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-circle-b-1/copy", map[string]any{})
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/copy", map[string]any{})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
@@ -3161,10 +3226,10 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-participation-exhibit", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0012-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -3177,7 +3242,7 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 		t.Fatalf("unexpected participation form detail: %#v", detail)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-participation-exhibit/preview", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0012-7000-8000-000000000001/preview", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -3186,14 +3251,14 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &preview); err != nil {
 		t.Fatalf("unmarshal participation form preview: %v", err)
 	}
-	if preview.ID != "form-participation-exhibit" {
+	if preview.ID != "0195ec00-0012-7000-8000-000000000001" {
 		t.Fatalf("unexpected participation form preview: %#v", preview)
 	}
 	if len(preview.AnswerableTags) != 0 {
 		t.Fatalf("expected participation preview tags to be empty, got %#v", preview.AnswerableTags)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-participation-exhibit", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0012-7000-8000-000000000001", map[string]any{
 		"name":                "変更不可",
 		"description":         "変更不可",
 		"openAt":              openAt,
@@ -3207,7 +3272,7 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusBadRequest, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/form-participation-exhibit/questions", map[string]string{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms/0195ec00-0012-7000-8000-000000000001/questions", map[string]string{
 		"type": "text",
 	})
 	if recorder.Code != http.StatusCreated {
@@ -3219,7 +3284,7 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 		t.Fatalf("unmarshal participation question: %v", err)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/form-participation-exhibit/questions/"+created.ID, map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/forms/0195ec00-0012-7000-8000-000000000001/questions/"+created.ID, map[string]any{
 		"name":         "追加設問",
 		"description":  "補足事項を入力してください",
 		"type":         "text",
@@ -3234,12 +3299,12 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/forms/form-participation-exhibit/questions/"+created.ID, nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/forms/0195ec00-0012-7000-8000-000000000001/questions/"+created.ID, nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/form-participation-exhibit/answers", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0012-7000-8000-000000000001/answers", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -3270,7 +3335,7 @@ func TestStaffCirclesListCreateDetailAndUpdate(t *testing.T) {
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles", map[string]any{
 		"name":                "追加企画",
 		"groupName":           "Cブロック",
-		"participationTypeId": "participation-type-exhibit",
+		"participationTypeId": "0195ec00-0002-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
@@ -3292,7 +3357,7 @@ func TestStaffCirclesListCreateDetailAndUpdate(t *testing.T) {
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/circles/"+created.ID, map[string]any{
 		"name":                "更新後の追加企画",
 		"groupName":           "更新後Cブロック",
-		"participationTypeId": "participation-type-food",
+		"participationTypeId": "0195ec00-0001-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3383,7 +3448,7 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &all); err != nil {
 		t.Fatalf("unmarshal staff circles all response: %v", err)
 	}
-	if len(all) != 2 || all[1].ID != "circle-b" {
+	if len(all) != 2 || all[1].ID != "0195ec00-0022-7000-8000-000000000001" {
 		t.Fatalf("unexpected all circles response: %#v", all)
 	}
 
@@ -3394,11 +3459,11 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if got := recorder.Header().Get("Content-Type"); got != "text/csv; charset=utf-8" {
 		t.Fatalf("unexpected content type: %s", got)
 	}
-	if !strings.Contains(recorder.Body.String(), "participation_type_id") || !strings.Contains(recorder.Body.String(), "circle-b") {
+	if !strings.Contains(recorder.Body.String(), "participation_type_id") || !strings.Contains(recorder.Body.String(), "0195ec00-0022-7000-8000-000000000001") {
 		t.Fatalf("unexpected circles export: %s", recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/circle-b/email", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/email", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -3407,11 +3472,11 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &form); err != nil {
 		t.Fatalf("unmarshal circle mail form: %v", err)
 	}
-	if form.Circle.ID != "circle-b" || len(form.Recipients) != 2 || form.Recipients[0].ID != "member-circle-b" || form.Recipients[1].ID != "member-circle-b-unverified" {
+	if form.Circle.ID != "0195ec00-0022-7000-8000-000000000001" || len(form.Recipients) != 2 || form.Recipients[0].ID != "member-0195ec00-0022-7000-8000-000000000001" || form.Recipients[1].ID != "demo-circle-unverified" {
 		t.Fatalf("unexpected circle mail form: %#v", form)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles/circle-b/email", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/email", map[string]any{
 		"recipient": "leader",
 		"subject":   "搬入のご案内",
 		"body":      "9:00 に集合してください。",
@@ -3420,7 +3485,7 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
 
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3430,16 +3495,16 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &jobs); err != nil {
 		t.Fatalf("unmarshal circle mail jobs: %v", err)
 	}
-	if len(jobs) != 1 || !slices.Equal(jobs[0].Recipients, []string{"circle-b@example.com"}) {
+	if len(jobs) != 1 || !slices.Equal(jobs[0].Recipients, []string{"0195ec00-0022-7000-8000-000000000001@example.com"}) {
 		t.Fatalf("unexpected circle mail jobs: %#v", jobs)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/circle-b", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/circle-b", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -3451,8 +3516,172 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &all); err != nil {
 		t.Fatalf("unmarshal circles after delete: %v", err)
 	}
-	if len(all) != 1 || all[0].ID != "circle-a" {
+	if len(all) != 1 || all[0].ID != "0195ec00-0021-7000-8000-000000000001" {
 		t.Fatalf("unexpected circles after delete: %#v", all)
+	}
+}
+
+func TestStaffCircleMembersListAddAndDelete(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:          "demo-user",
+		LoginIDs:    []string{"demo@example.com", "24a0000"},
+		DisplayName: "Demo User",
+		Password:    "password",
+		Roles:       []string{"participant"},
+		IsVerified:  true,
+	})
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var members []staffCircleMemberResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &members); err != nil {
+		t.Fatalf("unmarshal members response: %v", err)
+	}
+	if len(members) != 2 || !members[0].IsLeader {
+		t.Fatalf("unexpected initial members: %#v", members)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members", map[string]string{
+		"loginId": "demo@example.com",
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &members); err != nil {
+		t.Fatalf("unmarshal members response after add: %v", err)
+	}
+	if len(members) != 3 {
+		t.Fatalf("expected 3 members after add, got %#v", members)
+	}
+	addedMemberIndex := slices.IndexFunc(members, func(member staffCircleMemberResponse) bool {
+		return member.UserID == "demo-user"
+	})
+	if addedMemberIndex < 0 || !slices.Equal(members[addedMemberIndex].LoginIDs, []string{"demo@example.com", "24a0000"}) {
+		t.Fatalf("unexpected added member response: %#v", members)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/email", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var form staffCircleMailFormResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &form); err != nil {
+		t.Fatalf("unmarshal circle mail form after add: %v", err)
+	}
+	if len(form.Recipients) != 3 {
+		t.Fatalf("expected 3 mail recipients after add, got %#v", form.Recipients)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members/demo-user", nil)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &members); err != nil {
+		t.Fatalf("unmarshal members response after delete: %v", err)
+	}
+	if len(members) != 2 {
+		t.Fatalf("expected 2 members after delete, got %#v", members)
+	}
+}
+
+func TestStaffCircleMembersValidation(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:           "contact-email-member",
+		LoginIDs:     []string{"24c0001"},
+		DisplayName:  "Contact Email Member",
+		ContactEmail: "contact-add@example.com",
+		Password:     "password",
+		Roles:        []string{"participant"},
+		IsVerified:   true,
+	})
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles/0195ec00-0021-7000-8000-000000000001/members", map[string]string{
+		"loginId": "contact-add@example.com",
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles/0195ec00-0021-7000-8000-000000000001/members", map[string]string{
+		"loginId": "contact-add@example.com",
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var validationResponse models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &validationResponse); err != nil {
+		t.Fatalf("unmarshal duplicate member validation response: %v", err)
+	}
+	if len(validationResponse.Errors["loginId"]) == 0 {
+		t.Fatalf("expected duplicate loginId validation error, got %#v", validationResponse.Errors)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles/0195ec00-0021-7000-8000-000000000001/members", map[string]string{
+		"loginId": "missing-user",
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	if err := json.Unmarshal(recorder.Body.Bytes(), &validationResponse); err != nil {
+		t.Fatalf("unmarshal missing member validation response: %v", err)
+	}
+	if len(validationResponse.Errors["loginId"]) == 0 {
+		t.Fatalf("expected missing loginId validation error, got %#v", validationResponse.Errors)
+	}
+}
+
+func TestStaffCircleMembersRejectLeaderDeletion(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members/member-0195ec00-0022-7000-8000-000000000001", nil)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal validation response: %v", err)
+	}
+	if len(response.Errors["userId"]) == 0 {
+		t.Fatalf("expected userId validation error, got %#v", response.Errors)
 	}
 }
 
@@ -3533,7 +3762,7 @@ func TestStaffUsersNonAdminCannotChangeAdminRole(t *testing.T) {
 
 	authorizeStaff(t, server, cookies)
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/member-circle-a/roles", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/member-0195ec00-0021-7000-8000-000000000001/roles", map[string]any{
 		"roles": []string{"participant", "admin"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -3570,14 +3799,14 @@ func TestStaffFormsExportExcludesParticipationForm(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/export", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
-	if strings.Contains(recorder.Body.String(), "form-participation-exhibit") {
+	if strings.Contains(recorder.Body.String(), "0195ec00-0012-7000-8000-000000000001") {
 		t.Fatalf("expected participation form to be excluded from export, got %s", recorder.Body.String())
 	}
 }
@@ -3666,8 +3895,8 @@ func TestStaffUsersListSupportsSearchSortAndFilters(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &searched); err != nil {
 		t.Fatalf("unmarshal searched users response: %v", err)
 	}
-	if searched.Total != 1 || searched.Items[0].ID != "member-circle-a" {
-		t.Fatalf("expected contact email search to match member-circle-a, got %#v", searched)
+	if searched.Total != 1 || searched.Items[0].ID != "member-0195ec00-0021-7000-8000-000000000001" {
+		t.Fatalf("expected contact email search to match member-0195ec00-0021-7000-8000-000000000001, got %#v", searched)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users?sortKey=contactEmail&sortDirection=desc", nil)
@@ -3682,8 +3911,8 @@ func TestStaffUsersListSupportsSearchSortAndFilters(t *testing.T) {
 	if len(sorted.Items) < 2 {
 		t.Fatalf("expected at least two users for sort assertion, got %#v", sorted.Items)
 	}
-	if sorted.Items[0].ID != "member-circle-a" {
-		t.Fatalf("expected member-circle-a to be first by contactEmail desc, got %#v", sorted.Items)
+	if sorted.Items[0].ID != "member-0195ec00-0021-7000-8000-000000000001" {
+		t.Fatalf("expected member-0195ec00-0021-7000-8000-000000000001 to be first by contactEmail desc, got %#v", sorted.Items)
 	}
 
 	filterQueries := `[{"key_name":"isVerified","operator":"=","value":"false"}]`
@@ -3696,7 +3925,7 @@ func TestStaffUsersListSupportsSearchSortAndFilters(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &filtered); err != nil {
 		t.Fatalf("unmarshal filtered users response: %v", err)
 	}
-	if filtered.Total != 1 || filtered.Items[0].ID != "member-circle-b-unverified" {
+	if filtered.Total != 1 || filtered.Items[0].ID != "demo-circle-unverified" {
 		t.Fatalf("expected isVerified=false filter result, got %#v", filtered)
 	}
 
@@ -3911,13 +4140,13 @@ func TestStaffUsersUpdateVerifyExportAndDelete(t *testing.T) {
 	if got := recorder.Header().Get("Content-Type"); got != "text/csv; charset=utf-8" {
 		t.Fatalf("unexpected content type: %s", got)
 	}
-	if !strings.Contains(recorder.Body.String(), "is_verified") || !strings.Contains(recorder.Body.String(), "member-circle-b-unverified") {
+	if !strings.Contains(recorder.Body.String(), "is_verified") || !strings.Contains(recorder.Body.String(), "demo-circle-unverified") {
 		t.Fatalf("unexpected users export: %s", recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/member-circle-b-unverified", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/demo-circle-unverified", map[string]any{
 		"displayName": "Updated Circle B Member",
-		"loginIds":    []string{"updated-circle-b@example.com", "24b9999"},
+		"loginIds":    []string{"updated-0195ec00-0022-7000-8000-000000000001@example.com", "24b9999"},
 	})
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3927,11 +4156,11 @@ func TestStaffUsersUpdateVerifyExportAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
 		t.Fatalf("unmarshal updated staff user: %v", err)
 	}
-	if updated.DisplayName != "Updated Circle B Member" || !slices.Equal(updated.LoginIDs, []string{"updated-circle-b@example.com", "24b9999"}) || updated.IsVerified {
+	if updated.DisplayName != "Updated Circle B Member" || !slices.Equal(updated.LoginIDs, []string{"updated-0195ec00-0022-7000-8000-000000000001@example.com", "24b9999"}) || updated.IsVerified {
 		t.Fatalf("unexpected updated user: %#v", updated)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPatch, "/v1/staff/users/member-circle-b-unverified/verify", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodPatch, "/v1/staff/users/demo-circle-unverified/verify", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -3944,12 +4173,12 @@ func TestStaffUsersUpdateVerifyExportAndDelete(t *testing.T) {
 		t.Fatalf("expected user to be verified, got %#v", verified)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/member-circle-a", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/member-0195ec00-0021-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users/member-circle-a", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users/member-0195ec00-0021-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -4002,11 +4231,11 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 		"title":    "スタッフ向け新着",
 		"body":     "設営順の詳細を更新しました。",
 		"isPublic": true,
@@ -4016,7 +4245,7 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
-		"circleId":            "circle-b",
+		"circleId":            "0195ec00-0022-7000-8000-000000000001",
 		"name":                "追加ヒアリング",
 		"description":         "当日の搬入担当者を確認します。",
 		"openAt":              openAt,
@@ -4032,7 +4261,7 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
-		"circleId":   "circle-b",
+		"circleId":   "0195ec00-0022-7000-8000-000000000001",
 		"subject":    "搬入のご案内",
 		"body":       "9:00 に集合してください。",
 		"recipients": []string{"demo@example.com"},
@@ -4101,7 +4330,7 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/circles", map[string]any{
 		"name":                "追加企画",
 		"groupName":           "Cブロック",
-		"participationTypeId": "participation-type-exhibit",
+		"participationTypeId": "0195ec00-0002-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
@@ -4117,7 +4346,7 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId": "circle-b",
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
 		"title":    "新着ページ",
 		"body":     "本文",
 		"isPublic": true,
@@ -4160,10 +4389,10 @@ func TestStaffExportsDownloadArtifacts(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/form-circle-b-1/answer", map[string]string{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", map[string]string{
 		"body": "展示位置は正面入口側を希望します。",
 	})
 	if recorder.Code != http.StatusOK {
@@ -4233,7 +4462,7 @@ func TestStaffPortalSettingsRequireAdminRole(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/portal-settings", nil)
@@ -4249,7 +4478,7 @@ func TestStaffPortalSettingsGetAndUpdate(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/portal-settings", nil)
@@ -4320,7 +4549,7 @@ func TestStaffPortalSettingsValidateInput(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/portal-settings", map[string]any{
@@ -4358,10 +4587,10 @@ func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types/participation-type-food/circles?page=1&pageSize=10", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types/0195ec00-0001-7000-8000-000000000001/circles?page=1&pageSize=10", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -4370,15 +4599,15 @@ func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal participation type circles: %v", err)
 	}
-	if response.Total != 1 || len(response.Items) != 1 || response.Items[0].ID != "circle-a" {
+	if response.Total != 1 || len(response.Items) != 1 || response.Items[0].ID != "0195ec00-0021-7000-8000-000000000001" {
 		t.Fatalf("unexpected participation type circle response: %#v", response)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types/participation-type-food/circles/export", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types/0195ec00-0001-7000-8000-000000000001/circles/export", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
-	if got := recorder.Header().Get("Content-Disposition"); !strings.Contains(got, "staff-participation-type-participation-type-food-circles.csv") {
+	if got := recorder.Header().Get("Content-Disposition"); !strings.Contains(got, "staff-participation-type-0195ec00-0001-7000-8000-000000000001-circles.csv") {
 		t.Fatalf("unexpected content disposition: %s", got)
 	}
 
@@ -4392,7 +4621,7 @@ func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
 	if got, want := rows[0][0], "id"; got != want {
 		t.Fatalf("unexpected header first column: got=%q want=%q", got, want)
 	}
-	if got, want := rows[1][0], "circle-a"; got != want {
+	if got, want := rows[1][0], "0195ec00-0021-7000-8000-000000000001"; got != want {
 		t.Fatalf("unexpected csv row id: got=%q want=%q all=%#v", got, want, rows)
 	}
 }
@@ -4408,7 +4637,7 @@ func TestStaffParticipationTypesListAllowsCircleReaders(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/participation-types", nil)
@@ -4432,7 +4661,7 @@ func TestStaffTagsExportCSV(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/tags/export", nil)
@@ -4471,12 +4700,12 @@ func TestStaffTagsExportCSV(t *testing.T) {
 		if len(row) != 7 {
 			t.Fatalf("unexpected row width: %#v", row)
 		}
-		if row[1] == "展示" && row[2] == "circle-b" {
+		if row[1] == "展示" && row[2] == "0195ec00-0022-7000-8000-000000000001" {
 			foundTaggedCircle = true
 		}
 	}
 	if !foundTaggedCircle {
-		t.Fatalf("expected tag export to include circle-b row, got %#v", rows)
+		t.Fatalf("expected tag export to include 0195ec00-0022-7000-8000-000000000001 row, got %#v", rows)
 	}
 }
 
@@ -4487,7 +4716,7 @@ func TestStaffPlacesExportCSV(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/places/export", nil)
@@ -4522,13 +4751,13 @@ func TestStaffPlacesExportCSV(t *testing.T) {
 	if !slices.Equal(rows[0], wantHeader) {
 		t.Fatalf("unexpected header: want=%#v got=%#v", wantHeader, rows[0])
 	}
-	if rows[1][0] != "place-indoor-1" || rows[1][4] != "circle-a" {
+	if rows[1][0] != "0195ec00-0071-7000-8000-000000000001" || rows[1][4] != "0195ec00-0021-7000-8000-000000000001" {
 		t.Fatalf("unexpected first export row: %#v", rows[1])
 	}
-	if rows[2][0] != "" || rows[2][4] != "circle-b" {
+	if rows[2][0] != "" || rows[2][4] != "0195ec00-0022-7000-8000-000000000001" {
 		t.Fatalf("unexpected second export row: %#v", rows[2])
 	}
-	if rows[3][0] != "place-outdoor-1" || rows[3][4] != "circle-b" {
+	if rows[3][0] != "0195ec00-0072-7000-8000-000000000001" || rows[3][4] != "0195ec00-0022-7000-8000-000000000001" {
 		t.Fatalf("unexpected third export row: %#v", rows[3])
 	}
 }
@@ -4540,7 +4769,7 @@ func TestStaffMailsListAndEnqueue(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
@@ -4557,7 +4786,7 @@ func TestStaffMailsListAndEnqueue(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
-		"circleId":   "circle-b",
+		"circleId":   "0195ec00-0022-7000-8000-000000000001",
 		"subject":    "搬入のご案内",
 		"body":       "9:00 に集合してください。",
 		"recipients": []string{"demo@example.com", "sub@example.com"},
@@ -4593,11 +4822,11 @@ func TestStaffMailValidation(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "circle-b")
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
-		"circleId":   "circle-b",
+		"circleId":   "0195ec00-0022-7000-8000-000000000001",
 		"subject":    "   ",
 		"body":       "   ",
 		"recipients": []string{},
@@ -4696,106 +4925,106 @@ func testConfig() config.Config {
 		},
 		Users: []config.User{
 			{
-				ID:              "member-circle-a",
-				LoginIDs:        []string{"circle-a@example.com"},
+				ID:              "member-0195ec00-0021-7000-8000-000000000001",
+				LoginIDs:        []string{"0195ec00-0021-7000-8000-000000000001@example.com"},
 				DisplayName:     "Circle A Member",
 				Password:        "password",
 				Roles:           []string{"participant"},
-				CircleIDs:       []string{"circle-a"},
-				LeaderCircleIDs: []string{"circle-a"},
+				CircleIDs:       []string{"0195ec00-0021-7000-8000-000000000001"},
+				LeaderCircleIDs: []string{"0195ec00-0021-7000-8000-000000000001"},
 				IsVerified:      true,
 			},
 			{
-				ID:              "member-circle-b",
-				LoginIDs:        []string{"circle-b@example.com"},
+				ID:              "member-0195ec00-0022-7000-8000-000000000001",
+				LoginIDs:        []string{"0195ec00-0022-7000-8000-000000000001@example.com"},
 				DisplayName:     "Circle B Member",
 				Password:        "password",
 				Roles:           []string{"participant"},
-				CircleIDs:       []string{"circle-b"},
-				LeaderCircleIDs: []string{"circle-b"},
+				CircleIDs:       []string{"0195ec00-0022-7000-8000-000000000001"},
+				LeaderCircleIDs: []string{"0195ec00-0022-7000-8000-000000000001"},
 				IsVerified:      true,
 			},
 			{
-				ID:          "member-circle-b-unverified",
-				LoginIDs:    []string{"circle-b-unverified@example.com"},
+				ID:          "demo-circle-unverified",
+				LoginIDs:    []string{"0195ec00-0022-7000-8000-000000000001-unverified@example.com"},
 				DisplayName: "Circle B Unverified Member",
 				Password:    "password",
 				Roles:       []string{"participant"},
-				CircleIDs:   []string{"circle-b"},
+				CircleIDs:   []string{"0195ec00-0022-7000-8000-000000000001"},
 				IsVerified:  false,
 			},
 		},
 		ParticipationTypes: []config.ParticipationType{
 			{
-				ID:            "participation-type-food",
+				ID:            "0195ec00-0001-7000-8000-000000000001",
 				Name:          "模擬店",
 				Description:   "模擬店向け参加登録",
 				UsersCountMin: 1,
 				UsersCountMax: 5,
 				Tags:          []string{"模擬店"},
-				FormID:        "form-participation-food",
+				FormID:        "0195ec00-0011-7000-8000-000000000001",
 			},
 			{
-				ID:            "participation-type-exhibit",
+				ID:            "0195ec00-0002-7000-8000-000000000001",
 				Name:          "展示",
 				Description:   "展示向け参加登録",
 				UsersCountMin: 1,
 				UsersCountMax: 5,
 				Tags:          []string{"展示"},
-				FormID:        "form-participation-exhibit",
+				FormID:        "0195ec00-0012-7000-8000-000000000001",
 			},
 		},
 		Tags: []config.Tag{
-			{ID: "tag-food", Name: "模擬店"},
-			{ID: "tag-exhibit", Name: "展示"},
+			{ID: "0195ec00-0063-7000-8000-000000000001", Name: "模擬店"},
+			{ID: "0195ec00-0062-7000-8000-000000000001", Name: "展示"},
 		},
 		Circles: []config.Circle{
 			{
-				ID:                    "circle-a",
+				ID:                    "0195ec00-0021-7000-8000-000000000001",
 				Name:                  "デモ企画A",
 				NameYomi:              "でもきかくえー",
 				GroupName:             "Aブロック",
 				GroupNameYomi:         "えーぶろっく",
-				ParticipationTypeID:   "participation-type-food",
+				ParticipationTypeID:   "0195ec00-0001-7000-8000-000000000001",
 				ParticipationTypeName: "模擬店",
 				Tags:                  []string{"模擬店"},
 			},
 			{
-				ID:                    "circle-b",
+				ID:                    "0195ec00-0022-7000-8000-000000000001",
 				Name:                  "デモ企画B",
 				NameYomi:              "でもきかくびー",
 				GroupName:             "Bブロック",
 				GroupNameYomi:         "びーぶろっく",
-				ParticipationTypeID:   "participation-type-exhibit",
+				ParticipationTypeID:   "0195ec00-0002-7000-8000-000000000001",
 				ParticipationTypeName: "展示",
 				Tags:                  []string{"展示"},
 			},
 		},
 		Places: []config.Place{
-			{ID: "place-indoor-1", Name: "1号館 101", Type: 1, Notes: "屋内"},
-			{ID: "place-outdoor-1", Name: "中庭", Type: 2, Notes: "屋外"},
+			{ID: "0195ec00-0071-7000-8000-000000000001", Name: "1号館 101", Type: 1, Notes: "屋内"},
+			{ID: "0195ec00-0072-7000-8000-000000000001", Name: "中庭", Type: 2, Notes: "屋外"},
 		},
 		Booths: []config.BoothAssignment{
-			{PlaceID: "place-indoor-1", CircleID: "circle-a"},
-			{PlaceID: "place-indoor-1", CircleID: "circle-b"},
-			{PlaceID: "place-outdoor-1", CircleID: "circle-b"},
+			{PlaceID: "0195ec00-0071-7000-8000-000000000001", CircleID: "0195ec00-0021-7000-8000-000000000001"},
+			{PlaceID: "0195ec00-0071-7000-8000-000000000001", CircleID: "0195ec00-0022-7000-8000-000000000001"},
+			{PlaceID: "0195ec00-0072-7000-8000-000000000001", CircleID: "0195ec00-0022-7000-8000-000000000001"},
 		},
 		Pages: []config.Page{
 			{
-				ID:           "page-circle-a-1",
-				CircleID:     "circle-a",
+				ID:           "0195ec00-0031-7000-8000-000000000001",
+				CircleID:     "0195ec00-0021-7000-8000-000000000001",
 				Title:        "搬入時間のお知らせ",
 				Body:         "Aブロックの搬入は 9:00 から開始します。",
 				Notes:        "搬入担当向けの補足です。",
 				IsPinned:     false,
 				IsPublic:     true,
 				ViewableTags: []string{"模擬店"},
-				DocumentIDs:  []string{"document-circle-a-1"},
+				DocumentIDs:  []string{"0195ec00-0041-7000-8000-000000000001"},
 				PublishedAt:  "2026-03-01T09:00:00Z",
 			},
 			{
-				ID:           "page-circle-a-pinned",
-				CircleID:     "circle-a",
+				ID:           "0195ec00-0032-7000-8000-000000000001",
+				CircleID:     "0195ec00-0021-7000-8000-000000000001",
 				Title:        "固定表示の連絡",
 				Body:         "このお知らせは一覧には出しません。",
 				Notes:        "",
@@ -4806,34 +5035,34 @@ func testConfig() config.Config {
 				PublishedAt:  "2026-03-02T09:00:00Z",
 			},
 			{
-				ID:           "page-circle-b-1",
-				CircleID:     "circle-b",
+				ID:           "0195ec00-0034-7000-8000-000000000001",
+				CircleID:     "0195ec00-0022-7000-8000-000000000001",
 				Title:        "展示レイアウト更新",
 				Body:         "Bブロックの展示レイアウトを更新しました。",
 				Notes:        "展示班向けの差し替え指示あり。",
 				IsPinned:     false,
 				IsPublic:     true,
 				ViewableTags: []string{"展示"},
-				DocumentIDs:  []string{"document-circle-b-1"},
+				DocumentIDs:  []string{"0195ec00-0042-7000-8000-000000000001"},
 				PublishedAt:  "2026-03-03T09:00:00Z",
 			},
 			{
-				ID:           "page-circle-b-private",
-				CircleID:     "circle-b",
+				ID:           "0195ec00-0035-7000-8000-000000000001",
+				CircleID:     "0195ec00-0022-7000-8000-000000000001",
 				Title:        "非公開メモ",
 				Body:         "このお知らせは公開されません。",
 				Notes:        "スタッフだけが確認するメモです。",
 				IsPinned:     false,
 				IsPublic:     false,
 				ViewableTags: []string{},
-				DocumentIDs:  []string{"document-circle-b-private"},
+				DocumentIDs:  []string{"0195ec00-0043-7000-8000-000000000001"},
 				PublishedAt:  "2026-03-04T09:00:00Z",
 			},
 		},
 		Documents: []config.Document{
 			{
-				ID:          "document-circle-a-1",
-				CircleID:    "circle-a",
+				ID:          "0195ec00-0041-7000-8000-000000000001",
+				CircleID:    "0195ec00-0021-7000-8000-000000000001",
 				Name:        "搬入手順書",
 				Description: "Aブロック向けの搬入手順です。",
 				Notes:       "搬入班で最終確認してください。",
@@ -4846,8 +5075,8 @@ func testConfig() config.Config {
 				UpdatedAt:   "2026-03-02T09:00:00Z",
 			},
 			{
-				ID:          "document-circle-b-1",
-				CircleID:    "circle-b",
+				ID:          "0195ec00-0042-7000-8000-000000000001",
+				CircleID:    "0195ec00-0022-7000-8000-000000000001",
 				Name:        "展示ガイド",
 				Description: "Bブロック向けの展示ガイドです。",
 				Notes:       "展示班の責任者に共有済みです。",
@@ -4860,8 +5089,8 @@ func testConfig() config.Config {
 				UpdatedAt:   "2026-03-05T09:00:00Z",
 			},
 			{
-				ID:          "document-circle-b-private",
-				CircleID:    "circle-b",
+				ID:          "0195ec00-0043-7000-8000-000000000001",
+				CircleID:    "0195ec00-0022-7000-8000-000000000001",
 				Name:        "内部メモ",
 				Description: "この資料は公開しません。",
 				Notes:       "スタッフ内だけで参照します。",
@@ -4876,7 +5105,7 @@ func testConfig() config.Config {
 		},
 		Forms: []config.Form{
 			{
-				ID:                  "form-participation-food",
+				ID:                  "0195ec00-0011-7000-8000-000000000001",
 				CircleID:            "",
 				Name:                "企画参加登録",
 				Description:         "模擬店向けの参加登録フォームです。",
@@ -4891,7 +5120,7 @@ func testConfig() config.Config {
 				ConfirmationMessage: "参加登録を受け付けました。",
 			},
 			{
-				ID:                  "form-participation-exhibit",
+				ID:                  "0195ec00-0012-7000-8000-000000000001",
 				CircleID:            "",
 				Name:                "企画参加登録",
 				Description:         "展示向けの参加登録フォームです。",
@@ -4906,8 +5135,8 @@ func testConfig() config.Config {
 				ConfirmationMessage: "参加登録を受け付けました。",
 			},
 			{
-				ID:                  "form-circle-a-1",
-				CircleID:            "circle-a",
+				ID:                  "0195ec00-0013-7000-8000-000000000001",
+				CircleID:            "0195ec00-0021-7000-8000-000000000001",
 				Name:                "搬入確認フォーム",
 				Description:         "搬入予定時刻と責任者情報を提出してください。",
 				IsPublic:            true,
@@ -4921,8 +5150,8 @@ func testConfig() config.Config {
 				ConfirmationMessage: "搬入確認フォームへの回答ありがとうございました。",
 			},
 			{
-				ID:                  "form-circle-b-1",
-				CircleID:            "circle-b",
+				ID:                  "0195ec00-0014-7000-8000-000000000001",
+				CircleID:            "0195ec00-0022-7000-8000-000000000001",
 				Name:                "展示チェックフォーム",
 				Description:         "展示レイアウトと機材使用申請を提出してください。",
 				IsPublic:            true,
@@ -4936,8 +5165,8 @@ func testConfig() config.Config {
 				ConfirmationMessage: "展示チェックフォームへの回答を受け付けました。",
 			},
 			{
-				ID:                  "form-circle-b-closed",
-				CircleID:            "circle-b",
+				ID:                  "0195ec00-0010-7000-8000-000000000001",
+				CircleID:            "0195ec00-0022-7000-8000-000000000001",
 				Name:                "締切済みフォーム",
 				Description:         "このフォームは締切済みです。",
 				IsPublic:            true,
@@ -4951,8 +5180,8 @@ func testConfig() config.Config {
 				ConfirmationMessage: "",
 			},
 			{
-				ID:                  "form-circle-b-private",
-				CircleID:            "circle-b",
+				ID:                  "0195ec00-0015-7000-8000-000000000001",
+				CircleID:            "0195ec00-0022-7000-8000-000000000001",
 				Name:                "非公開フォーム",
 				Description:         "このフォームは公開されません。",
 				IsPublic:            false,
@@ -4991,13 +5220,34 @@ func testStrictStaffConfig() config.Config {
 func circleMemberConfig() config.Config {
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "member-circle-b",
-		LoginIDs:    []string{"circle-b@example.com"},
+		ID:          "member-0195ec00-0022-7000-8000-000000000001",
+		LoginIDs:    []string{"0195ec00-0022-7000-8000-000000000001@example.com"},
 		DisplayName: "Circle B Member",
 		Password:    "password",
 		Roles:       []string{"participant"},
 	}
 
+	return cfg
+}
+
+func memberOnlyConfig() config.Config {
+	cfg := testConfig()
+	cfg.AuthUser = config.AuthUser{
+		ID:          "member-only-user",
+		LoginIDs:    []string{"member-only@example.com"},
+		DisplayName: "Member Only User",
+		Password:    "password",
+		Roles:       []string{"participant"},
+	}
+	cfg.Users = append(cfg.Users, config.User{
+		ID:          "member-only-user",
+		LoginIDs:    []string{"member-only@example.com"},
+		DisplayName: "Member Only User",
+		Password:    "password",
+		Roles:       []string{"participant"},
+		CircleIDs:   []string{"0195ec00-0021-7000-8000-000000000001"},
+		IsVerified:  true,
+	})
 	return cfg
 }
 
