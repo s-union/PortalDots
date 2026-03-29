@@ -9,6 +9,7 @@ definePage({
 import { computed, ref, shallowRef } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -187,7 +188,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
     </SettingsSection>
 
     <SettingsSection title="メンバー一覧">
-      <div v-if="membersQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+      <LoadingMessage v-if="membersQuery.isPending.value" />
 
       <div v-else-if="membersQuery.data.value?.length === 0" class="px-6 py-6 text-sm text-muted">
         メンバーがいません。

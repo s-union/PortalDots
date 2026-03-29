@@ -15,11 +15,11 @@ vi.mock('@/lib/api/client', async () => {
 })
 
 const publicHomeApiMocks = vi.hoisted(() => ({
-  usePublicDocumentsQuery: vi.fn()
+  useSuspensePublicDocumentsQuery: vi.fn()
 }))
 
 vi.mock('@/features/public-home/api', () => ({
-  usePublicDocumentsQuery: publicHomeApiMocks.usePublicDocumentsQuery
+  useSuspensePublicDocumentsQuery: publicHomeApiMocks.useSuspensePublicDocumentsQuery
 }))
 
 import PublicDocumentsIndexPage from './index.vue'
@@ -46,7 +46,7 @@ describe('PublicDocumentsIndexPage', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
 
-    publicHomeApiMocks.usePublicDocumentsQuery.mockReturnValue({
+    publicHomeApiMocks.useSuspensePublicDocumentsQuery.mockReturnValue({
       data: ref([
         {
           id: 'document-1',
@@ -60,7 +60,8 @@ describe('PublicDocumentsIndexPage', () => {
           downloadUrl: '/v1/public/documents/document-1'
         }
       ]),
-      isPending: ref(false)
+      isPending: ref(false),
+      suspense: vi.fn().mockResolvedValue(undefined)
     })
 
     const router = createRouter({

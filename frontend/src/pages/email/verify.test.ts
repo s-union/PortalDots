@@ -1,9 +1,30 @@
+import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { useSessionStore } from '@/features/session/store'
+
+const authApiMocks = vi.hoisted(() => ({
+  useSuspenseAuthVerificationStatusQuery: vi.fn(),
+  useRequestAuthVerificationMutation: vi.fn(),
+  useConfirmAuthVerificationMutation: vi.fn(),
+  extractFirstErrorMessage: vi.fn()
+}))
+
+vi.mock('@/features/auth/api', async () => {
+  const actual = await vi.importActual<typeof import('@/features/auth/api')>('@/features/auth/api')
+
+  return {
+    ...actual,
+    useSuspenseAuthVerificationStatusQuery: authApiMocks.useSuspenseAuthVerificationStatusQuery,
+    useRequestAuthVerificationMutation: authApiMocks.useRequestAuthVerificationMutation,
+    useConfirmAuthVerificationMutation: authApiMocks.useConfirmAuthVerificationMutation,
+    extractFirstErrorMessage: authApiMocks.extractFirstErrorMessage
+  }
+})
+
 import EmailVerifyPage from './verify.vue'
 
 function createQueryPlugin() {
@@ -19,40 +40,42 @@ function createQueryPlugin() {
   ]
 }
 
-function buildFetchMock() {
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    await Promise.resolve()
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-    const pathname = new URL(url, 'http://localhost').pathname
-
-    if (pathname.endsWith('/auth/verification') && method === 'GET') {
-      return new Response(
-        JSON.stringify({
-          userId: 'demo-user',
-          displayName: 'Demo User',
-          completed: false,
-          items: [
-            {
-              type: 'email',
-              label: '連絡先メールアドレス',
-              address: 'demo@example.com',
-              verified: false
-            },
-            {
-              type: 'univemail',
-              label: '大学メールアドレス',
-              address: '24a0000@example.ac.jp',
-              verified: false
-            }
-          ]
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    throw new Error(`Unexpected request: ${method} ${url}`)
+function mockAuthVerificationHooks() {
+  authApiMocks.useSuspenseAuthVerificationStatusQuery.mockReturnValue({
+    data: ref({
+      userId: 'demo-user',
+      displayName: 'Demo User',
+      completed: false,
+      items: [
+        {
+          type: 'email',
+          label: '連絡先メールアドレス',
+          address: 'demo@example.com',
+          verified: false
+        },
+        {
+          type: 'univemail',
+          label: '大学メールアドレス',
+          address: '24a0000@example.ac.jp',
+          verified: false
+        }
+      ]
+    }),
+    suspense: vi.fn().mockResolvedValue(undefined),
+    refetch: vi.fn().mockResolvedValue(undefined)
   })
+
+  authApiMocks.useRequestAuthVerificationMutation.mockReturnValue({
+    mutateAsync: vi.fn(),
+    isPending: ref(false)
+  })
+
+  authApiMocks.useConfirmAuthVerificationMutation.mockReturnValue({
+    mutateAsync: vi.fn(),
+    isPending: ref(false)
+  })
+
+  authApiMocks.extractFirstErrorMessage.mockImplementation(() => 'エラーが発生しました')
 }
 
 async function mountAtVerify() {
@@ -70,6 +93,8 @@ async function mountAtVerify() {
     }
   })
 
+  mockAuthVerificationHooks()
+
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -81,7 +106,6 @@ async function mountAtVerify() {
 
   await router.push('/email/verify')
   await router.isReady()
-  vi.stubGlobal('fetch', buildFetchMock())
 
   const wrapper = mount(EmailVerifyPage, {
     global: {
@@ -96,6 +120,7 @@ async function mountAtVerify() {
 describe('EmailVerifyPage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.clearAllMocks()
   })
 
   it('shows verify sections and settings link', async () => {
@@ -118,6 +143,8 @@ describe('EmailVerifyPage', () => {
       roles: [],
       user: null
     })
+
+    mockAuthVerificationHooks()
 
     const router = createRouter({
       history: createMemoryHistory(),

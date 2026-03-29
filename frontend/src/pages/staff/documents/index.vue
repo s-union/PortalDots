@@ -13,6 +13,7 @@ import { RouterLink } from 'vue-router'
 import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
@@ -100,7 +101,7 @@ async function handleCreateDocument() {
         </template>
       </SurfaceHeader>
 
-      <div v-if="documentsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+      <LoadingMessage v-if="documentsQuery.isPending.value" />
 
       <div v-else-if="(documentsQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         staff documents はまだありません。

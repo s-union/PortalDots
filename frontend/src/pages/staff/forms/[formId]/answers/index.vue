@@ -25,6 +25,8 @@ import {
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { usePaginationState } from '@/lib/usePaginationState'
+import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
 const route = useRoute('/staff/forms/[formId]/answers/')
 const sessionStore = useSessionStore()
@@ -42,13 +44,10 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
 const currentForm = computed(() => answersQuery.data.value?.form ?? null)
 const showNotAnsweredLink = computed(() => currentForm.value?.isParticipationForm !== true)
 
-// ページネーション
-const page = ref(1)
-const pageSize = ref(25)
-
-// ソート
-const sortKey = ref('id')
-const sortDirection = ref<'asc' | 'desc'>('asc')
+const answersSortKeys = ['id', 'createdAt', 'updatedAt'] as const
+type AnswersSortKey = (typeof answersSortKeys)[number]
+const isAnswersSortKey = createSortKeyGuard(answersSortKeys)
+const sort = useSortState<AnswersSortKey>('id')
 
 // 動的列定義（フォーム設問を含む）
 const columns = computed<StaffDataGridColumn[]>(() => {
@@ -70,8 +69,8 @@ const columns = computed<StaffDataGridColumn[]>(() => {
 // ソート済み回答一覧
 const sortedAnswers = computed(() => {
   const answers = answersQuery.data.value?.answers ?? []
-  const key = sortKey.value
-  const dir = sortDirection.value
+  const key = sort.sortKey.value
+  const dir = sort.sortDirection.value
   return [...answers].sort((a, b) => {
     let av = ''
     let bv = ''
@@ -95,10 +94,12 @@ const sortedAnswers = computed(() => {
   })
 })
 
+const pagination = usePaginationState(computed(() => sortedAnswers.value.length))
+
 // ページネーション後の行データ
 const rows = computed<StaffDataGridRow[]>(() => {
-  const start = (page.value - 1) * pageSize.value
-  const end = start + pageSize.value
+  const start = (pagination.page.value - 1) * pagination.pageSize.value
+  const end = start + pagination.pageSize.value
   return sortedAnswers.value.slice(start, end).map((answer) => {
     const row: StaffDataGridRow = {
       id: answer.id,
@@ -118,16 +119,13 @@ const rows = computed<StaffDataGridRow[]>(() => {
   })
 })
 
-const total = computed(() => sortedAnswers.value.length)
-
 function handleSort(key: string) {
-  if (sortKey.value === key) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortKey.value = key
-    sortDirection.value = 'asc'
+  if (!isAnswersSortKey(key)) {
+    return
   }
-  page.value = 1
+
+  sort.toggleSort(key)
+  pagination.resetPage()
 }
 
 async function handleDelete(answerId: string, groupName: string) {
@@ -208,26 +206,21 @@ async function handleDelete(answerId: string, groupName: string) {
         <StaffDataGrid
           :rows="rows"
           :columns="columns"
-          :page="page"
-          :page-size="pageSize"
-          :total="total"
+          :page="pagination.page.value"
+          :page-size="pagination.pageSize.value"
+          :total="sortedAnswers.length"
           :loading="answersQuery.isFetching.value"
-          :sort-key="sortKey"
-          :sort-direction="sortDirection"
+          :sort-key="sort.sortKey.value"
+          :sort-direction="sort.sortDirection.value"
           table-label="回答一覧"
           empty-message="まだ回答はありません。"
-          @first="page = 1"
-          @prev="page = Math.max(1, page - 1)"
-          @next="page = Math.min(Math.ceil(total / pageSize), page + 1)"
-          @last="page = Math.ceil(total / pageSize)"
+          @first="pagination.setFirstPage"
+          @prev="pagination.setPrevPage"
+          @next="pagination.setNextPage"
+          @last="pagination.setLastPage"
           @reload="answersQuery.refetch()"
           @sort="handleSort"
-          @update:page-size="
-            (n) => {
-              pageSize = n
-              page = 1
-            }
-          "
+          @update:page-size="pagination.setPageSize"
         >
           <template #actions="{ row }">
             <div class="flex items-center gap-1">

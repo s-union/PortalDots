@@ -11,6 +11,7 @@ import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -156,7 +157,7 @@ async function handleSubmit() {
       description="この企画で送信したお問い合わせの履歴です（メール送信はモック）。"
       overflow-hidden
     >
-      <div v-if="historyQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+      <LoadingMessage v-if="historyQuery.isPending.value" />
       <div v-else-if="(historyQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         まだお問い合わせは送信していません。
       </div>

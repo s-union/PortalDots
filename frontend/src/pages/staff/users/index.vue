@@ -8,7 +8,7 @@ definePage({
   }
 })
 
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffFilterDrawer, {
@@ -31,11 +31,12 @@ import {
   useStaffUsersQuery
 } from '@/features/staff/users/api'
 import { useSessionStore } from '@/features/session/store'
+import { usePaginationState } from '@/lib/usePaginationState'
+import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const page = ref(1)
-const pageSize = ref(25)
+
 const searchQuery = ref('')
 const isEditorOpen = ref(false)
 const isFilterOpen = ref(false)
@@ -58,20 +59,28 @@ const staffUserSortKeys = [
   'isVerified'
 ] as const
 
-const sortKey = ref<StaffUserSortKey>('id')
-const sortDirection = ref<'asc' | 'desc'>('asc')
+const isStaffUserSortKey = createSortKeyGuard(staffUserSortKeys)
+const totalUsers = ref(0)
+const sort = useSortState<StaffUserSortKey>('id')
+const pagination = usePaginationState(totalUsers)
+
 const usersQuery = useStaffUsersQuery(
   computed(() => staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
-    page: page.value,
-    pageSize: pageSize.value,
+    page: pagination.page.value,
+    pageSize: pagination.pageSize.value,
     query: searchQuery.value,
-    sortKey: sortKey.value,
-    sortDirection: sortDirection.value,
+    sortKey: sort.sortKey.value,
+    sortDirection: sort.sortDirection.value,
     queries: appliedFilterQueries.value,
     mode: appliedFilterMode.value
   }))
 )
+
+watchEffect(() => {
+  totalUsers.value = usersQuery.data.value?.total ?? 0
+})
+
 const exportUrl = buildStaffUsersExportUrl()
 
 const filterFields: StaffFilterField[] = [
@@ -173,34 +182,8 @@ function handleSort(nextKey: string) {
     return
   }
 
-  if (sortKey.value === nextKey) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-    page.value = 1
-    return
-  }
-
-  sortKey.value = nextKey
-  sortDirection.value = 'asc'
-  page.value = 1
-}
-
-function handleFirstPage() {
-  page.value = 1
-}
-
-function handlePrevPage() {
-  page.value = Math.max(1, page.value - 1)
-}
-
-function handleNextPage() {
-  const total = usersQuery.data.value?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / pageSize.value))
-  page.value = Math.min(totalPages, page.value + 1)
-}
-
-function handleLastPage() {
-  const total = usersQuery.data.value?.total ?? 0
-  page.value = Math.max(1, Math.ceil(total / pageSize.value))
+  sort.toggleSort(nextKey)
+  pagination.resetPage()
 }
 
 async function handleReload() {
@@ -209,13 +192,8 @@ async function handleReload() {
   }
 }
 
-function handlePageSizeChange(nextSize: number) {
-  pageSize.value = nextSize
-  page.value = 1
-}
-
 function handleSearch() {
-  page.value = 1
+  pagination.resetPage()
 }
 
 function openFilter() {
@@ -271,7 +249,7 @@ function handleUpdateFilter(queryId: number, patch: Partial<Omit<StaffFilterQuer
 function handleApplyFilters() {
   appliedFilterQueries.value = toAppliedFilterQueries(draftFilterQueries.value)
   appliedFilterMode.value = draftFilterMode.value
-  page.value = 1
+  pagination.resetPage()
   closeFilter()
 }
 
@@ -280,7 +258,7 @@ function handleClearFilters() {
   draftFilterQueries.value = []
   appliedFilterMode.value = 'and'
   draftFilterMode.value = 'and'
-  page.value = 1
+  pagination.resetPage()
   closeFilter()
 }
 
@@ -340,10 +318,6 @@ function handleDeleted() {
   void handleReload()
 }
 
-function isStaffUserSortKey(value: string): value is StaffUserSortKey {
-  return (staffUserSortKeys as readonly string[]).includes(value)
-}
-
 function isStaffUserFilterKey(value: string): value is StaffUserFilterKey {
   return filterFields.some((field) => field.key === value)
 }
@@ -360,24 +334,24 @@ function handleFilterModeUpdate(mode: StaffUserFilterMode) {
         <StaffDataGrid
           :rows="gridRows"
           :columns="columns"
-          :page="page"
-          :page-size="pageSize"
+          :page="pagination.page.value"
+          :page-size="pagination.pageSize.value"
           :total="usersQuery.data.value?.total ?? 0"
           :loading="usersQuery.isPending.value"
-          :sort-key="sortKey"
-          :sort-direction="sortDirection"
+          :sort-key="sort.sortKey.value"
+          :sort-direction="sort.sortDirection.value"
           :show-filter-button="true"
           :filter-active="searchQuery.length > 0 || appliedFilterQueries.length > 0"
           empty-message="対象ユーザーが見つかりませんでした。"
           table-label="staff users"
-          @first="handleFirstPage"
-          @prev="handlePrevPage"
-          @next="handleNextPage"
-          @last="handleLastPage"
+          @first="pagination.setFirstPage"
+          @prev="pagination.setPrevPage"
+          @next="pagination.setNextPage"
+          @last="pagination.setLastPage"
           @reload="handleReload"
           @sort="handleSort"
           @filter="openFilter"
-          @update:page-size="handlePageSizeChange"
+          @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
             <form class="flex items-center gap-2" @submit.prevent="handleSearch">

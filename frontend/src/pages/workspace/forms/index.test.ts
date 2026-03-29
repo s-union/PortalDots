@@ -1,9 +1,23 @@
+import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+const formsApiMocks = vi.hoisted(() => ({
+  useSuspenseFormsQuery: vi.fn()
+}))
+
+vi.mock('@/features/forms/api', async () => {
+  const actual = await vi.importActual<typeof import('@/features/forms/api')>('@/features/forms/api')
+
+  return {
+    ...actual,
+    useSuspenseFormsQuery: formsApiMocks.useSuspenseFormsQuery
+  }
+})
+
 import FormsIndexPage from './index.vue'
 
 function createQueryPlugin() {
@@ -23,80 +37,6 @@ describe('FormsIndexPage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
-
-  function stubFetchWithForms() {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              csrfToken: 'csrf-token',
-              currentCircle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              featureFlags: [],
-              roles: ['participant'],
-              user: {
-                id: 'demo-user',
-                displayName: 'Demo User'
-              }
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/forms') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              {
-                id: 'form-circle-b-1',
-                name: '展示チェックフォーム',
-                description: '展示レイアウトと機材使用申請を提出してください。',
-                openAt: '2026-03-02T00:00:00Z',
-                closeAt: '2026-03-22T23:59:59Z',
-                maxAnswers: 2,
-                answerableTags: ['展示'],
-                confirmationMessage: '回答ありがとうございました。',
-                isPublic: true,
-                isOpen: true,
-                hasAnswer: false
-              },
-              {
-                id: 'form-circle-b-2',
-                name: '備品返却報告',
-                description: '使用した備品の返却状況を報告してください。',
-                openAt: '2026-02-01T00:00:00Z',
-                closeAt: '2026-02-20T23:59:59Z',
-                maxAnswers: 1,
-                answerableTags: [],
-                confirmationMessage: '',
-                isPublic: true,
-                isOpen: false,
-                hasAnswer: true
-              }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
-  }
 
   it('renders forms for the current circle', async () => {
     const pinia = createPinia()
@@ -127,7 +67,37 @@ describe('FormsIndexPage', () => {
     await router.push('/workspace/forms')
     await router.isReady()
 
-    stubFetchWithForms()
+    formsApiMocks.useSuspenseFormsQuery.mockReturnValue({
+      data: ref([
+        {
+          id: 'form-circle-b-1',
+          name: '展示チェックフォーム',
+          description: '展示レイアウトと機材使用申請を提出してください。',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: ['展示'],
+          confirmationMessage: '回答ありがとうございました。',
+          isPublic: true,
+          isOpen: true,
+          hasAnswer: false
+        },
+        {
+          id: 'form-circle-b-2',
+          name: '備品返却報告',
+          description: '使用した備品の返却状況を報告してください。',
+          openAt: '2026-02-01T00:00:00Z',
+          closeAt: '2026-02-20T23:59:59Z',
+          maxAnswers: 1,
+          answerableTags: [],
+          confirmationMessage: '',
+          isPublic: true,
+          isOpen: false,
+          hasAnswer: true
+        }
+      ]),
+      suspense: vi.fn().mockResolvedValue(undefined)
+    })
 
     const wrapper = mount(FormsIndexPage, {
       global: {
@@ -171,7 +141,38 @@ describe('FormsIndexPage', () => {
     })
     await router.push('/workspace/forms?status=closed')
     await router.isReady()
-    stubFetchWithForms()
+
+    formsApiMocks.useSuspenseFormsQuery.mockReturnValue({
+      data: ref([
+        {
+          id: 'form-circle-b-1',
+          name: '展示チェックフォーム',
+          description: '展示レイアウトと機材使用申請を提出してください。',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: ['展示'],
+          confirmationMessage: '回答ありがとうございました。',
+          isPublic: true,
+          isOpen: true,
+          hasAnswer: false
+        },
+        {
+          id: 'form-circle-b-2',
+          name: '備品返却報告',
+          description: '使用した備品の返却状況を報告してください。',
+          openAt: '2026-02-01T00:00:00Z',
+          closeAt: '2026-02-20T23:59:59Z',
+          maxAnswers: 1,
+          answerableTags: [],
+          confirmationMessage: '',
+          isPublic: true,
+          isOpen: false,
+          hasAnswer: true
+        }
+      ]),
+      suspense: vi.fn().mockResolvedValue(undefined)
+    })
 
     const wrapper = mount(FormsIndexPage, {
       global: {
@@ -212,7 +213,38 @@ describe('FormsIndexPage', () => {
     })
     await router.push('/workspace/forms')
     await router.isReady()
-    stubFetchWithForms()
+
+    formsApiMocks.useSuspenseFormsQuery.mockReturnValue({
+      data: ref([
+        {
+          id: 'form-circle-b-1',
+          name: '展示チェックフォーム',
+          description: '展示レイアウトと機材使用申請を提出してください。',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: ['展示'],
+          confirmationMessage: '回答ありがとうございました。',
+          isPublic: true,
+          isOpen: true,
+          hasAnswer: false
+        },
+        {
+          id: 'form-circle-b-2',
+          name: '備品返却報告',
+          description: '使用した備品の返却状況を報告してください。',
+          openAt: '2026-02-01T00:00:00Z',
+          closeAt: '2026-02-20T23:59:59Z',
+          maxAnswers: 1,
+          answerableTags: [],
+          confirmationMessage: '',
+          isPublic: true,
+          isOpen: false,
+          hasAnswer: true
+        }
+      ]),
+      suspense: vi.fn().mockResolvedValue(undefined)
+    })
 
     const wrapper = mount(FormsIndexPage, {
       global: {

@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import type { z } from 'zod'
-import { createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import { formDetailSchema, formSummarySchema, parseWithSchema, type formQuestionSchema } from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'
 export type FormSummary = z.infer<typeof formSummarySchema>
@@ -53,6 +53,26 @@ export function useFormsQuery() {
     {
       queryKey: computed(() => ['forms', sessionStore.currentCircle?.id ?? 'none']),
       enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch forms'
+    }
+  )
+}
+
+export function useSuspenseFormsQuery() {
+  const sessionStore = useSessionStore()
+
+  return $apiSuspense.useSuspenseQueryData(
+    'get',
+    '/forms',
+    {
+      headers: createJsonHeaders()
+    },
+    parseForms,
+    {
+      queryKey: computed(() => ['forms', sessionStore.currentCircle?.id ?? 'none']),
       retry: false
     },
     {

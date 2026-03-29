@@ -8,6 +8,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import { resolveCircleSelectorDestination, sanitizeCircleSelectorCircleId } from '@/app/router/circleSelectorRedirect'
 import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from '@/features/circles/api'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
@@ -73,7 +74,7 @@ watch(
             : '企画選択後は、元の画面へ戻ってそのまま作業を続けられます。'
       "
     >
-      <div v-if="circlesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+      <LoadingMessage v-if="circlesQuery.isPending.value" />
 
       <div v-else class="divide-y divide-border">
         <button
@@ -96,9 +97,7 @@ watch(
       title="別の企画を参加登録する"
       description="参加種別ごとに新しい企画を作成します。作成後はワークスペースで続けて編集できます。"
     >
-      <div v-if="participationTypesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        参加種別を読み込み中...
-      </div>
+      <LoadingMessage v-if="participationTypesQuery.isPending.value" message="参加種別を読み込み中..." />
 
       <div v-else class="grid gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">
         <RouterLink

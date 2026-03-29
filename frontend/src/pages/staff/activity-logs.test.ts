@@ -1,9 +1,19 @@
+import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+
+const staffActivityLogsApiMocks = vi.hoisted(() => ({
+  useSuspenseStaffActivityLogsQuery: vi.fn()
+}))
+
+vi.mock('@/features/staff/admin/activityLogs', () => ({
+  useSuspenseStaffActivityLogsQuery: staffActivityLogsApiMocks.useSuspenseStaffActivityLogsQuery
+}))
+
 import StaffActivityLogsPage from './activity-logs.vue'
 
 function createQueryPlugin() {
@@ -22,6 +32,7 @@ function createQueryPlugin() {
 describe('StaffActivityLogsPage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.clearAllMocks()
   })
 
   it('lists recorded staff activity logs', async () => {
@@ -68,45 +79,40 @@ describe('StaffActivityLogsPage', () => {
           })
         }
 
-        if (url.includes('/staff/activity-logs') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              items: [
-                {
-                  id: 'activity-log-3',
-                  actorUserId: 'staff-user',
-                  action: 'staff.user.roles_updated',
-                  targetType: 'user',
-                  targetId: 'demo-user',
-                  circleId: '',
-                  summary: 'staff がユーザーロールを更新しました: Demo User',
-                  createdAt: '2026-03-12T12:00:00Z'
-                },
-                {
-                  id: 'activity-log-2',
-                  actorUserId: 'staff-user',
-                  action: 'staff.mail.queued',
-                  targetType: 'mail_job',
-                  targetId: 'mail-job-1',
-                  circleId: 'circle-b',
-                  summary: 'staff がメールをキューに追加しました: 搬入のご案内',
-                  createdAt: '2026-03-12T11:00:00Z'
-                }
-              ],
-              page: 1,
-              pageSize: 10,
-              total: 2
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
         throw new Error(`Unexpected request: ${method} ${url}`)
       })
     )
+
+    staffActivityLogsApiMocks.useSuspenseStaffActivityLogsQuery.mockReturnValue({
+      data: ref({
+        items: [
+          {
+            id: 'activity-log-3',
+            actorUserId: 'staff-user',
+            action: 'staff.user.roles_updated',
+            targetType: 'user',
+            targetId: 'demo-user',
+            circleId: '',
+            summary: 'staff がユーザーロールを更新しました: Demo User',
+            createdAt: '2026-03-12T12:00:00Z'
+          },
+          {
+            id: 'activity-log-2',
+            actorUserId: 'staff-user',
+            action: 'staff.mail.queued',
+            targetType: 'mail_job',
+            targetId: 'mail-job-1',
+            circleId: 'circle-b',
+            summary: 'staff がメールをキューに追加しました: 搬入のご案内',
+            createdAt: '2026-03-12T11:00:00Z'
+          }
+        ],
+        page: 1,
+        pageSize: 10,
+        total: 2
+      }),
+      suspense: vi.fn().mockResolvedValue(undefined)
+    })
 
     const wrapper = mount(StaffActivityLogsPage, {
       global: {

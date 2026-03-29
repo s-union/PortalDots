@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { parseWithSchema, staffActivityLogSchema } from '@/lib/api/schema'
 
@@ -59,6 +59,30 @@ export function useStaffActivityLogsQuery(
     {
       queryKey: computed(() => ['staff', 'activity-logs', toValue(pagination)]),
       enabled: computed(() => toValue(enabled)),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch staff activity logs'
+    }
+  )
+}
+
+export function useSuspenseStaffActivityLogsQuery(pagination: MaybeRefOrGetter<StaffActivityLogPagination>) {
+  return $apiSuspense.useSuspenseQueryData(
+    'get',
+    '/staff/activity-logs',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        query: {
+          page: toValue(pagination).page,
+          pageSize: toValue(pagination).pageSize
+        }
+      }
+    }),
+    (value) => parsePaginatedResult(value, parseStaffActivityLog, 'staff activity logs'),
+    {
+      queryKey: computed(() => ['staff', 'activity-logs', toValue(pagination)]),
       retry: false
     },
     {

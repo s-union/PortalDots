@@ -29,6 +29,8 @@ import {
   type StaffFormSummary
 } from '@/features/staff/forms/api'
 import { useSessionStore } from '@/features/session/store'
+import { usePaginationState } from '@/lib/usePaginationState'
+import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
 const router = useRouter()
 const sessionStore = useSessionStore()
@@ -43,14 +45,11 @@ const canEdit = computed(() => canEditForms(sessionStore.roles, sessionStore.per
 const detailActionTitle = computed(() => (canReadAnswers.value ? '回答一覧・設定' : '設定'))
 const detailActionIconClass = computed(() => (canReadAnswers.value ? 'far fa-eye fa-fw' : 'fas fa-cog fa-fw'))
 
-const page = ref(1)
-const pageSize = ref(25)
-const sortKey = ref<StaffFormSortKey>('id')
-const sortDirection = ref<'asc' | 'desc'>('asc')
-
 const sortKeys = ['id', 'name', 'isPublic', 'openAt', 'closeAt', 'createdAt', 'updatedAt', 'maxAnswers'] as const
-
 type StaffFormSortKey = (typeof sortKeys)[number]
+const isStaffFormSortKey = createSortKeyGuard(sortKeys)
+
+const sort = useSortState<StaffFormSortKey>('id')
 
 const columns: StaffDataGridColumn[] = [
   { key: 'circle', label: '企画' },
@@ -74,8 +73,8 @@ const isBusy = computed(
 
 const sortedForms = computed(() => {
   const forms = formsQuery.data.value ?? []
-  const key = sortKey.value
-  const direction = sortDirection.value
+  const key = sort.sortKey.value
+  const direction = sort.sortDirection.value
 
   return [...forms].sort((left, right) => {
     const order = direction === 'asc' ? 1 : -1
@@ -90,19 +89,18 @@ const sortedForms = computed(() => {
   })
 })
 
-const total = computed(() => sortedForms.value.length)
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pagination = usePaginationState(computed(() => sortedForms.value.length))
 
 const rows = computed<StaffDataGridRow[]>(() => {
-  const start = (page.value - 1) * pageSize.value
-  const end = start + pageSize.value
+  const start = (pagination.page.value - 1) * pagination.pageSize.value
+  const end = start + pagination.pageSize.value
   return sortedForms.value.slice(start, end).map((staffForm) => ({ ...staffForm }))
 })
 
 watch(
-  totalPages,
+  pagination.totalPages,
   (nextTotalPages) => {
-    page.value = Math.min(page.value, nextTotalPages)
+    pagination.page.value = Math.min(pagination.page.value, nextTotalPages)
   },
   { immediate: true }
 )
@@ -124,22 +122,13 @@ function compareBoolean(left: boolean, right: boolean) {
   return left ? 1 : -1
 }
 
-function isStaffFormSortKey(value: string): value is StaffFormSortKey {
-  return sortKeys.includes(value as StaffFormSortKey)
-}
-
 function handleSort(nextSortKey: string) {
   if (!isStaffFormSortKey(nextSortKey)) {
     return
   }
 
-  if (sortKey.value === nextSortKey) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortKey.value = nextSortKey
-    sortDirection.value = 'asc'
-  }
-  page.value = 1
+  sort.toggleSort(nextSortKey)
+  pagination.resetPage()
 }
 
 function findFormName(formId: string) {
@@ -172,7 +161,7 @@ async function handleDeleteForm(formId: string) {
   errorMessage.value = ''
   try {
     await deleteFormMutation.mutateAsync(formId)
-    page.value = Math.min(page.value, totalPages.value)
+    pagination.page.value = Math.min(pagination.page.value, pagination.totalPages.value)
   } catch (error) {
     errorMessage.value = extractStaffFormValidationMessage(error)
   }
@@ -224,26 +213,21 @@ function resolveDescription(form: StaffFormSummary) {
       <StaffDataGrid
         :rows="rows"
         :columns="columns"
-        :page="page"
-        :page-size="pageSize"
-        :total="total"
+        :page="pagination.page.value"
+        :page-size="pagination.pageSize.value"
+        :total="sortedForms.length"
         :loading="isBusy"
-        :sort-key="sortKey"
-        :sort-direction="sortDirection"
+        :sort-key="sort.sortKey.value"
+        :sort-direction="sort.sortDirection.value"
         table-label="申請フォーム一覧"
         empty-message="staff forms は見つかりませんでした。"
-        @first="page = 1"
-        @prev="page = Math.max(1, page - 1)"
-        @next="page = Math.min(totalPages, page + 1)"
-        @last="page = totalPages"
+        @first="pagination.setFirstPage"
+        @prev="pagination.setPrevPage"
+        @next="pagination.setNextPage"
+        @last="pagination.setLastPage"
         @reload="formsQuery.refetch()"
         @sort="handleSort"
-        @update:page-size="
-          (nextPageSize) => {
-            pageSize = nextPageSize
-            page = 1
-          }
-        "
+        @update:page-size="pagination.setPageSize"
       >
         <template #toolbar>
           <RouterLink

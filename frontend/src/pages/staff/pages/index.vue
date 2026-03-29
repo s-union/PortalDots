@@ -14,6 +14,7 @@ import { formatDateTime } from '@/lib/format/datetime'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
@@ -170,7 +171,7 @@ function handleDocumentChange(documentId: string, event: Event) {
         </div>
       </form>
 
-      <div v-if="pagesQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+      <LoadingMessage v-if="pagesQuery.isPending.value" />
 
       <div v-else-if="(pagesQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         staff pages は見つかりませんでした。

@@ -38,6 +38,8 @@ import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
+import { usePaginationState } from '@/lib/usePaginationState'
+import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -50,11 +52,21 @@ const deletingCircleId = ref('')
 const deleteCircleMutation = useDeleteStaffCircleMutation(computed(() => deletingCircleId.value))
 const form = useStaffCircleForm()
 
-const page = ref(1)
-const pageSize = ref(25)
+const staffCircleSortKeys = [
+  'id',
+  'participationTypeName',
+  'name',
+  'nameYomi',
+  'groupName',
+  'groupNameYomi',
+  'notes',
+  'submittedAt',
+  'status'
+] as const
+type StaffCircleSortKey = (typeof staffCircleSortKeys)[number]
+const isStaffCircleSortKey = createSortKeyGuard(staffCircleSortKeys)
+
 const searchQuery = ref('')
-const sortKey = ref<StaffCircleSortKey>('id')
-const sortDirection = ref<'asc' | 'desc'>('asc')
 const isFilterOpen = ref(false)
 const nextFilterId = ref(1)
 const appliedFilterMode = ref<StaffFilterMode>('and')
@@ -131,10 +143,12 @@ const filteredRows = computed<StaffCircleRow[]>(() => {
   })
 })
 
+const sort = useSortState<StaffCircleSortKey>('id')
+
 const sortedRows = computed<StaffCircleRow[]>(() => {
   const cloned = [...filteredRows.value]
-  const direction = sortDirection.value === 'asc' ? 1 : -1
-  const key = sortKey.value
+  const direction = sort.sortDirection.value === 'asc' ? 1 : -1
+  const key = sort.sortKey.value
 
   cloned.sort((left, right) => {
     const leftValue = resolveCircleSortValue(left, key)
@@ -152,9 +166,11 @@ const sortedRows = computed<StaffCircleRow[]>(() => {
   return cloned
 })
 
+const pagination = usePaginationState(computed(() => sortedRows.value.length))
+
 const pagedRows = computed<StaffCircleRow[]>(() => {
-  const start = (page.value - 1) * pageSize.value
-  const end = start + pageSize.value
+  const start = (pagination.page.value - 1) * pagination.pageSize.value
+  const end = start + pagination.pageSize.value
   return sortedRows.value.slice(start, end)
 })
 
@@ -163,11 +179,11 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
 const filterActive = computed(() => searchQuery.value.trim().length > 0 || appliedFilterQueries.value.length > 0)
 
 watch(
-  () => [sortedRows.value.length, pageSize.value] as const,
+  () => [sortedRows.value.length, pagination.pageSize.value] as const,
   ([total, currentPageSize]) => {
     const totalPages = Math.max(1, Math.ceil(total / currentPageSize))
-    if (page.value > totalPages) {
-      page.value = totalPages
+    if (pagination.page.value > totalPages) {
+      pagination.page.value = totalPages
     }
   }
 )
@@ -208,30 +224,8 @@ function handleSort(nextKey: string) {
     return
   }
 
-  if (sortKey.value === nextKey) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-    return
-  }
-
-  sortKey.value = nextKey
-  sortDirection.value = 'asc'
-}
-
-function handleFirstPage() {
-  page.value = 1
-}
-
-function handlePrevPage() {
-  page.value = Math.max(1, page.value - 1)
-}
-
-function handleNextPage() {
-  const totalPages = Math.max(1, Math.ceil(sortedRows.value.length / pageSize.value))
-  page.value = Math.min(totalPages, page.value + 1)
-}
-
-function handleLastPage() {
-  page.value = Math.max(1, Math.ceil(sortedRows.value.length / pageSize.value))
+  sort.toggleSort(nextKey)
+  // Note: In circles/all.vue, page is not reset on sort toggle (original behavior)
 }
 
 async function handleReload() {
@@ -240,13 +234,8 @@ async function handleReload() {
   }
 }
 
-function handlePageSizeChange(nextSize: number) {
-  pageSize.value = nextSize
-  page.value = 1
-}
-
 function handleSearch() {
-  page.value = 1
+  pagination.resetPage()
 }
 
 async function handleDeleteCircle(circleId: string, circleName: string) {
@@ -327,7 +316,7 @@ function handleApplyFilters() {
       operator: normalizeFilterOperator(query.operator)
     }))
   appliedFilterMode.value = draftFilterMode.value
-  page.value = 1
+  pagination.resetPage()
   closeFilter()
 }
 
@@ -336,7 +325,7 @@ function handleClearFilters() {
   draftFilterQueries.value = []
   appliedFilterMode.value = 'and'
   draftFilterMode.value = 'and'
-  page.value = 1
+  pagination.resetPage()
   closeFilter()
 }
 
@@ -371,23 +360,6 @@ function statusLabel(status: string) {
     return '不受理'
   }
   return '審査中'
-}
-
-const staffCircleSortKeys = [
-  'id',
-  'participationTypeName',
-  'name',
-  'nameYomi',
-  'groupName',
-  'groupNameYomi',
-  'notes',
-  'submittedAt',
-  'status'
-] as const
-type StaffCircleSortKey = (typeof staffCircleSortKeys)[number]
-
-function isStaffCircleSortKey(value: string): value is StaffCircleSortKey {
-  return (staffCircleSortKeys as readonly string[]).includes(value)
 }
 
 function isStaffCircleFilterKey(value: string) {
@@ -488,25 +460,25 @@ function matchesFilterQuery(circle: StaffCircleRow, query: StaffFilterQuery) {
         <StaffDataGrid
           :rows="gridRows"
           :columns="columns"
-          :page="page"
-          :page-size="pageSize"
+          :page="pagination.page.value"
+          :page-size="pagination.pageSize.value"
           :total="sortedRows.length"
           :loading="allCirclesQuery.isPending.value"
-          :sort-key="sortKey"
-          :sort-direction="sortDirection"
+          :sort-key="sort.sortKey.value"
+          :sort-direction="sort.sortDirection.value"
           :show-filter-button="true"
           :filter-active="filterActive"
           :per-page-options="[10, 25, 50, 100, 250, 500]"
           empty-message="企画はまだありません。"
           table-label="staff circles"
-          @first="handleFirstPage"
-          @prev="handlePrevPage"
-          @next="handleNextPage"
-          @last="handleLastPage"
+          @first="pagination.setFirstPage"
+          @prev="pagination.setPrevPage"
+          @next="pagination.setNextPage"
+          @last="pagination.setLastPage"
           @reload="handleReload"
           @sort="handleSort"
           @filter="openFilter"
-          @update:page-size="handlePageSizeChange"
+          @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
             <div class="grid w-full gap-3">

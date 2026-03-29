@@ -5,11 +5,11 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 const publicHomeApiMocks = vi.hoisted(() => ({
-  usePublicPagesQuery: vi.fn()
+  useSuspensePublicPagesQuery: vi.fn()
 }))
 
 vi.mock('@/features/public-home/api', () => ({
-  usePublicPagesQuery: publicHomeApiMocks.usePublicPagesQuery
+  useSuspensePublicPagesQuery: publicHomeApiMocks.useSuspensePublicPagesQuery
 }))
 
 import PublicPagesIndexPage from './index.vue'
@@ -36,7 +36,7 @@ describe('PublicPagesIndexPage', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
 
-    publicHomeApiMocks.usePublicPagesQuery.mockReturnValue({
+    publicHomeApiMocks.useSuspensePublicPagesQuery.mockReturnValue({
       data: ref([
         {
           id: 'page-1',
@@ -47,7 +47,8 @@ describe('PublicPagesIndexPage', () => {
           isNew: true
         }
       ]),
-      isPending: ref(false)
+      isPending: ref(false),
+      suspense: vi.fn().mockResolvedValue(undefined)
     })
 
     const router = createRouter({

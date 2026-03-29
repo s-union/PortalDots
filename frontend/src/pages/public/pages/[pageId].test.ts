@@ -5,11 +5,11 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 const publicHomeApiMocks = vi.hoisted(() => ({
-  usePublicPageDetailQuery: vi.fn()
+  useSuspensePublicPageDetailQuery: vi.fn()
 }))
 
 vi.mock('@/features/public-home/api', () => ({
-  usePublicPageDetailQuery: publicHomeApiMocks.usePublicPageDetailQuery
+  useSuspensePublicPageDetailQuery: publicHomeApiMocks.useSuspensePublicPageDetailQuery
 }))
 
 import PublicPageDetailPage from './[pageId].vue'
@@ -36,7 +36,7 @@ describe('PublicPageDetailPage', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
 
-    publicHomeApiMocks.usePublicPageDetailQuery.mockReturnValue({
+    publicHomeApiMocks.useSuspensePublicPageDetailQuery.mockReturnValue({
       data: ref({
         id: 'page-1',
         title: 'お知らせサンプル',
@@ -55,7 +55,8 @@ describe('PublicPageDetailPage', () => {
           }
         ]
       }),
-      isPending: ref(false)
+      isPending: ref(false),
+      suspense: vi.fn().mockResolvedValue(undefined)
     })
 
     const router = createRouter({

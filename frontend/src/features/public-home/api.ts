@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { z } from 'zod'
-import { createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import {
   pageDetailSchema,
   parseWithSchema,
@@ -136,3 +136,65 @@ function parsePublicHome(value: unknown): PublicHome {
 }
 
 const publicPageDetailSchema = pageDetailSchema
+
+// Suspense-oriented query hooks.
+// Callers should `await query.suspense()` in async setup under a <Suspense> boundary.
+
+export function useSuspensePublicPagesQuery() {
+  return $apiSuspense.useSuspenseQueryData(
+    'get',
+    '/public/pages',
+    {
+      headers: createJsonHeaders()
+    },
+    (value) => parseWithSchema(z.array(publicHomePageSchema), value, 'public pages'),
+    {
+      queryKey: ['public', 'pages'],
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch public pages'
+    }
+  )
+}
+
+export function useSuspensePublicPageDetailQuery(pageId: MaybeRefOrGetter<string>) {
+  return $apiSuspense.useSuspenseQueryData(
+    'get',
+    '/public/pages/{pageID}',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          pageID: toValue(pageId)
+        }
+      }
+    }),
+    (value) => parseWithSchema(publicPageDetailSchema, value, 'public page detail'),
+    {
+      queryKey: computed(() => ['public', 'pages', 'detail', toValue(pageId)]),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch public page'
+    }
+  )
+}
+
+export function useSuspensePublicDocumentsQuery() {
+  return $apiSuspense.useSuspenseQueryData(
+    'get',
+    '/public/documents',
+    {
+      headers: createJsonHeaders()
+    },
+    (value) => parseWithSchema(z.array(publicHomeDocumentSchema), value, 'public documents'),
+    {
+      queryKey: ['public', 'documents'],
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch public documents'
+    }
+  )
+}

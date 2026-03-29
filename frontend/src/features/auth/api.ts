@@ -1,6 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import {
   authVerificationStatusSchema,
   parseWithSchema,
@@ -345,6 +345,24 @@ export function useAuthVerificationStatusQuery(enabled: MaybeRefOrGetter<boolean
     enabled: computed(() => toValue(enabled)),
     retry: false
   })
+}
+
+export function useSuspenseAuthVerificationStatusQuery() {
+  return $apiSuspense.useSuspenseQueryData(
+    'get',
+    '/auth/verification',
+    {
+      headers: createJsonHeaders()
+    },
+    (value) => parseWithSchema(authVerificationStatusSchema, value, 'auth verification status'),
+    {
+      queryKey: ['auth', 'verification'],
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch auth verification status'
+    }
+  )
 }
 
 export function useRequestAuthVerificationMutation() {

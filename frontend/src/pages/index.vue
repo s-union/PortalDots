@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'
 import { buildApiUrl } from '@/lib/api/client'
@@ -112,7 +113,7 @@ const pageDetailPath = (pageId: string) =>
         title="ログイン方法"
         :description="`以下の学生番号 / パスワードで${publicHome?.appName ?? 'PortalDots'}にログインできます。試しにログインして使ってみてください。`"
       >
-        <div v-if="publicHomeQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+        <LoadingMessage v-if="publicHomeQuery.isPending.value" />
         <div v-else class="overflow-x-auto px-6 py-4">
           <table class="min-w-full border-separate border-spacing-0 text-left text-sm">
             <thead>
@@ -160,7 +161,7 @@ const pageDetailPath = (pageId: string) =>
       </ListPanel>
 
       <ListPanel legacy title="お知らせ">
-        <div v-if="publicHomeQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+        <LoadingMessage v-if="publicHomeQuery.isPending.value" />
         <div v-else-if="publicPages.length === 0" class="px-6 py-6 text-sm text-muted">
           公開中のお知らせはありません。
         </div>
@@ -185,7 +186,7 @@ const pageDetailPath = (pageId: string) =>
       </ListPanel>
 
       <ListPanel legacy title="最近の配布資料">
-        <div v-if="publicHomeQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
+        <LoadingMessage v-if="publicHomeQuery.isPending.value" />
         <div v-else-if="publicDocuments.length === 0" class="px-6 py-6 text-sm text-muted">
           公開中の配布資料はありません。
         </div>

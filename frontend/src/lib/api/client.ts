@@ -1,4 +1,10 @@
-import { createApiClient, createQueryClient, expectApiData, expectApiNoContent } from '@portaldots/api-client'
+import {
+  createApiClient,
+  createQueryClient,
+  createSuspenseQueryClient,
+  expectApiData,
+  expectApiNoContent
+} from '@portaldots/api-client'
 
 export const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080/v1').replace(/\/$/, '')
 
@@ -55,6 +61,7 @@ export const apiClient = createApiClient({
 })
 
 export const $api = createQueryClient(apiClient)
+export const $apiSuspense = createSuspenseQueryClient(apiClient)
 
 function resolveApiBasePath(baseUrl: string) {
   if (/^https?:\/\//.test(baseUrl)) {
