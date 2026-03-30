@@ -97,7 +97,8 @@ func (r *MemoryRepository) ListQueued(limit int) []Job {
 		capHint = len(r.jobs)
 	}
 	jobs := make([]Job, 0, capHint)
-	for _, job := range r.jobs {
+	for index := len(r.jobs) - 1; index >= 0; index-- {
+		job := r.jobs[index]
 		if job.Status != "queued" {
 			continue
 		}

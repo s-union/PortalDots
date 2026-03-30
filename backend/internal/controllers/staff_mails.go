@@ -50,11 +50,9 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 	for _, job := range jobs {
 		circleValue := staffManagedCircleResponse{}
 		if job.CircleID != "" {
-			mappedCircle, ok := circlesByID[job.CircleID]
-			if !ok {
-				return internalError(c)
+			if mappedCircle, ok := circlesByID[job.CircleID]; ok {
+				circleValue = mappedCircle
 			}
-			circleValue = mappedCircle
 		}
 		response = append(response, mapStaffMail(job, circleValue))
 	}

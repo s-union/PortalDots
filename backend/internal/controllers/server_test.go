@@ -1584,6 +1584,45 @@ func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 	}
 }
 
+func TestDocumentsEndpointsRequireAuthAndCurrentCircle(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/documents", nil)
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnauthorized, recorder.Code, recorder.Body.String())
+	}
+	var unauth map[string]string
+	if err := json.Unmarshal(recorder.Body.Bytes(), &unauth); err != nil {
+		t.Fatalf("unmarshal unauthenticated response: %v", err)
+	}
+	if unauth["message"] != "unauthenticated" {
+		t.Fatalf("unexpected unauthenticated message: %#v", unauth)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/documents", nil)
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusConflict, recorder.Code, recorder.Body.String())
+	}
+	var conflict map[string]string
+	if err := json.Unmarshal(recorder.Body.Bytes(), &conflict); err != nil {
+		t.Fatalf("unmarshal current-circle-required response: %v", err)
+	}
+	if conflict["message"] != "current_circle_required" {
+		t.Fatalf("unexpected current-circle-required message: %#v", conflict)
+	}
+}
+
 func TestDownloadDocumentFileRequiresVisiblePublicDocument(t *testing.T) {
 	t.Parallel()
 
@@ -2683,7 +2722,7 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	if len(rows) != 5 {
 		t.Fatalf("expected 5 csv rows, got %#v", rows)
 	}
-	if rows[0][0] != "お知らせID" || rows[0][1] != "タイトル" || rows[0][7] != "作成日時" || rows[0][8] != "更新日時" {
+	if strings.TrimPrefix(rows[0][0], "\ufeff") != "お知らせID" || rows[0][1] != "タイトル" || rows[0][7] != "作成日時" || rows[0][8] != "更新日時" {
 		t.Fatalf("unexpected csv header: %#v", rows[0])
 	}
 	if rows[1][3] == "" {
@@ -4559,7 +4598,7 @@ func TestStaffExportsDownloadArtifacts(t *testing.T) {
 	if len(rows) < 5 {
 		t.Fatalf("expected summary csv rows, got %#v", rows)
 	}
-	if rows[0][0] != "resource_type" || rows[0][1] != "circle_id" || rows[0][2] != "circle_name" {
+	if strings.TrimPrefix(rows[0][0], "\ufeff") != "resource_type" || rows[0][1] != "circle_id" || rows[0][2] != "circle_name" {
 		t.Fatalf("unexpected csv header: %#v", rows[0])
 	}
 
@@ -4762,7 +4801,7 @@ func TestStaffParticipationTypeCirclesListAndExport(t *testing.T) {
 	if len(rows) != 2 {
 		t.Fatalf("expected 2 csv rows, got %#v", rows)
 	}
-	if got, want := rows[0][0], "id"; got != want {
+	if got, want := strings.TrimPrefix(rows[0][0], "\ufeff"), "id"; got != want {
 		t.Fatalf("unexpected header first column: got=%q want=%q", got, want)
 	}
 	if got, want := rows[1][0], "0195ec00-0021-7000-8000-000000000001"; got != want {
@@ -4835,6 +4874,7 @@ func TestStaffTagsExportCSV(t *testing.T) {
 		"group_name",
 		"group_name_yomi",
 	}
+	rows[0][0] = strings.TrimPrefix(rows[0][0], "\ufeff")
 	if !slices.Equal(rows[0], wantHeader) {
 		t.Fatalf("unexpected header: want=%#v got=%#v", wantHeader, rows[0])
 	}
@@ -4892,6 +4932,7 @@ func TestStaffPlacesExportCSV(t *testing.T) {
 		"group_name",
 		"group_name_yomi",
 	}
+	rows[0][0] = strings.TrimPrefix(rows[0][0], "\ufeff")
 	if !slices.Equal(rows[0], wantHeader) {
 		t.Fatalf("unexpected header: want=%#v got=%#v", wantHeader, rows[0])
 	}

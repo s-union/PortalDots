@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"archive/zip"
-	"bytes"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -87,8 +87,16 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 		}
 	}
 
-	buffer := bytes.NewBuffer(nil)
-	archive := zip.NewWriter(buffer)
+	tempFile, err := os.CreateTemp("", "staff-form-answer-uploads-*.zip")
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+	defer func() {
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
+	}()
+
+	archive := zip.NewWriter(tempFile)
 	created := 0
 	for _, currentAnswer := range h.answers.ListByForm(formValue.ID) {
 		for _, upload := range h.answers.ListUploadsByAnswer(currentAnswer.ID) {
@@ -120,11 +128,14 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 	if created == 0 {
 		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
+	if _, err := tempFile.Seek(0, 0); err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
 
 	filename := fmt.Sprintf("%s-answer-uploads.zip", formValue.ID)
 	c.Response().Header().Set(echo.HeaderContentType, "application/zip")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "application/zip", buffer.Bytes())
+	return c.Stream(http.StatusOK, "application/zip", tempFile)
 }
 
 func staffAnswerExportValue(

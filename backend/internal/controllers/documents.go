@@ -25,14 +25,10 @@ type documentSummaryResponse struct {
 func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"message": "unauthenticated",
-		})
+		return statusError(c, http.StatusUnauthorized)
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, http.StatusConflict)
 	}
 
 	documents := h.documents.ListPublic()
@@ -58,14 +54,10 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 func (h *workspaceHandlers) getDocument(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{
-			"message": "unauthenticated",
-		})
+		return statusError(c, http.StatusUnauthorized)
 	}
 	if currentSession.CurrentCircleID == "" {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"message": "current_circle_required",
-		})
+		return statusError(c, http.StatusConflict)
 	}
 
 	document, found := h.documents.FindPublic(c.Param("documentID"))

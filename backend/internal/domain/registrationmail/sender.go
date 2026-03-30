@@ -2,6 +2,7 @@ package registrationmail
 
 import (
 	"fmt"
+	"mime"
 	"net/smtp"
 	"strings"
 )
@@ -64,10 +65,11 @@ func (s *SMTPSender) SendVerificationMail(message Message) (DeliveryResult, erro
 
 func buildVerificationMailBody(from string, message Message) string {
 	subject := fmt.Sprintf("%s ユーザー登録の確認", strings.TrimSpace(message.AppName))
+	encodedSubject := mime.BEncoding.Encode("UTF-8", subject)
 	lines := []string{
 		fmt.Sprintf("From: %s", strings.TrimSpace(from)),
 		fmt.Sprintf("To: %s", message.To),
-		fmt.Sprintf("Subject: %s", subject),
+		fmt.Sprintf("Subject: %s", encodedSubject),
 		"MIME-Version: 1.0",
 		"Content-Type: text/plain; charset=UTF-8",
 		"",
