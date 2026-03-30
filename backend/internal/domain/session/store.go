@@ -77,14 +77,15 @@ func (s *MemoryStore) Create(user *auth.User) (string, Session, error) {
 }
 
 func (s *MemoryStore) Get(id string) (Session, bool) {
-	s.mu.RLock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	entry, ok := s.sessions[id]
-	s.mu.RUnlock()
 	if !ok {
 		return Session{}, false
 	}
 	if s.isExpired(entry.updatedAt) {
-		s.Delete(id)
+		delete(s.sessions, id)
 		return Session{}, false
 	}
 	session := entry.session

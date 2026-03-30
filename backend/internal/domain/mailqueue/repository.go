@@ -92,7 +92,11 @@ func (r *MemoryRepository) ListQueued(limit int) []Job {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	jobs := make([]Job, 0, limit)
+	capHint := limit
+	if capHint <= 0 {
+		capHint = len(r.jobs)
+	}
+	jobs := make([]Job, 0, capHint)
 	for _, job := range r.jobs {
 		if job.Status != "queued" {
 			continue

@@ -108,10 +108,10 @@ func (a *StaticAuthenticator) Authenticate(_ context.Context, loginID, password 
 
 	normalizedLoginID := strings.TrimSpace(strings.ToLower(loginID))
 	for _, candidate := range a.users {
-		if bcrypt.CompareHashAndPassword([]byte(candidate.passwordHash), []byte(password)) != nil {
+		if !matchesStaticLoginID(candidate, normalizedLoginID) {
 			continue
 		}
-		if !matchesStaticLoginID(candidate, normalizedLoginID) {
+		if bcrypt.CompareHashAndPassword([]byte(candidate.passwordHash), []byte(password)) != nil {
 			continue
 		}
 

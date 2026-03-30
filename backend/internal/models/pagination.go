@@ -67,12 +67,17 @@ func parsePositiveInt(raw string, fallback int) int {
 		return fallback
 	}
 
+	maxInt := int(^uint(0) >> 1)
 	value := 0
 	for _, char := range raw {
 		if char < '0' || char > '9' {
 			return fallback
 		}
-		value = value*10 + int(char-'0')
+		digit := int(char - '0')
+		if value > (maxInt-digit)/10 {
+			return fallback
+		}
+		value = value*10 + digit
 	}
 
 	if value <= 0 {

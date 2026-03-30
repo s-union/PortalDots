@@ -169,5 +169,5 @@ func normalizeRecipients(recipients []string) []string {
 		normalized = append(normalized, trimmed)
 	}
 
-	return slices.Clone(normalized)
+	return normalized
 }
