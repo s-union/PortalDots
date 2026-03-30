@@ -7,15 +7,16 @@ import type { MutateStaffPagePayload, StaffPageDocument } from '@/features/staff
 
 const form = defineModel<MutateStaffPagePayload>({ required: true })
 
-defineProps<{
-  availableTags: string[]
-  availableDocuments: StaffPageDocument[]
-  documentsLoading: boolean
-  errorMessage?: string
-  successMessage?: string
-  submitLabel: string
-  submitting: boolean
-}>()
+const { availableTags, availableDocuments, documentsLoading, errorMessage, successMessage, submitLabel, submitting } =
+  defineProps<{
+    availableTags: string[]
+    availableDocuments: StaffPageDocument[]
+    documentsLoading: boolean
+    errorMessage?: string
+    successMessage?: string
+    submitLabel: string
+    submitting: boolean
+  }>()
 
 function handleDocumentChange(documentId: string, event: Event) {
   const target = event.target

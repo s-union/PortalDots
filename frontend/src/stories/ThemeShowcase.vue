@@ -51,7 +51,7 @@ const { primaryLabel, showDanger, showSuccess } = defineProps<{
       <div class="grid gap-4 min-[1001px]:grid-cols-2">
         <div :class="cn(surfaceVariants(), 'p-6')">
           <h3 class="text-lg font-semibold">通常カード (shadow-lv1)</h3>
-          <p class="mt-2 text-muted">bg-surface + border-border + shadow-lv1。Laravelの .content 内カードに相当。</p>
+          <p class="mt-2 text-muted">bg-surface + border-border + shadow-lv1。</p>
         </div>
         <div :class="cn(surfaceVariants({ shadow: 'lv2' }), 'p-6')">
           <h3 class="text-lg font-semibold">カード (shadow-lv2)</h3>
@@ -165,7 +165,7 @@ const { primaryLabel, showDanger, showSuccess } = defineProps<{
 
     <!-- Drawer Nav Mock -->
     <section class="mb-8">
-      <h2 class="mb-4 text-xl font-semibold">ドロワーナビゲーション (モック)</h2>
+      <h2 class="mb-4 text-xl font-semibold">ドロワーナビゲーション (サンプル)</h2>
       <p class="mb-4 text-sm text-muted">
         width: 320px / bg-surface / border-right / active link: border-right 4px primary
       </p>

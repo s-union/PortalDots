@@ -338,7 +338,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
                     name="memberLoginId"
                     type="text"
                     class="flex-1"
-                    placeholder="24a0000 / demo@example.com"
+                    placeholder="24a0000 / user@example.com"
                   />
                   <button
                     class="rounded bg-primary px-5 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"

@@ -80,7 +80,7 @@ function formatOpenFormMeta(form: FormSummary) {
               v-if="isDemoMode"
               class="mr-3 inline-flex rounded-full border border-primary bg-primary-light px-3 py-1 align-middle text-xs font-bold text-primary"
             >
-              デモ
+              検証環境
             </span>
             <span class="align-middle">{{ publicHome?.appName ?? 'PortalDots' }}</span>
           </h1>

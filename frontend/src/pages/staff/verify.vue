@@ -36,7 +36,7 @@ async function handleRequestCode() {
 
   try {
     const result = await requestMutation.mutateAsync()
-    infoMessage.value = `${result.message} モック認証コード: ${result.verifyCode}`
+    infoMessage.value = `${result.message} 認証コード: ${result.verifyCode}`
   } catch {
     errorMessage.value = '認証コードの送信に失敗しました。'
   }
@@ -66,10 +66,9 @@ async function handleConfirm() {
       <div class="border-b border-border px-6 py-5">
         <h3 class="text-lg font-semibold text-body">認証コードを入力してください</h3>
         <p class="mt-2 text-sm leading-7 text-muted">
-          あなたの連絡先メールアドレス宛に認証メールが送信された想定で、認証コードを確認します。 旧実装の staff verify
-          と同様に、コード確認後に staff session を有効化します。
+          あなたの連絡先メールアドレス宛の認証を想定し、認証コードを確認します。コード確認後に staff session
+          を有効化します。
         </p>
-        <p class="mt-2 text-sm leading-7 text-muted">現在はメール送信をモックしています。実メールは送られません。</p>
       </div>
 
       <div class="border-b border-border px-6 py-5">

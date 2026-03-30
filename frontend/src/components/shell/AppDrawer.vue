@@ -75,7 +75,7 @@ const emit = defineEmits<{
               v-if="isDemoMode"
               class="rounded bg-muted-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-muted"
             >
-              デモサイト
+              検証環境
             </span>
           </div>
           <p class="mt-3 text-sm text-muted">{{ topDescription }}</p>

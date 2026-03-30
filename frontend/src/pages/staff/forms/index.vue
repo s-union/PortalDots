@@ -202,7 +202,7 @@ function resolveDescription(form: StaffFormSummary) {
   <PageLayout class="max-w-full">
     <PageHeader title="申請管理" description="全企画の申請フォームを横断して管理します。" />
 
-    <DataCard title="申請フォーム一覧" description="旧 data-grid 互換の一覧表示" overflow-hidden>
+    <DataCard title="申請フォーム一覧" description="申請フォームを一覧で表示します" overflow-hidden>
       <AlertMessage v-if="errorMessage" class="mx-6 mt-4">{{ errorMessage }}</AlertMessage>
 
       <StaffDataGrid

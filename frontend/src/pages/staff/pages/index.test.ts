@@ -41,8 +41,8 @@ describe('StaffPagesIndexPage', () => {
       }
     })
 
-    let createdTitle = ''
-    let createdRequestBody: Record<string, unknown> | null = null
+    const createdTitle = ''
+    const createdRequestBody: Record<string, unknown> | null = null
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [

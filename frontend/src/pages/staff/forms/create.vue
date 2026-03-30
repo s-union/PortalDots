@@ -69,7 +69,7 @@ async function handleCreateForm() {
 
     <SurfaceCard>
       <SurfaceHeader>
-        <template #description>旧画面の導線に合わせて、新規作成は専用ページで行います。</template>
+        <template #description>新規作成は専用ページで行います。</template>
       </SurfaceHeader>
 
       <form class="grid gap-4 px-6 py-6" @submit.prevent="handleCreateForm">

@@ -10,7 +10,7 @@ const { hasError, errorText } = defineProps<{
 
 <template>
   <div class="min-h-screen bg-base text-body">
-    <!-- Navbar mock -->
+    <!-- Navbar sample -->
     <header
       class="border-b border-border bg-surface"
       style="height: 5rem; display: flex; align-items: center; padding: 0 1.5rem"
@@ -19,7 +19,7 @@ const { hasError, errorText } = defineProps<{
     </header>
 
     <div class="flex">
-      <!-- Drawer mock -->
+      <!-- Drawer sample -->
       <aside
         class="hidden border-r border-border bg-surface min-[1001px]:block"
         style="width: 320px; min-height: calc(100vh - 5rem)"

@@ -20,7 +20,7 @@ function createQueryPlugin() {
 }
 
 function buildFetchMock(options?: {
-  circles?: Array<{ id: string; name: string; groupName: string; participationTypeName: string }>
+  circles?: { id: string; name: string; groupName: string; participationTypeName: string }[]
 }) {
   let selected = false
   const circles = options?.circles ?? [

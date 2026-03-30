@@ -63,32 +63,35 @@ export function useFormValidation<T extends z.ZodTypeAny>(
     return form
   }
 
-  const validateField = (field: keyof z.input<T>) => {
-    const fieldStr = String(field)
+  const validateFieldByKey = (fieldKey: string) => {
     const formData = getFormData()
     const result = schema.safeParse(formData)
 
     if (result.success) {
       // Clear error for this field if validation passes
       const newErrors = { ...fieldErrors.value }
-      delete newErrors[fieldStr]
+      delete newErrors[fieldKey]
       fieldErrors.value = newErrors
     } else {
       // Find error for this specific field
-      const fieldError = result.error.issues.find((err) => err.path[0] === fieldStr)
+      const fieldError = result.error.issues.find((err) => String(err.path[0]) === fieldKey)
 
       if (fieldError) {
         fieldErrors.value = {
           ...fieldErrors.value,
-          [fieldStr]: fieldError.message
+          [fieldKey]: fieldError.message
         }
       } else {
         // No error for this field, clear it
         const newErrors = { ...fieldErrors.value }
-        delete newErrors[fieldStr]
+        delete newErrors[fieldKey]
         fieldErrors.value = newErrors
       }
     }
+  }
+
+  const validateField = (field: keyof z.input<T>) => {
+    validateFieldByKey(String(field))
   }
 
   const debouncedValidateField = (field: keyof z.input<T>) => {
@@ -100,7 +103,7 @@ export function useFormValidation<T extends z.ZodTypeAny>(
 
     debounceTimers[fieldStr] = setTimeout(() => {
       if (touchedFields.value.has(fieldStr)) {
-        validateField(field)
+        validateFieldByKey(fieldStr)
       }
     }, debounceMs)
   }
@@ -169,7 +172,15 @@ export function useFormValidation<T extends z.ZodTypeAny>(
     () => {
       // Re-validate all touched fields when form data changes
       for (const field of touchedFields.value) {
-        debouncedValidateField(field as keyof z.input<T>)
+        if (debounceTimers[field]) {
+          clearTimeout(debounceTimers[field])
+        }
+
+        debounceTimers[field] = setTimeout(() => {
+          if (touchedFields.value.has(field)) {
+            validateFieldByKey(field)
+          }
+        }, debounceMs)
       }
     },
     { deep: true, flush: 'sync' }

@@ -54,7 +54,7 @@ async function handleSubmit() {
       subject: form.value.subject,
       body: form.value.body
     })
-    successMessage.value = `「${result.categoryName}」に問い合わせを送信しました（実際のメール送信はされません）。`
+    successMessage.value = `「${result.categoryName}」に問い合わせを送信しました。`
     form.value = {
       categoryId: '',
       subject: '',
@@ -71,7 +71,7 @@ async function handleSubmit() {
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Contact</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">お問い合わせ</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">現在、メール送信はデモ環境のため実際には送信されません。</p>
+      <p class="mt-3 text-sm leading-7 text-muted">問い合わせ内容を確認し、順次対応します。</p>
     </SurfaceCard>
 
     <SettingsSection title="お問い合わせ前の確認">
@@ -108,7 +108,7 @@ async function handleSubmit() {
     </SettingsSection>
 
     <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleSubmit">
-      <h3 class="text-lg font-semibold text-body">お問い合わせ（モック）</h3>
+      <h3 class="text-lg font-semibold text-body">お問い合わせ</h3>
       <div class="mt-4 grid gap-4">
         <label class="grid gap-2 text-sm text-body">
           <span>問い合わせカテゴリ</span>
@@ -143,17 +143,13 @@ async function handleSubmit() {
             :disabled="submitContactMutation.isPending.value || categoriesQuery.isPending.value"
             type="submit"
           >
-            {{ submitContactMutation.isPending.value ? '送信中...' : '送信する（モック）' }}
+            {{ submitContactMutation.isPending.value ? '送信中...' : '送信する' }}
           </button>
         </div>
       </div>
     </form>
 
-    <ListPanel
-      title="送信履歴"
-      description="この企画で送信したお問い合わせの履歴です（メール送信はモック）。"
-      overflow-hidden
-    >
+    <ListPanel title="送信履歴" description="この企画で送信したお問い合わせの履歴です。" overflow-hidden>
       <LoadingMessage v-if="historyQuery.isPending.value" />
       <div v-else-if="(historyQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
         まだお問い合わせは送信していません。

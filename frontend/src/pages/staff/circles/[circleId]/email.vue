@@ -62,7 +62,7 @@ async function handleSendMail() {
       subject: '',
       body: ''
     }
-    successMessage.value = '企画所属者向けモックメールをキューに追加しました。実メールは送信していません。'
+    successMessage.value = '企画所属者向けメールをキューに追加しました。'
   } catch (error) {
     errorMessage.value = extractStaffCircleMailValidationMessage(error)
   }
@@ -117,7 +117,7 @@ async function handleSendMail() {
             </label>
 
             <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm leading-7 text-muted">
-              <p>この送信はモックです。登録内容はキューで確認できますが、外部メール送信は行いません。</p>
+              <p>登録内容はキューに保存され、配信処理の対象になります。</p>
               <p>本文は Markdown 記法をそのまま記入できます。</p>
               <p class="mt-2">現在はスタッフ用控えを送らず、本体送信のみを先行実装しています。</p>
               <p class="mt-2">
@@ -136,7 +136,7 @@ async function handleSendMail() {
             type="button"
             @click="handleSendMail"
           >
-            {{ sendCircleMailMutation.isPending.value ? '登録中...' : 'モックメールをキューに追加' }}
+            {{ sendCircleMailMutation.isPending.value ? '登録中...' : 'メールをキューに追加' }}
           </button>
         </template>
       </SettingsSection>

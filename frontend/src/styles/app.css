@@ -13,7 +13,7 @@
 }
 
 @theme {
-  /* Primary Color — default: HSL(214, 91%, 53%) from Laravel UIThemeService */
+  /* Primary Color — default: HSL(214, 91%, 53%) */
   --color-primary: hsla(214, 91%, 53%, 1);
   --color-primary-hover: hsla(214, 91%, 53%, 0.8);
   --color-primary-light: hsla(214, 91%, 53%, 0.1);
@@ -51,7 +51,7 @@
   --color-border: rgb(215, 222, 228);
   --color-border-form: rgb(215, 222, 228);
 
-  /* Shadows — matches Laravel --color-box-shadow* */
+  /* Shadows */
   --color-box-shadow: rgba(34, 41, 47, 0.5);
   --color-box-shadow-subdued: rgba(34, 41, 47, 0.1);
 
@@ -284,7 +284,7 @@
 }
 
 /* Focus shadow — matches $box-shadow-focus-primary / $box-shadow-focus-danger
-   Inner ring uses bg-base (not bg-surface) to match Laravel */
+   Inner ring uses bg-base (not bg-surface) */
 @utility focus-ring-primary {
   box-shadow:
     0 0 0 1.5px var(--color-focus-primary),

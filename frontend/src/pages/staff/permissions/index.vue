@@ -42,9 +42,7 @@ function movePage(nextPage: number) {
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Staff Permissions</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">スタッフの権限設定</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">
-        Laravel 側の権限設定一覧に合わせて、スタッフ権限ユーザーごとの permission を管理します。
-      </p>
+      <p class="mt-3 text-sm leading-7 text-muted">スタッフ権限ユーザーごとに、利用可能な permission を管理します。</p>
     </SurfaceCard>
 
     <ListPanel title="権限対象ユーザー" overflow-hidden>

@@ -119,9 +119,7 @@ async function handleSave() {
       <SettingsSection title="参加登録フォームの設定">
         <SurfaceHeader>
           <template #title>企画参加登録のカスタムフォーム</template>
-          <template #description>
-            旧 Laravel 画面の form settings に合わせて、公開設定と表示文面をここで管理します。
-          </template>
+          <template #description>公開設定と表示文面をここで管理します。</template>
           <template #actions>
             <RouterLink
               :to="formEditorRoute"
@@ -154,7 +152,7 @@ async function handleSave() {
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-body">受付期間</p>
-              <p class="text-xs text-muted-2">Laravel 版と同様に、参加登録画面の表示期間を日時で管理します。</p>
+              <p class="text-xs text-muted-2">参加登録画面の表示期間を日時で管理します。</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm text-body">

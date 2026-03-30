@@ -227,7 +227,7 @@ async function handleDeleteForm() {
           <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-body">フォーム名</p>
-              <p class="text-xs text-muted-2">一覧と回答画面で表示する名称です。旧画面と同じく必須項目です。</p>
+              <p class="text-xs text-muted-2">一覧と回答画面で表示する名称です。必須項目です。</p>
             </div>
             <label class="grid gap-2 text-sm text-body">
               <span class="sr-only">フォーム名</span>

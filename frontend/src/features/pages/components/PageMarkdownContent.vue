@@ -7,7 +7,7 @@ import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 
-const props = defineProps<{
+const { source } = defineProps<{
   source: string
 }>()
 
@@ -29,7 +29,7 @@ const sanitizeSchema = {
 } as const
 
 const renderedHtml = computed(() => {
-  if (props.source.trim() === '') {
+  if (source.trim() === '') {
     return ''
   }
 
@@ -40,7 +40,7 @@ const renderedHtml = computed(() => {
       .use(remarkRehype)
       .use(rehypeSanitize, sanitizeSchema as never)
       .use(rehypeStringify)
-      .processSync(props.source)
+      .processSync(source)
   )
 })
 </script>
