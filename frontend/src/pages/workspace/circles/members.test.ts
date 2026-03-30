@@ -52,12 +52,16 @@ const membersFixture = [
 
 function buildFetchMock(
   options: {
-    addShouldSucceed?: boolean
+    detail?: Partial<typeof circleDetailFixture>
     members?: object[]
     removeShouldSucceed?: boolean
   } = {}
 ) {
-  const { addShouldSucceed = true, members = membersFixture, removeShouldSucceed = true } = options
+  const { detail = {}, members = membersFixture, removeShouldSucceed = true } = options
+  const detailResponse = {
+    ...circleDetailFixture,
+    ...detail
+  }
 
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     await Promise.resolve()
@@ -67,7 +71,7 @@ function buildFetchMock(
     const pathname = new URL(url, 'http://localhost').pathname
 
     if (pathname.endsWith('/circles/current/detail') && method === 'GET') {
-      return new Response(JSON.stringify(circleDetailFixture), {
+      return new Response(JSON.stringify(detailResponse), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
@@ -78,24 +82,6 @@ function buildFetchMock(
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       })
-    }
-
-    if (pathname.endsWith('/circles/current/members') && method === 'POST') {
-      if (!addShouldSucceed) {
-        return new Response(
-          JSON.stringify({
-            message: 'validation_error',
-            errors: {
-              loginId: ['この学籍番号または連絡先メールアドレスは登録されていません']
-            }
-          }),
-          {
-            status: 422,
-            headers: { 'Content-Type': 'application/json' }
-          }
-        )
-      }
-      return new Response(null, { status: 204 })
     }
 
     if (url.includes('/circles/current/members/') && method === 'DELETE') {
@@ -194,7 +180,7 @@ describe('CircleMembersPage', () => {
     expect(deleteButtons).toHaveLength(1)
   })
 
-  it('adds a member by login id', async () => {
+  it('does not show direct add member section', async () => {
     const { pinia, router } = setupTest('leader-user')
     await router.push('/workspace/circles/members')
     await router.isReady()
@@ -206,32 +192,31 @@ describe('CircleMembersPage', () => {
     })
     await flushPromises()
 
-    const loginInput = wrapper.get('input[placeholder="24a0000 / demo@example.com"]')
-    await loginInput.setValue('24a0000')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
-
-    expect((loginInput.element as HTMLInputElement).value).toBe('')
-    expect(wrapper.text()).not.toContain('この学籍番号または連絡先メールアドレスは登録されていません')
+    expect(wrapper.text()).not.toContain('メンバーを直接追加')
+    expect(wrapper.find('input[placeholder="24a0000 / demo@example.com"]').exists()).toBe(false)
   })
 
-  it('shows validation error when adding a member fails', async () => {
+  it('keeps invite regeneration available after submission', async () => {
     const { pinia, router } = setupTest('leader-user')
     await router.push('/workspace/circles/members')
     await router.isReady()
 
-    vi.stubGlobal('fetch', buildFetchMock({ addShouldSucceed: false }))
+    vi.stubGlobal(
+      'fetch',
+      buildFetchMock({
+        detail: {
+          submittedAt: '2026-03-20T00:00:00Z'
+        }
+      })
+    )
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
     })
     await flushPromises()
 
-    await wrapper.get('input[placeholder="24a0000 / demo@example.com"]').setValue('missing-user')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('この学籍番号または連絡先メールアドレスは登録されていません')
+    expect(wrapper.text()).toContain('招待URLを再生成')
+    expect(wrapper.text()).not.toContain('確認画面へ進む')
   })
 
   it('removes a member after confirmation', async () => {

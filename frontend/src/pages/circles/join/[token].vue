@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useJoinCircleMutation } from '@/features/circles/api'
@@ -64,8 +63,6 @@ function extractApiMessage(error: unknown) {
 
 <template>
   <PageLayout>
-    <BackLink to="/"> ホームへ戻る </BackLink>
-
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Circle Invitation</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">企画招待を受け入れる</h2>

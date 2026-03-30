@@ -11,7 +11,6 @@ definePage({
 import { computed, ref } from 'vue'
 import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -49,9 +48,7 @@ async function handleDeleteAll() {
       title="メール配信設定"
       description="お知らせ保存時の配信予約を確認し、必要なら全件キャンセルできます。"
     >
-      <template #actions>
-        <BackLink to="/staff/pages">お知らせ管理へ戻る</BackLink>
-      </template>
+      <template #actions> </template>
     </PageHeader>
 
     <div class="space-y-6">

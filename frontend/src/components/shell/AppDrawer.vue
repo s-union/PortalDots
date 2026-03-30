@@ -111,7 +111,7 @@ const emit = defineEmits<{
         </nav>
 
         <div class="mt-auto border-t border-border px-6 py-6">
-          <p v-if="isStaffRoute" class="text-sm text-muted">{{ authLabel }}</p>
+          <p v-if="isAuthenticated" class="text-sm text-muted text-center">{{ authLabel }}</p>
           <div v-if="statusBadges.length > 0" class="mt-3 flex flex-wrap gap-2">
             <span
               v-for="badge in statusBadges"

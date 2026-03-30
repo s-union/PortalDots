@@ -454,9 +454,34 @@ function matchesFilterQuery(circle: StaffCircleRow, query: StaffFilterQuery) {
 <template>
   <StaffSideWindowContainer :is-open="isFilterOpen">
     <PageLayout class="max-w-full">
-      <PageHeader title="企画情報管理 - 全企画一覧" />
+      <PageHeader eyebrow="Circles" title="全企画一覧" description="参加種別をまたいで企画を一覧管理します。">
+        <template #actions>
+          <RouterLink
+            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            to="/staff/circles"
+          >
+            参加種別から探す
+          </RouterLink>
+          <RouterLink
+            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            to="/staff/circles/participation_types"
+          >
+            参加種別管理
+          </RouterLink>
+        </template>
+      </PageHeader>
 
-      <DataCard title="企画一覧" overflow-hidden>
+      <DataCard title="企画一覧" description="全企画を横断して検索・絞り込みできます。" overflow-hidden>
+        <template #actions>
+          <a
+            :href="exportUrl"
+            class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-xs text-body transition hover:bg-surface-light hover:no-underline"
+          >
+            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+            CSVで出力
+          </a>
+        </template>
+
         <StaffDataGrid
           :rows="gridRows"
           :columns="columns"
@@ -481,54 +506,37 @@ function matchesFilterQuery(circle: StaffCircleRow, query: StaffFilterQuery) {
           @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
-            <div class="grid w-full gap-3">
-              <div class="flex flex-wrap items-center gap-2">
+            <div class="flex w-full flex-wrap items-center gap-3">
+              <button
+                v-if="canEdit"
+                class="inline-flex items-center gap-1 rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
+                type="button"
+                @click="openCreateCircleCard"
+              >
+                <i class="fas fa-plus fa-fw" aria-hidden="true" />
+                新規企画
+              </button>
+
+              <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  placeholder="企画ID・企画名・団体名などで絞り込み"
+                  class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                />
                 <button
-                  v-if="canEdit"
-                  class="inline-flex items-center gap-1 rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-                  type="button"
-                  @click="openCreateCircleCard"
-                >
-                  <i class="fas fa-plus fa-fw" aria-hidden="true" />
-                  新規企画
-                </button>
-                <a
-                  :href="exportUrl"
-                  class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light hover:no-underline"
-                >
-                  <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-                  CSVで出力
-                </a>
-                <RouterLink
+                  type="submit"
                   class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
-                  to="/staff/circles/participation_types"
                 >
-                  参加種別管理
-                </RouterLink>
-              </div>
+                  <i class="fas fa-search fa-fw" aria-hidden="true" />
+                  絞り込み
+                </button>
+              </form>
 
-              <div class="flex flex-wrap items-center gap-3">
-                <form class="flex items-center gap-2" @submit.prevent="handleSearch">
-                  <input
-                    v-model="searchQuery"
-                    type="search"
-                    placeholder="企画ID・企画名・団体名などで絞り込み"
-                    class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button
-                    type="submit"
-                    class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
-                  >
-                    <i class="fas fa-search fa-fw" aria-hidden="true" />
-                    絞り込み
-                  </button>
-                </form>
-
-                <div class="text-sm text-muted">
-                  現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全企画:
-                  {{ rows.length }}
-                </div>
-              </div>
+              <p class="text-sm text-muted">
+                現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全企画:
+                {{ rows.length }}
+              </p>
             </div>
           </template>
 
@@ -612,11 +620,12 @@ function matchesFilterQuery(circle: StaffCircleRow, query: StaffFilterQuery) {
                 />
               </label>
               <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画名(よみ)</span>
+                <span class="font-medium">企画名(よみ) <span class="text-danger">*</span></span>
                 <input
                   v-model="form.nameYomi"
                   class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   name="nameYomi"
+                  required
                   type="text"
                 />
               </label>
@@ -630,11 +639,12 @@ function matchesFilterQuery(circle: StaffCircleRow, query: StaffFilterQuery) {
                 />
               </label>
               <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画を出店する団体の名称(よみ)</span>
+                <span class="font-medium">企画を出店する団体の名称(よみ) <span class="text-danger">*</span></span>
                 <input
                   v-model="form.groupNameYomi"
                   class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                   name="groupNameYomi"
+                  required
                   type="text"
                 />
               </label>

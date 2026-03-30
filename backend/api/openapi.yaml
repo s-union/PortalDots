@@ -3951,7 +3951,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, groupName, participationTypeId]
+              required: [name, nameYomi, groupName, groupNameYomi, participationTypeId]
               properties:
                 name:
                   type: string
@@ -4219,7 +4219,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, groupName, participationTypeId]
+              required: [name, nameYomi, groupName, groupNameYomi, participationTypeId]
               properties:
                 name:
                   type: string
@@ -5348,7 +5348,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, groupName, participationTypeId]
+              required: [name, nameYomi, groupName, groupNameYomi, participationTypeId]
               properties:
                 name:
                   type: string
@@ -5595,7 +5595,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, groupName]
+              required: [name, nameYomi, groupName, groupNameYomi]
               properties:
                 name:
                   type: string
@@ -5759,7 +5759,7 @@ paths:
           description: Current circle was not found
     post:
       operationId: postCurrentCircleMember
-      summary: Add one member to the current circle by login ID
+      summary: Disabled endpoint (direct member add is not allowed)
       requestBody:
         required: true
         content:
@@ -5771,16 +5771,12 @@ paths:
                 loginId:
                   type: string
       responses:
-        "204":
-          description: Member added
         "401":
           description: Unauthenticated
         "403":
-          description: The current user cannot add members
+          description: Direct member add is not allowed
         "404":
           description: Current circle was not found
-        "422":
-          description: Invalid login ID or unverified member
   /circles/current/members/{userID}:
     delete:
       operationId: deleteCurrentCircleMember

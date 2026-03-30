@@ -8,7 +8,6 @@ definePage({
 })
 
 import { computed } from 'vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -61,8 +60,6 @@ const settingLinks = computed(() => [
 
 <template>
   <PageLayout>
-    <BackLink to="/staff"> Staff top へ戻る </BackLink>
-
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Portal Settings</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">PortalDots の設定</h2>

@@ -7,7 +7,6 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import BackLink from '@/components/ui/BackLink.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import AsyncBoundary from '@/components/async/AsyncBoundary.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
@@ -19,8 +18,6 @@ const pageId = computed(() => String(route.params.pageId ?? ''))
 
 <template>
   <PageLayout>
-    <BackLink to="/public/pages"> お知らせへ戻る </BackLink>
-
     <AsyncBoundary :suspense-key="pageId">
       <template #fallback>
         <LoadingSkeleton variant="detail" />

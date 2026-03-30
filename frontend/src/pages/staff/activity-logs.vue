@@ -9,7 +9,6 @@ definePage({
 })
 
 import { ref } from 'vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -34,9 +33,7 @@ function movePage(nextPage: number) {
       title="活動ログ"
       description="staff 操作の主要な mutation を時系列で確認します。"
     >
-      <template #actions>
-        <BackLink to="/staff"> Staff top へ戻る </BackLink>
-      </template>
+      <template #actions> </template>
     </PageHeader>
 
     <SurfaceCard overflow-hidden>

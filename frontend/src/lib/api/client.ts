@@ -29,11 +29,6 @@ function resolvePublicApiOrigin(baseUrl: string) {
     return new URL(baseUrl).origin
   }
 
-  const configuredProxyTarget = import.meta.env.VITE_API_PROXY_TARGET
-  if (typeof configuredProxyTarget === 'string' && /^https?:\/\//.test(configuredProxyTarget)) {
-    return configuredProxyTarget.replace(/\/$/, '')
-  }
-
   if (
     typeof globalThis.location?.origin === 'string' &&
     globalThis.location.origin !== '' &&
@@ -42,7 +37,7 @@ function resolvePublicApiOrigin(baseUrl: string) {
     return globalThis.location.origin
   }
 
-  return 'http://127.0.0.1:8080'
+  return 'http://localhost'
 }
 
 const apiClientBaseUrl = resolveApiClientBaseUrl(apiBaseUrl)

@@ -1,7 +1,7 @@
 import type { RouteLocationRaw } from 'vue-router'
 
 const CIRCLE_SELECTOR_PATH = '/circles/select'
-const DEFAULT_CIRCLE_SELECTOR_DESTINATION = '/workspace'
+const DEFAULT_CIRCLE_SELECTOR_DESTINATION = '/'
 
 export function sanitizeCircleSelectorRedirect(input: string | null | undefined): string | null {
   if (typeof input !== 'string') {

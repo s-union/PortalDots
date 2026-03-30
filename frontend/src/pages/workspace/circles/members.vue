@@ -18,8 +18,6 @@ import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import {
-  extractAddCircleMemberValidationMessage,
-  useAddCircleMemberMutation,
   useCurrentCircleDetailQuery,
   useCircleMembersQuery,
   useRemoveMemberMutation,
@@ -32,11 +30,9 @@ import { buttonVariants } from '@/lib/ui/variants'
 const sessionStore = useSessionStore()
 const detailQuery = useCurrentCircleDetailQuery()
 const membersQuery = useCircleMembersQuery()
-const addMemberMutation = useAddCircleMemberMutation()
 const removeMutation = useRemoveMemberMutation()
 const regenerateMutation = useRegenerateInvitationTokenMutation()
 
-const addMemberLoginId = shallowRef('')
 const copySuccess = shallowRef(false)
 const errorMessage = shallowRef('')
 
@@ -114,19 +110,6 @@ async function handleRegenerate() {
   }
 }
 
-async function handleAddMember() {
-  errorMessage.value = ''
-
-  try {
-    await addMemberMutation.mutateAsync({
-      loginId: addMemberLoginId.value
-    })
-    addMemberLoginId.value = ''
-  } catch (error) {
-    errorMessage.value = extractAddCircleMemberValidationMessage(error)
-  }
-}
-
 async function handleRemoveMember(userId: string, displayName: string) {
   if (!confirm(`${displayName} をメンバーから削除しますか？`)) {
     return
@@ -197,7 +180,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
         </div>
       </SettingsRow>
 
-      <template v-if="isCurrentUserLeader && detailQuery.data.value?.submittedAt === null" #footer>
+      <template v-if="isCurrentUserLeader" #footer>
         <div class="flex justify-end">
           <button
             :class="buttonVariants({ variant: 'secondary', size: 'md' })"
@@ -209,24 +192,6 @@ async function handleRemoveMember(userId: string, displayName: string) {
           </button>
         </div>
       </template>
-    </SettingsSection>
-
-    <SettingsSection v-if="isCurrentUserLeader" title="メンバーを直接追加">
-      <form class="grid gap-3 px-6 py-6" @submit.prevent="handleAddMember">
-        <p class="text-sm text-muted">
-          学籍番号または連絡先メールアドレスを入力して、学園祭係(副責任者)を直接追加できます。
-        </p>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input v-model="addMemberLoginId" type="text" class="flex-1" placeholder="24a0000 / demo@example.com" />
-          <button
-            :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
-            :disabled="addMemberMutation.isPending.value"
-            type="submit"
-          >
-            {{ addMemberMutation.isPending.value ? '追加中...' : 'メンバーを追加' }}
-          </button>
-        </div>
-      </form>
     </SettingsSection>
 
     <SettingsSection title="メンバー一覧">

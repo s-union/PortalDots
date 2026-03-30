@@ -49,7 +49,7 @@ describe('StaffUsersIndexPage', () => {
     statusApiMocks.useStaffStatusQuery.mockReturnValue({
       data: ref({ allowed: true, authorized: true })
     })
-    usersApiMocks.buildStaffUsersExportUrl.mockReturnValue('http://127.0.0.1:8080/v1/staff/users/export')
+    usersApiMocks.buildStaffUsersExportUrl.mockReturnValue('http://localhost/v1/staff/users/export')
     usersApiMocks.useStaffUsersQuery.mockReturnValue({
       data: ref({
         items: [
@@ -115,7 +115,7 @@ describe('StaffUsersIndexPage', () => {
     expect(wrapper.text()).toContain('表示件数:')
     expect(wrapper.text()).toContain('全2件')
     expect(wrapper.text()).toContain('絞り込み')
-    expect(wrapper.get('a[href="http://127.0.0.1:8080/v1/staff/users/export"]').text()).toContain('CSVで出力')
+    expect(wrapper.get('a[href$="/v1/staff/users/export"]').text()).toContain('CSVで出力')
 
     await wrapper.get('thead button').trigger('click')
     const sortArgAfterHeaderClick = usersApiMocks.useStaffUsersQuery.mock.calls.at(-1)?.[1]
@@ -147,7 +147,7 @@ describe('StaffUsersIndexPage', () => {
     statusApiMocks.useStaffStatusQuery.mockReturnValue({
       data: ref({ allowed: true, authorized: true })
     })
-    usersApiMocks.buildStaffUsersExportUrl.mockReturnValue('http://127.0.0.1:8080/v1/staff/users/export')
+    usersApiMocks.buildStaffUsersExportUrl.mockReturnValue('http://localhost/v1/staff/users/export')
     usersApiMocks.useStaffUsersQuery.mockReturnValue({
       data: ref({
         items: [],

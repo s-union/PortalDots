@@ -12,7 +12,6 @@ definePage({
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -72,7 +71,6 @@ async function handleSendMail() {
 
 <template>
   <PageLayout>
-    <BackLink to="/staff/circles">企画管理へ戻る</BackLink>
     <TabStrip :tabs="circleTabs" />
 
     <div v-if="mailFormQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">

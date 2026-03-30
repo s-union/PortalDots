@@ -11,7 +11,6 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -193,16 +192,16 @@ async function handleDeleteMember(userId: string, displayName: string) {
                 <input v-model="form.name" name="name" type="text" />
               </label>
               <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画名(よみ)</span>
-                <input v-model="form.nameYomi" name="nameYomi" type="text" />
+                <span class="font-medium">企画名(よみ) <span class="text-danger">*</span></span>
+                <input v-model="form.nameYomi" name="nameYomi" required type="text" />
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">企画を出店する団体の名称</span>
                 <input v-model="form.groupName" name="groupName" type="text" />
               </label>
               <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画を出店する団体の名称(よみ)</span>
-                <input v-model="form.groupNameYomi" name="groupNameYomi" type="text" />
+                <span class="font-medium">企画を出店する団体の名称(よみ) <span class="text-danger">*</span></span>
+                <input v-model="form.groupNameYomi" name="groupNameYomi" required type="text" />
               </label>
               <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">参加種別</span>

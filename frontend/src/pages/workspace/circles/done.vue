@@ -23,9 +23,9 @@ definePage({
         <div class="flex flex-wrap gap-3">
           <RouterLink
             class="inline-flex rounded border border-primary bg-primary px-6 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline"
-            to="/workspace"
+            to="/"
           >
-            ワークスペースへ戻る
+            ホームへ戻る
           </RouterLink>
           <RouterLink
             class="inline-flex rounded border border-border bg-surface px-6 py-3 text-sm text-body transition hover:bg-surface-light hover:no-underline"

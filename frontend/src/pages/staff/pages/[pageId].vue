@@ -11,7 +11,6 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -128,8 +127,6 @@ async function handleDeletePage() {
 
 <template>
   <PageLayout>
-    <BackLink to="/staff/pages"> お知らせ管理へ戻る </BackLink>
-
     <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>

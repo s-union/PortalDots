@@ -55,7 +55,7 @@ describe('app router guards', () => {
     await router.replace('/')
   })
 
-  it('redirects unauthenticated workspace access to login', async () => {
+  it('redirects unauthenticated workspace pages access to login', async () => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
       csrfToken: '',
       currentCircle: null,
@@ -65,13 +65,13 @@ describe('app router guards', () => {
       user: null
     })
 
-    await router.push('/workspace')
+    await router.push('/workspace/pages')
     await router.isReady()
 
     expect(router.currentRoute.value.fullPath).toBe('/login')
   })
 
-  it('redirects authenticated workspace root without current circle to selector', async () => {
+  it('redirects authenticated workspace pages without current circle to selector', async () => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
       csrfToken: 'csrf-token',
       currentCircle: null,
@@ -85,12 +85,12 @@ describe('app router guards', () => {
       }
     })
 
-    await router.push('/workspace')
+    await router.push('/workspace/pages')
 
-    expect(router.currentRoute.value.fullPath).toBe('/circles/select?redirect=/workspace')
+    expect(router.currentRoute.value.fullPath).toBe('/circles/select?redirect=/workspace/pages')
   })
 
-  it('allows authenticated workspace root access when current circle exists', async () => {
+  it('redirects authenticated workspace root to home when current circle exists', async () => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
       csrfToken: 'csrf-token',
       currentCircle: {
@@ -109,7 +109,7 @@ describe('app router guards', () => {
 
     await router.push('/workspace')
 
-    expect(router.currentRoute.value.fullPath).toBe('/workspace')
+    expect(router.currentRoute.value.fullPath).toBe('/')
   })
 
   it('allows global staff pages without current circle', async () => {

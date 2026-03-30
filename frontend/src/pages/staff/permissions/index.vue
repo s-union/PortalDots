@@ -9,7 +9,6 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -40,8 +39,6 @@ function movePage(nextPage: number) {
 
 <template>
   <PageLayout>
-    <BackLink to="/staff"> Staff top へ戻る </BackLink>
-
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Staff Permissions</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">スタッフの権限設定</h2>

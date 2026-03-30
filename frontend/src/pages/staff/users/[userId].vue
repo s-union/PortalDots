@@ -10,7 +10,6 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BackLink from '@/components/ui/BackLink.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffUserEditor from '@/components/staff/StaffUserEditor.vue'
 
@@ -24,7 +23,6 @@ async function handleDeleted() {
 
 <template>
   <PageLayout>
-    <BackLink to="/staff/users"> ユーザー管理へ戻る </BackLink>
     <StaffUserEditor :user-id="userId" @deleted="handleDeleted" />
   </PageLayout>
 </template>

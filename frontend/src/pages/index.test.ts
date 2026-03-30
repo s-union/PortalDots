@@ -5,6 +5,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
+import { buildApiUrl } from '@/lib/api/client'
 import { useSessionStore } from '@/features/session/store'
 
 const homeApiMocks = vi.hoisted(() => ({
@@ -12,9 +13,17 @@ const homeApiMocks = vi.hoisted(() => ({
   usePublicConfigQuery: vi.fn()
 }))
 
+const formsApiMocks = vi.hoisted(() => ({
+  useFormsQuery: vi.fn()
+}))
+
 vi.mock('@/features/public-home/api', () => ({
   usePublicHomeQuery: homeApiMocks.usePublicHomeQuery,
   usePublicConfigQuery: homeApiMocks.usePublicConfigQuery
+}))
+
+vi.mock('@/features/forms/api', () => ({
+  useFormsQuery: formsApiMocks.useFormsQuery
 }))
 
 import HomePage from './index.vue'
@@ -31,18 +40,11 @@ function createTestRouter() {
       { path: '/public/pages', component: { template: '<div>public pages</div>' } },
       { path: '/public/pages/:pageId', component: { template: '<div>public page</div>' } },
       { path: '/public/documents', component: { template: '<div>public documents</div>' } },
-      {
-        path: '/public/documents/:documentId',
-        component: { template: '<div>public document</div>' }
-      },
       { path: '/workspace', component: { template: '<div>workspace</div>' } },
       { path: '/workspace/pages', component: { template: '<div>pages</div>' } },
       { path: '/workspace/pages/:pageId', component: { template: '<div>page</div>' } },
       { path: '/workspace/documents', component: { template: '<div>documents</div>' } },
-      {
-        path: '/workspace/documents/:documentId',
-        component: { template: '<div>document</div>' }
-      },
+      { path: '/workspace/forms', component: { template: '<div>forms</div>' } },
       { path: '/workspace/forms/:formId', component: { template: '<div>form</div>' } }
     ]
   })
@@ -145,6 +147,37 @@ describe('HomePage', () => {
     return wrapper.findAllComponents(ListItemLink).find((component) => component.text().includes(text))
   }
 
+  function makeFormsData() {
+    return [
+      {
+        id: 'form-open',
+        name: '展示レイアウト申請',
+        description: '展示レイアウトを提出してください。',
+        openAt: '2026-03-01T00:00:00Z',
+        closeAt: '2026-03-31T23:59:59Z',
+        maxAnswers: 2,
+        answerableTags: ['展示'],
+        confirmationMessage: '',
+        isPublic: true,
+        isOpen: true,
+        hasAnswer: false
+      },
+      {
+        id: 'form-closed',
+        name: '備品申請',
+        description: '備品を申請してください。',
+        openAt: '2026-02-01T00:00:00Z',
+        closeAt: '2026-02-20T23:59:59Z',
+        maxAnswers: 1,
+        answerableTags: [],
+        confirmationMessage: '',
+        isPublic: true,
+        isOpen: false,
+        hasAnswer: false
+      }
+    ]
+  }
+
   it('shows a login call-to-action when unauthenticated', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
@@ -154,6 +187,10 @@ describe('HomePage', () => {
     })
     homeApiMocks.usePublicConfigQuery.mockReturnValue({
       data: ref({ isDemo: true, appName: '門点祭ウェブシステム' })
+    })
+    formsApiMocks.useFormsQuery.mockReturnValue({
+      data: ref([]),
+      isPending: ref(false)
     })
 
     const router = createTestRouter()
@@ -182,6 +219,7 @@ describe('HomePage', () => {
       expect(participationTypeLink?.props('to')).toBe('/register')
       expect(wrapper.get('a[href="/public/pages"]').text()).toContain('他のお知らせを見る')
       expect(wrapper.get('a[href="/public/documents"]').text()).toContain('他の配布資料を見る')
+      expect(wrapper.get(`a[href="${buildApiUrl('/v1/public/documents/document-1')}"]`).exists()).toBe(true)
     })
   })
 
@@ -207,6 +245,10 @@ describe('HomePage', () => {
     homeApiMocks.usePublicConfigQuery.mockReturnValue({
       data: ref({ isDemo: false, appName: '門点祭ウェブシステム' })
     })
+    formsApiMocks.useFormsQuery.mockReturnValue({
+      data: ref([]),
+      isPending: ref(false)
+    })
 
     const router = createTestRouter()
     await router.push('/')
@@ -228,6 +270,60 @@ describe('HomePage', () => {
       expect(participationTypeLink?.props('to')).toBe('/circles/new?participation_type=pt-exhibit')
       expect(wrapper.find('a[href="/login"]').exists()).toBe(false)
       expect(wrapper.find('a[href="/register"]').exists()).toBe(false)
+      expect(wrapper.get(`a[href="${buildApiUrl('/v1/public/documents/document-1')}"]`).exists()).toBe(true)
+    })
+  })
+
+  it('shows open forms panel for authenticated users with selected circle', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-1',
+        name: '展示企画A'
+      },
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User'
+      }
+    })
+
+    homeApiMocks.usePublicHomeQuery.mockReturnValue({
+      data: ref(makePublicHomeData()),
+      isPending: ref(false)
+    })
+    homeApiMocks.usePublicConfigQuery.mockReturnValue({
+      data: ref({ isDemo: false, appName: '門点祭ウェブシステム' })
+    })
+    formsApiMocks.useFormsQuery.mockReturnValue({
+      data: ref(makeFormsData()),
+      isPending: ref(false)
+    })
+
+    const router = createTestRouter()
+    await router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(HomePage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    await vi.waitFor(() => {
+      const openFormLink = findListItemLinkByText(wrapper, '展示レイアウト申請')
+
+      expect(wrapper.text()).toContain('受付中の申請')
+      expect(wrapper.text()).toContain('展示レイアウト申請')
+      expect(wrapper.text()).toContain('展示レイアウトを提出してください。')
+      expect(openFormLink?.props('to')).toBe('/workspace/forms/form-open')
+      expect(wrapper.get('a[href="/workspace/forms"]').text()).toContain('他の受付中の申請を見る')
+      expect(wrapper.text()).not.toContain('備品申請')
     })
   })
 })

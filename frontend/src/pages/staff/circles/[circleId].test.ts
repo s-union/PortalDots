@@ -325,7 +325,9 @@ describe('StaffCircleDetailPage', () => {
     expect(wrapper.text()).toContain('メール送信')
 
     await wrapper.get('input[name="name"]').setValue('更新後の企画B')
+    await wrapper.get('input[name="nameYomi"]').setValue('こうしんごのきかくびー')
     await wrapper.get('input[name="groupName"]').setValue('更新後Bブロック')
+    await wrapper.get('input[name="groupNameYomi"]').setValue('こうしんごびーぶろっく')
     await wrapper.findAll('form')[0].trigger('submit')
     await flushPromises()
 

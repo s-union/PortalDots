@@ -12,7 +12,6 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -83,9 +82,7 @@ async function handleCreateDocument() {
 <template>
   <PageLayout>
     <PageHeader title="配布資料管理" description="全企画の配布資料を横断して管理します。">
-      <template #actions>
-        <BackLink to="/staff">Staff top へ戻る</BackLink>
-      </template>
+      <template #actions> </template>
     </PageHeader>
 
     <SurfaceCard>

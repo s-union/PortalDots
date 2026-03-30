@@ -8,7 +8,6 @@ definePage({
   }
 })
 
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -27,7 +26,6 @@ const bundleHref = buildApiUrl('/staff/exports/bundle.zip')
           全企画のお知らせ・資料・フォーム・回答を staff mode で書き出します。
         </p>
       </div>
-      <BackLink to="/staff"> Staff top へ戻る </BackLink>
     </header>
 
     <SurfaceCard>

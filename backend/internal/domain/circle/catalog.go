@@ -447,9 +447,6 @@ func (c *StaticCatalog) RegenerateInvitationToken(user *auth.User, circleID stri
 		if !requesterIsLeader {
 			return Circle{}, ErrForbidden
 		}
-		if c.circles[index].SubmittedAt != nil {
-			return Circle{}, ErrAlreadySubmitted
-		}
 		c.circles[index].InvitationToken = c.circles[index].ID + "-invite-token-regenerated"
 		return cloneCircle(c.circles[index]), nil
 	}

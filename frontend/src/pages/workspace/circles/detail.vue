@@ -10,7 +10,6 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -25,6 +24,7 @@ import {
 import { extractValidationMessage } from '@/lib/api/validation'
 import { formatDate } from '@/lib/format/datetime'
 import { buttonVariants } from '@/lib/ui/variants'
+import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
 
 const router = useRouter()
 const detailQuery = useCurrentCircleDetailQuery()
@@ -36,7 +36,13 @@ const form = reactive({
   nameYomi: '',
   groupName: '',
   groupNameYomi: '',
+  participationTypeId: '',
   notes: ''
+})
+
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: circleRegistrationFormSchema,
+  form: computed(() => form)
 })
 
 const questions = computed(() => detailQuery.data.value?.questions ?? [])
@@ -75,6 +81,7 @@ watch(
     form.nameYomi = detail.nameYomi
     form.groupName = detail.groupName
     form.groupNameYomi = detail.groupNameYomi
+    form.participationTypeId = detail.participationTypeId
     form.notes = detail.notes
   },
   { immediate: true }
@@ -83,6 +90,11 @@ watch(
 async function saveCircle() {
   const detail = detailQuery.data.value
   if (!detail) {
+    return false
+  }
+
+  // Validate all fields before saving
+  if (!validateAll()) {
     return false
   }
 
@@ -185,8 +197,6 @@ function downloadHref(questionId: string) {
 
 <template>
   <PageLayout>
-    <BackLink to="/workspace">ワークスペースへ戻る</BackLink>
-
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Circle Registration</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">企画参加登録 1/3</h2>
@@ -231,12 +241,36 @@ function downloadHref(questionId: string) {
           <div class="grid gap-4">
             <label class="grid gap-2 text-sm text-body">
               <span class="font-semibold">企画名 <span class="text-danger">*</span></span>
-              <input v-model="form.name" :disabled="!canEdit" name="name" type="text" />
+              <input
+                v-model="form.name"
+                :disabled="!canEdit"
+                name="name"
+                type="text"
+                :class="{ 'border-danger': getFieldError('name') && canEdit }"
+                @blur="markTouched('name')"
+                @input="markTouched('name')"
+              />
+              <p v-if="getFieldError('name') && canEdit" class="text-xs text-danger">
+                {{ getFieldError('name') }}
+              </p>
             </label>
 
             <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">企画名（よみ）</span>
-              <input v-model="form.nameYomi" :disabled="!canEdit" name="nameYomi" type="text" />
+              <span class="font-semibold">企画名（よみ） <span class="text-danger">*</span></span>
+              <input
+                v-model="form.nameYomi"
+                :disabled="!canEdit"
+                name="nameYomi"
+                required
+                type="text"
+                placeholder="ひらがなで入力"
+                :class="{ 'border-danger': getFieldError('nameYomi') && canEdit }"
+                @blur="markTouched('nameYomi')"
+                @input="markTouched('nameYomi')"
+              />
+              <p v-if="getFieldError('nameYomi') && canEdit" class="text-xs text-danger">
+                {{ getFieldError('nameYomi') }}
+              </p>
             </label>
 
             <label class="grid gap-2 text-sm text-body">
@@ -246,17 +280,43 @@ function downloadHref(questionId: string) {
                 :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
                 name="groupName"
                 type="text"
+                placeholder="例: ○○サークル"
+                :class="{
+                  'border-danger': getFieldError('groupName') && canEdit && detailQuery.data.value.canChangeGroupName
+                }"
+                @blur="markTouched('groupName')"
+                @input="markTouched('groupName')"
               />
+              <p
+                v-if="getFieldError('groupName') && canEdit && detailQuery.data.value.canChangeGroupName"
+                class="text-xs text-danger"
+              >
+                {{ getFieldError('groupName') }}
+              </p>
             </label>
 
             <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">団体名（よみ）</span>
+              <span class="font-semibold">団体名（よみ） <span class="text-danger">*</span></span>
               <input
                 v-model="form.groupNameYomi"
                 :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
                 name="groupNameYomi"
+                required
                 type="text"
+                placeholder="ひらがなで入力"
+                :class="{
+                  'border-danger':
+                    getFieldError('groupNameYomi') && canEdit && detailQuery.data.value.canChangeGroupName
+                }"
+                @blur="markTouched('groupNameYomi')"
+                @input="markTouched('groupNameYomi')"
               />
+              <p
+                v-if="getFieldError('groupNameYomi') && canEdit && detailQuery.data.value.canChangeGroupName"
+                class="text-xs text-danger"
+              >
+                {{ getFieldError('groupNameYomi') }}
+              </p>
             </label>
 
             <p v-if="!detailQuery.data.value.canChangeGroupName" class="text-sm text-muted">
@@ -272,11 +332,7 @@ function downloadHref(questionId: string) {
       </SettingsSection>
 
       <SettingsSection title="参加登録フォーム">
-        <div v-if="detailQuery.data.value.formDescription" class="border-b border-border px-6 py-5">
-          <p class="whitespace-pre-wrap text-sm leading-7 text-body">
-            {{ detailQuery.data.value.formDescription }}
-          </p>
-        </div>
+        <div v-if="questions.length === 0" class="px-6 py-5 text-sm text-muted">追加の設問はありません。</div>
 
         <div class="grid gap-0">
           <template v-for="question in questions" :key="question.id">

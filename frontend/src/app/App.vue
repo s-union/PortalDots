@@ -92,12 +92,12 @@ const circleName = computed(() => sessionStore.currentCircle?.name ?? '企画未
 
 const authLabel = computed(() => {
   if (bootstrapQuery.isLoading.value) {
-    return 'loading'
+    return '読み込み中'
   }
   if (!sessionStore.isAuthenticated) {
     return 'ログインしていません'
   }
-  return `${sessionStore.user?.displayName ?? 'unknown'}としてログイン中`
+  return `${sessionStore.user?.displayName ?? '不明なユーザー'}としてログイン中`
 })
 
 const topDescription = computed(() =>

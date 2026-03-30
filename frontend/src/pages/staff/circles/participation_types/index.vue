@@ -11,7 +11,6 @@ definePage({
 import { computed, ref } from 'vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -73,9 +72,7 @@ async function handleCreate() {
 <template>
   <PageLayout>
     <PageHeader eyebrow="Participation Types" title="参加種別管理">
-      <template #actions>
-        <BackLink to="/staff/circles">企画管理へ戻る</BackLink>
-      </template>
+      <template #actions> </template>
     </PageHeader>
 
     <SurfaceCard>

@@ -9,7 +9,6 @@ definePage({
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -65,12 +64,8 @@ function uploadNames(questionId: string) {
 
 <template>
   <PageLayout>
-    <BackLink :to="requiresMemberStep ? '/workspace/circles/members' : '/workspace/circles/detail'">
-      {{ requiresMemberStep ? 'メンバー確認へ戻る' : '入力画面へ戻る' }}
-    </BackLink>
-
     <SurfaceCard tag="header">
-      <SurfaceCardBand borderless>
+      <SurfaceCardBand borderless ignore-main-padding>
         <CircleRegistrationSteps :current-step="3" :requires-member-step="requiresMemberStep" />
         <p class="mt-3 text-sm leading-7 text-muted">入力内容を確認し、問題なければ参加登録を提出してください。</p>
       </SurfaceCardBand>
@@ -109,17 +104,7 @@ function uploadNames(questionId: string) {
         </div>
       </SurfaceCard>
 
-      <SurfaceCard>
-        <div class="border-b border-border px-6 py-5">
-          <h3 class="text-lg font-semibold text-body">参加登録フォーム回答</h3>
-          <p
-            v-if="detailQuery.data.value.confirmationMessage"
-            class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted"
-          >
-            {{ detailQuery.data.value.confirmationMessage }}
-          </p>
-        </div>
-
+      <SurfaceCard v-if="detailQuery.data.value.questions.length > 0">
         <div class="grid gap-0">
           <template v-for="question in detailQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
@@ -145,6 +130,8 @@ function uploadNames(questionId: string) {
           </template>
         </div>
       </SurfaceCard>
+
+      <p v-else class="text-sm text-muted">追加の設問はありません。</p>
 
       <AlertMessage v-if="errorMessage" tone="danger">
         {{ errorMessage }}

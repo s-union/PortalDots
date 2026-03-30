@@ -10,7 +10,6 @@ definePage({
 
 import { computed, ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
@@ -80,9 +79,7 @@ async function handleDeletePlace(placeId: string) {
 <template>
   <PageLayout>
     <PageHeader eyebrow="Staff Places" title="場所管理">
-      <template #actions>
-        <BackLink to="/staff">Staff top へ戻る</BackLink>
-      </template>
+      <template #actions> </template>
     </PageHeader>
 
     <SurfaceCard overflow-hidden>

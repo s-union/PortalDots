@@ -40,7 +40,7 @@ export function useUserSettingsPage(activeTab: UserSettingsTab) {
       return '/'
     }
     if (route.path.startsWith('/workspace/settings')) {
-      return '/workspace'
+      return '/'
     }
     return '/'
   })

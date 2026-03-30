@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 </script>
 
 <template>
   <PageLayout>
-    <BackLink to="/">ホームへ戻る</BackLink>
-
     <SurfaceCard>
       <div class="px-6 py-8">
         <p class="text-sm text-primary">404</p>

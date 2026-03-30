@@ -9,6 +9,7 @@ import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePublicHomeQuery, usePublicConfigQuery } from '@/features/public-home/api'
+import { useFormsQuery, type FormSummary } from '@/features/forms/api'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
@@ -16,6 +17,7 @@ import { useSessionStore } from '@/features/session/store'
 const sessionStore = useSessionStore()
 const publicHomeQuery = usePublicHomeQuery(computed(() => true))
 const publicConfigQuery = usePublicConfigQuery()
+const formsQuery = useFormsQuery()
 
 const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions))
 const publicHome = computed(() => publicHomeQuery.data.value)
@@ -26,6 +28,13 @@ const publicDocuments = computed(() => publicHome.value?.documents ?? [])
 const publicLoginMethods = computed(() => publicHome.value?.loginMethods ?? [])
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
+const openForms = computed(() => (formsQuery.data.value ?? []).filter((form) => form.isOpen))
+const shouldShowOpenFormsPanel = computed(
+  () =>
+    sessionStore.isAuthenticated &&
+    sessionStore.currentCircle !== null &&
+    (formsQuery.isPending.value || openForms.value.length > 0)
+)
 const pagesIndexPath = computed(() => (sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages'))
 const documentsIndexPath = computed(() => (sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents'))
 const pageDetailPath = (pageId: string) =>
@@ -42,6 +51,17 @@ const participationTypePath = (participationTypeId: string) => {
   }
 
   return `/circles/new?participation_type=${encodeURIComponent(participationTypeId)}`
+}
+
+const workspaceFormPath = (formId: string) => `/workspace/forms/${encodeURIComponent(formId)}`
+
+function isLimitedForm(form: FormSummary) {
+  return form.answerableTags.length > 0
+}
+
+function formatOpenFormMeta(form: FormSummary) {
+  const schedule = `${formatDateTime(form.closeAt)} まで受付`
+  return form.maxAnswers > 1 ? `${schedule} • 1企画あたり${form.maxAnswers}つ回答可能` : schedule
 }
 </script>
 
@@ -208,7 +228,8 @@ const participationTypePath = (participationTypeId: string) => {
             v-for="document in publicDocuments"
             :key="document.id"
             legacy
-            :to="`${documentsIndexPath}/${encodeURIComponent(document.id)}`"
+            :href="buildApiUrl(document.downloadUrl)"
+            new-tab
           >
             <template #title>
               <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
@@ -231,6 +252,29 @@ const participationTypePath = (participationTypeId: string) => {
           :to="documentsIndexPath"
         >
           他の配布資料を見る
+        </RouterLink>
+      </ListPanel>
+
+      <ListPanel v-if="shouldShowOpenFormsPanel" legacy title="受付中の申請">
+        <LoadingMessage v-if="formsQuery.isPending.value" />
+        <div v-else class="divide-y divide-border">
+          <ListItemLink v-for="form in openForms" :key="form.id" legacy :to="workspaceFormPath(form.id)">
+            <template #title>{{ form.name }}</template>
+            <template #prefix>
+              <StatusBadge :tone="isLimitedForm(form) ? 'primary' : 'muted'" appearance="outlined">
+                {{ isLimitedForm(form) ? '限定公開' : '全員に公開' }}
+              </StatusBadge>
+            </template>
+            <template #meta>{{ formatOpenFormMeta(form) }}</template>
+            {{ form.description }}
+          </ListItemLink>
+        </div>
+        <RouterLink
+          v-if="!formsQuery.isPending.value && openForms.length > 0"
+          class="block border-t border-border px-6 py-6 text-center text-sm font-semibold text-primary transition hover:bg-form-control hover:no-underline"
+          to="/workspace/forms"
+        >
+          他の受付中の申請を見る
         </RouterLink>
       </ListPanel>
     </div>

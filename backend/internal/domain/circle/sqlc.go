@@ -610,13 +610,6 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 	if !isLeader {
 		return Circle{}, ErrForbidden
 	}
-	current, err := c.Find(circleID)
-	if err != nil {
-		return Circle{}, err
-	}
-	if current.SubmittedAt != nil {
-		return Circle{}, ErrAlreadySubmitted
-	}
 
 	row, err := c.queries.UpdateCircleInvitationToken(context.Background(), circleID)
 	if err != nil {

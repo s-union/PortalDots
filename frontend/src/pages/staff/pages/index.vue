@@ -10,7 +10,6 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import BackLink from '@/components/ui/BackLink.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -48,9 +47,7 @@ async function handleSearchSubmit() {
 <template>
   <PageLayout>
     <PageHeader title="お知らせ管理" description="企画に依存しない共通のお知らせを管理します。">
-      <template #actions>
-        <BackLink to="/staff">Staff top へ戻る</BackLink>
-      </template>
+      <template #actions> </template>
     </PageHeader>
 
     <SurfaceCard>

@@ -9,7 +9,6 @@ definePage({
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -69,8 +68,6 @@ async function handleSubmit() {
 
 <template>
   <PageLayout>
-    <BackLink to="/workspace"> ワークスペースへ戻る </BackLink>
-
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">Contact</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">お問い合わせ</h2>

@@ -15,6 +15,7 @@ import {
   useCompleteRegistrationMutation,
   useVerifyRegistrationMutation
 } from '@/features/auth/api'
+import { useFormValidation, userRegistrationFormSchema } from '@/lib/form-validation'
 
 const router = useRouter()
 const route = useRoute()
@@ -34,7 +35,8 @@ const token = computed(() => {
 const verifyMutation = useVerifyRegistrationMutation()
 const completeMutation = useCompleteRegistrationMutation()
 const verification = ref<{ univemail: string; studentId: string } | null>(null)
-const errorMessage = ref('')
+const verificationErrorMessage = ref('')
+const submitErrorMessage = ref('')
 const form = reactive({
   name: '',
   nameYomi: '',
@@ -44,11 +46,17 @@ const form = reactive({
   passwordConfirmation: ''
 })
 
+const { fieldErrors, markTouched, validateAll, getFieldError } = useFormValidation({
+  schema: userRegistrationFormSchema,
+  form: computed(() => form)
+})
+
 async function loadVerification() {
-  errorMessage.value = ''
+  verificationErrorMessage.value = ''
+  submitErrorMessage.value = ''
 
   if (verifyType.value !== 'univemail' || pendingRegistrationId.value === 'unknown' || token.value.trim() === '') {
-    errorMessage.value = '認証URLが無効か期限切れです。もう一度お試しください。'
+    verificationErrorMessage.value = '認証URLが無効か期限切れです。もう一度お試しください。'
     return
   }
 
@@ -62,12 +70,17 @@ async function loadVerification() {
       studentId: result.studentId
     }
   } catch (error) {
-    errorMessage.value = extractFirstErrorMessage(error)
+    verificationErrorMessage.value = extractFirstErrorMessage(error)
   }
 }
 
 async function handleSubmit() {
-  errorMessage.value = ''
+  submitErrorMessage.value = ''
+
+  // Validate all fields before submitting
+  if (!validateAll()) {
+    return
+  }
 
   try {
     await completeMutation.mutateAsync({
@@ -82,7 +95,7 @@ async function handleSubmit() {
     })
     await router.replace('/email/verify/completed')
   } catch (error) {
-    errorMessage.value = extractFirstErrorMessage(error)
+    submitErrorMessage.value = extractFirstErrorMessage(error)
   }
 }
 
@@ -99,12 +112,18 @@ onMounted(() => {
       </div>
       <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
         <p v-if="verifyMutation.isPending.value" class="text-muted">認証URLを確認しています...</p>
-        <p v-else-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
-          {{ errorMessage }}
+        <p
+          v-else-if="verificationErrorMessage"
+          class="rounded border border-danger bg-danger-light px-4 py-3 text-danger"
+        >
+          {{ verificationErrorMessage }}
         </p>
         <template v-else-if="verification">
           <p>
             大学メールアドレス <strong>{{ verification.univemail }}</strong> の確認が完了しました。
+          </p>
+          <p v-if="submitErrorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
+            {{ submitErrorMessage }}
           </p>
           <form class="space-y-5" @submit.prevent="handleSubmit">
             <div class="grid gap-4 md:grid-cols-2">
@@ -119,49 +138,121 @@ onMounted(() => {
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2">
-                <span class="font-semibold">名前</span>
-                <input v-model="form.name" autocomplete="name" name="name" placeholder="姓 名" required type="text" />
-              </label>
-              <label class="grid gap-2">
-                <span class="font-semibold">名前(よみ)</span>
-                <input v-model="form.nameYomi" name="nameYomi" placeholder="せい めい" required type="text" />
-              </label>
+              <div class="grid gap-2">
+                <label class="grid gap-2">
+                  <span class="font-semibold">名前</span>
+                  <input
+                    v-model="form.name"
+                    autocomplete="name"
+                    name="name"
+                    placeholder="姓 名"
+                    required
+                    type="text"
+                    :class="{ 'border-danger': getFieldError('name') }"
+                    @blur="markTouched('name')"
+                    @input="markTouched('name')"
+                  />
+                </label>
+                <p v-if="getFieldError('name')" class="text-xs text-danger">
+                  {{ getFieldError('name') }}
+                </p>
+              </div>
+              <div class="grid gap-2">
+                <label class="grid gap-2">
+                  <span class="font-semibold">名前(よみ)</span>
+                  <input
+                    v-model="form.nameYomi"
+                    name="nameYomi"
+                    placeholder="せい めい"
+                    required
+                    type="text"
+                    :class="{ 'border-danger': getFieldError('nameYomi') }"
+                    @blur="markTouched('nameYomi')"
+                    @input="markTouched('nameYomi')"
+                  />
+                </label>
+                <p v-if="getFieldError('nameYomi')" class="text-xs text-danger">
+                  {{ getFieldError('nameYomi') }}
+                </p>
+              </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2">
-                <span class="font-semibold">連絡先メールアドレス</span>
-                <input v-model="form.contactEmail" autocomplete="email" name="contactEmail" type="email" />
-              </label>
-              <label class="grid gap-2">
-                <span class="font-semibold">連絡先電話番号</span>
-                <input v-model="form.phoneNumber" autocomplete="tel" name="phoneNumber" required type="tel" />
-              </label>
+              <div class="grid gap-2">
+                <label class="grid gap-2">
+                  <span class="font-semibold">連絡先メールアドレス</span>
+                  <input
+                    v-model="form.contactEmail"
+                    autocomplete="email"
+                    name="contactEmail"
+                    type="email"
+                    :class="{ 'border-danger': getFieldError('contactEmail') }"
+                    @blur="markTouched('contactEmail')"
+                    @input="markTouched('contactEmail')"
+                  />
+                </label>
+                <p v-if="getFieldError('contactEmail')" class="text-xs text-danger">
+                  {{ getFieldError('contactEmail') }}
+                </p>
+              </div>
+              <div class="grid gap-2">
+                <label class="grid gap-2">
+                  <span class="font-semibold">連絡先電話番号</span>
+                  <input
+                    v-model="form.phoneNumber"
+                    autocomplete="tel"
+                    name="phoneNumber"
+                    required
+                    type="tel"
+                    :class="{ 'border-danger': getFieldError('phoneNumber') }"
+                    @blur="markTouched('phoneNumber')"
+                    @input="markTouched('phoneNumber')"
+                  />
+                </label>
+                <p v-if="getFieldError('phoneNumber')" class="text-xs text-danger">
+                  {{ getFieldError('phoneNumber') }}
+                </p>
+              </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2">
-                <span class="font-semibold">パスワード</span>
-                <input
-                  v-model="form.password"
-                  autocomplete="new-password"
-                  name="password"
-                  placeholder="8文字以上"
-                  required
-                  type="password"
-                />
-              </label>
-              <label class="grid gap-2">
-                <span class="font-semibold">パスワード(確認)</span>
-                <input
-                  v-model="form.passwordConfirmation"
-                  autocomplete="new-password"
-                  name="passwordConfirmation"
-                  required
-                  type="password"
-                />
-              </label>
+              <div class="grid gap-2">
+                <label class="grid gap-2">
+                  <span class="font-semibold">パスワード</span>
+                  <input
+                    v-model="form.password"
+                    autocomplete="new-password"
+                    name="password"
+                    placeholder="8文字以上（英字・数字を含む）"
+                    required
+                    type="password"
+                    :class="{ 'border-danger': getFieldError('password') }"
+                    @blur="markTouched('password')"
+                    @input="markTouched('password')"
+                  />
+                </label>
+                <p v-if="getFieldError('password')" class="text-xs text-danger">
+                  {{ getFieldError('password') }}
+                </p>
+              </div>
+              <div class="grid gap-2">
+                <label class="grid gap-2">
+                  <span class="font-semibold">パスワード(確認)</span>
+                  <input
+                    v-model="form.passwordConfirmation"
+                    autocomplete="new-password"
+                    name="passwordConfirmation"
+                    required
+                    type="password"
+                    :class="{ 'border-danger': getFieldError('passwordConfirmation') }"
+                    @blur="markTouched('passwordConfirmation')"
+                    @input="markTouched('passwordConfirmation')"
+                  />
+                </label>
+                <p v-if="getFieldError('passwordConfirmation')" class="text-xs text-danger">
+                  {{ getFieldError('passwordConfirmation') }}
+                </p>
+              </div>
             </div>
 
             <div class="flex justify-end">

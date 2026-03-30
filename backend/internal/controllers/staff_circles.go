@@ -616,8 +616,14 @@ func bindAndValidateStaffCircle(c echo.Context) (mutateStaffCircleRequest, map[s
 	if request.Name == "" {
 		errs["name"] = []string{"企画名を入力してください"}
 	}
+	if request.NameYomi == "" {
+		errs["nameYomi"] = []string{"企画名(よみ)を入力してください"}
+	}
 	if request.GroupName == "" {
 		errs["groupName"] = []string{"企画グループ名を入力してください"}
+	}
+	if request.GroupNameYomi == "" {
+		errs["groupNameYomi"] = []string{"企画グループ名(よみ)を入力してください"}
 	}
 	if request.ParticipationTypeID == "" {
 		errs["participationTypeId"] = []string{"参加種別を選択してください"}

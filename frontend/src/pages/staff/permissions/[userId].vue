@@ -11,7 +11,6 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -94,8 +93,6 @@ function handlePermissionChange(event: Event, permissionName: string) {
 
 <template>
   <PageLayout>
-    <BackLink to="/staff/permissions"> 権限設定一覧へ戻る </BackLink>
-
     <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>

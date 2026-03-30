@@ -206,6 +206,12 @@ describe('CircleCreatePage', () => {
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('模擬店')
     expect(wrapper.text()).toContain('保存して確認画面へ')
+
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('展示参加用の設問です')
+    expect(wrapper.text()).not.toContain('追加の設問はありません。')
     expect(
       fetchMock.mock.calls.some(([input]) => {
         const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
@@ -258,6 +264,7 @@ describe('CircleCreatePage', () => {
     await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
     await flushPromises()
     await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('input[name="nameYomi"]').setValue('てすときかく')
     await wrapper.get('input[name="groupName"]').setValue('テスト大学')
     await wrapper.get('input[name="groupNameYomi"]').setValue('てすとだいがく')
     await wrapper.get('button[type="button"]').trigger('click')
@@ -288,6 +295,7 @@ describe('CircleCreatePage', () => {
     await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
     await flushPromises()
     await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('input[name="nameYomi"]').setValue('てすときかく')
     await wrapper.get('input[name="groupName"]').setValue('テスト大学')
     await wrapper.get('input[name="groupNameYomi"]').setValue('てすとだいがく')
     await wrapper.get('button[type="button"]').trigger('click')
@@ -322,5 +330,141 @@ describe('CircleCreatePage', () => {
         return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
       })
     ).toBe(false)
+  })
+
+  it('shows real-time validation error for nameYomi on input', async () => {
+    const pinia = setupSession()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/circles/new', component: CircleCreatePage },
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } }
+      ]
+    })
+    await router.push('/circles/new')
+    await router.isReady()
+
+    vi.stubGlobal('fetch', buildFetchMock())
+
+    const wrapper = mount(CircleCreatePage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+
+    const nameYomiInput = wrapper.get('input[name="nameYomi"]')
+    await nameYomiInput.setValue('テスト企画')
+    await nameYomiInput.trigger('input')
+    await flushPromises()
+
+    // Wait for debounce
+    await new Promise((resolve) => setTimeout(resolve, 350))
+
+    expect(wrapper.text()).toContain('ひらがなで入力してください')
+    expect(router.currentRoute.value.path).toBe('/circles/new')
+  })
+
+  it('shows client-side validation error for nameYomi with non-hiragana characters', async () => {
+    const pinia = setupSession()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/circles/new', component: CircleCreatePage },
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } }
+      ]
+    })
+    await router.push('/circles/new')
+    await router.isReady()
+
+    vi.stubGlobal('fetch', buildFetchMock())
+
+    const wrapper = mount(CircleCreatePage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+
+    const nameYomiInput = wrapper.get('input[name="nameYomi"]')
+    await nameYomiInput.setValue('テスト企画')
+    await nameYomiInput.trigger('blur')
+    await flushPromises()
+
+    // Wait for debounce
+    await new Promise((resolve) => setTimeout(resolve, 350))
+
+    expect(wrapper.text()).toContain('ひらがなで入力してください')
+    expect(router.currentRoute.value.path).toBe('/circles/new')
+  })
+
+  it('prevents form submission when participation type is not selected', async () => {
+    const pinia = setupSession()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/circles/new', component: CircleCreatePage },
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } }
+      ]
+    })
+    await router.push('/circles/new')
+    await router.isReady()
+
+    vi.stubGlobal('fetch', buildFetchMock())
+
+    const wrapper = mount(CircleCreatePage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    // Fill form but do not select participation type
+    await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('input[name="nameYomi"]').setValue('てすときかく')
+    await wrapper.get('button[type="button"]').trigger('click')
+    await flushPromises()
+
+    // Wait for validation
+    await new Promise((resolve) => setTimeout(resolve, 350))
+
+    expect(wrapper.text()).toContain('参加種別を選択してください')
+    expect(router.currentRoute.value.path).toBe('/circles/new')
+  })
+
+  it('prevents form submission when required fields are empty', async () => {
+    const pinia = setupSession()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/circles/new', component: CircleCreatePage },
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } }
+      ]
+    })
+    await router.push('/circles/new')
+    await router.isReady()
+
+    vi.stubGlobal('fetch', buildFetchMock())
+
+    const wrapper = mount(CircleCreatePage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+
+    // Leave name empty
+    await wrapper.get('input[name="nameYomi"]').setValue('てすときかく')
+    await wrapper.get('input[name="groupName"]').setValue('テスト大学')
+    await wrapper.get('input[name="groupNameYomi"]').setValue('てすとだいがく')
+    await wrapper.get('button[type="button"]').trigger('click')
+    await flushPromises()
+
+    // Wait for validation
+    await new Promise((resolve) => setTimeout(resolve, 350))
+
+    expect(wrapper.text()).toContain('企画名を入力してください')
+    expect(router.currentRoute.value.path).toBe('/circles/new')
   })
 })

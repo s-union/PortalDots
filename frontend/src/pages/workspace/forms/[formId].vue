@@ -10,7 +10,6 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { useFormDetailQuery } from '@/features/forms/api'
@@ -183,8 +182,6 @@ function handleFileChange(questionId: string, event: Event) {
 
 <template>
   <PageLayout>
-    <BackLink to="/workspace/forms">申請へ戻る</BackLink>
-
     <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>

@@ -9,7 +9,6 @@ definePage({
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { buildApiUrl } from '@/lib/api/client'
@@ -26,8 +25,6 @@ const pageQuery = usePageDetailQuery(pageId)
 
 <template>
   <PageLayout>
-    <BackLink to="/workspace/pages"> お知らせへ戻る </BackLink>
-
     <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>

@@ -5,7 +5,6 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
 import CircleSelectorPage from './select.vue'
-import WorkspacePage from '../workspace/index.vue'
 
 function createQueryPlugin() {
   return [
@@ -142,7 +141,7 @@ describe('CircleSelectorPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('selects a circle and navigates to the workspace', async () => {
+  it('selects a circle and navigates to the home page', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -161,7 +160,7 @@ describe('CircleSelectorPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/circles/select', component: CircleSelectorPage },
-        { path: '/workspace', component: WorkspacePage }
+        { path: '/', component: { template: '<div>home</div>' } }
       ]
     })
     await router.push('/circles/select')
@@ -182,7 +181,7 @@ describe('CircleSelectorPage', () => {
     await flushPromises()
 
     expect(sessionStore.currentCircle?.name).toBe('デモ企画B')
-    expect(router.currentRoute.value.path).toBe('/workspace')
+    expect(router.currentRoute.value.path).toBe('/')
   })
 
   it('returns to the requested page after selecting a circle', async () => {
@@ -266,6 +265,40 @@ describe('CircleSelectorPage', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.fullPath).toBe('/workspace/forms/form-1?answer=answer-1')
+  })
+
+  it('shows default context message when no redirect is provided', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/circles/select', component: CircleSelectorPage }]
+    })
+    await router.push('/circles/select')
+    await router.isReady()
+
+    vi.stubGlobal('fetch', buildFetchMock())
+
+    const wrapper = mount(CircleSelectorPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('ここで選んだ企画コンテキストで以後の画面が動きます。')
   })
 
   it('shows participation type cards linking to circle creation', async () => {

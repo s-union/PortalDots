@@ -7,7 +7,6 @@ definePage({
   }
 })
 
-import BackLink from '@/components/ui/BackLink.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -15,8 +14,6 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 
 <template>
   <PageLayout>
-    <BackLink to="/staff"> Staff top へ戻る </BackLink>
-
     <SurfaceCard tag="header">
       <p class="text-sm text-primary">About PortalDots</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">PortalDots について</h2>

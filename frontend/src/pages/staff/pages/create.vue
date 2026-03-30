@@ -10,7 +10,6 @@ definePage({
 
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import BackLink from '@/components/ui/BackLink.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
@@ -60,8 +59,6 @@ async function handleCreatePage() {
 
 <template>
   <PageLayout>
-    <BackLink to="/staff/pages"> お知らせ管理へ戻る </BackLink>
-
     <form class="space-y-6" @submit.prevent="handleCreatePage">
       <SurfaceCard>
         <div class="border-b border-border px-6 py-5">

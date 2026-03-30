@@ -61,10 +61,6 @@ type circleMemberResponse struct {
 	IsLeader    bool   `json:"isLeader"`
 }
 
-type addCurrentCircleMemberRequest struct {
-	LoginID string `json:"loginId"`
-}
-
 type createCircleRequest struct {
 	Name                string         `json:"name"`
 	NameYomi            string         `json:"nameYomi"`
@@ -267,6 +263,9 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 	if req.Name == "" {
 		validationErrors["name"] = []string{"企画名を入力してください"}
 	}
+	if req.NameYomi == "" {
+		validationErrors["nameYomi"] = []string{"企画名(よみ)を入力してください"}
+	}
 	if req.ParticipationTypeID == "" {
 		validationErrors["participationTypeId"] = []string{"参加種別を選択してください"}
 	}
@@ -398,6 +397,9 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 	validationErrors := map[string][]string{}
 	if strings.TrimSpace(req.Name) == "" {
 		validationErrors["name"] = []string{"企画名を入力してください"}
+	}
+	if req.NameYomi == "" {
+		validationErrors["nameYomi"] = []string{"企画名(よみ)を入力してください"}
 	}
 	if circleValue.CanChangeGroupName {
 		if req.GroupName == "" {
@@ -571,47 +573,7 @@ func (h *workspaceHandlers) addCurrentCircleMember(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
-	var req addCurrentCircleMemberRequest
-	if err := c.Bind(&req); err != nil {
-		return errorJSON(c, http.StatusBadRequest, "invalid_request")
-	}
-
-	req.LoginID = strings.TrimSpace(req.LoginID)
-	if req.LoginID == "" {
-		return validationError(c, map[string][]string{
-			"loginId": {"学籍番号または連絡先メールアドレスを入力してください"},
-		})
-	}
-
-	targetUser, err := h.users.FindByLoginID(req.LoginID)
-	if errors.Is(err, useradmin.ErrNotFound) {
-		targetUser, err = h.users.FindByContactEmail(req.LoginID)
-	}
-	if err != nil {
-		return validationError(c, map[string][]string{
-			"loginId": {"この学籍番号または連絡先メールアドレスは登録されていません"},
-		})
-	}
-
-	err = h.circles.AddMember(currentSession.User, currentSession.CurrentCircleID, targetUser.ID, targetUser.DisplayName, targetUser.IsVerified)
-	if errors.Is(err, circle.ErrForbidden) {
-		return errorJSON(c, http.StatusForbidden, "forbidden")
-	}
-	if errors.Is(err, circle.ErrAlreadyMember) {
-		return validationError(c, map[string][]string{
-			"loginId": {"このユーザーは既にメンバーです"},
-		})
-	}
-	if errors.Is(err, circle.ErrInviteeUnverified) {
-		return validationError(c, map[string][]string{
-			"loginId": {"このユーザーはメール認証が完了していません"},
-		})
-	}
-	if err != nil {
-		return internalError(c)
-	}
-
-	return c.NoContent(http.StatusNoContent)
+	return errorJSON(c, http.StatusForbidden, "forbidden")
 }
 
 func (h *workspaceHandlers) removeCurrentCircleMember(c echo.Context) error {
@@ -680,9 +642,6 @@ func (h *workspaceHandlers) joinCircleByToken(c echo.Context) error {
 	}
 	if err != nil {
 		return internalError(c)
-	}
-	if joinTarget.SubmittedAt != nil {
-		return errorJSON(c, http.StatusNotFound, "invalid_token")
 	}
 	pt, formValue, _, err := h.resolveParticipationRegistrationForm(joinTarget.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {

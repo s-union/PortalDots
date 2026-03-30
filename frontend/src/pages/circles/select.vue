@@ -67,7 +67,7 @@ watch(
     <ListPanel
       title="作業対象の企画を選択します。"
       :description="
-        redirectDestination === '/workspace'
+        redirectDestination === '/'
           ? 'ここで選んだ企画コンテキストで以後の画面が動きます。'
           : requestedCircleId
             ? '指定された企画を確認できれば自動で選択し、元の画面へ戻ります。'
