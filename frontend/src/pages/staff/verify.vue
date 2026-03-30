@@ -36,7 +36,7 @@ async function handleRequestCode() {
 
   try {
     const result = await requestMutation.mutateAsync()
-    infoMessage.value = `${result.message} 認証コード: ${result.verifyCode}`
+    infoMessage.value = result.verifyCode ? `${result.message} 認証コード: ${result.verifyCode}` : result.message
   } catch {
     errorMessage.value = '認証コードの送信に失敗しました。'
   }

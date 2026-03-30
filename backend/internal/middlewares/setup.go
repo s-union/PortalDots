@@ -57,7 +57,8 @@ func VerifyCSRF(cfg SessionMiddlewareConfig) echo.MiddlewareFunc {
 			}
 
 			token := c.Request().Header.Get("X-CSRF-Token")
-			if subtle.ConstantTimeCompare([]byte(token), []byte(currentSession.CSRFToken)) != 1 {
+			expectedToken := currentSession.CSRFToken
+			if len(token) != len(expectedToken) || subtle.ConstantTimeCompare([]byte(token), []byte(expectedToken)) != 1 {
 				return c.JSON(http.StatusForbidden, map[string]string{
 					"message": "csrf_token_invalid",
 				})

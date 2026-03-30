@@ -79,7 +79,6 @@ type authHandlers struct {
 // staffVerifyHandlers handles staff verification endpoints.
 type staffVerifyHandlers struct {
 	sharedDeps
-	staffVerifyCode string
 }
 
 // staffUserHandlers handles staff user management endpoints.
@@ -305,8 +304,7 @@ func NewServerWithDependencies(
 	}
 
 	staffVerifyH := &staffVerifyHandlers{
-		sharedDeps:      shared,
-		staffVerifyCode: cfg.StaffVerifyCode,
+		sharedDeps: shared,
 	}
 
 	staffUsersH := &staffUserHandlers{

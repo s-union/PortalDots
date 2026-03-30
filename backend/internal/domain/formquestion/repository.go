@@ -2,15 +2,15 @@ package formquestion
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 	"strconv"
 	"sync"
+	"time"
 )
 
 var ErrNotFound = errors.New("form question not found")
 
-var AllowedTypes = []string{
+var AllowedQuestionTypes = []string{
 	"heading",
 	"text",
 	"textarea",
@@ -46,10 +46,9 @@ type Repository interface {
 }
 
 type MemoryRepository struct {
-	mu        sync.RWMutex
-	items     map[string][]Question
-	nextID    int
-	timestamp int
+	mu     sync.RWMutex
+	items  map[string][]Question
+	nextID int
 }
 
 func NewMemoryRepository() *MemoryRepository {
@@ -86,11 +85,10 @@ func (r *MemoryRepository) Create(formID, questionType string) (Question, error)
 		AllowedTypes: "",
 		Options:      []string{},
 		Priority:     priority,
-		CreatedAt:    fmt.Sprintf("2026-03-13T00:00:%02dZ", r.timestamp),
-		UpdatedAt:    fmt.Sprintf("2026-03-13T00:00:%02dZ", r.timestamp),
+		CreatedAt:    nowRFC3339(),
+		UpdatedAt:    nowRFC3339(),
 	}
 	r.nextID++
-	r.timestamp++
 	r.items[formID] = append(r.items[formID], question)
 
 	return cloneQuestion(question), nil
@@ -107,8 +105,7 @@ func (r *MemoryRepository) Update(question Question) (Question, error) {
 		}
 
 		question.CreatedAt = item.CreatedAt
-		question.UpdatedAt = fmt.Sprintf("2026-03-13T00:01:%02dZ", r.timestamp)
-		r.timestamp++
+		question.UpdatedAt = nowRFC3339()
 		r.items[question.FormID][index] = cloneQuestion(question)
 		return cloneQuestion(r.items[question.FormID][index]), nil
 	}
@@ -177,4 +174,8 @@ func cloneQuestion(question Question) Question {
 		question.NumberMax = &value
 	}
 	return question
+}
+
+func nowRFC3339() string {
+	return time.Now().UTC().Format(time.RFC3339)
 }

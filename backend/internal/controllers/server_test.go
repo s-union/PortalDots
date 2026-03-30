@@ -20,6 +20,8 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
+const strictStaffVerifyCode = "654321"
+
 func TestLoginAndBootstrap(t *testing.T) {
 	t.Parallel()
 
@@ -1651,17 +1653,7 @@ func TestStaffDocumentUploadAndDownloadUseCurrentCircle(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{})
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": "123456",
-	})
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
+	authorizeStaff(t, server, cookies)
 
 	recorder = doMultipartRequest(
 		t,
@@ -1811,17 +1803,7 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{})
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": "123456",
-	})
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
+	authorizeStaff(t, server, cookies)
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]string{"name": "新規タグ"})
 	if recorder.Code != http.StatusCreated {
@@ -2364,15 +2346,15 @@ func TestStaffVerificationFlow(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
 		t.Fatalf("unmarshal staff verify request response: %v", err)
 	}
-	if requestResponse.DeliveryMode != "mock" || requestResponse.VerifyCode != "123456" {
+	if requestResponse.DeliveryMode != "email" || requestResponse.VerifyCode != "" {
 		t.Fatalf("unexpected staff verify request response: %#v", requestResponse)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": "123456",
+		"verifyCode": "x",
 	}, csrf)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/status", nil)
@@ -2384,7 +2366,7 @@ func TestStaffVerificationFlow(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &verifiedStatus); err != nil {
 		t.Fatalf("unmarshal verified staff status: %v", err)
 	}
-	if !verifiedStatus.Allowed || !verifiedStatus.Authorized {
+	if !verifiedStatus.Allowed || verifiedStatus.Authorized {
 		t.Fatalf("unexpected verified staff status: %#v", verifiedStatus)
 	}
 }
@@ -2447,17 +2429,7 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{})
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": "123456",
-	})
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
+	authorizeStaff(t, server, cookies)
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages", nil)
 	if recorder.Code != http.StatusOK {
@@ -5063,8 +5035,16 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
+	var response staffVerifyRequestResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal staff verify request response: %v", err)
+	}
+	if strings.TrimSpace(response.VerifyCode) == "" {
+		t.Fatalf("expected mock verify code in insecure defaults, got %#v", response)
+	}
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": "123456",
+		"verifyCode": response.VerifyCode,
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -5404,6 +5384,7 @@ func testStaffConfig() config.Config {
 func testStrictStaffConfig() config.Config {
 	cfg := testStaffConfig()
 	cfg.AllowInsecureDefaults = false
+	cfg.StaffVerifyCode = strictStaffVerifyCode
 	return cfg
 }
 

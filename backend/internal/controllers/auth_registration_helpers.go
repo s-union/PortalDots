@@ -118,12 +118,12 @@ func buildRegistrationVerifyURL(appURL, pendingRegistrationID, token string) str
 	return fmt.Sprintf("%s/email/verify/univemail/%s?token=%s", base, pendingRegistrationID, url.QueryEscape(token))
 }
 
-func generateRegistrationToken() string {
+func generateRegistrationToken() (string, error) {
 	var raw [24]byte
-	if _, err := rand.Read(raw[:]); err == nil {
-		return base64.RawURLEncoding.EncodeToString(raw[:])
+	if _, err := rand.Read(raw[:]); err != nil {
+		return "", err
 	}
-	return base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf("%d", time.Now().UnixNano())))
+	return base64.RawURLEncoding.EncodeToString(raw[:]), nil
 }
 
 func hashRegistrationToken(token string) string {
@@ -171,10 +171,10 @@ func registrationMailMessage(appName, to, verifyURL string) registrationmail.Mes
 	}
 }
 
-func generateVerificationCode() string {
+func generateVerificationCode() (string, error) {
 	var raw [4]byte
-	if _, err := rand.Read(raw[:]); err == nil {
-		return fmt.Sprintf("%06d", binary.BigEndian.Uint32(raw[:])%1000000)
+	if _, err := rand.Read(raw[:]); err != nil {
+		return "", err
 	}
-	return fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
+	return fmt.Sprintf("%06d", binary.BigEndian.Uint32(raw[:])%1000000), nil
 }

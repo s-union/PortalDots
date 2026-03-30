@@ -118,7 +118,7 @@ RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_i
 SELECT b.circle_id, p.name
 FROM booths b
 JOIN places p ON p.id = b.place_id
-WHERE b.circle_id = ANY($1::uuid[])
+WHERE b.circle_id = ANY($1::text[])
 ORDER BY b.circle_id, p.name;
 
 -- name: ListCircleMembers :many

@@ -233,7 +233,7 @@ func mapStaffPermissionUserSummary(currentSession session.Session, userValue use
 		LoginIDs:    slices.Clone(userValue.LoginIDs),
 		Roles:       slices.Clone(userValue.Roles),
 		Permissions: permissions,
-		IsEditable:  currentSession.User == nil || currentSession.User.ID != userValue.ID && !slices.Contains(userValue.Roles, "admin"),
+		IsEditable:  currentSession.User == nil || (currentSession.User.ID != userValue.ID && !slices.Contains(userValue.Roles, "admin")),
 	}
 }
 

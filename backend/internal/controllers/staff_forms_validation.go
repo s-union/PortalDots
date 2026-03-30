@@ -71,9 +71,9 @@ func normalizeTags(tags []string) []string {
 	return normalized
 }
 
-func validateStaffFormQuestionRequest(request updateStaffFormQuestionRequest) map[string][]string {
+func validateStaffFormQuestionRequest(request *updateStaffFormQuestionRequest) map[string][]string {
 	errors := map[string][]string{}
-	if !slices.Contains(formquestion.AllowedTypes, request.Type) {
+	if !slices.Contains(formquestion.AllowedQuestionTypes, request.Type) {
 		errors["type"] = []string{"設問タイプが不正です"}
 	}
 	if request.Type != "heading" && request.Name == "" {

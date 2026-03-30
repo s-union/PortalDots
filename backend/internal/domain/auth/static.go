@@ -2,13 +2,13 @@ package auth
 
 import (
 	"context"
-	"crypto/subtle"
 	"errors"
 	"slices"
 	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -46,7 +46,7 @@ type staticCredential struct {
 	user         User
 	loginIDs     []string
 	contactEmail string
-	password     string
+	passwordHash string
 }
 
 type StaticAuthenticator struct {
@@ -55,6 +55,11 @@ type StaticAuthenticator struct {
 }
 
 func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAuthenticator {
+	defaultPasswordHash, err := bcrypt.GenerateFromPassword([]byte(cfg.Password), bcrypt.DefaultCost)
+	if err != nil {
+		panic("failed to hash default auth password: " + err.Error())
+	}
+
 	built := map[string]staticCredential{
 		cfg.ID: {
 			user: User{
@@ -63,8 +68,8 @@ func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAut
 				Roles:       slices.Clone(cfg.Roles),
 				Permissions: slices.Clone(cfg.Permissions),
 			},
-			loginIDs: slices.Clone(cfg.LoginIDs),
-			password: cfg.Password,
+			loginIDs:     slices.Clone(cfg.LoginIDs),
+			passwordHash: string(defaultPasswordHash),
 		},
 	}
 
@@ -77,6 +82,10 @@ func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAut
 			built[cfg.ID] = current
 			continue
 		}
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(configured.Password), bcrypt.DefaultCost)
+		if err != nil {
+			panic("failed to hash configured user password: " + err.Error())
+		}
 		built[configured.ID] = staticCredential{
 			user: User{
 				ID:          configured.ID,
@@ -86,7 +95,7 @@ func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAut
 			},
 			loginIDs:     slices.Clone(configured.LoginIDs),
 			contactEmail: configured.ContactEmail,
-			password:     configured.Password,
+			passwordHash: string(passwordHash),
 		}
 	}
 
@@ -99,7 +108,7 @@ func (a *StaticAuthenticator) Authenticate(_ context.Context, loginID, password 
 
 	normalizedLoginID := strings.TrimSpace(strings.ToLower(loginID))
 	for _, candidate := range a.users {
-		if subtle.ConstantTimeCompare([]byte(password), []byte(candidate.password)) != 1 {
+		if bcrypt.CompareHashAndPassword([]byte(candidate.passwordHash), []byte(password)) != nil {
 			continue
 		}
 		if !matchesStaticLoginID(candidate, normalizedLoginID) {
@@ -123,11 +132,15 @@ func (a *StaticAuthenticator) ChangePassword(_ context.Context, userID, currentP
 	if !ok {
 		return ErrInvalidPassword
 	}
-	if subtle.ConstantTimeCompare([]byte(currentPassword), []byte(current.password)) != 1 {
+	if bcrypt.CompareHashAndPassword([]byte(current.passwordHash), []byte(currentPassword)) != nil {
 		return ErrInvalidPassword
 	}
 
-	current.password = newPassword
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	current.passwordHash = string(newHash)
 	a.users[userID] = current
 	return nil
 }
@@ -135,6 +148,11 @@ func (a *StaticAuthenticator) ChangePassword(_ context.Context, userID, currentP
 func (a *StaticAuthenticator) RegisterUser(params RegisterParams) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return
+	}
 
 	a.users[params.ID] = staticCredential{
 		user: User{
@@ -145,7 +163,7 @@ func (a *StaticAuthenticator) RegisterUser(params RegisterParams) {
 		},
 		loginIDs:     slices.Clone(params.LoginIDs),
 		contactEmail: params.ContactEmail,
-		password:     params.Password,
+		passwordHash: string(passwordHash),
 	}
 }
 

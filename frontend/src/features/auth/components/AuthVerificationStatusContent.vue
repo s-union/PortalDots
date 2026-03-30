@@ -28,7 +28,7 @@ async function handleRequest(type: 'email' | 'univemail') {
     const result = await requestMutation.mutateAsync(type)
     requestResult.value = {
       type,
-      code: result.verifyCode,
+      code: result.verifyCode ?? '',
       message: result.message
     }
     await statusQuery.refetch()

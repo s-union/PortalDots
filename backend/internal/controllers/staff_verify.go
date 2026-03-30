@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"crypto/rand"
+	"encoding/binary"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -19,7 +22,7 @@ type staffStatusResponse struct {
 type staffVerifyRequestResponse struct {
 	DeliveryMode string `json:"deliveryMode"`
 	Message      string `json:"message"`
-	VerifyCode   string `json:"verifyCode"`
+	VerifyCode   string `json:"verifyCode,omitempty"`
 }
 
 type confirmStaffVerificationRequest struct {
@@ -47,17 +50,28 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		return statusError(c, status)
 	}
 
+	verifyCode, err := generateStaffVerifyCode()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
+	}
+
 	h.sessions.Update(sessionID, func(next *session.Session) {
 		next.StaffAuthorized = false
-		next.StaffVerifyCode = h.staffVerifyCode
+		next.StaffVerifyCode = verifyCode
 		next.StaffVerifyExpires = time.Now().UTC().Add(staffVerifyTTL)
 	})
 
-	return c.JSON(http.StatusOK, staffVerifyRequestResponse{
-		DeliveryMode: "mock",
-		Message:      "モック中: メールは送信していません。画面に表示された認証コードを入力してください。",
-		VerifyCode:   h.staffVerifyCode,
-	})
+	response := staffVerifyRequestResponse{
+		DeliveryMode: "email",
+		Message:      "認証コードを送信しました。メールをご確認ください。",
+	}
+	if h.allowInsecureDefaults {
+		response.DeliveryMode = "mock"
+		response.Message = "モック中: メールは送信していません。画面に表示された認証コードを入力してください。"
+		response.VerifyCode = verifyCode
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {
@@ -120,4 +134,12 @@ func (s *sharedDeps) requireStaffMode(c echo.Context) (string, session.Session, 
 	}
 
 	return sessionID, currentSession, http.StatusOK, true
+}
+
+func generateStaffVerifyCode() (string, error) {
+	var raw [4]byte
+	if _, err := rand.Read(raw[:]); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", binary.BigEndian.Uint32(raw[:])%1000000), nil
 }

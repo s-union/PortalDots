@@ -435,7 +435,7 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 	request.Type = strings.TrimSpace(request.Type)
-	if !slices.Contains(formquestion.AllowedTypes, request.Type) {
+	if !slices.Contains(formquestion.AllowedQuestionTypes, request.Type) {
 		return validationError(c, map[string][]string{"type": {"設問タイプが不正です"}})
 	}
 
@@ -479,7 +479,7 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 	request.AllowedTypes = strings.TrimSpace(request.AllowedTypes)
 	request.Options = normalizeQuestionOptions(request.Options)
 
-	validationErrors := validateStaffFormQuestionRequest(request)
+	validationErrors := validateStaffFormQuestionRequest(&request)
 	if len(validationErrors) > 0 {
 		return validationError(c, validationErrors)
 	}

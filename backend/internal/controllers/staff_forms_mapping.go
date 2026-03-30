@@ -54,33 +54,29 @@ func mapStaffFormQuestion(question formquestion.Question) staffFormQuestion {
 	}
 }
 
-func staffFormRowsExtended(forms []backendform.Form) [][]string {
-	rows := make([][]string, 0, len(forms))
-	for _, currentForm := range forms {
-		rows = append(rows, []string{
-			currentForm.ID,
-			currentForm.Name,
-			visibilityLabel(currentForm.IsPublic),
-			formStatus(currentForm.IsOpen),
-			currentForm.OpenAt,
-			currentForm.CloseAt,
-			fmt.Sprintf("%d", currentForm.MaxAnswers),
-			strings.Join(currentForm.AnswerableTags, ","),
-			singleLine(currentForm.ConfirmationMessage),
-		})
-	}
-	return rows
-}
-
 func staffFormRowsExtendedWithCircles(forms []backendform.Form, circleNames map[string]string) [][]string {
 	rows := make([][]string, 0, len(forms))
 	for _, currentForm := range forms {
 		rows = append(rows, append([]string{
 			currentForm.CircleID,
 			circleNames[currentForm.CircleID],
-		}, staffFormRowsExtended([]backendform.Form{currentForm})[0]...))
+		}, staffFormRowExtended(currentForm)...))
 	}
 	return rows
+}
+
+func staffFormRowExtended(formValue backendform.Form) []string {
+	return []string{
+		formValue.ID,
+		formValue.Name,
+		visibilityLabel(formValue.IsPublic),
+		formStatus(formValue.IsOpen),
+		formValue.OpenAt,
+		formValue.CloseAt,
+		fmt.Sprintf("%d", formValue.MaxAnswers),
+		strings.Join(formValue.AnswerableTags, ","),
+		singleLine(formValue.ConfirmationMessage),
+	}
 }
 
 func (h *staffFormHandlers) filterEditableStaffForms(forms []backendform.Form) []backendform.Form {

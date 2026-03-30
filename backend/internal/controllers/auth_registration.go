@@ -219,7 +219,10 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	token := generateRegistrationToken()
+	token, err := generateRegistrationToken()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_registration_token")
+	}
 	tokenHash := hashRegistrationToken(token)
 	pendingValue, err := h.pendingRegistrations.Save(
 		univemail,
@@ -453,7 +456,10 @@ func (h *authHandlers) requestAuthVerification(c echo.Context) error {
 		})
 	}
 
-	code := generateVerificationCode()
+	code, err := generateVerificationCode()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
+	}
 	h.verifyCodes.Put(sessionID, request.Type, code, time.Now().UTC().Add(participantVerifyTTL))
 
 	return c.JSON(http.StatusOK, staffVerifyRequestResponse{

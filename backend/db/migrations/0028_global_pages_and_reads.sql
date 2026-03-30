@@ -25,7 +25,7 @@ CREATE INDEX IF NOT EXISTS pages_updated_at_idx
     ON pages(updated_at DESC, id DESC);
 
 CREATE TABLE IF NOT EXISTS reads (
-    page_id uuid NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    page_id text NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
     user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (page_id, user_id)

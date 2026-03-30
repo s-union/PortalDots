@@ -48,7 +48,15 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 	})
 	response := make([]staffMailResponse, 0, len(jobs))
 	for _, job := range jobs {
-		response = append(response, mapStaffMail(job, circlesByID[job.CircleID]))
+		circleValue := staffManagedCircleResponse{}
+		if job.CircleID != "" {
+			mappedCircle, ok := circlesByID[job.CircleID]
+			if !ok {
+				return internalError(c)
+			}
+			circleValue = mappedCircle
+		}
+		response = append(response, mapStaffMail(job, circleValue))
 	}
 
 	return c.JSON(http.StatusOK, response)
