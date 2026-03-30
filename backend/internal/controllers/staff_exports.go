@@ -207,8 +207,14 @@ func (h *staffAdminHandlers) buildStaffBundleZIP() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// UTF-8 BOM for Excel compatibility with Japanese characters
+var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
+
 func writeCSV(rows [][]string) ([]byte, error) {
 	var buffer bytes.Buffer
+	// Write UTF-8 BOM so that Excel correctly interprets the CSV as UTF-8
+	buffer.Write(utf8BOM)
+
 	writer := csv.NewWriter(&buffer)
 
 	for _, row := range rows {

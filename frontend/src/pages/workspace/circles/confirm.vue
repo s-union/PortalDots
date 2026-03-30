@@ -27,7 +27,7 @@ const requiresMemberStep = computed(() => {
   if (!detail) {
     return false
   }
-  return detail.usersCountMin > 1 || detail.usersCountMax > 1
+  return detail.usersCountMax > 1
 })
 
 async function handleSubmit() {
@@ -65,7 +65,7 @@ function uploadNames(questionId: string) {
 <template>
   <PageLayout>
     <SurfaceCard tag="header">
-      <SurfaceCardBand borderless ignore-main-padding>
+      <SurfaceCardBand borderless>
         <CircleRegistrationSteps :current-step="3" :requires-member-step="requiresMemberStep" />
         <p class="mt-3 text-sm leading-7 text-muted">入力内容を確認し、問題なければ参加登録を提出してください。</p>
       </SurfaceCardBand>

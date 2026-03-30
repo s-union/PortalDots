@@ -110,7 +110,8 @@ export const circleDetailSchema = z.object({
     .nullable()
     .default(null),
   invitationToken: z.string(),
-  submittedAt: z.string().nullable()
+  submittedAt: z.string().nullable(),
+  status: z.enum(['pending', 'approved', 'rejected']).default('pending')
 })
 
 export const circleMemberSchema = z.object({
@@ -360,6 +361,7 @@ export const formDetailSchema = z.object({
   confirmationMessage: z.string(),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
+  currentCircleStatus: z.enum(['pending', 'approved', 'rejected']),
   questions: z.array(formQuestionSchema)
 })
 

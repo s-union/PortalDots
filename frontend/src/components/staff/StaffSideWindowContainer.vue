@@ -5,10 +5,7 @@ const { isOpen = false } = defineProps<{
 </script>
 
 <template>
-  <div
-    class="transition-[padding] duration-300 ease-in-out"
-    :class="isOpen ? 'pr-[min(640px,max(400px,40vw))] max-[860px]:pr-0' : ''"
-  >
+  <div :data-side-window-open="isOpen ? 'true' : undefined">
     <slot />
   </div>
 </template>

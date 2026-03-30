@@ -64,11 +64,16 @@ const draft = useFormAnswerEditorDraft(
 )
 const canChangeGroupName = computed(() => registrationFormQuery.data.value?.canChangeGroupName ?? true)
 const requiresMemberStep = computed(() => {
+  if (selectedParticipationType.value) {
+    return selectedParticipationType.value.usersCountMax > 1
+  }
+
   const registration = registrationFormQuery.data.value
   if (!registration) {
     return false
   }
-  return registration.usersCountMin > 1 || registration.usersCountMax > 1
+
+  return registration.usersCountMax > 1
 })
 
 watch(

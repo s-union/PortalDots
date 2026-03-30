@@ -2076,6 +2076,98 @@ func TestClosedFormAnswerMutationsRemainBlocked(t *testing.T) {
 	}
 }
 
+func TestFormAnswerMutationsBlockedWhenCircleNotApproved(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	for index := range cfg.Circles {
+		if cfg.Circles[index].ID == "0195ec00-0022-7000-8000-000000000001" {
+			cfg.Circles[index].Status = "pending"
+		}
+	}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
+		"circleId": "0195ec00-0022-7000-8000-000000000001",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0014-7000-8000-000000000001", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail formDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal form detail: %v", err)
+	}
+	if detail.CurrentCircleStatus != "pending" {
+		t.Fatalf("expected pending circle status, got %#v", detail)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answers", nil)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var validation models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &validation); err != nil {
+		t.Fatalf("unmarshal create validation response: %v", err)
+	}
+	if len(validation.Errors["circle"]) == 0 {
+		t.Fatalf("expected circle validation error, got %#v", validation.Errors)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", map[string]string{
+		"body": "展示位置は正面入口側を希望します。",
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	if err := json.Unmarshal(recorder.Body.Bytes(), &validation); err != nil {
+		t.Fatalf("unmarshal update validation response: %v", err)
+	}
+	if len(validation.Errors["circle"]) == 0 {
+		t.Fatalf("expected circle validation error on update, got %#v", validation.Errors)
+	}
+
+	recorder = doMultipartRequest(
+		t,
+		server,
+		cookies,
+		http.MethodPost,
+		"/v1/forms/0195ec00-0014-7000-8000-000000000001/answer/uploads",
+		"file",
+		"layout.txt",
+		[]byte("layout content"),
+		"text/plain",
+		nil,
+	)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	if err := json.Unmarshal(recorder.Body.Bytes(), &validation); err != nil {
+		t.Fatalf("unmarshal upload validation response: %v", err)
+	}
+	if len(validation.Errors["circle"]) == 0 {
+		t.Fatalf("expected circle validation error on upload, got %#v", validation.Errors)
+	}
+}
+
 func TestGetAndUpsertFormAnswerUsesCurrentCircle(t *testing.T) {
 	t.Parallel()
 
@@ -5084,6 +5176,7 @@ func testConfig() config.Config {
 				ParticipationTypeID:   "0195ec00-0001-7000-8000-000000000001",
 				ParticipationTypeName: "模擬店",
 				Tags:                  []string{"模擬店"},
+				Status:                "approved",
 			},
 			{
 				ID:                    "0195ec00-0022-7000-8000-000000000001",
@@ -5094,6 +5187,7 @@ func testConfig() config.Config {
 				ParticipationTypeID:   "0195ec00-0002-7000-8000-000000000001",
 				ParticipationTypeName: "展示",
 				Tags:                  []string{"展示"},
+				Status:                "approved",
 			},
 		},
 		Places: []config.Place{

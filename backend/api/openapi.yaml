@@ -412,8 +412,6 @@ paths:
           description: Unauthenticated
         "409":
           description: Current circle is not selected
-        "422":
-          description: Validation error
   /staff/status:
     get:
       operationId: getStaffStatus
@@ -991,6 +989,8 @@ paths:
           description: Staff verification is required
         "409":
           description: Current circle is not selected
+        "422":
+          description: Validation error
     post:
       operationId: postStaffForms
       summary: Create a form in the current circle from staff mode
@@ -2665,8 +2665,6 @@ paths:
           description: Form not found
         "409":
           description: Current circle is not selected
-        "422":
-          description: Validation error
     delete:
       operationId: deleteStaffForm
       summary: Delete a form in the current circle from staff mode
@@ -5557,6 +5555,7 @@ paths:
                     notes,
                     invitationToken,
                     submittedAt,
+                    status,
                   ]
                 properties:
                   id:
@@ -5582,6 +5581,9 @@ paths:
                       - type: "null"
                       - type: string
                         format: date-time
+                  status:
+                    type: string
+                    enum: [pending, approved, rejected]
         "401":
           description: Unauthenticated
         "404":
@@ -6054,7 +6056,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, questions]
+                required: [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, currentCircleStatus, questions]
                 properties:
                   id:
                     type: string
@@ -6080,6 +6082,9 @@ paths:
                     type: boolean
                   isOpen:
                     type: boolean
+                  currentCircleStatus:
+                    type: string
+                    enum: [pending, approved, rejected]
                   hasAnswer:
                     type: boolean
                   questions:
@@ -6189,6 +6194,8 @@ paths:
           description: Form not found
         "409":
           description: Current circle is not selected
+        "422":
+          description: Validation error
     post:
       operationId: postFormAnswers
       summary: Create a new answer for the current circle and form
@@ -6641,6 +6648,8 @@ paths:
           description: Form not found
         "409":
           description: Current circle is not selected
+        "422":
+          description: Validation error
     post:
       operationId: postFormAnswerUpload
       summary: Upload a file attached to the current circle answer for a form

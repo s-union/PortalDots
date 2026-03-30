@@ -203,6 +203,7 @@ describe('CircleCreatePage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('企画情報')
+    expect(wrapper.text()).toContain('メンバー')
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('模擬店')
     expect(wrapper.text()).toContain('保存して確認画面へ')

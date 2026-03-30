@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref, watchEffect } from 'vue'
 import DataCard from '@/components/layouts/DataCard.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffFilterDrawer, {
   type StaffFilterField,
@@ -330,7 +331,9 @@ function handleFilterModeUpdate(mode: StaffUserFilterMode) {
 <template>
   <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
     <PageLayout class="max-w-full">
-      <DataCard title="ユーザー情報管理" overflow-hidden>
+      <PageHeader title="ユーザー情報管理" description="登録ユーザーを横断して検索・編集します。" />
+
+      <DataCard title="ユーザー一覧" overflow-hidden>
         <StaffDataGrid
           :rows="gridRows"
           :columns="columns"
@@ -380,7 +383,7 @@ function handleFilterModeUpdate(mode: StaffUserFilterMode) {
 
           <template #actions="{ row }">
             <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
               title="編集"
               type="button"
               @click="openEditor(String(row.id))"

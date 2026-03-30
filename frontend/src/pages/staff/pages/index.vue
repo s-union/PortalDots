@@ -10,15 +10,22 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import LoadingMessage from '@/components/ui/LoadingMessage.vue'
+import DataCard from '@/components/layouts/DataCard.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
-import { buildStaffPagesExportUrl, useStaffPagesQuery } from '@/features/staff/pages/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
+import {
+  buildStaffPagesExportUrl,
+  useDeleteStaffPageByIdMutation,
+  usePatchStaffPagePinByIdMutation,
+  useStaffPagesQuery,
+  type StaffPageSummary
+} from '@/features/staff/pages/api'
 import { useSessionStore } from '@/features/session/store'
+import { usePaginationState } from '@/lib/usePaginationState'
+import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,7 +34,78 @@ const searchQuery = ref(String(route.query.query ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const pagesQuery = useStaffPagesQuery(searchQuery, enabled)
+const patchPinMutation = usePatchStaffPagePinByIdMutation()
+const deletePageMutation = useDeleteStaffPageByIdMutation()
 const exportHref = computed(() => buildStaffPagesExportUrl())
+
+const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt'] as const
+type StaffPageSortKey = (typeof sortKeys)[number]
+const isStaffPageSortKey = createSortKeyGuard(sortKeys)
+const sort = useSortState<StaffPageSortKey>('updatedAt', { initialSortDirection: 'desc' })
+
+const columns: StaffDataGridColumn[] = [
+  { key: 'title', label: 'タイトル', sortable: true },
+  { key: 'viewableTags', label: '閲覧可能なタグ' },
+  { key: 'documents', label: '関連する配布資料' },
+  { key: 'isPinned', label: '固定', sortable: true, align: 'center' },
+  { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
+  { key: 'createdAt', label: '作成日時', sortable: true },
+  { key: 'updatedAt', label: '更新日時', sortable: true },
+  { key: 'notes', label: 'スタッフ用メモ' }
+]
+
+const isBusy = computed(
+  () =>
+    pagesQuery.isPending.value ||
+    pagesQuery.isFetching.value ||
+    patchPinMutation.isPending.value ||
+    deletePageMutation.isPending.value
+)
+
+const sortedPages = computed(() => {
+  const pages = pagesQuery.data.value ?? []
+  const key = sort.sortKey.value
+  const direction = sort.sortDirection.value
+  const order = direction === 'asc' ? 1 : -1
+
+  return [...pages].sort((left, right) => {
+    switch (key) {
+      case 'isPinned':
+        return compareBoolean(left.isPinned, right.isPinned) * order
+      case 'isPublic':
+        return compareBoolean(left.isPublic, right.isPublic) * order
+      case 'createdAt':
+        return compareString(left.createdAt, right.createdAt) * order
+      case 'updatedAt':
+        return compareString(left.updatedAt, right.updatedAt) * order
+      case 'id':
+        return compareString(left.id, right.id) * order
+      case 'title':
+        return compareString(left.title, right.title) * order
+      default:
+        return 0
+    }
+  })
+})
+
+const pagination = usePaginationState(computed(() => sortedPages.value.length))
+
+const rows = computed<StaffDataGridRow[]>(() => {
+  const start = (pagination.page.value - 1) * pagination.pageSize.value
+  const end = start + pagination.pageSize.value
+
+  return sortedPages.value.slice(start, end).map((page) => ({
+    id: page.id,
+    title: page.title,
+    viewableTags: page.viewableTags,
+    documents: page.documents,
+    isPinned: page.isPinned,
+    isPublic: page.isPublic,
+    createdAt: page.createdAt,
+    updatedAt: page.updatedAt,
+    notes: page.notes
+  }))
+})
 
 watch(
   () => route.query.query,
@@ -36,32 +114,127 @@ watch(
   }
 )
 
+watch(
+  pagination.totalPages,
+  (nextTotalPages) => {
+    pagination.page.value = Math.min(pagination.page.value, nextTotalPages)
+  },
+  { immediate: true }
+)
+
+function compareString(left: string, right: string) {
+  if (left < right) {
+    return -1
+  }
+  if (left > right) {
+    return 1
+  }
+  return 0
+}
+
+function compareBoolean(left: boolean, right: boolean) {
+  if (left === right) {
+    return 0
+  }
+  return left ? 1 : -1
+}
+
+function handleSort(nextSortKey: string) {
+  if (!isStaffPageSortKey(nextSortKey)) {
+    return
+  }
+
+  sort.toggleSort(nextSortKey)
+  pagination.resetPage()
+}
+
+function resolveRowId(row: StaffDataGridRow) {
+  return String(row.id ?? '')
+}
+
+function resolveText(value: unknown) {
+  if (typeof value !== 'string') {
+    return '-'
+  }
+
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : '-'
+}
+
+function resolveTags(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+function resolveDocuments(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value.filter(
+    (item): item is StaffPageSummary['documents'][number] =>
+      typeof item === 'object' && item !== null && 'id' in item && 'name' in item
+  )
+}
+
 async function handleSearchSubmit() {
   const normalizedQuery = searchQuery.value.trim()
   await router.replace({
     query: normalizedQuery === '' ? {} : { query: normalizedQuery }
   })
 }
+
+async function handleTogglePin(pageId: string, currentPinned: boolean) {
+  await patchPinMutation.mutateAsync({
+    pageId,
+    isPinned: !currentPinned
+  })
+}
+
+async function handleDeletePage(pageId: string, pageTitle: string) {
+  if (typeof window !== 'undefined' && !window.confirm(`お知らせ「${pageTitle}」を削除しますか？`)) {
+    return
+  }
+  await deletePageMutation.mutateAsync(pageId)
+}
 </script>
 
 <template>
-  <PageLayout>
-    <PageHeader title="お知らせ管理" description="企画に依存しない共通のお知らせを管理します。">
-      <template #actions> </template>
-    </PageHeader>
+  <PageLayout class="max-w-full">
+    <PageHeader title="お知らせ管理" description="企画に依存しない共通のお知らせを管理します。" />
 
-    <SurfaceCard>
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-4">
-        <div class="flex flex-wrap gap-2">
+    <DataCard title="お知らせ一覧" description="公開状態やタグを含めてお知らせを一覧管理します。" overflow-hidden>
+      <StaffDataGrid
+        :rows="rows"
+        :columns="columns"
+        :page="pagination.page.value"
+        :page-size="pagination.pageSize.value"
+        :total="sortedPages.length"
+        :loading="isBusy"
+        :sort-key="sort.sortKey.value"
+        :sort-direction="sort.sortDirection.value"
+        table-label="お知らせ一覧"
+        empty-message="お知らせは見つかりませんでした。"
+        @first="pagination.setFirstPage"
+        @prev="pagination.setPrevPage"
+        @next="pagination.setNextPage"
+        @last="pagination.setLastPage"
+        @reload="pagesQuery.refetch()"
+        @sort="handleSort"
+        @update:page-size="pagination.setPageSize"
+      >
+        <template #toolbar>
           <RouterLink
-            class="rounded bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-hover"
             to="/staff/pages/create"
+            class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
           >
-            新規作成
+            <i class="fas fa-plus fa-fw" aria-hidden="true" />
+            新規お知らせ
           </RouterLink>
           <RouterLink
-            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
             to="/staff/mails"
+            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
           >
             メール配信設定
           </RouterLink>
@@ -69,70 +242,106 @@ async function handleSearchSubmit() {
             :href="exportHref"
             class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
           >
+            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
             CSVで出力
           </a>
-        </div>
+          <form class="ml-auto flex min-w-80 flex-wrap gap-2 max-[860px]:ml-0" @submit.prevent="handleSearchSubmit">
+            <input
+              v-model="searchQuery"
+              class="min-w-64 flex-1"
+              name="query"
+              placeholder="お知らせを検索..."
+              type="search"
+            />
+            <button
+              class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
+              type="submit"
+            >
+              検索
+            </button>
+          </form>
+        </template>
 
-        <form class="flex min-w-80 flex-1 flex-wrap gap-3 sm:justify-end" @submit.prevent="handleSearchSubmit">
-          <input
-            v-model="searchQuery"
-            class="min-w-64 flex-1"
-            name="query"
-            placeholder="お知らせを検索..."
-            type="search"
-          />
-          <button
-            class="rounded bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-hover"
-            type="submit"
-          >
-            検索
-          </button>
-        </form>
-      </div>
-
-      <LoadingMessage v-if="pagesQuery.isPending.value" />
-
-      <div v-else-if="(pagesQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
-        お知らせは見つかりませんでした。
-      </div>
-
-      <div v-else class="divide-y divide-border">
-        <article v-for="page in pagesQuery.data.value" :key="page.id" class="px-6 py-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="space-y-2">
-              <RouterLink :to="`/staff/pages/${page.id}`" class="text-lg font-semibold text-primary hover:underline">
-                {{ page.title }}
-              </RouterLink>
-              <div class="flex flex-wrap gap-2">
-                <StatusBadge :tone="page.isPublic ? 'success' : 'muted'" appearance="outlined">
-                  {{ page.isPublic ? '公開中' : '非公開' }}
-                </StatusBadge>
-                <StatusBadge :tone="page.isPinned ? 'primary' : 'muted'" appearance="outlined">
-                  {{ page.isPinned ? '固定表示' : '通常表示' }}
-                </StatusBadge>
-                <StatusBadge :tone="page.viewableTags.length > 0 ? 'primary' : 'muted'" appearance="outlined">
-                  {{ page.viewableTags.length > 0 ? '限定公開' : '全員に公開' }}
-                </StatusBadge>
-              </div>
-            </div>
-
-            <RouterLink :to="`/staff/pages/${page.id}`" class="text-sm font-semibold text-primary hover:underline">
-              編集
+        <template #actions="{ row }">
+          <div class="flex items-center gap-1">
+            <RouterLink
+              :to="`/staff/pages/${encodeURIComponent(resolveRowId(row))}`"
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+              title="編集"
+            >
+              <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
             </RouterLink>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              :title="row.isPinned ? '固定表示を解除する' : '固定表示する'"
+              :disabled="patchPinMutation.isPending.value"
+              @click="handleTogglePin(resolveRowId(row), row.isPinned === true)"
+            >
+              <i class="fas fa-thumbtack fa-fw" aria-hidden="true" />
+            </button>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              title="削除"
+              :disabled="deletePageMutation.isPending.value"
+              @click="handleDeletePage(resolveRowId(row), typeof row.title === 'string' ? row.title : '')"
+            >
+              <i class="fas fa-trash fa-fw" aria-hidden="true" />
+            </button>
           </div>
+        </template>
 
-          <div class="mt-4 grid gap-3 text-sm text-muted">
-            <p v-if="page.notes !== ''">{{ page.notes }}</p>
-            <p>閲覧タグ: {{ page.viewableTags.length > 0 ? page.viewableTags.join(', ') : 'なし' }}</p>
-            <p>
-              関連資料:
-              {{ page.documents.length > 0 ? page.documents.map((document) => document.name).join(', ') : 'なし' }}
-            </p>
-            <p>作成日時: {{ formatDateTimeUpdated(page.createdAt) }}</p>
-            <p>更新日時: {{ formatDateTimeUpdated(page.updatedAt) }}</p>
+        <template #cell-title="{ row }">
+          <RouterLink class="font-medium text-primary" :to="`/staff/pages/${encodeURIComponent(resolveRowId(row))}`">
+            {{ row.title }}
+          </RouterLink>
+        </template>
+
+        <template #cell-viewableTags="{ value }">
+          <div class="flex flex-wrap gap-1">
+            <template v-for="tag in resolveTags(value)" :key="tag">
+              <span class="inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-white">
+                {{ tag }}
+              </span>
+            </template>
+            <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
           </div>
-        </article>
-      </div>
-    </SurfaceCard>
+        </template>
+
+        <template #cell-documents="{ value }">
+          <div class="flex flex-wrap gap-1">
+            <template v-for="document in resolveDocuments(value)" :key="document.id">
+              <span class="inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-white">
+                {{ document.name }}
+              </span>
+            </template>
+            <span v-if="resolveDocuments(value).length === 0" class="text-muted">-</span>
+          </div>
+        </template>
+
+        <template #cell-isPinned="{ value }">
+          <strong v-if="value === true">はい</strong>
+          <span v-else>-</span>
+        </template>
+
+        <template #cell-isPublic="{ value }">
+          <strong v-if="value === true">はい</strong>
+          <span v-else>-</span>
+        </template>
+
+        <template #cell-createdAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeUpdated(value) : '-' }}</span>
+        </template>
+
+        <template #cell-updatedAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeUpdated(value) : '-' }}</span>
+        </template>
+
+        <template #cell-notes="{ value }">
+          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
+        </template>
+      </StaffDataGrid>
+    </DataCard>
   </PageLayout>
 </template>

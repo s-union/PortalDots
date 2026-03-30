@@ -6,10 +6,12 @@ definePage({
     noBottomTabs: true
   }
 })
+
+import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[880px] space-y-6 px-6 py-8">
+  <NarrowPageLayout class="space-y-6 py-8">
     <section class="rounded border border-border bg-surface shadow-lv1">
       <div class="border-b border-border px-6 py-5">
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">パスワードの再設定</h1>
@@ -27,5 +29,5 @@ definePage({
         ログイン画面へ
       </RouterLink>
     </div>
-  </section>
+  </NarrowPageLayout>
 </template>

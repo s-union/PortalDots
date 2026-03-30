@@ -8,6 +8,7 @@ definePage({
 
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { buttonVariants, formControlVariants } from '@/lib/ui/variants'
 import {
@@ -55,7 +56,7 @@ async function handleConfirm() {
 </script>
 
 <template>
-  <section class="mx-auto max-w-3xl space-y-6">
+  <NarrowPageLayout class="space-y-6 py-8">
     <header class="text-center">
       <p class="text-sm text-primary">Staff Verify</p>
       <h2 class="mt-3 text-3xl font-semibold text-body">スタッフ認証</h2>
@@ -110,5 +111,5 @@ async function handleConfirm() {
         </div>
       </form>
     </SurfaceCard>
-  </section>
+  </NarrowPageLayout>
 </template>

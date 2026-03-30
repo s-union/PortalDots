@@ -33,6 +33,7 @@ type formDetailResponse struct {
 	CloseAt             string              `json:"closeAt"`
 	IsPublic            bool                `json:"isPublic"`
 	IsOpen              bool                `json:"isOpen"`
+	CurrentCircleStatus string              `json:"currentCircleStatus"`
 	MaxAnswers          int32               `json:"maxAnswers"`
 	HasAnswer           bool                `json:"hasAnswer,omitempty"`
 	AnswerableTags      []string            `json:"answerableTags"`
@@ -74,7 +75,15 @@ func (h *workspaceHandlers) getForm(c echo.Context) error {
 		return internalError(c)
 	}
 
-	return c.JSON(http.StatusOK, h.buildWorkspaceFormDetailResponse(form, currentSession.CurrentCircleID, mapStaffFormQuestions(questions)))
+	return c.JSON(
+		http.StatusOK,
+		h.buildWorkspaceFormDetailResponse(
+			form,
+			currentSession.CurrentCircleID,
+			currentCircle,
+			mapStaffFormQuestions(filterWorkspaceFormQuestions(questions)),
+		),
+	)
 }
 
 func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (session.Session, circle.Circle, int, bool) {
@@ -176,6 +185,7 @@ func (h *workspaceHandlers) buildWorkspaceFormSummaryResponse(formValue backendf
 func (h *workspaceHandlers) buildWorkspaceFormDetailResponse(
 	formValue backendform.Form,
 	currentCircleID string,
+	currentCircle circle.Circle,
 	questions []staffFormQuestion,
 ) formDetailResponse {
 	return formDetailResponse{
@@ -186,6 +196,7 @@ func (h *workspaceHandlers) buildWorkspaceFormDetailResponse(
 		CloseAt:             formValue.CloseAt,
 		IsPublic:            formValue.IsPublic,
 		IsOpen:              formValue.IsOpen,
+		CurrentCircleStatus: currentCircle.Status,
 		MaxAnswers:          formValue.MaxAnswers,
 		HasAnswer:           len(h.answers.ListByFormAndCircle(formValue.ID, currentCircleID)) > 0,
 		AnswerableTags:      slices.Clone(formValue.AnswerableTags),

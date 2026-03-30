@@ -10,8 +10,6 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { useFormDetailQuery } from '@/features/forms/api'
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
@@ -27,15 +25,12 @@ import {
   useFormAnswerUploadMutation,
   useUpdateFormAnswerMutation
 } from '@/features/forms/answers'
-import { useSessionStore } from '@/features/session/store'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/workspace/forms/[formId]')
 const router = useRouter()
-const sessionStore = useSessionStore()
 const formId = computed(() => String(route.params.formId ?? ''))
-const circleSelectorLink = computed(() => `/circles/select?redirect=${encodeURIComponent(route.fullPath)}`)
 const formQuery = useFormDetailQuery(formId)
 const answersQuery = useFormAnswersQuery(formId)
 const legacyAnswerQuery = useFormAnswerQuery(formId)
@@ -61,7 +56,8 @@ const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
 
 const form = computed(() => formQuery.data.value)
-const isDisabled = computed(() => formQuery.data.value?.isOpen !== true)
+const isCircleApproved = computed(() => form.value?.currentCircleStatus === 'approved')
+const isFormWritable = computed(() => form.value?.isOpen === true && isCircleApproved.value)
 const answers = computed(() => answersQuery.data.value?.answers ?? [])
 const isLimitedPublic = computed(() => (form.value?.answerableTags.length ?? 0) > 0)
 const confirmationMessage = computed(() => form.value?.confirmationMessage?.trim() ?? '')
@@ -75,6 +71,7 @@ const isSavingAnswer = computed(() => {
   }
   return legacyAnswerMutation.isPending.value
 })
+const circleNotApprovedMessage = '企画が受理されていないため申請できません。'
 
 watch(
   [answers, selectedAnswerId],
@@ -106,6 +103,12 @@ watch(
 )
 
 async function handleSaveAnswer() {
+  if (!isFormWritable.value) {
+    if (!isCircleApproved.value) {
+      errorMessage.value = circleNotApprovedMessage
+    }
+    return
+  }
   errorMessage.value = ''
 
   try {
@@ -120,6 +123,12 @@ async function handleSaveAnswer() {
 }
 
 async function handleCreateAnswer() {
+  if (!isFormWritable.value) {
+    if (!isCircleApproved.value) {
+      errorMessage.value = circleNotApprovedMessage
+    }
+    return
+  }
   errorMessage.value = ''
 
   try {
@@ -140,6 +149,13 @@ async function handleCreateAnswer() {
 }
 
 async function handleUploadFile(questionId: string) {
+  if (!isFormWritable.value) {
+    uploadErrorMessages.value = {
+      ...uploadErrorMessages.value,
+      [questionId]: !isCircleApproved.value ? circleNotApprovedMessage : '受付期間外のため申請できません。'
+    }
+    return
+  }
   uploadErrorMessages.value = { ...uploadErrorMessages.value, [questionId]: '' }
   const file = selectedFiles.value[questionId]
   if (!file) {
@@ -182,208 +198,183 @@ function handleFileChange(questionId: string, event: Event) {
 
 <template>
   <PageLayout>
-    <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <section class="pb-6">
+      <div v-if="formQuery.isPending.value" class="mt-6">
+        <div class="rounded border border-border bg-surface px-6 py-5 text-muted shadow-lv1">読み込み中...</div>
+      </div>
 
-    <article v-else-if="formQuery.data.value" class="space-y-6">
-      <section class="space-y-4 rounded border border-border bg-surface px-6 py-6 shadow-lv1">
-        <div>
-          <h1 class="text-3xl font-semibold text-body">{{ formQuery.data.value.name }}</h1>
-          <p class="mt-3 text-sm text-muted">
-            受付期間 : {{ formatDateTime(formQuery.data.value.openAt) }}〜{{
-              formatDateTime(formQuery.data.value.closeAt)
-            }}
-          </p>
-          <p v-if="!formQuery.data.value.isOpen" class="mt-1 text-sm font-semibold text-danger">受付期間外です</p>
-          <p v-if="formQuery.data.value.maxAnswers > 1" class="mt-1 text-sm text-muted">
-            1企画あたり {{ formQuery.data.value.maxAnswers }} 件まで回答できます。
-          </p>
-        </div>
-
-        <p class="whitespace-pre-wrap text-sm leading-7 text-body">
-          {{ formQuery.data.value.description }}
-        </p>
-
-        <div
-          v-if="isLimitedPublic"
-          class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
-        >
-          <span
-            class="mr-2 inline-flex rounded border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"
-          >
-            限定公開
-          </span>
-          このフォームは、{{ formQuery.data.value.answerableTags.join(' / ') }}
-          のタグを持つ企画に限定公開されます。
-        </div>
-      </section>
-
-      <SurfaceCard>
-        <SurfaceHeader>
-          <template #title>申請企画名</template>
-        </SurfaceHeader>
-        <div class="px-6 py-5">
-          <div class="flex flex-wrap items-center gap-3">
-            <input
-              class="min-w-0 flex-1 bg-form-control"
-              readonly
-              type="text"
-              :value="sessionStore.currentCircle?.name ?? ''"
-            />
-            <RouterLink
-              :to="circleSelectorLink"
-              class="inline-flex rounded border border-border bg-surface px-4 py-2 text-sm font-semibold text-body transition hover:bg-surface-light"
-            >
-              企画を変更
-            </RouterLink>
-          </div>
-        </div>
-      </SurfaceCard>
-
-      <section
-        v-if="selectedAnswer?.updatedAt"
-        class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1"
-      >
-        回答の最終更新日時 : {{ formatDateTime(selectedAnswer.updatedAt) }}
-      </section>
-
-      <section
-        v-if="selectedAnswer && confirmationMessage"
-        class="rounded border border-success/20 bg-success-light px-6 py-5 text-sm text-body shadow-lv1"
-      >
-        <p class="font-semibold text-success">回答後メッセージ</p>
-        <p class="mt-2 whitespace-pre-wrap leading-7">
-          {{ confirmationMessage }}
-        </p>
-      </section>
-
-      <SurfaceCard>
-        <SurfaceHeader>
-          <template #title>回答一覧</template>
-        </SurfaceHeader>
-        <div class="grid gap-4 px-6 py-5">
-          <p class="text-sm text-muted">現在 {{ answers.length }} / {{ formQuery.data.value.maxAnswers }} 件</p>
-          <div class="flex flex-wrap gap-3">
-            <RouterLink
-              v-for="answer in answers"
-              :key="answer.id"
-              :to="{
-                path: `/workspace/forms/${formId}`,
-                query: { answer: answer.id }
-              }"
-              class="rounded border px-4 py-2 text-sm transition"
-              :class="
-                selectedAnswerId === answer.id
-                  ? 'border-primary bg-primary-light text-primary'
-                  : 'border-border bg-surface text-body hover:bg-surface-light'
-              "
-            >
-              回答 {{ formatDateTimeUpdated(answer.updatedAt) }}
-            </RouterLink>
-            <button
-              class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="isDisabled || hasReachedAnswerLimit || createAnswerMutation.isPending.value"
-              type="button"
-              @click="handleCreateAnswer"
-            >
-              {{ createAnswerMutation.isPending.value ? '作成中...' : '新しい回答を作成' }}
-            </button>
-          </div>
-          <p v-if="hasReachedAnswerLimit" class="text-sm text-muted">
-            このフォームではこれ以上新しい回答を作成できません。
-          </p>
-        </div>
-      </SurfaceCard>
-
-      <div class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-4">
-          <h2 class="text-lg font-semibold text-body">
-            {{ formQuery.data.value.questions.length > 0 ? '回答を入力' : '回答内容' }}
-          </h2>
-        </div>
-
-        <div class="grid gap-0">
-          <template v-if="formQuery.data.value.questions.length === 0">
-            <div class="border-b border-border px-6 py-5">
-              <label class="grid gap-2 text-sm text-body">
-                <span>回答</span>
-                <textarea
-                  :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
-                  class="min-h-40"
-                  name="answer-body"
-                  :disabled="isDisabled"
-                  placeholder="回答内容を入力してください"
-                  @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
-                />
-              </label>
-            </div>
-          </template>
-
-          <template v-for="question in formQuery.data.value.questions" :key="question.id">
-            <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
-              <h2 class="text-lg font-semibold text-body">{{ question.name }}</h2>
-              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
-                {{ question.description }}
+      <template v-else-if="form">
+        <form class="space-y-6 py-6" @submit.prevent="handleSaveAnswer">
+          <header class="space-y-4">
+            <div>
+              <h1 class="text-3xl font-semibold text-body">{{ form.name }}</h1>
+              <p class="mt-3 text-sm text-muted">
+                受付期間 : {{ formatDateTime(form.openAt) }}〜{{ formatDateTime(form.closeAt) }}
+              </p>
+              <p v-if="!form.isOpen" class="mt-1 text-sm font-semibold text-danger">受付期間外です</p>
+              <p v-if="form.maxAnswers > 1" class="mt-1 text-sm text-muted">
+                1企画あたり {{ form.maxAnswers }} 件まで回答できます。
               </p>
             </div>
 
-            <div v-else class="border-b border-border px-6 py-5">
-              <div class="grid gap-3">
-                <div>
-                  <p class="text-sm font-semibold text-body">
-                    {{ question.name }}
-                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
-                  </p>
-                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+            <p v-if="form.description" class="whitespace-pre-wrap text-sm leading-7 text-body">
+              {{ form.description }}
+            </p>
+
+            <div
+              v-if="isLimitedPublic"
+              class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
+            >
+              <span
+                class="mr-2 inline-flex rounded border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"
+              >
+                限定公開
+              </span>
+              このフォームは、{{ form.answerableTags.join(' / ') }}
+              のタグを持つ企画に限定公開されます。
+            </div>
+          </header>
+
+          <AlertMessage v-if="!isCircleApproved" tone="danger">
+            {{ circleNotApprovedMessage }}
+          </AlertMessage>
+
+          <section
+            v-if="selectedAnswer?.updatedAt"
+            class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1"
+          >
+            回答の最終更新日時 : {{ formatDateTime(selectedAnswer.updatedAt) }}
+          </section>
+
+          <section
+            v-if="selectedAnswer && confirmationMessage"
+            class="rounded border border-success/20 bg-success-light px-6 py-5 text-sm text-body shadow-lv1"
+          >
+            <p class="font-semibold text-success">回答後メッセージ</p>
+            <p class="mt-2 whitespace-pre-wrap leading-7">
+              {{ confirmationMessage }}
+            </p>
+          </section>
+
+          <div class="rounded border border-border bg-surface px-6 py-5 shadow-lv1">
+            <div class="grid gap-4">
+              <p class="text-sm text-muted">現在 {{ answers.length }} / {{ form.maxAnswers }} 件</p>
+              <div class="flex flex-wrap gap-3">
+                <RouterLink
+                  v-for="answer in answers"
+                  :key="answer.id"
+                  :to="{
+                    path: `/workspace/forms/${formId}`,
+                    query: { answer: answer.id }
+                  }"
+                  class="rounded border px-4 py-2 text-sm transition"
+                  :class="
+                    selectedAnswerId === answer.id
+                      ? 'border-primary bg-primary-light text-primary'
+                      : 'border-border bg-surface text-body hover:bg-surface-light'
+                  "
+                >
+                  回答 {{ formatDateTimeUpdated(answer.updatedAt) }}
+                </RouterLink>
+                <button
+                  class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="!isFormWritable || hasReachedAnswerLimit || createAnswerMutation.isPending.value"
+                  type="button"
+                  @click="handleCreateAnswer"
+                >
+                  {{ createAnswerMutation.isPending.value ? '作成中...' : '新しい回答を作成' }}
+                </button>
+              </div>
+              <p v-if="hasReachedAnswerLimit" class="text-sm text-muted">
+                このフォームではこれ以上新しい回答を作成できません。
+              </p>
+            </div>
+          </div>
+
+          <div class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
+            <div class="grid gap-0">
+              <template v-if="form.questions.length === 0">
+                <div class="border-b border-border px-6 py-5 last:border-b-0">
+                  <label class="grid gap-2 text-sm text-body">
+                    <span>回答</span>
+                    <textarea
+                      :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
+                      class="min-h-40"
+                      name="answer-body"
+                      :disabled="!isFormWritable"
+                      placeholder="回答内容を入力してください"
+                      @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
+                    />
+                  </label>
+                </div>
+              </template>
+
+              <template v-for="question in form.questions" :key="question.id">
+                <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5 last:border-b-0">
+                  <h2 class="text-lg font-semibold text-body">{{ question.name }}</h2>
+                  <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
 
-                <AnswerQuestionFields
-                  :answer="selectedAnswer"
-                  :draft="draft"
-                  :question="question"
-                  :disabled="isDisabled"
-                  :upload-button-label="'ファイルを追加'"
-                  :upload-pending="uploadMutation.isPending.value"
-                  :upload-error-message="uploadErrorMessages[question.id]"
-                  :download-label="selectedAnswerId ? 'ダウンロード' : '表示'"
-                  :download-href="
-                    (currentQuestion) =>
-                      selectedAnswerId
-                        ? buildFormAnswerUploadDownloadUrlByAnswer(formId, selectedAnswerId, currentQuestion.id)
-                        : buildFormAnswerUploadDownloadUrl(
-                            formId,
-                            (selectedAnswer?.uploads ?? []).find((upload) => upload.questionId === currentQuestion.id)
-                              ?.id ?? ''
-                          )
-                  "
-                  @upload="handleUploadFile"
-                  @file-change="handleFileChange"
-                />
-              </div>
+                <div v-else class="border-b border-border px-6 py-5 last:border-b-0">
+                  <div class="grid gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-body">
+                        {{ question.name }}
+                        <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
+                      </p>
+                      <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                        {{ question.description }}
+                      </p>
+                    </div>
+
+                    <AnswerQuestionFields
+                      :answer="selectedAnswer"
+                      :draft="draft"
+                      :question="question"
+                      :disabled="!isFormWritable"
+                      :upload-button-label="'ファイルを追加'"
+                      :upload-pending="uploadMutation.isPending.value"
+                      :upload-error-message="uploadErrorMessages[question.id]"
+                      :download-label="selectedAnswerId ? 'ダウンロード' : '表示'"
+                      :download-href="
+                        (currentQuestion) =>
+                          selectedAnswerId
+                            ? buildFormAnswerUploadDownloadUrlByAnswer(formId, selectedAnswerId, currentQuestion.id)
+                            : buildFormAnswerUploadDownloadUrl(
+                                formId,
+                                (selectedAnswer?.uploads ?? []).find(
+                                  (upload) => upload.questionId === currentQuestion.id
+                                )?.id ?? ''
+                              )
+                      "
+                      @upload="handleUploadFile"
+                      @file-change="handleFileChange"
+                    />
+                  </div>
+                </div>
+              </template>
             </div>
-          </template>
-        </div>
-      </div>
+          </div>
 
-      <AlertMessage v-if="errorMessage" tone="danger">
-        {{ errorMessage }}
-      </AlertMessage>
+          <AlertMessage v-if="errorMessage" tone="danger">
+            {{ errorMessage }}
+          </AlertMessage>
 
-      <div class="flex justify-center">
-        <button
-          class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover"
-          :disabled="isDisabled || isSavingAnswer"
-          type="button"
-          @click="handleSaveAnswer"
-        >
-          {{ isSavingAnswer ? '送信中...' : '送信' }}
-        </button>
-      </div>
-    </article>
+          <div class="flex justify-center">
+            <button
+              class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="!isFormWritable || isSavingAnswer"
+              type="submit"
+            >
+              {{ isSavingAnswer ? '送信中...' : '送信' }}
+            </button>
+          </div>
+        </form>
+      </template>
 
-    <AlertMessage v-else tone="danger"> フォームを取得できませんでした。 </AlertMessage>
+      <AlertMessage v-else tone="danger"> フォームを取得できませんでした。 </AlertMessage>
+    </section>
   </PageLayout>
 </template>

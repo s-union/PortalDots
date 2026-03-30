@@ -101,6 +101,7 @@ describe('FormDetailPage', () => {
             confirmationMessage: '搬入確認フォームへの回答ありがとうございました。',
             isPublic: true,
             isOpen: true,
+            currentCircleStatus: 'approved',
             questions: [
               {
                 id: 'question-text',
@@ -275,14 +276,10 @@ describe('FormDetailPage', () => {
     expect(wrapper.text()).toContain('1企画あたり 2 件まで回答できます。')
     expect(wrapper.text()).toContain('模擬店')
     expect(wrapper.text()).toContain('搬入確認フォームへの回答ありがとうございました。')
-    expect(
-      wrapper
-        .get('a[href="/circles/select?redirect=%2Fworkspace%2Fforms%2Fform-circle-a-1%3Fanswer%3Danswer-1"]')
-        .text()
-    ).toContain('企画を変更')
+    expect(wrapper.text()).not.toContain('申請企画名')
 
     const inputs = wrapper.findAll('input[type="text"]')
-    const textInput = inputs[1]
+    const textInput = inputs[0]
     if (!textInput) {
       throw new Error('Question text input was not rendered')
     }
@@ -291,12 +288,7 @@ describe('FormDetailPage', () => {
     const checkbox = wrapper.find('input[type="checkbox"]')
     await checkbox.setValue(true)
 
-    const buttons = wrapper.findAll('button[type="button"]')
-    const saveButton = buttons[buttons.length - 1]
-    if (!saveButton) {
-      throw new Error('Save button was not rendered')
-    }
-    await saveButton.trigger('click')
+    await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(wrapper.text()).toContain('回答の最終更新日時 : 2026年3月5日(木) 19:00')
@@ -370,6 +362,7 @@ describe('FormDetailPage', () => {
             confirmationMessage: '',
             isPublic: true,
             isOpen: true,
+            currentCircleStatus: 'approved',
             questions: [
               {
                 id: 'question-text',
@@ -420,12 +413,7 @@ describe('FormDetailPage', () => {
     })
     await flushPromises()
 
-    const buttons = wrapper.findAll('button[type="button"]')
-    const saveButton = buttons[buttons.length - 1]
-    if (!saveButton) {
-      throw new Error('Save button was not rendered')
-    }
-    await saveButton.trigger('click')
+    await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(wrapper.text()).toContain('この設問は必須です')
@@ -480,6 +468,7 @@ describe('FormDetailPage', () => {
             confirmationMessage: '',
             isPublic: true,
             isOpen: true,
+            currentCircleStatus: 'approved',
             hasAnswer: true,
             questions: [
               {
@@ -563,12 +552,137 @@ describe('FormDetailPage', () => {
 
     expect(router.currentRoute.value.query.answer).toBe('answer-2')
     expect(wrapper.text()).toContain('回答の最終更新日時 : 2026年3月6日(金) 19:00')
-    const secondTextInput = wrapper.findAll('input[type="text"]')[1]
+    const secondTextInput = wrapper.findAll('input[type="text"]')[0]
     expect(secondTextInput).toBeDefined()
     if (!secondTextInput) {
       throw new Error('2番目のテキスト入力が見つかりません')
     }
     expect((secondTextInput.element as HTMLInputElement).value).toBe('佐藤')
+  })
+
+  it('disables submission when current circle is not approved', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/workspace/forms', component: { template: '<div>forms</div>' } },
+        { path: '/workspace/forms/:formId', component: FormDetailPage }
+      ]
+    })
+    await router.push('/workspace/forms/form-circle-a-1')
+    await router.isReady()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+        const pathname = new URL(url, 'http://localhost').pathname
+
+        if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
+          return jsonResponse({
+            csrfToken: 'csrf-token',
+            currentCircle: {
+              id: 'circle-a',
+              name: 'デモ企画A'
+            },
+            featureFlags: [],
+            roles: ['participant'],
+            user: {
+              id: 'demo-user',
+              displayName: 'Demo User'
+            }
+          })
+        }
+
+        if (pathname.endsWith('/forms/form-circle-a-1') && method === 'GET') {
+          return jsonResponse({
+            id: 'form-circle-a-1',
+            name: '搬入確認フォーム',
+            description: '搬入予定時刻と責任者情報を提出してください。',
+            openAt: '2026-03-01T00:00:00Z',
+            closeAt: '2026-03-20T23:59:59Z',
+            maxAnswers: 2,
+            answerableTags: [],
+            confirmationMessage: '',
+            isPublic: true,
+            isOpen: true,
+            currentCircleStatus: 'pending',
+            questions: [
+              {
+                id: 'question-text',
+                name: '搬入責任者',
+                description: '当日の責任者氏名',
+                type: 'text',
+                isRequired: true,
+                numberMin: null,
+                numberMax: null,
+                allowedTypes: '',
+                options: [],
+                priority: 1,
+                createdAt: '2026-03-01T00:00:00Z',
+                updatedAt: '2026-03-01T00:00:00Z'
+              }
+            ]
+          })
+        }
+
+        if (pathname.endsWith('/forms/form-circle-a-1/answers') && method === 'GET') {
+          return jsonResponse({ answers: [] })
+        }
+
+        if (pathname.endsWith('/forms/form-circle-a-1/answer') && method === 'GET') {
+          return jsonResponse({ answer: null })
+        }
+
+        if (
+          (pathname.endsWith('/forms/form-circle-a-1/answer') && method === 'PUT') ||
+          (pathname.endsWith('/forms/form-circle-a-1/answers') && method === 'POST')
+        ) {
+          throw new Error(`mutation must not be called: ${method} ${pathname}`)
+        }
+
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
+
+    const wrapper = mount(FormDetailPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('企画が受理されていないため申請できません。')
+
+    const createButton = wrapper
+      .findAll('button[type="button"]')
+      .find((button) => button.text().includes('新しい回答を作成'))
+    expect(createButton).toBeDefined()
+    if (!createButton) {
+      throw new Error('Create button was not rendered')
+    }
+    expect((createButton.element as HTMLButtonElement).disabled).toBe(true)
+
+    const submitButton = wrapper.get('button[type="submit"]')
+    expect((submitButton.element as HTMLButtonElement).disabled).toBe(true)
   })
 })
 

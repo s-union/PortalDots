@@ -104,31 +104,93 @@ describe('StaffPlacesPage', () => {
     await flushPromises()
 
     expect(wrapper.get('a[href$="/v1/staff/places/export"]').text()).toContain('CSVで出力(場所別企画一覧)')
+    expect(wrapper.text()).toContain('1号館')
+    expect(wrapper.text()).toContain('中庭')
     expect(wrapper.text()).not.toContain('場所ID')
     expect(wrapper.text()).not.toContain('place-1')
     expect(wrapper.text()).not.toContain('place-2')
     expect(wrapper.text().indexOf('1号館')).toBeLessThan(wrapper.text().indexOf('中庭'))
-    expect(wrapper.text()).toContain('1号館')
 
-    const createInputs = wrapper.findAll('input[name]')
-    await createInputs[0].setValue('体育館')
-    await createInputs[1].setValue('特殊')
-    await wrapper.get('form').trigger('submit')
+    const createButton = wrapper.findAll('button[type="button"]').find((button) => button.text().includes('新規場所'))
+    if (!createButton) {
+      throw new Error('create button not found')
+    }
+    await createButton.trigger('click')
+    await flushPromises()
+
+    const createNameInput = document.body.querySelector('input[name="name"]')
+    if (!(createNameInput instanceof HTMLInputElement)) {
+      throw new Error('create name input not found')
+    }
+    createNameInput.value = '体育館'
+    createNameInput.dispatchEvent(new Event('input'))
+
+    const createTypeSelect = document.body.querySelector('select[name="type"]')
+    if (!(createTypeSelect instanceof HTMLSelectElement)) {
+      throw new Error('create type select not found')
+    }
+    createTypeSelect.value = '3'
+    createTypeSelect.dispatchEvent(new Event('change'))
+
+    const createNotesTextarea = document.body.querySelector('textarea[name="notes"]')
+    if (!(createNotesTextarea instanceof HTMLTextAreaElement)) {
+      throw new Error('create notes textarea not found')
+    }
+    createNotesTextarea.value = '特殊'
+    createNotesTextarea.dispatchEvent(new Event('input'))
+
+    const createSubmitButton = document.body.querySelector('button[type="submit"]')
+    if (!(createSubmitButton instanceof HTMLButtonElement)) {
+      throw new Error('create submit button not found')
+    }
+    createSubmitButton.click()
     await flushPromises()
     expect(wrapper.text()).toContain('体育館')
 
-    const textInputs = wrapper.findAll('input[type="text"]')
-    await textInputs[2].setValue('更新後 1号館')
-    const buttons = wrapper.findAll('button[type="button"]')
-    await buttons[0].trigger('click')
+    const editButtons = wrapper.findAll('button[type="button"]').filter((button) => button.text().includes('編集'))
+    await editButtons[0]?.trigger('click')
+    await flushPromises()
+
+    const editNameInput = document.body.querySelector('input[name="name"]')
+    if (!(editNameInput instanceof HTMLInputElement)) {
+      throw new Error('edit name input not found')
+    }
+    editNameInput.value = '更新後 1号館'
+    editNameInput.dispatchEvent(new Event('input'))
+
+    const editNotesTextarea = document.body.querySelector('textarea[name="notes"]')
+    if (!(editNotesTextarea instanceof HTMLTextAreaElement)) {
+      throw new Error('edit notes textarea not found')
+    }
+    editNotesTextarea.value = '更新'
+    editNotesTextarea.dispatchEvent(new Event('input'))
+
+    const saveButton = document.body.querySelector('button[type="submit"]')
+    if (!(saveButton instanceof HTMLButtonElement)) {
+      throw new Error('save button not found')
+    }
+    saveButton.click()
     await flushPromises()
     expect(wrapper.text()).toContain('更新後 1号館')
 
-    await buttons[3].trigger('click')
+    const reopenEditButtons = wrapper
+      .findAll('button[type="button"]')
+      .filter((button) => button.text().includes('編集'))
+    await reopenEditButtons[1]?.trigger('click')
+    await flushPromises()
+
+    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
+      button.textContent?.includes('削除')
+    )
+    if (!(deleteButton instanceof HTMLButtonElement)) {
+      throw new Error('delete button not found')
+    }
+    deleteButton.click()
     await flushPromises()
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('場所「中庭」を削除しますか？'))
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('企画自体は削除されません'))
     expect(wrapper.text()).not.toContain('中庭')
+    expect(wrapper.findAll('button[class*="border-danger"]').length).toBe(0)
   })
 
   it('does not delete when place deletion is cancelled', async () => {
@@ -197,8 +259,17 @@ describe('StaffPlacesPage', () => {
     })
     await flushPromises()
 
-    const buttons = wrapper.findAll('button[type="button"]')
-    await buttons[3].trigger('click')
+    const editButtons = wrapper.findAll('button[type="button"]').filter((button) => button.text().includes('編集'))
+    await editButtons[1]?.trigger('click')
+    await flushPromises()
+
+    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
+      button.textContent?.includes('削除')
+    )
+    if (!(deleteButton instanceof HTMLButtonElement)) {
+      throw new Error('delete button not found')
+    }
+    deleteButton.click()
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('場所「中庭」を削除しますか？'))

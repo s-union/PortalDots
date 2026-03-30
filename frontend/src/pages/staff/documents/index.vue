@@ -8,220 +8,251 @@ definePage({
   }
 })
 
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { formatDateTime } from '@/lib/format/datetime'
-import AlertMessage from '@/components/ui/AlertMessage.vue'
-import LoadingMessage from '@/components/ui/LoadingMessage.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import DataCard from '@/components/layouts/DataCard.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import { formatFileSize } from '@/lib/format/fileSize'
-import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffDocumentsExportUrl,
   buildStaffDocumentDownloadUrl,
-  extractStaffDocumentValidationMessage,
-  useCreateStaffDocumentMutation,
-  useStaffDocumentForm,
-  useStaffDocumentsQuery
+  useStaffDocumentsQuery,
+  type StaffDocumentSummary
 } from '@/features/staff/documents/api'
 import { useSessionStore } from '@/features/session/store'
+import { usePaginationState } from '@/lib/usePaginationState'
+import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const circlesQuery = useManagedStaffCirclesQuery(enabled)
 const documentsQuery = useStaffDocumentsQuery(enabled)
-const createDocumentMutation = useCreateStaffDocumentMutation()
-const form = useStaffDocumentForm()
-const errorMessage = ref('')
-const sortedDocuments = computed(() =>
-  [...(documentsQuery.data.value ?? [])].sort((left, right) => left.id.localeCompare(right.id))
+const exportHref = computed(() => buildStaffDocumentsExportUrl())
+
+const sortKeys = ['id', 'name', 'isImportant', 'isPublic', 'filename', 'sizeBytes', 'updatedAt'] as const
+type StaffDocumentSortKey = (typeof sortKeys)[number]
+const isStaffDocumentSortKey = createSortKeyGuard(sortKeys)
+const sort = useSortState<StaffDocumentSortKey>('id')
+
+const columns: StaffDataGridColumn[] = [
+  { key: 'circle', label: '企画' },
+  { key: 'name', label: '配布資料名', sortable: true },
+  { key: 'description', label: '説明' },
+  { key: 'notes', label: 'スタッフ用メモ' },
+  { key: 'isImportant', label: '重要', sortable: true, align: 'center' },
+  { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
+  { key: 'filename', label: 'ファイル名', sortable: true },
+  { key: 'sizeBytes', label: 'サイズ', sortable: true, align: 'right' },
+  { key: 'updatedAt', label: '更新日時', sortable: true }
+]
+
+const isBusy = computed(() => documentsQuery.isPending.value || documentsQuery.isFetching.value)
+
+const sortedDocuments = computed(() => {
+  const documents = documentsQuery.data.value ?? []
+  const key = sort.sortKey.value
+  const direction = sort.sortDirection.value
+  const order = direction === 'asc' ? 1 : -1
+
+  return [...documents].sort((left, right) => {
+    switch (key) {
+      case 'isImportant':
+        return compareBoolean(left.isImportant, right.isImportant) * order
+      case 'isPublic':
+        return compareBoolean(left.isPublic, right.isPublic) * order
+      case 'sizeBytes':
+        return (left.sizeBytes - right.sizeBytes) * order
+      default:
+        return compareString(resolveSortValue(left, key), resolveSortValue(right, key)) * order
+    }
+  })
+})
+
+const pagination = usePaginationState(computed(() => sortedDocuments.value.length))
+
+const rows = computed<StaffDataGridRow[]>(() => {
+  const start = (pagination.page.value - 1) * pagination.pageSize.value
+  const end = start + pagination.pageSize.value
+
+  return sortedDocuments.value.slice(start, end).map((document) => ({
+    id: document.id,
+    circle: document.circle,
+    name: document.name,
+    description: document.description,
+    notes: document.notes,
+    isImportant: document.isImportant,
+    isPublic: document.isPublic,
+    filename: document.filename,
+    sizeBytes: document.sizeBytes,
+    updatedAt: document.updatedAt
+  }))
+})
+
+watch(
+  pagination.totalPages,
+  (nextTotalPages) => {
+    pagination.page.value = Math.min(pagination.page.value, nextTotalPages)
+  },
+  { immediate: true }
 )
 
-function handleFileChange(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) {
+function compareString(left: string, right: string) {
+  if (left < right) {
+    return -1
+  }
+  if (left > right) {
+    return 1
+  }
+  return 0
+}
+
+function compareBoolean(left: boolean, right: boolean) {
+  if (left === right) {
+    return 0
+  }
+  return left ? 1 : -1
+}
+
+function resolveSortValue(document: StaffDocumentSummary, sortKey: StaffDocumentSortKey) {
+  switch (sortKey) {
+    case 'id':
+      return document.id
+    case 'name':
+      return document.name
+    case 'filename':
+      return document.filename
+    case 'updatedAt':
+      return document.updatedAt
+    default:
+      return ''
+  }
+}
+
+function handleSort(nextSortKey: string) {
+  if (!isStaffDocumentSortKey(nextSortKey)) {
     return
   }
 
-  form.value.file = target.files?.[0] ?? target.files?.item(0) ?? null
+  sort.toggleSort(nextSortKey)
+  pagination.resetPage()
 }
 
-async function handleCreateDocument() {
-  errorMessage.value = ''
+function resolveRowId(row: StaffDataGridRow) {
+  return String(row.id ?? '')
+}
 
-  try {
-    await createDocumentMutation.mutateAsync({
-      circleId: form.value.circleId,
-      name: form.value.name,
-      description: form.value.description,
-      notes: form.value.notes,
-      isPublic: form.value.isPublic,
-      isImportant: form.value.isImportant,
-      file: form.value.file
-    })
-    form.value = {
-      circleId: '',
-      name: '',
-      description: '',
-      notes: '',
-      isPublic: true,
-      isImportant: false,
-      file: null
-    }
-  } catch (error) {
-    errorMessage.value = extractStaffDocumentValidationMessage(error)
+function resolveText(value: unknown) {
+  if (typeof value !== 'string') {
+    return '-'
   }
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : '-'
 }
 </script>
 
 <template>
-  <PageLayout>
-    <PageHeader title="配布資料管理" description="全企画の配布資料を横断して管理します。">
-      <template #actions> </template>
-    </PageHeader>
+  <PageLayout class="max-w-full">
+    <PageHeader title="配布資料管理" description="全企画の配布資料を横断して管理します。" />
 
-    <SurfaceCard>
-      <SurfaceHeader>
-        <template #actions>
-          <span class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white"> 新規配布資料 </span>
-          <a
-            :href="buildStaffDocumentsExportUrl()"
-            class="rounded border border-border px-4 py-2 text-sm text-muted transition hover:border-primary hover:text-primary"
+    <DataCard title="配布資料一覧" description="全企画の配布資料を一覧管理します。" overflow-hidden>
+      <StaffDataGrid
+        :rows="rows"
+        :columns="columns"
+        :page="pagination.page.value"
+        :page-size="pagination.pageSize.value"
+        :total="sortedDocuments.length"
+        :loading="isBusy"
+        :sort-key="sort.sortKey.value"
+        :sort-direction="sort.sortDirection.value"
+        table-label="配布資料一覧"
+        empty-message="staff documents はまだありません。"
+        @first="pagination.setFirstPage"
+        @prev="pagination.setPrevPage"
+        @next="pagination.setNextPage"
+        @last="pagination.setLastPage"
+        @reload="documentsQuery.refetch()"
+        @sort="handleSort"
+        @update:page-size="pagination.setPageSize"
+      >
+        <template #toolbar>
+          <RouterLink
+            to="/staff/documents/create"
+            class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
           >
+            <i class="fas fa-plus fa-fw" aria-hidden="true" />
+            新規配布資料
+          </RouterLink>
+          <a
+            :href="exportHref"
+            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+          >
+            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
             CSVで出力
           </a>
         </template>
-      </SurfaceHeader>
 
-      <LoadingMessage v-if="documentsQuery.isPending.value" />
-
-      <div v-else-if="(documentsQuery.data.value?.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
-        staff documents はまだありません。
-      </div>
-
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full border-collapse text-sm">
-          <thead class="bg-form-control">
-            <tr class="text-left text-muted">
-              <th class="border-b border-border px-4 py-3 font-semibold">企画</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">配布資料名</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">説明</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">スタッフ用メモ</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">重要</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">公開</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">ファイル名</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">サイズ</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">更新日時</th>
-              <th class="border-b border-border px-4 py-3 font-semibold">ファイル</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="staffDocument in sortedDocuments"
-              :key="staffDocument.id"
-              class="transition hover:bg-form-control"
+        <template #actions="{ row }">
+          <div class="flex items-center gap-1">
+            <RouterLink
+              :to="`/staff/documents/${encodeURIComponent(resolveRowId(row))}/edit`"
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+              title="編集"
             >
-              <td class="border-b border-border px-4 py-4">{{ staffDocument.circle.name }}</td>
-              <td class="border-b border-border px-4 py-4 font-medium text-body">
-                <RouterLink :to="`/staff/documents/${staffDocument.id}/edit`" class="text-primary">
-                  {{ staffDocument.name }}
-                </RouterLink>
-              </td>
-              <td class="border-b border-border px-4 py-4">{{ staffDocument.description }}</td>
-              <td class="border-b border-border px-4 py-4">{{ staffDocument.notes }}</td>
-              <td class="border-b border-border px-4 py-4">
-                <strong v-if="staffDocument.isImportant">はい</strong>
-                <span v-else>-</span>
-              </td>
-              <td class="border-b border-border px-4 py-4">
-                <strong v-if="staffDocument.isPublic">はい</strong>
-                <span v-else>-</span>
-              </td>
-              <td class="border-b border-border px-4 py-4">{{ staffDocument.filename }}</td>
-              <td class="border-b border-border px-4 py-4">
-                {{ formatFileSize(staffDocument.sizeBytes) }}
-              </td>
-              <td class="border-b border-border px-4 py-4">{{ formatDateTime(staffDocument.updatedAt) }}</td>
-              <td class="border-b border-border px-4 py-4">
-                <a
-                  :href="buildStaffDocumentDownloadUrl(staffDocument.id)"
-                  class="text-primary"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  表示
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </SurfaceCard>
+              <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+            </RouterLink>
+            <a
+              :href="buildStaffDocumentDownloadUrl(resolveRowId(row))"
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+              target="_blank"
+              rel="noreferrer"
+              title="表示"
+            >
+              <i class="far fa-file-alt fa-fw" aria-hidden="true" />
+            </a>
+          </div>
+        </template>
 
-    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreateDocument">
-      <h3 class="text-lg font-semibold text-body">配布資料を新規作成</h3>
-      <div class="mt-4 grid gap-4">
-        <label class="grid gap-2 text-sm text-body">
-          <span>対象企画</span>
-          <select v-model="form.circleId" name="circleId">
-            <option value="">企画を選択してください</option>
-            <option v-for="circle in circlesQuery.data.value ?? []" :key="circle.id" :value="circle.id">
-              {{ circle.name }}
-            </option>
-          </select>
-        </label>
+        <template #cell-circle="{ value }">
+          <span v-if="value && typeof value === 'object' && 'name' in value">
+            {{ (value as { name: string }).name }}
+          </span>
+          <span v-else class="text-muted">-</span>
+        </template>
 
-        <label class="grid gap-2 text-sm text-body">
-          <span>配布資料名</span>
-          <input v-model="form.name" name="name" type="text" />
-        </label>
-
-        <label class="grid gap-2 text-sm text-body">
-          <span>説明</span>
-          <textarea v-model="form.description" class="min-h-32" name="description" />
-        </label>
-
-        <label class="grid gap-2 text-sm text-body">
-          <span>スタッフ用メモ</span>
-          <textarea v-model="form.notes" class="min-h-24" name="notes" />
-        </label>
-
-        <label class="grid gap-2 text-sm text-body">
-          <span>ファイル</span>
-          <input name="file" type="file" @change="handleFileChange" />
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-body">
-          <input v-model="form.isImportant" name="isImportant" type="checkbox" />
-          重要資料として扱う
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-body">
-          <input v-model="form.isPublic" name="isPublic" type="checkbox" />
-          公開する
-        </label>
-
-        <AlertMessage tone="info"
-          >現在の upload は DB 保存です。外部ストレージ連携はまだ実装していません。</AlertMessage
-        >
-
-        <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
-
-        <div class="flex justify-end">
-          <button
-            class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="createDocumentMutation.isPending.value"
-            type="submit"
+        <template #cell-name="{ row }">
+          <RouterLink
+            class="font-medium text-primary"
+            :to="`/staff/documents/${encodeURIComponent(resolveRowId(row))}/edit`"
           >
-            {{ createDocumentMutation.isPending.value ? 'アップロード中...' : '保存' }}
-          </button>
-        </div>
-      </div>
-    </form>
+            {{ row.name }}
+          </RouterLink>
+        </template>
+
+        <template #cell-description="{ value }">
+          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
+        </template>
+
+        <template #cell-notes="{ value }">
+          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
+        </template>
+
+        <template #cell-isImportant="{ value }">
+          <strong v-if="value === true">はい</strong>
+          <span v-else>-</span>
+        </template>
+
+        <template #cell-isPublic="{ value }">
+          <strong v-if="value === true">はい</strong>
+          <span v-else>-</span>
+        </template>
+
+        <template #cell-sizeBytes="{ value }">
+          <span>{{ typeof value === 'number' ? formatFileSize(value) : '-' }}</span>
+        </template>
+      </StaffDataGrid>
+    </DataCard>
   </PageLayout>
 </template>

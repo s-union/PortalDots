@@ -112,8 +112,13 @@ func NewStaticCatalog(cfg []config.Circle, authUser config.AuthUser, users []con
 			InvitationToken:       item.ID + "-invite-token",
 			UpdatedAt:             time.Now().UTC(),
 			CanChangeGroupName:    true,
-			Status:                "pending",
-			Places:                []string{},
+			Status: func() string {
+				if item.Status == "" {
+					return "pending"
+				}
+				return item.Status
+			}(),
+			Places: []string{},
 		})
 		members[item.ID] = []CircleMember{}
 	}

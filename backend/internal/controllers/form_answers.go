@@ -50,7 +50,7 @@ const maxAnswerUploadBytes = 5 * 1024 * 1024
 func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	answerValue, found := h.answers.Get(currentForm.ID, currentSession.CurrentCircleID)
@@ -68,7 +68,7 @@ func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) listFormAnswers(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	answers := h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)
@@ -89,7 +89,7 @@ func (h *workspaceHandlers) listFormAnswers(c echo.Context) error {
 func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
@@ -105,7 +105,7 @@ func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
 func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	existingAnswers := h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)
@@ -124,7 +124,7 @@ func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	var request upsertFormAnswerRequest
@@ -136,6 +136,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	questions = filterWorkspaceFormQuestions(questions)
 
 	existingUploads := h.answers.ListUploads(currentForm.ID, currentSession.CurrentCircleID)
 	trimmedBody := strings.TrimSpace(request.Body)
@@ -167,7 +168,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
@@ -184,6 +185,7 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	questions = filterWorkspaceFormQuestions(questions)
 
 	existingUploads := h.answers.ListUploadsByAnswer(answerValue.ID)
 	trimmedBody := strings.TrimSpace(request.Body)
@@ -223,13 +225,14 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	questions, err := h.formQuestions.List(currentForm.ID)
 	if err != nil {
 		return internalError(c)
 	}
+	questions = filterWorkspaceFormQuestions(questions)
 
 	questionID := strings.TrimSpace(c.FormValue("questionId"))
 	uploadQuestion := formquestion.Question{}
@@ -302,7 +305,7 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
@@ -314,6 +317,7 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	questions = filterWorkspaceFormQuestions(questions)
 
 	questionID := strings.TrimSpace(c.FormValue("questionId"))
 	uploadQuestion := formquestion.Question{}
@@ -386,7 +390,7 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	upload, found := h.answers.FindUpload(currentForm.ID, currentSession.CurrentCircleID, c.Param("uploadID"))
@@ -401,7 +405,7 @@ func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
 func (h *workspaceHandlers) downloadFormAnswerFileByID(c echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
-		return statusError(c, status)
+		return workspaceFormStatusError(c, status)
 	}
 
 	answerValue, found := h.answers.Find(c.Param("answerID"))
@@ -433,10 +437,12 @@ func (h *workspaceHandlers) resolveCurrentForm(c echo.Context) (formDetailRespon
 	if err != nil {
 		return formDetailResponse{}, session.Session{}, http.StatusInternalServerError, false
 	}
+	questions = filterWorkspaceFormQuestions(questions)
 
 	return h.buildWorkspaceFormDetailResponse(
 		currentForm,
 		currentSession.CurrentCircleID,
+		currentCircle,
 		mapStaffFormQuestions(questions),
 	), currentSession, http.StatusOK, true
 }
@@ -449,8 +455,20 @@ func (h *workspaceHandlers) resolveWritableCurrentForm(c echo.Context) (formDeta
 	if !currentForm.IsOpen {
 		return formDetailResponse{}, session.Session{}, http.StatusNotFound, false
 	}
+	if !isWorkspaceCircleApprovedStatus(currentForm.CurrentCircleStatus) {
+		return formDetailResponse{}, session.Session{}, http.StatusUnprocessableEntity, false
+	}
 
 	return currentForm, currentSession, http.StatusOK, true
+}
+
+func workspaceFormStatusError(c echo.Context, status int) error {
+	if status == http.StatusUnprocessableEntity {
+		return validationError(c, map[string][]string{
+			"circle": {workspaceCircleNotApprovedMessage},
+		})
+	}
+	return statusError(c, status)
 }
 
 func buildFormAnswerResponse(answerValue answer.Answer, uploads []answer.Upload) *formAnswerResponse {

@@ -14,8 +14,7 @@ import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import DataCard from '@/components/layouts/DataCard.vue'
 import { canEditForms, canReadFormAnswers } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
@@ -200,14 +199,10 @@ function resolveDescription(form: StaffFormSummary) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout class="max-w-full">
     <PageHeader title="申請管理" description="全企画の申請フォームを横断して管理します。" />
 
-    <SurfaceCard>
-      <SurfaceHeader>
-        <template #description>旧 data-grid 互換の一覧表示</template>
-      </SurfaceHeader>
-
+    <DataCard title="申請フォーム一覧" description="旧 data-grid 互換の一覧表示" overflow-hidden>
       <AlertMessage v-if="errorMessage" class="mx-6 mt-4">{{ errorMessage }}</AlertMessage>
 
       <StaffDataGrid
@@ -327,6 +322,6 @@ function resolveDescription(form: StaffFormSummary) {
           <span class="whitespace-pre-wrap">{{ resolveDescription(row as StaffFormSummary) }}</span>
         </template>
       </StaffDataGrid>
-    </SurfaceCard>
+    </DataCard>
   </PageLayout>
 </template>

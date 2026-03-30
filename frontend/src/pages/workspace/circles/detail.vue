@@ -13,7 +13,9 @@ import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import { useCurrentCircleDetailQuery, useDeleteCircleMutation, useUpdateCircleMutation } from '@/features/circles/api'
 import {
   buildFormAnswerUploadDownloadUrl,
@@ -56,7 +58,7 @@ const requiresMemberStep = computed(() => {
   if (!detail) {
     return false
   }
-  return detail.usersCountMin > 1 || detail.usersCountMax > 1
+  return detail.usersCountMax > 1
 })
 const canEdit = computed(() => {
   const detail = detailQuery.data.value
@@ -198,11 +200,12 @@ function downloadHref(questionId: string) {
 <template>
   <PageLayout>
     <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Circle Registration</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">企画参加登録 1/3</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">
-        企画情報と参加登録フォームの回答を編集します。保存後にメンバー確認または確認画面へ進みます。
-      </p>
+      <SurfaceCardBand borderless>
+        <CircleRegistrationSteps :current-step="1" :requires-member-step="requiresMemberStep" />
+        <p class="mt-3 text-sm leading-7 text-muted">
+          企画情報と参加登録フォームの回答を編集します。保存後にメンバー確認または確認画面へ進みます。
+        </p>
+      </SurfaceCardBand>
     </SurfaceCard>
 
     <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>

@@ -53,6 +53,7 @@ type circleDetailResponse struct {
 	Answer                *formAnswerResponse `json:"answer"`
 	InvitationToken       string              `json:"invitationToken"`
 	SubmittedAt           *string             `json:"submittedAt"`
+	Status                string              `json:"status"`
 }
 
 type circleMemberResponse struct {
@@ -104,6 +105,7 @@ func mapCircleDetail(c circle.Circle) circleDetailResponse {
 		Questions:             []staffFormQuestion{},
 		InvitationToken:       c.InvitationToken,
 		SubmittedAt:           submittedAt,
+		Status:                c.Status,
 	}
 }
 

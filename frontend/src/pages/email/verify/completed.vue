@@ -6,10 +6,12 @@ definePage({
     noBottomTabs: true
   }
 })
+
+import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[880px] px-6 py-8">
+  <NarrowPageLayout class="py-8">
     <section class="rounded border border-border bg-surface shadow-lv1">
       <div class="border-b border-border px-6 py-5">
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー登録完了</h1>
@@ -29,5 +31,5 @@ definePage({
         </p>
       </div>
     </section>
-  </section>
+  </NarrowPageLayout>
 </template>

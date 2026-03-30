@@ -325,7 +325,7 @@ describe('StaffPagesIndexPage', () => {
     expect(wrapper.get('a[href="/staff/mails"]').text()).toContain('メール配信設定')
     expect(wrapper.text()).toContain('展示ガイド')
     expect(wrapper.text()).toContain('スタッフだけが確認するメモです。')
-    expect(wrapper.get('a[href="/staff/pages/create"]').text()).toContain('新規作成')
+    expect(wrapper.get('a[href="/staff/pages/create"]').text()).toContain('新規お知らせ')
 
     const forms = wrapper.findAll('form')
     await wrapper.get('input[name="query"]').setValue('新着')

@@ -244,6 +244,13 @@ declare module 'vue-router/auto-routes' {
       { documentId: ParamValue<false> },
       | never
     >,
+    '/staff/documents/create': RouteRecordInfo<
+      '/staff/documents/create',
+      '/staff/documents/create',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/staff/exports': RouteRecordInfo<
       '/staff/exports',
       '/staff/exports',
@@ -751,6 +758,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/staff/documents/[documentId]/edit.vue': {
       routes:
         | '/staff/documents/[documentId]/edit'
+      views:
+        | never
+    }
+    'src/pages/staff/documents/create.vue': {
+      routes:
+        | '/staff/documents/create'
       views:
         | never
     }

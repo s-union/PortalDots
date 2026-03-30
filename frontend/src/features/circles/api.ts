@@ -45,6 +45,7 @@ export interface CircleDetail {
   answer: FormAnswer | null
   invitationToken: string
   submittedAt: string | null
+  status: 'pending' | 'approved' | 'rejected'
 }
 
 export interface CircleMember {

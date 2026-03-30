@@ -96,6 +96,7 @@ type Circle struct {
 	ParticipationTypeID   string
 	ParticipationTypeName string
 	Tags                  []string
+	Status                string
 }
 
 type ParticipationType struct {
@@ -366,6 +367,7 @@ func FromEnv() Config {
 				ParticipationTypeID:   "0195ec00-0001-7000-8000-000000000001",
 				ParticipationTypeName: "模擬店",
 				Tags:                  []string{"模擬店"},
+				Status:                "approved",
 			},
 			{
 				ID:                    "0195ec00-0022-7000-8000-000000000001",
@@ -376,6 +378,7 @@ func FromEnv() Config {
 				ParticipationTypeID:   "0195ec00-0002-7000-8000-000000000001",
 				ParticipationTypeName: "展示",
 				Tags:                  []string{"展示"},
+				Status:                "approved",
 			},
 		},
 		Pages: []Page{

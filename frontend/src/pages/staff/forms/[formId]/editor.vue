@@ -11,6 +11,7 @@ definePage({
 
 import { computed, onBeforeUnmount, ref, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import FormEditorSidebar from '@/components/staff/forms/editor/FormEditorSidebar.vue'
 import FormQuestionPreviewItem from '@/components/staff/forms/editor/FormQuestionPreviewItem.vue'
@@ -343,7 +344,7 @@ function navigateToSettings() {
 </script>
 
 <template>
-  <section class="pb-6">
+  <PageLayout class="max-w-full space-y-0 pb-6 max-[1000px]:px-0">
     <div v-if="formQuery.isPending.value" class="px-6 pt-6 max-[1000px]:px-4">
       <div class="rounded border border-border bg-surface px-6 py-5 text-muted shadow-lv1">読み込み中...</div>
     </div>
@@ -469,5 +470,5 @@ function navigateToSettings() {
     <div v-else class="mx-6 mt-6 rounded border border-danger bg-danger-light px-6 py-5 text-danger max-[1000px]:mx-4">
       フォームを取得できませんでした。
     </div>
-  </section>
+  </PageLayout>
 </template>

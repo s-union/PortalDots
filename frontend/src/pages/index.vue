@@ -5,6 +5,7 @@ import ListPanel from '@/components/ui/ListPanel.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'
+import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
@@ -107,7 +108,7 @@ function formatOpenFormMeta(form: FormSummary) {
       </div>
     </header>
 
-    <div class="mx-auto max-w-[1024px] px-6 max-[1000px]:px-4">
+    <PageContentContainer class="space-y-0">
       <ListPanel v-for="page in publicPinnedPages" :key="page.id" legacy overflow-hidden>
         <div class="border-b border-border px-6 py-[1.2rem] max-[1000px]:px-4">
           <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">{{ page.title }}</h2>
@@ -277,6 +278,6 @@ function formatOpenFormMeta(form: FormSummary) {
           他の受付中の申請を見る
         </RouterLink>
       </ListPanel>
-    </div>
+    </PageContentContainer>
   </section>
 </template>

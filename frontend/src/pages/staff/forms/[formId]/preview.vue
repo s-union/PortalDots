@@ -10,6 +10,7 @@ definePage({
 
 import { computed, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
+import PageLayout from '@/components/layouts/PageLayout.vue'
 import { formatDateTime } from '@/lib/format/datetime'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useSessionStore } from '@/features/session/store'
@@ -98,7 +99,7 @@ function handlePreviewSubmit() {
 </script>
 
 <template>
-  <section class="pb-6">
+  <PageLayout class="max-w-full space-y-0 pb-6 max-[1000px]:px-0">
     <div v-if="previewQuery.isPending.value" class="mt-6 px-6 max-[1000px]:px-4">
       <div class="rounded border border-border bg-surface px-6 py-5 text-muted shadow-lv1">読み込み中...</div>
     </div>
@@ -273,5 +274,5 @@ function handlePreviewSubmit() {
         プレビューを取得できませんでした。
       </div>
     </div>
-  </section>
+  </PageLayout>
 </template>

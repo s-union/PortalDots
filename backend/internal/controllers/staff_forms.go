@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"net/http"
@@ -384,16 +383,15 @@ func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
 		"完了メッセージ",
 	}}, staffFormRowsExtendedWithCircles(h.filterEditableStaffForms(forms), circleNames)...)
 
-	buffer := strings.Builder{}
-	writer := csv.NewWriter(&buffer)
-	if err := writer.WriteAll(rows); err != nil {
+	csvBytes, err := writeCSV(rows)
+	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
 	filename := "staff-forms.csv"
 	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", []byte(buffer.String()))
+	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
 }
 
 func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {

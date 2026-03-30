@@ -453,8 +453,10 @@ async function handleLogout() {
 
     <!-- Main Content: offset by navbar height (pt-20) and drawer width (pl-*) -->
     <main :class="cn('content', mainContentClass)">
-      <div class="min-h-full">
-        <RouterView />
+      <div class="flex min-h-[calc(100dvh-5rem)] flex-col">
+        <div class="grow">
+          <RouterView />
+        </div>
         <footer
           v-if="showFooter"
           class="mt-6 border-t border-border px-6 py-6 text-center"

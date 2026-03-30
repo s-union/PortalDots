@@ -10,6 +10,7 @@ definePage({
 
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 import {
   extractFirstErrorMessage,
   useCompleteRegistrationMutation,
@@ -105,7 +106,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[880px] space-y-6 px-6 py-8">
+  <NarrowPageLayout class="space-y-6 py-8">
     <section class="rounded border border-border bg-surface shadow-lv1">
       <div class="border-b border-border px-6 py-5">
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー登録を続ける</h1>
@@ -268,5 +269,5 @@ onMounted(() => {
         </template>
       </div>
     </section>
-  </section>
+  </NarrowPageLayout>
 </template>

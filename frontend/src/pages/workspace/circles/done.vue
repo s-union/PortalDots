@@ -5,11 +5,20 @@ definePage({
     requiresCircle: true
   }
 })
+
+import { computed } from 'vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import { useCurrentCircleDetailQuery } from '@/features/circles/api'
+
+const detailQuery = useCurrentCircleDetailQuery()
+const confirmationMessage = computed(() => detailQuery.data.value?.confirmationMessage.trim() ?? '')
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[880px] px-6 py-8">
-    <section class="rounded border border-border bg-surface shadow-lv1">
+  <PageLayout>
+    <SurfaceCard>
       <div class="border-b border-border px-6 py-5">
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">参加登録を提出しました</h1>
       </div>
@@ -17,7 +26,14 @@ definePage({
         <p class="text-success">
           <strong>企画参加登録の提出が完了しました。</strong>
         </p>
-        <p>
+        <p v-if="detailQuery.isPending.value" class="text-muted">読み込み中...</p>
+        <div
+          v-else-if="confirmationMessage"
+          class="rounded border border-success/20 bg-success-light px-4 py-3 text-sm leading-7"
+        >
+          <PageMarkdownContent :source="confirmationMessage" />
+        </div>
+        <p v-else>
           内容を再確認したい場合は企画情報ページから閲覧できます。追加の申請や連絡事項はホームから確認してください。
         </p>
         <div class="flex flex-wrap gap-3">
@@ -35,6 +51,6 @@ definePage({
           </RouterLink>
         </div>
       </div>
-    </section>
-  </section>
+    </SurfaceCard>
+  </PageLayout>
 </template>

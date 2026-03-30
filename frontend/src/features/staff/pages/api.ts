@@ -265,6 +265,25 @@ export function usePatchStaffPagePinMutation(pageId: MaybeRefOrGetter<string>) {
   })
 }
 
+export function usePatchStaffPagePinByIdMutation() {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async ({ pageId, isPinned }: { pageId: string; isPinned: boolean }) =>
+      patchStaffPagePin(pageId, isPinned, sessionStore.csrfToken),
+    onSuccess: async (updatedPage) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['staff', 'pages'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'pages', 'detail', updatedPage.id]
+        }),
+        queryClient.invalidateQueries({ queryKey: ['pages'] })
+      ])
+    }
+  })
+}
+
 export function useDeleteStaffPageMutation(pageId: MaybeRefOrGetter<string>) {
   const queryClient = useQueryClient()
   const sessionStore = useSessionStore()
@@ -276,6 +295,24 @@ export function useDeleteStaffPageMutation(pageId: MaybeRefOrGetter<string>) {
         queryClient.invalidateQueries({ queryKey: ['staff', 'pages'] }),
         queryClient.invalidateQueries({
           queryKey: ['staff', 'pages', 'detail', toValue(pageId)]
+        }),
+        queryClient.invalidateQueries({ queryKey: ['pages'] })
+      ])
+    }
+  })
+}
+
+export function useDeleteStaffPageByIdMutation() {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (pageId: string) => deleteStaffPage(pageId, sessionStore.csrfToken),
+    onSuccess: async (_result, pageId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['staff', 'pages'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'pages', 'detail', pageId]
         }),
         queryClient.invalidateQueries({ queryKey: ['pages'] })
       ])
