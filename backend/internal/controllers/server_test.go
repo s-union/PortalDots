@@ -3973,6 +3973,53 @@ func TestStaffUsersNonAdminCannotChangeAdminRole(t *testing.T) {
 	}
 }
 
+func TestStaffUsersNonAdminCannotDeleteAdmin(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:          "admin-target",
+		LoginIDs:    []string{"admin-target@example.com"},
+		DisplayName: "Admin Target",
+		Password:    "password",
+		Roles:       []string{"admin"},
+		IsVerified:  true,
+	})
+	cfg.AuthUser = config.AuthUser{
+		ID:          "user-manager",
+		LoginIDs:    []string{"user-manager@example.com"},
+		DisplayName: "User Manager",
+		Password:    "password",
+		Roles:       []string{"user_manager"},
+	}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "user-manager@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	authorizeStaff(t, server, cookies)
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/admin-target", nil)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal delete admin validation response: %v", err)
+	}
+	if len(response.Errors["user"]) == 0 {
+		t.Fatalf("expected user validation error, got %#v", response.Errors)
+	}
+}
+
 func TestStaffFormsExportExcludesParticipationForm(t *testing.T) {
 	t.Parallel()
 

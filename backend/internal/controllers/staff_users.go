@@ -280,6 +280,13 @@ func (h *staffUserHandlers) deleteStaffUser(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	if currentSession.User != nil &&
+		!slices.Contains(currentSession.User.Roles, "admin") &&
+		slices.Contains(currentUser.Roles, "admin") {
+		return validationError(c, map[string][]string{
+			"user": {"admin ロールを持つユーザーを削除する権限がありません"},
+		})
+	}
 
 	if err := h.users.Delete(userID); errors.Is(err, useradmin.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "user_not_found")
