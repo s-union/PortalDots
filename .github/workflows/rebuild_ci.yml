@@ -5,6 +5,7 @@ on:
     branches:
       - 5.x
       - 5.x_development
+      - gonext
     paths:
       - "backend/**"
       - "frontend/**"
@@ -37,6 +38,14 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
+      - name: Build backend
+        working-directory: backend
+        run: go build ./...
+
+      - name: Vet backend
+        working-directory: backend
+        run: go vet ./...
+
       - name: Test backend
         working-directory: backend
         run: go test ./...
@@ -64,6 +73,14 @@ jobs:
       - name: Check frontend
         working-directory: frontend
         run: pnpm run ci:check
+
+      - name: Test frontend
+        working-directory: frontend
+        run: pnpm run test
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm run build
 
   frontend-e2e:
     runs-on: ubuntu-latest

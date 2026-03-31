@@ -179,7 +179,7 @@ export const staffStatusSchema = z.object({
 export const staffVerifyRequestResultSchema = z.object({
   deliveryMode: z.enum(['email', 'mock']),
   message: z.string(),
-  verifyCode: z.string().optional()
+  verifyCode: z.string().nullable().optional()
 })
 
 export const authVerificationStatusItemSchema = z.object({

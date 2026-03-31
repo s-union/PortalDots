@@ -58,6 +58,7 @@ type Repository interface {
 	FindByContactEmail(contactEmail string) (User, error)
 	Create(params CreateParams) (User, error)
 	Update(userID, displayName string, loginIDs []string) (User, error)
+	UpdateFull(userID, displayName string, loginIDs []string, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error)
 	UpdateDisplayName(userID, displayName string) (User, error)
 	UpdateProfile(userID, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error)
 	UpdateRoles(userID string, roles []string) (User, error)
@@ -311,6 +312,35 @@ func (r *StaticRepository) Update(userID, displayName string, loginIDs []string)
 			}
 			r.users[index].DisplayName = displayName
 			r.users[index].LoginIDs = slices.Clone(loginIDs)
+			return cloneUser(r.users[index]), nil
+		}
+	}
+
+	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) UpdateFull(userID, displayName string, loginIDs []string, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for index := range r.users {
+		if r.users[index].ID == userID {
+			for otherIndex := range r.users {
+				if otherIndex == index {
+					continue
+				}
+				if hasLoginIDConflict(r.users[otherIndex].LoginIDs, loginIDs) {
+					return User{}, ErrConflict
+				}
+			}
+			r.users[index].DisplayName = displayName
+			r.users[index].LoginIDs = slices.Clone(loginIDs)
+			r.users[index].LastName = lastName
+			r.users[index].LastNameReading = lastNameReading
+			r.users[index].FirstName = firstName
+			r.users[index].FirstNameReading = firstNameReading
+			r.users[index].ContactEmail = contactEmail
+			r.users[index].PhoneNumber = phoneNumber
 			return cloneUser(r.users[index]), nil
 		}
 	}

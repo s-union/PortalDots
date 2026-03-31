@@ -110,21 +110,10 @@ func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	updatedUser, err := h.users.Update(c.Param("userID"), request.DisplayName, request.LoginIDs)
-	if errors.Is(err, useradmin.ErrNotFound) {
-		return errorJSON(c, http.StatusNotFound, "user_not_found")
-	}
-	if errors.Is(err, useradmin.ErrConflict) {
-		return validationError(c, map[string][]string{
-			"loginIds": {"入力されたログイン ID はすでに登録されています"},
-		})
-	}
-	if err != nil {
-		return internalError(c)
-	}
-
-	updatedUser, err = h.users.UpdateProfile(
+	updatedUser, err := h.users.UpdateFull(
 		c.Param("userID"),
+		request.DisplayName,
+		request.LoginIDs,
 		request.LastName,
 		request.LastNameReading,
 		request.FirstName,
@@ -134,6 +123,11 @@ func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 	)
 	if errors.Is(err, useradmin.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "user_not_found")
+	}
+	if errors.Is(err, useradmin.ErrConflict) {
+		return validationError(c, map[string][]string{
+			"loginIds": {"入力されたログイン ID はすでに登録されています"},
+		})
 	}
 	if err != nil {
 		return internalError(c)
