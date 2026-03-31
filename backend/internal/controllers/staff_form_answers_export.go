@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"archive/zip"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -179,7 +180,7 @@ func (h *staffFormHandlers) shouldNotifyStaffFormAnswer(formID string, isPublic 
 	return isPublic && !h.isParticipationForm(formID)
 }
 
-func (h *staffFormHandlers) enqueueStaffFormAnswerMail(createdByUserID string, formValue backendform.Form, answerValue answer.Answer) {
+func (h *staffFormHandlers) enqueueStaffFormAnswerMail(ctx context.Context, createdByUserID string, formValue backendform.Form, answerValue answer.Answer) {
 	recipients := h.staffFormAnswerMailRecipients(createdByUserID, answerValue.CircleID)
 	if len(recipients) == 0 {
 		return
@@ -191,7 +192,10 @@ func (h *staffFormHandlers) enqueueStaffFormAnswerMail(createdByUserID string, f
 		body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 	}
 
-	job := h.mails.Enqueue(formValue.CircleID, createdByUserID, subject, body, recipients)
+	job, err := h.mails.Enqueue(ctx, formValue.CircleID, createdByUserID, subject, body, recipients)
+	if err != nil {
+		return
+	}
 	recordActivity(
 		h.activities,
 		createdByUserID,

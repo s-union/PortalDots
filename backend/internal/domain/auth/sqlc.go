@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"golang.org/x/crypto/bcrypt"
@@ -68,7 +68,7 @@ func (a *SQLCAuthenticator) ChangePassword(
 		Password: string(hashed),
 	})
 	if err != nil {
-		return errors.New("failed to update password")
+		return fmt.Errorf("failed to update password: %w", err)
 	}
 
 	return nil

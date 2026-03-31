@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -119,7 +120,7 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 		buildActivitySummary("staff がページを作成しました", created.Title),
 	)
 	if request.SendEmails {
-		h.enqueuePageMail(currentSession.User.ID, created)
+		h.enqueuePageMail(c.Request().Context(), currentSession.User.ID, created)
 	}
 	return c.JSON(http.StatusCreated, mapStaffPageSummary(created, h.pageDocuments(created.DocumentIDs, true)))
 }
@@ -170,7 +171,7 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 		buildActivitySummary("staff がページを更新しました", updated.Title),
 	)
 	if request.SendEmails {
-		h.enqueuePageMail(currentSession.User.ID, updated)
+		h.enqueuePageMail(c.Request().Context(), currentSession.User.ID, updated)
 	}
 
 	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
@@ -384,7 +385,7 @@ func (h *staffPageHandlers) validateStaffPageDocumentIDs(documentIDs []string, e
 	return nil
 }
 
-func (h *staffPageHandlers) enqueuePageMail(createdByUserID string, currentPage backendpage.Page) {
+func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID string, currentPage backendpage.Page) {
 	recipients := h.pageMailRecipients(currentPage.ViewableTags)
 	if len(recipients) == 0 {
 		return
@@ -405,7 +406,10 @@ func (h *staffPageHandlers) enqueuePageMail(createdByUserID string, currentPage 
 		body += strings.Join(lines, "\n")
 	}
 
-	job := h.mails.Enqueue("", createdByUserID, currentPage.Title, body, recipients)
+	job, err := h.mails.Enqueue(ctx, "", createdByUserID, currentPage.Title, body, recipients)
+	if err != nil {
+		return
+	}
 	recordActivity(
 		h.activities,
 		createdByUserID,

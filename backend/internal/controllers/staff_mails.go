@@ -112,7 +112,10 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		})
 	}
 
-	job := h.mails.Enqueue(request.CircleID, currentSession.User.ID, request.Subject, request.Body, recipients)
+	job, err := h.mails.Enqueue(c.Request().Context(), request.CircleID, currentSession.User.ID, request.Subject, request.Body, recipients)
+	if err != nil {
+		return internalError(c)
+	}
 	recordActivity(
 		h.activities,
 		currentSession.User.ID,

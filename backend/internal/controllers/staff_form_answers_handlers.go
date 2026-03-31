@@ -133,7 +133,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 
 	created := h.answers.Create(formValue.ID, request.CircleID, body, normalizedDetails)
 	if h.shouldNotifyStaffFormAnswer(formValue.ID, formValue.IsPublic) {
-		h.enqueueStaffFormAnswerMail(currentSession.User.ID, formValue, created)
+		h.enqueueStaffFormAnswerMail(c.Request().Context(), currentSession.User.ID, formValue, created)
 	}
 	recordActivity(
 		h.activities,
@@ -184,7 +184,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 	if h.shouldNotifyStaffFormAnswer(formValue.ID, formValue.IsPublic) {
-		h.enqueueStaffFormAnswerMail(currentSession.User.ID, formValue, updated)
+		h.enqueueStaffFormAnswerMail(c.Request().Context(), currentSession.User.ID, formValue, updated)
 	}
 
 	recordActivity(

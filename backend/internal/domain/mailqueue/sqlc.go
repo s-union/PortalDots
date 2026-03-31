@@ -2,6 +2,7 @@ package mailqueue
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
@@ -16,8 +17,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) Enqueue(circleID, createdByUserID, subject, body string, recipients []string) Job {
-	row, err := r.queries.CreateMailJob(context.Background(), dbgen.CreateMailJobParams{
+func (r *SQLCRepository) Enqueue(ctx context.Context, circleID, createdByUserID, subject, body string, recipients []string) (Job, error) {
+	row, err := r.queries.CreateMailJob(ctx, dbgen.CreateMailJobParams{
 		CircleID:        pgutil.Text(circleID),
 		Subject:         subject,
 		Body:            body,
@@ -25,10 +26,10 @@ func (r *SQLCRepository) Enqueue(circleID, createdByUserID, subject, body string
 		CreatedByUserID: createdByUserID,
 	})
 	if err != nil {
-		return Job{}
+		return Job{}, fmt.Errorf("create mail job: %w", err)
 	}
 
-	return mapJob(row)
+	return mapJob(row), nil
 }
 
 func (r *SQLCRepository) ListAll() []Job {

@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"testing"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
@@ -10,8 +11,12 @@ func TestProcessMailJobsOnceMarksQueuedJobsAsSent(t *testing.T) {
 	t.Parallel()
 
 	repository := mailqueue.NewMemoryRepository()
-	repository.Enqueue("0195ec00-0021-7000-8000-000000000001", "staff-user", "件名1", "本文1", []string{"a@example.com"})
-	repository.Enqueue("0195ec00-0021-7000-8000-000000000001", "staff-user", "件名2", "本文2", []string{"b@example.com"})
+	if _, err := repository.Enqueue(context.Background(), "0195ec00-0021-7000-8000-000000000001", "staff-user", "件名1", "本文1", []string{"a@example.com"}); err != nil {
+		t.Fatalf("enqueue first mail: %v", err)
+	}
+	if _, err := repository.Enqueue(context.Background(), "0195ec00-0021-7000-8000-000000000001", "staff-user", "件名2", "本文2", []string{"b@example.com"}); err != nil {
+		t.Fatalf("enqueue second mail: %v", err)
+	}
 
 	processed := ProcessMailJobsOnce(repository, 10)
 	if processed != 2 {

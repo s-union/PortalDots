@@ -527,7 +527,9 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 		})
 	}
 
-	h.mails.Enqueue(circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails)
+	if _, err := h.mails.Enqueue(c.Request().Context(), circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails); err != nil {
+		return internalError(c)
+	}
 	recordActivity(
 		h.activities,
 		currentSession.User.ID,

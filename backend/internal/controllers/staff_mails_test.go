@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -18,7 +19,9 @@ func TestListStaffMailsAllowsMissingCircle(t *testing.T) {
 	t.Parallel()
 
 	mails := mailqueue.NewMemoryRepository()
-	mails.Enqueue("missing-circle", "staff-user", "件名", "本文", []string{"demo@example.com"})
+	if _, err := mails.Enqueue(context.Background(), "missing-circle", "staff-user", "件名", "本文", []string{"demo@example.com"}); err != nil {
+		t.Fatalf("enqueue mail: %v", err)
+	}
 	cfg := testStaffConfig()
 
 	handler := &staffAdminHandlers{

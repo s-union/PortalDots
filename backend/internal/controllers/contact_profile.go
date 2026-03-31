@@ -161,13 +161,17 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		selectedCircle.ID,
 		request.Body,
 	)
-	job := h.mails.Enqueue(
+	job, err := h.mails.Enqueue(
+		c.Request().Context(),
 		selectedCircle.ID,
 		currentSession.User.ID,
 		request.Subject,
 		body,
 		[]string{category.Email},
 	)
+	if err != nil {
+		return internalError(c)
+	}
 	recordActivity(
 		h.activities,
 		currentSession.User.ID,

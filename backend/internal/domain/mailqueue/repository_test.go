@@ -1,14 +1,26 @@
 package mailqueue
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestListQueuedReturnsOldestFirst(t *testing.T) {
 	t.Parallel()
 
 	repository := NewMemoryRepository()
-	first := repository.Enqueue("circle-a", "staff", "subject-1", "body-1", []string{"a@example.com"})
-	second := repository.Enqueue("circle-a", "staff", "subject-2", "body-2", []string{"b@example.com"})
-	third := repository.Enqueue("circle-a", "staff", "subject-3", "body-3", []string{"c@example.com"})
+	first, err := repository.Enqueue(context.Background(), "circle-a", "staff", "subject-1", "body-1", []string{"a@example.com"})
+	if err != nil {
+		t.Fatalf("enqueue first mail: %v", err)
+	}
+	second, err := repository.Enqueue(context.Background(), "circle-a", "staff", "subject-2", "body-2", []string{"b@example.com"})
+	if err != nil {
+		t.Fatalf("enqueue second mail: %v", err)
+	}
+	third, err := repository.Enqueue(context.Background(), "circle-a", "staff", "subject-3", "body-3", []string{"c@example.com"})
+	if err != nil {
+		t.Fatalf("enqueue third mail: %v", err)
+	}
 
 	jobs := repository.ListQueued(0)
 	if len(jobs) != 3 {

@@ -1,6 +1,7 @@
 package mailqueue
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"sync"
@@ -20,7 +21,7 @@ type Job struct {
 }
 
 type Repository interface {
-	Enqueue(circleID, createdByUserID, subject, body string, recipients []string) Job
+	Enqueue(ctx context.Context, circleID, createdByUserID, subject, body string, recipients []string) (Job, error)
 	ListAll() []Job
 	ListByCircle(circleID string) []Job
 	ListQueued(limit int) []Job
@@ -42,7 +43,7 @@ func NewMemoryRepository() *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) Enqueue(circleID, createdByUserID, subject, body string, recipients []string) Job {
+func (r *MemoryRepository) Enqueue(_ context.Context, circleID, createdByUserID, subject, body string, recipients []string) (Job, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -56,10 +57,10 @@ func (r *MemoryRepository) Enqueue(circleID, createdByUserID, subject, body stri
 		CreatedByUserID: createdByUserID,
 		CreatedAt:       time.Now().UTC().Format(time.RFC3339),
 	}
-	r.jobs = append([]Job{job}, r.jobs...)
+	r.jobs = append(r.jobs, job)
 	r.nextID++
 
-	return job
+	return job, nil
 }
 
 func (r *MemoryRepository) ListByCircle(circleID string) []Job {
@@ -67,7 +68,8 @@ func (r *MemoryRepository) ListByCircle(circleID string) []Job {
 	defer r.mu.RUnlock()
 
 	jobs := make([]Job, 0, len(r.jobs))
-	for _, job := range r.jobs {
+	for index := len(r.jobs) - 1; index >= 0; index-- {
+		job := r.jobs[index]
 		if job.CircleID == circleID {
 			jobs = append(jobs, cloneJob(job))
 		}
@@ -81,7 +83,8 @@ func (r *MemoryRepository) ListAll() []Job {
 	defer r.mu.RUnlock()
 
 	jobs := make([]Job, 0, len(r.jobs))
-	for _, job := range r.jobs {
+	for index := len(r.jobs) - 1; index >= 0; index-- {
+		job := r.jobs[index]
 		jobs = append(jobs, cloneJob(job))
 	}
 
@@ -97,7 +100,7 @@ func (r *MemoryRepository) ListQueued(limit int) []Job {
 		capHint = len(r.jobs)
 	}
 	jobs := make([]Job, 0, capHint)
-	for index := len(r.jobs) - 1; index >= 0; index-- {
+	for index := 0; index < len(r.jobs); index++ {
 		job := r.jobs[index]
 		if job.Status != "queued" {
 			continue
