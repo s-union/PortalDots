@@ -25,11 +25,11 @@ const strictStaffVerifyCode = "654321"
 func TestLoginAndBootstrap(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(independentUserConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "demo@example.com",
+		"loginId":  "independent@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -49,11 +49,11 @@ func TestLoginAndBootstrap(t *testing.T) {
 	if response.User == nil {
 		t.Fatal("expected authenticated user")
 	}
-	if response.User.ID != "demo-user" {
-		t.Fatalf("expected user id demo-user, got %s", response.User.ID)
+	if response.User.ID != "independent-user" {
+		t.Fatalf("expected user id independent-user, got %s", response.User.ID)
 	}
-	if response.User.DisplayName != "Demo User" {
-		t.Fatalf("expected display name Demo User, got %s", response.User.DisplayName)
+	if response.User.DisplayName != "Independent User" {
+		t.Fatalf("expected display name Independent User, got %s", response.User.DisplayName)
 	}
 	if !response.User.CanDeleteAccount {
 		t.Fatal("expected bootstrap to allow account deletion for demo user")
@@ -95,7 +95,7 @@ func TestLoginRememberSetsPersistentCookie(t *testing.T) {
 func TestContactCategoriesAndSubmitContact(t *testing.T) {
 	t.Parallel()
 
-	cfg := testConfig()
+	cfg := demoCircleConfig()
 	cfg.ContactCategories = []config.ContactCategory{
 		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
 	}
@@ -238,11 +238,11 @@ func TestUpdatePasswordAllowsLoginWithNewPassword(t *testing.T) {
 func TestDeleteOwnAccountClearsSession(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(independentUserConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "demo@example.com",
+		"loginId":  "independent@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -272,7 +272,7 @@ func TestDeleteOwnAccountClearsSession(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "demo@example.com",
+		"loginId":  "independent@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -740,6 +740,34 @@ func TestListCirclesRequiresAuthentication(t *testing.T) {
 	}
 }
 
+func TestListCirclesReturnsOnlySelectableMemberships(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(circleMemberConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/circles", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response []selectableCircleResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal circles response: %v", err)
+	}
+	if len(response) != 1 || response[0].ID != "0195ec00-0022-7000-8000-000000000001" {
+		t.Fatalf("expected only member circle to be selectable, got %#v", response)
+	}
+}
+
 func TestListParticipationTypesRequiresAuthentication(t *testing.T) {
 	t.Parallel()
 
@@ -1079,7 +1107,7 @@ func TestGetPublicDocumentDownloadsGuestFile(t *testing.T) {
 func TestSetCurrentCircleUpdatesBootstrap(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1114,6 +1142,28 @@ func TestSetCurrentCircleUpdatesBootstrap(t *testing.T) {
 	}
 	if !response.User.CanCreateCircleRegistration {
 		t.Fatal("expected selected demo user to still be allowed to create a new circle")
+	}
+}
+
+func TestSetCurrentCircleRejectsUnselectableCircle(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(circleMemberConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
+		"circleId": "0195ec00-0021-7000-8000-000000000001",
+	})
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
 }
 
@@ -1300,12 +1350,17 @@ func TestJoinCircleByTokenAfterSubmitReturnsOK(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/join/0195ec00-0022-7000-8000-000000000001-invite-token", nil)
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusConflict, recorder.Code, recorder.Body.String())
+	}
 }
 
 func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 	t.Parallel()
 
-	cfg := testConfig()
+	cfg := demoCircleConfig()
 	cfg.Pages = append(cfg.Pages, config.Page{
 		ID:           "0195ec00-0033-7000-8000-000000000001",
 		Title:        "展示向け共通連絡",
@@ -1384,7 +1439,7 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 func TestListPagesUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) {
 	t.Parallel()
 
-	cfg := testConfig()
+	cfg := demoCircleConfig()
 	for index := range cfg.Circles {
 		if cfg.Circles[index].ID == "0195ec00-0022-7000-8000-000000000001" {
 			cfg.Circles[index].Tags = []string{}
@@ -1425,7 +1480,7 @@ func TestListPagesUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) 
 func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1476,7 +1531,7 @@ func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
 	t.Parallel()
 
-	cfg := testConfig()
+	cfg := demoCircleConfig()
 	cfg.Pages = append(cfg.Pages, config.Page{
 		ID:           "0195ec00-0033-7000-8000-000000000001",
 		Title:        "展示向け共通連絡",
@@ -1527,7 +1582,7 @@ func TestGetPageAllowsVisiblePageAcrossCirclesByTags(t *testing.T) {
 func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1626,7 +1681,7 @@ func TestDocumentsEndpointsRequireAuthAndCurrentCircle(t *testing.T) {
 func TestDownloadDocumentFileRequiresVisiblePublicDocument(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1932,7 +1987,7 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -1960,27 +2015,27 @@ func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 		t.Fatalf("unmarshal forms response: %v", err)
 	}
 
-	if len(response) != 3 {
-		t.Fatalf("expected 3 accessible forms for 0195ec00-0022-7000-8000-000000000001, got %d", len(response))
+	if len(response) != 2 {
+		t.Fatalf("expected 2 accessible forms for 0195ec00-0022-7000-8000-000000000001, got %d", len(response))
 	}
 	if response[0].ID != "0195ec00-0010-7000-8000-000000000001" {
 		t.Fatalf("expected closed form to be first, got %s", response[0].ID)
 	}
-	if response[1].ID != "0195ec00-0013-7000-8000-000000000001" || response[2].ID != "0195ec00-0014-7000-8000-000000000001" {
+	if response[1].ID != "0195ec00-0014-7000-8000-000000000001" {
 		t.Fatalf("unexpected visible forms order: %#v", response)
 	}
-	if !slices.Equal(response[2].AnswerableTags, []string{"展示"}) {
-		t.Fatalf("expected answerable tags to be returned, got %#v", response[2].AnswerableTags)
+	if !slices.Equal(response[1].AnswerableTags, []string{"展示"}) {
+		t.Fatalf("expected answerable tags to be returned, got %#v", response[1].AnswerableTags)
 	}
-	if response[2].ConfirmationMessage != "展示チェックフォームへの回答を受け付けました。" {
-		t.Fatalf("unexpected confirmation message: %#v", response[2])
+	if response[1].ConfirmationMessage != "展示チェックフォームへの回答を受け付けました。" {
+		t.Fatalf("unexpected confirmation message: %#v", response[1])
 	}
 }
 
 func TestListFormsUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) {
 	t.Parallel()
 
-	cfg := testConfig()
+	cfg := demoCircleConfig()
 	for index := range cfg.Circles {
 		if cfg.Circles[index].ID == "0195ec00-0022-7000-8000-000000000001" {
 			cfg.Circles[index].Tags = []string{}
@@ -2010,18 +2065,18 @@ func TestListFormsUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) 
 		t.Fatalf("unmarshal forms response: %v", err)
 	}
 
-	if len(response) != 3 {
-		t.Fatalf("expected 3 accessible forms from participation type tags, got %#v", response)
+	if len(response) != 2 {
+		t.Fatalf("expected 2 accessible forms from participation type tags, got %#v", response)
 	}
-	if !slices.Equal(response[2].AnswerableTags, []string{"展示"}) {
-		t.Fatalf("expected limited form to remain visible, got %#v", response[2])
+	if !slices.Equal(response[1].AnswerableTags, []string{"展示"}) {
+		t.Fatalf("expected limited form to remain visible, got %#v", response[1])
 	}
 }
 
-func TestGetFormAllowsClosedAccessibleFormInCurrentCircle(t *testing.T) {
+func TestGetFormScopesToCurrentCircle(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -2056,22 +2111,15 @@ func TestGetFormAllowsClosedAccessibleFormInCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0010-7000-8000-000000000001", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
-		t.Fatalf("unmarshal closed form detail: %v", err)
-	}
-	if detail.ID != "0195ec00-0010-7000-8000-000000000001" || detail.IsOpen {
-		t.Fatalf("expected closed accessible form detail, got %#v", detail)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
 }
 
 func TestClosedFormAnswerMutationsRemainBlocked(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -2100,7 +2148,7 @@ func TestClosedFormAnswerMutationsRemainBlocked(t *testing.T) {
 func TestFormAnswerMutationsBlockedWhenCircleNotApproved(t *testing.T) {
 	t.Parallel()
 
-	cfg := testConfig()
+	cfg := demoCircleConfig()
 	for index := range cfg.Circles {
 		if cfg.Circles[index].ID == "0195ec00-0022-7000-8000-000000000001" {
 			cfg.Circles[index].Status = "pending"
@@ -2192,7 +2240,7 @@ func TestFormAnswerMutationsBlockedWhenCircleNotApproved(t *testing.T) {
 func TestGetAndUpsertFormAnswerUsesCurrentCircle(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -2255,7 +2303,7 @@ func TestGetAndUpsertFormAnswerUsesCurrentCircle(t *testing.T) {
 func TestUploadAndDownloadFormAnswerFile(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -2311,7 +2359,7 @@ func TestUploadAndDownloadFormAnswerFile(t *testing.T) {
 func TestUpsertFormAnswerRejectsBlankBody(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(demoCircleConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -2385,12 +2433,12 @@ func TestStaffVerificationFlow(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
 		t.Fatalf("unmarshal staff verify request response: %v", err)
 	}
-	if requestResponse.DeliveryMode != "mock" || requestResponse.VerifyCode == "" {
+	if requestResponse.DeliveryMode != "email" || requestResponse.VerifyCode != "" {
 		t.Fatalf("unexpected staff verify request response: %#v", requestResponse)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": requestResponse.VerifyCode,
+		"verifyCode": strictStaffVerifyCode,
 	}, csrf)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -5575,6 +5623,35 @@ func circleMemberConfig() config.Config {
 		Password:    "password",
 		Roles:       []string{"participant"},
 	}
+
+	return cfg
+}
+
+func independentUserConfig() config.Config {
+	cfg := testConfig()
+	cfg.AuthUser = config.AuthUser{
+		ID:          "independent-user",
+		LoginIDs:    []string{"independent@example.com"},
+		DisplayName: "Independent User",
+		Password:    "password",
+		Roles:       []string{"participant"},
+	}
+
+	return cfg
+}
+
+func demoCircleConfig() config.Config {
+	cfg := testConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:              "demo-user",
+		LoginIDs:        []string{"demo@example.com"},
+		DisplayName:     "Demo User",
+		Password:        "password",
+		Roles:           []string{"participant"},
+		CircleIDs:       []string{"0195ec00-0021-7000-8000-000000000001", "0195ec00-0022-7000-8000-000000000001"},
+		LeaderCircleIDs: []string{"0195ec00-0021-7000-8000-000000000001", "0195ec00-0022-7000-8000-000000000001"},
+		IsVerified:      true,
+	})
 
 	return cfg
 }

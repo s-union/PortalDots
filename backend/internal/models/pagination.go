@@ -39,25 +39,37 @@ func ReadPagination(c echo.Context) PaginationParams {
 // PaginateItems applies pagination to a slice and returns a paginated response.
 func PaginateItems[T any](items []T, pagination PaginationParams) PaginatedResponse[T] {
 	total := len(items)
-	start := (pagination.Page - 1) * pagination.PageSize
+	page := pagination.Page
+	if page <= 0 {
+		page = DefaultPage
+	}
+	pageSize := pagination.PageSize
+	if pageSize <= 0 {
+		pageSize = DefaultPageSize
+	}
+	if pageSize > MaxPageSize {
+		pageSize = MaxPageSize
+	}
+
+	start := (page - 1) * pageSize
 	if start >= total {
 		return PaginatedResponse[T]{
 			Items:    []T{},
-			Page:     pagination.Page,
-			PageSize: pagination.PageSize,
+			Page:     page,
+			PageSize: pageSize,
 			Total:    total,
 		}
 	}
 
-	end := start + pagination.PageSize
+	end := start + pageSize
 	if end > total {
 		end = total
 	}
 
 	return PaginatedResponse[T]{
 		Items:    items[start:end],
-		Page:     pagination.Page,
-		PageSize: pagination.PageSize,
+		Page:     page,
+		PageSize: pageSize,
 		Total:    total,
 	}
 }

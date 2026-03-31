@@ -59,3 +59,28 @@ func TestPaginateItemsHandlesBounds(t *testing.T) {
 		t.Fatalf("unexpected second page result: %#v", result)
 	}
 }
+
+func TestPaginateItemsNormalizesInvalidParameters(t *testing.T) {
+	t.Parallel()
+
+	items := []int{1, 2, 3}
+
+	result := PaginateItems(items, PaginationParams{
+		Page:     0,
+		PageSize: 0,
+	})
+	if result.Page != DefaultPage || result.PageSize != DefaultPageSize {
+		t.Fatalf("expected defaults for invalid pagination, got %#v", result)
+	}
+	if len(result.Items) != len(items) {
+		t.Fatalf("expected all items on normalized first page, got %#v", result)
+	}
+
+	result = PaginateItems(items, PaginationParams{
+		Page:     1,
+		PageSize: MaxPageSize + 10,
+	})
+	if result.PageSize != MaxPageSize {
+		t.Fatalf("expected page size to be clamped, got %#v", result)
+	}
+}

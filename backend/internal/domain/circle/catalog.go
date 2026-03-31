@@ -4,6 +4,7 @@ import (
 	"errors"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -143,23 +144,43 @@ func NewStaticCatalog(cfg []config.Circle, authUser config.AuthUser, users []con
 	}
 }
 
-func (c *StaticCatalog) ListSelectable(_ *auth.User) ([]Circle, error) {
+func (c *StaticCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	return cloneCircles(c.circles), nil
+	if canAccessAllSelectableCircles(user) {
+		return cloneCircles(c.circles), nil
+	}
+	if user == nil {
+		return cloneCircles(c.circles), nil
+	}
+
+	selectable := make([]Circle, 0, len(c.circles))
+	for _, circle := range c.circles {
+		if !c.isCircleMemberLocked(circle.ID, user.ID) {
+			continue
+		}
+		selectable = append(selectable, cloneCircle(circle))
+	}
+
+	return selectable, nil
 }
 
-func (c *StaticCatalog) FindSelectable(_ *auth.User, circleID string) (Circle, error) {
+func (c *StaticCatalog) FindSelectable(user *auth.User, circleID string) (Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	for _, circle := range c.circles {
-		if circle.ID == circleID {
-			return cloneCircle(circle), nil
-		}
+	if canAccessAllSelectableCircles(user) {
+		return c.findCircleLocked(circleID)
 	}
-	return Circle{}, ErrNotFound
+	if user == nil {
+		return c.findCircleLocked(circleID)
+	}
+	if !c.isCircleMemberLocked(circleID, user.ID) {
+		return Circle{}, ErrNotFound
+	}
+
+	return c.findCircleLocked(circleID)
 }
 
 func (c *StaticCatalog) ListForStaff() ([]Circle, error) {
@@ -245,11 +266,21 @@ func (c *StaticCatalog) Delete(circleID string) error {
 	return ErrNotFound
 }
 
-func (c *StaticCatalog) GetUserCircle(_ *auth.User, circleID string) (Circle, error) {
-	return c.Find(circleID)
+func (c *StaticCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if canAccessAllSelectableCircles(user) {
+		return c.findCircleLocked(circleID)
+	}
+	if user == nil || !c.isCircleMemberLocked(circleID, user.ID) {
+		return Circle{}, ErrNotFound
+	}
+
+	return c.findCircleLocked(circleID)
 }
 
-func (c *StaticCatalog) CreateForUser(_ *auth.User, params CreateCircleParams) (Circle, error) {
+func (c *StaticCatalog) CreateForUser(user *auth.User, params CreateCircleParams) (Circle, error) {
 	created, err := c.Create(params.Name, params.NameYomi, params.GroupName, params.GroupNameYomi, params.ParticipationTypeID, params.ParticipationTypeName, params.Notes, nil, "pending", "", "", nil)
 	if err != nil {
 		return Circle{}, err
@@ -261,6 +292,14 @@ func (c *StaticCatalog) CreateForUser(_ *auth.User, params CreateCircleParams) (
 	for index := range c.circles {
 		if c.circles[index].ID == created.ID {
 			c.circles[index].CanChangeGroupName = params.CanChangeGroupName
+			if user != nil && !c.isCircleMemberLocked(created.ID, user.ID) {
+				c.members[created.ID] = append(c.members[created.ID], CircleMember{
+					UserID:      user.ID,
+					DisplayName: user.DisplayName,
+					IsLeader:    true,
+				})
+				sortMembersForDisplay(c.members[created.ID])
+			}
 			return cloneCircle(c.circles[index]), nil
 		}
 	}
@@ -268,9 +307,12 @@ func (c *StaticCatalog) CreateForUser(_ *auth.User, params CreateCircleParams) (
 	return created, nil
 }
 
-func (c *StaticCatalog) UpdateForUser(_ *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
+func (c *StaticCatalog) UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if user == nil || !c.isCircleLeaderLocked(circleID, user.ID) {
+		return Circle{}, ErrForbidden
+	}
 
 	for index := range c.circles {
 		if c.circles[index].ID != circleID {
@@ -288,13 +330,31 @@ func (c *StaticCatalog) UpdateForUser(_ *auth.User, circleID string, params Upda
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) DeleteForUser(_ *auth.User, circleID string) error {
-	return c.Delete(circleID)
-}
-
-func (c *StaticCatalog) Submit(_ *auth.User, circleID string) (Circle, error) {
+func (c *StaticCatalog) DeleteForUser(user *auth.User, circleID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if user == nil || !c.isCircleLeaderLocked(circleID, user.ID) {
+		return ErrForbidden
+	}
+
+	for index := range c.circles {
+		if c.circles[index].ID != circleID {
+			continue
+		}
+		c.circles = append(c.circles[:index], c.circles[index+1:]...)
+		delete(c.members, circleID)
+		return nil
+	}
+
+	return ErrNotFound
+}
+
+func (c *StaticCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if user == nil || !c.isCircleLeaderLocked(circleID, user.ID) {
+		return Circle{}, ErrForbidden
+	}
 
 	now := time.Now()
 	for index := range c.circles {
@@ -459,8 +519,30 @@ func (c *StaticCatalog) RegenerateInvitationToken(user *auth.User, circleID stri
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) JoinByToken(_ *auth.User, token string) (Circle, error) {
-	return c.FindByInvitationToken(token)
+func (c *StaticCatalog) JoinByToken(user *auth.User, token string) (Circle, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if user == nil {
+		return Circle{}, ErrForbidden
+	}
+
+	for index := range c.circles {
+		if c.circles[index].InvitationToken != token {
+			continue
+		}
+		if c.isCircleMemberLocked(c.circles[index].ID, user.ID) {
+			return Circle{}, ErrAlreadyMember
+		}
+		c.members[c.circles[index].ID] = append(c.members[c.circles[index].ID], CircleMember{
+			UserID:      user.ID,
+			DisplayName: user.DisplayName,
+			IsLeader:    false,
+		})
+		sortMembersForDisplay(c.members[c.circles[index].ID])
+		return cloneCircle(c.circles[index]), nil
+	}
+
+	return Circle{}, ErrNotFound
 }
 
 func (c *StaticCatalog) FindByInvitationToken(token string) (Circle, error) {
@@ -492,4 +574,55 @@ func cloneCircle(value Circle) Circle {
 
 func cloneMembers(values []CircleMember) []CircleMember {
 	return append([]CircleMember{}, values...)
+}
+
+func (c *StaticCatalog) findCircleLocked(circleID string) (Circle, error) {
+	for _, circle := range c.circles {
+		if circle.ID == circleID {
+			return cloneCircle(circle), nil
+		}
+	}
+
+	return Circle{}, ErrNotFound
+}
+
+func (c *StaticCatalog) isCircleMemberLocked(circleID, userID string) bool {
+	for _, member := range c.members[circleID] {
+		if member.UserID == userID {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *StaticCatalog) isCircleLeaderLocked(circleID, userID string) bool {
+	for _, member := range c.members[circleID] {
+		if member.UserID == userID && member.IsLeader {
+			return true
+		}
+	}
+
+	return false
+}
+
+func canAccessAllSelectableCircles(user *auth.User) bool {
+	if user == nil {
+		return true
+	}
+
+	for _, role := range user.Roles {
+		switch role {
+		case "admin", "content_manager", "forms_manager", "circle_manager", "user_manager":
+			return true
+		}
+	}
+
+	for _, permission := range user.Permissions {
+		if strings.HasPrefix(permission, "staff.") {
+			return true
+		}
+	}
+
+	return false
 }

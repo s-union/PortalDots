@@ -26,6 +26,7 @@ func TestListStaffMailsAllowsMissingCircle(t *testing.T) {
 			sessionCookieName:     "test_session",
 			sessionCookieTTL:      time.Hour,
 			sessionCookieSecure:   false,
+			staffVerifyCode:       cfg.StaffVerifyCode,
 			allowInsecureDefaults: true,
 			sessions:              session.NewMemoryStore(time.Hour),
 		},

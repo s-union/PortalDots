@@ -51,9 +51,13 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	verifyCode, err := generateStaffVerifyCode()
-	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
+	verifyCode := h.staffVerifyCode
+	if h.allowInsecureDefaults {
+		generatedCode, err := generateStaffVerifyCode()
+		if err != nil {
+			return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
+		}
+		verifyCode = generatedCode
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {
@@ -62,10 +66,13 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		next.StaffVerifyExpires = time.Now().UTC().Add(staffVerifyTTL)
 	})
 
-	response := staffVerifyRequestResponse{
-		DeliveryMode: "mock",
-		Message:      "モック中: メールは送信していません。画面に表示された認証コードを入力してください。",
-		VerifyCode:   verifyCode,
+	response := staffVerifyRequestResponse{DeliveryMode: "email"}
+	if h.allowInsecureDefaults {
+		response.DeliveryMode = "mock"
+		response.Message = "モック中: メールは送信していません。画面に表示された認証コードを入力してください。"
+		response.VerifyCode = verifyCode
+	} else {
+		response.Message = "認証コードを登録済みの連絡先メールアドレスに送信しました。メール内のコードを入力してください。"
 	}
 
 	return c.JSON(http.StatusOK, response)

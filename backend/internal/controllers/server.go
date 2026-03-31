@@ -34,6 +34,7 @@ type sharedDeps struct {
 	sessionCookieName     string
 	sessionCookieTTL      time.Duration
 	sessionCookieSecure   bool
+	staffVerifyCode       string
 	allowInsecureDefaults bool
 	sessions              session.Store
 }
@@ -248,6 +249,7 @@ func NewServerWithDependencies(
 		sessionCookieName:     cfg.SessionCookieName,
 		sessionCookieTTL:      cfg.SessionTTL,
 		sessionCookieSecure:   cfg.SessionCookieSecure,
+		staffVerifyCode:       cfg.StaffVerifyCode,
 		allowInsecureDefaults: cfg.AllowInsecureDefaults,
 		sessions:              sessionStore,
 	}
