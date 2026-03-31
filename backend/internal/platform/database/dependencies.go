@@ -107,15 +107,19 @@ func EnsureSeedData(ctx context.Context, store *SQLCStore, cfg config.Config) er
 		return err
 	}
 
-	if userCount == 0 {
+	if shouldReseedOnStartup(userCount, cfg) {
 		if err := Seed(ctx, store.Pool(), cfg); err != nil {
-			return err
-		}
-	} else if cfg.AllowInsecureDefaults && cfg.SyncAuthUserOnStartup {
-		if err := SyncConfiguredUsers(ctx, store.Pool(), cfg.AuthUser, cfg.Users); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func shouldReseedOnStartup(userCount int64, cfg config.Config) bool {
+	if userCount == 0 {
+		return true
+	}
+
+	return cfg.AllowInsecureDefaults && cfg.SyncAuthUserOnStartup
 }

@@ -72,8 +72,8 @@ Local development notes:
 Behavior notes:
 
 - `cmd/api` runs SQL migrations on startup before wiring repositories.
-- Seed data is inserted only when the database is empty (`users` count is zero).
-- Demo users are seeded and synchronized only when `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true`.
+- Seed data is inserted when the database is empty (`users` count is zero).
+- When `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true` and `PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP=true`, configured demo seed data is reapplied on every startup.
 - `cmd/api` requires an explicit non-default value for `PORTALDOTS_STAFF_VERIFY_CODE` unless `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true` is set.
 - Session cookies now use `PORTALDOTS_SESSION_TTL_SECONDS` and default to 12 hours.
 - Staff verify email delivery is currently mocked. `POST /v1/staff/verify/request` returns the verification code only when `PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true`; otherwise the configured staff verify code is required and is not exposed in the response.
