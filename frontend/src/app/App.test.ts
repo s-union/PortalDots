@@ -383,4 +383,88 @@ describe('App', () => {
       })
     }
   })
+
+  it('cleans up matchMedia and keydown listeners on unmount', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.reset()
+    appApiMocks.useSessionBootstrapQuery.mockReturnValue({ isLoading: ref(false) })
+    appApiMocks.usePublicConfigQuery.mockReturnValue({
+      data: ref({ isDemo: false, appName: 'PortalDots' })
+    })
+    appApiMocks.useLogoutMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: ref(false)
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
+        { path: '/public/pages', component: { template: '<div>public pages</div>' } },
+        {
+          path: '/public/documents',
+          component: { template: '<div>public documents</div>' }
+        },
+        {
+          path: '/workspace/settings/appearance',
+          component: { template: '<div>appearance</div>' }
+        }
+      ]
+    })
+    await router.push('/')
+    await router.isReady()
+
+    const matchMediaAddListener = vi.fn()
+    const matchMediaRemoveListener = vi.fn()
+    const originalMatchMedia = window.matchMedia
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: () => ({
+        matches: false,
+        media: '(max-width: 1000px)',
+        onchange: null,
+        addEventListener: matchMediaAddListener,
+        removeEventListener: matchMediaRemoveListener,
+        addListener() {},
+        removeListener() {},
+        dispatchEvent() {
+          return true
+        }
+      })
+    })
+
+    const addEventListenerSpy = vi.spyOn(document, 'addEventListener')
+    const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener')
+
+    try {
+      const wrapper = mount(App, {
+        global: {
+          plugins: [pinia, router, createQueryPlugin()]
+        }
+      })
+      await flushPromises()
+
+      const mediaQueryChangeHandler = matchMediaAddListener.mock.calls[0]?.[1]
+      const keydownHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === 'keydown')?.[1]
+
+      expect(mediaQueryChangeHandler).toBeTypeOf('function')
+      expect(keydownHandler).toBeTypeOf('function')
+
+      wrapper.unmount()
+
+      expect(matchMediaRemoveListener).toHaveBeenCalledWith('change', mediaQueryChangeHandler)
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', keydownHandler)
+    } finally {
+      addEventListenerSpy.mockRestore()
+      removeEventListenerSpy.mockRestore()
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia
+      })
+    }
+  })
 })

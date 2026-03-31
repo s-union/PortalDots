@@ -156,14 +156,14 @@ describe('StaffCircleMailPage', () => {
     await wrapper.get('input[name="subject"]').setValue('搬入のご案内')
     await wrapper.get('textarea[name="body"]').setValue('9:00 に集合してください。')
 
-    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('モックメールをキューに追加'))
+    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('メールをキューに追加'))
     if (!mailButton) {
       throw new Error('mail button not found')
     }
     await mailButton.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('企画所属者向けモックメールをキューに追加しました。実メールは送信していません。')
+    expect(wrapper.text()).toContain('企画所属者向けメールをキューに追加しました。')
     expect(wrapper.text()).toContain('責任者A')
     expect(wrapper.text()).toContain('Markdown 記法')
   })
@@ -181,7 +181,7 @@ describe('StaffCircleMailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('宛先となる企画所属者がいないため、メールは送信できません。')
-    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('モックメールをキューに追加'))
+    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('メールをキューに追加'))
     if (!mailButton) {
       throw new Error('mail button not found')
     }

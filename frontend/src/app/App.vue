@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import AppDrawer from '@/components/shell/AppDrawer.vue'
 import BottomTabLink from '@/components/ui/BottomTabLink.vue'
@@ -40,19 +40,32 @@ const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 const isDrawerOpen = ref(false)
 const isSmallScreen = ref(typeof window !== 'undefined' && window.innerWidth <= 1000)
 
+let drawerMediaQueryList: MediaQueryList | null = null
+
+function handleDrawerMediaQueryChange(event: MediaQueryListEvent) {
+  isSmallScreen.value = event.matches
+  if (!event.matches) {
+    isDrawerOpen.value = false
+  }
+}
+
+function handleDrawerKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    isDrawerOpen.value = false
+  }
+}
+
 onMounted(() => {
-  const mq = window.matchMedia('(max-width: 1000px)')
-  mq.addEventListener('change', (e) => {
-    isSmallScreen.value = e.matches
-    if (!e.matches) {
-      isDrawerOpen.value = false
-    }
-  })
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      isDrawerOpen.value = false
-    }
-  })
+  drawerMediaQueryList = window.matchMedia('(max-width: 1000px)')
+  isSmallScreen.value = drawerMediaQueryList.matches
+  drawerMediaQueryList.addEventListener('change', handleDrawerMediaQueryChange)
+  document.addEventListener('keydown', handleDrawerKeydown)
+})
+
+onBeforeUnmount(() => {
+  drawerMediaQueryList?.removeEventListener('change', handleDrawerMediaQueryChange)
+  drawerMediaQueryList = null
+  document.removeEventListener('keydown', handleDrawerKeydown)
 })
 
 // On small screens: slide in/out. On desktop: always visible (no transform).

@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
 import type { z } from 'zod'
 
 export interface FieldError {
@@ -53,7 +53,26 @@ export function useFormValidation<T extends z.ZodTypeAny>(
 
   const fieldErrors = ref<Record<string, string>>({})
   const touchedFields = ref(new Set<string>())
-  const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+  const debounceTimers: Record<string, ReturnType<typeof setTimeout> | undefined> = {}
+
+  const clearFieldDebounceTimer = (fieldKey: string) => {
+    const timer = debounceTimers[fieldKey]
+    if (timer === undefined) {
+      return
+    }
+    clearTimeout(timer)
+    delete debounceTimers[fieldKey]
+  }
+
+  const scheduleFieldValidation = (fieldKey: string) => {
+    clearFieldDebounceTimer(fieldKey)
+    debounceTimers[fieldKey] = setTimeout(() => {
+      delete debounceTimers[fieldKey]
+      if (touchedFields.value.has(fieldKey)) {
+        validateFieldByKey(fieldKey)
+      }
+    }, debounceMs)
+  }
 
   // Get form data regardless of whether it's a ref or plain object
   const getFormData = (): z.input<T> => {
@@ -95,17 +114,7 @@ export function useFormValidation<T extends z.ZodTypeAny>(
   }
 
   const debouncedValidateField = (field: keyof z.input<T>) => {
-    const fieldStr = String(field)
-
-    if (debounceTimers[fieldStr]) {
-      clearTimeout(debounceTimers[fieldStr])
-    }
-
-    debounceTimers[fieldStr] = setTimeout(() => {
-      if (touchedFields.value.has(fieldStr)) {
-        validateFieldByKey(fieldStr)
-      }
-    }, debounceMs)
+    scheduleFieldValidation(String(field))
   }
 
   const validateAll = (): boolean => {
@@ -167,24 +176,27 @@ export function useFormValidation<T extends z.ZodTypeAny>(
   })
 
   // Watch form data changes and validate touched fields
-  watch(
+  const stopWatchingForm = watch(
     () => getFormData(),
     () => {
       // Re-validate all touched fields when form data changes
       for (const field of touchedFields.value) {
-        if (debounceTimers[field]) {
-          clearTimeout(debounceTimers[field])
-        }
-
-        debounceTimers[field] = setTimeout(() => {
-          if (touchedFields.value.has(field)) {
-            validateFieldByKey(field)
-          }
-        }, debounceMs)
+        scheduleFieldValidation(field)
       }
     },
     { deep: true, flush: 'sync' }
   )
+
+  const cleanup = () => {
+    stopWatchingForm()
+    for (const field of Object.keys(debounceTimers)) {
+      clearFieldDebounceTimer(field)
+    }
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(cleanup)
+  }
 
   return {
     fieldErrors,

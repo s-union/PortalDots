@@ -71,7 +71,7 @@ describe('ContactPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('前回のお問い合わせ')
-    expect(wrapper.text()).toContain('「総合窓口」に問い合わせを送信しました（実際のメール送信はされません）。')
+    expect(wrapper.text()).toContain('「総合窓口」に問い合わせを送信しました。')
     expect(wrapper.get('a[href="/circles/select?redirect=%2Fworkspace%2Fcontact"]').text()).toContain('企画を変更')
     expect(router.currentRoute.value.fullPath).toBe('/workspace/contact')
   })

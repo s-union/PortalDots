@@ -28,7 +28,7 @@ describe('PasswordResetPage', () => {
     const wrapper = await mountAtPasswordReset()
 
     expect(wrapper.text()).toContain('パスワードの再設定')
-    expect(wrapper.text()).toContain('旧フォームは未移植')
+    expect(wrapper.text()).toContain('現在、この画面からのパスワード再設定は利用できません。')
     expect(wrapper.get('a[href="/login"]').text()).toContain('ログイン画面へ')
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import { reactive, ref, nextTick } from 'vue'
+import { effectScope, reactive, ref, nextTick } from 'vue'
 import { z } from 'zod'
 import { useFormValidation } from './useFormValidation'
 
@@ -171,6 +171,29 @@ describe('useFormValidation', () => {
     await nextTick()
 
     expect(fieldErrors.value.name).toBe('名前を入力してください')
+  })
+
+  it('clears pending debounce timers when disposed', async () => {
+    const form = reactive({ name: '', email: 'test@example.com', age: undefined })
+    const scope = effectScope()
+    let fieldErrors = ref<Record<string, string>>({})
+
+    scope.run(() => {
+      const formValidation = useFormValidation({
+        schema: testSchema,
+        form: ref(form),
+        debounceMs: 300
+      })
+      fieldErrors = formValidation.fieldErrors
+      formValidation.markTouched('name')
+    })
+
+    scope.stop()
+
+    vi.advanceTimersByTime(300)
+    await nextTick()
+
+    expect(fieldErrors.value.name).toBeUndefined()
   })
 
   it('works with plain reactive form object', async () => {

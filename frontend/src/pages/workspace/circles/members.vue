@@ -23,7 +23,6 @@ import {
   useRemoveMemberMutation,
   useRegenerateInvitationTokenMutation
 } from '@/features/circles/api'
-import { buildApiUrl } from '@/lib/api/client'
 import { useSessionStore } from '@/features/session/store'
 import { buttonVariants } from '@/lib/ui/variants'
 
@@ -51,7 +50,6 @@ const invitationUrl = computed(() => {
   if (!token) {
     return ''
   }
-  const base = buildApiUrl('/').replace(/\/v1\/$/, '')
   return `${window.location.origin}/circles/join/${token}`
 })
 
@@ -60,13 +58,26 @@ const isCurrentUserLeader = computed(() => {
 })
 
 const invitationQrSvg = shallowRef('')
+const invitationQrError = shallowRef('')
 watchEffect(() => {
   const url = invitationUrl.value
+  invitationQrError.value = ''
   if (!url) {
     invitationQrSvg.value = ''
     return
   }
-  invitationQrSvg.value = renderSVG(url)
+  try {
+    const renderedSvg = renderSVG(url)
+    if (renderedSvg.trim() === '') {
+      invitationQrSvg.value = ''
+      invitationQrError.value = 'QRコードの生成に失敗しました。招待URLをそのまま共有してください。'
+      return
+    }
+    invitationQrSvg.value = renderedSvg
+  } catch {
+    invitationQrSvg.value = ''
+    invitationQrError.value = 'QRコードの生成に失敗しました。招待URLをそのまま共有してください。'
+  }
 })
 
 const canShare = computed(
@@ -175,6 +186,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
                 共有
               </button>
             </div>
+            <p v-if="invitationQrError" class="text-sm text-warning">{{ invitationQrError }}</p>
             <div v-if="invitationQrSvg" class="flex justify-center" v-html="invitationQrSvg" />
           </template>
         </div>

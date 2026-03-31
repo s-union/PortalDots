@@ -1,9 +1,15 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+const renderSvgMock = vi.hoisted(() => vi.fn())
+
+vi.mock('uqr', () => ({
+  renderSVG: renderSvgMock
+}))
+
 import CircleMembersPage from './members.vue'
 
 function createQueryPlugin() {
@@ -96,6 +102,10 @@ function buildFetchMock(
 }
 
 describe('CircleMembersPage', () => {
+  beforeEach(() => {
+    renderSvgMock.mockReturnValue('<svg data-testid="invite-qr"></svg>')
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -270,5 +280,24 @@ describe('CircleMembersPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('メンバーの削除に失敗しました')
+  })
+
+  it('shows fallback message when QR rendering fails', async () => {
+    const { pinia, router } = setupTest('leader-user')
+    await router.push('/workspace/circles/members')
+    await router.isReady()
+
+    renderSvgMock.mockImplementation(() => {
+      throw new Error('qr rendering error')
+    })
+    vi.stubGlobal('fetch', buildFetchMock())
+
+    const wrapper = mount(CircleMembersPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('QRコードの生成に失敗しました。招待URLをそのまま共有してください。')
+    expect(wrapper.find('[data-testid="invite-qr"]').exists()).toBe(false)
   })
 })

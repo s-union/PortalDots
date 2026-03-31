@@ -29,6 +29,13 @@ export const router = createRouter({
   routes
 })
 
+function reportSessionInitializationError(error: unknown) {
+  const maybeReportError = Reflect.get(globalThis, 'reportError')
+  if (typeof maybeReportError === 'function') {
+    maybeReportError(error)
+  }
+}
+
 async function ensureSessionStore() {
   const sessionStore = useSessionStore(pinia)
 
@@ -38,7 +45,8 @@ async function ensureSessionStore() {
       queryFn: fetchSessionBootstrap
     })
     sessionStore.hydrate(session)
-  } catch {
+  } catch (error) {
+    reportSessionInitializationError(error)
     sessionStore.reset()
   }
 

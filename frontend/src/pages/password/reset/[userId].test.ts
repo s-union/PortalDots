@@ -28,7 +28,7 @@ describe('PasswordResetSignedPage', () => {
     const wrapper = await mountAtSignedReset()
 
     expect(wrapper.text()).toContain('パスワードの再設定')
-    expect(wrapper.text()).toContain('署名付きパスワード再設定リンクの旧フローは未移植')
+    expect(wrapper.text()).toContain('このリンクからのパスワード再設定は利用できません。')
     expect(wrapper.get('a[href="/password/reset"]').text()).toContain('再設定方法の案内を見る')
   })
 })

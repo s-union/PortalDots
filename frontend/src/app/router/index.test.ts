@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActivePinia } from 'pinia'
 import { pinia } from '@/app/providers/pinia'
 import { queryClient } from '@/app/providers/queryClient'
+import { useSessionStore } from '@/features/session/store'
 
 const sessionApiMocks = vi.hoisted(() => ({
   fetchSessionBootstrap: vi.fn()
@@ -31,6 +32,8 @@ vi.mock('@/features/staff/status/api', async () => {
 
 import { router } from './index'
 
+const originalGlobalReportError = Reflect.get(globalThis, 'reportError')
+
 describe('app router guards', () => {
   beforeEach(() => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
@@ -48,6 +51,11 @@ describe('app router guards', () => {
   })
 
   afterEach(async () => {
+    if (originalGlobalReportError === undefined) {
+      Reflect.deleteProperty(globalThis, 'reportError')
+    } else {
+      Reflect.set(globalThis, 'reportError', originalGlobalReportError)
+    }
     vi.unstubAllGlobals()
     vi.clearAllMocks()
     queryClient.clear()
@@ -362,5 +370,38 @@ describe('app router guards', () => {
 
     expect(router.currentRoute.value.fullPath).toBe('/privacy_policy')
     expect(sessionApiMocks.fetchSessionBootstrap).not.toHaveBeenCalled()
+  })
+
+  it('resets session and reports error when session bootstrap fails', async () => {
+    const bootstrapError = new Error('session bootstrap failed')
+    const reportErrorSpy = vi.fn()
+    const sessionStore = useSessionStore(pinia)
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: ['participant'],
+      permissions: [],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
+    queryClient.removeQueries({ queryKey: ['session', 'bootstrap'] })
+    Reflect.set(globalThis, 'reportError', reportErrorSpy)
+    sessionApiMocks.fetchSessionBootstrap.mockRejectedValue(bootstrapError)
+
+    await router.push('/workspace/pages')
+    await router.isReady()
+
+    expect(router.currentRoute.value.fullPath).toBe('/login')
+    expect(sessionApiMocks.fetchSessionBootstrap).toHaveBeenCalled()
+    expect(reportErrorSpy).toHaveBeenCalledWith(bootstrapError)
+    expect(sessionStore.user).toBeNull()
+    expect(sessionStore.roles).toEqual([])
   })
 })
