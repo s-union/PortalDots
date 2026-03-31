@@ -13,7 +13,7 @@ interface StaffStatus {
 interface StaffVerifyRequestResult {
   deliveryMode: 'email' | 'mock'
   message: string
-  verifyCode?: string
+  verifyCode?: string | null
 }
 
 export async function fetchStaffStatus() {
