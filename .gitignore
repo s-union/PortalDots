@@ -52,7 +52,5 @@ pnpm-debug.log
 # Generated files (do not edit manually)
 /packages/api-client/src/generated/
 /backend/internal/platform/postgres/db/
-/backend/internal/domain/**/sqlc.go
-/backend/internal/platform/database/sqlc.go
 /frontend/typed-router.d.ts
 *.tsbuildinfo
