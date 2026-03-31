@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/binary"
 	"fmt"
 	"net/http"
@@ -93,7 +94,8 @@ func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {
 	}
 
 	if currentSession.StaffVerifyCode == "" ||
-		currentSession.StaffVerifyCode != request.VerifyCode ||
+		len(currentSession.StaffVerifyCode) != len(request.VerifyCode) ||
+		subtle.ConstantTimeCompare([]byte(currentSession.StaffVerifyCode), []byte(request.VerifyCode)) != 1 ||
 		time.Now().UTC().After(currentSession.StaffVerifyExpires) {
 		return validationError(c, map[string][]string{
 			"verifyCode": {"認証コードが間違っているか、期限切れです。再度お試しください。"},

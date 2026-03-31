@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -162,8 +163,16 @@ func staffAnswerExportValue(
 }
 
 func sanitizeArchiveFilename(filename string) string {
+	base := strings.TrimSpace(filepath.Base(filepath.Clean(filename)))
+	if base == "" || base == "." || base == ".." {
+		return "upload.bin"
+	}
 	replacer := strings.NewReplacer("/", "_", "\\", "_")
-	return replacer.Replace(filename)
+	sanitized := strings.TrimSpace(replacer.Replace(base))
+	if sanitized == "" || sanitized == "." || sanitized == ".." {
+		return "upload.bin"
+	}
+	return sanitized
 }
 
 func (h *staffFormHandlers) shouldNotifyStaffFormAnswer(formID string, isPublic bool) bool {

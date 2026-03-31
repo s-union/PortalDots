@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"crypto/subtle"
 	"sync"
 	"time"
 )
@@ -53,7 +54,9 @@ func (s *participantVerifyCodeStore) Match(sessionID, verificationType, code str
 		return false
 	}
 
-	return current.Code == code && now.Before(current.ExpiresAt)
+	return now.Before(current.ExpiresAt) &&
+		len(current.Code) == len(code) &&
+		subtle.ConstantTimeCompare([]byte(current.Code), []byte(code)) == 1
 }
 
 func (s *participantVerifyCodeStore) Clear(sessionID, verificationType string) {

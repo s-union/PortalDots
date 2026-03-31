@@ -3,12 +3,10 @@ package controllers
 import (
 	"net/http"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
-	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 type staffMailResponse struct {
@@ -40,12 +38,6 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 		return internalError(c)
 	}
 	jobs := h.mails.ListAll()
-	sort.SliceStable(jobs, func(i, j int) bool {
-		if jobs[i].CreatedAt == jobs[j].CreatedAt {
-			return jobs[i].ID > jobs[j].ID
-		}
-		return jobs[i].CreatedAt > jobs[j].CreatedAt
-	})
 	response := make([]staffMailResponse, 0, len(jobs))
 	for _, job := range jobs {
 		circleValue := staffManagedCircleResponse{}
@@ -110,19 +102,13 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		errors["recipients"] = []string{"宛先メールアドレスを 1 件以上入力してください"}
 	}
 	if len(errors) > 0 {
-		return c.JSON(http.StatusUnprocessableEntity, models.ValidationErrorResponse{
-			Message: "validation_error",
-			Errors:  errors,
-		})
+		return validationError(c, errors)
 	}
 
 	currentCircle, err := h.circles.Find(request.CircleID)
 	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, models.ValidationErrorResponse{
-			Message: "validation_error",
-			Errors: map[string][]string{
-				"circleId": {"企画を選択してください"},
-			},
+		return validationError(c, map[string][]string{
+			"circleId": {"企画を選択してください"},
 		})
 	}
 
