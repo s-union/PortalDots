@@ -4224,6 +4224,51 @@ func TestStaffPermissionsValidation(t *testing.T) {
 	}
 }
 
+func TestStaffPermissionsUpdateInvalidatesTargetUserSession(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:          "content-user",
+		LoginIDs:    []string{"content@example.com"},
+		DisplayName: "Content User",
+		Password:    "password",
+		Roles:       []string{"content_manager"},
+		Permissions: []string{"staff.pages.read"},
+		IsVerified:  true,
+	})
+	server := NewServer(cfg)
+
+	targetCookies := map[string]*http.Cookie{}
+	recorder := doJSONRequest(t, server, targetCookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "content@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	authorizeStaff(t, server, targetCookies)
+	recorder = doJSONRequest(t, server, targetCookies, http.MethodGet, "/v1/staff/pages", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	adminCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, adminCookies)
+	authorizeStaff(t, server, adminCookies)
+	recorder = doJSONRequest(t, server, adminCookies, http.MethodPut, "/v1/staff/permissions/content-user", map[string]any{
+		"permissions": []string{},
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, targetCookies, http.MethodGet, "/v1/staff/pages", nil)
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d after session invalidation, got %d, body=%s", http.StatusUnauthorized, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestStaffUsersPreventSelfLockout(t *testing.T) {
 	t.Parallel()
 
@@ -4302,6 +4347,51 @@ func TestStaffUsersValidation(t *testing.T) {
 	}
 	if len(response.Errors["roles"]) == 0 {
 		t.Fatalf("expected roles validation error, got %#v", response.Errors)
+	}
+}
+
+func TestStaffUserRolesUpdateInvalidatesTargetUserSession(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:          "content-user",
+		LoginIDs:    []string{"content@example.com"},
+		DisplayName: "Content User",
+		Password:    "password",
+		Roles:       []string{"content_manager"},
+		Permissions: []string{"staff.pages.read"},
+		IsVerified:  true,
+	})
+	server := NewServer(cfg)
+
+	targetCookies := map[string]*http.Cookie{}
+	recorder := doJSONRequest(t, server, targetCookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "content@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	authorizeStaff(t, server, targetCookies)
+	recorder = doJSONRequest(t, server, targetCookies, http.MethodGet, "/v1/staff/pages", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	adminCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, adminCookies)
+	authorizeStaff(t, server, adminCookies)
+	recorder = doJSONRequest(t, server, adminCookies, http.MethodPut, "/v1/staff/users/content-user/roles", map[string]any{
+		"roles": []string{"participant"},
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, targetCookies, http.MethodGet, "/v1/staff/pages", nil)
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d after session invalidation, got %d, body=%s", http.StatusUnauthorized, recorder.Code, recorder.Body.String())
 	}
 }
 

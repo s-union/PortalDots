@@ -115,7 +115,17 @@ func updateStaffUserSession(sessionID string, currentSession session.Session, up
 		}
 		next.User.DisplayName = updatedUser.DisplayName
 		next.User.Roles = slices.Clone(updatedUser.Roles)
+		next.User.Permissions = slices.Clone(updatedUser.Permissions)
 	})
+}
+
+func updateOrInvalidateStaffUserSession(sessionID string, currentSession session.Session, updatedUser useradmin.User, store session.Store) {
+	if currentSession.User != nil && currentSession.User.ID == updatedUser.ID {
+		updateStaffUserSession(sessionID, currentSession, updatedUser, store)
+		return
+	}
+
+	store.DeleteByUserID(updatedUser.ID)
 }
 
 func mapStaffUser(userValue useradmin.User) staffUserSummaryResponse {

@@ -83,7 +83,7 @@ func (h *staffPermissionHandlers) getStaffPermission(c echo.Context) error {
 }
 
 func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
-	_, currentSession, status, ok := h.requirePermissionsEdit(c)
+	sessionID, currentSession, status, ok := h.requirePermissionsEdit(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -124,6 +124,7 @@ func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	updateOrInvalidateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
 
 	actorUserID := ""
 	if currentSession.User != nil {
