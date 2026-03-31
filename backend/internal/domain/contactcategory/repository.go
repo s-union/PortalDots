@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
@@ -39,7 +40,7 @@ func NewMemoryRepository(cfg []config.ContactCategory) *MemoryRepository {
 			Email: item.Email,
 		})
 	}
-	slices.SortFunc(items, func(a, b Category) int { return compareString(a.Name, b.Name) })
+	slices.SortFunc(items, func(a, b Category) int { return strings.Compare(a.Name, b.Name) })
 
 	return &MemoryRepository{
 		items:  items,
@@ -64,8 +65,10 @@ func (r *MemoryRepository) Create(name, email string) (Category, error) {
 		Email: email,
 	}
 	r.nextID++
-	r.items = append(r.items, created)
-	slices.SortFunc(r.items, func(a, b Category) int { return compareString(a.Name, b.Name) })
+	insertAt, _ := slices.BinarySearchFunc(r.items, created, func(item Category, target Category) int {
+		return strings.Compare(item.Name, target.Name)
+	})
+	r.items = slices.Insert(r.items, insertAt, created)
 
 	return created, nil
 }
@@ -78,10 +81,15 @@ func (r *MemoryRepository) Update(id, name, email string) (Category, error) {
 		if item.ID != id {
 			continue
 		}
-		r.items[index].Name = name
-		r.items[index].Email = email
-		slices.SortFunc(r.items, func(a, b Category) int { return compareString(a.Name, b.Name) })
-		return r.items[index], nil
+		updated := r.items[index]
+		updated.Name = name
+		updated.Email = email
+		r.items = append(r.items[:index], r.items[index+1:]...)
+		insertAt, _ := slices.BinarySearchFunc(r.items, updated, func(item Category, target Category) int {
+			return strings.Compare(item.Name, target.Name)
+		})
+		r.items = slices.Insert(r.items, insertAt, updated)
+		return updated, nil
 	}
 
 	return Category{}, ErrNotFound
@@ -100,15 +108,4 @@ func (r *MemoryRepository) Delete(id string) error {
 	}
 
 	return ErrNotFound
-}
-
-func compareString(left, right string) int {
-	switch {
-	case left < right:
-		return -1
-	case left > right:
-		return 1
-	default:
-		return 0
-	}
 }

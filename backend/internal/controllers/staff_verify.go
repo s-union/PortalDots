@@ -63,13 +63,9 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 	})
 
 	response := staffVerifyRequestResponse{
-		DeliveryMode: "email",
-		Message:      "認証コードを送信しました。メールをご確認ください。",
-	}
-	if h.allowInsecureDefaults {
-		response.DeliveryMode = "mock"
-		response.Message = "モック中: メールは送信していません。画面に表示された認証コードを入力してください。"
-		response.VerifyCode = verifyCode
+		DeliveryMode: "mock",
+		Message:      "モック中: メールは送信していません。画面に表示された認証コードを入力してください。",
+		VerifyCode:   verifyCode,
 	}
 
 	return c.JSON(http.StatusOK, response)

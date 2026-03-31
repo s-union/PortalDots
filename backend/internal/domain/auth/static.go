@@ -39,7 +39,7 @@ type RegisterParams struct {
 }
 
 type RegistrationAuthenticator interface {
-	RegisterUser(params RegisterParams)
+	RegisterUser(params RegisterParams) error
 }
 
 type staticCredential struct {
@@ -145,13 +145,13 @@ func (a *StaticAuthenticator) ChangePassword(_ context.Context, userID, currentP
 	return nil
 }
 
-func (a *StaticAuthenticator) RegisterUser(params RegisterParams) {
+func (a *StaticAuthenticator) RegisterUser(params RegisterParams) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return
+		return err
 	}
 
 	a.users[params.ID] = staticCredential{
@@ -165,6 +165,7 @@ func (a *StaticAuthenticator) RegisterUser(params RegisterParams) {
 		contactEmail: params.ContactEmail,
 		passwordHash: string(passwordHash),
 	}
+	return nil
 }
 
 func matchesStaticLoginID(candidate staticCredential, loginID string) bool {

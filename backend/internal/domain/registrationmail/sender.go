@@ -1,6 +1,7 @@
 package registrationmail
 
 import (
+	"crypto/tls"
 	"fmt"
 	"mime"
 	"net/smtp"
@@ -54,9 +55,45 @@ func NewSMTPSender(host string, port int, username, password, from string) *SMTP
 }
 
 func (s *SMTPSender) SendVerificationMail(message Message) (DeliveryResult, error) {
-	auth := smtp.PlainAuth("", s.username, s.password, s.host)
+	client, err := smtp.Dial(s.addr)
+	if err != nil {
+		return DeliveryResult{}, err
+	}
+	defer client.Close()
+
+	if ok, _ := client.Extension("STARTTLS"); !ok {
+		return DeliveryResult{}, fmt.Errorf("smtp server %s does not support STARTTLS", s.addr)
+	}
+	if err := client.StartTLS(&tls.Config{
+		ServerName: s.host,
+		MinVersion: tls.VersionTLS12,
+	}); err != nil {
+		return DeliveryResult{}, err
+	}
+
+	if err := client.Auth(smtp.PlainAuth("", s.username, s.password, s.host)); err != nil {
+		return DeliveryResult{}, err
+	}
+
 	body := buildVerificationMailBody(s.from, message)
-	if err := smtp.SendMail(s.addr, auth, s.from, []string{message.To}, []byte(body)); err != nil {
+	if err := client.Mail(s.from); err != nil {
+		return DeliveryResult{}, err
+	}
+	if err := client.Rcpt(message.To); err != nil {
+		return DeliveryResult{}, err
+	}
+	writer, err := client.Data()
+	if err != nil {
+		return DeliveryResult{}, err
+	}
+	if _, err := writer.Write([]byte(body)); err != nil {
+		_ = writer.Close()
+		return DeliveryResult{}, err
+	}
+	if err := writer.Close(); err != nil {
+		return DeliveryResult{}, err
+	}
+	if err := client.Quit(); err != nil {
 		return DeliveryResult{}, err
 	}
 

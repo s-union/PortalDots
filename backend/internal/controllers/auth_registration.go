@@ -178,7 +178,7 @@ func (h *authHandlers) register(c echo.Context) error {
 	}
 
 	if h.registrationAuth != nil {
-		h.registrationAuth.RegisterUser(auth.RegisterParams{
+		if err := h.registrationAuth.RegisterUser(auth.RegisterParams{
 			ID:           createdUser.ID,
 			DisplayName:  createdUser.DisplayName,
 			LoginIDs:     createdUser.LoginIDs,
@@ -186,7 +186,9 @@ func (h *authHandlers) register(c echo.Context) error {
 			Password:     request.Password,
 			Roles:        createdUser.Roles,
 			Permissions:  createdUser.Permissions,
-		})
+		}); err != nil {
+			return errorJSON(c, http.StatusInternalServerError, "failed_to_register_auth_user")
+		}
 	}
 
 	return h.loginRegisteredUser(c, createdUser)
@@ -381,7 +383,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	}
 
 	if h.registrationAuth != nil {
-		h.registrationAuth.RegisterUser(auth.RegisterParams{
+		if err := h.registrationAuth.RegisterUser(auth.RegisterParams{
 			ID:           createdUser.ID,
 			DisplayName:  createdUser.DisplayName,
 			LoginIDs:     createdUser.LoginIDs,
@@ -389,7 +391,9 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 			Password:     request.Password,
 			Roles:        createdUser.Roles,
 			Permissions:  createdUser.Permissions,
-		})
+		}); err != nil {
+			return errorJSON(c, http.StatusInternalServerError, "failed_to_register_auth_user")
+		}
 	}
 
 	if err := h.pendingRegistrations.Delete(pendingValue.ID); err != nil && !errors.Is(err, pendingregistration.ErrNotFound) {

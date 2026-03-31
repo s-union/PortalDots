@@ -2385,15 +2385,15 @@ func TestStaffVerificationFlow(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
 		t.Fatalf("unmarshal staff verify request response: %v", err)
 	}
-	if requestResponse.DeliveryMode != "email" || requestResponse.VerifyCode != "" {
+	if requestResponse.DeliveryMode != "mock" || requestResponse.VerifyCode == "" {
 		t.Fatalf("unexpected staff verify request response: %#v", requestResponse)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": "x",
+		"verifyCode": requestResponse.VerifyCode,
 	}, csrf)
-	if recorder.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/status", nil)
@@ -2405,7 +2405,7 @@ func TestStaffVerificationFlow(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &verifiedStatus); err != nil {
 		t.Fatalf("unmarshal verified staff status: %v", err)
 	}
-	if !verifiedStatus.Allowed || verifiedStatus.Authorized {
+	if !verifiedStatus.Allowed || !verifiedStatus.Authorized {
 		t.Fatalf("unexpected verified staff status: %#v", verifiedStatus)
 	}
 }

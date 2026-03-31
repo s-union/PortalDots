@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
@@ -35,9 +36,7 @@ func NewMemoryRepository(cfg []config.Tag) *MemoryRepository {
 		items = append(items, Tag{ID: item.ID, Name: item.Name})
 	}
 
-	slices.SortFunc(items, func(a, b Tag) int {
-		return compareString(a.Name, b.Name)
-	})
+	slices.SortFunc(items, func(a, b Tag) int { return strings.Compare(a.Name, b.Name) })
 
 	return &MemoryRepository{
 		items:  items,
@@ -61,8 +60,10 @@ func (r *MemoryRepository) Create(name string) (Tag, error) {
 		Name: name,
 	}
 	r.nextID++
-	r.items = append(r.items, created)
-	slices.SortFunc(r.items, func(a, b Tag) int { return compareString(a.Name, b.Name) })
+	insertAt, _ := slices.BinarySearchFunc(r.items, created, func(item Tag, target Tag) int {
+		return strings.Compare(item.Name, target.Name)
+	})
+	r.items = slices.Insert(r.items, insertAt, created)
 
 	return created, nil
 }
@@ -75,9 +76,14 @@ func (r *MemoryRepository) Update(id, name string) (Tag, error) {
 		if item.ID != id {
 			continue
 		}
-		r.items[index].Name = name
-		slices.SortFunc(r.items, func(a, b Tag) int { return compareString(a.Name, b.Name) })
-		return r.items[index], nil
+		updated := r.items[index]
+		updated.Name = name
+		r.items = append(r.items[:index], r.items[index+1:]...)
+		insertAt, _ := slices.BinarySearchFunc(r.items, updated, func(item Tag, target Tag) int {
+			return strings.Compare(item.Name, target.Name)
+		})
+		r.items = slices.Insert(r.items, insertAt, updated)
+		return updated, nil
 	}
 
 	return Tag{}, ErrNotFound
@@ -96,15 +102,4 @@ func (r *MemoryRepository) Delete(id string) error {
 	}
 
 	return ErrNotFound
-}
-
-func compareString(left, right string) int {
-	switch {
-	case left < right:
-		return -1
-	case left > right:
-		return 1
-	default:
-		return 0
-	}
 }
