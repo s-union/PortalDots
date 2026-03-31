@@ -28,6 +28,20 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: portaldots_rebuild
+          POSTGRES_USER: portaldots
+          POSTGRES_PASSWORD: portaldots
+        options: >-
+          --health-cmd="pg_isready -U portaldots -d portaldots_rebuild"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +62,8 @@ jobs:
 
       - name: Test backend
         working-directory: backend
+        env:
+          PORTALDOTS_DATABASE_URL: postgres://portaldots:portaldots@127.0.0.1:5432/portaldots_rebuild?sslmode=disable
         run: go test ./...
 
   frontend:
