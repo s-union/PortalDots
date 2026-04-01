@@ -122,6 +122,9 @@ func (r *MemoryRepository) MarkSent(id string, deliveredAt time.Time) bool {
 		if r.jobs[index].ID != id {
 			continue
 		}
+		if r.jobs[index].Status != "queued" {
+			return false
+		}
 		r.jobs[index].Status = "sent"
 		r.jobs[index].DeliveredAt = deliveredAt.UTC().Format(time.RFC3339)
 		return true

@@ -99,6 +99,8 @@ func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAut
 		}
 	}
 
+	validateUniqueStaticAuthIdentifiers(built)
+
 	return &StaticAuthenticator{users: built}
 }
 
@@ -106,7 +108,7 @@ func (a *StaticAuthenticator) Authenticate(_ context.Context, loginID, password 
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 
-	normalizedLoginID := strings.TrimSpace(strings.ToLower(loginID))
+	normalizedLoginID := normalizeStaticLoginID(loginID)
 	for _, candidate := range a.users {
 		if !matchesStaticLoginID(candidate, normalizedLoginID) {
 			continue
@@ -169,15 +171,54 @@ func (a *StaticAuthenticator) RegisterUser(params RegisterParams) error {
 }
 
 func matchesStaticLoginID(candidate staticCredential, loginID string) bool {
-	if strings.TrimSpace(strings.ToLower(candidate.contactEmail)) == loginID {
+	if normalizeStaticLoginID(candidate.contactEmail) == loginID {
 		return true
 	}
 
 	for _, current := range candidate.loginIDs {
-		if strings.TrimSpace(strings.ToLower(current)) == loginID {
+		if normalizeStaticLoginID(current) == loginID {
 			return true
 		}
 	}
 
 	return false
+}
+
+func validateUniqueStaticAuthIdentifiers(users map[string]staticCredential) {
+	owners := make(map[string]string)
+	for userID, credential := range users {
+		for _, identifier := range staticAuthIdentifiers(credential) {
+			if ownerID, ok := owners[identifier]; ok && ownerID != userID {
+				panic("duplicate static auth identifier: " + identifier)
+			}
+			owners[identifier] = userID
+		}
+	}
+}
+
+func staticAuthIdentifiers(credential staticCredential) []string {
+	identifiers := make([]string, 0, len(credential.loginIDs)+1)
+	seen := make(map[string]struct{}, len(credential.loginIDs)+1)
+	appendIdentifier := func(raw string) {
+		normalized := normalizeStaticLoginID(raw)
+		if normalized == "" {
+			return
+		}
+		if _, ok := seen[normalized]; ok {
+			return
+		}
+		seen[normalized] = struct{}{}
+		identifiers = append(identifiers, normalized)
+	}
+
+	appendIdentifier(credential.contactEmail)
+	for _, loginID := range credential.loginIDs {
+		appendIdentifier(loginID)
+	}
+
+	return identifiers
+}
+
+func normalizeStaticLoginID(loginID string) string {
+	return strings.TrimSpace(strings.ToLower(loginID))
 }

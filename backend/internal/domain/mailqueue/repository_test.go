@@ -3,6 +3,7 @@ package mailqueue
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 func TestListQueuedReturnsOldestFirst(t *testing.T) {
@@ -37,4 +38,25 @@ func TestListQueuedReturnsOldestFirst(t *testing.T) {
 	if limited[0].ID != first.ID || limited[1].ID != second.ID {
 		t.Fatalf("expected oldest-first with limit, got %#v", limited)
 	}
+}
+
+func TestMarkSentReturnsFalseWhenAlreadySent(t *testing.T) {
+	t.Parallel()
+
+	repository := NewMemoryRepository()
+	job, err := repository.Enqueue(context.Background(), "circle-a", "staff", "subject", "body", []string{"a@example.com"})
+	if err != nil {
+		t.Fatalf("enqueue mail: %v", err)
+	}
+
+	if !repository.MarkSent(job.ID, nowUTC()) {
+		t.Fatal("expected first mark sent to succeed")
+	}
+	if repository.MarkSent(job.ID, nowUTC()) {
+		t.Fatal("expected second mark sent to fail for non-queued job")
+	}
+}
+
+func nowUTC() time.Time {
+	return time.Now().UTC()
 }
