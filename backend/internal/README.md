@@ -4,6 +4,7 @@
 
 - `app/`: process-level jobs and workers
 - `controllers/`: HTTP handlers, route registration, and API server composition
+- `http/`: new HTTP composition root and future feature-first HTTP layout
 - `domain/`: business-facing repositories and services
 - `middlewares/`: shared Echo middleware and request guards
 - `models/`: shared HTTP transport models

@@ -64,6 +64,11 @@ description = "Run Go tests for backend"
 dir = "backend"
 run = "go test ./..."
 
+[tasks.backend-cover]
+description = "Run Go tests with coverage for backend"
+dir = "backend"
+run = "GOCACHE=/tmp/portaldots-go-cache go test -coverprofile=/tmp/portaldots-backend-cover.out ./..."
+
 [tasks.backend-check]
 description = "Run staticcheck for Go backend"
 dir = "backend"

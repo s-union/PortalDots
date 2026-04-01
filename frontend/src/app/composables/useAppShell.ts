@@ -1,0 +1,440 @@
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useLogoutMutation } from '@/features/auth/api'
+import { useSessionBootstrapQuery } from '@/features/session/api'
+import { useSessionStore } from '@/features/session/store'
+import {
+  canManageParticipationTypes,
+  canManagePortalSettings,
+  canReadCircles,
+  canReadContactCategories,
+  canReadDocuments,
+  canReadForms,
+  canReadPages,
+  canReadPermissions,
+  canReadPlaces,
+  canReadTags,
+  canReadUsers,
+  canUseMailQueue,
+  canUseStaffExports,
+  canViewActivityLogs,
+  hasStaffAccess
+} from '@/features/staff/access/capabilities'
+import { usePublicConfigQuery } from '@/features/public-home/api'
+import { cn } from '@/lib/ui/cn'
+import type { AppModeSwitchTarget, DrawerNavLink } from '@/app/types/shell'
+
+export function useAppShell() {
+  const route = useRoute()
+  const router = useRouter()
+  const sessionStore = useSessionStore()
+  const bootstrapQuery = useSessionBootstrapQuery()
+  const logoutMutation = useLogoutMutation()
+  const publicConfigQuery = usePublicConfigQuery()
+  const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalDots')
+  const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
+
+  const isDrawerOpen = ref(false)
+  const isSmallScreen = ref(typeof window !== 'undefined' && window.innerWidth <= 1000)
+
+  let drawerMediaQueryList: MediaQueryList | null = null
+
+  function handleDrawerMediaQueryChange(event: MediaQueryListEvent) {
+    isSmallScreen.value = event.matches
+    if (!event.matches) {
+      isDrawerOpen.value = false
+    }
+  }
+
+  function handleDrawerKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      isDrawerOpen.value = false
+    }
+  }
+
+  onMounted(() => {
+    drawerMediaQueryList = window.matchMedia('(max-width: 1000px)')
+    isSmallScreen.value = drawerMediaQueryList.matches
+    drawerMediaQueryList.addEventListener('change', handleDrawerMediaQueryChange)
+    document.addEventListener('keydown', handleDrawerKeydown)
+  })
+
+  onBeforeUnmount(() => {
+    drawerMediaQueryList?.removeEventListener('change', handleDrawerMediaQueryChange)
+    drawerMediaQueryList = null
+    document.removeEventListener('keydown', handleDrawerKeydown)
+  })
+
+  const drawerTranslateClass = computed(() => {
+    if (!isSmallScreen.value) {
+      return ''
+    }
+    return isDrawerOpen.value ? 'translate-x-0' : '-translate-x-full'
+  })
+
+  const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions))
+  const canAccessUsers = computed(() => canReadUsers(sessionStore.roles, sessionStore.permissions))
+  const canAccessCircles = computed(() => canReadCircles(sessionStore.roles, sessionStore.permissions))
+  const canAccessTags = computed(() => canReadTags(sessionStore.roles, sessionStore.permissions))
+  const canAccessPlaces = computed(() => canReadPlaces(sessionStore.roles, sessionStore.permissions))
+  const canAccessPages = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions))
+  const canAccessDocuments = computed(() => canReadDocuments(sessionStore.roles, sessionStore.permissions))
+  const canAccessForms = computed(() => canReadForms(sessionStore.roles, sessionStore.permissions))
+  const canAccessContactCategories = computed(() =>
+    canReadContactCategories(sessionStore.roles, sessionStore.permissions)
+  )
+  const canAccessPermissions = computed(() => canReadPermissions(sessionStore.roles, sessionStore.permissions))
+  const canAccessParticipationTypes = computed(() =>
+    canManageParticipationTypes(sessionStore.roles, sessionStore.permissions)
+  )
+  const canAccessExports = computed(() => canUseStaffExports(sessionStore.roles, sessionStore.permissions))
+  const canAccessMails = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
+  const canAccessActivityLogs = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
+  const canAccessPortalSettings = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
+  const isStaffRoute = computed(() => route.path.startsWith('/staff'))
+  const hasDrawer = computed(() => route.meta.noDrawer !== true)
+  const showFooter = computed(() => route.meta.noFooter !== true)
+  const showBottomTabs = computed(() => !isStaffRoute.value && route.meta.noBottomTabs !== true && hasDrawer.value)
+  const appModeLabel = computed(() => (isStaffRoute.value ? 'スタッフモード' : '一般モード'))
+  const circleActionLabel = computed(() => (sessionStore.currentCircle === null ? '企画を選択' : '企画を切り替え'))
+  const circleName = computed(() => sessionStore.currentCircle?.name ?? '企画未選択')
+
+  const authLabel = computed(() => {
+    if (bootstrapQuery.isLoading.value) {
+      return '読み込み中'
+    }
+    if (!sessionStore.isAuthenticated) {
+      return 'ログインしていません'
+    }
+    return `${sessionStore.user?.displayName ?? '不明なユーザー'}としてログイン中`
+  })
+
+  const topDescription = computed(() =>
+    isStaffRoute.value ? authLabel.value : `現在の企画: ${sessionStore.currentCircle?.name ?? '未選択'}`
+  )
+
+  const modeSwitchTarget = computed<AppModeSwitchTarget | null>(() => {
+    if (sessionStore.isAuthenticated && canAccessStaff.value && !isStaffRoute.value) {
+      return { to: '/staff', label: 'スタッフモードへ' }
+    }
+    if (sessionStore.isAuthenticated && canAccessStaff.value && isStaffRoute.value) {
+      return { to: '/', label: '一般モードへ' }
+    }
+    if (!sessionStore.isAuthenticated) {
+      return { to: '/login', label: 'ログイン' }
+    }
+    return null
+  })
+
+  const generalLinks = computed<DrawerNavLink[]>(() => [
+    {
+      to: '/',
+      label: 'ホーム',
+      iconClass: 'fas fa-home fa-fw',
+      active: route.path === '/'
+    },
+    {
+      to: sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages',
+      label: 'お知らせ',
+      iconClass: 'fas fa-bullhorn fa-fw',
+      active: route.path.startsWith('/workspace/pages') || route.path.startsWith('/public/pages')
+    },
+    {
+      to: sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents',
+      label: '配布資料',
+      iconClass: 'far fa-file-alt fa-fw',
+      active: route.path.startsWith('/workspace/documents') || route.path.startsWith('/public/documents')
+    },
+    {
+      to: '/workspace/forms',
+      label: '申請',
+      iconClass: 'far fa-edit fa-fw',
+      active: route.path.startsWith('/workspace/forms'),
+      hidden: sessionStore.currentCircle === null
+    },
+    {
+      to: '/workspace/contact',
+      label: 'お問い合わせ',
+      iconClass: 'far fa-envelope fa-fw',
+      active: route.path.startsWith('/workspace/contact'),
+      hidden: !sessionStore.isAuthenticated
+    },
+    {
+      to: sessionStore.isAuthenticated ? '/workspace/settings' : '/workspace/settings/appearance',
+      label: 'ユーザー設定',
+      iconClass: 'fas fa-cog fa-fw',
+      active: route.path.startsWith('/workspace/settings')
+    }
+  ])
+
+  const mobileTabs = computed(() => [
+    {
+      to: '/',
+      label: 'ホーム',
+      iconClass: 'fas fa-home',
+      active: route.path === '/'
+    },
+    {
+      to: sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages',
+      label: 'お知らせ',
+      iconClass: 'fas fa-bullhorn',
+      active: route.path.startsWith('/workspace/pages') || route.path.startsWith('/public/pages'),
+      showNotifier: false
+    },
+    {
+      to: sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents',
+      label: '配布資料',
+      iconClass: 'far fa-file-alt',
+      active: route.path.startsWith('/workspace/documents') || route.path.startsWith('/public/documents')
+    },
+    {
+      to: '/workspace/forms',
+      label: '申請',
+      iconClass: 'far fa-edit',
+      active: route.path.startsWith('/workspace/forms'),
+      hidden: !sessionStore.isAuthenticated || sessionStore.currentCircle === null
+    },
+    {
+      to: '/workspace/contact',
+      label: 'お問い合わせ',
+      iconClass: 'far fa-envelope',
+      active: route.path.startsWith('/workspace/contact'),
+      hidden: !sessionStore.isAuthenticated
+    }
+  ])
+
+  const staffLinks = computed<DrawerNavLink[]>(() => [
+    {
+      to: '/staff',
+      label: 'スタッフモード ホーム',
+      iconClass: 'fas fa-home fa-fw',
+      active: route.path === '/staff'
+    },
+    {
+      to: '/staff/users',
+      label: 'ユーザー情報管理',
+      iconClass: 'far fa-address-book fa-fw',
+      active: route.path.startsWith('/staff/users'),
+      hidden: !canAccessUsers.value
+    },
+    {
+      to: '/staff/circles',
+      label: '企画情報管理',
+      iconClass: 'fas fa-star fa-fw',
+      active: route.path.startsWith('/staff/circles'),
+      hidden: !canAccessCircles.value
+    },
+    {
+      to: '/staff/circles/participation_types',
+      label: '参加種別管理',
+      iconClass: 'fas fa-list fa-fw',
+      active:
+        route.path.startsWith('/staff/circles/participation_types') ||
+        route.path.startsWith('/staff/participation-types'),
+      hidden: isDemoMode.value || !canAccessParticipationTypes.value
+    },
+    {
+      to: '/staff/tags',
+      label: '企画タグ管理',
+      iconClass: 'fas fa-tags fa-fw',
+      active: route.path.startsWith('/staff/tags'),
+      hidden: !canAccessTags.value
+    },
+    {
+      to: '/staff/places',
+      label: '場所情報管理',
+      iconClass: 'fas fa-store fa-fw',
+      active: route.path.startsWith('/staff/places'),
+      hidden: !canAccessPlaces.value
+    },
+    {
+      to: '/staff/pages',
+      label: 'お知らせ管理',
+      iconClass: 'fas fa-bullhorn fa-fw',
+      active: route.path.startsWith('/staff/pages'),
+      hidden: !canAccessPages.value
+    },
+    {
+      to: '/staff/documents',
+      label: '配布資料管理',
+      iconClass: 'far fa-file-alt fa-fw',
+      active: route.path.startsWith('/staff/documents'),
+      hidden: !canAccessDocuments.value
+    },
+    {
+      to: '/staff/forms',
+      label: '申請管理',
+      iconClass: 'far fa-edit fa-fw',
+      active: route.path.startsWith('/staff/forms'),
+      hidden: !canAccessForms.value
+    },
+    {
+      to: '/staff/contacts/categories',
+      label: 'お問い合わせ受付設定',
+      iconClass: 'fas fa-at fa-fw',
+      active: route.path.startsWith('/staff/contacts/categories'),
+      hidden: !canAccessContactCategories.value
+    },
+    {
+      to: '/staff/permissions',
+      label: 'スタッフの権限設定',
+      iconClass: 'fas fa-key fa-fw',
+      active: route.path.startsWith('/staff/permissions'),
+      hidden: !canAccessPermissions.value
+    },
+    {
+      to: '/staff/activity-logs',
+      label: 'アクティビティログ',
+      iconClass: 'fas fa-user-edit fa-fw',
+      active: route.path.startsWith('/staff/activity-logs'),
+      hidden: !canAccessActivityLogs.value,
+      adminOnly: true
+    },
+    {
+      to: '/staff/settings/portal',
+      label: 'PortalDots の設定',
+      iconClass: 'fas fa-cog fa-fw',
+      active: route.path.startsWith('/staff/settings'),
+      hidden: !canAccessPortalSettings.value,
+      adminOnly: true
+    },
+    {
+      to: '/staff/about',
+      label: 'PortalDots のアップデートの確認',
+      iconClass: 'fa-solid fa-arrows-rotate fa-fw',
+      active: route.path.startsWith('/staff/about')
+    },
+    {
+      to: '/staff/exports',
+      label: 'CSV / ZIP 出力',
+      iconClass: 'fas fa-file-export fa-fw',
+      active: route.path.startsWith('/staff/exports'),
+      hidden: isDemoMode.value || !canAccessExports.value
+    },
+    {
+      to: '/staff/mails',
+      label: 'メールキュー',
+      iconClass: 'far fa-envelope fa-fw',
+      active: route.path.startsWith('/staff/mails'),
+      hidden: isDemoMode.value || !canAccessMails.value
+    }
+  ])
+
+  const mobileTabsStyle = computed(() => ({
+    gridTemplateColumns: `repeat(${Math.max(mobileTabs.value.filter((link) => link.hidden !== true).length, 1)}, minmax(0, 1fr))`
+  }))
+
+  const statusBadges = computed(() => {
+    if (!sessionStore.isAuthenticated) {
+      return []
+    }
+
+    const badges: { label: string; variant: 'primary' | 'danger' }[] = []
+    if (canAccessStaff.value) {
+      badges.push({ label: 'スタッフ', variant: 'primary' })
+    }
+    if (sessionStore.roles.includes('admin')) {
+      badges.push({ label: '管理者', variant: 'danger' })
+    }
+    return badges
+  })
+
+  const drawerLinks = computed(() => {
+    const links = isStaffRoute.value ? staffLinks.value : generalLinks.value
+    return links.filter((link) => link.hidden !== true)
+  })
+
+  function closeDrawer() {
+    isDrawerOpen.value = false
+  }
+
+  function openDrawer() {
+    isDrawerOpen.value = true
+  }
+
+  const pageTitle = computed(() => {
+    if (route.path === '/login') {
+      return 'ログイン'
+    }
+    if (route.path === '/register') {
+      return 'ユーザー登録'
+    }
+    if (route.path === '/support') {
+      return '推奨動作環境'
+    }
+    if (route.path === '/privacy_policy') {
+      return 'プライバシーポリシー'
+    }
+    if (route.path === '/circles/select') {
+      return '企画を選択'
+    }
+    if (route.path === '/circles/new') {
+      return '新しい企画を作成'
+    }
+    if (route.path === '/staff') {
+      return 'スタッフモード'
+    }
+    if (route.path === '/staff/about') {
+      return 'PortalDotsについて'
+    }
+
+    const activeLink = [...(isStaffRoute.value ? staffLinks.value : generalLinks.value)].find((link) => link.active)
+    return activeLink?.label ?? 'PortalDots'
+  })
+
+  watchEffect(() => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    const currentAppName = appName.value
+    if (pageTitle.value === 'PortalDots' || pageTitle.value === currentAppName) {
+      document.title = currentAppName
+      return
+    }
+
+    document.title = `${pageTitle.value} — ${currentAppName}`
+  })
+
+  const mainContentClass = computed(() =>
+    cn(
+      'pt-20',
+      hasDrawer.value && 'pl-[320px] max-[1440px]:pl-[280px] max-[1000px]:pl-0',
+      showBottomTabs.value && 'max-[1000px]:pb-[calc(env(safe-area-inset-bottom)+4.5rem)]'
+    )
+  )
+
+  async function handleLogout() {
+    await logoutMutation.mutateAsync()
+    await router.push('/login')
+  }
+
+  return {
+    appName,
+    authLabel,
+    circleActionLabel,
+    circleName,
+    closeDrawer,
+    drawerLinks,
+    drawerTranslateClass,
+    handleLogout,
+    hasDrawer,
+    isDemoMode,
+    isDrawerOpen,
+    isSmallScreen,
+    isStaffRoute,
+    logoutMutation,
+    mainContentClass,
+    mobileTabs,
+    mobileTabsStyle,
+    modeSwitchTarget,
+    openDrawer,
+    pageTitle,
+    sessionStore,
+    showBottomTabs,
+    showFooter,
+    statusBadges,
+    topDescription,
+    appModeLabel
+  }
+}

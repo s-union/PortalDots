@@ -18,7 +18,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,vue}'],
-      exclude: ['src/test/**', 'src/**/*.test.ts', 'src/lib/api/schema.ts', 'src/app/router/**']
+      exclude: [
+        'src/test/**',
+        'src/**/*.test.ts',
+        'src/**/*.stories.ts',
+        'src/stories/**',
+        'src/**/*.d.ts',
+        'src/lib/api/schema.ts'
+      ]
     }
   }
 })

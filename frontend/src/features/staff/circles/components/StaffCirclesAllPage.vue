@@ -7,7 +7,10 @@ import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '
 import StaffFilterDrawer from '@/components/staff/StaffFilterDrawer.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import { canAccessCircleMail, canDeleteCircles, canEditCircles } from '@/features/staff/access/capabilities'
 import { useStaffCirclesAllPage } from '@/features/staff/circles/composables/useStaffCirclesAllPage'
 import { statusTone, statusLabel } from '@/features/staff/circles/helpers/circleFilters'
@@ -80,14 +83,11 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
     <PageLayout class="max-w-full">
       <PageHeader eyebrow="Circles" title="全企画一覧" description="参加種別をまたいで企画を一覧管理します。">
         <template #actions>
-          <RouterLink
-            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-            to="/staff/circles"
-          >
+          <RouterLink :class="buttonVariants({ variant: 'secondary', size: 'md' })" to="/staff/circles">
             参加種別から探す
           </RouterLink>
           <RouterLink
-            class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            :class="buttonVariants({ variant: 'secondary', size: 'md' })"
             to="/staff/circles/participation_types"
           >
             参加種別管理
@@ -97,10 +97,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
 
       <DataCard title="企画一覧" description="全企画を横断して検索・絞り込みできます。" overflow-hidden>
         <template #actions>
-          <a
-            :href="exportUrl"
-            class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-xs text-body transition hover:bg-surface-light hover:no-underline"
-          >
+          <a :href="exportUrl" :class="buttonVariants({ variant: 'secondary', size: 'xs' })">
             <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
             CSVで出力
           </a>
@@ -130,10 +127,10 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
           @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
-            <div class="flex w-full flex-wrap items-center gap-3">
+            <ToolbarRow>
               <button
                 v-if="canEdit"
-                class="inline-flex items-center gap-1 rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
+                :class="buttonVariants({ variant: 'primary', size: 'md', weight: 'semibold' })"
                 type="button"
                 @click="openCreateCircleCard"
               >
@@ -148,10 +145,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
                   placeholder="企画ID・企画名・団体名などで絞り込み"
                   class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <button
-                  type="submit"
-                  class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
-                >
+                <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
                   <i class="fas fa-search fa-fw" aria-hidden="true" />
                   絞り込み
                 </button>
@@ -161,7 +155,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
                 現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全企画:
                 {{ rows.length }}
               </p>
-            </div>
+            </ToolbarRow>
           </template>
 
           <template #actions="{ row }">
@@ -169,7 +163,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
               <RouterLink
                 v-if="canEdit"
                 :to="`/staff/circles/${encodeURIComponent(String(row.id))}`"
-                class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
+                :class="buttonVariants({ variant: 'secondary', size: 'sm' })"
                 title="編集"
               >
                 <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
@@ -177,21 +171,21 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
               <RouterLink
                 v-if="canSendEmail"
                 :to="`/staff/circles/${encodeURIComponent(String(row.id))}/email`"
-                class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
+                :class="buttonVariants({ variant: 'secondary', size: 'sm' })"
                 title="メール送信"
               >
                 <i class="far fa-envelope fa-fw" aria-hidden="true" />
               </RouterLink>
-              <button
+              <IconActionButton
                 v-if="canDelete"
-                class="inline-flex h-8 w-8 items-center justify-center rounded border border-danger text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
+                variant="danger"
                 type="button"
                 title="削除"
                 :disabled="deleteCircleMutation.isPending.value"
                 @click="handleDeleteCircle(String(row.id), String(row.name))"
               >
                 <i class="fas fa-trash fa-fw" aria-hidden="true" />
-              </button>
+              </IconActionButton>
             </div>
           </template>
 

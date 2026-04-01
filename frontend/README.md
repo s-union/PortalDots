@@ -1,14 +1,19 @@
 # Frontend Structure
 
-This frontend centralizes **all Vue components** under `src/components`.
+This frontend splits Vue code by responsibility:
+
+- `src/pages`: route shells only
+- `src/features/*/components`: feature-specific screens, editors, and content containers
+- `src/features/*/composables`: feature orchestration and local state
+- `src/components`: reusable UI and layout primitives
 
 ```text
 frontend/
 ├── src/
 │   ├── app/         # app bootstrap and router wiring (no component implementations)
-│   ├── components/  # all Vue components
-│   ├── features/    # domain API/state/composables
-│   ├── pages/       # route-level pages grouped by area
+│   ├── components/  # reusable UI/layout primitives
+│   ├── features/    # domain APIs, feature components, composables
+│   ├── pages/       # route-level shells grouped by area
 │   ├── styles/      # global styles
 │   ├── stories/     # Storybook stories
 │   └── test/        # test setup
@@ -18,16 +23,17 @@ frontend/
 
 ## Ownership rules
 
-- **`src/components`**: every Vue component (`.vue`) lives here.
-- **`src/pages`**: route screens that map directly to URLs.
-- **`src/features`**: domain logic only (API, state, business logic, composables).
+- **`src/components`**: reusable presentational building blocks, not feature-owned data orchestration.
+- **`src/pages`**: route shells that map directly to URLs and hand off to feature components.
+- **`src/features`**: domain APIs, feature-owned components, composables, and helpers.
 - **`src/app`**: app bootstrap and router composition only.
 
 ## Where to place new code
 
-| What                        | Where                         |
-| --------------------------- | ----------------------------- |
-| New route page              | `src/pages/<area>/...`        |
-| Any Vue component           | `src/components/<domain>/...` |
-| Feature API/state logic     | `src/features/<feature>/...`  |
-| App bootstrap/router wiring | `src/app/...`                 |
+| What                         | Where                                   |
+| ---------------------------- | --------------------------------------- |
+| New route page               | `src/pages/<area>/...`                  |
+| Reusable UI/layout component | `src/components/<domain>/...`           |
+| Feature screen/editor        | `src/features/<feature>/components/...` |
+| Feature API/state/composable | `src/features/<feature>/...`            |
+| App bootstrap/router wiring  | `src/app/...`                           |

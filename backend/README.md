@@ -12,6 +12,7 @@ backend/
 └── internal/
     ├── app/               # app-level jobs and workers
     ├── controllers/       # HTTP handlers, routes, server composition
+    ├── http/              # new HTTP composition root and future feature-first API layout
     ├── domain/            # business repositories and domain services
     ├── middlewares/       # Echo middleware and request guards
     ├── models/            # shared request/response transport models
@@ -24,8 +25,11 @@ Rules of thumb:
 - `internal/domain`: feature-oriented business code such as `form`, `page`, `useradmin`.
 - `internal/platform`: infrastructure code such as config loading, SQLC store wiring, and generated PostgreSQL access.
 - `internal/controllers`: Echo handlers and request/response mapping.
+- `internal/http/server`: `cmd/api` から参照される新しい composition root。依存を `public/workspace/staff/shared` の関心ごとで束ねる。
 - `internal/middlewares`: Echo middleware setup.
 - `internal/models`: shared API transport models (errors/pagination, etc.)
+
+人間向けの索引は [docs/backend-map.md](./docs/backend-map.md) を参照してください。
 
 Current scope:
 

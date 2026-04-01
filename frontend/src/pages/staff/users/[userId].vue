@@ -11,7 +11,7 @@ definePage({
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import StaffUserEditor from '@/components/staff/StaffUserEditor.vue'
+import StaffUserEditor from '@/features/staff/users/components/StaffUserEditor.vue'
 
 const route = useRoute('/staff/users/[userId]')
 const router = useRouter()

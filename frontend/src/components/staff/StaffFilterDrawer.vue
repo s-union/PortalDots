@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 
 export type StaffFilterFieldType = 'string' | 'bool'
 export type StaffFilterOperator = '=' | '!=' | 'like' | 'not like'
@@ -139,15 +141,15 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
         <div v-for="query in queries" :key="query.id" class="rounded border border-border bg-surface p-4">
           <div class="mb-2 flex items-center justify-between gap-2">
             <div class="text-sm font-medium text-body">{{ resolveLabel(query.keyName) }}</div>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded border border-border text-muted transition hover:bg-danger-light hover:text-danger"
+            <IconActionButton
               type="button"
               title="条件を削除"
+              variant="subtleDanger"
               :disabled="loading"
               @click="emit('remove', query.id)"
             >
               <i class="fas fa-times" aria-hidden="true" />
-            </button>
+            </IconActionButton>
           </div>
 
           <div class="grid gap-2 min-[860px]:grid-cols-[10rem_1fr]">
@@ -233,7 +235,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
 
     <section class="flex items-center gap-3">
       <button
-        class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+        :class="buttonVariants({ variant: 'primary', size: 'md', weight: 'semibold' })"
         type="button"
         :disabled="loading"
         @click="emit('apply')"
@@ -241,7 +243,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
         適用
       </button>
       <button
-        class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
+        :class="buttonVariants({ variant: 'secondary', size: 'md' })"
         type="button"
         :disabled="loading || queries.length === 0"
         @click="emit('clear')"

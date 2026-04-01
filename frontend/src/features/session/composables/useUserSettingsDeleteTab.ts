@@ -1,28 +1,22 @@
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { extractDeleteAccountValidationMessage, useDeleteOwnAccountMutation } from '@/features/session/deleteAccount'
-import { extractPasswordValidationMessage, useUpdatePasswordMutation } from '@/features/session/password'
-import { extractProfileValidationMessage, useUpdateProfileMutation } from '@/features/session/profile'
 import { useSessionStore } from '@/features/session/store'
-import { useUiThemePreference } from '@/features/session/theme'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
-import { buildUserSettingsTabs, type UserSettingsTab } from '@/features/ui/tabStrip'
+import { useUserSettingsTabs } from './useUserSettingsTabs'
 
-export function useUserSettingsPage(activeTab: UserSettingsTab) {
-  const route = useRoute()
+export function useUserSettingsDeleteTab() {
+  const { tabs } = useUserSettingsTabs('delete')
   const router = useRouter()
   const sessionStore = useSessionStore()
-  const updateProfileMutation = useUpdateProfileMutation()
-  const updatePasswordMutation = useUpdatePasswordMutation()
   const deleteAccountMutation = useDeleteOwnAccountMutation()
-  const { theme, setTheme } = useUiThemePreference()
+  const errorMessage = ref('')
 
-  const tabs = computed(() => buildUserSettingsTabs(activeTab, sessionStore.isAuthenticated))
   const hasPrivilegedRole = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions))
   const belongsToCircle = computed(() => sessionStore.currentCircle !== null)
   const canDeleteAccountFromServer = computed(() => sessionStore.user?.canDeleteAccount === true)
   const canDeleteAccount = computed(() => canDeleteAccountFromServer.value)
-  const deleteAccountBlockedReason = computed(() => {
+  const blockedReason = computed(() => {
     if (canDeleteAccountFromServer.value) {
       return 'アカウントを削除した場合、申請の手続きなどができなくなります。'
     }
@@ -34,48 +28,30 @@ export function useUserSettingsPage(activeTab: UserSettingsTab) {
     }
     return '企画所属または権限状態のため、現在はアカウント削除できません。'
   })
-  const forgotPasswordHref = computed(() => '/password/reset')
-  const workspaceBackLink = computed(() => {
-    if (!sessionStore.isAuthenticated) {
-      return '/'
-    }
-    if (route.path.startsWith('/workspace/settings')) {
-      return '/'
-    }
-    return '/'
-  })
 
   async function deleteAccount() {
+    errorMessage.value = ''
     if (!canDeleteAccount.value) {
-      return null
+      return
     }
     if (typeof window !== 'undefined' && !window.confirm('本当にアカウントを削除しますか？')) {
-      return null
+      return
     }
 
     try {
       await deleteAccountMutation.mutateAsync()
       await router.replace('/')
-      return null
     } catch (error) {
-      return extractDeleteAccountValidationMessage(error)
+      errorMessage.value = extractDeleteAccountValidationMessage(error)
     }
   }
 
   return {
-    tabs,
-    theme,
-    setTheme,
-    sessionStore,
-    updateProfileMutation,
-    updatePasswordMutation,
-    deleteAccountMutation,
+    blockedReason,
     canDeleteAccount,
-    deleteAccountBlockedReason,
-    forgotPasswordHref,
-    workspaceBackLink,
-    extractProfileValidationMessage,
-    extractPasswordValidationMessage,
-    deleteAccount
+    deleteAccount,
+    deleteAccountMutation,
+    errorMessage,
+    tabs
   }
 }

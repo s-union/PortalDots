@@ -96,6 +96,30 @@ export const buttonVariants = cva(
 
 export type ButtonVariantProps = VariantProps<typeof buttonVariants>
 
+export const iconButtonVariants = cva(
+  'inline-flex items-center justify-center rounded-[0.45rem] transition disabled:cursor-not-allowed disabled:opacity-60',
+  {
+    variants: {
+      variant: {
+        ghost: 'text-body hover:bg-primary-light hover:text-primary',
+        surface: 'border border-border bg-surface text-body hover:bg-surface-light',
+        danger: 'border border-danger text-danger hover:bg-danger-light',
+        subtleDanger: 'text-muted hover:bg-danger-light hover:text-danger'
+      },
+      size: {
+        sm: 'h-8 w-8',
+        md: 'h-10 w-10'
+      }
+    },
+    defaultVariants: {
+      variant: 'ghost',
+      size: 'sm'
+    }
+  }
+)
+
+export type IconButtonVariantProps = VariantProps<typeof iconButtonVariants>
+
 export const surfaceVariants = cva('rounded border border-border bg-surface', {
   variants: {
     shadow: {

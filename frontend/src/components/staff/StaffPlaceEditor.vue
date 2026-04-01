@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import {
   buildDeleteStaffPlaceConfirmMessage,
   extractStaffPlaceValidationMessage,
@@ -134,7 +135,7 @@ async function handleDelete() {
             <div class="flex justify-between gap-3">
               <button
                 v-if="place"
-                class="rounded border border-danger bg-danger-light px-6 py-3 font-bold text-danger transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+                :class="buttonVariants({ variant: 'dangerOutline', size: 'lg', weight: 'bold' })"
                 :disabled="deleteMutation.isPending.value"
                 type="button"
                 @click="handleDelete"
@@ -143,7 +144,7 @@ async function handleDelete() {
               </button>
               <div class="ml-auto">
                 <button
-                  class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+                  :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
                   :disabled="createMutation.isPending.value || updateMutation.isPending.value"
                   type="submit"
                 >

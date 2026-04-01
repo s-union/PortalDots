@@ -10,4 +10,12 @@
 
 ## Rule of thumb
 
-Each file here should correspond to a URL or a closely related route screen. Keep business logic thin—delegate to `src/features` for API/domain logic and `src/components` for UI building blocks.
+Each file here should correspond to a URL or a closely related route screen.
+
+Keep route pages thin:
+
+- resolve route params and query state
+- wire route metadata
+- render a feature-owned content component from `src/features/.../components`
+
+Business logic and feature UI should live under `src/features`, while reusable UI primitives belong in `src/components`.
