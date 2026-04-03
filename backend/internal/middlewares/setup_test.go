@@ -146,6 +146,59 @@ func TestTransformExternalIDs(t *testing.T) {
 			t.Fatalf("expected encoded download url, got %q", response.DownloadURL)
 		}
 	})
+
+	t.Run("preserves request id header on json responses", func(t *testing.T) {
+		t.Parallel()
+
+		e := echo.New()
+		circleID := "0195ec00-0022-7000-8000-000000000001"
+		req := httptest.NewRequest(http.MethodGet, "/circles", nil)
+		rec := httptest.NewRecorder()
+		rec.Header().Set(echo.HeaderXRequestID, "req-123")
+		c := e.NewContext(req, rec)
+
+		handler := TransformExternalIDs()(func(c echo.Context) error {
+			return c.JSON(http.StatusOK, map[string]string{"id": circleID})
+		})
+
+		if err := handler(c); err != nil {
+			t.Fatalf("expected middleware to pass through, got %v", err)
+		}
+		if got := rec.Header().Get(echo.HeaderXRequestID); got != "req-123" {
+			t.Fatalf("expected request id header to be preserved, got %q", got)
+		}
+	})
+
+	t.Run("passes through non json responses immediately", func(t *testing.T) {
+		t.Parallel()
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/download", nil)
+		rec := httptest.NewRecorder()
+		rec.Header().Set(echo.HeaderXRequestID, "req-456")
+		c := e.NewContext(req, rec)
+
+		handler := TransformExternalIDs()(func(c echo.Context) error {
+			c.Response().Header().Set(echo.HeaderContentType, "application/zip")
+			if _, err := c.Response().Write([]byte("zipdata")); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
+			if got := rec.Body.String(); got != "zipdata" {
+				t.Fatalf("expected non json response to be written immediately, got %q", got)
+			}
+			return nil
+		})
+
+		if err := handler(c); err != nil {
+			t.Fatalf("expected middleware to pass through, got %v", err)
+		}
+		if got := rec.Body.String(); got != "zipdata" {
+			t.Fatalf("unexpected non json response body: %q", got)
+		}
+		if got := rec.Header().Get(echo.HeaderXRequestID); got != "req-456" {
+			t.Fatalf("expected request id header to be preserved, got %q", got)
+		}
+	})
 }
 
 func TestVerifyCSRF(t *testing.T) {

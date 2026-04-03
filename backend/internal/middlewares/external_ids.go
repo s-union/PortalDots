@@ -1,12 +1,14 @@
 package middlewares
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"mime"
+	"net"
 	"net/http"
-	"net/http/httptest"
 	"strconv"
 	"strings"
 
@@ -71,8 +73,8 @@ func TransformExternalIDs() echo.MiddlewareFunc {
 			}
 
 			originalWriter := c.Response().Writer
-			bufferedWriter := httptest.NewRecorder()
-			c.Response().Writer = bufferedWriter
+			transformingWriter := newExternalIDResponseWriter(originalWriter)
+			c.Response().Writer = transformingWriter
 
 			err := next(c)
 			c.Response().Writer = originalWriter
@@ -80,31 +82,179 @@ func TransformExternalIDs() echo.MiddlewareFunc {
 				return err
 			}
 
-			statusCode := bufferedWriter.Code
-			if statusCode == 0 {
-				statusCode = http.StatusOK
-			}
-
-			body := bufferedWriter.Body.Bytes()
-			contentType := bufferedWriter.Header().Get(echo.HeaderContentType)
-			if isJSONContentType(contentType) && len(body) > 0 {
-				encodedBody, encodeErr := encodeExternalIDResponse(body)
-				if encodeErr != nil {
-					return invalidRequest(c)
-				}
-				body = encodedBody
-			}
-
-			copyHeaders(originalWriter.Header(), bufferedWriter.Header(), len(body))
-			originalWriter.WriteHeader(statusCode)
-			if len(body) > 0 {
-				if _, writeErr := originalWriter.Write(body); writeErr != nil {
-					return writeErr
-				}
-			}
-			return nil
+			return transformingWriter.Finalize()
 		}
 	}
+}
+
+type externalIDResponseMode int
+
+const (
+	externalIDResponseModeUndecided externalIDResponseMode = iota
+	externalIDResponseModeBufferedJSON
+	externalIDResponseModePassthrough
+)
+
+type externalIDResponseWriter struct {
+	original    http.ResponseWriter
+	header      http.Header
+	statusCode  int
+	wroteHeader bool
+	mode        externalIDResponseMode
+	body        bytes.Buffer
+}
+
+func newExternalIDResponseWriter(original http.ResponseWriter) *externalIDResponseWriter {
+	return &externalIDResponseWriter{
+		original: original,
+		header:   make(http.Header),
+	}
+}
+
+func (w *externalIDResponseWriter) Header() http.Header {
+	return w.header
+}
+
+func (w *externalIDResponseWriter) WriteHeader(statusCode int) {
+	if w.wroteHeader {
+		return
+	}
+
+	w.wroteHeader = true
+	w.statusCode = statusCode
+	if w.shouldBufferJSON() {
+		w.mode = externalIDResponseModeBufferedJSON
+		return
+	}
+
+	w.mode = externalIDResponseModePassthrough
+	w.commitPassthroughHeaders()
+	w.original.WriteHeader(statusCode)
+}
+
+func (w *externalIDResponseWriter) Write(body []byte) (int, error) {
+	switch w.mode {
+	case externalIDResponseModeBufferedJSON:
+		if !w.wroteHeader {
+			w.wroteHeader = true
+			w.statusCode = http.StatusOK
+		}
+		return w.body.Write(body)
+	case externalIDResponseModePassthrough:
+		if !w.wroteHeader {
+			w.WriteHeader(http.StatusOK)
+		}
+		return w.original.Write(body)
+	default:
+		if w.shouldBufferJSON() {
+			w.mode = externalIDResponseModeBufferedJSON
+			if !w.wroteHeader {
+				w.wroteHeader = true
+				w.statusCode = http.StatusOK
+			}
+			return w.body.Write(body)
+		}
+
+		w.mode = externalIDResponseModePassthrough
+		if !w.wroteHeader {
+			w.wroteHeader = true
+			w.statusCode = http.StatusOK
+			w.commitPassthroughHeaders()
+			w.original.WriteHeader(http.StatusOK)
+		}
+		return w.original.Write(body)
+	}
+}
+
+func (w *externalIDResponseWriter) Flush() {
+	switch w.mode {
+	case externalIDResponseModeBufferedJSON:
+		return
+	case externalIDResponseModePassthrough:
+		if flusher, ok := w.original.(http.Flusher); ok {
+			flusher.Flush()
+		}
+	default:
+		w.mode = externalIDResponseModePassthrough
+		if !w.wroteHeader {
+			w.wroteHeader = true
+			w.statusCode = http.StatusOK
+			w.commitPassthroughHeaders()
+			w.original.WriteHeader(http.StatusOK)
+		}
+		if flusher, ok := w.original.(http.Flusher); ok {
+			flusher.Flush()
+		}
+	}
+}
+
+func (w *externalIDResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := w.original.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("response writer does not support hijacking")
+	}
+	return hijacker.Hijack()
+}
+
+func (w *externalIDResponseWriter) Push(target string, opts *http.PushOptions) error {
+	pusher, ok := w.original.(http.Pusher)
+	if !ok {
+		return http.ErrNotSupported
+	}
+	return pusher.Push(target, opts)
+}
+
+func (w *externalIDResponseWriter) Finalize() error {
+	switch w.mode {
+	case externalIDResponseModeBufferedJSON:
+		return w.flushBufferedJSON()
+	case externalIDResponseModePassthrough:
+		return nil
+	default:
+		if w.shouldBufferJSON() {
+			w.mode = externalIDResponseModeBufferedJSON
+			return w.flushBufferedJSON()
+		}
+		if !w.wroteHeader && len(w.header) == 0 {
+			return nil
+		}
+		if !w.wroteHeader {
+			w.statusCode = http.StatusOK
+		}
+		w.commitPassthroughHeaders()
+		w.original.WriteHeader(w.statusCode)
+		return nil
+	}
+}
+
+func (w *externalIDResponseWriter) flushBufferedJSON() error {
+	body := w.body.Bytes()
+	if len(body) > 0 {
+		encodedBody, err := encodeExternalIDResponse(body)
+		if err != nil {
+			return invalidExternalIDResponseWrite(w.original)
+		}
+		body = encodedBody
+	}
+
+	if w.statusCode == 0 {
+		w.statusCode = http.StatusOK
+	}
+	mergeHeaders(w.original.Header(), w.header, len(body))
+	w.original.WriteHeader(w.statusCode)
+	if len(body) == 0 {
+		return nil
+	}
+	_, err := w.original.Write(body)
+	return err
+}
+
+func (w *externalIDResponseWriter) commitPassthroughHeaders() {
+	mergeHeaders(w.original.Header(), w.header, -1)
+}
+
+func (w *externalIDResponseWriter) shouldBufferJSON() bool {
+	return isJSONContentType(w.header.Get(echo.HeaderContentType))
 }
 
 func decodeExternalIDParams(c echo.Context) error {
@@ -381,6 +531,13 @@ func invalidRequest(c echo.Context) error {
 	return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
 }
 
+func invalidExternalIDResponseWrite(w http.ResponseWriter) error {
+	mergeHeaders(w.Header(), http.Header{echo.HeaderContentType: []string{echo.MIMEApplicationJSON}}, -1)
+	w.WriteHeader(http.StatusBadRequest)
+	_, err := w.Write([]byte("{\"message\":\"invalid_request\"}\n"))
+	return err
+}
+
 func isJSONContentType(value string) bool {
 	contentType, _, err := mime.ParseMediaType(value)
 	if err != nil {
@@ -399,20 +556,18 @@ func shouldTransformMapKeys(parentKey string) bool {
 	return ok
 }
 
-func copyHeaders(target http.Header, source http.Header, bodyLength int) {
+func mergeHeaders(target http.Header, source http.Header, bodyLength int) {
 	target.Del(echo.HeaderContentLength)
-	for key := range target {
-		target.Del(key)
-	}
 	for key, values := range source {
 		if strings.EqualFold(key, echo.HeaderContentLength) {
 			continue
 		}
+		target.Del(key)
 		for _, value := range values {
 			target.Add(key, value)
 		}
 	}
-	if bodyLength > 0 {
+	if bodyLength >= 0 {
 		target.Set(echo.HeaderContentLength, strconv.Itoa(bodyLength))
 	}
 }
