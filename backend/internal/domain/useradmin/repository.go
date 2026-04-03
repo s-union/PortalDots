@@ -3,11 +3,11 @@ package useradmin
 import (
 	"errors"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("user not found")
@@ -254,7 +254,7 @@ func (r *StaticRepository) Create(params CreateParams) (User, error) {
 
 	id := strings.TrimSpace(params.ID)
 	if id == "" {
-		id = "user-generated-" + strconv.Itoa(r.nextID)
+		id = uuidv7.MustString()
 		r.nextID++
 	}
 

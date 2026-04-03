@@ -178,7 +178,7 @@ INSERT INTO users (
     is_email_verified,
     is_univemail_verified
 ) VALUES (
-    COALESCE(NULLIF($1, ''), gen_random_uuid()::text),
+    COALESCE(NULLIF($1, '')::uuid, uuidv7()),
     $2,
     $3,
     $4,

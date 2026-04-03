@@ -51,8 +51,8 @@ func TestLoginAndBootstrap(t *testing.T) {
 	if response.User == nil {
 		t.Fatal("expected authenticated user")
 	}
-	if response.User.ID != "independent-user" {
-		t.Fatalf("expected user id independent-user, got %s", response.User.ID)
+	if response.User.ID != "0195ec00-0099-7000-8000-000000000001" {
+		t.Fatalf("expected user id 0195ec00-0099-7000-8000-000000000001, got %s", response.User.ID)
 	}
 	if response.User.DisplayName != "Independent User" {
 		t.Fatalf("expected display name Independent User, got %s", response.User.DisplayName)
@@ -1200,7 +1200,7 @@ func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "member-0195ec00-0021-7000-8000-000000000001",
+		ID:          "0195ec00-0057-7000-8000-000000000001",
 		LoginIDs:    []string{"0195ec00-0021-7000-8000-000000000001@example.com"},
 		DisplayName: "Circle A Member",
 		Password:    "password",
@@ -1237,7 +1237,7 @@ func TestAddCurrentCircleMemberAcceptsContactEmail(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:           "contact-email-member",
+		ID:           "0195ec00-0091-7000-8000-000000000001",
 		LoginIDs:     []string{"24c0001"},
 		DisplayName:  "Contact Email Member",
 		ContactEmail: "contact-add@example.com",
@@ -3606,7 +3606,7 @@ func TestStaffCirclesRequireCircleAdminRole(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "forms-user",
+		ID:          "0195ec00-0092-7000-8000-000000000001",
 		LoginIDs:    []string{"forms@example.com"},
 		DisplayName: "Forms User",
 		Password:    "password",
@@ -3703,7 +3703,7 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &form); err != nil {
 		t.Fatalf("unmarshal circle mail form: %v", err)
 	}
-	if form.Circle.ID != "0195ec00-0022-7000-8000-000000000001" || len(form.Recipients) != 2 || form.Recipients[0].ID != "member-0195ec00-0022-7000-8000-000000000001" || form.Recipients[1].ID != "demo-circle-unverified" {
+	if form.Circle.ID != "0195ec00-0022-7000-8000-000000000001" || len(form.Recipients) != 2 || form.Recipients[0].ID != "0195ec00-0058-7000-8000-000000000001" || form.Recipients[1].ID != "0195ec00-0056-7000-8000-000000000001" {
 		t.Fatalf("unexpected circle mail form: %#v", form)
 	}
 
@@ -3757,7 +3757,7 @@ func TestStaffCircleMembersListAddAndDelete(t *testing.T) {
 
 	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "demo-user",
+		ID:          "0195ec00-0093-7000-8000-000000000001",
 		LoginIDs:    []string{"demo@example.com", "24a0000"},
 		DisplayName: "Demo User",
 		Password:    "password",
@@ -3801,7 +3801,7 @@ func TestStaffCircleMembersListAddAndDelete(t *testing.T) {
 		t.Fatalf("expected 3 members after add, got %#v", members)
 	}
 	addedMemberIndex := slices.IndexFunc(members, func(member staffCircleMemberResponse) bool {
-		return member.UserID == "demo-user"
+		return member.UserID == "0195ec00-0093-7000-8000-000000000001"
 	})
 	if addedMemberIndex < 0 || !slices.Equal(members[addedMemberIndex].LoginIDs, []string{"demo@example.com", "24a0000"}) {
 		t.Fatalf("unexpected added member response: %#v", members)
@@ -3820,7 +3820,7 @@ func TestStaffCircleMembersListAddAndDelete(t *testing.T) {
 		t.Fatalf("expected 3 mail recipients after add, got %#v", form.Recipients)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members/demo-user", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members/0195ec00-0093-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
@@ -3842,7 +3842,7 @@ func TestStaffCircleMembersValidation(t *testing.T) {
 
 	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:           "contact-email-member",
+		ID:           "0195ec00-0091-7000-8000-000000000001",
 		LoginIDs:     []string{"24c0001"},
 		DisplayName:  "Contact Email Member",
 		ContactEmail: "contact-add@example.com",
@@ -3902,7 +3902,7 @@ func TestStaffCircleMembersRejectLeaderDeletion(t *testing.T) {
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members/member-0195ec00-0022-7000-8000-000000000001", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001/members/0195ec00-0058-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
@@ -3921,7 +3921,7 @@ func TestManagedStaffCirclesHideCircleDetailsFromNonCircleReaders(t *testing.T) 
 
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "content-user",
+		ID:          "0195ec00-0094-7000-8000-000000000001",
 		LoginIDs:    []string{"content@example.com"},
 		DisplayName: "Content User",
 		Password:    "password",
@@ -3965,16 +3965,16 @@ func TestStaffUsersNonAdminCannotChangeAdminRole(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "admin-target",
-		LoginIDs:    []string{"admin-target@example.com"},
+		ID:          "0195ec00-0095-7000-8000-000000000001",
+		LoginIDs:    []string{"0195ec00-0095-7000-8000-000000000001@example.com"},
 		DisplayName: "Admin Target",
 		Password:    "password",
 		Roles:       []string{"admin"},
 		IsVerified:  true,
 	})
 	cfg.AuthUser = config.AuthUser{
-		ID:          "user-manager",
-		LoginIDs:    []string{"user-manager@example.com"},
+		ID:          "0195ec00-0096-7000-8000-000000000001",
+		LoginIDs:    []string{"0195ec00-0096-7000-8000-000000000001@example.com"},
 		DisplayName: "User Manager",
 		Password:    "password",
 		Roles:       []string{"user_manager"},
@@ -3984,7 +3984,7 @@ func TestStaffUsersNonAdminCannotChangeAdminRole(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "user-manager@example.com",
+		"loginId":  "0195ec00-0096-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -3993,7 +3993,7 @@ func TestStaffUsersNonAdminCannotChangeAdminRole(t *testing.T) {
 
 	authorizeStaff(t, server, cookies)
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/member-0195ec00-0021-7000-8000-000000000001/roles", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/0195ec00-0057-7000-8000-000000000001/roles", map[string]any{
 		"roles": []string{"participant", "admin"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -4008,7 +4008,7 @@ func TestStaffUsersNonAdminCannotChangeAdminRole(t *testing.T) {
 		t.Fatalf("expected roles validation error, got %#v", response.Errors)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/admin-target/roles", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/0195ec00-0095-7000-8000-000000000001/roles", map[string]any{
 		"roles": []string{"user_manager"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -4028,16 +4028,16 @@ func TestStaffUsersNonAdminCannotDeleteAdmin(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "admin-target",
-		LoginIDs:    []string{"admin-target@example.com"},
+		ID:          "0195ec00-0095-7000-8000-000000000001",
+		LoginIDs:    []string{"0195ec00-0095-7000-8000-000000000001@example.com"},
 		DisplayName: "Admin Target",
 		Password:    "password",
 		Roles:       []string{"admin"},
 		IsVerified:  true,
 	})
 	cfg.AuthUser = config.AuthUser{
-		ID:          "user-manager",
-		LoginIDs:    []string{"user-manager@example.com"},
+		ID:          "0195ec00-0096-7000-8000-000000000001",
+		LoginIDs:    []string{"0195ec00-0096-7000-8000-000000000001@example.com"},
 		DisplayName: "User Manager",
 		Password:    "password",
 		Roles:       []string{"user_manager"},
@@ -4047,7 +4047,7 @@ func TestStaffUsersNonAdminCannotDeleteAdmin(t *testing.T) {
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "user-manager@example.com",
+		"loginId":  "0195ec00-0096-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
@@ -4056,7 +4056,7 @@ func TestStaffUsersNonAdminCannotDeleteAdmin(t *testing.T) {
 
 	authorizeStaff(t, server, cookies)
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/admin-target", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/0195ec00-0095-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
@@ -4107,11 +4107,11 @@ func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &users); err != nil {
 		t.Fatalf("unmarshal staff users response: %v", err)
 	}
-	if len(users.Items) != 4 || users.Items[0].ID != "staff-user" {
+	if len(users.Items) != 4 || users.Items[0].ID != "0195ec00-0098-7000-8000-000000000001" {
 		t.Fatalf("unexpected staff users response: %#v", users)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users/staff-user", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users/0195ec00-0098-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -4124,7 +4124,7 @@ func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 		t.Fatalf("unexpected staff user detail: %#v", detail)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/staff-user/roles", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/0195ec00-0098-7000-8000-000000000001/roles", map[string]any{
 		"roles": []string{"admin", "forms_manager"},
 	})
 	if recorder.Code != http.StatusOK {
@@ -4173,8 +4173,8 @@ func TestStaffUsersListSupportsSearchSortAndFilters(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &searched); err != nil {
 		t.Fatalf("unmarshal searched users response: %v", err)
 	}
-	if searched.Total != 1 || searched.Items[0].ID != "member-0195ec00-0021-7000-8000-000000000001" {
-		t.Fatalf("expected contact email search to match member-0195ec00-0021-7000-8000-000000000001, got %#v", searched)
+	if searched.Total != 1 || searched.Items[0].ID != "0195ec00-0057-7000-8000-000000000001" {
+		t.Fatalf("expected contact email search to match 0195ec00-0057-7000-8000-000000000001, got %#v", searched)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users?sortKey=contactEmail&sortDirection=desc", nil)
@@ -4189,8 +4189,8 @@ func TestStaffUsersListSupportsSearchSortAndFilters(t *testing.T) {
 	if len(sorted.Items) < 2 {
 		t.Fatalf("expected at least two users for sort assertion, got %#v", sorted.Items)
 	}
-	if sorted.Items[0].ID != "member-0195ec00-0021-7000-8000-000000000001" {
-		t.Fatalf("expected member-0195ec00-0021-7000-8000-000000000001 to be first by contactEmail desc, got %#v", sorted.Items)
+	if sorted.Items[0].ID != "0195ec00-0057-7000-8000-000000000001" {
+		t.Fatalf("expected 0195ec00-0057-7000-8000-000000000001 to be first by contactEmail desc, got %#v", sorted.Items)
 	}
 
 	filterQueries := `[{"key_name":"isVerified","operator":"=","value":"false"}]`
@@ -4203,7 +4203,7 @@ func TestStaffUsersListSupportsSearchSortAndFilters(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &filtered); err != nil {
 		t.Fatalf("unmarshal filtered users response: %v", err)
 	}
-	if filtered.Total != 1 || filtered.Items[0].ID != "demo-circle-unverified" {
+	if filtered.Total != 1 || filtered.Items[0].ID != "0195ec00-0056-7000-8000-000000000001" {
 		t.Fatalf("expected isVerified=false filter result, got %#v", filtered)
 	}
 
@@ -4223,7 +4223,7 @@ func TestStaffPermissionsListDetailAndUpdate(t *testing.T) {
 
 	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "content-user",
+		ID:          "0195ec00-0094-7000-8000-000000000001",
 		LoginIDs:    []string{"content@example.com"},
 		DisplayName: "Content User",
 		Password:    "password",
@@ -4251,7 +4251,7 @@ func TestStaffPermissionsListDetailAndUpdate(t *testing.T) {
 		t.Fatalf("expected 2 staff permission targets, got %#v", list)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/permissions/content-user", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/permissions/0195ec00-0094-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -4260,11 +4260,11 @@ func TestStaffPermissionsListDetailAndUpdate(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal staff permission detail: %v", err)
 	}
-	if detail.User.ID != "content-user" || !slices.Contains(detail.AssignedPermissionNames, "staff.pages.read,edit") {
+	if detail.User.ID != "0195ec00-0094-7000-8000-000000000001" || !slices.Contains(detail.AssignedPermissionNames, "staff.pages.read,edit") {
 		t.Fatalf("unexpected permission detail: %#v", detail)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/permissions/content-user", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/permissions/0195ec00-0094-7000-8000-000000000001", map[string]any{
 		"permissions": []string{"staff.forms.read", "staff.pages.read"},
 	})
 	if recorder.Code != http.StatusOK {
@@ -4284,7 +4284,7 @@ func TestStaffPermissionsValidation(t *testing.T) {
 
 	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "content-user",
+		ID:          "0195ec00-0094-7000-8000-000000000001",
 		LoginIDs:    []string{"content@example.com"},
 		DisplayName: "Content User",
 		Password:    "password",
@@ -4298,14 +4298,14 @@ func TestStaffPermissionsValidation(t *testing.T) {
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/permissions/staff-user", map[string]any{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/permissions/0195ec00-0098-7000-8000-000000000001", map[string]any{
 		"permissions": []string{"staff.permissions.read"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/permissions/content-user", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/permissions/0195ec00-0094-7000-8000-000000000001", map[string]any{
 		"permissions": []string{"unknown.permission"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -4326,7 +4326,7 @@ func TestStaffPermissionsUpdateInvalidatesTargetUserSession(t *testing.T) {
 
 	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "content-user",
+		ID:          "0195ec00-0094-7000-8000-000000000001",
 		LoginIDs:    []string{"content@example.com"},
 		DisplayName: "Content User",
 		Password:    "password",
@@ -4353,7 +4353,7 @@ func TestStaffPermissionsUpdateInvalidatesTargetUserSession(t *testing.T) {
 	adminCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, adminCookies)
 	authorizeStaff(t, server, adminCookies)
-	recorder = doJSONRequest(t, server, adminCookies, http.MethodPut, "/v1/staff/permissions/content-user", map[string]any{
+	recorder = doJSONRequest(t, server, adminCookies, http.MethodPut, "/v1/staff/permissions/0195ec00-0094-7000-8000-000000000001", map[string]any{
 		"permissions": []string{},
 	})
 	if recorder.Code != http.StatusOK {
@@ -4375,7 +4375,7 @@ func TestStaffUsersPreventSelfLockout(t *testing.T) {
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/staff-user/roles", map[string]any{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/0195ec00-0098-7000-8000-000000000001/roles", map[string]any{
 		"roles": []string{"participant", "forms_manager"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -4396,7 +4396,7 @@ func TestStaffUsersRequireUserAdminRole(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "content-user",
+		ID:          "0195ec00-0094-7000-8000-000000000001",
 		LoginIDs:    []string{"content@example.com"},
 		DisplayName: "Content User",
 		Password:    "password",
@@ -4431,7 +4431,7 @@ func TestStaffUsersValidation(t *testing.T) {
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/staff-user/roles", map[string]any{
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/0195ec00-0098-7000-8000-000000000001/roles", map[string]any{
 		"roles": []string{" ", "unknown_role"},
 	})
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -4452,7 +4452,7 @@ func TestStaffUserRolesUpdateInvalidatesTargetUserSession(t *testing.T) {
 
 	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "content-user",
+		ID:          "0195ec00-0094-7000-8000-000000000001",
 		LoginIDs:    []string{"content@example.com"},
 		DisplayName: "Content User",
 		Password:    "password",
@@ -4479,7 +4479,7 @@ func TestStaffUserRolesUpdateInvalidatesTargetUserSession(t *testing.T) {
 	adminCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, adminCookies)
 	authorizeStaff(t, server, adminCookies)
-	recorder = doJSONRequest(t, server, adminCookies, http.MethodPut, "/v1/staff/users/content-user/roles", map[string]any{
+	recorder = doJSONRequest(t, server, adminCookies, http.MethodPut, "/v1/staff/users/0195ec00-0094-7000-8000-000000000001/roles", map[string]any{
 		"roles": []string{"participant"},
 	})
 	if recorder.Code != http.StatusOK {
@@ -4508,11 +4508,11 @@ func TestStaffUsersUpdateVerifyExportAndDelete(t *testing.T) {
 	if got := recorder.Header().Get("Content-Type"); got != "text/csv; charset=utf-8" {
 		t.Fatalf("unexpected content type: %s", got)
 	}
-	if !strings.Contains(recorder.Body.String(), "is_verified") || !strings.Contains(recorder.Body.String(), "demo-circle-unverified") {
+	if !strings.Contains(recorder.Body.String(), "is_verified") || !strings.Contains(recorder.Body.String(), "0195ec00-0056-7000-8000-000000000001") {
 		t.Fatalf("unexpected users export: %s", recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/demo-circle-unverified", map[string]any{
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/0195ec00-0056-7000-8000-000000000001", map[string]any{
 		"displayName": "Updated Circle B Member",
 		"loginIds":    []string{"updated-0195ec00-0022-7000-8000-000000000001@example.com", "24b9999"},
 	})
@@ -4528,7 +4528,7 @@ func TestStaffUsersUpdateVerifyExportAndDelete(t *testing.T) {
 		t.Fatalf("unexpected updated user: %#v", updated)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPatch, "/v1/staff/users/demo-circle-unverified/verify", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodPatch, "/v1/staff/users/0195ec00-0056-7000-8000-000000000001/verify", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
@@ -4541,12 +4541,12 @@ func TestStaffUsersUpdateVerifyExportAndDelete(t *testing.T) {
 		t.Fatalf("expected user to be verified, got %#v", verified)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/member-0195ec00-0021-7000-8000-000000000001", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/0195ec00-0057-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users/member-0195ec00-0021-7000-8000-000000000001", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users/0195ec00-0057-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
@@ -4574,7 +4574,7 @@ func TestStaffUsersPreventSelfDelete(t *testing.T) {
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/staff-user", nil)
+	recorder := doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/users/0195ec00-0098-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
@@ -4660,7 +4660,7 @@ func TestStaffActivityLogsRequireAdminRole(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "circle-user",
+		ID:          "0195ec00-0097-7000-8000-000000000001",
 		LoginIDs:    []string{"circle@example.com"},
 		DisplayName: "Circle User",
 		Password:    "password",
@@ -5313,7 +5313,7 @@ func testConfig() config.Config {
 		PortalPrimaryColorS:       80,
 		PortalPrimaryColorL:       45,
 		AuthUser: config.AuthUser{
-			ID:          "demo-user",
+			ID:          "0195ec00-0093-7000-8000-000000000001",
 			LoginIDs:    []string{"demo@example.com", "24a0000"},
 			DisplayName: "Demo User",
 			Password:    "password",
@@ -5321,7 +5321,7 @@ func testConfig() config.Config {
 		},
 		Users: []config.User{
 			{
-				ID:              "member-0195ec00-0021-7000-8000-000000000001",
+				ID:              "0195ec00-0057-7000-8000-000000000001",
 				LoginIDs:        []string{"0195ec00-0021-7000-8000-000000000001@example.com"},
 				DisplayName:     "Circle A Member",
 				Password:        "password",
@@ -5331,7 +5331,7 @@ func testConfig() config.Config {
 				IsVerified:      true,
 			},
 			{
-				ID:              "member-0195ec00-0022-7000-8000-000000000001",
+				ID:              "0195ec00-0058-7000-8000-000000000001",
 				LoginIDs:        []string{"0195ec00-0022-7000-8000-000000000001@example.com"},
 				DisplayName:     "Circle B Member",
 				Password:        "password",
@@ -5341,7 +5341,7 @@ func testConfig() config.Config {
 				IsVerified:      true,
 			},
 			{
-				ID:          "demo-circle-unverified",
+				ID:          "0195ec00-0056-7000-8000-000000000001",
 				LoginIDs:    []string{"0195ec00-0022-7000-8000-000000000001-unverified@example.com"},
 				DisplayName: "Circle B Unverified Member",
 				Password:    "password",
@@ -5599,7 +5599,7 @@ func testConfig() config.Config {
 func testStaffConfig() config.Config {
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "staff-user",
+		ID:          "0195ec00-0098-7000-8000-000000000001",
 		LoginIDs:    []string{"staff@example.com"},
 		DisplayName: "Staff User",
 		Password:    "password",
@@ -5619,7 +5619,7 @@ func testStrictStaffConfig() config.Config {
 func circleMemberConfig() config.Config {
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "member-0195ec00-0022-7000-8000-000000000001",
+		ID:          "0195ec00-0058-7000-8000-000000000001",
 		LoginIDs:    []string{"0195ec00-0022-7000-8000-000000000001@example.com"},
 		DisplayName: "Circle B Member",
 		Password:    "password",
@@ -5632,7 +5632,7 @@ func circleMemberConfig() config.Config {
 func independentUserConfig() config.Config {
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "independent-user",
+		ID:          "0195ec00-0099-7000-8000-000000000001",
 		LoginIDs:    []string{"independent@example.com"},
 		DisplayName: "Independent User",
 		Password:    "password",
@@ -5645,7 +5645,7 @@ func independentUserConfig() config.Config {
 func demoCircleConfig() config.Config {
 	cfg := testConfig()
 	cfg.Users = append(cfg.Users, config.User{
-		ID:              "demo-user",
+		ID:              "0195ec00-0093-7000-8000-000000000001",
 		LoginIDs:        []string{"demo@example.com"},
 		DisplayName:     "Demo User",
 		Password:        "password",
@@ -5661,14 +5661,14 @@ func demoCircleConfig() config.Config {
 func memberOnlyConfig() config.Config {
 	cfg := testConfig()
 	cfg.AuthUser = config.AuthUser{
-		ID:          "member-only-user",
+		ID:          "0195ec00-0060-7000-8000-000000000001",
 		LoginIDs:    []string{"member-only@example.com"},
 		DisplayName: "Member Only User",
 		Password:    "password",
 		Roles:       []string{"participant"},
 	}
 	cfg.Users = append(cfg.Users, config.User{
-		ID:          "member-only-user",
+		ID:          "0195ec00-0060-7000-8000-000000000001",
 		LoginIDs:    []string{"member-only@example.com"},
 		DisplayName: "Member Only User",
 		Password:    "password",

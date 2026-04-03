@@ -2,12 +2,12 @@ package page
 
 import (
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type Page struct {
@@ -129,7 +129,7 @@ func (r *StaticRepository) Create(
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	page := Page{
-		ID:           "page-generated-" + strconv.Itoa(r.nextID),
+		ID:           uuidv7.MustString(),
 		Title:        title,
 		Body:         body,
 		Notes:        notes,

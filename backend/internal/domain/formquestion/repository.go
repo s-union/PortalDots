@@ -3,9 +3,10 @@ package formquestion
 import (
 	"errors"
 	"slices"
-	"strconv"
 	"sync"
 	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("form question not found")
@@ -76,7 +77,7 @@ func (r *MemoryRepository) Create(formID, questionType string) (Question, error)
 
 	priority := int32(len(r.items[formID]) + 1)
 	question := Question{
-		ID:           "question-generated-" + strconv.Itoa(r.nextID),
+		ID:           uuidv7.MustString(),
 		FormID:       formID,
 		Name:         "",
 		Description:  "",

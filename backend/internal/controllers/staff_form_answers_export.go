@@ -13,6 +13,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
+	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
 func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
@@ -70,7 +71,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("%s-answers.csv", formValue.ID)
+	filename := fmt.Sprintf("%s-answers.csv", externalid.MustEncodeUUIDString(formValue.ID))
 	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
 	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
@@ -110,7 +111,13 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 				continue
 			}
 
-			filename := fmt.Sprintf("%s/%s-%s-%s", currentAnswer.CircleID, currentAnswer.ID, upload.QuestionID, sanitizeArchiveFilename(fileUpload.Filename))
+			filename := fmt.Sprintf(
+				"%s/%s-%s-%s",
+				externalid.MustEncodeUUIDString(currentAnswer.CircleID),
+				externalid.MustEncodeUUIDString(currentAnswer.ID),
+				externalid.MustEncodeUUIDString(upload.QuestionID),
+				sanitizeArchiveFilename(fileUpload.Filename),
+			)
 			writer, err := archive.Create(filename)
 			if err != nil {
 				archive.Close()
@@ -134,7 +141,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("%s-answer-uploads.zip", formValue.ID)
+	filename := fmt.Sprintf("%s-answer-uploads.zip", externalid.MustEncodeUUIDString(formValue.ID))
 	c.Response().Header().Set(echo.HeaderContentType, "application/zip")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
 	return c.Stream(http.StatusOK, "application/zip", tempFile)

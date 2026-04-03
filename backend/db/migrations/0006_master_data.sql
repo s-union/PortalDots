@@ -1,13 +1,13 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS tags (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     name text NOT NULL UNIQUE,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS places (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     name text NOT NULL,
     type integer NOT NULL,
     notes text NOT NULL DEFAULT '',
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS places (
 );
 
 CREATE TABLE IF NOT EXISTS contact_categories (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     name text NOT NULL,
     email text NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),

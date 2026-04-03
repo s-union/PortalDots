@@ -69,7 +69,7 @@ describe('StaffFormCreatePage', () => {
                 id: 'circle-b',
                 name: 'デモ企画B'
               },
-              id: 'form-generated-1',
+              id: '0195ec00-00a1-7000-8000-000000000001',
               name: '追加ヒアリング',
               description: '当日の搬入担当者を確認します。',
               openAt: '2026-03-15T00:00:00Z',
@@ -166,7 +166,7 @@ describe('StaffFormCreatePage', () => {
     })
     expect(String(createdRequestBody?.openAt)).toMatch(/^2026-03-15T/)
     expect(String(createdRequestBody?.closeAt)).toMatch(/^2026-03-30T/)
-    expect(router.currentRoute.value.fullPath).toBe('/staff/forms/form-generated-1/editor')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/forms/0195ec00-00a1-7000-8000-000000000001/editor')
   })
 })
 

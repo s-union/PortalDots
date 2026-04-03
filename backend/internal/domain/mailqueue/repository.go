@@ -2,10 +2,11 @@ package mailqueue
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type Job struct {
@@ -48,7 +49,7 @@ func (r *MemoryRepository) Enqueue(_ context.Context, circleID, createdByUserID,
 	defer r.mu.Unlock()
 
 	job := Job{
-		ID:              fmt.Sprintf("mail-job-%d", r.nextID),
+		ID:              uuidv7.MustString(),
 		CircleID:        circleID,
 		Subject:         subject,
 		Body:            body,

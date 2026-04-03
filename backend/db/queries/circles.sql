@@ -104,7 +104,10 @@ UPDATE circles
 SET status = $2,
     status_reason = $3,
     status_set_at = CASE WHEN $2 = 'approved' OR $2 = 'rejected' THEN now() ELSE NULL END,
-    status_set_by = CASE WHEN ($2 = 'approved' OR $2 = 'rejected') AND $4::text != '' THEN $4 ELSE NULL END
+    status_set_by = CASE
+        WHEN $2 = 'approved' OR $2 = 'rejected' THEN NULLIF($4, '')::uuid
+        ELSE NULL
+    END
 WHERE id = $1
 RETURNING id, name, name_yomi, group_name, group_name_yomi, participation_type_id, participation_type_name, tags, invitation_token, submitted_at, notes, can_change_group_name, updated_at, status, status_reason, status_set_at, status_set_by, created_at;
 

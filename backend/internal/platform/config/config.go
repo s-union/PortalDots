@@ -12,6 +12,12 @@ const (
 	DefaultSessionTTLSeconds = 12 * 60 * 60
 	defaultAuthPassword      = "demo-admin"
 	defaultStaffVerifyCode   = "123456"
+	demoAdminUserID          = "0195ec00-0051-7000-8000-000000000001"
+	demoStaffUserID          = "0195ec00-0052-7000-8000-000000000001"
+	demoStaffSubUserID       = "0195ec00-0053-7000-8000-000000000001"
+	demoCircleUserID         = "0195ec00-0054-7000-8000-000000000001"
+	demoCircleSubUserID      = "0195ec00-0055-7000-8000-000000000001"
+	demoCircleUnverifiedID   = "0195ec00-0056-7000-8000-000000000001"
 )
 
 type Config struct {
@@ -178,7 +184,7 @@ type ContactCategory struct {
 
 func defaultDemoAuthUser() AuthUser {
 	return AuthUser{
-		ID:          "demo-admin",
+		ID:          demoAdminUserID,
 		LoginIDs:    []string{"demo-admin"},
 		DisplayName: "Demo Admin",
 		Password:    defaultAuthPassword,
@@ -190,7 +196,7 @@ func defaultDemoAuthUser() AuthUser {
 func defaultDemoUsers() []User {
 	return []User{
 		{
-			ID:                  "demo-staff",
+			ID:                  demoStaffUserID,
 			LoginIDs:            []string{"demo-staff"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
@@ -209,7 +215,7 @@ func defaultDemoUsers() []User {
 			IsUnivemailVerified: true,
 		},
 		{
-			ID:                  "demo-staff-sub",
+			ID:                  demoStaffSubUserID,
 			LoginIDs:            []string{"demo-staff-sub"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
@@ -228,7 +234,7 @@ func defaultDemoUsers() []User {
 			IsUnivemailVerified: true,
 		},
 		{
-			ID:                  "demo-circle",
+			ID:                  demoCircleUserID,
 			LoginIDs:            []string{"demo-circle"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
@@ -247,7 +253,7 @@ func defaultDemoUsers() []User {
 			IsUnivemailVerified: true,
 		},
 		{
-			ID:                  "demo-circle-sub",
+			ID:                  demoCircleSubUserID,
 			LoginIDs:            []string{"demo-circle-sub"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
@@ -266,7 +272,7 @@ func defaultDemoUsers() []User {
 			IsUnivemailVerified: true,
 		},
 		{
-			ID:                  "demo-circle-unverified",
+			ID:                  demoCircleUnverifiedID,
 			LoginIDs:            []string{"0195ec00-0022-7000-8000-000000000001-unverified@example.com"},
 			LastName:            "未確認",
 			LastNameReading:     "みかくにん",

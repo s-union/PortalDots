@@ -2,10 +2,11 @@ package pendingregistration
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("pending registration not found")
@@ -67,7 +68,7 @@ func (r *MemoryRepository) Save(univemail, studentID, tokenHash string, expiresA
 	}
 
 	created := PendingRegistration{
-		ID:        fmt.Sprintf("pending-registration-%d", r.nextID),
+		ID:        uuidv7.MustString(),
 		Univemail: normalizedEmail,
 		StudentID: strings.TrimSpace(studentID),
 		TokenHash: strings.TrimSpace(tokenHash),

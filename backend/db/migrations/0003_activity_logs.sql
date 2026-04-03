@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS activity_logs (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    actor_user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    actor_user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     action text NOT NULL,
     target_type text NOT NULL,
     target_id text NOT NULL,

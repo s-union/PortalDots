@@ -11,10 +11,10 @@ func TestProcessMailJobsOnceMarksQueuedJobsAsSent(t *testing.T) {
 	t.Parallel()
 
 	repository := mailqueue.NewMemoryRepository()
-	if _, err := repository.Enqueue(context.Background(), "0195ec00-0021-7000-8000-000000000001", "staff-user", "件名1", "本文1", []string{"a@example.com"}); err != nil {
+	if _, err := repository.Enqueue(context.Background(), "0195ec00-0021-7000-8000-000000000001", "0195ec00-00b1-7000-8000-000000000001", "件名1", "本文1", []string{"a@example.com"}); err != nil {
 		t.Fatalf("enqueue first mail: %v", err)
 	}
-	if _, err := repository.Enqueue(context.Background(), "0195ec00-0021-7000-8000-000000000001", "staff-user", "件名2", "本文2", []string{"b@example.com"}); err != nil {
+	if _, err := repository.Enqueue(context.Background(), "0195ec00-0021-7000-8000-000000000001", "0195ec00-00b1-7000-8000-000000000001", "件名2", "本文2", []string{"b@example.com"}); err != nil {
 		t.Fatalf("enqueue second mail: %v", err)
 	}
 

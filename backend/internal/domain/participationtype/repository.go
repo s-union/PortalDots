@@ -3,10 +3,10 @@ package participationtype
 import (
 	"errors"
 	"slices"
-	"strconv"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("participation type not found")
@@ -95,7 +95,7 @@ func (r *MemoryRepository) Create(name, description string, usersCountMin, users
 	defer r.mu.Unlock()
 
 	item := ParticipationType{
-		ID:            "participation-type-generated-" + strconv.Itoa(r.nextID),
+		ID:            uuidv7.MustString(),
 		Name:          name,
 		Description:   description,
 		UsersCountMin: usersCountMin,

@@ -3,13 +3,13 @@ package circle
 import (
 	"errors"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("circle not found")
@@ -202,7 +202,7 @@ func (c *StaticCatalog) Create(name, nameYomi, groupName, groupNameYomi, partici
 		status = "pending"
 	}
 	circle := Circle{
-		ID:                    "circle-generated-" + strconv.Itoa(c.nextID),
+		ID:                    uuidv7.MustString(),
 		Name:                  name,
 		NameYomi:              nameYomi,
 		GroupName:             groupName,

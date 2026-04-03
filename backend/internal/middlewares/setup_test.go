@@ -1,13 +1,16 @@
 package middlewares
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
+	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
 type stubSessionAccess struct {
@@ -17,6 +20,132 @@ type stubSessionAccess struct {
 func (s stubSessionAccess) Get(id string) (session.Session, bool) {
 	current, ok := s.sessions[id]
 	return current, ok
+}
+
+func TestTransformExternalIDs(t *testing.T) {
+	t.Parallel()
+
+	t.Run("decodes external id params before handler", func(t *testing.T) {
+		t.Parallel()
+
+		e := echo.New()
+		externalUserID := externalid.MustEncodeUUIDString("0195ec00-0054-7000-8000-000000000001")
+		req := httptest.NewRequest(http.MethodGet, "/staff/users/"+externalUserID, nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("userID")
+		c.SetParamValues(externalUserID)
+
+		called := false
+		handler := TransformExternalIDs()(func(c echo.Context) error {
+			called = true
+			if got := c.Param("userID"); got != "0195ec00-0054-7000-8000-000000000001" {
+				t.Fatalf("expected decoded internal id, got %q", got)
+			}
+			return c.JSON(http.StatusOK, map[string]string{"id": c.Param("userID")})
+		})
+
+		if err := handler(c); err != nil {
+			t.Fatalf("expected middleware to pass through, got %v", err)
+		}
+		if !called {
+			t.Fatal("expected next handler to be called")
+		}
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d", rec.Code)
+		}
+		if rec.Body.String() == "{\"id\":\"0195ec00-0054-7000-8000-000000000001\"}\n" {
+			t.Fatalf("expected response id to be externalized, got %q", rec.Body.String())
+		}
+	})
+
+	t.Run("rejects raw uuid params", func(t *testing.T) {
+		t.Parallel()
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/staff/users/0195ec00-0054-7000-8000-000000000001", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("userID")
+		c.SetParamValues("0195ec00-0054-7000-8000-000000000001")
+
+		called := false
+		handler := TransformExternalIDs()(func(c echo.Context) error {
+			called = true
+			return c.NoContent(http.StatusNoContent)
+		})
+
+		if err := handler(c); err != nil {
+			t.Fatalf("expected JSON response, got %v", err)
+		}
+		if called {
+			t.Fatal("expected next handler not to be called")
+		}
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d", rec.Code)
+		}
+		if rec.Body.String() != "{\"message\":\"invalid_request\"}\n" {
+			t.Fatalf("unexpected response body: %q", rec.Body.String())
+		}
+	})
+
+	t.Run("decodes json body ids and details keys", func(t *testing.T) {
+		t.Parallel()
+
+		e := echo.New()
+		questionID := "0195ec00-0003-7000-8000-000000000001"
+		circleID := "0195ec00-0022-7000-8000-000000000001"
+		payload := `{"circleId":"` + externalid.MustEncodeUUIDString(circleID) + `","details":{"` + externalid.MustEncodeUUIDString(questionID) + `":["ok"]}}`
+		req := httptest.NewRequest(http.MethodPost, "/answers", strings.NewReader(payload))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		handler := TransformExternalIDs()(func(c echo.Context) error {
+			var body struct {
+				CircleID string              `json:"circleId"`
+				Details  map[string][]string `json:"details"`
+			}
+			if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			if body.CircleID != circleID {
+				t.Fatalf("expected decoded circle id %q, got %q", circleID, body.CircleID)
+			}
+			if _, ok := body.Details[questionID]; !ok {
+				t.Fatalf("expected decoded details key, got %#v", body.Details)
+			}
+			return c.JSON(http.StatusOK, map[string]any{
+				"id": circleID,
+				"details": map[string]any{
+					questionID: []string{"ok"},
+				},
+				"downloadUrl": "/v1/forms/" + circleID + "/answers/" + circleID,
+			})
+		})
+
+		if err := handler(c); err != nil {
+			t.Fatalf("expected middleware to pass through, got %v", err)
+		}
+
+		var response struct {
+			ID          string              `json:"id"`
+			Details     map[string][]string `json:"details"`
+			DownloadURL string              `json:"downloadUrl"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+			t.Fatalf("decode response body: %v", err)
+		}
+		if response.ID == circleID {
+			t.Fatalf("expected encoded response id, got %q", response.ID)
+		}
+		if _, ok := response.Details[externalid.MustEncodeUUIDString(questionID)]; !ok {
+			t.Fatalf("expected encoded details key, got %#v", response.Details)
+		}
+		if strings.Contains(response.DownloadURL, circleID) {
+			t.Fatalf("expected encoded download url, got %q", response.DownloadURL)
+		}
+	})
 }
 
 func TestVerifyCSRF(t *testing.T) {

@@ -2,12 +2,12 @@ package place
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("place not found")
@@ -62,7 +62,7 @@ func (r *MemoryRepository) Create(name string, placeType int32, notes string) (P
 	defer r.mu.Unlock()
 
 	created := Place{
-		ID:    fmt.Sprintf("place-generated-%d", r.nextID),
+		ID:    uuidv7.MustString(),
 		Name:  name,
 		Type:  placeType,
 		Notes: notes,

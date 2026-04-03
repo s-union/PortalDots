@@ -2,9 +2,10 @@ package activitylog
 
 import (
 	"errors"
-	"strconv"
 	"sync"
 	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("activity log not found")
@@ -62,7 +63,7 @@ func (r *MemoryRepository) Record(
 	defer r.mu.Unlock()
 
 	entry := Entry{
-		ID:          "activity-log-" + strconv.Itoa(r.nextID),
+		ID:          uuidv7.MustString(),
 		ActorUserID: actorUserID,
 		Action:      action,
 		TargetType:  targetType,

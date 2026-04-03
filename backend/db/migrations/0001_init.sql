@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS users (
-    id text PRIMARY KEY,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     display_name text NOT NULL,
     password text NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now()
@@ -10,17 +10,17 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS user_login_ids (
     login_id text PRIMARY KEY,
-    user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role text NOT NULL,
     PRIMARY KEY (user_id, role)
 );
 
 CREATE TABLE IF NOT EXISTS circles (
-    id text PRIMARY KEY,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     name text NOT NULL,
     group_name text NOT NULL,
     participation_type_name text NOT NULL,
@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS circles (
 );
 
 CREATE TABLE IF NOT EXISTS pages (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    circle_id text NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     title text NOT NULL,
     body text NOT NULL,
     is_pinned boolean NOT NULL DEFAULT false,
@@ -41,8 +41,8 @@ CREATE INDEX IF NOT EXISTS pages_circle_id_published_at_idx
     ON pages(circle_id, published_at DESC);
 
 CREATE TABLE IF NOT EXISTS documents (
-    id text PRIMARY KEY,
-    circle_id text NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     name text NOT NULL,
     description text NOT NULL,
     is_public boolean NOT NULL DEFAULT true,
@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 
 CREATE TABLE IF NOT EXISTS forms (
-    id text PRIMARY KEY,
-    circle_id text NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     name text NOT NULL,
     description text NOT NULL,
     is_public boolean NOT NULL DEFAULT true,
@@ -65,9 +65,9 @@ CREATE TABLE IF NOT EXISTS forms (
 );
 
 CREATE TABLE IF NOT EXISTS answers (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    form_id text NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
-    circle_id text NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    form_id uuid NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
+    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     body text NOT NULL,
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (form_id, circle_id)
@@ -75,9 +75,9 @@ CREATE TABLE IF NOT EXISTS answers (
 
 CREATE TABLE IF NOT EXISTS sessions (
     id text PRIMARY KEY,
-    user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     csrf_token text NOT NULL,
-    current_circle_id text REFERENCES circles(id) ON DELETE SET NULL,
+    current_circle_id uuid REFERENCES circles(id) ON DELETE SET NULL,
     staff_authorized boolean NOT NULL DEFAULT false,
     staff_verify_code text NOT NULL DEFAULT '',
     staff_verify_expires timestamptz,

@@ -1,7 +1,6 @@
 package document
 
 import (
-	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type Document struct {
@@ -180,7 +180,7 @@ func (r *StaticRepository) Create(
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	created := Document{
-		ID:          fmt.Sprintf("document-generated-%d", r.nextID),
+		ID:          uuidv7.MustString(),
 		CircleID:    circleID,
 		Name:        name,
 		Description: description,

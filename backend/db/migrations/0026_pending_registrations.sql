@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS pending_registrations (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     univemail text NOT NULL,
     student_id text NOT NULL,
     token_hash text NOT NULL,

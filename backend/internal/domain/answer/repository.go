@@ -1,10 +1,11 @@
 package answer
 
 import (
-	"fmt"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type Answer struct {
@@ -266,7 +267,7 @@ func (r *MemoryRepository) AddUploadToAnswer(answerID, questionID, filename, mim
 func (r *MemoryRepository) createLocked(formID, circleID, body string, details map[string][]string) Answer {
 	now := time.Now().UTC().Format(time.RFC3339)
 	answer := Answer{
-		ID:        fmt.Sprintf("answer-%d", r.nextID),
+		ID:        uuidv7.MustString(),
 		FormID:    formID,
 		CircleID:  circleID,
 		Body:      body,
@@ -307,7 +308,7 @@ func (r *MemoryRepository) addUploadLocked(answerID, questionID, filename, mimeT
 	}
 
 	upload := Upload{
-		ID:         fmt.Sprintf("answer-upload-%d", r.nextUpload),
+		ID:         uuidv7.MustString(),
 		AnswerID:   currentAnswer.ID,
 		FormID:     currentAnswer.FormID,
 		CircleID:   currentAnswer.CircleID,

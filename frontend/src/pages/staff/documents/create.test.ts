@@ -87,7 +87,7 @@ describe('StaffDocumentCreatePage', () => {
                 id: 'circle-b',
                 name: 'デモ企画B'
               },
-              id: 'document-generated-1',
+              id: '0195ec00-00a2-7000-8000-000000000001',
               name: '設営チェックシート',
               description: '当日の確認事項です。',
               notes: '設営責任者に配布します。',
@@ -99,7 +99,7 @@ describe('StaffDocumentCreatePage', () => {
               isPublic: true,
               createdAt: '2026-03-06T09:00:00Z',
               updatedAt: '2026-03-06T09:00:00Z',
-              downloadUrl: '/v1/staff/documents/document-generated-1'
+              downloadUrl: '/v1/staff/documents/0195ec00-00a2-7000-8000-000000000001'
             }),
             {
               status: 201,

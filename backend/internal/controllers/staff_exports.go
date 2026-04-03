@@ -12,6 +12,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
+	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
 func (h *staffAdminHandlers) downloadStaffSummaryCSV(c echo.Context) error {
@@ -218,7 +219,11 @@ func writeCSV(rows [][]string) ([]byte, error) {
 	writer := csv.NewWriter(&buffer)
 
 	for _, row := range rows {
-		if err := writer.Write(row); err != nil {
+		externalRow := make([]string, len(row))
+		for index, value := range row {
+			externalRow[index] = externalid.RewriteURLPathUUIDs(externalid.MaybeEncodeUUIDString(value))
+		}
+		if err := writer.Write(externalRow); err != nil {
 			return nil, err
 		}
 	}

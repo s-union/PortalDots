@@ -1,12 +1,12 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS mail_jobs (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    circle_id text NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     subject text NOT NULL,
     body text NOT NULL,
     recipients text[] NOT NULL,
     status text NOT NULL DEFAULT 'queued',
-    created_by_user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_by_user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     delivered_at timestamptz
 );

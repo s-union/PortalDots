@@ -1,8 +1,8 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS booths (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    place_id text NOT NULL REFERENCES places(id) ON DELETE CASCADE,
-    circle_id text NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    place_id uuid NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (place_id, circle_id)
 );

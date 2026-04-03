@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
+	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
 type staffParticipationTypeFormResponse struct {
@@ -178,7 +179,7 @@ func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c echo.Co
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("staff-participation-type-%s-circles.csv", participationType.ID)
+	filename := fmt.Sprintf("staff-participation-type-%s-circles.csv", externalid.MustEncodeUUIDString(participationType.ID))
 	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
 	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)

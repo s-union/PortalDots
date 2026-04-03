@@ -1,9 +1,9 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS answer_uploads (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    answer_id text NOT NULL REFERENCES answers(id) ON DELETE CASCADE,
-    form_id text NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
-    circle_id text NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    answer_id uuid NOT NULL REFERENCES answers(id) ON DELETE CASCADE,
+    form_id uuid NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
+    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     filename text NOT NULL,
     mime_type text NOT NULL,
     content bytea NOT NULL,

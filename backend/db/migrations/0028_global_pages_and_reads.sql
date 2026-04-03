@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS pages_updated_at_idx
 
 CREATE TABLE IF NOT EXISTS reads (
     page_id uuid NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
-    user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (page_id, user_id)
 );
@@ -53,7 +53,7 @@ DROP TABLE IF EXISTS reads;
 DROP INDEX IF EXISTS pages_updated_at_idx;
 
 ALTER TABLE pages
-    ADD COLUMN IF NOT EXISTS circle_id text REFERENCES circles(id) ON DELETE CASCADE;
+    ADD COLUMN IF NOT EXISTS circle_id uuid REFERENCES circles(id) ON DELETE CASCADE;
 
 CREATE INDEX IF NOT EXISTS pages_circle_id_published_at_idx
     ON pages(circle_id, published_at DESC);

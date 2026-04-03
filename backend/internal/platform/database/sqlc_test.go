@@ -100,20 +100,20 @@ func TestDeleteUsersConflictingWithConfiguredLoginIDsDeletesOldUserOnce(t *testi
 
 	resolver := &fakeConfiguredUserConflictResolver{
 		loginUsers: map[string]dbgen.GetUserByLoginIDRow{
-			"demo-circle-unverified@example.com": {ID: "member-0195ec00-0022-7000-8000-000000000001-unverified"},
-			"legacy-alias@example.com":           {ID: "member-0195ec00-0022-7000-8000-000000000001-unverified"},
-			"current@example.com":                {ID: "demo-circle-unverified"},
+			"0195ec00-0056-7000-8000-000000000001@example.com": {ID: "0195ec00-0059-7000-8000-000000000001"},
+			"legacy-alias@example.com":                         {ID: "0195ec00-0059-7000-8000-000000000001"},
+			"current@example.com":                              {ID: "0195ec00-0056-7000-8000-000000000001"},
 		},
 	}
 
 	err := deleteUsersConflictingWithConfiguredLoginIDs(context.Background(), resolver, config.User{
-		ID:       "demo-circle-unverified",
-		LoginIDs: []string{"demo-circle-unverified@example.com", "legacy-alias@example.com", "current@example.com"},
+		ID:       "0195ec00-0056-7000-8000-000000000001",
+		LoginIDs: []string{"0195ec00-0056-7000-8000-000000000001@example.com", "legacy-alias@example.com", "current@example.com"},
 	})
 	if err != nil {
 		t.Fatalf("expected conflict cleanup to succeed, got %v", err)
 	}
-	if len(resolver.deletedIDs) != 1 || resolver.deletedIDs[0] != "member-0195ec00-0022-7000-8000-000000000001-unverified" {
+	if len(resolver.deletedIDs) != 1 || resolver.deletedIDs[0] != "0195ec00-0059-7000-8000-000000000001" {
 		t.Fatalf("expected old configured user to be deleted once, got %#v", resolver.deletedIDs)
 	}
 }

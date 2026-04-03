@@ -82,7 +82,7 @@ WHERE page_id = $1;
 SELECT page_id
 FROM reads
 WHERE user_id = $1
-  AND page_id = ANY($2::text[]);
+  AND page_id = ANY($2::uuid[]);
 
 -- name: UpsertPageRead :exec
 INSERT INTO reads (page_id, user_id)

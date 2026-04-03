@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS form_questions (
-    id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    form_id text NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    form_id uuid NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
     name text NOT NULL DEFAULT '',
     description text NOT NULL DEFAULT '',
     type text NOT NULL,

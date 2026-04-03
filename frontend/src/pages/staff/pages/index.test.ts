@@ -170,7 +170,7 @@ describe('StaffPagesIndexPage', () => {
           return new Response(
             JSON.stringify([
               {
-                id: 'page-generated-1',
+                id: '0195ec00-00a3-7000-8000-000000000001',
                 title: createdTitle,
                 notes: '作成済みメモ',
                 createdAt: '2026-03-12T00:00:00Z',
@@ -242,7 +242,7 @@ describe('StaffPagesIndexPage', () => {
                 ]
               : [
                   {
-                    id: 'page-generated-1',
+                    id: '0195ec00-00a3-7000-8000-000000000001',
                     title: createdTitle,
                     notes: '作成済みメモ',
                     createdAt: '2026-03-12T00:00:00Z',

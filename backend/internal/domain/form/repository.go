@@ -1,11 +1,11 @@
 package form
 
 import (
-	"strconv"
 	"sync"
 	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type Form struct {
@@ -157,7 +157,7 @@ func (r *StaticRepository) Create(
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	form := Form{
-		ID:                  "form-generated-" + strconv.Itoa(r.nextID),
+		ID:                  uuidv7.MustString(),
 		CircleID:            circleID,
 		Name:                name,
 		Description:         description,

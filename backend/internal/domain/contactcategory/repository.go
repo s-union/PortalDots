@@ -2,12 +2,12 @@ package contactcategory
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("contact category not found")
@@ -60,7 +60,7 @@ func (r *MemoryRepository) Create(name, email string) (Category, error) {
 	defer r.mu.Unlock()
 
 	created := Category{
-		ID:    fmt.Sprintf("contact-category-generated-%d", r.nextID),
+		ID:    uuidv7.MustString(),
 		Name:  name,
 		Email: email,
 	}

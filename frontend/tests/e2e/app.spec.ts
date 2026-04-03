@@ -100,7 +100,7 @@ test.beforeEach(async ({ page }) => {
     if (route.request().method() === 'POST') {
       const payload = parseJsonObject(route.request().postData())
       const created = {
-        id: `page-generated-${staffPages.length + 1}`,
+        id: `0195ec00-00a4-7000-8000-00000000000${staffPages.length + 1}`,
         title: typeof payload.title === 'string' ? payload.title : '',
         publishedAt: '2026-03-12T00:00:00Z',
         isPinned: false,

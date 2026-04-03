@@ -157,11 +157,11 @@ func TestDefaultDemoUsersKeepLegacyStaffRoles(t *testing.T) {
 	var demoStaffSubRoles []string
 	var demoStaffSubPermissions []string
 	for _, user := range users {
-		switch user.ID {
-		case "demo-staff":
+		switch {
+		case slices.Contains(user.LoginIDs, "demo-staff"):
 			demoStaffRoles = append([]string{}, user.Roles...)
 			demoStaffPermissions = append([]string{}, user.Permissions...)
-		case "demo-staff-sub":
+		case slices.Contains(user.LoginIDs, "demo-staff-sub"):
 			demoStaffSubRoles = append([]string{}, user.Roles...)
 			demoStaffSubPermissions = append([]string{}, user.Permissions...)
 		}

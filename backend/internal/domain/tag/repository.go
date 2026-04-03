@@ -2,12 +2,12 @@ package tag
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 var ErrNotFound = errors.New("tag not found")
@@ -56,7 +56,7 @@ func (r *MemoryRepository) Create(name string) (Tag, error) {
 	defer r.mu.Unlock()
 
 	created := Tag{
-		ID:   fmt.Sprintf("tag-generated-%d", r.nextID),
+		ID:   uuidv7.MustString(),
 		Name: name,
 	}
 	r.nextID++

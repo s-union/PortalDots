@@ -20,6 +20,7 @@ type SetupConfig struct {
 func Setup(e *echo.Echo, cfg SetupConfig) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
+	e.Use(TransformExternalIDs())
 	if len(cfg.AllowedOrigins) > 0 {
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins:     cfg.AllowedOrigins,

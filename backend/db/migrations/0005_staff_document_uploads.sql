@@ -1,6 +1,6 @@
 -- +goose Up
 ALTER TABLE documents
-    ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+    ALTER COLUMN id SET DEFAULT uuidv7();
 
 ALTER TABLE documents
     ALTER COLUMN content TYPE bytea USING convert_to(content, 'UTF8');

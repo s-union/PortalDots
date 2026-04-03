@@ -19,7 +19,7 @@ func TestListStaffMailsAllowsMissingCircle(t *testing.T) {
 	t.Parallel()
 
 	mails := mailqueue.NewMemoryRepository()
-	if _, err := mails.Enqueue(context.Background(), "missing-circle", "staff-user", "件名", "本文", []string{"demo@example.com"}); err != nil {
+	if _, err := mails.Enqueue(context.Background(), "0195ec00-00b2-7000-8000-000000000001", "0195ec00-00b1-7000-8000-000000000001", "件名", "本文", []string{"demo@example.com"}); err != nil {
 		t.Fatalf("enqueue mail: %v", err)
 	}
 	cfg := testStaffConfig()
@@ -45,7 +45,7 @@ func TestListStaffMailsAllowsMissingCircle(t *testing.T) {
 	c.Set("httpapi.session", session.Session{
 		StaffAuthorized: true,
 		User: &auth.User{
-			ID:          "staff-user",
+			ID:          "0195ec00-00b1-7000-8000-000000000001",
 			DisplayName: "Staff User",
 			Roles:       []string{"admin"},
 			Permissions: []string{"staff.mailQueue.use"},
