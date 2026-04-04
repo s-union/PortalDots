@@ -122,14 +122,18 @@ func (h *authHandlers) register(c echo.Context) error {
 	if !yomiOK {
 		validationErrors["nameYomi"] = []string{"姓と名の間にはスペースを入れてください"}
 	}
-	if request.ContactEmail == "" || !strings.Contains(request.ContactEmail, "@") {
+	if request.ContactEmail == "" || !isValidEmail(request.ContactEmail) {
 		validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}
 	}
 	if request.PhoneNumber == "" {
 		validationErrors["phoneNumber"] = []string{"連絡先電話番号を入力してください"}
+	} else if !isValidPhoneNumber(request.PhoneNumber) {
+		validationErrors["phoneNumber"] = []string{"電話番号の形式が正しくありません（例: 090-1234-5678）"}
 	}
 	if len(request.Password) < 8 {
 		validationErrors["password"] = []string{"パスワードは8文字以上で入力してください"}
+	} else if !passwordHasLetterAndDigit(request.Password) {
+		validationErrors["password"] = []string{"パスワードには英字と数字の両方を含めてください"}
 	}
 	if request.Password != request.PasswordConfirmation {
 		validationErrors["passwordConfirmation"] = []string{"確認用パスワードが一致しません"}
@@ -325,14 +329,18 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	if !yomiOK {
 		validationErrors["nameYomi"] = []string{"姓と名の間にはスペースを入れてください"}
 	}
-	if request.ContactEmail != "" && !strings.Contains(request.ContactEmail, "@") {
+	if request.ContactEmail != "" && !isValidEmail(request.ContactEmail) {
 		validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}
 	}
 	if request.PhoneNumber == "" {
 		validationErrors["phoneNumber"] = []string{"連絡先電話番号を入力してください"}
+	} else if !isValidPhoneNumber(request.PhoneNumber) {
+		validationErrors["phoneNumber"] = []string{"電話番号の形式が正しくありません（例: 090-1234-5678）"}
 	}
 	if len(request.Password) < 8 {
 		validationErrors["password"] = []string{"パスワードは8文字以上で入力してください"}
+	} else if !passwordHasLetterAndDigit(request.Password) {
+		validationErrors["password"] = []string{"パスワードには英字と数字の両方を含めてください"}
 	}
 	if request.Password != request.PasswordConfirmation {
 		validationErrors["passwordConfirmation"] = []string{"確認用パスワードが一致しません"}

@@ -1,11 +1,12 @@
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { extractPasswordValidationMessage, useUpdatePasswordMutation } from '@/features/session/password'
+import { useFormValidation, passwordChangeFormSchema } from '@/lib/form-validation'
 import { useUserSettingsTabs } from './useUserSettingsTabs'
 
 export function useUserSettingsPasswordTab() {
   const { tabs } = useUserSettingsTabs('password')
   const updatePasswordMutation = useUpdatePasswordMutation()
-  const passwordForm = ref({
+  const passwordForm = reactive({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -14,25 +15,27 @@ export function useUserSettingsPasswordTab() {
   const successMessage = ref('')
   const forgotPasswordHref = computed(() => '/password/reset')
 
+  const { fieldErrors, getFieldError, markTouched, validateAll } = useFormValidation({
+    schema: passwordChangeFormSchema,
+    form: computed(() => passwordForm)
+  })
+
   async function savePassword() {
     errorMessage.value = ''
     successMessage.value = ''
 
-    if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-      errorMessage.value = '確認用パスワードが一致しません。'
+    if (!validateAll()) {
       return
     }
 
     try {
       await updatePasswordMutation.mutateAsync({
-        currentPassword: passwordForm.value.currentPassword,
-        newPassword: passwordForm.value.newPassword
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
       })
-      passwordForm.value = {
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }
+      passwordForm.currentPassword = ''
+      passwordForm.newPassword = ''
+      passwordForm.confirmPassword = ''
       successMessage.value = 'パスワードを更新しました。'
     } catch (error) {
       errorMessage.value = extractPasswordValidationMessage(error)
@@ -41,7 +44,10 @@ export function useUserSettingsPasswordTab() {
 
   return {
     errorMessage,
+    fieldErrors,
     forgotPasswordHref,
+    getFieldError,
+    markTouched,
     passwordForm,
     savePassword,
     successMessage,

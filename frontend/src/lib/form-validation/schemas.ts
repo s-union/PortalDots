@@ -66,6 +66,53 @@ export function requiredTextSchema(fieldName: string, minLength = 1) {
 }
 
 /**
+ * Required email validation schema
+ */
+export const requiredEmailSchema = z
+  .string()
+  .min(1, 'メールアドレスを入力してください')
+  .email('メールアドレスの形式が正しくありません')
+
+/**
+ * Profile update form schema
+ */
+export const profileUpdateFormSchema = z.object({
+  name: fullNameSchema,
+  nameYomi: nameYomiSchema,
+  contactEmail: requiredEmailSchema,
+  phoneNumber: phoneNumberSchema,
+  currentPassword: z.string().min(1, '現在のパスワードを入力してください')
+})
+
+export type ProfileUpdateFormData = z.infer<typeof profileUpdateFormSchema>
+
+/**
+ * Password change form schema
+ */
+export const passwordChangeFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, '現在のパスワードを入力してください'),
+    newPassword: passwordSchema,
+    confirmPassword: z.string()
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: '確認用パスワードが一致しません',
+    path: ['confirmPassword']
+  })
+
+export type PasswordChangeFormData = z.infer<typeof passwordChangeFormSchema>
+
+/**
+ * Contact form schema
+ */
+export const contactFormSchema = z.object({
+  categoryId: z.string().min(1, 'お問い合わせ項目を選択してください'),
+  body: z.string().min(1, 'お問い合わせ内容を入力してください')
+})
+
+export type ContactFormData = z.infer<typeof contactFormSchema>
+
+/**
  * User registration form schema
  */
 export const userRegistrationFormSchema = z

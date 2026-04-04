@@ -6,7 +6,7 @@ definePage({
   }
 })
 
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -16,40 +16,48 @@ import {
   useSubmitContactMutation
 } from '@/features/contact/api'
 import { useSessionStore } from '@/features/session/store'
+import { useFormValidation, contactFormSchema } from '@/lib/form-validation'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 
 const sessionStore = useSessionStore()
 const categoriesQuery = useContactCategoriesQuery()
 const submitContactMutation = useSubmitContactMutation()
-const form = ref({
+const form = reactive({
   categoryId: '',
   body: ''
 })
-const errorMessage = ref('')
+const submitErrorMessage = ref('')
 const successMessage = ref('')
 const selectedCategoryName = computed(
-  () => categoriesQuery.data.value?.find((category) => category.id === form.value.categoryId)?.name ?? ''
+  () => categoriesQuery.data.value?.find((category) => category.id === form.categoryId)?.name ?? ''
 )
 const selectedCircleLabel = computed(() => sessionStore.currentCircle?.name ?? '')
 
+const { getFieldError, markTouched, validateAll } = useFormValidation({
+  schema: contactFormSchema,
+  form: computed(() => form)
+})
+
 async function handleSubmit() {
-  errorMessage.value = ''
+  submitErrorMessage.value = ''
   successMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
 
   try {
     const result = await submitContactMutation.mutateAsync({
-      categoryId: form.value.categoryId,
+      categoryId: form.categoryId,
       subject: selectedCategoryName.value || 'お問い合わせ',
-      body: form.value.body
+      body: form.body
     })
     successMessage.value = `「${result.categoryName}」に問い合わせを送信しました。`
-    form.value = {
-      categoryId: '',
-      body: ''
-    }
+    form.categoryId = ''
+    form.body = ''
   } catch (error) {
-    errorMessage.value = extractContactValidationMessage(error)
+    submitErrorMessage.value = extractContactValidationMessage(error)
   }
 }
 </script>
@@ -70,26 +78,45 @@ async function handleSubmit() {
           <input :value="selectedCircleLabel" readonly type="text" />
         </label>
 
-        <label class="grid gap-2 text-sm text-body">
-          <span>お問い合わせ項目</span>
-          <select v-model="form.categoryId" aria-label="お問い合わせ項目" name="categoryId">
-            <option value="">選択してください</option>
-            <option v-for="category in categoriesQuery.data.value ?? []" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
-          </select>
-        </label>
+        <div class="grid gap-2">
+          <label class="grid gap-2 text-sm text-body">
+            <span>お問い合わせ項目</span>
+            <select
+              v-model="form.categoryId"
+              aria-label="お問い合わせ項目"
+              name="categoryId"
+              :class="{ 'border-danger': getFieldError('categoryId') }"
+              @change="markTouched('categoryId')"
+            >
+              <option value="">選択してください</option>
+              <option v-for="category in categoriesQuery.data.value ?? []" :key="category.id" :value="category.id">
+                {{ category.name }}
+              </option>
+            </select>
+          </label>
+          <p v-if="getFieldError('categoryId')" class="text-xs text-danger">{{ getFieldError('categoryId') }}</p>
+        </div>
 
-        <label class="grid gap-2 text-sm text-body">
-          <span>お問い合わせ内容</span>
-          <textarea v-model="form.body" class="min-h-40" name="body" />
-        </label>
+        <div class="grid gap-2">
+          <label class="grid gap-2 text-sm text-body">
+            <span>お問い合わせ内容</span>
+            <textarea
+              v-model="form.body"
+              class="min-h-40"
+              name="body"
+              :class="{ 'border-danger': getFieldError('body') }"
+              @blur="markTouched('body')"
+              @input="markTouched('body')"
+            />
+          </label>
+          <p v-if="getFieldError('body')" class="text-xs text-danger">{{ getFieldError('body') }}</p>
+        </div>
 
         <AlertMessage v-if="successMessage" tone="success">
           {{ successMessage }}
         </AlertMessage>
-        <AlertMessage v-if="errorMessage" tone="danger">
-          {{ errorMessage }}
+        <AlertMessage v-if="submitErrorMessage" tone="danger">
+          {{ submitErrorMessage }}
         </AlertMessage>
 
         <div class="flex justify-end">

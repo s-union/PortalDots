@@ -9,8 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/registrationmail"
@@ -18,6 +20,38 @@ import (
 )
 
 var errInvalidRegistrationToken = errors.New("invalid registration token")
+
+var validPhoneNumberRegexp = regexp.MustCompile(`^[\d\-()+]+$`)
+
+// isValidPhoneNumber returns true when s contains only digits, hyphens, parentheses, and plus signs.
+func isValidPhoneNumber(s string) bool {
+	return len(s) > 0 && validPhoneNumberRegexp.MatchString(s)
+}
+
+// isValidEmail returns true for the minimal check used across all handlers:
+// exactly one "@", at least one character before it, and a "." somewhere after it.
+func isValidEmail(s string) bool {
+	parts := strings.SplitN(s, "@", 2)
+	return len(parts) == 2 && len(parts[0]) > 0 && strings.Contains(parts[1], ".")
+}
+
+// passwordHasLetterAndDigit returns true when s contains at least one ASCII letter
+// and at least one ASCII digit.
+func passwordHasLetterAndDigit(s string) bool {
+	hasLetter := false
+	hasDigit := false
+	for _, r := range s {
+		if unicode.IsLetter(r) {
+			hasLetter = true
+		} else if unicode.IsDigit(r) {
+			hasDigit = true
+		}
+		if hasLetter && hasDigit {
+			return true
+		}
+	}
+	return false
+}
 
 func buildAuthVerificationStatus(userValue useradmin.User, univemail string) authVerificationStatusResponse {
 	items := []authVerificationStatusItem{

@@ -253,11 +253,13 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 		} else if !yomiOK {
 			validationErrors["nameYomi"] = []string{"名前(よみ)は姓と名の両方を入力してください"}
 		}
-		if request.ContactEmail == "" || !strings.Contains(request.ContactEmail, "@") {
+		if request.ContactEmail == "" || !isValidEmail(request.ContactEmail) {
 			validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}
 		}
 		if request.PhoneNumber == "" {
 			validationErrors["phoneNumber"] = []string{"連絡先電話番号を入力してください"}
+		} else if !isValidPhoneNumber(request.PhoneNumber) {
+			validationErrors["phoneNumber"] = []string{"電話番号の形式が正しくありません（例: 090-1234-5678）"}
 		}
 		if request.CurrentPassword == "" {
 			validationErrors["currentPassword"] = []string{"現在のパスワードを入力してください"}

@@ -108,7 +108,7 @@ describe('ContactPage', () => {
     await wrapper.get('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('本文を入力してください')
+    expect(wrapper.text()).toContain('お問い合わせ内容を入力してください')
     expect(wrapper.text()).not.toContain('に問い合わせを送信しました')
   })
 

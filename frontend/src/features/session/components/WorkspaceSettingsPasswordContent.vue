@@ -7,8 +7,18 @@ import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useUserSettingsPasswordTab } from '@/features/session/composables/useUserSettingsPasswordTab'
 
-const { errorMessage, forgotPasswordHref, passwordForm, savePassword, successMessage, tabs, updatePasswordMutation } =
-  useUserSettingsPasswordTab()
+const {
+  errorMessage,
+  fieldErrors,
+  forgotPasswordHref,
+  getFieldError,
+  markTouched,
+  passwordForm,
+  savePassword,
+  successMessage,
+  tabs,
+  updatePasswordMutation
+} = useUserSettingsPasswordTab()
 </script>
 
 <template>
@@ -23,18 +33,55 @@ const { errorMessage, forgotPasswordHref, passwordForm, savePassword, successMes
             </p>
           </div>
           <div class="grid gap-4">
-            <label class="grid gap-2 text-sm text-body">
-              <span>現在のパスワード</span>
-              <input v-model="passwordForm.currentPassword" name="currentPassword" type="password" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span>新しいパスワード</span>
-              <input v-model="passwordForm.newPassword" name="newPassword" type="password" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span>新しいパスワード(確認)</span>
-              <input v-model="passwordForm.confirmPassword" name="confirmPassword" type="password" />
-            </label>
+            <div class="grid gap-2">
+              <label class="grid gap-2 text-sm text-body">
+                <span>現在のパスワード</span>
+                <input
+                  v-model="passwordForm.currentPassword"
+                  name="currentPassword"
+                  type="password"
+                  :class="{ 'border-danger': getFieldError('currentPassword') }"
+                  @blur="markTouched('currentPassword')"
+                  @input="markTouched('currentPassword')"
+                />
+              </label>
+              <p v-if="getFieldError('currentPassword')" class="text-xs text-danger">
+                {{ getFieldError('currentPassword') }}
+              </p>
+            </div>
+            <div class="grid gap-2">
+              <label class="grid gap-2 text-sm text-body">
+                <span>新しいパスワード</span>
+                <input
+                  v-model="passwordForm.newPassword"
+                  name="newPassword"
+                  placeholder="8文字以上（英字・数字を含む）"
+                  type="password"
+                  :class="{ 'border-danger': getFieldError('newPassword') }"
+                  @blur="markTouched('newPassword')"
+                  @input="markTouched('newPassword')"
+                />
+              </label>
+              <p v-if="getFieldError('newPassword')" class="text-xs text-danger">
+                {{ getFieldError('newPassword') }}
+              </p>
+            </div>
+            <div class="grid gap-2">
+              <label class="grid gap-2 text-sm text-body">
+                <span>新しいパスワード(確認)</span>
+                <input
+                  v-model="passwordForm.confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  :class="{ 'border-danger': getFieldError('confirmPassword') }"
+                  @blur="markTouched('confirmPassword')"
+                  @input="markTouched('confirmPassword')"
+                />
+              </label>
+              <p v-if="getFieldError('confirmPassword')" class="text-xs text-danger">
+                {{ getFieldError('confirmPassword') }}
+              </p>
+            </div>
           </div>
         </div>
       </SettingsRow>

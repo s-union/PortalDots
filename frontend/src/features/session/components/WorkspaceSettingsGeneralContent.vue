@@ -10,13 +10,11 @@ import { useUserSettingsGeneralTab } from '@/features/session/composables/useUse
 
 const publicConfigQuery = usePublicConfigQuery()
 const {
-  contactEmail,
-  currentPassword,
   errorMessage,
   forgotPasswordHref,
-  name,
-  nameYomi,
-  phoneNumber,
+  form,
+  getFieldError,
+  markTouched,
   saveProfile,
   studentId,
   successMessage,
@@ -53,7 +51,16 @@ const {
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">名前</p>
           <div class="grid gap-2">
-            <input v-model="name" name="name" type="text" />
+            <input
+              v-model="form.name"
+              name="name"
+              placeholder="姓 名"
+              type="text"
+              :class="{ 'border-danger': getFieldError('name') }"
+              @blur="markTouched('name')"
+              @input="markTouched('name')"
+            />
+            <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
           </div>
         </div>
       </SettingsRow>
@@ -61,7 +68,16 @@ const {
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">名前(よみ)</p>
           <div class="grid gap-2">
-            <input v-model="nameYomi" name="nameYomi" type="text" />
+            <input
+              v-model="form.nameYomi"
+              name="nameYomi"
+              placeholder="せい めい"
+              type="text"
+              :class="{ 'border-danger': getFieldError('nameYomi') }"
+              @blur="markTouched('nameYomi')"
+              @input="markTouched('nameYomi')"
+            />
+            <p v-if="getFieldError('nameYomi')" class="text-xs text-danger">{{ getFieldError('nameYomi') }}</p>
           </div>
         </div>
       </SettingsRow>
@@ -69,7 +85,17 @@ const {
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">連絡先メールアドレス</p>
           <div class="grid gap-2">
-            <input v-model="contactEmail" name="contactEmail" type="email" />
+            <input
+              v-model="form.contactEmail"
+              name="contactEmail"
+              type="email"
+              :class="{ 'border-danger': getFieldError('contactEmail') }"
+              @blur="markTouched('contactEmail')"
+              @input="markTouched('contactEmail')"
+            />
+            <p v-if="getFieldError('contactEmail')" class="text-xs text-danger">
+              {{ getFieldError('contactEmail') }}
+            </p>
           </div>
         </div>
       </SettingsRow>
@@ -77,7 +103,17 @@ const {
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <p class="text-sm font-semibold text-body">連絡先電話番号</p>
           <div class="grid gap-2">
-            <input v-model="phoneNumber" name="phoneNumber" type="tel" />
+            <input
+              v-model="form.phoneNumber"
+              name="phoneNumber"
+              type="tel"
+              :class="{ 'border-danger': getFieldError('phoneNumber') }"
+              @blur="markTouched('phoneNumber')"
+              @input="markTouched('phoneNumber')"
+            />
+            <p v-if="getFieldError('phoneNumber')" class="text-xs text-danger">
+              {{ getFieldError('phoneNumber') }}
+            </p>
           </div>
         </div>
       </SettingsRow>
@@ -90,7 +126,17 @@ const {
             </p>
           </div>
           <div class="grid gap-2">
-            <input v-model="currentPassword" name="currentPassword" type="password" />
+            <input
+              v-model="form.currentPassword"
+              name="currentPassword"
+              type="password"
+              :class="{ 'border-danger': getFieldError('currentPassword') }"
+              @blur="markTouched('currentPassword')"
+              @input="markTouched('currentPassword')"
+            />
+            <p v-if="getFieldError('currentPassword')" class="text-xs text-danger">
+              {{ getFieldError('currentPassword') }}
+            </p>
           </div>
         </div>
       </SettingsRow>

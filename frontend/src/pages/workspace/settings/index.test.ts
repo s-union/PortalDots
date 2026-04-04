@@ -131,8 +131,8 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
-    await wrapper.get('input[name="name"]').setValue('Updated Demo User')
-    await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと でもゆーざー')
+    await wrapper.get('input[name="name"]').setValue('Updated User')
+    await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと ゆーざー')
     await wrapper.get('input[name="contactEmail"]').setValue('updated@example.com')
     await wrapper.get('input[name="phoneNumber"]').setValue('090-9999-9999')
     await wrapper.get('input[name="currentPassword"]').setValue('password')
@@ -199,8 +199,8 @@ describe('UserSettingsPage', () => {
     await flushPromises()
 
     await wrapper.get('input[name="currentPassword"]').setValue('password')
-    await wrapper.get('input[name="newPassword"]').setValue('new-password')
-    await wrapper.get('input[name="confirmPassword"]').setValue('new-password')
+    await wrapper.get('input[name="newPassword"]').setValue('newpass123')
+    await wrapper.get('input[name="confirmPassword"]').setValue('newpass123')
     await wrapper.find('button[type="button"]').trigger('click')
     await flushPromises()
 
