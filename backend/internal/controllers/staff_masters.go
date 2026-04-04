@@ -17,8 +17,10 @@ import (
 )
 
 type staffTagResponse struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 type mutateStaffTagRequest struct {
@@ -26,10 +28,12 @@ type mutateStaffTagRequest struct {
 }
 
 type staffPlaceResponse struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Type  int32  `json:"type"`
-	Notes string `json:"notes"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      int32  `json:"type"`
+	Notes     string `json:"notes"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
 }
 
 type mutateStaffPlaceRequest struct {
@@ -61,7 +65,7 @@ func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
 
 	response := make([]staffTagResponse, 0, len(tags))
 	for _, item := range tags {
-		response = append(response, staffTagResponse{ID: item.ID, Name: item.Name})
+		response = append(response, mapStaffTag(item))
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -155,7 +159,7 @@ func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {
 		return internalError(c)
 	}
 	recordActivity(h.activities, currentSession.User.ID, "staff.tag.created", "tag", created.ID, "", buildActivitySummary("staff がタグを作成しました", created.Name))
-	return c.JSON(http.StatusCreated, staffTagResponse{ID: created.ID, Name: created.Name})
+	return c.JSON(http.StatusCreated, mapStaffTag(created))
 }
 
 func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
@@ -182,7 +186,7 @@ func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
 	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.tag.updated", "tag", updated.ID, "", buildActivitySummary("staff がタグを更新しました", updated.Name))
-	return c.JSON(http.StatusOK, staffTagResponse{ID: updated.ID, Name: updated.Name})
+	return c.JSON(http.StatusOK, mapStaffTag(updated))
 }
 
 func (h *staffMastersHandlers) deleteStaffTag(c echo.Context) error {
@@ -428,10 +432,21 @@ func bindStaffContactCategoryRequest(c echo.Context) (mutateStaffContactCategory
 
 func mapStaffPlace(item place.Place) staffPlaceResponse {
 	return staffPlaceResponse{
-		ID:    item.ID,
-		Name:  item.Name,
-		Type:  item.Type,
-		Notes: item.Notes,
+		ID:        item.ID,
+		Name:      item.Name,
+		Type:      item.Type,
+		Notes:     item.Notes,
+		CreatedAt: item.CreatedAt,
+		UpdatedAt: item.UpdatedAt,
+	}
+}
+
+func mapStaffTag(item tag.Tag) staffTagResponse {
+	return staffTagResponse{
+		ID:        item.ID,
+		Name:      item.Name,
+		CreatedAt: item.CreatedAt,
+		UpdatedAt: item.UpdatedAt,
 	}
 }
 

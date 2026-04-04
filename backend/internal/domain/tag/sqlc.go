@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
+	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
 )
 
 type SQLCRepository struct {
@@ -23,8 +24,10 @@ func (r *SQLCRepository) List() ([]Tag, error) {
 	tags := make([]Tag, 0, len(rows))
 	for _, row := range rows {
 		tags = append(tags, Tag{
-			ID:   row.ID,
-			Name: row.Name,
+			ID:        row.ID,
+			Name:      row.Name,
+			CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+			UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
 		})
 	}
 
@@ -37,7 +40,12 @@ func (r *SQLCRepository) Create(name string) (Tag, error) {
 		return Tag{}, err
 	}
 
-	return Tag{ID: row.ID, Name: row.Name}, nil
+	return Tag{
+		ID:        row.ID,
+		Name:      row.Name,
+		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
+	}, nil
 }
 
 func (r *SQLCRepository) Update(id, name string) (Tag, error) {
@@ -49,7 +57,12 @@ func (r *SQLCRepository) Update(id, name string) (Tag, error) {
 		return Tag{}, err
 	}
 
-	return Tag{ID: row.ID, Name: row.Name}, nil
+	return Tag{
+		ID:        row.ID,
+		Name:      row.Name,
+		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
+	}, nil
 }
 
 func (r *SQLCRepository) Delete(id string) error {

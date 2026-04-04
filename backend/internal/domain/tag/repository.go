@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
@@ -13,8 +14,10 @@ import (
 var ErrNotFound = errors.New("tag not found")
 
 type Tag struct {
-	ID   string
-	Name string
+	ID        string
+	Name      string
+	CreatedAt string
+	UpdatedAt string
 }
 
 type Repository interface {
@@ -33,7 +36,12 @@ type MemoryRepository struct {
 func NewMemoryRepository(cfg []config.Tag) *MemoryRepository {
 	items := make([]Tag, 0, len(cfg))
 	for _, item := range cfg {
-		items = append(items, Tag{ID: item.ID, Name: item.Name})
+		items = append(items, Tag{
+			ID:        item.ID,
+			Name:      item.Name,
+			CreatedAt: item.CreatedAt,
+			UpdatedAt: item.UpdatedAt,
+		})
 	}
 
 	slices.SortFunc(items, func(a, b Tag) int { return strings.Compare(a.Name, b.Name) })
@@ -55,9 +63,12 @@ func (r *MemoryRepository) Create(name string) (Tag, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	now := time.Now().UTC().Format(time.RFC3339)
 	created := Tag{
-		ID:   uuidv7.MustString(),
-		Name: name,
+		ID:        uuidv7.MustString(),
+		Name:      name,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 	r.nextID++
 	insertAt, _ := slices.BinarySearchFunc(r.items, created, func(item Tag, target Tag) int {
@@ -78,6 +89,7 @@ func (r *MemoryRepository) Update(id, name string) (Tag, error) {
 		}
 		updated := r.items[index]
 		updated.Name = name
+		updated.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 		r.items = append(r.items[:index], r.items[index+1:]...)
 		insertAt, _ := slices.BinarySearchFunc(r.items, updated, func(item Tag, target Tag) int {
 			return strings.Compare(item.Name, target.Name)

@@ -146,10 +146,18 @@ func seedUsers(ctx context.Context, q *dbgen.Queries, authUser config.AuthUser, 
 		}
 
 		if err := q.SeedUpsertUser(ctx, dbgen.SeedUpsertUserParams{
-			ID:          user.ID,
-			DisplayName: user.DisplayName,
-			Password:    passwordHash,
-			IsVerified:  user.IsVerified,
+			ID:                  user.ID,
+			LastName:            user.LastName,
+			LastNameReading:     user.LastNameReading,
+			FirstName:           user.FirstName,
+			FirstNameReading:    user.FirstNameReading,
+			DisplayName:         user.DisplayName,
+			ContactEmail:        user.ContactEmail,
+			PhoneNumber:         user.PhoneNumber,
+			Password:            passwordHash,
+			IsVerified:          user.IsVerified,
+			IsEmailVerified:     user.IsEmailVerified,
+			IsUnivemailVerified: user.IsUnivemailVerified,
 		}); err != nil {
 			return err
 		}

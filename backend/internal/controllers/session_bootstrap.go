@@ -29,6 +29,14 @@ type sessionBootstrapUserInfo struct {
 	DisplayName                 string `json:"displayName"`
 	CanDeleteAccount            bool   `json:"canDeleteAccount"`
 	CanCreateCircleRegistration bool   `json:"canCreateCircleRegistration"`
+	StudentID                   string `json:"studentId"`
+	Univemail                   string `json:"univemail"`
+	LastName                    string `json:"lastName"`
+	LastNameReading             string `json:"lastNameReading"`
+	FirstName                   string `json:"firstName"`
+	FirstNameReading            string `json:"firstNameReading"`
+	ContactEmail                string `json:"contactEmail"`
+	PhoneNumber                 string `json:"phoneNumber"`
 }
 
 func (h *authHandlers) sessionBootstrap(c echo.Context) error {
@@ -75,13 +83,25 @@ func (h *authHandlers) sessionBootstrap(c echo.Context) error {
 		FeatureFlags:  []string{},
 		Roles:         append([]string{}, managedUser.Roles...),
 		Permissions:   append([]string{}, managedUser.Permissions...),
-		User: &sessionBootstrapUserInfo{
-			ID:                          managedUser.ID,
-			DisplayName:                 managedUser.DisplayName,
-			CanDeleteAccount:            !hasStaffAccess(managedUser.Roles, managedUser.Permissions) && len(managedUser.CircleIDs) == 0,
-			CanCreateCircleRegistration: canCreateCircleRegistration(managedUser),
-		},
+		User:          buildSessionBootstrapUserInfo(managedUser, h.portalUnivemailDomainPart),
 	})
+}
+
+func buildSessionBootstrapUserInfo(managedUser useradmin.User, portalUnivemailDomainPart string) *sessionBootstrapUserInfo {
+	return &sessionBootstrapUserInfo{
+		ID:                          managedUser.ID,
+		DisplayName:                 managedUser.DisplayName,
+		CanDeleteAccount:            !hasStaffAccess(managedUser.Roles, managedUser.Permissions) && len(managedUser.CircleIDs) == 0,
+		CanCreateCircleRegistration: canCreateCircleRegistration(managedUser),
+		StudentID:                   deriveStudentID(managedUser, portalUnivemailDomainPart),
+		Univemail:                   deriveUnivemail(managedUser, portalUnivemailDomainPart),
+		LastName:                    managedUser.LastName,
+		LastNameReading:             managedUser.LastNameReading,
+		FirstName:                   managedUser.FirstName,
+		FirstNameReading:            managedUser.FirstNameReading,
+		ContactEmail:                managedUser.ContactEmail,
+		PhoneNumber:                 managedUser.PhoneNumber,
+	}
 }
 
 func canCreateCircleRegistration(userValue useradmin.User) bool {

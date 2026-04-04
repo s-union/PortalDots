@@ -50,12 +50,33 @@ SET name = EXCLUDED.name,
     updated_at = now();
 
 -- name: SeedUpsertUser :exec
-INSERT INTO users (id, display_name, password, is_verified)
-VALUES ($1, $2, $3, $4)
+INSERT INTO users (
+    id,
+    last_name,
+    last_name_reading,
+    first_name,
+    first_name_reading,
+    display_name,
+    contact_email,
+    phone_number,
+    password,
+    is_verified,
+    is_email_verified,
+    is_univemail_verified
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 ON CONFLICT (id) DO UPDATE
-SET display_name = EXCLUDED.display_name,
+SET last_name = EXCLUDED.last_name,
+    last_name_reading = EXCLUDED.last_name_reading,
+    first_name = EXCLUDED.first_name,
+    first_name_reading = EXCLUDED.first_name_reading,
+    display_name = EXCLUDED.display_name,
+    contact_email = EXCLUDED.contact_email,
+    phone_number = EXCLUDED.phone_number,
     password = EXCLUDED.password,
-    is_verified = EXCLUDED.is_verified;
+    is_verified = EXCLUDED.is_verified,
+    is_email_verified = EXCLUDED.is_email_verified,
+    is_univemail_verified = EXCLUDED.is_univemail_verified;
 
 -- name: SeedDeleteCircleUserByUserID :exec
 DELETE FROM circle_user WHERE user_id = $1;

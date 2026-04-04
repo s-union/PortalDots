@@ -28,9 +28,11 @@ function buildFetchMock(verifyUrl = 'http://127.0.0.1:8080/email/verify/univemai
     if (pathname.endsWith('/public/config')) {
       return new Response(
         JSON.stringify({
+          isDemo: true,
+          appName: 'PortalDots',
           portalStudentIdName: '学籍番号',
-          portalUnivemailName: '大学メールアドレス',
-          portalUnivemailDomainPart: 'example.ac.jp'
+          portalUnivemailName: '学生用メールアドレス',
+          portalUnivemailDomainPart: 'portaldots.com'
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )

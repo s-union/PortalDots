@@ -8,6 +8,7 @@ import { useSessionStore } from '@/features/session/store'
 export interface StaffPageSummary {
   id: string
   title: string
+  body: string
   notes: string
   createdAt: string
   updatedAt: string
@@ -18,9 +19,7 @@ export interface StaffPageSummary {
   documents: StaffPageDocument[]
 }
 
-export type StaffPageDetail = StaffPageSummary & {
-  body: string
-}
+export type StaffPageDetail = StaffPageSummary
 
 export interface MutateStaffPagePayload {
   title: string

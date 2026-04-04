@@ -31,7 +31,7 @@ describe('UserSettingsPage', () => {
     document.documentElement.removeAttribute('data-theme')
   })
 
-  it('updates the display name', async () => {
+  it('updates the profile fields', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -73,7 +73,15 @@ describe('UserSettingsPage', () => {
         if (url.includes('/session/profile') && method === 'PUT') {
           return jsonResponse({
             id: 'demo-user',
-            displayName: 'Updated Demo User'
+            displayName: 'Updated Demo User',
+            studentId: 'DEMO-CIRCLE',
+            univemail: 'demo-circle@portaldots.com',
+            lastName: 'Updated',
+            lastNameReading: 'あっぷでーと',
+            firstName: 'Demo User',
+            firstNameReading: 'でもゆーざー',
+            contactEmail: 'updated@example.com',
+            phoneNumber: '090-9999-9999'
           })
         }
 
@@ -89,8 +97,26 @@ describe('UserSettingsPage', () => {
             user: {
               id: 'demo-user',
               displayName: 'Updated Demo User',
-              canDeleteAccount: false
+              canDeleteAccount: false,
+              studentId: 'DEMO-CIRCLE',
+              univemail: 'demo-circle@portaldots.com',
+              lastName: 'Updated',
+              lastNameReading: 'あっぷでーと',
+              firstName: 'Demo User',
+              firstNameReading: 'でもゆーざー',
+              contactEmail: 'updated@example.com',
+              phoneNumber: '090-9999-9999'
             }
+          })
+        }
+
+        if (url.includes('/public/config') && method === 'GET') {
+          return jsonResponse({
+            isDemo: true,
+            appName: 'PortalDots',
+            portalStudentIdName: '学生番号',
+            portalUnivemailName: '学生用メールアドレス',
+            portalUnivemailDomainPart: 'portaldots.com'
           })
         }
 
@@ -105,12 +131,17 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
-    await wrapper.get('input[name="displayName"]').setValue('Updated Demo User')
+    await wrapper.get('input[name="name"]').setValue('Updated Demo User')
+    await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと でもゆーざー')
+    await wrapper.get('input[name="contactEmail"]').setValue('updated@example.com')
+    await wrapper.get('input[name="phoneNumber"]').setValue('090-9999-9999')
+    await wrapper.get('input[name="currentPassword"]').setValue('password')
     await wrapper.find('button[type="button"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('表示名を更新しました。')
+    expect(wrapper.text()).toContain('プロフィールを更新しました。')
     expect(sessionStore.user?.displayName).toBe('Updated Demo User')
+    expect(sessionStore.user?.contactEmail).toBe('updated@example.com')
   })
 
   it('updates the password', async () => {
@@ -205,7 +236,26 @@ describe('UserSettingsPage', () => {
     await router.push('/workspace/settings')
     await router.isReady()
 
-    vi.stubGlobal('fetch', vi.fn())
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        await Promise.resolve()
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+
+        if (url.includes('/public/config') && method === 'GET') {
+          return jsonResponse({
+            isDemo: true,
+            appName: 'PortalDots',
+            portalStudentIdName: '学生番号',
+            portalUnivemailName: '学生用メールアドレス',
+            portalUnivemailDomainPart: 'portaldots.com'
+          })
+        }
+
+        throw new Error(`Unexpected request: ${method} ${url}`)
+      })
+    )
 
     const wrapper = mount(UserSettingsPage, {
       global: {

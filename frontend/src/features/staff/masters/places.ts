@@ -10,6 +10,14 @@ export interface StaffPlace {
   name: string
   type: number
   notes: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface StaffPlaceFormInput {
+  name: string
+  type: number
+  notes: string
 }
 
 export async function fetchStaffPlaces() {
@@ -26,7 +34,7 @@ export async function fetchStaffPlaces() {
   )
 }
 
-export async function createStaffPlace(payload: Omit<StaffPlace, 'id'>, csrfToken: string) {
+export async function createStaffPlace(payload: StaffPlaceFormInput, csrfToken: string) {
   return $api.mutationData(
     'post',
     '/staff/places',
@@ -104,7 +112,7 @@ export function useCreateStaffPlaceMutation() {
   const queryClient = useQueryClient()
   const sessionStore = useSessionStore()
   return useMutation({
-    mutationFn: async (payload: Omit<StaffPlace, 'id'>) => createStaffPlace(payload, sessionStore.csrfToken),
+    mutationFn: async (payload: StaffPlaceFormInput) => createStaffPlace(payload, sessionStore.csrfToken),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['staff', 'places'] })
     }

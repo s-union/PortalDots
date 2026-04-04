@@ -31,6 +31,7 @@ import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const publicConfigQuery = usePublicConfigQuery()
+const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalDots')
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 const pageAdminAvailable = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions))
 const documentAdminAvailable = computed(() => canReadDocuments(sessionStore.roles, sessionStore.permissions))
@@ -64,14 +65,14 @@ const staffCards = computed<StaffCard[]>(() => [
     to: '/staff/users',
     title: 'ユーザー情報管理',
     iconClass: 'far fa-address-book fa-fw',
-    description: 'PortalDotsに登録しているユーザーの情報を管理します',
+    description: `${appName.value}に登録しているユーザーの情報を管理します`,
     hidden: !userAdminAvailable.value
   },
   {
     to: '/staff/circles',
     title: '企画情報管理',
     iconClass: 'fas fa-star fa-fw',
-    description: 'PortalDotsに登録している企画の情報の管理や、企画参加登録フォームの設定を行います',
+    description: `${appName.value}に登録している企画の情報の管理や、企画参加登録フォームの設定を行います`,
     hidden: !circleAdminAvailable.value
   },
   {
@@ -99,14 +100,14 @@ const staffCards = computed<StaffCard[]>(() => [
     to: '/staff/pages',
     title: 'お知らせ管理',
     iconClass: 'fas fa-bullhorn fa-fw',
-    description: 'PortalDots上に表示するお知らせを管理します。お知らせはメールで一斉配信できます',
+    description: `${appName.value}上に表示するお知らせを管理します。お知らせはメールで一斉配信できます`,
     hidden: !pageAdminAvailable.value
   },
   {
     to: '/staff/documents',
     title: '配布資料管理',
     iconClass: 'far fa-file-alt fa-fw',
-    description: 'PortalDots上で配布する資料(ファイル)を管理します',
+    description: `${appName.value}上で配布する資料(ファイル)を管理します`,
     hidden: !documentAdminAvailable.value
   },
   {
@@ -120,7 +121,7 @@ const staffCards = computed<StaffCard[]>(() => [
     to: '/staff/contacts/categories',
     title: 'お問い合わせ受付設定',
     iconClass: 'fas fa-at fa-fw',
-    description: 'PortalDotsのお問い合わせフォームの受付方法を設定します',
+    description: `${appName.value}のお問い合わせフォームの受付方法を設定します`,
     hidden: !contactCategoryAvailable.value
   },
   {

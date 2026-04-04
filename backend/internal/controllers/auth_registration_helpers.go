@@ -95,6 +95,27 @@ func deriveUnivemail(userValue useradmin.User, domainPart string) string {
 	return ""
 }
 
+func deriveStudentID(userValue useradmin.User, domainPart string) string {
+	domain := strings.ToLower(strings.TrimSpace(domainPart))
+	for _, loginID := range userValue.LoginIDs {
+		normalized := strings.TrimSpace(loginID)
+		lowerNormalized := strings.ToLower(normalized)
+		if normalized == "" {
+			continue
+		}
+		if strings.Contains(lowerNormalized, "@") {
+			if domain != "" && strings.HasSuffix(lowerNormalized, "@"+domain) {
+				continue
+			}
+			if strings.EqualFold(lowerNormalized, strings.TrimSpace(userValue.ContactEmail)) {
+				continue
+			}
+		}
+		return normalized
+	}
+	return ""
+}
+
 func normalizeRegistrationLocalPart(value string) string {
 	normalized := strings.ToLower(strings.TrimSpace(value))
 	normalized = strings.TrimPrefix(normalized, "@")

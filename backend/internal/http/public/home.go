@@ -310,7 +310,7 @@ func (h *publicHomeHandlers) collectPublicDocuments(circles []circle.Circle, lim
 }
 
 func summarizePublicHomeText(value string, maxRunes int) string {
-	normalized := strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
+	normalized := normalizePublicHomeSummary(value)
 	if normalized == "" {
 		return ""
 	}
@@ -320,6 +320,26 @@ func summarizePublicHomeText(value string, maxRunes int) string {
 
 	runes := []rune(normalized)
 	return strings.TrimSpace(string(runes[:maxRunes])) + "..."
+}
+
+func normalizePublicHomeSummary(value string) string {
+	normalized := strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
+	if normalized == "" {
+		return ""
+	}
+
+	replacer := strings.NewReplacer(
+		"### ", "",
+		"## ", "",
+		"# ", "",
+		"|", " ",
+		" - ", " ",
+		"- ", "",
+		"* ", "",
+		"`", "",
+	)
+
+	return strings.Join(strings.Fields(replacer.Replace(normalized)), " ")
 }
 
 func (h *publicHomeHandlers) buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {

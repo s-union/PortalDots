@@ -46,7 +46,7 @@ async function handleSave() {
   try {
     if (tag) {
       await updateMutation.mutateAsync({
-        id: tag.id,
+        ...tag,
         name: name.value
       })
       successMessage.value = 'タグを更新しました。'

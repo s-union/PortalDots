@@ -17,7 +17,6 @@ const (
 	demoStaffSubUserID       = "0195ec00-0053-7000-8000-000000000001"
 	demoCircleUserID         = "0195ec00-0054-7000-8000-000000000001"
 	demoCircleSubUserID      = "0195ec00-0055-7000-8000-000000000001"
-	demoCircleUnverifiedID   = "0195ec00-0056-7000-8000-000000000001"
 )
 
 type Config struct {
@@ -160,15 +159,19 @@ type Form struct {
 }
 
 type Tag struct {
-	ID   string
-	Name string
+	ID        string
+	Name      string
+	CreatedAt string
+	UpdatedAt string
 }
 
 type Place struct {
-	ID    string
-	Name  string
-	Type  int
-	Notes string
+	ID        string
+	Name      string
+	Type      int
+	Notes     string
+	CreatedAt string
+	UpdatedAt string
 }
 
 type BoothAssignment struct {
@@ -182,11 +185,26 @@ type ContactCategory struct {
 	Email string
 }
 
+func ternaryString(condition bool, whenTrue string, whenFalse string) string {
+	if condition {
+		return whenTrue
+	}
+	return whenFalse
+}
+
+func sizedDemoFileContent(prefix string, targetSize int) string {
+	if targetSize <= len(prefix) {
+		return prefix
+	}
+
+	return prefix + strings.Repeat(" ", targetSize-len(prefix))
+}
+
 func defaultDemoAuthUser() AuthUser {
 	return AuthUser{
 		ID:          demoAdminUserID,
-		LoginIDs:    []string{"demo-admin"},
-		DisplayName: "Demo Admin",
+		LoginIDs:    []string{"DEMO-ADMIN"},
+		DisplayName: "デモ 管理者",
 		Password:    defaultAuthPassword,
 		Roles:       []string{"admin"},
 		Permissions: []string{},
@@ -196,15 +214,34 @@ func defaultDemoAuthUser() AuthUser {
 func defaultDemoUsers() []User {
 	return []User{
 		{
+			ID:                  demoAdminUserID,
+			LoginIDs:            []string{"DEMO-ADMIN"},
+			LastName:            "デモ",
+			LastNameReading:     "でも",
+			FirstName:           "管理者",
+			FirstNameReading:    "かんりしゃ",
+			DisplayName:         "デモ 管理者",
+			Password:            defaultAuthPassword,
+			ContactEmail:        "demo-admin@portaldots.com",
+			PhoneNumber:         "090-0000-0000",
+			Roles:               []string{"admin"},
+			Permissions:         []string{},
+			CircleIDs:           []string{},
+			LeaderCircleIDs:     []string{},
+			IsVerified:          true,
+			IsEmailVerified:     true,
+			IsUnivemailVerified: true,
+		},
+		{
 			ID:                  demoStaffUserID,
-			LoginIDs:            []string{"demo-staff"},
+			LoginIDs:            []string{"DEMO-STAFF"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
 			FirstName:           "スタッフ",
 			FirstNameReading:    "すたっふ",
-			DisplayName:         "Demo Staff",
+			DisplayName:         "デモ スタッフ",
 			Password:            "demo-staff",
-			ContactEmail:        "demo-staff@example.com",
+			ContactEmail:        "demo-staff@portaldots.com",
 			PhoneNumber:         "090-0000-0001",
 			Roles:               []string{"content_manager"},
 			Permissions:         []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
@@ -216,14 +253,14 @@ func defaultDemoUsers() []User {
 		},
 		{
 			ID:                  demoStaffSubUserID,
-			LoginIDs:            []string{"demo-staff-sub"},
+			LoginIDs:            []string{"DEMO-STAFF-SUB"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
-			FirstName:           "サブスタッフ",
-			FirstNameReading:    "さぶすたっふ",
-			DisplayName:         "Demo Staff Sub",
+			FirstName:           "副スタッフ",
+			FirstNameReading:    "ふくすたっふ",
+			DisplayName:         "デモ 副スタッフ",
 			Password:            "demo-staff-sub",
-			ContactEmail:        "demo-staff-sub@example.com",
+			ContactEmail:        "demo-staff-sub@portaldots.com",
 			PhoneNumber:         "090-0000-0002",
 			Roles:               []string{"content_manager"},
 			Permissions:         []string{"staff.users", "staff.circles", "staff.forms", "staff.permissions"},
@@ -235,14 +272,14 @@ func defaultDemoUsers() []User {
 		},
 		{
 			ID:                  demoCircleUserID,
-			LoginIDs:            []string{"demo-circle"},
+			LoginIDs:            []string{"DEMO-CIRCLE"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
-			FirstName:           "サークル",
-			FirstNameReading:    "さーくる",
-			DisplayName:         "Demo Circle",
+			FirstName:           "企画者",
+			FirstNameReading:    "きかくしゃ",
+			DisplayName:         "デモ 企画者",
 			Password:            "demo-circle",
-			ContactEmail:        "demo-circle@example.com",
+			ContactEmail:        "demo-circle@portaldots.com",
 			PhoneNumber:         "090-0000-0003",
 			Roles:               []string{"participant"},
 			Permissions:         []string{},
@@ -254,14 +291,14 @@ func defaultDemoUsers() []User {
 		},
 		{
 			ID:                  demoCircleSubUserID,
-			LoginIDs:            []string{"demo-circle-sub"},
+			LoginIDs:            []string{"DEMO-CIRCLE-SUB"},
 			LastName:            "デモ",
 			LastNameReading:     "でも",
-			FirstName:           "サブ",
-			FirstNameReading:    "さぶ",
-			DisplayName:         "Demo Circle Sub",
+			FirstName:           "副企画者",
+			FirstNameReading:    "ふくきかくしゃ",
+			DisplayName:         "デモ 副企画者",
 			Password:            "demo-circle-sub",
-			ContactEmail:        "demo-circle-sub@example.com",
+			ContactEmail:        "demo-circle-sub@portaldots.com",
 			PhoneNumber:         "090-0000-0004",
 			Roles:               []string{"participant"},
 			Permissions:         []string{},
@@ -271,25 +308,6 @@ func defaultDemoUsers() []User {
 			IsEmailVerified:     true,
 			IsUnivemailVerified: true,
 		},
-		{
-			ID:                  demoCircleUnverifiedID,
-			LoginIDs:            []string{"0195ec00-0022-7000-8000-000000000001-unverified@example.com"},
-			LastName:            "未確認",
-			LastNameReading:     "みかくにん",
-			FirstName:           "メンバー",
-			FirstNameReading:    "めんばー",
-			DisplayName:         "Circle B Unverified Member",
-			Password:            "password",
-			ContactEmail:        "0195ec00-0022-7000-8000-000000000001-unverified@example.com",
-			PhoneNumber:         "",
-			Roles:               []string{"participant"},
-			Permissions:         []string{},
-			CircleIDs:           []string{"0195ec00-0022-7000-8000-000000000001"},
-			LeaderCircleIDs:     []string{},
-			IsVerified:          false,
-			IsEmailVerified:     false,
-			IsUnivemailVerified: false,
-		},
 	}
 }
 
@@ -297,26 +315,27 @@ func FromEnv() Config {
 	authPassword, authPasswordProvided := getenvWithPresence("PORTALDOTS_AUTH_PASSWORD", defaultAuthPassword)
 	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTALDOTS_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
 	defaultAuthUser := defaultDemoAuthUser()
+	allowInsecureDefaults := getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true"
 
 	return Config{
 		BindAddress:               getenv("PORTALDOTS_API_BIND", ":8081"),
 		DatabaseURL:               getenv("PORTALDOTS_DATABASE_URL", ""),
 		MigrationsDir:             getenv("PORTALDOTS_MIGRATIONS_DIR", "db/migrations"),
-		AllowInsecureDefaults:     getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true",
+		AllowInsecureDefaults:     allowInsecureDefaults,
 		SyncAuthUserOnStartup:     getenv("PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP", "") == "true",
 		SessionCookieName:         getenv("PORTALDOTS_SESSION_COOKIE", "portaldots_session"),
 		SessionCookieSecure:       getenv("PORTALDOTS_SESSION_COOKIE_SECURE", "") == "true",
 		SessionTTL:                time.Duration(getenvInt("PORTALDOTS_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
 		AppName:                   getenv("APP_NAME", "PortalDots"),
-		PortalDescription:         getenv("PORTAL_DESCRIPTION", "学園祭参加団体向けポータル"),
+		PortalDescription:         getenv("PORTAL_DESCRIPTION", ternaryString(allowInsecureDefaults, "PortalDots デモサイトです。", "学園祭参加団体向けポータル")),
 		AppURL:                    getenv("APP_URL", "http://127.0.0.1:8080"),
 		AppForceHTTPS:             getenv("APP_FORCE_HTTPS", "") == "true",
-		PortalAdminName:           getenv("PORTAL_ADMIN_NAME", "PortalDots 実行委員会"),
-		PortalContactEmail:        getenv("PORTAL_CONTACT_EMAIL", "contact@example.com"),
+		PortalAdminName:           getenv("PORTAL_ADMIN_NAME", ternaryString(allowInsecureDefaults, "PortalDots 実行委員会", "PortalDots 実行委員会")),
+		PortalContactEmail:        getenv("PORTAL_CONTACT_EMAIL", ternaryString(allowInsecureDefaults, "support@portaldots.com", "contact@example.com")),
 		PortalUnivemailLocalPart:  getenv("PORTAL_UNIVEMAIL_LOCAL_PART", "student_id"),
-		PortalUnivemailDomainPart: getenv("PORTAL_UNIVEMAIL_DOMAIN_PART", "example.ac.jp"),
+		PortalUnivemailDomainPart: getenv("PORTAL_UNIVEMAIL_DOMAIN_PART", ternaryString(allowInsecureDefaults, "portaldots.com", "example.ac.jp")),
 		PortalStudentIDName:       getenv("PORTAL_STUDENT_ID_NAME", "学籍番号"),
-		PortalUnivemailName:       getenv("PORTAL_UNIVEMAIL_NAME", "大学メールアドレス"),
+		PortalUnivemailName:       getenv("PORTAL_UNIVEMAIL_NAME", ternaryString(allowInsecureDefaults, "学生用メールアドレス", "大学メールアドレス")),
 		PortalPrimaryColorH:       getenvInt("PORTAL_PRIMARY_COLOR_H", 214),
 		PortalPrimaryColorS:       getenvInt("PORTAL_PRIMARY_COLOR_S", 91),
 		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 53),
@@ -335,7 +354,7 @@ func FromEnv() Config {
 			Permissions: []string{},
 		},
 		Users: func() []User {
-			if getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true" {
+			if allowInsecureDefaults {
 				return defaultDemoUsers()
 			}
 			return []User{}
@@ -347,7 +366,7 @@ func FromEnv() Config {
 			{
 				ID:            "0195ec00-0001-7000-8000-000000000001",
 				Name:          "模擬店",
-				Description:   "飲食系の企画参加登録フォームです。",
+				Description:   "模擬店企画の参加登録です。",
 				UsersCountMin: 1,
 				UsersCountMax: 4,
 				Tags:          []string{"模擬店"},
@@ -356,7 +375,7 @@ func FromEnv() Config {
 			{
 				ID:            "0195ec00-0002-7000-8000-000000000001",
 				Name:          "展示",
-				Description:   "展示系の企画参加登録フォームです。",
+				Description:   "展示企画の参加登録です。",
 				UsersCountMin: 1,
 				UsersCountMax: 3,
 				Tags:          []string{"展示"},
@@ -390,95 +409,81 @@ func FromEnv() Config {
 		Pages: []Page{
 			{
 				ID:           "0195ec00-0031-7000-8000-000000000001",
-				Title:        "搬入時間のお知らせ",
-				Body:         "Aブロックの搬入は 9:00 から開始します。",
-				Notes:        "搬入担当向けの補足です。",
+				Title:        "お知らせサンプル",
+				Body:         "このような形でお知らせを掲載できます。\n\n## 見出し\n\n- 箇条書き\n- 箇条書き\n- 箇条書き\n  - 段下げもできます\n\n表を書くこともできます。\n\n| Column 1 | Column 2 | Column 3 |\n| --- | --- | --- |\n| Text | Text | Text |\n\nまた、お知らせに配布資料へのリンクを設置することができます。下記の「関連する配布資料」をご覧ください。",
+				Notes:        "デモサイト用のお知らせサンプルです。",
 				IsPinned:     false,
 				IsPublic:     true,
-				ViewableTags: []string{"模擬店"},
-				DocumentIDs:  []string{"0195ec00-0041-7000-8000-000000000001"},
-				CreatedAt:    "2026-03-01T09:00:00Z",
-				UpdatedAt:    "2026-03-01T09:00:00Z",
+				ViewableTags: []string{},
+				DocumentIDs:  []string{"0195ec00-0042-7000-8000-000000000001"},
+				CreatedAt:    "2022-03-27T15:02:00+09:00",
+				UpdatedAt:    "2022-03-27T15:02:00+09:00",
 			},
 			{
 				ID:           "0195ec00-0032-7000-8000-000000000001",
-				Title:        "固定表示の連絡",
-				Body:         "このお知らせは一覧には出しません。",
+				Title:        "PortalDots デモサイトへようこそ！",
+				Body:         "デモサイトでは PortalDots のほぼ全機能をお試し利用することができます。\n(他のデモサイト利用者へ影響が出ないよう、データの保存は制限しています)",
 				Notes:        "",
 				IsPinned:     true,
 				IsPublic:     true,
 				ViewableTags: []string{},
-				DocumentIDs:  []string{},
-				CreatedAt:    "2026-03-02T09:00:00Z",
-				UpdatedAt:    "2026-03-02T09:00:00Z",
+				DocumentIDs:  []string{"0195ec00-0041-7000-8000-000000000001"},
+				CreatedAt:    "2022-03-27T15:05:00+09:00",
+				UpdatedAt:    "2022-03-27T15:05:00+09:00",
 			},
 			{
 				ID:           "0195ec00-0034-7000-8000-000000000001",
-				Title:        "展示レイアウト更新",
-				Body:         "Bブロックの展示レイアウトを更新しました。",
-				Notes:        "展示班向けの差し替え指示あり。",
+				Title:        "お知らせサンプル2",
+				Body:         "お知らせサンプルです。",
+				Notes:        "",
 				IsPinned:     false,
 				IsPublic:     true,
-				ViewableTags: []string{"展示"},
-				DocumentIDs:  []string{"0195ec00-0042-7000-8000-000000000001"},
-				CreatedAt:    "2026-03-03T09:00:00Z",
-				UpdatedAt:    "2026-03-03T09:00:00Z",
+				ViewableTags: []string{},
+				DocumentIDs:  []string{},
+				CreatedAt:    "2021-06-07T22:30:00+09:00",
+				UpdatedAt:    "2021-06-07T22:30:00+09:00",
 			},
 			{
 				ID:           "0195ec00-0035-7000-8000-000000000001",
-				Title:        "非公開メモ",
-				Body:         "このお知らせは公開されません。",
-				Notes:        "スタッフだけが確認するメモです。",
+				Title:        "サイコロステーキ企画を実施する際の注意事項",
+				Body:         "このお知らせは、サイコロステーキ企画を実施される企画の関係者向けに掲載しています。\n\n（※ お知らせを掲載できる対象ユーザーを限定することもできます）",
+				Notes:        "模擬店向けの限定公開サンプルです。",
 				IsPinned:     false,
-				IsPublic:     false,
-				ViewableTags: []string{},
-				DocumentIDs:  []string{"0195ec00-0043-7000-8000-000000000001"},
-				CreatedAt:    "2026-03-04T09:00:00Z",
-				UpdatedAt:    "2026-03-04T09:00:00Z",
+				IsPublic:     true,
+				ViewableTags: []string{"模擬店"},
+				DocumentIDs:  []string{},
+				CreatedAt:    "2021-06-07T22:09:00+09:00",
+				UpdatedAt:    "2021-06-07T22:09:00+09:00",
 			},
 		},
 		Documents: []Document{
 			{
 				ID:          "0195ec00-0041-7000-8000-000000000001",
 				CircleID:    "0195ec00-0021-7000-8000-000000000001",
-				Name:        "搬入手順書",
-				Description: "Aブロック向けの搬入手順です。",
-				Notes:       "搬入班で最終確認してください。",
+				Name:        "デモサイトへのログイン方法",
+				Description: "",
+				Notes:       "デモサイト案内のサンプル資料です。",
 				IsPublic:    true,
-				IsImportant: true,
-				Filename:    "a-loading-guide.txt",
-				MimeType:    "text/plain; charset=utf-8",
-				Content:     "Aブロックの搬入は 9:00 から 9:30 です。",
-				CreatedAt:   "2026-03-01T09:00:00Z",
-				UpdatedAt:   "2026-03-02T09:00:00Z",
+				IsImportant: false,
+				Filename:    "demo-login-guide.png",
+				MimeType:    "image/png",
+				Content:     sizedDemoFileContent("PNG DATA", 97324),
+				CreatedAt:   "2022-03-27T15:05:19+09:00",
+				UpdatedAt:   "2022-03-27T15:05:41+09:00",
 			},
 			{
 				ID:          "0195ec00-0042-7000-8000-000000000001",
-				CircleID:    "0195ec00-0022-7000-8000-000000000001",
-				Name:        "展示ガイド",
-				Description: "Bブロック向けの展示ガイドです。",
-				Notes:       "展示班の責任者に共有済みです。",
+				CircleID:    "0195ec00-0021-7000-8000-000000000001",
+				Name:        "サンプル配布資料",
+				Description: "配布資料PDFのサンプルです。",
+				Notes:       "公開配布資料のサンプルです。",
 				IsPublic:    true,
-				IsImportant: true,
-				Filename:    "b-exhibition-guide.txt",
-				MimeType:    "text/plain; charset=utf-8",
-				Content:     "Bブロックは 10:00 までに設営してください。",
-				CreatedAt:   "2026-03-03T09:00:00Z",
-				UpdatedAt:   "2026-03-05T09:00:00Z",
-			},
-			{
-				ID:          "0195ec00-0043-7000-8000-000000000001",
-				CircleID:    "0195ec00-0022-7000-8000-000000000001",
-				Name:        "内部メモ",
-				Description: "この資料は公開しません。",
-				Notes:       "スタッフ内だけで参照します。",
-				IsPublic:    false,
 				IsImportant: false,
-				Filename:    "private-note.txt",
-				MimeType:    "text/plain; charset=utf-8",
-				Content:     "private",
-				CreatedAt:   "2026-03-04T09:00:00Z",
-				UpdatedAt:   "2026-03-04T09:00:00Z",
+				Filename:    "sample-document.pdf",
+				MimeType:    "application/pdf",
+				Content:     sizedDemoFileContent("%PDF-1.4 sample document", 165136),
+				CreatedAt:   "2022-03-27T15:01:54+09:00",
+				UpdatedAt:   "2022-03-27T15:01:54+09:00",
 			},
 		},
 		Forms: []Form{
@@ -486,13 +491,13 @@ func FromEnv() Config {
 				ID:                  "0195ec00-0011-7000-8000-000000000001",
 				CircleID:            "",
 				Name:                "企画参加登録",
-				Description:         "",
+				Description:         "模擬店向けの企画参加登録フォームです。",
 				IsPublic:            true,
 				IsOpen:              true,
-				OpenAt:              "2026-03-01T00:00:00Z",
-				CloseAt:             "2026-03-31T23:59:59Z",
-				CreatedAt:           "2026-03-01T00:00:00Z",
-				UpdatedAt:           "2026-03-01T00:00:00Z",
+				OpenAt:              "2022-03-01T00:00:00+09:00",
+				CloseAt:             "2099-12-31T23:59:59+09:00",
+				CreatedAt:           "2022-03-01T00:00:00+09:00",
+				UpdatedAt:           "2022-03-01T00:00:00+09:00",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "企画参加登録を受け付けました。",
@@ -504,10 +509,10 @@ func FromEnv() Config {
 				Description:         "",
 				IsPublic:            true,
 				IsOpen:              true,
-				OpenAt:              "2026-03-01T00:00:00Z",
-				CloseAt:             "2026-03-31T23:59:59Z",
-				CreatedAt:           "2026-03-01T00:00:00Z",
-				UpdatedAt:           "2026-03-01T00:00:00Z",
+				OpenAt:              "2022-03-01T00:00:00+09:00",
+				CloseAt:             "2099-12-31T23:59:59+09:00",
+				CreatedAt:           "2022-03-01T00:00:00+09:00",
+				UpdatedAt:           "2022-03-01T00:00:00+09:00",
 				MaxAnswers:          1,
 				AnswerableTags:      []string{},
 				ConfirmationMessage: "企画参加登録を受け付けました。",
@@ -574,14 +579,48 @@ func FromEnv() Config {
 			},
 		},
 		Tags: []Tag{
-			{ID: "0195ec00-0061-7000-8000-000000000001", Name: "模擬店"},
-			{ID: "0195ec00-0062-7000-8000-000000000001", Name: "展示"},
-			{ID: "0195ec00-0063-7000-8000-000000000001", Name: "飲食"},
-			{ID: "0195ec00-0064-7000-8000-000000000001", Name: "ステージ"},
+			{
+				ID:        "0195ec00-0061-7000-8000-000000000001",
+				Name:      "模擬店",
+				CreatedAt: "2021-06-07T12:42:19+09:00",
+				UpdatedAt: "2021-06-07T12:42:19+09:00",
+			},
+			{
+				ID:        "0195ec00-0062-7000-8000-000000000001",
+				Name:      "展示",
+				CreatedAt: "2021-06-07T12:42:19+09:00",
+				UpdatedAt: "2021-06-07T12:42:19+09:00",
+			},
+			{
+				ID:        "0195ec00-0063-7000-8000-000000000001",
+				Name:      "飲食",
+				CreatedAt: "2021-06-07T12:42:19+09:00",
+				UpdatedAt: "2021-06-07T12:42:19+09:00",
+			},
+			{
+				ID:        "0195ec00-0064-7000-8000-000000000001",
+				Name:      "ステージ",
+				CreatedAt: "2021-06-07T12:42:19+09:00",
+				UpdatedAt: "2021-06-07T12:42:19+09:00",
+			},
 		},
 		Places: []Place{
-			{ID: "0195ec00-0071-7000-8000-000000000001", Name: "1号館 101", Type: 1, Notes: "屋内"},
-			{ID: "0195ec00-0072-7000-8000-000000000001", Name: "中庭", Type: 2, Notes: "屋外"},
+			{
+				ID:        "0195ec00-0071-7000-8000-000000000001",
+				Name:      "1号館 101",
+				Type:      1,
+				Notes:     "屋内",
+				CreatedAt: "2021-06-07T22:19:45+09:00",
+				UpdatedAt: "2021-06-07T22:19:45+09:00",
+			},
+			{
+				ID:        "0195ec00-0072-7000-8000-000000000001",
+				Name:      "中庭",
+				Type:      2,
+				Notes:     "屋外",
+				CreatedAt: "2021-06-07T22:19:50+09:00",
+				UpdatedAt: "2021-06-07T22:19:50+09:00",
+			},
 		},
 		Booths: []BoothAssignment{
 			{PlaceID: "0195ec00-0071-7000-8000-000000000001", CircleID: "0195ec00-0021-7000-8000-000000000001"},
@@ -589,8 +628,12 @@ func FromEnv() Config {
 			{PlaceID: "0195ec00-0072-7000-8000-000000000001", CircleID: "0195ec00-0022-7000-8000-000000000001"},
 		},
 		ContactCategories: []ContactCategory{
-			{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
-			{ID: "0195ec00-0082-7000-8000-000000000001", Name: "安全管理", Email: "safety@example.com"},
+			{
+				ID: "0195ec00-0081-7000-8000-000000000001", Name: "公式ウェブサイト掲載内容に関すること", Email: "website@example.com",
+			},
+			{ID: "0195ec00-0082-7000-8000-000000000001", Name: "オンライン開催に関すること", Email: "online@example.com"},
+			{ID: "0195ec00-0083-7000-8000-000000000001", Name: "イベント当日に利用可能な備品に関すること", Email: "equipment@example.com"},
+			{ID: "0195ec00-0084-7000-8000-000000000001", Name: "その他", Email: "general@example.com"},
 		},
 	}
 }

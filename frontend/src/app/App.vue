@@ -10,8 +10,6 @@ const {
   appModeLabel,
   appName,
   authLabel,
-  circleActionLabel,
-  circleName,
   closeDrawer,
   drawerLinks,
   drawerTranslateClass,
@@ -56,15 +54,16 @@ const {
 
       <div v-if="hasDrawer" class="min-w-0">
         <p class="truncate text-lg font-semibold text-body">{{ pageTitle }}</p>
-        <p class="mt-1 text-xs text-muted">{{ appModeLabel }}</p>
+        <p v-if="isStaffRoute" class="mt-1 text-xs text-muted">{{ appModeLabel }}</p>
       </div>
 
       <RouterLink
         v-else
-        class="text-lg font-semibold text-body no-underline hover:no-underline"
+        class="flex flex-col text-body no-underline hover:no-underline"
         :to="isStaffRoute ? '/staff' : '/'"
       >
-        PortalDots
+        <span class="text-lg font-semibold text-body">{{ appName }}</span>
+        <span v-if="isStaffRoute" class="mt-1 text-xs text-muted">スタッフ</span>
       </RouterLink>
     </header>
 
@@ -81,8 +80,6 @@ const {
       :top-description="topDescription"
       :mode-switch-target="modeSwitchTarget"
       :is-authenticated="sessionStore.isAuthenticated"
-      :circle-name="circleName"
-      :circle-action-label="circleActionLabel"
       :links="drawerLinks"
       :auth-label="authLabel"
       :status-badges="statusBadges"
@@ -102,7 +99,7 @@ const {
           class="mt-6 border-t border-border px-6 py-6 text-center"
           :class="isStaffRoute && isDemoMode ? 'max-[1000px]:hidden' : ''"
         >
-          <PublicFooterLinks :app-name="appName" :show-privacy-policy="!(isStaffRoute && isDemoMode)" />
+          <PublicFooterLinks :app-name="appName" :show-privacy-policy="!isDemoMode" />
         </footer>
       </div>
     </main>

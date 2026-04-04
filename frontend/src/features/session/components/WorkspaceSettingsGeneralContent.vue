@@ -5,10 +5,25 @@ import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
+import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useUserSettingsGeneralTab } from '@/features/session/composables/useUserSettingsGeneralTab'
 
-const { displayName, errorMessage, saveProfile, sessionStore, successMessage, tabs, updateProfileMutation } =
-  useUserSettingsGeneralTab()
+const publicConfigQuery = usePublicConfigQuery()
+const {
+  contactEmail,
+  currentPassword,
+  errorMessage,
+  forgotPasswordHref,
+  name,
+  nameYomi,
+  phoneNumber,
+  saveProfile,
+  studentId,
+  successMessage,
+  tabs,
+  univemail,
+  updateProfileMutation
+} = useUserSettingsGeneralTab()
 </script>
 
 <template>
@@ -16,23 +31,67 @@ const { displayName, errorMessage, saveProfile, sessionStore, successMessage, ta
     <SettingsSection title="一般設定" :title-outside="true">
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">表示名</p>
+          <p class="text-sm font-semibold text-body">
+            {{ publicConfigQuery.data.value?.portalStudentIdName ?? '学生番号' }}
+          </p>
           <div class="grid gap-2">
-            <input v-model="displayName" name="displayName" type="text" />
-            <p class="text-xs text-muted">他のユーザーやスタッフに表示される名前です。</p>
+            <input :value="studentId" name="studentId" readonly type="text" />
           </div>
         </div>
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">ユーザー ID</p>
-          <p class="text-sm text-body">{{ sessionStore.user?.id ?? '-' }}</p>
+          <p class="text-sm font-semibold text-body">
+            {{ publicConfigQuery.data.value?.portalUnivemailName ?? '学生用メールアドレス' }}
+          </p>
+          <div class="grid gap-2">
+            <input :value="univemail" name="univemail" readonly type="text" />
+          </div>
         </div>
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">現在の企画</p>
-          <p class="text-sm text-body">{{ sessionStore.currentCircle?.name ?? '企画未選択' }}</p>
+          <p class="text-sm font-semibold text-body">名前</p>
+          <div class="grid gap-2">
+            <input v-model="name" name="name" type="text" />
+          </div>
+        </div>
+      </SettingsRow>
+      <SettingsRow>
+        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+          <p class="text-sm font-semibold text-body">名前(よみ)</p>
+          <div class="grid gap-2">
+            <input v-model="nameYomi" name="nameYomi" type="text" />
+          </div>
+        </div>
+      </SettingsRow>
+      <SettingsRow>
+        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+          <p class="text-sm font-semibold text-body">連絡先メールアドレス</p>
+          <div class="grid gap-2">
+            <input v-model="contactEmail" name="contactEmail" type="email" />
+          </div>
+        </div>
+      </SettingsRow>
+      <SettingsRow>
+        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+          <p class="text-sm font-semibold text-body">連絡先電話番号</p>
+          <div class="grid gap-2">
+            <input v-model="phoneNumber" name="phoneNumber" type="tel" />
+          </div>
+        </div>
+      </SettingsRow>
+      <SettingsRow>
+        <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+          <div class="space-y-1">
+            <p class="text-sm font-semibold text-body">認証情報</p>
+            <p class="text-xs leading-6 text-muted">
+              <a :href="forgotPasswordHref" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
+            </p>
+          </div>
+          <div class="grid gap-2">
+            <input v-model="currentPassword" name="currentPassword" type="password" />
+          </div>
         </div>
       </SettingsRow>
       <template #footer>

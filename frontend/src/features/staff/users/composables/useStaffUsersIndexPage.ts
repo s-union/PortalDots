@@ -32,7 +32,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'id', label: 'ユーザーID', type: 'string' },
   { key: 'lastName', label: '姓', type: 'string' },
   { key: 'firstName', label: '名', type: 'string' },
-  { key: 'loginIds', label: '学生用メールアドレス', type: 'string' },
+  { key: 'loginIds', label: '学生番号', type: 'string' },
   { key: 'contactEmail', label: '連絡先メールアドレス', type: 'string' },
   { key: 'phoneNumber', label: '電話番号', type: 'string' },
   { key: 'isStaff', label: 'スタッフ', type: 'bool' },
@@ -43,9 +43,13 @@ const filterFields: StaffFilterField[] = [
 
 interface StaffUserRow extends StaffDataGridRow {
   id: string
-  lastName: string
-  firstName: string
+  userNumber: string
+  studentId: string
   loginIds: string[]
+  lastName: string
+  lastNameReading: string
+  firstName: string
+  firstNameReading: string
   contactEmail: string
   phoneNumber: string
   isStaff: boolean
@@ -91,11 +95,15 @@ export function useStaffUsersIndexPage() {
   })
 
   const rows = computed<StaffUserRow[]>(() =>
-    (usersQuery.data.value?.items ?? []).map((user) => ({
+    (usersQuery.data.value?.items ?? []).map((user, index) => ({
       id: user.id,
-      lastName: user.lastName,
-      firstName: user.firstName,
+      userNumber: String((pagination.page.value - 1) * pagination.pageSize.value + index + 1),
+      studentId: resolveStudentID(user.loginIds),
       loginIds: user.loginIds,
+      lastName: user.lastName,
+      lastNameReading: user.lastNameReading,
+      firstName: user.firstName,
+      firstNameReading: user.firstNameReading,
       contactEmail: user.contactEmail,
       phoneNumber: user.phoneNumber,
       isStaff: user.roles.some((role) => role !== 'participant'),
@@ -263,6 +271,10 @@ function toDraftFilterQueries(queries: StaffUserFilterQuery[]) {
     operator: query.operator,
     value: query.value
   }))
+}
+
+function resolveStudentID(loginIDs: string[]) {
+  return loginIDs.find((loginID) => !loginID.includes('@')) ?? loginIDs[0] ?? '-'
 }
 
 function toAppliedFilterQueries(queries: StaffFilterQuery[]) {

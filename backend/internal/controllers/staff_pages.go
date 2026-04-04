@@ -14,6 +14,7 @@ import (
 type staffPageSummaryResponse struct {
 	ID           string                 `json:"id"`
 	Title        string                 `json:"title"`
+	Body         string                 `json:"body"`
 	Notes        string                 `json:"notes"`
 	CreatedAt    string                 `json:"createdAt"`
 	UpdatedAt    string                 `json:"updatedAt"`
@@ -303,6 +304,7 @@ func mapStaffPageSummary(currentPage backendpage.Page, documents []pageDocumentR
 	return staffPageSummaryResponse{
 		ID:           currentPage.ID,
 		Title:        currentPage.Title,
+		Body:         currentPage.Body,
 		Notes:        currentPage.Notes,
 		CreatedAt:    currentPage.CreatedAt,
 		UpdatedAt:    currentPage.UpdatedAt,

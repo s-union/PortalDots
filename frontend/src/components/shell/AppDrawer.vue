@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
 import ModeSwitchLink from '@/components/ui/ModeSwitchLink.vue'
 import NavMenuLink from '@/components/ui/NavMenuLink.vue'
 import { cn } from '@/lib/ui/cn'
@@ -17,8 +16,6 @@ const {
   topDescription,
   modeSwitchTarget,
   isAuthenticated,
-  circleName,
-  circleActionLabel,
   links,
   authLabel,
   statusBadges,
@@ -34,8 +31,6 @@ const {
   topDescription: string
   modeSwitchTarget: AppModeSwitchTarget | null
   isAuthenticated: boolean
-  circleName: string
-  circleActionLabel: string
   links: DrawerNavLink[]
   authLabel: string
   statusBadges: AppStatusBadge[]
@@ -75,27 +70,14 @@ const emit = defineEmits<{
               v-if="isDemoMode"
               class="rounded bg-muted-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-muted"
             >
-              検証環境
+              デモサイト
             </span>
           </div>
-          <p class="mt-3 text-sm text-muted">{{ topDescription }}</p>
+          <p v-if="topDescription !== ''" class="mt-3 text-sm text-muted">{{ topDescription }}</p>
         </div>
 
-        <div class="border-b border-border px-6 py-4">
+        <div v-if="modeSwitchTarget && isAuthenticated" class="border-b border-border px-6 py-4">
           <ModeSwitchLink v-if="modeSwitchTarget" :to="modeSwitchTarget.to" :label="modeSwitchTarget.label" />
-        </div>
-
-        <div v-if="isAuthenticated && !isStaffRoute" class="border-b border-border px-6 py-4">
-          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">選択中の企画</p>
-          <p class="mt-2 text-sm text-body">
-            {{ circleName }}
-          </p>
-          <RouterLink
-            :class="cn(buttonVariants({ variant: 'secondary', size: 'md', fullWidth: true }), 'mt-3')"
-            to="/circles/select"
-          >
-            {{ circleActionLabel }}
-          </RouterLink>
         </div>
 
         <nav class="flex-1 py-2">
@@ -110,7 +92,7 @@ const emit = defineEmits<{
           />
         </nav>
 
-        <div class="mt-auto border-t border-border px-6 py-6">
+        <div v-if="isAuthenticated || modeSwitchTarget" class="mt-auto border-t border-border px-6 py-6">
           <p v-if="isAuthenticated" class="text-sm text-muted text-center">{{ authLabel }}</p>
           <div v-if="statusBadges.length > 0" class="mt-3 flex flex-wrap gap-2">
             <span
@@ -134,6 +116,7 @@ const emit = defineEmits<{
           >
             ログアウト
           </button>
+          <ModeSwitchLink v-else-if="modeSwitchTarget" :to="modeSwitchTarget.to" :label="modeSwitchTarget.label" />
         </div>
       </div>
     </aside>

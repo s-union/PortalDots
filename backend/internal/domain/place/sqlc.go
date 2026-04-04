@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
+	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
 )
 
 type SQLCRepository struct {
@@ -23,10 +24,12 @@ func (r *SQLCRepository) List() ([]Place, error) {
 	places := make([]Place, 0, len(rows))
 	for _, row := range rows {
 		places = append(places, Place{
-			ID:    row.ID,
-			Name:  row.Name,
-			Type:  row.Type,
-			Notes: row.Notes,
+			ID:        row.ID,
+			Name:      row.Name,
+			Type:      row.Type,
+			Notes:     row.Notes,
+			CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+			UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
 		})
 	}
 
@@ -44,10 +47,12 @@ func (r *SQLCRepository) Create(name string, placeType int32, notes string) (Pla
 	}
 
 	return Place{
-		ID:    row.ID,
-		Name:  row.Name,
-		Type:  row.Type,
-		Notes: row.Notes,
+		ID:        row.ID,
+		Name:      row.Name,
+		Type:      row.Type,
+		Notes:     row.Notes,
+		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
 	}, nil
 }
 
@@ -63,10 +68,12 @@ func (r *SQLCRepository) Update(id, name string, placeType int32, notes string) 
 	}
 
 	return Place{
-		ID:    row.ID,
-		Name:  row.Name,
-		Type:  row.Type,
-		Notes: row.Notes,
+		ID:        row.ID,
+		Name:      row.Name,
+		Type:      row.Type,
+		Notes:     row.Notes,
+		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
 	}, nil
 }
 

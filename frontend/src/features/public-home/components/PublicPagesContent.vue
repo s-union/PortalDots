@@ -2,9 +2,8 @@
 import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
-import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import { formatDateTimeUpdated } from '@/lib/format/datetime'
+import { formatDateTime } from '@/lib/format/datetime'
 import { usePublicPagesQuery } from '@/features/public-home/api'
 
 const pagesQuery = usePublicPagesQuery(
@@ -48,10 +47,9 @@ const pageList = computed(() => pagesQuery.data.value ?? { items: [], page: 1, p
         <template v-if="page.isNew" #suffix>
           <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
         </template>
-        <template #meta>{{ formatDateTimeUpdated(page.updatedAt) }}</template>
+        <template #meta>{{ formatDateTime(page.updatedAt) }}</template>
         {{ page.summary }}
       </ListItemLink>
     </div>
-    <PaginationFooter :page="pageList.page" :page-size="pageList.pageSize" :total="pageList.total" />
   </ListPanel>
 </template>

@@ -8,13 +8,12 @@ definePage({
   }
 })
 
-import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, watch } from 'vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
-import { formatDateTimeUpdated } from '@/lib/format/datetime'
+import { formatDateTimeTable } from '@/lib/format/datetime'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffPagesExportUrl,
@@ -27,13 +26,10 @@ import { useSessionStore } from '@/features/session/store'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
-const route = useRoute()
-const router = useRouter()
 const sessionStore = useSessionStore()
-const searchQuery = ref(String(route.query.query ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const pagesQuery = useStaffPagesQuery(searchQuery, enabled)
+const pagesQuery = useStaffPagesQuery('', enabled)
 const patchPinMutation = usePatchStaffPagePinByIdMutation()
 const deletePageMutation = useDeleteStaffPageByIdMutation()
 const exportHref = computed(() => buildStaffPagesExportUrl())
@@ -41,17 +37,19 @@ const exportHref = computed(() => buildStaffPagesExportUrl())
 const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt'] as const
 type StaffPageSortKey = (typeof sortKeys)[number]
 const isStaffPageSortKey = createSortKeyGuard(sortKeys)
-const sort = useSortState<StaffPageSortKey>('updatedAt', { initialSortDirection: 'desc' })
+const sort = useSortState<StaffPageSortKey>('id')
 
 const columns: StaffDataGridColumn[] = [
+  { key: 'pageNumber', label: 'お知らせID', sortable: false, cellClass: 'font-medium text-body' },
   { key: 'title', label: 'タイトル', sortable: true },
   { key: 'viewableTags', label: '閲覧可能なタグ' },
   { key: 'documents', label: '関連する配布資料' },
+  { key: 'body', label: '本文' },
   { key: 'isPinned', label: '固定', sortable: true, align: 'center' },
   { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
+  { key: 'notes', label: 'スタッフ用メモ' },
   { key: 'createdAt', label: '作成日時', sortable: true },
-  { key: 'updatedAt', label: '更新日時', sortable: true },
-  { key: 'notes', label: 'スタッフ用メモ' }
+  { key: 'updatedAt', label: '更新日時', sortable: true }
 ]
 
 const isBusy = computed(
@@ -94,11 +92,13 @@ const rows = computed<StaffDataGridRow[]>(() => {
   const start = (pagination.page.value - 1) * pagination.pageSize.value
   const end = start + pagination.pageSize.value
 
-  return sortedPages.value.slice(start, end).map((page) => ({
+  return sortedPages.value.slice(start, end).map((page, index) => ({
     id: page.id,
+    pageNumber: String(start + index + 1),
     title: page.title,
     viewableTags: page.viewableTags,
     documents: page.documents,
+    body: page.body,
     isPinned: page.isPinned,
     isPublic: page.isPublic,
     createdAt: page.createdAt,
@@ -106,13 +106,6 @@ const rows = computed<StaffDataGridRow[]>(() => {
     notes: page.notes
   }))
 })
-
-watch(
-  () => route.query.query,
-  (value) => {
-    searchQuery.value = String(value ?? '')
-  }
-)
 
 watch(
   pagination.totalPages,
@@ -157,7 +150,7 @@ function resolveText(value: unknown) {
     return '-'
   }
 
-  const normalized = value.trim()
+  const normalized = value.replace(/\s+/g, ' ').trim()
   return normalized.length > 0 ? normalized : '-'
 }
 
@@ -178,13 +171,6 @@ function resolveDocuments(value: unknown) {
   )
 }
 
-async function handleSearchSubmit() {
-  const normalizedQuery = searchQuery.value.trim()
-  await router.replace({
-    query: normalizedQuery === '' ? {} : { query: normalizedQuery }
-  })
-}
-
 async function handleTogglePin(pageId: string, currentPinned: boolean) {
   await patchPinMutation.mutateAsync({
     pageId,
@@ -202,9 +188,9 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
 
 <template>
   <PageLayout class="max-w-full">
-    <PageHeader title="お知らせ管理" description="企画に依存しない共通のお知らせを管理します。" />
+    <PageHeader title="お知らせ管理" />
 
-    <DataCard title="お知らせ一覧" description="公開状態やタグを含めてお知らせを一覧管理します。" overflow-hidden>
+    <DataCard overflow-hidden>
       <StaffDataGrid
         :rows="rows"
         :columns="columns"
@@ -214,6 +200,7 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
         :loading="isBusy"
         :sort-key="sort.sortKey.value"
         :sort-direction="sort.sortDirection.value"
+        :show-filter-button="true"
         table-label="お知らせ一覧"
         empty-message="お知らせは見つかりませんでした。"
         @first="pagination.setFirstPage"
@@ -234,32 +221,17 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
           </RouterLink>
           <RouterLink
             to="/staff/mails"
-            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            class="inline-flex items-center px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
           >
             メール配信設定
           </RouterLink>
           <a
             :href="exportHref"
-            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
           >
             <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
             CSVで出力
           </a>
-          <form class="ml-auto flex min-w-80 flex-wrap gap-2 max-[860px]:ml-0" @submit.prevent="handleSearchSubmit">
-            <input
-              v-model="searchQuery"
-              class="min-w-64 flex-1"
-              name="query"
-              placeholder="お知らせを検索..."
-              type="search"
-            />
-            <button
-              class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-              type="submit"
-            >
-              検索
-            </button>
-          </form>
         </template>
 
         <template #actions="{ row }">
@@ -320,6 +292,10 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
           </div>
         </template>
 
+        <template #cell-body="{ value }">
+          <span class="block min-w-[18rem] max-w-[24rem] truncate">{{ resolveText(value) }}</span>
+        </template>
+
         <template #cell-isPinned="{ value }">
           <strong v-if="value === true">はい</strong>
           <span v-else>-</span>
@@ -331,11 +307,11 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
         </template>
 
         <template #cell-createdAt="{ value }">
-          <span>{{ typeof value === 'string' ? formatDateTimeUpdated(value) : '-' }}</span>
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
         </template>
 
         <template #cell-updatedAt="{ value }">
-          <span>{{ typeof value === 'string' ? formatDateTimeUpdated(value) : '-' }}</span>
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
         </template>
 
         <template #cell-notes="{ value }">

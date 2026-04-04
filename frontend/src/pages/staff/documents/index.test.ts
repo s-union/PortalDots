@@ -75,6 +75,22 @@ describe('StaffDocumentsIndexPage', () => {
           })
         }
 
+        if (pathname.endsWith('/public/config') && method === 'GET') {
+          return new Response(
+            JSON.stringify({
+              appName: 'PortalDots',
+              isDemo: true,
+              portalStudentIdName: '学籍番号',
+              portalUnivemailName: '学生用メールアドレス',
+              portalUnivemailDomainPart: 'portaldots.com'
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
         if (pathname.endsWith('/staff/circles/managed') && method === 'GET') {
           return new Response(
             JSON.stringify([
@@ -149,10 +165,10 @@ describe('StaffDocumentsIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('内部メモ')
     expect(wrapper.text()).toContain('チェック事項')
-    expect(wrapper.text()).not.toContain('配布資料ID')
-    expect(wrapper.text().indexOf('チェック事項')).toBeLessThan(wrapper.text().indexOf('内部メモ'))
+    expect(wrapper.text()).not.toContain('内部メモ')
+    expect(wrapper.text()).toContain('配布資料ID')
+    expect(wrapper.text()).toContain('サイズ(バイト)')
     expect(wrapper.get('a[href="/staff/documents/create"]').text()).toContain('新規配布資料')
   })
 })

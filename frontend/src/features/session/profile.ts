@@ -7,6 +7,11 @@ import { extractValidationMessage, parseValidationError } from '@/lib/api/valida
 
 interface UpdateProfilePayload {
   displayName: string
+  name?: string
+  nameYomi?: string
+  contactEmail?: string
+  phoneNumber?: string
+  currentPassword?: string
 }
 
 interface SessionUser {

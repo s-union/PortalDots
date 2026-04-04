@@ -80,7 +80,7 @@ function formatOpenFormMeta(form: FormSummary) {
               v-if="isDemoMode"
               class="mr-3 inline-flex rounded-full border border-primary bg-primary-light px-3 py-1 align-middle text-xs font-bold text-primary"
             >
-              検証環境
+              PortalDots デモサイト
             </span>
             <span class="align-middle">{{ publicHome?.appName ?? 'PortalDots' }}</span>
           </h1>
@@ -113,7 +113,7 @@ function formatOpenFormMeta(form: FormSummary) {
         <div class="border-b border-border px-6 py-[1.2rem] max-[1000px]:px-4">
           <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">{{ page.title }}</h2>
           <div class="mt-px flex flex-wrap items-center gap-2 text-base text-muted">
-            <span>{{ formatDateTimeUpdated(page.updatedAt) }}</span>
+            <span>{{ formatDateTime(page.updatedAt) }}</span>
             <StatusBadge v-if="page.isLimited" tone="primary" appearance="outlined">限定公開</StatusBadge>
           </div>
         </div>
@@ -207,7 +207,10 @@ function formatOpenFormMeta(form: FormSummary) {
                 {{ page.isLimited ? '限定公開' : '全員に公開' }}
               </StatusBadge>
             </template>
-            <template #meta>{{ formatDateTimeUpdated(page.updatedAt) }}</template>
+            <template v-if="page.isNew" #suffix>
+              <StatusBadge tone="danger" size="sm">NEW</StatusBadge>
+            </template>
+            <template #meta>{{ formatDateTime(page.updatedAt) }}</template>
             {{ page.summary }}
           </ListItemLink>
         </div>

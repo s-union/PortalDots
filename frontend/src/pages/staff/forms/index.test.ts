@@ -137,7 +137,7 @@ describe('StaffFormsIndexPage', () => {
     expect(wrapper.text().indexOf('締切済みフォーム')).toBeLessThan(wrapper.text().indexOf('展示チェックフォーム'))
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('全体に公開')
-    expect(wrapper.text()).not.toContain('フォームID')
+    expect(wrapper.text()).toContain('フォームID')
     expect(wrapper.get('a[href="/staff/forms/create"]').text()).toContain('新規フォーム')
     expect(wrapper.get('a[href="/staff/forms/0195ec00-0014-7000-8000-000000000001/answers"]').exists()).toBe(true)
   })

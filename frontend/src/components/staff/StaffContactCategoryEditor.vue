@@ -5,16 +5,16 @@ import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import {
-  buildDeleteStaffPlaceConfirmMessage,
-  extractStaffPlaceValidationMessage,
-  type StaffPlace,
-  useCreateStaffPlaceMutation,
-  useDeleteStaffPlaceMutation,
-  useUpdateStaffPlaceMutation
-} from '@/features/staff/masters/places'
+  buildDeleteStaffContactCategoryConfirmMessage,
+  extractStaffContactCategoryValidationMessage,
+  type StaffContactCategory,
+  useCreateStaffContactCategoryMutation,
+  useDeleteStaffContactCategoryMutation,
+  useUpdateStaffContactCategoryMutation
+} from '@/features/staff/masters/contactCategories'
 
-const { place } = defineProps<{
-  place: StaffPlace | null
+const { category } = defineProps<{
+  category: StaffContactCategory | null
 }>()
 
 const emit = defineEmits<{
@@ -22,21 +22,19 @@ const emit = defineEmits<{
   deleted: []
 }>()
 
-const createMutation = useCreateStaffPlaceMutation()
-const updateMutation = useUpdateStaffPlaceMutation()
-const deleteMutation = useDeleteStaffPlaceMutation()
+const createMutation = useCreateStaffContactCategoryMutation()
+const updateMutation = useUpdateStaffContactCategoryMutation()
+const deleteMutation = useDeleteStaffContactCategoryMutation()
 const name = ref('')
-const type = ref(1)
-const notes = ref('')
+const email = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
 watch(
-  () => place,
+  () => category,
   (value) => {
     name.value = value?.name ?? ''
-    type.value = value?.type ?? 1
-    notes.value = value?.notes ?? ''
+    email.value = value?.email ?? ''
     errorMessage.value = ''
     successMessage.value = ''
   },
@@ -48,37 +46,34 @@ async function handleSave() {
   successMessage.value = ''
 
   try {
-    if (place) {
+    if (category) {
       await updateMutation.mutateAsync({
-        ...place,
+        ...category,
         name: name.value,
-        type: type.value,
-        notes: notes.value
+        email: email.value
       })
-      successMessage.value = '場所を更新しました。'
+      successMessage.value = 'お問い合わせ受付設定を更新しました。'
     } else {
       await createMutation.mutateAsync({
         name: name.value,
-        type: type.value,
-        notes: notes.value
+        email: email.value
       })
       name.value = ''
-      type.value = 1
-      notes.value = ''
-      successMessage.value = '場所を作成しました。'
+      email.value = ''
+      successMessage.value = 'お問い合わせ受付設定を作成しました。'
     }
     emit('saved')
   } catch (error) {
-    errorMessage.value = extractStaffPlaceValidationMessage(error)
+    errorMessage.value = extractStaffContactCategoryValidationMessage(error)
   }
 }
 
 async function handleDelete() {
-  if (!place) {
+  if (!category) {
     return
   }
 
-  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffPlaceConfirmMessage(place.name))) {
+  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffContactCategoryConfirmMessage(category))) {
     return
   }
 
@@ -86,10 +81,10 @@ async function handleDelete() {
   successMessage.value = ''
 
   try {
-    await deleteMutation.mutateAsync(place.id)
+    await deleteMutation.mutateAsync(category.id)
     emit('deleted')
   } catch (error) {
-    errorMessage.value = extractStaffPlaceValidationMessage(error)
+    errorMessage.value = extractStaffContactCategoryValidationMessage(error)
   }
 }
 </script>
@@ -97,33 +92,24 @@ async function handleDelete() {
 <template>
   <div class="space-y-6 p-6">
     <header class="space-y-3">
-      <h2 class="text-2xl font-semibold text-body">{{ place ? '場所を編集' : '新規場所' }}</h2>
-      <div class="text-sm text-muted">
-        {{ place ? '既存の場所情報を編集します。' : '企画で利用する場所情報を追加します。' }}
-      </div>
+      <h2 class="text-2xl font-semibold text-body">
+        {{ category ? 'お問い合わせ受付設定を編集' : 'メールアドレスを追加' }}
+      </h2>
+      <div class="text-sm text-muted">ポータルからのお問い合わせを振り分けるカテゴリ名と送信先メールを設定します。</div>
     </header>
 
     <form class="space-y-6" @submit.prevent="handleSave">
-      <SettingsSection title="場所設定">
+      <SettingsSection title="お問い合わせ受付設定">
         <SettingsRow>
           <div class="grid gap-4">
             <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">場所名</span>
+              <span class="font-medium">カテゴリ名</span>
               <input v-model="name" name="name" type="text" />
             </label>
 
             <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">タイプ</span>
-              <select v-model.number="type" name="type">
-                <option :value="1">屋内</option>
-                <option :value="2">屋外</option>
-                <option :value="3">特殊場所</option>
-              </select>
-            </label>
-
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">スタッフ用メモ</span>
-              <textarea v-model="notes" class="min-h-24" name="notes" />
+              <span class="font-medium">送信先メールアドレス</span>
+              <input v-model="email" name="email" type="email" />
             </label>
           </div>
         </SettingsRow>
@@ -134,7 +120,7 @@ async function handleDelete() {
             <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
             <div class="flex justify-between gap-3">
               <button
-                v-if="place"
+                v-if="category"
                 :class="buttonVariants({ variant: 'dangerOutline', size: 'lg', weight: 'bold' })"
                 :disabled="deleteMutation.isPending.value"
                 type="button"
@@ -151,9 +137,9 @@ async function handleDelete() {
                   {{
                     createMutation.isPending.value || updateMutation.isPending.value
                       ? '保存中...'
-                      : place
+                      : category
                         ? '保存'
-                        : '作成'
+                        : '追加'
                   }}
                 </button>
               </div>

@@ -9,16 +9,21 @@ definePage({
 })
 
 import { computed, ref, watch } from 'vue'
+import { useMutation } from '@tanstack/vue-query'
 import { RouterLink } from 'vue-router'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
-import { formatFileSize } from '@/lib/format/fileSize'
+import { formatDateTimeTable } from '@/lib/format/datetime'
+import { canDeleteDocuments } from '@/features/staff/access/capabilities'
+import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
+  buildDeleteStaffDocumentConfirmMessage,
   buildStaffDocumentsExportUrl,
   buildStaffDocumentDownloadUrl,
+  deleteStaffDocument,
   useStaffDocumentsQuery,
   type StaffDocumentSummary
 } from '@/features/staff/documents/api'
@@ -27,38 +32,79 @@ import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
 const sessionStore = useSessionStore()
+const publicConfigQuery = usePublicConfigQuery()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const documentsQuery = useStaffDocumentsQuery(enabled)
 const exportHref = computed(() => buildStaffDocumentsExportUrl())
+const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo === true)
+const deletingDocumentId = ref('')
+const canDelete = computed(() => canDeleteDocuments(sessionStore.roles, sessionStore.permissions))
+const deleteDocumentMutation = useMutation({
+  mutationFn: async () => deleteStaffDocument(deletingDocumentId.value, sessionStore.csrfToken),
+  onSuccess: async () => {
+    await documentsQuery.refetch()
+  }
+})
 
-const sortKeys = ['id', 'name', 'isImportant', 'isPublic', 'filename', 'sizeBytes', 'updatedAt'] as const
+const sortKeys = [
+  'documentNumber',
+  'name',
+  'sizeBytes',
+  'extension',
+  'description',
+  'isPublic',
+  'isImportant',
+  'createdAt',
+  'updatedAt',
+  'notes'
+] as const
 type StaffDocumentSortKey = (typeof sortKeys)[number]
 const isStaffDocumentSortKey = createSortKeyGuard(sortKeys)
-const sort = useSortState<StaffDocumentSortKey>('id')
+const sort = useSortState<StaffDocumentSortKey>('documentNumber')
 
 const columns: StaffDataGridColumn[] = [
-  { key: 'circle', label: '企画' },
+  { key: 'documentNumber', label: '配布資料ID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
   { key: 'name', label: '配布資料名', sortable: true },
+  { key: 'fileLinkLabel', label: 'ファイル' },
+  { key: 'sizeBytes', label: 'サイズ(バイト)', sortable: true, align: 'right' },
+  { key: 'extension', label: 'ファイル形式', sortable: true, align: 'center' },
   { key: 'description', label: '説明' },
-  { key: 'notes', label: 'スタッフ用メモ' },
-  { key: 'isImportant', label: '重要', sortable: true, align: 'center' },
   { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
-  { key: 'filename', label: 'ファイル名', sortable: true },
-  { key: 'sizeBytes', label: 'サイズ', sortable: true, align: 'right' },
-  { key: 'updatedAt', label: '更新日時', sortable: true }
+  { key: 'isImportant', label: '重要', sortable: true, align: 'center' },
+  { key: 'createdAt', label: '作成日時', sortable: true },
+  { key: 'updatedAt', label: '更新日時', sortable: true },
+  { key: 'notes', label: 'スタッフ用メモ', sortable: true }
 ]
 
-const isBusy = computed(() => documentsQuery.isPending.value || documentsQuery.isFetching.value)
+const isBusy = computed(
+  () => documentsQuery.isPending.value || documentsQuery.isFetching.value || deleteDocumentMutation.isPending.value
+)
+
+const orderedDocuments = computed(() =>
+  [...(documentsQuery.data.value ?? [])]
+    .filter((document) => !isDemoMode.value || document.isPublic)
+    .sort((left, right) => compareString(left.createdAt, right.createdAt))
+)
+
+const documentOrderMap = computed(() => {
+  const order = new Map<string, number>()
+  orderedDocuments.value.forEach((document, index) => {
+    order.set(document.id, index + 1)
+  })
+  return order
+})
 
 const sortedDocuments = computed(() => {
-  const documents = documentsQuery.data.value ?? []
+  const documents = orderedDocuments.value
   const key = sort.sortKey.value
   const direction = sort.sortDirection.value
   const order = direction === 'asc' ? 1 : -1
 
   return [...documents].sort((left, right) => {
     switch (key) {
+      case 'documentNumber':
+        return ((documentOrderMap.value.get(left.id) ?? 0) - (documentOrderMap.value.get(right.id) ?? 0)) * order
       case 'isImportant':
         return compareBoolean(left.isImportant, right.isImportant) * order
       case 'isPublic':
@@ -79,15 +125,17 @@ const rows = computed<StaffDataGridRow[]>(() => {
 
   return sortedDocuments.value.slice(start, end).map((document) => ({
     id: document.id,
-    circle: document.circle,
+    documentNumber: String(documentOrderMap.value.get(document.id) ?? start + 1),
     name: document.name,
+    fileLinkLabel: '表示',
     description: document.description,
-    notes: document.notes,
-    isImportant: document.isImportant,
-    isPublic: document.isPublic,
-    filename: document.filename,
     sizeBytes: document.sizeBytes,
-    updatedAt: document.updatedAt
+    extension: document.extension,
+    isPublic: document.isPublic,
+    isImportant: document.isImportant,
+    createdAt: document.createdAt,
+    updatedAt: document.updatedAt,
+    notes: document.notes
   }))
 })
 
@@ -118,14 +166,20 @@ function compareBoolean(left: boolean, right: boolean) {
 
 function resolveSortValue(document: StaffDocumentSummary, sortKey: StaffDocumentSortKey) {
   switch (sortKey) {
-    case 'id':
-      return document.id
+    case 'documentNumber':
+      return String(documentOrderMap.value.get(document.id) ?? 0)
     case 'name':
       return document.name
-    case 'filename':
-      return document.filename
+    case 'extension':
+      return document.extension
+    case 'description':
+      return document.description
+    case 'createdAt':
+      return document.createdAt
     case 'updatedAt':
       return document.updatedAt
+    case 'notes':
+      return document.notes
     default:
       return ''
   }
@@ -144,6 +198,18 @@ function resolveRowId(row: StaffDataGridRow) {
   return String(row.id ?? '')
 }
 
+async function handleDeleteDocument(row: StaffDataGridRow) {
+  const documentId = resolveRowId(row)
+  const documentName = typeof row.name === 'string' ? row.name : 'この配布資料'
+
+  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffDocumentConfirmMessage(documentName))) {
+    return
+  }
+
+  deletingDocumentId.value = documentId
+  await deleteDocumentMutation.mutateAsync()
+}
+
 function resolveText(value: unknown) {
   if (typeof value !== 'string') {
     return '-'
@@ -155,9 +221,9 @@ function resolveText(value: unknown) {
 
 <template>
   <PageLayout class="max-w-full">
-    <PageHeader title="配布資料管理" description="全企画の配布資料を横断して管理します。" />
+    <PageHeader title="配布資料管理" />
 
-    <DataCard title="配布資料一覧" description="全企画の配布資料を一覧管理します。" overflow-hidden>
+    <DataCard overflow-hidden>
       <StaffDataGrid
         :rows="rows"
         :columns="columns"
@@ -167,6 +233,7 @@ function resolveText(value: unknown) {
         :loading="isBusy"
         :sort-key="sort.sortKey.value"
         :sort-direction="sort.sortDirection.value"
+        :show-filter-button="true"
         table-label="配布資料一覧"
         empty-message="staff documents はまだありません。"
         @first="pagination.setFirstPage"
@@ -187,7 +254,7 @@ function resolveText(value: unknown) {
           </RouterLink>
           <a
             :href="exportHref"
-            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
           >
             <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
             CSVで出力
@@ -203,45 +270,42 @@ function resolveText(value: unknown) {
             >
               <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
             </RouterLink>
-            <a
-              :href="buildStaffDocumentDownloadUrl(resolveRowId(row))"
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
-              target="_blank"
-              rel="noreferrer"
-              title="表示"
+            <button
+              v-if="canDelete"
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              title="削除"
+              :disabled="deleteDocumentMutation.isPending.value"
+              @click="handleDeleteDocument(row)"
             >
-              <i class="far fa-file-alt fa-fw" aria-hidden="true" />
-            </a>
+              <i class="fas fa-trash fa-fw" aria-hidden="true" />
+            </button>
           </div>
         </template>
 
-        <template #cell-circle="{ value }">
-          <span v-if="value && typeof value === 'object' && 'name' in value">
-            {{ (value as { name: string }).name }}
+        <template #cell-name="{ value }">
+          <span class="font-medium text-body">
+            {{ typeof value === 'string' && value.trim().length > 0 ? value : '-' }}
           </span>
-          <span v-else class="text-muted">-</span>
         </template>
 
-        <template #cell-name="{ row }">
-          <RouterLink
+        <template #cell-fileLinkLabel="{ row }">
+          <a
+            :href="buildStaffDocumentDownloadUrl(resolveRowId(row))"
             class="font-medium text-primary"
-            :to="`/staff/documents/${encodeURIComponent(resolveRowId(row))}/edit`"
+            target="_blank"
+            rel="noreferrer"
           >
-            {{ row.name }}
-          </RouterLink>
+            表示
+          </a>
         </template>
 
         <template #cell-description="{ value }">
           <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
         </template>
 
-        <template #cell-notes="{ value }">
-          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
-        </template>
-
-        <template #cell-isImportant="{ value }">
-          <strong v-if="value === true">はい</strong>
-          <span v-else>-</span>
+        <template #cell-sizeBytes="{ value }">
+          <span>{{ typeof value === 'number' ? value : '-' }}</span>
         </template>
 
         <template #cell-isPublic="{ value }">
@@ -249,8 +313,21 @@ function resolveText(value: unknown) {
           <span v-else>-</span>
         </template>
 
-        <template #cell-sizeBytes="{ value }">
-          <span>{{ typeof value === 'number' ? formatFileSize(value) : '-' }}</span>
+        <template #cell-isImportant="{ value }">
+          <strong v-if="value === true">はい</strong>
+          <span v-else>-</span>
+        </template>
+
+        <template #cell-createdAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+        </template>
+
+        <template #cell-updatedAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+        </template>
+
+        <template #cell-notes="{ value }">
+          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
         </template>
       </StaffDataGrid>
     </DataCard>

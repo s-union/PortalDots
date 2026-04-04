@@ -17,6 +17,7 @@ import (
 )
 
 type publicHomeHandlers struct {
+	sharedDeps
 	circles               circle.Catalog
 	documents             backenddocument.Repository
 	forms                 backendform.Repository
@@ -103,15 +104,17 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 		return internalError(c)
 	}
 
+	circleTags := h.currentPublicHomeCircleTags(c)
+
 	return c.JSON(http.StatusOK, publicHomeResponse{
 		AppName:            settings.AppName,
 		PortalDescription:  settings.PortalDescription,
 		PortalAdminName:    settings.PortalAdminName,
 		PortalContactEmail: settings.PortalContactEmail,
 		LoginMethods:       h.buildPublicHomeLoginMethods(),
-		PinnedPages:        h.collectPinnedPublicPages(),
+		PinnedPages:        h.collectPinnedPublicPages(circleTags),
 		ParticipationTypes: participationTypes,
-		Pages:              h.collectPublicPages(5),
+		Pages:              h.collectPublicPages(circleTags, 5),
 		Documents:          h.collectPublicDocuments(selectableCircles, 3),
 	})
 }
@@ -217,8 +220,12 @@ func (h *publicHomeHandlers) listPublicParticipationTypes() ([]participationType
 	return response, nil
 }
 
-func (h *publicHomeHandlers) collectPublicPages(limit int) []publicHomePageResponse {
+func (h *publicHomeHandlers) collectPublicPages(circleTags []string, limit int) []publicHomePageResponse {
 	visiblePages := h.pages.ListGuest("")
+	if len(circleTags) > 0 {
+		visiblePages = h.pages.ListForCircle(circleTags, "")
+	}
+
 	pages := make([]publicHomePageResponse, 0, len(visiblePages))
 	for _, currentPage := range visiblePages {
 		pages = append(pages, publicHomePageResponse{
@@ -227,7 +234,7 @@ func (h *publicHomeHandlers) collectPublicPages(limit int) []publicHomePageRespo
 			Summary:   summarizePublicHomeText(currentPage.Body, 120),
 			CreatedAt: currentPage.CreatedAt,
 			UpdatedAt: currentPage.UpdatedAt,
-			IsLimited: false,
+			IsLimited: len(currentPage.ViewableTags) > 0,
 			IsNew:     isPageNew(currentPage),
 		})
 	}
@@ -239,11 +246,18 @@ func (h *publicHomeHandlers) collectPublicPages(limit int) []publicHomePageRespo
 	return pages
 }
 
-func (h *publicHomeHandlers) collectPinnedPublicPages() []publicPinnedPageResponse {
+func (h *publicHomeHandlers) collectPinnedPublicPages(circleTags []string) []publicPinnedPageResponse {
 	allPages := h.pages.ListForStaff("")
 	pages := make([]publicPinnedPageResponse, 0, len(allPages))
 	for _, currentPage := range allPages {
-		if !currentPage.IsPinned || !currentPage.IsPublic || len(currentPage.ViewableTags) > 0 {
+		if !currentPage.IsPinned || !currentPage.IsPublic {
+			continue
+		}
+		if len(circleTags) == 0 {
+			if len(currentPage.ViewableTags) > 0 {
+				continue
+			}
+		} else if !pageVisibleToCircleTags(currentPage.ViewableTags, circleTags) {
 			continue
 		}
 		pages = append(pages, publicPinnedPageResponse{
@@ -252,7 +266,7 @@ func (h *publicHomeHandlers) collectPinnedPublicPages() []publicPinnedPageRespon
 			Body:      currentPage.Body,
 			CreatedAt: currentPage.CreatedAt,
 			UpdatedAt: currentPage.UpdatedAt,
-			IsLimited: false,
+			IsLimited: len(currentPage.ViewableTags) > 0,
 			IsNew:     isPageNew(currentPage),
 			Documents: pageDocuments(h.documents, currentPage.DocumentIDs, false, true),
 		})
@@ -266,6 +280,20 @@ func (h *publicHomeHandlers) collectPinnedPublicPages() []publicPinnedPageRespon
 	})
 
 	return pages
+}
+
+func (h *publicHomeHandlers) currentPublicHomeCircleTags(c echo.Context) []string {
+	_, currentSession, ok := h.getSession(c)
+	if !ok || currentSession.User == nil || currentSession.CurrentCircleID == "" {
+		return nil
+	}
+
+	currentCircle, err := h.circles.FindSelectable(currentSession.User, currentSession.CurrentCircleID)
+	if err != nil {
+		return nil
+	}
+
+	return effectiveCircleTags(currentCircle, h.participationTypes)
 }
 
 func (h *publicHomeHandlers) collectPublicDocuments(circles []circle.Circle, limit int) []publicHomeDocumentResponse {
@@ -308,7 +336,7 @@ func (h *publicHomeHandlers) collectPublicDocuments(circles []circle.Circle, lim
 }
 
 func summarizePublicHomeText(value string, maxRunes int) string {
-	normalized := strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
+	normalized := normalizePublicHomeSummary(value)
 	if normalized == "" {
 		return ""
 	}
@@ -318,6 +346,26 @@ func summarizePublicHomeText(value string, maxRunes int) string {
 
 	runes := []rune(normalized)
 	return strings.TrimSpace(string(runes[:maxRunes])) + "..."
+}
+
+func normalizePublicHomeSummary(value string) string {
+	normalized := strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
+	if normalized == "" {
+		return ""
+	}
+
+	replacer := strings.NewReplacer(
+		"### ", "",
+		"## ", "",
+		"# ", "",
+		"|", " ",
+		" - ", " ",
+		"- ", "",
+		"* ", "",
+		"`", "",
+	)
+
+	return strings.Join(strings.Fields(replacer.Replace(normalized)), " ")
 }
 
 func (h *publicHomeHandlers) buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {

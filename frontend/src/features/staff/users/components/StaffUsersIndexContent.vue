@@ -7,9 +7,7 @@ import StaffFilterDrawer from '@/components/staff/StaffFilterDrawer.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import ToolbarRow from '@/components/ui/ToolbarRow.vue'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
-import { buttonVariants } from '@/lib/ui/variants'
 import { useStaffUsersIndexPage } from '@/features/staff/users/composables/useStaffUsersIndexPage'
 import StaffUserEditor from './StaffUserEditor.vue'
 
@@ -31,7 +29,6 @@ const {
   handleReload,
   handleRemoveFilter,
   handleSaved,
-  handleSearch,
   handleSort,
   handleUpdateFilter,
   isEditorOpen,
@@ -39,16 +36,18 @@ const {
   openEditor,
   openFilter,
   pagination,
-  searchQuery,
   selectedUserId,
   sort,
   usersQuery
 } = useStaffUsersIndexPage()
 
 const columns: StaffDataGridColumn[] = [
+  { key: 'userNumber', label: 'ユーザーID', sortable: false, cellClass: 'font-medium text-body' },
+  { key: 'loginIds', label: '学生番号', sortable: true },
   { key: 'lastName', label: '姓', sortable: true },
+  { key: 'lastNameReading', label: '姓(よみ)', sortable: false },
   { key: 'firstName', label: '名', sortable: true },
-  { key: 'loginIds', label: '学生用メールアドレス', sortable: true },
+  { key: 'firstNameReading', label: '名(よみ)', sortable: false },
   { key: 'contactEmail', label: '連絡先メールアドレス', sortable: true },
   { key: 'phoneNumber', label: '電話番号', sortable: true },
   { key: 'isStaff', label: 'スタッフ', sortable: true, align: 'center' },
@@ -61,9 +60,9 @@ const columns: StaffDataGridColumn[] = [
 <template>
   <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
     <PageLayout class="max-w-full">
-      <PageHeader title="ユーザー情報管理" description="登録ユーザーを横断して検索・編集します。" />
+      <PageHeader title="ユーザー情報管理" />
 
-      <DataCard title="ユーザー一覧" overflow-hidden>
+      <DataCard overflow-hidden>
         <StaffDataGrid
           :rows="gridRows"
           :columns="columns"
@@ -87,24 +86,13 @@ const columns: StaffDataGridColumn[] = [
           @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
-            <ToolbarRow>
-              <form class="flex items-center gap-2" @submit.prevent="handleSearch">
-                <input
-                  v-model="searchQuery"
-                  type="search"
-                  placeholder="姓名・メールアドレス・学生用メールアドレスで絞り込み"
-                  class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
-                  <i class="fas fa-search fa-fw" aria-hidden="true" />
-                  絞り込み
-                </button>
-              </form>
-              <a :href="exportUrl" :class="buttonVariants({ variant: 'secondary', size: 'md' })">
-                <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-                CSVで出力
-              </a>
-            </ToolbarRow>
+            <a
+              :href="exportUrl"
+              class="inline-flex items-center gap-2 px-3 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
+            >
+              <i class="fas fa-file-csv fa-fw text-[0.95rem]" aria-hidden="true" />
+              CSVで出力
+            </a>
           </template>
 
           <template #actions="{ row }">
@@ -113,8 +101,12 @@ const columns: StaffDataGridColumn[] = [
             </IconActionButton>
           </template>
 
-          <template #cell-loginIds="{ value }">
-            {{ Array.isArray(value) ? value.join(', ') : '-' }}
+          <template #cell-loginIds="{ row }">
+            {{ row.studentId }}
+          </template>
+
+          <template #cell-contactEmail="{ value }">
+            <span class="block min-w-[16rem]">{{ value }}</span>
           </template>
 
           <template #cell-isStaff="{ value }">

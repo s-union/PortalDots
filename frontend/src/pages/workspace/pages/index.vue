@@ -67,7 +67,13 @@ async function handlePageChange(nextPage: number) {
       </p>
 
       <form class="mt-4 flex flex-wrap gap-3" @submit.prevent="handleSearchSubmit">
-        <input v-model="searchQuery" class="min-w-64 flex-1" name="query" placeholder="お知らせを検索…" type="search" />
+        <input
+          v-model="searchQuery"
+          class="min-w-64 flex-1"
+          name="query"
+          placeholder="お知らせを検索..."
+          type="search"
+        />
         <button
           class="rounded bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-hover"
           type="submit"

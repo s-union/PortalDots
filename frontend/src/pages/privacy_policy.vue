@@ -1,13 +1,42 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import privacyPolicyMarkdown from '../../../resources/md/privacy_policy.md?raw'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import { usePublicConfigQuery } from '@/features/public-home/api'
+
+const publicConfigQuery = usePublicConfigQuery()
+const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
+
+function handleBack() {
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    window.history.back()
+    return
+  }
+  if (typeof window !== 'undefined') {
+    window.location.assign('/')
+  }
+}
 </script>
 
 <template>
   <PageLayout>
+    <section v-if="isDemoMode" class="flex min-h-[calc(100dvh-15rem)] flex-col items-center px-4 pt-4 text-center">
+      <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">お探しのページは見つかりませんでした</h2>
+      <p class="mt-1 text-sm text-muted">URLをご確認ください</p>
+      <div class="mt-4">
+        <button
+          class="inline-flex rounded border border-primary bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-hover"
+          type="button"
+          @click="handleBack"
+        >
+          前のページに戻る
+        </button>
+      </div>
+    </section>
+
     <section class="pb-2 pt-4">
-      <div class="rounded-[0.45rem] bg-surface shadow-lv1">
+      <div v-if="!isDemoMode" class="rounded-[0.45rem] bg-surface shadow-lv1">
         <div class="px-6 py-[1.2rem] text-base leading-[1.7] text-body max-[1000px]:px-4">
           <h2 class="mb-4 text-[1.333rem] font-semibold leading-[1.4] text-body">プライバシーポリシー</h2>
           <PageMarkdownContent

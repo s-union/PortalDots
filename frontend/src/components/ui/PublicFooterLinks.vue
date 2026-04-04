@@ -19,7 +19,7 @@ const { appName, showPrivacyPolicy = true } = defineProps<{
         PortalDots
       </a>
     </p>
-    <div class="flex flex-wrap gap-x-2 gap-y-1">
+    <div class="flex flex-wrap justify-center gap-x-2 gap-y-1">
       <RouterLink class="font-semibold text-muted transition hover:text-body hover:underline" to="/support">
         推奨動作環境
       </RouterLink>

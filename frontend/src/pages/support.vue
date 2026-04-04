@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { computed } from 'vue'
+import { usePublicConfigQuery } from '@/features/public-home/api'
 
 const supportBrowsers = ['Microsoft Edge 最新版', 'Mozilla Firefox 最新版', 'Google Chrome 最新版', 'Safari 最新版']
+const publicConfigQuery = usePublicConfigQuery()
+const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalDots')
 </script>
 
 <template>
@@ -12,7 +16,7 @@ const supportBrowsers = ['Microsoft Edge 最新版', 'Mozilla Firefox 最新版'
           <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ブラウザ環境について</h2>
         </div>
         <div class="px-6 py-[1.2rem] text-base leading-[1.7] text-body max-[1000px]:px-4">
-          <p>PortalDotsは以下の環境でご覧いただくことを推奨いたします。</p>
+          <p>{{ appName }}は以下の環境でご覧いただくことを推奨いたします。</p>
           <ul class="mt-2 list-disc space-y-1 pl-6">
             <li v-for="browser in supportBrowsers" :key="browser">{{ browser }}</li>
           </ul>

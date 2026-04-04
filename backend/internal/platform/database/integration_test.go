@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
@@ -111,6 +112,98 @@ func TestEnsureSeedDataDoesNotReseedDemoContentWhenSyncDisabled(t *testing.T) {
 	assertDemoContentCount(t, store, testDocumentID, "documents", 0)
 	assertDemoContentCount(t, store, testFormID, "forms", 0)
 	assertBoothAssignmentCount(t, store, testPlaceID, testCircleBID, 0)
+}
+
+func TestEnsureSeedDataSeedsDemoCircleProfileFields(t *testing.T) {
+	cfg := integrationConfig(t, true)
+	store := openIntegrationStore(t, cfg)
+
+	ctx := context.Background()
+	if err := EnsureSeedData(ctx, store, cfg); err != nil {
+		t.Fatalf("seed integration data: %v", err)
+	}
+
+	userRow, err := store.Queries().GetUserWithRelationsByID(ctx, "0195ec00-0054-7000-8000-000000000001")
+	if err != nil {
+		t.Fatalf("get demo-circle user: %v", err)
+	}
+
+	if userRow.LastName != "デモ" || userRow.LastNameReading != "でも" {
+		t.Fatalf("expected seeded last name to use generic demo profile, got %#v", userRow)
+	}
+	if userRow.FirstName != "企画者" || userRow.FirstNameReading != "きかくしゃ" {
+		t.Fatalf("expected seeded first name to match demo, got %#v", userRow)
+	}
+	if userRow.ContactEmail != "demo-circle@portaldots.com" {
+		t.Fatalf("expected seeded contact email to match demo, got %q", userRow.ContactEmail)
+	}
+	if userRow.PhoneNumber != "090-0000-0003" {
+		t.Fatalf("expected seeded phone number to match demo, got %q", userRow.PhoneNumber)
+	}
+	if !userRow.IsEmailVerified || !userRow.IsUnivemailVerified || !userRow.IsVerified {
+		t.Fatalf("expected seeded verification flags to be true, got %#v", userRow)
+	}
+	gotLoginIDs := append([]string{}, userRow.LoginIds...)
+	wantLoginIDs := []string{"DEMO-CIRCLE"}
+	slices.Sort(gotLoginIDs)
+	slices.Sort(wantLoginIDs)
+	if !slices.Equal(gotLoginIDs, wantLoginIDs) {
+		t.Fatalf("expected seeded login IDs to match demo, got %#v", userRow.LoginIds)
+	}
+}
+
+func TestEnsureSeedDataSeedsDemoAdminProfileFields(t *testing.T) {
+	cfg := integrationConfig(t, true)
+	store := openIntegrationStore(t, cfg)
+
+	ctx := context.Background()
+	if err := EnsureSeedData(ctx, store, cfg); err != nil {
+		t.Fatalf("seed integration data: %v", err)
+	}
+
+	userRow, err := store.Queries().GetUserWithRelationsByID(ctx, "0195ec00-0051-7000-8000-000000000001")
+	if err != nil {
+		t.Fatalf("get demo-admin user: %v", err)
+	}
+
+	if userRow.LastName != "デモ" || userRow.LastNameReading != "でも" {
+		t.Fatalf("expected seeded admin last name to use generic demo profile, got %#v", userRow)
+	}
+	if userRow.FirstName != "管理者" || userRow.FirstNameReading != "かんりしゃ" {
+		t.Fatalf("expected seeded admin first name to match demo, got %#v", userRow)
+	}
+	if userRow.ContactEmail != "demo-admin@portaldots.com" {
+		t.Fatalf("expected seeded admin contact email to match demo, got %q", userRow.ContactEmail)
+	}
+	if !slices.Equal(userRow.LoginIds, []string{"DEMO-ADMIN"}) {
+		t.Fatalf("expected seeded admin login IDs to match demo, got %#v", userRow.LoginIds)
+	}
+}
+
+func TestEnsureSeedDataListsUsersWithQueryOnUUIDColumn(t *testing.T) {
+	cfg := integrationConfig(t, true)
+	store := openIntegrationStore(t, cfg)
+
+	ctx := context.Background()
+	if err := EnsureSeedData(ctx, store, cfg); err != nil {
+		t.Fatalf("seed integration data: %v", err)
+	}
+
+	rows, err := store.Queries().ListUsersWithQuery(ctx, "")
+	if err != nil {
+		t.Fatalf("list users with empty query: %v", err)
+	}
+	if len(rows) != 5 {
+		t.Fatalf("expected 5 demo users from query, got %d", len(rows))
+	}
+
+	rows, err = store.Queries().ListUsersWithQuery(ctx, "0195ec00-0051")
+	if err != nil {
+		t.Fatalf("list users with partial uuid query: %v", err)
+	}
+	if len(rows) != 1 || rows[0].ID != "0195ec00-0051-7000-8000-000000000001" {
+		t.Fatalf("expected demo-admin to match UUID query, got %#v", rows)
+	}
 }
 
 func integrationConfig(t *testing.T, syncAuthUserOnStartup bool) config.Config {

@@ -1024,6 +1024,59 @@ func TestGetPublicHomeReturnsGuestContent(t *testing.T) {
 	}
 }
 
+func TestGetPublicHomeReturnsCurrentCircleLimitedContent(t *testing.T) {
+	t.Parallel()
+
+	cfg := demoCircleConfig()
+	cfg.Pages = append(cfg.Pages, config.Page{
+		ID:           "0195ec00-0036-7000-8000-000000000001",
+		Title:        "展示向け固定連絡",
+		Body:         "展示企画だけに見せる固定表示です。",
+		Notes:        "",
+		IsPinned:     true,
+		IsPublic:     true,
+		ViewableTags: []string{"展示"},
+		DocumentIDs:  []string{},
+		CreatedAt:    "2026-03-05T09:00:00Z",
+		UpdatedAt:    "2026-03-05T09:00:00Z",
+	})
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/home", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response publicHomeResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal public home response: %v", err)
+	}
+
+	if len(response.PinnedPages) != 2 {
+		t.Fatalf("expected guest pinned page plus limited pinned page, got %#v", response.PinnedPages)
+	}
+	if response.PinnedPages[0].ID != "0195ec00-0036-7000-8000-000000000001" || !response.PinnedPages[0].IsLimited {
+		t.Fatalf("expected limited pinned page first, got %#v", response.PinnedPages)
+	}
+	if len(response.Pages) != 1 {
+		t.Fatalf("expected one visible limited page for selected circle, got %#v", response.Pages)
+	}
+	if response.Pages[0].ID != "0195ec00-0034-7000-8000-000000000001" || !response.Pages[0].IsLimited {
+		t.Fatalf("expected limited page to appear on authenticated home, got %#v", response.Pages[0])
+	}
+}
+
 func TestListPublicPagesReturnsGuestPageCollection(t *testing.T) {
 	t.Parallel()
 

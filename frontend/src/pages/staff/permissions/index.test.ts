@@ -122,12 +122,12 @@ describe('StaffPermissionsPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('スタッフ権限ユーザー')
+    expect(wrapper.text()).toContain('スタッフの権限設定')
     expect(wrapper.text()).toContain('Staff User')
     expect(wrapper.text()).toContain('Content User')
     expect(wrapper.text()).not.toContain('Participant User')
     expect(wrapper.text()).toContain('権限設定(全機能)')
-    expect(wrapper.text()).toContain('編集へ')
+    expect(wrapper.get('a[href="/staff/permissions/content-user"]').exists()).toBe(true)
   })
 })
 

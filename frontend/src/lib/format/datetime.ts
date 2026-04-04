@@ -17,6 +17,19 @@ export function formatDateTime(value: string): string {
 }
 
 /**
+ * ISO 8601 文字列を「2026/03/03 09:00:00」形式にフォーマットする。
+ * staff 管理画面の一覧テーブルで利用する。
+ */
+export function formatDateTimeTable(value: string): string {
+  const zdt = toZonedDateTime(value)
+  if (zdt === null) {
+    return value
+  }
+
+  return `${zdt.year}/${pad(zdt.month)}/${pad(zdt.day)} ${pad(zdt.hour)}:${pad(zdt.minute)}:${pad(zdt.second)}`
+}
+
+/**
  * ISO 8601 文字列を「2026年3月3日(月)」形式（日付のみ）にフォーマットする。
  */
 export function formatDate(value: string): string {

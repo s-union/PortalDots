@@ -108,24 +108,69 @@ describe('StaffContactCategoriesPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('総合')
+    expect(wrapper.text()).toContain('メールアドレスを追加')
 
-    const createInputs = wrapper.findAll('input[name]')
-    await createInputs[0].setValue('新規')
-    await createInputs[1].setValue('new@example.com')
-    await wrapper.get('form').trigger('submit')
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+
+    const createNameInput = document.body.querySelector('input[name="name"]')
+    if (!(createNameInput instanceof HTMLInputElement)) {
+      throw new Error('create name input not found')
+    }
+    createNameInput.value = '新規'
+    createNameInput.dispatchEvent(new Event('input'))
+
+    const createEmailInput = document.body.querySelector('input[name="email"]')
+    if (!(createEmailInput instanceof HTMLInputElement)) {
+      throw new Error('create email input not found')
+    }
+    createEmailInput.value = 'new@example.com'
+    createEmailInput.dispatchEvent(new Event('input'))
+
+    const createSubmitButton = document.body.querySelector('button[type="submit"]')
+    if (!(createSubmitButton instanceof HTMLButtonElement)) {
+      throw new Error('create submit button not found')
+    }
+    createSubmitButton.click()
     await flushPromises()
     expect(wrapper.text()).toContain('new@example.com')
 
-    const emailInputs = wrapper.findAll('input[type="email"]')
-    await emailInputs[1].setValue('updated@example.com')
-    const textInputs = wrapper.findAll('input[type="text"]')
-    await textInputs[1].setValue('更新総合')
-    const buttons = wrapper.findAll('button[type="button"]')
-    await buttons[0].trigger('click')
+    await wrapper.findAll('button[type="button"]')[1]?.trigger('click')
     await flushPromises()
+
+    const editEmailInput = document.body.querySelector('input[name="email"]')
+    if (!(editEmailInput instanceof HTMLInputElement)) {
+      throw new Error('edit email input not found')
+    }
+    editEmailInput.value = 'updated@example.com'
+    editEmailInput.dispatchEvent(new Event('input'))
+
+    const editNameInput = document.body.querySelector('input[name="name"]')
+    if (!(editNameInput instanceof HTMLInputElement)) {
+      throw new Error('edit name input not found')
+    }
+    editNameInput.value = '更新総合'
+    editNameInput.dispatchEvent(new Event('input'))
+
+    const saveButton = document.body.querySelector('button[type="submit"]')
+    if (!(saveButton instanceof HTMLButtonElement)) {
+      throw new Error('save button not found')
+    }
+    saveButton.click()
+    await flushPromises()
+
     expect(wrapper.text()).toContain('更新総合')
 
-    await buttons[3].trigger('click')
+    await wrapper.findAll('button[type="button"]')[2]?.trigger('click')
+    await flushPromises()
+
+    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
+      button.textContent?.includes('削除')
+    )
+    if (!(deleteButton instanceof HTMLButtonElement)) {
+      throw new Error('delete button not found')
+    }
+    deleteButton.click()
     await flushPromises()
     expect(confirmMock).toHaveBeenCalledWith('安全(safety@example.com)を削除しますか？')
     expect(wrapper.text()).not.toContain('安全')
@@ -197,8 +242,16 @@ describe('StaffContactCategoriesPage', () => {
     })
     await flushPromises()
 
-    const buttons = wrapper.findAll('button[type="button"]')
-    await buttons[3].trigger('click')
+    await wrapper.findAll('button[type="button"]')[2]?.trigger('click')
+    await flushPromises()
+
+    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
+      button.textContent?.includes('削除')
+    )
+    if (!(deleteButton instanceof HTMLButtonElement)) {
+      throw new Error('delete button not found')
+    }
+    deleteButton.click()
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledWith('安全(safety@example.com)を削除しますか？')

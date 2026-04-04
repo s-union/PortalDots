@@ -36,7 +36,12 @@ type submitContactResponse struct {
 }
 
 type updateProfileRequest struct {
-	DisplayName string `json:"displayName"`
+	DisplayName     string `json:"displayName"`
+	Name            string `json:"name"`
+	NameYomi        string `json:"nameYomi"`
+	ContactEmail    string `json:"contactEmail"`
+	PhoneNumber     string `json:"phoneNumber"`
+	CurrentPassword string `json:"currentPassword"`
 }
 
 type updatePasswordRequest struct {
@@ -219,7 +224,104 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
+	managedUser, err := h.users.Find(currentSession.User.ID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
 	request.DisplayName = strings.TrimSpace(request.DisplayName)
+	request.Name = strings.TrimSpace(request.Name)
+	request.NameYomi = strings.TrimSpace(request.NameYomi)
+	request.ContactEmail = strings.TrimSpace(request.ContactEmail)
+	request.PhoneNumber = strings.TrimSpace(request.PhoneNumber)
+	request.CurrentPassword = strings.TrimSpace(request.CurrentPassword)
+
+	if request.Name != "" || request.NameYomi != "" || request.ContactEmail != "" || request.PhoneNumber != "" || request.CurrentPassword != "" {
+		validationErrors := map[string][]string{}
+		lastName, firstName, normalizedName, ok := splitFullName(request.Name)
+		if request.Name == "" {
+			validationErrors["name"] = []string{"名前を入力してください"}
+		} else if !ok {
+			validationErrors["name"] = []string{"名前は姓と名の両方を入力してください"}
+		}
+		lastNameReading, firstNameReading, _, yomiOK := splitFullName(request.NameYomi)
+		if request.NameYomi == "" {
+			validationErrors["nameYomi"] = []string{"名前(よみ)を入力してください"}
+		} else if !yomiOK {
+			validationErrors["nameYomi"] = []string{"名前(よみ)は姓と名の両方を入力してください"}
+		}
+		if request.ContactEmail == "" || !strings.Contains(request.ContactEmail, "@") {
+			validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}
+		}
+		if request.PhoneNumber == "" {
+			validationErrors["phoneNumber"] = []string{"連絡先電話番号を入力してください"}
+		}
+		if request.CurrentPassword == "" {
+			validationErrors["currentPassword"] = []string{"現在のパスワードを入力してください"}
+		}
+		if len(validationErrors) > 0 {
+			return validationError(c, validationErrors)
+		}
+
+		authenticated := false
+		for _, loginID := range managedUser.LoginIDs {
+			if _, ok := h.authenticator.Authenticate(c.Request().Context(), loginID, request.CurrentPassword); ok {
+				authenticated = true
+				break
+			}
+		}
+		if !authenticated && managedUser.ContactEmail != "" {
+			if _, ok := h.authenticator.Authenticate(c.Request().Context(), managedUser.ContactEmail, request.CurrentPassword); ok {
+				authenticated = true
+			}
+		}
+		if !authenticated {
+			return validationError(c, map[string][]string{"currentPassword": {"現在のパスワードが正しくありません"}})
+		}
+
+		updatedUser, err := h.users.UpdateFull(
+			currentSession.User.ID,
+			normalizedName,
+			managedUser.LoginIDs,
+			lastName,
+			lastNameReading,
+			firstName,
+			firstNameReading,
+			request.ContactEmail,
+			request.PhoneNumber,
+		)
+		if errors.Is(err, useradmin.ErrNotFound) {
+			return errorJSON(c, http.StatusNotFound, "user_not_found")
+		}
+		if errors.Is(err, useradmin.ErrConflict) {
+			return validationError(c, map[string][]string{"contactEmail": {"入力されたメールアドレスはすでに登録されています"}})
+		}
+		if err != nil {
+			return internalError(c)
+		}
+
+		h.sessions.Update(sessionID, func(next *session.Session) {
+			if next.User == nil {
+				return
+			}
+			next.User.DisplayName = updatedUser.DisplayName
+		})
+		recordActivity(
+			h.activities,
+			updatedUser.ID,
+			"user.profile.updated",
+			"user",
+			updatedUser.ID,
+			"",
+			buildActivitySummary("利用者がプロフィールを更新しました", updatedUser.DisplayName),
+		)
+
+		return c.JSON(http.StatusOK, buildSessionBootstrapUserInfo(updatedUser, h.portalUnivemailDomainPart))
+	}
+
 	if request.DisplayName == "" {
 		return validationError(c, map[string][]string{"displayName": {"表示名を入力してください"}})
 	}
@@ -248,10 +350,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 		buildActivitySummary("利用者が表示名を更新しました", updatedUser.DisplayName),
 	)
 
-	return c.JSON(http.StatusOK, updatedProfileResponse{
-		ID:          updatedUser.ID,
-		DisplayName: updatedUser.DisplayName,
-	})
+	return c.JSON(http.StatusOK, buildSessionBootstrapUserInfo(updatedUser, h.portalUnivemailDomainPart))
 }
 
 func (h *authHandlers) updatePassword(c echo.Context) error {

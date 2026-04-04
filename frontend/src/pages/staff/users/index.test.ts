@@ -55,13 +55,13 @@ describe('StaffUsersIndexPage', () => {
         items: [
           {
             id: 'staff-user',
-            lastName: 'スタッフ',
-            lastNameReading: 'すたっふ',
-            firstName: 'ユーザー',
-            firstNameReading: 'ゆーざー',
-            displayName: 'Staff User',
-            loginIds: ['staff@example.com'],
-            contactEmail: 'staff@example.com',
+            lastName: 'デモ',
+            lastNameReading: 'でも',
+            firstName: 'スタッフ',
+            firstNameReading: 'すたっふ',
+            displayName: 'デモ スタッフ',
+            loginIds: ['DEMO-STAFF'],
+            contactEmail: 'demo-staff@portaldots.com',
             phoneNumber: '090-0000-0001',
             roles: ['admin'],
             isVerified: true,
@@ -71,11 +71,11 @@ describe('StaffUsersIndexPage', () => {
             id: 'demo-user',
             lastName: 'デモ',
             lastNameReading: 'でも',
-            firstName: 'ユーザー',
-            firstNameReading: 'ゆーざー',
-            displayName: 'Demo User',
-            loginIds: ['demo@example.com', '24a0000'],
-            contactEmail: 'demo@example.com',
+            firstName: '企画者',
+            firstNameReading: 'きかくしゃ',
+            displayName: 'デモ 企画者',
+            loginIds: ['DEMO-CIRCLE'],
+            contactEmail: 'demo-circle@portaldots.com',
             phoneNumber: '',
             roles: ['participant'],
             isVerified: false,
@@ -107,9 +107,10 @@ describe('StaffUsersIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).not.toContain('staff-user')
-    expect(wrapper.text()).not.toContain('demo-user')
-    expect(wrapper.text()).toContain('staff@example.com')
+    expect(wrapper.text()).toContain('DEMO-STAFF')
+    expect(wrapper.text()).toContain('DEMO-CIRCLE')
+    expect(wrapper.text()).toContain('でも')
+    expect(wrapper.text()).toContain('demo-staff@portaldots.com')
     expect(wrapper.text()).toContain('確認済み')
     expect(wrapper.text()).toContain('未確認')
     expect(wrapper.text()).toContain('表示件数:')
@@ -117,7 +118,11 @@ describe('StaffUsersIndexPage', () => {
     expect(wrapper.text()).toContain('絞り込み')
     expect(wrapper.get('a[href$="/v1/staff/users/export"]').text()).toContain('CSVで出力')
 
-    await wrapper.get('thead button').trigger('click')
+    const sortButton = wrapper.findAll('thead button').find((button) => button.text().includes('姓'))
+    if (!sortButton) {
+      throw new Error('expected lastName sort button')
+    }
+    await sortButton.trigger('click')
     const sortArgAfterHeaderClick = usersApiMocks.useStaffUsersQuery.mock.calls.at(-1)?.[1]
     if (!sortArgAfterHeaderClick) {
       throw new Error('expected sort argument')

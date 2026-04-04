@@ -8,6 +8,8 @@ import { useSessionStore } from '@/features/session/store'
 export interface StaffTag {
   id: string
   name: string
+  createdAt: string
+  updatedAt: string
 }
 
 export async function fetchStaffTags() {

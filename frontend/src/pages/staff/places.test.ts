@@ -38,8 +38,22 @@ describe('StaffPlacesPage', () => {
     })
 
     const places = [
-      { id: 'place-2', name: '中庭', type: 2, notes: '屋外' },
-      { id: 'place-1', name: '1号館', type: 1, notes: '屋内' }
+      {
+        id: 'place-2',
+        name: '中庭',
+        type: 2,
+        notes: '屋外',
+        createdAt: '2021-06-07T22:19:50+09:00',
+        updatedAt: '2021-06-07T22:19:50+09:00'
+      },
+      {
+        id: 'place-1',
+        name: '1号館',
+        type: 1,
+        notes: '屋内',
+        createdAt: '2021-06-07T22:19:45+09:00',
+        updatedAt: '2021-06-07T22:19:45+09:00'
+      }
     ]
 
     const router = createRouter({
@@ -76,14 +90,28 @@ describe('StaffPlacesPage', () => {
           })
         }
         if (pathname.endsWith('/staff/places') && method === 'POST') {
-          places.push({ id: 'place-3', name: '体育館', type: 3, notes: '特殊' })
+          places.push({
+            id: 'place-3',
+            name: '体育館',
+            type: 3,
+            notes: '特殊',
+            createdAt: '2021-06-07T22:19:55+09:00',
+            updatedAt: '2021-06-07T22:19:55+09:00'
+          })
           return new Response(JSON.stringify(places[2]), {
             status: 201,
             headers: { 'Content-Type': 'application/json' }
           })
         }
         if (pathname.endsWith('/staff/places/place-1') && method === 'PUT') {
-          places[1] = { id: 'place-1', name: '更新後 1号館', type: 1, notes: '更新' }
+          places[1] = {
+            id: 'place-1',
+            name: '更新後 1号館',
+            type: 1,
+            notes: '更新',
+            createdAt: '2021-06-07T22:19:45+09:00',
+            updatedAt: '2021-06-07T22:20:01+09:00'
+          }
           return new Response(JSON.stringify(places[1]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
@@ -106,9 +134,7 @@ describe('StaffPlacesPage', () => {
     expect(wrapper.get('a[href$="/v1/staff/places/export"]').text()).toContain('CSVで出力(場所別企画一覧)')
     expect(wrapper.text()).toContain('1号館')
     expect(wrapper.text()).toContain('中庭')
-    expect(wrapper.text()).not.toContain('場所ID')
-    expect(wrapper.text()).not.toContain('place-1')
-    expect(wrapper.text()).not.toContain('place-2')
+    expect(wrapper.text()).toContain('場所ID')
     expect(wrapper.text().indexOf('1号館')).toBeLessThan(wrapper.text().indexOf('中庭'))
 
     const createButton = wrapper.findAll('button[type="button"]').find((button) => button.text().includes('新規場所'))
@@ -147,8 +173,7 @@ describe('StaffPlacesPage', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('体育館')
 
-    const editButtons = wrapper.findAll('button[type="button"]').filter((button) => button.text().includes('編集'))
-    await editButtons[0]?.trigger('click')
+    await wrapper.find('button[title="編集"]').trigger('click')
     await flushPromises()
 
     const editNameInput = document.body.querySelector('input[name="name"]')
@@ -173,24 +198,11 @@ describe('StaffPlacesPage', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('更新後 1号館')
 
-    const reopenEditButtons = wrapper
-      .findAll('button[type="button"]')
-      .filter((button) => button.text().includes('編集'))
-    await reopenEditButtons[1]?.trigger('click')
-    await flushPromises()
-
-    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
-      button.textContent?.includes('削除')
-    )
-    if (!(deleteButton instanceof HTMLButtonElement)) {
-      throw new Error('delete button not found')
-    }
-    deleteButton.click()
+    await wrapper.findAll('button[title="削除"]')[1]?.trigger('click')
     await flushPromises()
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('場所「中庭」を削除しますか？'))
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('企画自体は削除されません'))
     expect(wrapper.text()).not.toContain('中庭')
-    expect(wrapper.findAll('button[class*="border-danger"]').length).toBe(0)
   })
 
   it('does not delete when place deletion is cancelled', async () => {
@@ -236,8 +248,22 @@ describe('StaffPlacesPage', () => {
         if (pathname.endsWith('/staff/places') && method === 'GET') {
           return new Response(
             JSON.stringify([
-              { id: 'place-1', name: '1号館', type: 1, notes: '屋内' },
-              { id: 'place-2', name: '中庭', type: 2, notes: '屋外' }
+              {
+                id: 'place-1',
+                name: '1号館',
+                type: 1,
+                notes: '屋内',
+                createdAt: '2021-06-07T22:19:45+09:00',
+                updatedAt: '2021-06-07T22:19:45+09:00'
+              },
+              {
+                id: 'place-2',
+                name: '中庭',
+                type: 2,
+                notes: '屋外',
+                createdAt: '2021-06-07T22:19:50+09:00',
+                updatedAt: '2021-06-07T22:19:50+09:00'
+              }
             ]),
             {
               status: 200,
@@ -259,17 +285,9 @@ describe('StaffPlacesPage', () => {
     })
     await flushPromises()
 
-    const editButtons = wrapper.findAll('button[type="button"]').filter((button) => button.text().includes('編集'))
-    await editButtons[1]?.trigger('click')
+    await wrapper.findAll('button[title="編集"]')[1]?.trigger('click')
     await flushPromises()
-
-    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
-      button.textContent?.includes('削除')
-    )
-    if (!(deleteButton instanceof HTMLButtonElement)) {
-      throw new Error('delete button not found')
-    }
-    deleteButton.click()
+    await wrapper.findAll('button[title="削除"]')[1]?.trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('場所「中庭」を削除しますか？'))
@@ -314,10 +332,22 @@ describe('StaffPlacesPage', () => {
       }
       if (pathname.endsWith('/staff/places') && method === 'GET') {
         return Promise.resolve(
-          new Response(JSON.stringify([{ id: 'place-1', name: '1号館', type: 1, notes: '屋内' }]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
+          new Response(
+            JSON.stringify([
+              {
+                id: 'place-1',
+                name: '1号館',
+                type: 1,
+                notes: '屋内',
+                createdAt: '2021-06-07T22:19:45+09:00',
+                updatedAt: '2021-06-07T22:19:45+09:00'
+              }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
         )
       }
 

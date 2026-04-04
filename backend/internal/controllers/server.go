@@ -294,6 +294,7 @@ func NewServerWithDependencies(
 	}
 
 	publicHomeH := &publicHomeHandlers{
+		sharedDeps:            shared,
 		circles:               circles,
 		documents:             documents,
 		forms:                 forms,

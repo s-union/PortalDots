@@ -152,16 +152,20 @@ func TestDefaultDemoUsersKeepLegacyStaffRoles(t *testing.T) {
 
 	users := defaultDemoUsers()
 
+	if len(users) != 5 {
+		t.Fatalf("expected 5 demo users to match demo.portaldots.com, got %d", len(users))
+	}
+
 	var demoStaffRoles []string
 	var demoStaffPermissions []string
 	var demoStaffSubRoles []string
 	var demoStaffSubPermissions []string
 	for _, user := range users {
 		switch {
-		case slices.Contains(user.LoginIDs, "demo-staff"):
+		case slices.Contains(user.LoginIDs, "DEMO-STAFF"):
 			demoStaffRoles = append([]string{}, user.Roles...)
 			demoStaffPermissions = append([]string{}, user.Permissions...)
-		case slices.Contains(user.LoginIDs, "demo-staff-sub"):
+		case slices.Contains(user.LoginIDs, "DEMO-STAFF-SUB"):
 			demoStaffSubRoles = append([]string{}, user.Roles...)
 			demoStaffSubPermissions = append([]string{}, user.Permissions...)
 		}
@@ -192,5 +196,96 @@ func TestDefaultDemoUsersKeepLegacyStaffRoles(t *testing.T) {
 			expectedDemoStaffPermissions,
 			demoStaffSubPermissions,
 		)
+	}
+}
+
+func TestDefaultDemoUsersAlignCircleProfileWithDemo(t *testing.T) {
+	t.Parallel()
+
+	users := defaultDemoUsers()
+
+	for _, user := range users {
+		if !slices.Contains(user.LoginIDs, "DEMO-CIRCLE") {
+			continue
+		}
+
+		if !slices.Equal(user.LoginIDs, []string{"DEMO-CIRCLE"}) {
+			t.Fatalf("expected demo-circle login IDs to match demo, got %#v", user.LoginIDs)
+		}
+		if user.LastName != "デモ" || user.LastNameReading != "でも" {
+			t.Fatalf("expected demo-circle last name to use generic demo profile, got %#v", user)
+		}
+		if user.FirstName != "企画者" || user.FirstNameReading != "きかくしゃ" {
+			t.Fatalf("expected demo-circle first name to match demo, got %#v", user)
+		}
+		if user.ContactEmail != "demo-circle@portaldots.com" {
+			t.Fatalf("expected demo-circle contact email to match demo, got %q", user.ContactEmail)
+		}
+		if user.PhoneNumber != "090-0000-0003" {
+			t.Fatalf("expected demo-circle phone number to match demo, got %q", user.PhoneNumber)
+		}
+		return
+	}
+
+	t.Fatal("expected demo-circle user to exist")
+}
+
+func TestDefaultDemoUsersAlignStaffProfilesWithDemo(t *testing.T) {
+	t.Parallel()
+
+	users := defaultDemoUsers()
+
+	expectations := map[string]User{
+		"DEMO-ADMIN": {
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "管理者",
+			FirstNameReading: "かんりしゃ",
+			ContactEmail:     "demo-admin@portaldots.com",
+		},
+		"DEMO-STAFF": {
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "スタッフ",
+			FirstNameReading: "すたっふ",
+			ContactEmail:     "demo-staff@portaldots.com",
+		},
+		"DEMO-STAFF-SUB": {
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "副スタッフ",
+			FirstNameReading: "ふくすたっふ",
+			ContactEmail:     "demo-staff-sub@portaldots.com",
+		},
+		"DEMO-CIRCLE-SUB": {
+			LastName:         "デモ",
+			LastNameReading:  "でも",
+			FirstName:        "副企画者",
+			FirstNameReading: "ふくきかくしゃ",
+			ContactEmail:     "demo-circle-sub@portaldots.com",
+		},
+	}
+
+	for loginID, want := range expectations {
+		found := false
+		for _, user := range users {
+			if !slices.Contains(user.LoginIDs, loginID) {
+				continue
+			}
+			found = true
+			if user.LastName != want.LastName || user.LastNameReading != want.LastNameReading {
+				t.Fatalf("expected %s last name to match demo, got %#v", loginID, user)
+			}
+			if user.FirstName != want.FirstName || user.FirstNameReading != want.FirstNameReading {
+				t.Fatalf("expected %s first name to match demo, got %#v", loginID, user)
+			}
+			if user.ContactEmail != want.ContactEmail {
+				t.Fatalf("expected %s contact email to match demo, got %q", loginID, user.ContactEmail)
+			}
+			break
+		}
+		if !found {
+			t.Fatalf("expected %s user to exist", loginID)
+		}
 	}
 }

@@ -28,6 +28,7 @@ import {
   type StaffFormSummary
 } from '@/features/staff/forms/api'
 import { useSessionStore } from '@/features/session/store'
+import { formatDateTimeTable } from '@/lib/format/datetime'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 
@@ -44,14 +45,23 @@ const canEdit = computed(() => canEditForms(sessionStore.roles, sessionStore.per
 const detailActionTitle = computed(() => (canReadAnswers.value ? '回答一覧・設定' : '設定'))
 const detailActionIconClass = computed(() => (canReadAnswers.value ? 'far fa-eye fa-fw' : 'fas fa-cog fa-fw'))
 
-const sortKeys = ['id', 'name', 'isPublic', 'openAt', 'closeAt', 'createdAt', 'updatedAt', 'maxAnswers'] as const
+const sortKeys = [
+  'formNumber',
+  'name',
+  'isPublic',
+  'openAt',
+  'closeAt',
+  'createdAt',
+  'updatedAt',
+  'maxAnswers'
+] as const
 type StaffFormSortKey = (typeof sortKeys)[number]
 const isStaffFormSortKey = createSortKeyGuard(sortKeys)
 
-const sort = useSortState<StaffFormSortKey>('id')
+const sort = useSortState<StaffFormSortKey>('formNumber')
 
 const columns: StaffDataGridColumn[] = [
-  { key: 'circle', label: '企画' },
+  { key: 'formNumber', label: 'フォームID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
   { key: 'name', label: 'フォーム名', sortable: true },
   { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
   { key: 'answerableTags', label: '回答可能なタグ' },
@@ -70,6 +80,16 @@ const isBusy = computed(
     deleteFormMutation.isPending.value
 )
 
+const formOrderMap = computed(() => {
+  const order = new Map<string, number>()
+  ;[...(formsQuery.data.value ?? [])]
+    .sort((left, right) => compareString(left.id, right.id))
+    .forEach((staffForm, index) => {
+      order.set(staffForm.id, index + 1)
+    })
+  return order
+})
+
 const sortedForms = computed(() => {
   const forms = formsQuery.data.value ?? []
   const key = sort.sortKey.value
@@ -78,6 +98,8 @@ const sortedForms = computed(() => {
   return [...forms].sort((left, right) => {
     const order = direction === 'asc' ? 1 : -1
     switch (key) {
+      case 'formNumber':
+        return ((formOrderMap.value.get(left.id) ?? 0) - (formOrderMap.value.get(right.id) ?? 0)) * order
       case 'isPublic':
         return compareBoolean(left.isPublic, right.isPublic) * order
       case 'maxAnswers':
@@ -93,7 +115,10 @@ const pagination = usePaginationState(computed(() => sortedForms.value.length))
 const rows = computed<StaffDataGridRow[]>(() => {
   const start = (pagination.page.value - 1) * pagination.pageSize.value
   const end = start + pagination.pageSize.value
-  return sortedForms.value.slice(start, end).map((staffForm) => ({ ...staffForm }))
+  return sortedForms.value.slice(start, end).map((staffForm) => ({
+    ...staffForm,
+    formNumber: String(formOrderMap.value.get(staffForm.id) ?? start + 1)
+  }))
 })
 
 watch(
@@ -200,9 +225,9 @@ function resolveDescription(form: StaffFormSummary) {
 
 <template>
   <PageLayout class="max-w-full">
-    <PageHeader title="申請管理" description="全企画の申請フォームを横断して管理します。" />
+    <PageHeader title="申請管理" />
 
-    <DataCard title="申請フォーム一覧" description="申請フォームを一覧で表示します" overflow-hidden>
+    <DataCard overflow-hidden>
       <AlertMessage v-if="errorMessage" class="mx-6 mt-4">{{ errorMessage }}</AlertMessage>
 
       <StaffDataGrid
@@ -214,6 +239,7 @@ function resolveDescription(form: StaffFormSummary) {
         :loading="isBusy"
         :sort-key="sort.sortKey.value"
         :sort-direction="sort.sortDirection.value"
+        :show-filter-button="true"
         table-label="申請フォーム一覧"
         empty-message="staff forms は見つかりませんでした。"
         @first="pagination.setFirstPage"
@@ -235,7 +261,7 @@ function resolveDescription(form: StaffFormSummary) {
           <a
             :href="exportHref"
             download
-            class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
           >
             <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
             CSVで出力
@@ -273,15 +299,15 @@ function resolveDescription(form: StaffFormSummary) {
           </div>
         </template>
 
-        <template #cell-id="{ row }">
+        <template #cell-formNumber="{ row }">
           <RouterLink
             v-if="resolveDetailPath(resolveRowId(row))"
             class="font-medium text-primary"
             :to="resolveDetailPath(resolveRowId(row))!"
           >
-            {{ row.id }}
+            {{ row.formNumber }}
           </RouterLink>
-          <span v-else class="font-medium text-body">{{ row.id }}</span>
+          <span v-else class="font-medium text-body">{{ row.formNumber }}</span>
         </template>
 
         <template #cell-name="{ row }">
@@ -293,13 +319,6 @@ function resolveDescription(form: StaffFormSummary) {
             {{ row.name }}
           </RouterLink>
           <span v-else class="font-medium text-body">{{ row.name }}</span>
-        </template>
-
-        <template #cell-circle="{ value }">
-          <span v-if="value && typeof value === 'object' && 'name' in value">
-            {{ (value as { name: string }).name }}
-          </span>
-          <span v-else class="text-muted">-</span>
         </template>
 
         <template #cell-isPublic="{ value }">
@@ -320,6 +339,22 @@ function resolveDescription(form: StaffFormSummary) {
 
         <template #cell-description="{ row }">
           <span class="whitespace-pre-wrap">{{ resolveDescription(row as StaffFormSummary) }}</span>
+        </template>
+
+        <template #cell-openAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+        </template>
+
+        <template #cell-closeAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+        </template>
+
+        <template #cell-createdAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+        </template>
+
+        <template #cell-updatedAt="{ value }">
+          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
         </template>
       </StaffDataGrid>
     </DataCard>

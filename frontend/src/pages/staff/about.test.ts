@@ -20,7 +20,7 @@ function createQueryPlugin() {
 }
 
 describe('StaffAboutPage', () => {
-  it('shows staff-facing PortalDots overview', async () => {
+  it('shows staff-facing PortalDots update information', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -51,8 +51,10 @@ describe('StaffAboutPage', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('PortalDots について')
-    expect(wrapper.text()).toContain('学園祭実行委員会と参加企画担当者')
+    expect(wrapper.text()).toContain('PortalDotsについて')
+    expect(wrapper.text()).toContain('バージョン 5.0.2 の詳細')
+    expect(wrapper.text()).toContain('PortalDots(ポータルドット)は')
+    expect(wrapper.text()).toContain('PortalDots で利用している各種ライブラリを更新しました。')
     expect(wrapper.get('a[href="https://www.portaldots.com"]').attributes('target')).toBe('_blank')
   })
 })

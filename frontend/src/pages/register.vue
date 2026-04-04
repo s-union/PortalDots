@@ -28,14 +28,6 @@ const canSubmit = computed(
   () => !isSubmitting.value && (publicConfigQuery.data.value?.portalUnivemailDomainPart?.trim().length ?? 0) > 0
 )
 const resolvedVerifyUrl = computed(() => resolveCurrentAppVerifyUrl(verifyUrl.value))
-const fullUnivemail = computed(() => {
-  const localPart = form.univemailLocalPart.trim()
-  const domainPart = publicConfigQuery.data.value?.portalUnivemailDomainPart?.trim() ?? ''
-  if (localPart === '' || domainPart === '') {
-    return ''
-  }
-  return `${localPart}@${domainPart}`
-})
 
 async function handleSubmit() {
   errorMessage.value = ''
@@ -111,10 +103,6 @@ function resolveCurrentAppVerifyUrl(value: string) {
           </span>
         </div>
       </label>
-
-      <p v-if="fullUnivemail" class="text-sm text-muted">
-        送信先: <strong>{{ fullUnivemail }}</strong>
-      </p>
 
       <div v-if="verifyUrl" class="rounded border border-primary/20 bg-primary-light px-4 py-4 text-sm text-body">
         <p>開発モードのため、認証URLを直接表示しています。</p>

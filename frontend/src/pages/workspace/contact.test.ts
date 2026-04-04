@@ -31,21 +31,8 @@ describe('ContactPage', () => {
 
       if (pathname.endsWith('/contact-categories') && method === 'GET') {
         return jsonResponse([
-          { id: 'contact-general', name: '総合窓口' },
-          { id: 'contact-safety', name: '安全管理' }
-        ])
-      }
-
-      if (pathname.endsWith('/contact') && method === 'GET') {
-        return jsonResponse([
-          {
-            id: 'mail-job-0',
-            categoryId: 'contact-safety',
-            categoryName: '安全管理',
-            subject: '前回のお問い合わせ',
-            status: 'queued',
-            createdAt: '2026-03-12T10:00:00Z'
-          }
+          { id: 'contact-web', name: '公式ウェブサイト掲載内容に関すること' },
+          { id: 'contact-other', name: 'その他' }
         ])
       }
 
@@ -53,9 +40,9 @@ describe('ContactPage', () => {
         return jsonResponse(
           {
             id: 'mail-job-1',
-            categoryId: 'contact-general',
-            categoryName: '総合窓口',
-            subject: '搬入時間について',
+            categoryId: 'contact-other',
+            categoryName: 'その他',
+            subject: 'その他',
             status: 'queued',
             createdAt: '2026-03-13T10:00:00Z'
           },
@@ -70,30 +57,26 @@ describe('ContactPage', () => {
     await wrapper.get('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('前回のお問い合わせ')
-    expect(wrapper.text()).toContain('「総合窓口」に問い合わせを送信しました。')
-    expect(wrapper.get('a[href="/circles/select?redirect=%2Fworkspace%2Fcontact"]').text()).toContain('企画を変更')
+    expect(wrapper.text()).toContain('「その他」に問い合わせを送信しました。')
+    expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain('ユーザー設定')
+    expect(wrapper.get('input[readonly]').element).toHaveProperty('value', 'デモ企画A')
     expect(router.currentRoute.value.fullPath).toBe('/workspace/contact')
   })
 
-  it('shows the empty history state when no contact has been sent', async () => {
+  it('shows the category placeholder when nothing is selected', async () => {
     const { wrapper } = await mountContactPage(async (input, init) => {
       await Promise.resolve()
       const { method, url, pathname } = getRequestMeta(input, init)
 
       if (pathname.endsWith('/contact-categories') && method === 'GET') {
-        return jsonResponse([{ id: 'contact-general', name: '総合窓口' }])
-      }
-
-      if (pathname.endsWith('/contact') && method === 'GET') {
-        return jsonResponse([])
+        return jsonResponse([{ id: 'contact-other', name: 'その他' }])
       }
 
       throw new Error(`Unexpected request: ${method} ${url}`)
     })
 
-    expect(wrapper.text()).toContain('まだお問い合わせは送信していません。')
-    expect(wrapper.text()).toContain('カテゴリを選択してください')
+    expect(wrapper.get('select[name="categoryId"]').text()).toContain('選択してください')
+    expect(wrapper.text()).toContain('お問い合わせ内容')
   })
 
   it('shows the validation message when contact submission fails', async () => {
@@ -102,11 +85,7 @@ describe('ContactPage', () => {
       const { method, url, pathname } = getRequestMeta(input, init)
 
       if (pathname.endsWith('/contact-categories') && method === 'GET') {
-        return jsonResponse([{ id: 'contact-general', name: '総合窓口' }])
-      }
-
-      if (pathname.endsWith('/contact') && method === 'GET') {
-        return jsonResponse([])
+        return jsonResponse([{ id: 'contact-other', name: 'その他' }])
       }
 
       if (pathname.endsWith('/contact') && method === 'POST') {
@@ -114,7 +93,7 @@ describe('ContactPage', () => {
           {
             message: 'The given data was invalid.',
             errors: {
-              subject: ['件名を入力してください']
+              body: ['本文を入力してください']
             }
           },
           422
@@ -125,11 +104,11 @@ describe('ContactPage', () => {
     })
 
     await fillContactForm(wrapper)
-    await wrapper.get('input[name="subject"]').setValue('')
+    await wrapper.get('textarea[name="body"]').setValue('')
     await wrapper.get('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('件名を入力してください')
+    expect(wrapper.text()).toContain('本文を入力してください')
     expect(wrapper.text()).not.toContain('に問い合わせを送信しました')
   })
 
@@ -142,17 +121,12 @@ describe('ContactPage', () => {
         return jsonResponse({ message: 'server error' }, 500)
       }
 
-      if (pathname.endsWith('/contact') && method === 'GET') {
-        return jsonResponse([])
-      }
-
       throw new Error(`Unexpected request: ${method} ${url}`)
     })
 
     const options = wrapper.findAll('select[name="categoryId"] option')
 
-    expect(wrapper.text()).toContain('カテゴリを選択してください')
-    expect(wrapper.text()).toContain('まだお問い合わせは送信していません。')
+    expect(wrapper.text()).toContain('お問い合わせ内容')
     expect(options).toHaveLength(1)
     expect(options[0]?.text()).toBe('選択してください')
   })
@@ -180,7 +154,7 @@ async function mountContactPage(fetchImpl: (input: RequestInfo | URL, init?: Req
     history: createMemoryHistory(),
     routes: [
       { path: '/workspace', component: { template: '<div>workspace</div>' } },
-      { path: '/circles/select', component: { template: '<div>selector</div>' } },
+      { path: '/workspace/settings', component: { template: '<div>settings</div>' } },
       { path: '/workspace/contact', component: ContactPage }
     ]
   })
@@ -200,8 +174,7 @@ async function mountContactPage(fetchImpl: (input: RequestInfo | URL, init?: Req
 }
 
 async function fillContactForm(wrapper: ReturnType<typeof mount>) {
-  await wrapper.get('select[name="categoryId"]').setValue('contact-general')
-  await wrapper.get('input[name="subject"]').setValue('搬入時間について')
+  await wrapper.get('select[name="categoryId"]').setValue('contact-other')
   await wrapper.get('textarea[name="body"]').setValue('9時前の搬入可否を確認したいです。')
 }
 

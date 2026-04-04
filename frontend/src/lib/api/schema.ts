@@ -133,7 +133,15 @@ export const sessionUserSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   canDeleteAccount: z.boolean().default(false),
-  canCreateCircleRegistration: z.boolean().default(true)
+  canCreateCircleRegistration: z.boolean().default(true),
+  studentId: z.string().default(''),
+  univemail: z.string().default(''),
+  lastName: z.string().default(''),
+  lastNameReading: z.string().default(''),
+  firstName: z.string().default(''),
+  firstNameReading: z.string().default(''),
+  contactEmail: z.string().default(''),
+  phoneNumber: z.string().default('')
 })
 
 export const sessionBootstrapSchema = z.object({
@@ -222,14 +230,18 @@ export const staffActivityLogSchema = z.object({
 
 export const staffTagSchema = z.object({
   id: z.string(),
-  name: z.string()
+  name: z.string(),
+  createdAt: z.string().default(''),
+  updatedAt: z.string().default('')
 })
 
 export const staffPlaceSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.number(),
-  notes: z.string()
+  notes: z.string(),
+  createdAt: z.string().default(''),
+  updatedAt: z.string().default('')
 })
 
 export const staffContactCategorySchema = z.object({
@@ -489,6 +501,7 @@ export const existingAnswerConflictSchema = z.object({
 export const staffPageSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
+  body: z.string(),
   notes: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -501,9 +514,7 @@ export const staffPageSummarySchema = z.object({
 
 export const staffPageDocumentSchema = pageDocumentSchema
 
-export const staffPageDetailSchema = staffPageSummarySchema.extend({
-  body: z.string()
-})
+export const staffPageDetailSchema = staffPageSummarySchema
 
 export const staffDocumentSummarySchema = z.object({
   circle: staffManagedCircleSchema.default({ id: '', name: '' }),

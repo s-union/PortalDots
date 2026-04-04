@@ -9,14 +9,25 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import { useMutation } from '@tanstack/vue-query'
+import DataCard from '@/components/layouts/DataCard.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StaffPlaceEditor from '@/components/staff/StaffPlaceEditor.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
-import PageLayout from '@/components/layouts/PageLayout.vue'
-import { buildStaffPlacesExportUrl, useStaffPlacesQuery } from '@/features/staff/masters/places'
+import { formatDateTimeTable } from '@/lib/format/datetime'
+import { usePaginationState } from '@/lib/usePaginationState'
+import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { canDeletePlaces } from '@/features/staff/access/capabilities'
+import {
+  buildDeleteStaffPlaceConfirmMessage,
+  buildStaffPlacesExportUrl,
+  deleteStaffPlace,
+  placeTypeLabel,
+  useStaffPlacesQuery
+} from '@/features/staff/masters/places'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -25,22 +36,84 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const placesQuery = useStaffPlacesQuery(enabled)
 const exportHref = computed(() => buildStaffPlacesExportUrl())
+const canDelete = computed(() => canDeletePlaces(sessionStore.roles, sessionStore.permissions))
 const isEditorOpen = ref(false)
 const selectedPlaceId = ref('')
+const deletingPlaceId = ref('')
 
-const sortedPlaces = computed(() =>
-  [...(placesQuery.data.value ?? [])].sort((left, right) => {
-    if (left.id < right.id) {
-      return -1
-    }
-    if (left.id > right.id) {
-      return 1
-    }
-    return 0
-  })
+const deletePlaceMutation = useMutation({
+  mutationFn: async () => deleteStaffPlace(deletingPlaceId.value, sessionStore.csrfToken),
+  onSuccess: async () => {
+    await placesQuery.refetch()
+  }
+})
+
+const sortKeys = ['placeNumber', 'name', 'typeLabel', 'notes', 'createdAt', 'updatedAt'] as const
+type StaffPlaceSortKey = (typeof sortKeys)[number]
+const isStaffPlaceSortKey = createSortKeyGuard(sortKeys)
+const sort = useSortState<StaffPlaceSortKey>('placeNumber')
+
+const columns: StaffDataGridColumn[] = [
+  { key: 'placeNumber', label: '場所ID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
+  { key: 'name', label: '場所名', sortable: true },
+  { key: 'typeLabel', label: 'タイプ', sortable: true, align: 'center' },
+  { key: 'notes', label: 'スタッフ用メモ', sortable: true },
+  { key: 'createdAt', label: '作成日時', sortable: true },
+  { key: 'updatedAt', label: '更新日時', sortable: true }
+]
+
+const orderedPlaces = computed(() =>
+  [...(placesQuery.data.value ?? [])].sort((left, right) => compareString(left.createdAt, right.createdAt))
 )
 
-const selectedPlace = computed(() => sortedPlaces.value.find((place) => place.id === selectedPlaceId.value) ?? null)
+const placeOrderMap = computed(() => {
+  const order = new Map<string, number>()
+  orderedPlaces.value.forEach((place, index) => {
+    order.set(place.id, index + 1)
+  })
+  return order
+})
+
+const sortedPlaces = computed(() => {
+  const places = orderedPlaces.value
+  const key = sort.sortKey.value
+  const direction = sort.sortDirection.value
+  const order = direction === 'asc' ? 1 : -1
+
+  return [...places].sort((left, right) => {
+    switch (key) {
+      case 'placeNumber':
+        return ((placeOrderMap.value.get(left.id) ?? 0) - (placeOrderMap.value.get(right.id) ?? 0)) * order
+      case 'typeLabel':
+        return compareString(placeTypeLabel(left.type), placeTypeLabel(right.type)) * order
+      default:
+        return compareString(String(left[key]), String(right[key])) * order
+    }
+  })
+})
+
+const pagination = usePaginationState(computed(() => sortedPlaces.value.length))
+
+const rows = computed<StaffDataGridRow[]>(() => {
+  const start = (pagination.page.value - 1) * pagination.pageSize.value
+  const end = start + pagination.pageSize.value
+
+  return sortedPlaces.value.slice(start, end).map((place) => ({
+    id: place.id,
+    placeNumber: String(placeOrderMap.value.get(place.id) ?? start + 1),
+    name: place.name,
+    typeLabel: placeTypeLabel(place.type),
+    notes: place.notes,
+    createdAt: formatDateTimeTable(place.createdAt),
+    updatedAt: formatDateTimeTable(place.updatedAt)
+  }))
+})
+
+const selectedPlace = computed(() => orderedPlaces.value.find((place) => place.id === selectedPlaceId.value) ?? null)
+
+const isBusy = computed(
+  () => placesQuery.isPending.value || placesQuery.isFetching.value || deletePlaceMutation.isPending.value
+)
 
 function openCreateEditor() {
   selectedPlaceId.value = ''
@@ -65,86 +138,128 @@ function handleDeleted() {
   closeEditor()
 }
 
-function resolvePlaceTypeLabel(placeType: number) {
-  switch (placeType) {
-    case 1:
-      return '屋内'
-    case 2:
-      return '屋外'
-    case 3:
-      return '特殊場所'
-    default:
-      return String(placeType)
+async function handleDeletePlace(row: StaffDataGridRow) {
+  const placeId = resolveRowId(row)
+  const place = orderedPlaces.value.find((value) => value.id === placeId)
+  if (!place) {
+    return
   }
+
+  if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffPlaceConfirmMessage(place.name))) {
+    return
+  }
+
+  deletingPlaceId.value = place.id
+  try {
+    await deletePlaceMutation.mutateAsync()
+    if (selectedPlaceId.value === place.id) {
+      selectedPlaceId.value = ''
+      closeEditor()
+    }
+  } finally {
+    deletingPlaceId.value = ''
+  }
+}
+
+function handleSort(nextSortKey: string) {
+  if (isStaffPlaceSortKey(nextSortKey)) {
+    sort.toggleSort(nextSortKey)
+  }
+}
+
+function resolveRowId(row: StaffDataGridRow) {
+  return typeof row.id === 'string' ? row.id : ''
+}
+
+function compareString(left: string, right: string) {
+  return left.localeCompare(right, 'ja')
 }
 </script>
 
 <template>
   <PageLayout>
-    <PageHeader title="場所管理">
-      <template #actions>
-        <button
-          class="rounded bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-hover"
-          type="button"
-          @click="openCreateEditor"
-        >
-          新規場所
-        </button>
-      </template>
-    </PageHeader>
+    <PageHeader title="場所情報管理" />
 
     <StaffSideWindowContainer :is-open="isEditorOpen">
-      <SurfaceCard overflow-hidden>
-        <SurfaceHeader>
-          <template #title>場所一覧</template>
-          <template #description>一覧から選んだ場所を右カラムで編集します。</template>
-          <template #actions>
-            <a
-              class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-              :href="exportHref"
+      <DataCard>
+        <StaffDataGrid
+          :rows="rows"
+          :columns="columns"
+          :page="pagination.page.value"
+          :page-size="pagination.pageSize.value"
+          :total="sortedPlaces.length"
+          :loading="isBusy"
+          :sort-key="sort.sortKey.value"
+          :sort-direction="sort.sortDirection.value"
+          :show-filter-button="true"
+          table-label="場所一覧"
+          empty-message="場所情報はまだありません。"
+          @first="pagination.setFirstPage"
+          @prev="pagination.setPrevPage"
+          @next="pagination.setNextPage"
+          @last="pagination.setLastPage"
+          @reload="placesQuery.refetch()"
+          @sort="handleSort"
+          @update:page-size="pagination.setPageSize"
+        >
+          <template #toolbar>
+            <button
+              class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
+              type="button"
+              @click="openCreateEditor"
             >
+              <i class="fas fa-plus fa-fw" aria-hidden="true" />
+              新規場所
+            </button>
+            <a
+              :href="exportHref"
+              class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
+            >
+              <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
               CSVで出力(場所別企画一覧)
             </a>
           </template>
-        </SurfaceHeader>
 
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-border text-sm">
-            <thead class="bg-surface-light text-left text-muted-2">
-              <tr>
-                <th class="px-5 py-3 font-medium">場所名</th>
-                <th class="px-5 py-3 font-medium">タイプ</th>
-                <th class="px-5 py-3 font-medium">スタッフ用メモ</th>
-                <th class="px-5 py-3 font-medium text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
-              <tr v-for="place in sortedPlaces" :key="place.id">
-                <td class="px-5 py-4">
-                  <p class="font-medium text-body">{{ place.name }}</p>
-                </td>
-                <td class="px-5 py-4">
-                  <span class="text-body">{{ resolvePlaceTypeLabel(place.type) }}</span>
-                </td>
-                <td class="px-5 py-4">
-                  <span class="text-body">{{ place.notes === '' ? '-' : place.notes }}</span>
-                </td>
-                <td class="px-5 py-4">
-                  <div class="flex justify-end gap-2">
-                    <button
-                      class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-                      type="button"
-                      @click="openEditEditor(place.id)"
-                    >
-                      編集
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </SurfaceCard>
+          <template #actions="{ row }">
+            <div class="flex items-center gap-1">
+              <button
+                class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+                type="button"
+                title="編集"
+                @click="openEditEditor(resolveRowId(row))"
+              >
+                <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+              </button>
+              <button
+                v-if="canDelete"
+                class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                title="削除"
+                :disabled="deletePlaceMutation.isPending.value"
+                @click="handleDeletePlace(row)"
+              >
+                <i class="fas fa-trash fa-fw" aria-hidden="true" />
+              </button>
+            </div>
+          </template>
+
+          <template #cell-name="{ value }">
+            <span class="font-medium text-body">{{ value }}</span>
+          </template>
+
+          <template #cell-notes="{ value }">
+            <span>{{ typeof value === 'string' && value.trim().length > 0 ? value : '-' }}</span>
+          </template>
+
+          <template #cell-createdAt="{ value }">
+            <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+          </template>
+
+          <template #cell-updatedAt="{ value }">
+            <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+          </template>
+        </StaffDataGrid>
+      </DataCard>
     </StaffSideWindowContainer>
 
     <StaffSideWindow :is-open="isEditorOpen" @click-close="closeEditor">

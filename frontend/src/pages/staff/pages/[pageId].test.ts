@@ -192,6 +192,7 @@ describe('StaffPageDetailPage', () => {
             JSON.stringify({
               id: 'page-circle-b-1',
               title: '展示担当向け更新連絡',
+              body: '更新後本文です。',
               notes: '更新後メモです。',
               createdAt: '2026-03-05T10:00:00Z',
               updatedAt: '2026-03-06T10:00:00Z',

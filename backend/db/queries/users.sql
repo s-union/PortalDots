@@ -479,7 +479,7 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 LEFT JOIN circle_user ON circle_user.user_id = users.id
 WHERE ($1::text = '' OR
-    users.id ILIKE '%' || $1 || '%' OR
+    users.id::text ILIKE '%' || $1 || '%' OR
     users.display_name ILIKE '%' || $1 || '%' OR
     users.last_name ILIKE '%' || $1 || '%' OR
     users.first_name ILIKE '%' || $1 || '%' OR

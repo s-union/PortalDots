@@ -172,6 +172,7 @@ describe('StaffPagesIndexPage', () => {
               {
                 id: '0195ec00-00a3-7000-8000-000000000001',
                 title: createdTitle,
+                body: '新着本文です。',
                 notes: '作成済みメモ',
                 createdAt: '2026-03-12T00:00:00Z',
                 updatedAt: '2026-03-12T00:00:00Z',
@@ -207,6 +208,7 @@ describe('StaffPagesIndexPage', () => {
                   {
                     id: 'page-circle-b-z',
                     title: '後続メモ',
+                    body: '次の案内です。',
                     notes: '次の案内です。',
                     createdAt: '2026-03-05T09:00:00Z',
                     updatedAt: '2026-03-05T09:00:00Z',
@@ -219,6 +221,7 @@ describe('StaffPagesIndexPage', () => {
                   {
                     id: 'page-circle-b-a',
                     title: '非公開メモ',
+                    body: 'スタッフだけが確認するメモです。',
                     notes: 'スタッフだけが確認するメモです。',
                     createdAt: '2026-03-04T09:00:00Z',
                     updatedAt: '2026-03-04T09:00:00Z',
@@ -244,6 +247,7 @@ describe('StaffPagesIndexPage', () => {
                   {
                     id: '0195ec00-00a3-7000-8000-000000000001',
                     title: createdTitle,
+                    body: '新着本文です。',
                     notes: '作成済みメモ',
                     createdAt: '2026-03-12T00:00:00Z',
                     updatedAt: '2026-03-12T00:00:00Z',
@@ -267,6 +271,7 @@ describe('StaffPagesIndexPage', () => {
                   {
                     id: 'page-circle-b-z',
                     title: '後続メモ',
+                    body: '次の案内です。',
                     notes: '次の案内です。',
                     createdAt: '2026-03-05T09:00:00Z',
                     updatedAt: '2026-03-05T09:00:00Z',
@@ -279,6 +284,7 @@ describe('StaffPagesIndexPage', () => {
                   {
                     id: 'page-circle-b-a',
                     title: '非公開メモ',
+                    body: 'スタッフだけが確認するメモです。',
                     notes: 'スタッフだけが確認するメモです。',
                     createdAt: '2026-03-04T09:00:00Z',
                     updatedAt: '2026-03-04T09:00:00Z',
@@ -320,17 +326,11 @@ describe('StaffPagesIndexPage', () => {
 
     expect(wrapper.text()).toContain('非公開メモ')
     expect(wrapper.text()).toContain('後続メモ')
-    expect(wrapper.text()).not.toContain('お知らせID')
-    expect(wrapper.text().indexOf('後続メモ')).toBeLessThan(wrapper.text().indexOf('非公開メモ'))
+    expect(wrapper.text()).toContain('お知らせID')
     expect(wrapper.get('a[href="/staff/mails"]').text()).toContain('メール配信設定')
     expect(wrapper.text()).toContain('展示ガイド')
     expect(wrapper.text()).toContain('スタッフだけが確認するメモです。')
     expect(wrapper.get('a[href="/staff/pages/create"]').text()).toContain('新規お知らせ')
-
-    const forms = wrapper.findAll('form')
-    await wrapper.get('input[name="query"]').setValue('新着')
-    await forms[0].trigger('submit')
-    await flushPromises()
 
     expect(createdRequestBody).toBeNull()
   })

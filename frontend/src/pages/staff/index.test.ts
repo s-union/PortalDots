@@ -118,6 +118,8 @@ describe('StaffDashboardPage', () => {
     expect(wrapper.text()).toContain('アクティビティログ')
     expect(wrapper.text()).toContain('PortalDots の設定')
     expect(wrapper.text()).toContain('メールキュー')
+    expect(wrapper.text()).toContain('PortalDotsに登録しているユーザーの情報を管理します')
+    expect(wrapper.text()).toContain('PortalDots上に表示するお知らせを管理します')
   })
 
   it('hides demo-only disabled staff cards in demo mode', async () => {

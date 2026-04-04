@@ -53,7 +53,7 @@ describe('DocumentsIndexPage', () => {
         }
       ]
     })
-    await router.push('/workspace/documents')
+    await router.push('/workspace/documents?page=2')
     await router.isReady()
 
     vi.stubGlobal(
@@ -87,7 +87,7 @@ describe('DocumentsIndexPage', () => {
           )
         }
 
-        if (url.includes('/documents?page=1&pageSize=10') && method === 'GET') {
+        if (url.includes('/documents?page=2&pageSize=10') && method === 'GET') {
           return new Response(
             JSON.stringify({
               items: [
@@ -103,9 +103,9 @@ describe('DocumentsIndexPage', () => {
                   downloadUrl: '/v1/documents/document-circle-b-1'
                 }
               ],
-              page: 1,
+              page: 2,
               pageSize: 10,
-              total: 1
+              total: 21
             }),
             {
               status: 200,
@@ -126,8 +126,8 @@ describe('DocumentsIndexPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('展示ガイド')
-    expect(wrapper.text()).toContain('デモ企画B')
     expect(wrapper.text()).toContain('PDFファイル')
     expect(wrapper.text()).toContain('NEW')
+    expect(wrapper.text()).toContain('21 件中')
   })
 })

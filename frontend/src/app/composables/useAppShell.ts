@@ -96,9 +96,6 @@ export function useAppShell() {
   const showFooter = computed(() => route.meta.noFooter !== true)
   const showBottomTabs = computed(() => !isStaffRoute.value && route.meta.noBottomTabs !== true && hasDrawer.value)
   const appModeLabel = computed(() => (isStaffRoute.value ? 'スタッフモード' : '一般モード'))
-  const circleActionLabel = computed(() => (sessionStore.currentCircle === null ? '企画を選択' : '企画を切り替え'))
-  const circleName = computed(() => sessionStore.currentCircle?.name ?? '企画未選択')
-
   const authLabel = computed(() => {
     if (bootstrapQuery.isLoading.value) {
       return '読み込み中'
@@ -109,9 +106,7 @@ export function useAppShell() {
     return `${sessionStore.user?.displayName ?? '不明なユーザー'}としてログイン中`
   })
 
-  const topDescription = computed(() =>
-    isStaffRoute.value ? authLabel.value : `現在の企画: ${sessionStore.currentCircle?.name ?? '未選択'}`
-  )
+  const topDescription = computed(() => '')
 
   const modeSwitchTarget = computed<AppModeSwitchTarget | null>(() => {
     if (sessionStore.isAuthenticated && canAccessStaff.value && !isStaffRoute.value) {
@@ -353,6 +348,9 @@ export function useAppShell() {
   }
 
   const pageTitle = computed(() => {
+    if (route.path === '/') {
+      return appName.value
+    }
     if (route.path === '/login') {
       return 'ログイン'
     }
@@ -363,7 +361,7 @@ export function useAppShell() {
       return '推奨動作環境'
     }
     if (route.path === '/privacy_policy') {
-      return 'プライバシーポリシー'
+      return isDemoMode.value ? '404 Not Found' : 'プライバシーポリシー'
     }
     if (route.path === '/circles/select') {
       return '企画を選択'
@@ -412,8 +410,6 @@ export function useAppShell() {
   return {
     appName,
     authLabel,
-    circleActionLabel,
-    circleName,
     closeDrawer,
     drawerLinks,
     drawerTranslateClass,

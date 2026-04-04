@@ -10,138 +10,98 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import AlertMessage from '@/components/ui/AlertMessage.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import StaffContactCategoryEditor from '@/components/staff/StaffContactCategoryEditor.vue'
+import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
+import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
+import DataCard from '@/components/layouts/DataCard.vue'
+import { type StaffContactCategory, useStaffContactCategoriesQuery } from '@/features/staff/masters/contactCategories'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
-import {
-  buildDeleteStaffContactCategoryConfirmMessage,
-  extractStaffContactCategoryValidationMessage,
-  useCreateStaffContactCategoryMutation,
-  useDeleteStaffContactCategoryMutation,
-  useStaffContactCategoriesQuery,
-  useUpdateStaffContactCategoryMutation,
-  type StaffContactCategory
-} from '@/features/staff/masters/contactCategories'
 import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const categoriesQuery = useStaffContactCategoriesQuery(enabled)
-const createMutation = useCreateStaffContactCategoryMutation()
-const updateMutation = useUpdateStaffContactCategoryMutation()
-const deleteMutation = useDeleteStaffContactCategoryMutation()
-const errorMessage = ref('')
-const form = ref<Omit<StaffContactCategory, 'id'>>({
-  name: '',
-  email: ''
-})
-const editing = ref<Record<string, StaffContactCategory>>({})
+const isEditorOpen = ref(false)
+const selectedCategoryId = ref('')
 
-async function handleCreateCategory() {
-  errorMessage.value = ''
-  try {
-    await createMutation.mutateAsync(form.value)
-    form.value = { name: '', email: '' }
-  } catch (error) {
-    errorMessage.value = extractStaffContactCategoryValidationMessage(error)
-  }
+const categories = computed(() => categoriesQuery.data.value ?? [])
+const selectedCategory = computed<StaffContactCategory | null>(
+  () => categories.value.find((category) => category.id === selectedCategoryId.value) ?? null
+)
+
+function openCreateEditor() {
+  selectedCategoryId.value = ''
+  isEditorOpen.value = true
 }
 
-async function handleUpdateCategory(categoryId: string) {
-  errorMessage.value = ''
-  try {
-    await updateMutation.mutateAsync(editing.value[categoryId])
-  } catch (error) {
-    errorMessage.value = extractStaffContactCategoryValidationMessage(error)
-  }
+function openEditEditor(categoryId: string) {
+  selectedCategoryId.value = categoryId
+  isEditorOpen.value = true
 }
 
-async function handleDeleteCategory(categoryId: string) {
-  const category = categoriesQuery.data.value?.find((value) => value.id === categoryId)
-  if (
-    category &&
-    typeof window !== 'undefined' &&
-    !window.confirm(buildDeleteStaffContactCategoryConfirmMessage(category))
-  ) {
-    return
-  }
+function closeEditor() {
+  isEditorOpen.value = false
+}
 
-  await deleteMutation.mutateAsync(categoryId)
+function handleSaved() {
+  closeEditor()
+}
+
+function handleDeleted() {
+  selectedCategoryId.value = ''
+  closeEditor()
 }
 </script>
 
 <template>
   <PageLayout>
-    <SurfaceCard>
-      <SurfaceHeader>
-        <template #title>お問い合わせ受付設定</template>
-        <template #description
-          >ここでメールアドレスを設定するとポータルからのお問い合わせを振り分けることができます。</template
+    <PageHeader title="お問い合わせ受付設定" />
+
+    <StaffSideWindowContainer :is-open="isEditorOpen">
+      <DataCard class="divide-y divide-border">
+        <div class="px-6 py-5 text-sm leading-7 text-muted">
+          ここでメールアドレスを設定するとポータルからのお問い合わせを振り分けることができます。
+        </div>
+
+        <button
+          class="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition hover:bg-surface-light"
+          type="button"
+          @click="openCreateEditor"
         >
-      </SurfaceHeader>
-
-      <form class="border-b border-border px-6 py-4" @submit.prevent="handleCreateCategory">
-        <div class="grid gap-4 md:grid-cols-2">
-          <input
-            v-model="form.name"
-            class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-            name="name"
-            type="text"
-          />
-          <input
-            v-model="form.email"
-            class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-            name="email"
-            type="email"
-          />
-        </div>
-        <div class="mt-4">
-          <button
-            class="rounded bg-primary px-5 py-3 font-bold text-white transition hover:bg-primary-hover"
-            type="submit"
-          >
+          <span class="inline-flex items-center gap-2 font-medium text-primary">
+            <i class="fas fa-plus fa-fw" aria-hidden="true" />
             メールアドレスを追加
-          </button>
-        </div>
-        <AlertMessage v-if="errorMessage" class="mt-4">{{ errorMessage }}</AlertMessage>
-      </form>
+          </span>
+        </button>
 
-      <div class="divide-y divide-border">
-        <article v-for="category in categoriesQuery.data.value" :key="category.id" class="px-6 py-5">
-          <div class="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-            <input
-              v-model="(editing[category.id] ??= { ...category }).name"
-              class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-              type="text"
-            />
-            <input
-              v-model="(editing[category.id] ??= { ...category }).email"
-              class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-              type="email"
-            />
-            <div class="flex gap-2">
-              <button
-                class="rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-                type="button"
-                @click="handleUpdateCategory(category.id)"
-              >
-                保存
-              </button>
-              <button
-                class="rounded border border-danger px-4 py-2 text-sm text-danger transition hover:bg-danger-light"
-                type="button"
-                @click="handleDeleteCategory(category.id)"
-              >
-                削除
-              </button>
-            </div>
+        <button
+          v-for="category in categories"
+          :key="category.id"
+          class="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition hover:bg-surface-light"
+          type="button"
+          @click="openEditEditor(category.id)"
+        >
+          <div>
+            <div class="font-medium text-body">{{ category.name }}</div>
+            <div class="mt-1 text-sm text-muted">{{ category.email }}</div>
           </div>
-          <p class="mt-3 text-sm text-muted">現在値: {{ category.name }} / {{ category.email }}</p>
-        </article>
-      </div>
-    </SurfaceCard>
+          <span
+            class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+          >
+            <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+          </span>
+        </button>
+      </DataCard>
+    </StaffSideWindowContainer>
+
+    <StaffSideWindow :is-open="isEditorOpen" @click-close="closeEditor">
+      <template #title>
+        {{ selectedCategory ? 'お問い合わせ受付設定を編集' : 'メールアドレスを追加' }}
+      </template>
+      <StaffContactCategoryEditor :category="selectedCategory" @deleted="handleDeleted" @saved="handleSaved" />
+    </StaffSideWindow>
   </PageLayout>
 </template>

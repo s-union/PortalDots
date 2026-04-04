@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { toValue, type MaybeRefOrGetter } from 'vue'
+import { RouterLink } from 'vue-router'
+import ListItemLink from '@/components/ui/ListItemLink.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
@@ -19,6 +22,14 @@ const page = pageQuery.data
 
 <template>
   <article v-if="page" class="space-y-6">
+    <RouterLink
+      class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+      to="/public/pages"
+    >
+      <span aria-hidden="true">‹</span>
+      お知らせ
+    </RouterLink>
+
     <SurfaceCard>
       <div class="border-b border-border px-6 py-5">
         <h2 class="text-2xl font-semibold text-body">{{ page.title }}</h2>
@@ -29,33 +40,32 @@ const page = pageQuery.data
       </div>
       <div class="px-6 py-6">
         <PageMarkdownContent :source="page.body" />
-
-        <div v-if="page.documents && page.documents.length > 0" class="mt-8 border-t border-border pt-6">
-          <h3 class="text-base font-semibold text-body">関連する配布資料</h3>
-          <ul class="mt-4 space-y-3 text-sm">
-            <li v-for="document in page.documents" :key="document.id">
-              <a
-                :href="buildApiUrl(document.downloadUrl)"
-                class="text-primary hover:underline"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
-                <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
-                {{ document.name }}
-              </a>
-              <p class="mt-1 text-xs text-muted">
-                {{ formatDateTimeUpdated(document.updatedAt) }} / {{ document.extension || 'FILE' }} /
-                {{ formatFileSize(document.sizeBytes) }}
-              </p>
-              <p v-if="document.description" class="mt-1 text-muted">
-                {{ document.description }}
-              </p>
-            </li>
-          </ul>
-        </div>
       </div>
     </SurfaceCard>
+
+    <ListPanel v-if="page.documents && page.documents.length > 0" legacy title="関連する配布資料" overflow-hidden>
+      <div class="divide-y divide-border">
+        <ListItemLink
+          v-for="document in page.documents"
+          :key="document.id"
+          legacy
+          :href="buildApiUrl(document.downloadUrl)"
+          new-tab
+        >
+          <template #title>
+            <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
+            <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+            {{ document.name }}
+          </template>
+          <template #meta>
+            {{ formatDateTimeUpdated(document.updatedAt) }}
+            <br />
+            {{ document.extension || 'FILE' }}ファイル • {{ formatFileSize(document.sizeBytes) }}
+          </template>
+          {{ document.description }}
+        </ListItemLink>
+      </div>
+    </ListPanel>
   </article>
 
   <div v-else class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">

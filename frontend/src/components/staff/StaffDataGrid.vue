@@ -201,7 +201,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
       </button>
 
       <div class="grid-controls__group ml-2 inline-flex items-center border-l border-border pl-2">
-        <label class="grid-controls__label inline-flex items-center gap-2 font-medium text-body">
+        <label class="grid-controls__label inline-flex items-center gap-2 whitespace-nowrap font-medium text-body">
           表示件数:
           <select
             class="grid-controls__select min-w-[4.5rem] rounded-[0.45rem] border border-border bg-surface px-2 py-1 text-[0.9rem]"
@@ -217,10 +217,10 @@ function rowKey(row: Record<string, unknown>, index: number) {
       </div>
 
       <div
-        class="grid-controls__summary ml-2 border-l border-border pl-2 text-body max-[860px]:basis-full max-[860px]:border-l-0 max-[860px]:pl-0 min-[861px]:ml-auto"
+        class="grid-controls__summary ml-2 border-l border-border pl-2 whitespace-nowrap text-body max-[860px]:basis-full max-[860px]:border-l-0 max-[860px]:pl-0 min-[861px]:ml-auto"
       >
         <template v-if="total > 0">
-          {{ startIndex }}〜{{ endIndex }}件目 • 全{{ total }}件 (ページ{{ page }} / {{ totalPages }})
+          {{ startIndex }}〜{{ endIndex }}件目・全{{ total }}件 (ページ{{ page }} / {{ totalPages }})
         </template>
         <template v-else>0件</template>
       </div>

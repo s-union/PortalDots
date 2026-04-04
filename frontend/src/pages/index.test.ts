@@ -71,7 +71,7 @@ describe('HomePage', () => {
 
   function makePublicHomeData() {
     return {
-      appName: '門点祭ウェブシステム',
+      appName: 'PortalDots',
       portalDescription: 'PortalDots デモサイトです。',
       portalAdminName: 'PortalDots 実行委員会',
       portalContactEmail: 'support@portaldots.com',
@@ -186,7 +186,7 @@ describe('HomePage', () => {
       isPending: ref(false)
     })
     homeApiMocks.usePublicConfigQuery.mockReturnValue({
-      data: ref({ isDemo: true, appName: '門点祭ウェブシステム' })
+      data: ref({ isDemo: true, appName: 'PortalDots' })
     })
     formsApiMocks.useFormsQuery.mockReturnValue({
       data: ref([]),
@@ -208,7 +208,7 @@ describe('HomePage', () => {
     await vi.waitFor(() => {
       const participationTypeLink = findListItemLinkByText(wrapper, '展示')
 
-      expect(wrapper.text()).toContain('門点祭ウェブシステム')
+      expect(wrapper.text()).toContain('PortalDots')
       expect(wrapper.text()).toContain('PortalDots デモサイトへようこそ！')
       expect(wrapper.text()).toContain('ログイン方法')
       expect(wrapper.text()).toContain('demo-circle')
@@ -243,7 +243,7 @@ describe('HomePage', () => {
       isPending: ref(false)
     })
     homeApiMocks.usePublicConfigQuery.mockReturnValue({
-      data: ref({ isDemo: false, appName: '門点祭ウェブシステム' })
+      data: ref({ isDemo: false, appName: 'PortalDots' })
     })
     formsApiMocks.useFormsQuery.mockReturnValue({
       data: ref([]),
@@ -263,10 +263,12 @@ describe('HomePage', () => {
 
     await vi.waitFor(() => {
       const participationTypeLink = findListItemLinkByText(wrapper, '展示')
+      const pageLink = findListItemLinkByText(wrapper, 'お知らせサンプルです。')
 
       expect(wrapper.text()).toContain('PortalDots デモサイトへようこそ！')
       expect(wrapper.text()).toContain('お知らせサンプルです。')
       expect(wrapper.text()).toContain('配布資料PDFのサンプルです。')
+      expect(pageLink?.text()).toContain('NEW')
       expect(participationTypeLink?.props('to')).toBe('/circles/new?participation_type=pt-exhibit')
       expect(wrapper.find('a[href="/login"]').exists()).toBe(false)
       expect(wrapper.find('a[href="/register"]').exists()).toBe(false)
@@ -297,7 +299,7 @@ describe('HomePage', () => {
       isPending: ref(false)
     })
     homeApiMocks.usePublicConfigQuery.mockReturnValue({
-      data: ref({ isDemo: false, appName: '門点祭ウェブシステム' })
+      data: ref({ isDemo: false, appName: 'PortalDots' })
     })
     formsApiMocks.useFormsQuery.mockReturnValue({
       data: ref(makeFormsData()),

@@ -9,89 +9,163 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import ListPanel from '@/components/ui/ListPanel.vue'
-import PaginationFooter from '@/components/ui/PaginationFooter.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import { RouterLink } from 'vue-router'
+import DataCard from '@/components/layouts/DataCard.vue'
+import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import { useStaffStatusQuery } from '@/features/staff/status/api'
-import { canManagePermissions } from '@/features/staff/access/capabilities'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import { canEditPermissions, canManagePermissions } from '@/features/staff/access/capabilities'
 import { useStaffPermissionsQuery } from '@/features/staff/permissions/api'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const canReadPermissions = computed(() => canManagePermissions(sessionStore.roles, sessionStore.permissions))
+const canUpdatePermissions = computed(() => canEditPermissions(sessionStore.roles, sessionStore.permissions))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const page = ref(1)
-const pageSize = 20
+const pageSize = ref(25)
+
 const permissionsQuery = useStaffPermissionsQuery(
   computed(() => canReadPermissions.value && staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
     page: page.value,
-    pageSize
+    pageSize: pageSize.value
   }))
 )
 
-function movePage(nextPage: number) {
-  page.value = nextPage
+const columns: StaffDataGridColumn[] = [
+  { key: 'userNumber', label: 'ユーザーID', align: 'right', cellClass: 'font-medium text-body' },
+  { key: 'displayName', label: '名前', cellClass: 'whitespace-normal min-w-[18rem]' },
+  { key: 'permissionSummary', label: '割り当てられた権限', cellClass: 'whitespace-normal min-w-[18rem]' }
+]
+
+const rows = computed<StaffDataGridRow[]>(() => {
+  const items = permissionsQuery.data.value?.items ?? []
+  const start = (page.value - 1) * pageSize.value
+
+  return items.map((user, index) => ({
+    id: user.id,
+    userNumber: String(start + index + 1),
+    displayName: user.displayName,
+    loginIds: user.loginIds,
+    roles: user.roles,
+    permissions: user.permissions,
+    permissionSummary:
+      user.permissions.length > 0
+        ? user.permissions.map((permission) => permission.shortName).join(', ')
+        : '利用可能な機能なし',
+    isEditable: user.isEditable
+  }))
+})
+
+const total = computed(() => permissionsQuery.data.value?.total ?? 0)
+const resolvedPageSize = computed(() => permissionsQuery.data.value?.pageSize ?? pageSize.value)
+const isBusy = computed(() => permissionsQuery.isPending.value || permissionsQuery.isFetching.value)
+
+function resolveRowId(row: StaffDataGridRow) {
+  return typeof row.id === 'string' ? row.id : ''
+}
+
+function resolvePermissionSummary(row: StaffDataGridRow) {
+  if (!Array.isArray(row.permissions)) {
+    return []
+  }
+
+  return row.permissions
+    .filter(
+      (permission): permission is { shortName: string } =>
+        typeof permission === 'object' && permission !== null && 'shortName' in permission
+    )
+    .map((permission) => permission.shortName)
+}
+
+function setFirstPage() {
+  page.value = 1
+}
+
+function setPrevPage() {
+  page.value = Math.max(1, page.value - 1)
+}
+
+function setNextPage() {
+  const totalPages = Math.max(1, Math.ceil(total.value / resolvedPageSize.value))
+  page.value = Math.min(totalPages, page.value + 1)
+}
+
+function setLastPage() {
+  page.value = Math.max(1, Math.ceil(total.value / resolvedPageSize.value))
+}
+
+function handlePageSize(nextPageSize: number) {
+  pageSize.value = nextPageSize
+  page.value = 1
 }
 </script>
 
 <template>
   <PageLayout>
-    <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Staff Permissions</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">スタッフの権限設定</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">スタッフ権限ユーザーごとに、利用可能な permission を管理します。</p>
-    </SurfaceCard>
+    <PageHeader title="スタッフの権限設定" />
 
-    <ListPanel title="権限対象ユーザー" overflow-hidden>
+    <DataCard>
       <div v-if="!canReadPermissions" class="px-6 py-6 text-sm text-muted">
-        この画面の閲覧には `staff.permissions.read` 系または `user_manager / admin` が必要です。
-      </div>
-      <div v-else-if="permissionsQuery.isPending.value" class="px-6 py-6 text-sm text-muted">読み込み中...</div>
-      <div v-else-if="(permissionsQuery.data.value?.items.length ?? 0) === 0" class="px-6 py-6 text-sm text-muted">
-        権限管理対象のユーザーは見つかりませんでした。
-      </div>
-      <div v-else class="divide-y divide-border">
-        <RouterLink
-          v-for="user in permissionsQuery.data.value?.items"
-          :key="user.id"
-          :to="`/staff/permissions/${user.id}`"
-          class="block px-6 py-5 transition hover:bg-surface-light"
-        >
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="space-y-2">
-              <p class="text-sm font-semibold text-body">{{ user.displayName }}</p>
-              <p class="text-xs text-muted">{{ user.loginIds.join(', ') }}</p>
-              <div class="flex flex-wrap gap-2">
-                <StatusBadge v-for="role in user.roles" :key="role" tone="muted">{{ role }}</StatusBadge>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <StatusBadge v-for="permission in user.permissions" :key="permission.name" tone="primary">
-                  {{ permission.shortName }}
-                </StatusBadge>
-                <StatusBadge v-if="user.permissions.length === 0" tone="muted">権限なし</StatusBadge>
-              </div>
-            </div>
-            <span class="text-sm text-primary">
-              {{ user.isEditable ? '編集へ' : '閲覧のみ' }}
-            </span>
-          </div>
-        </RouterLink>
+        この画面の閲覧には `staff.permissions.read` 系または `admin` が必要です。
       </div>
 
-      <template #footer>
-        <PaginationFooter
-          v-if="permissionsQuery.data.value && permissionsQuery.data.value.total > 0"
-          :page="page"
-          :page-size="permissionsQuery.data.value.pageSize"
-          :total="permissionsQuery.data.value.total"
-          :bordered="false"
-          class="px-6"
-          @update:page="movePage"
-        />
-      </template>
-    </ListPanel>
+      <StaffDataGrid
+        v-else
+        :rows="rows"
+        :columns="columns"
+        :page="page"
+        :page-size="resolvedPageSize"
+        :total="total"
+        :loading="isBusy"
+        :show-filter-button="true"
+        table-label="スタッフ権限一覧"
+        empty-message="権限管理対象のユーザーは見つかりませんでした。"
+        @first="setFirstPage"
+        @prev="setPrevPage"
+        @next="setNextPage"
+        @last="setLastPage"
+        @reload="permissionsQuery.refetch()"
+        @update:page-size="handlePageSize"
+      >
+        <template #actions="{ row }">
+          <RouterLink
+            v-if="row.isEditable || canUpdatePermissions"
+            :to="`/staff/permissions/${encodeURIComponent(resolveRowId(row))}`"
+            class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
+            title="編集"
+          >
+            <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+          </RouterLink>
+          <span v-else class="inline-flex h-8 w-8 items-center justify-center text-muted" title="閲覧のみ">
+            <i class="fas fa-lock fa-fw" aria-hidden="true" />
+          </span>
+        </template>
+
+        <template #cell-displayName="{ row }">
+          <div class="space-y-1">
+            <div class="font-medium text-body">{{ row.displayName }}</div>
+            <div class="text-xs text-muted">{{ Array.isArray(row.loginIds) ? row.loginIds.join(', ') : '-' }}</div>
+          </div>
+        </template>
+
+        <template #cell-permissionSummary="{ row }">
+          <div class="space-y-1">
+            <div class="text-body">
+              {{
+                resolvePermissionSummary(row).length > 0
+                  ? resolvePermissionSummary(row).join(', ')
+                  : '利用可能な機能なし'
+              }}
+            </div>
+            <div v-if="Array.isArray(row.roles) && row.roles.length > 0" class="text-xs text-muted">
+              {{ row.roles.join(', ') }}
+            </div>
+          </div>
+        </template>
+      </StaffDataGrid>
+    </DataCard>
   </PageLayout>
 </template>

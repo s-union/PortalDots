@@ -37,8 +37,8 @@ describe('StaffTagsPage', () => {
     })
 
     const tags = [
-      { id: 'tag-2', name: '展示' },
-      { id: 'tag-1', name: '飲食' }
+      { id: 'tag-2', name: '展示', createdAt: '2021-06-07T12:42:19+09:00', updatedAt: '2021-06-07T12:42:19+09:00' },
+      { id: 'tag-1', name: '飲食', createdAt: '2021-06-07T12:42:18+09:00', updatedAt: '2021-06-07T12:42:18+09:00' }
     ]
 
     const router = createRouter({
@@ -75,7 +75,12 @@ describe('StaffTagsPage', () => {
           })
         }
         if (pathname.endsWith('/staff/tags') && method === 'POST') {
-          tags.push({ id: 'tag-3', name: '新規タグ' })
+          tags.push({
+            id: 'tag-3',
+            name: '新規タグ',
+            createdAt: '2021-06-07T12:42:20+09:00',
+            updatedAt: '2021-06-07T12:42:20+09:00'
+          })
           return new Response(JSON.stringify(tags[2]), {
             status: 201,
             headers: { 'Content-Type': 'application/json' }
@@ -83,7 +88,12 @@ describe('StaffTagsPage', () => {
         }
         if (pathname.endsWith('/staff/tags/tag-1') && method === 'PUT') {
           const targetIndex = tags.findIndex((tag) => tag.id === 'tag-1')
-          tags[targetIndex] = { id: 'tag-1', name: '更新タグ' }
+          tags[targetIndex] = {
+            id: 'tag-1',
+            name: '更新タグ',
+            createdAt: '2021-06-07T12:42:18+09:00',
+            updatedAt: '2021-06-07T12:42:21+09:00'
+          }
           return new Response(JSON.stringify(tags[targetIndex]), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
@@ -108,9 +118,9 @@ describe('StaffTagsPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('飲食')
-    expect(wrapper.text()).not.toContain('タグID')
+    expect(wrapper.text()).toContain('タグID')
     expect(wrapper.text().indexOf('飲食')).toBeLessThan(wrapper.text().indexOf('展示'))
-    expect(wrapper.get('a[href$="/staff/tags/export"]').text()).toContain('CSVで出力')
+    expect(wrapper.get('a[href$="/v1/staff/tags/export"]').text()).toContain('CSVで出力')
 
     await wrapper.get('button[type="button"]').trigger('click')
     await flushPromises()
@@ -130,8 +140,7 @@ describe('StaffTagsPage', () => {
 
     expect(wrapper.text()).toContain('新規タグ')
 
-    const editButtons = wrapper.findAll('button[type="button"]').filter((button) => button.text().includes('編集'))
-    await editButtons[0]?.trigger('click')
+    await wrapper.find('button[title="編集"]').trigger('click')
     await flushPromises()
 
     const editNameInput = document.body.querySelector('input[name="name"]')
@@ -148,23 +157,12 @@ describe('StaffTagsPage', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('更新タグ')
 
-    const reopenEditButtons = wrapper
-      .findAll('button[type="button"]')
-      .filter((button) => button.text().includes('編集'))
-    await reopenEditButtons[0]?.trigger('click')
-    await flushPromises()
-
-    const deleteButton = Array.from(document.body.querySelectorAll('button[type="button"]')).find((button) =>
-      button.textContent?.includes('削除')
-    )
-    if (!(deleteButton instanceof HTMLButtonElement)) {
-      throw new Error('delete button not found')
-    }
-    deleteButton.click()
+    const deleteButton = wrapper.find('button[title="削除"]')
+    await deleteButton.trigger('click')
     await flushPromises()
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('本当に「更新タグ」タグを削除しますか？'))
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('全ユーザー公開になります'))
-    expect(wrapper.findAll('button[class*="border-danger"]').length).toBe(0)
+    expect(wrapper.text()).not.toContain('更新タグ')
   })
 
   it('loads tags without current circle', async () => {
@@ -204,10 +202,20 @@ describe('StaffTagsPage', () => {
       }
       if (pathname.endsWith('/staff/tags') && method === 'GET') {
         return Promise.resolve(
-          new Response(JSON.stringify([{ id: 'tag-1', name: '飲食' }]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
+          new Response(
+            JSON.stringify([
+              {
+                id: 'tag-1',
+                name: '飲食',
+                createdAt: '2021-06-07T12:42:19+09:00',
+                updatedAt: '2021-06-07T12:42:19+09:00'
+              }
+            ]),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
         )
       }
 
