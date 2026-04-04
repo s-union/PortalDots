@@ -3,7 +3,6 @@ package answer
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
@@ -186,7 +185,7 @@ func (r *SQLCRepository) ListUploadsByAnswer(answerID string) []Upload {
 			AnswerID:   row.AnswerID,
 			FormID:     row.FormID,
 			CircleID:   row.CircleID,
-			QuestionID: nullableTextValue(row.QuestionID),
+			QuestionID: derefString(row.QuestionID),
 			Filename:   row.Filename,
 			MimeType:   row.MimeType,
 			SizeBytes:  row.SizeBytes,
@@ -212,7 +211,7 @@ func (r *SQLCRepository) FindUpload(formID, circleID, uploadID string) (Upload, 
 func (r *SQLCRepository) FindUploadByAnswerAndQuestion(answerID, questionID string) (Upload, bool) {
 	row, err := r.queries.GetAnswerUploadFileByAnswerAndQuestion(context.Background(), dbgen.GetAnswerUploadFileByAnswerAndQuestionParams{
 		AnswerID:   answerID,
-		QuestionID: nullableText(questionID),
+		QuestionID: optionalString(questionID),
 	})
 	if err != nil {
 		return Upload{}, false
@@ -250,7 +249,7 @@ func (r *SQLCRepository) AddUploadToAnswer(answerID, questionID, filename, mimeT
 	if questionID != "" {
 		if _, err := queries.DeleteAnswerUploadsByAnswerAndQuestion(ctx, dbgen.DeleteAnswerUploadsByAnswerAndQuestionParams{
 			AnswerID:   answerID,
-			QuestionID: nullableText(questionID),
+			QuestionID: optionalString(questionID),
 		}); err != nil {
 			return Upload{}, false
 		}
@@ -260,7 +259,7 @@ func (r *SQLCRepository) AddUploadToAnswer(answerID, questionID, filename, mimeT
 		AnswerID:   answerID,
 		FormID:     answerRow.FormID,
 		CircleID:   answerRow.CircleID,
-		QuestionID: nullableText(questionID),
+		QuestionID: optionalString(questionID),
 		Filename:   filename,
 		MimeType:   mimeType,
 		Content:    content,
@@ -279,7 +278,7 @@ func (r *SQLCRepository) AddUploadToAnswer(answerID, questionID, filename, mimeT
 		AnswerID:   row.AnswerID,
 		FormID:     row.FormID,
 		CircleID:   row.CircleID,
-		QuestionID: nullableTextValue(row.QuestionID),
+		QuestionID: derefString(row.QuestionID),
 		Filename:   row.Filename,
 		MimeType:   row.MimeType,
 		SizeBytes:  row.SizeBytes,
@@ -366,7 +365,7 @@ func mapUploadFileByIDRow(row dbgen.GetAnswerUploadFileByIDRow) Upload {
 		AnswerID:   row.AnswerID,
 		FormID:     row.FormID,
 		CircleID:   row.CircleID,
-		QuestionID: nullableTextValue(row.QuestionID),
+		QuestionID: derefString(row.QuestionID),
 		Filename:   row.Filename,
 		MimeType:   row.MimeType,
 		SizeBytes:  row.SizeBytes,
@@ -381,7 +380,7 @@ func mapUploadFileByQuestionRow(row dbgen.GetAnswerUploadFileByAnswerAndQuestion
 		AnswerID:   row.AnswerID,
 		FormID:     row.FormID,
 		CircleID:   row.CircleID,
-		QuestionID: nullableTextValue(row.QuestionID),
+		QuestionID: derefString(row.QuestionID),
 		Filename:   row.Filename,
 		MimeType:   row.MimeType,
 		SizeBytes:  row.SizeBytes,
@@ -390,20 +389,17 @@ func mapUploadFileByQuestionRow(row dbgen.GetAnswerUploadFileByAnswerAndQuestion
 	}
 }
 
-func nullableText(value string) pgtype.Text {
+func optionalString(value string) *string {
 	if value == "" {
-		return pgtype.Text{}
+		return nil
 	}
-
-	return pgtype.Text{
-		String: value,
-		Valid:  true,
-	}
+	s := value
+	return &s
 }
 
-func nullableTextValue(value pgtype.Text) string {
-	if !value.Valid {
+func derefString(value *string) string {
+	if value == nil {
 		return ""
 	}
-	return value.String
+	return *value
 }

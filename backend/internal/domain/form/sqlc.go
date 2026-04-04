@@ -18,7 +18,7 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 }
 
 func (r *SQLCRepository) ListByCircle(circleID string) []Form {
-	rows, err := r.queries.ListStaffFormsByCircle(context.Background(), nullableText(circleID))
+	rows, err := r.queries.ListStaffFormsByCircle(context.Background(), optionalString(circleID))
 	if err != nil {
 		return nil
 	}
@@ -36,7 +36,7 @@ func (r *SQLCRepository) ListByCircle(circleID string) []Form {
 }
 
 func (r *SQLCRepository) ListByCircleForStaff(circleID string) []Form {
-	rows, err := r.queries.ListStaffFormsByCircle(context.Background(), nullableText(circleID))
+	rows, err := r.queries.ListStaffFormsByCircle(context.Background(), optionalString(circleID))
 	if err != nil {
 		return nil
 	}
@@ -51,7 +51,7 @@ func (r *SQLCRepository) ListByCircleForStaff(circleID string) []Form {
 
 func (r *SQLCRepository) FindByCircle(circleID, formID string) (Form, bool) {
 	row, err := r.queries.GetStaffFormByID(context.Background(), dbgen.GetStaffFormByIDParams{
-		CircleID: nullableText(circleID),
+		CircleID: optionalString(circleID),
 		ID:       formID,
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func (r *SQLCRepository) FindByCircle(circleID, formID string) (Form, bool) {
 
 func (r *SQLCRepository) FindByCircleForStaff(circleID, formID string) (Form, bool) {
 	row, err := r.queries.GetStaffFormByID(context.Background(), dbgen.GetStaffFormByIDParams{
-		CircleID: nullableText(circleID),
+		CircleID: optionalString(circleID),
 		ID:       formID,
 	})
 	if err != nil {
@@ -107,7 +107,7 @@ func (r *SQLCRepository) Create(
 	}
 
 	row, err := r.queries.CreateForm(context.Background(), dbgen.CreateFormParams{
-		CircleID:            nullableText(circleID),
+		CircleID:            optionalString(circleID),
 		Name:                name,
 		Description:         description,
 		IsPublic:            isPublic,
@@ -147,7 +147,7 @@ func (r *SQLCRepository) Update(
 	}
 
 	row, err := r.queries.UpdateForm(context.Background(), dbgen.UpdateFormParams{
-		CircleID:            nullableText(circleID),
+		CircleID:            optionalString(circleID),
 		ID:                  formID,
 		Name:                name,
 		Description:         description,
@@ -207,7 +207,7 @@ func (r *SQLCRepository) UpdateByID(
 
 func (r *SQLCRepository) Delete(circleID, formID string) bool {
 	rows, err := r.queries.DeleteForm(context.Background(), dbgen.DeleteFormParams{
-		CircleID: nullableText(circleID),
+		CircleID: optionalString(circleID),
 		ID:       formID,
 	})
 	if err != nil {
@@ -321,7 +321,7 @@ func mapUpdateAnyRowToForm(row dbgen.UpdateAnyFormByIDRow) Form {
 
 func buildForm(
 	id string,
-	circleID pgtype.Text,
+	circleID *string,
 	name string,
 	description string,
 	isPublic bool,
@@ -339,7 +339,7 @@ func buildForm(
 	updatedAt := pgutil.FormatTimestamptz(updatedAtValue)
 	return Form{
 		ID:                  id,
-		CircleID:            nullableTextValue(circleID),
+		CircleID:            derefString(circleID),
 		Name:                name,
 		Description:         description,
 		IsPublic:            isPublic,
@@ -354,16 +354,17 @@ func buildForm(
 	}
 }
 
-func nullableText(value string) pgtype.Text {
+func optionalString(value string) *string {
 	if value == "" {
-		return pgtype.Text{}
+		return nil
 	}
-	return pgtype.Text{String: value, Valid: true}
+	s := value
+	return &s
 }
 
-func nullableTextValue(value pgtype.Text) string {
-	if !value.Valid {
+func derefString(value *string) string {
+	if value == nil {
 		return ""
 	}
-	return value.String
+	return *value
 }

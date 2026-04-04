@@ -248,7 +248,7 @@ func seedCircles(ctx context.Context, q *dbgen.Queries, circles []config.Circle)
 			NameYomi:              item.NameYomi,
 			GroupName:             item.GroupName,
 			GroupNameYomi:         item.GroupNameYomi,
-			ParticipationTypeID:   nullableText(item.ParticipationTypeID),
+			ParticipationTypeID:   optionalString(item.ParticipationTypeID),
 			ParticipationTypeName: item.ParticipationTypeName,
 			Tags:                  item.Tags,
 		}); err != nil {
@@ -290,7 +290,7 @@ func seedForms(ctx context.Context, q *dbgen.Queries, forms []config.Form) error
 
 		if err := q.SeedUpsertForm(ctx, dbgen.SeedUpsertFormParams{
 			ID:                  item.ID,
-			CircleID:            nullableText(item.CircleID),
+			CircleID:            optionalString(item.CircleID),
 			Name:                item.Name,
 			Description:         item.Description,
 			IsPublic:            item.IsPublic,
@@ -434,11 +434,12 @@ func parseRFC3339(value string) (time.Time, error) {
 	return parsed, nil
 }
 
-func nullableText(value string) pgtype.Text {
+func optionalString(value string) *string {
 	if value == "" {
-		return pgtype.Text{}
+		return nil
 	}
-	return pgtype.Text{String: value, Valid: true}
+	s := value
+	return &s
 }
 
 func toTimestamptz(t time.Time) pgtype.Timestamptz {

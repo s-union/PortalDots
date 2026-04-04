@@ -19,7 +19,7 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 
 func (r *SQLCRepository) Enqueue(ctx context.Context, circleID, createdByUserID, subject, body string, recipients []string) (Job, error) {
 	row, err := r.queries.CreateMailJob(ctx, dbgen.CreateMailJobParams{
-		CircleID:        pgutil.Text(circleID),
+		CircleID:        pgutil.OptionalString(circleID),
 		Subject:         subject,
 		Body:            body,
 		Recipients:      recipients,
@@ -47,7 +47,7 @@ func (r *SQLCRepository) ListAll() []Job {
 }
 
 func (r *SQLCRepository) ListByCircle(circleID string) []Job {
-	rows, err := r.queries.ListMailJobsByCircle(context.Background(), pgutil.Text(circleID))
+	rows, err := r.queries.ListMailJobsByCircle(context.Background(), pgutil.OptionalString(circleID))
 	if err != nil {
 		return nil
 	}
@@ -84,7 +84,7 @@ func (r *SQLCRepository) MarkSent(id string, deliveredAt time.Time) bool {
 }
 
 func (r *SQLCRepository) DeleteByCircle(circleID string) {
-	_ = r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.Text(circleID))
+	_ = r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.OptionalString(circleID))
 }
 
 func (r *SQLCRepository) DeleteAll() {
@@ -94,7 +94,7 @@ func (r *SQLCRepository) DeleteAll() {
 func mapJob(row dbgen.MailJob) Job {
 	job := Job{
 		ID:              row.ID,
-		CircleID:        row.CircleID.String,
+		CircleID:        pgutil.DerefString(row.CircleID),
 		Subject:         row.Subject,
 		Body:            row.Body,
 		Recipients:      row.Recipients,

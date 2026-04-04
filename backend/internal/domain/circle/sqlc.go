@@ -44,7 +44,7 @@ func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 			NameYomi:              row.NameYomi,
 			GroupName:             row.GroupName,
 			GroupNameYomi:         row.GroupNameYomi,
-			ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+			ParticipationTypeID:   derefString(row.ParticipationTypeID),
 			ParticipationTypeName: row.ParticipationTypeName,
 			Tags:                  append([]string{}, row.Tags...),
 			InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -55,7 +55,7 @@ func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 			Status:                row.Status,
 			StatusReason:          row.StatusReason,
 			StatusSetAt:           nullableTime(row.StatusSetAt),
-			StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+			StatusSetByID:         row.StatusSetBy,
 			Places:                []string{},
 		})
 	}
@@ -159,7 +159,7 @@ func (c *SQLCCatalog) Create(name, nameYomi, groupName, groupNameYomi, participa
 	row, err := c.queries.CreateCircle(context.Background(), dbgen.CreateCircleParams{
 		Name:                  name,
 		GroupName:             groupName,
-		ParticipationTypeID:   nullableText(participationTypeID),
+		ParticipationTypeID:   optionalString(participationTypeID),
 		ParticipationTypeName: participationTypeName,
 		Tags:                  tags,
 	})
@@ -214,7 +214,7 @@ func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi,
 		ID:                    circleID,
 		Name:                  name,
 		GroupName:             groupName,
-		ParticipationTypeID:   nullableText(participationTypeID),
+		ParticipationTypeID:   optionalString(participationTypeID),
 		ParticipationTypeName: participationTypeName,
 		Tags:                  tags,
 	})
@@ -297,7 +297,7 @@ func (c *SQLCCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, e
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -308,7 +308,7 @@ func (c *SQLCCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, e
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}, nil
 }
@@ -319,7 +319,7 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 		NameYomi:              params.NameYomi,
 		GroupName:             params.GroupName,
 		GroupNameYomi:         params.GroupNameYomi,
-		ParticipationTypeID:   nullableText(params.ParticipationTypeID),
+		ParticipationTypeID:   optionalString(params.ParticipationTypeID),
 		ParticipationTypeName: params.ParticipationTypeName,
 		Notes:                 params.Notes,
 		CanChangeGroupName:    params.CanChangeGroupName,
@@ -334,7 +334,7 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -345,7 +345,7 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}
 
@@ -393,7 +393,7 @@ func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params Upd
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -404,7 +404,7 @@ func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params Upd
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}, nil
 }
@@ -457,7 +457,7 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -468,7 +468,7 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}, nil
 }
@@ -625,7 +625,7 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -636,7 +636,7 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}, nil
 }
@@ -675,7 +675,7 @@ func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error)
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -686,7 +686,7 @@ func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error)
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}, nil
 }
@@ -706,7 +706,7 @@ func (c *SQLCCatalog) FindByInvitationToken(token string) (Circle, error) {
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -717,7 +717,7 @@ func (c *SQLCCatalog) FindByInvitationToken(token string) (Circle, error) {
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}, nil
 }
@@ -744,7 +744,7 @@ func circleFromListRow(row dbgen.ListCirclesRow) Circle {
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -755,7 +755,7 @@ func circleFromListRow(row dbgen.ListCirclesRow) Circle {
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}
 }
@@ -767,7 +767,7 @@ func circleFromGetByIDRow(row dbgen.GetCircleByIDRow) Circle {
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -778,7 +778,7 @@ func circleFromGetByIDRow(row dbgen.GetCircleByIDRow) Circle {
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}
 }
@@ -790,7 +790,7 @@ func circleFromGetUserCircleRow(row dbgen.GetUserCircleRow) Circle {
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -801,7 +801,7 @@ func circleFromGetUserCircleRow(row dbgen.GetUserCircleRow) Circle {
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                []string{},
 	}
 }
@@ -813,7 +813,7 @@ func circleFromSetStatusRow(row dbgen.SetCircleStatusRow, places []string) Circl
 		NameYomi:              row.NameYomi,
 		GroupName:             row.GroupName,
 		GroupNameYomi:         row.GroupNameYomi,
-		ParticipationTypeID:   nullableTextValue(row.ParticipationTypeID),
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
 		ParticipationTypeName: row.ParticipationTypeName,
 		Tags:                  append([]string{}, row.Tags...),
 		InvitationToken:       nullableTextValue(row.InvitationToken),
@@ -822,11 +822,12 @@ func circleFromSetStatusRow(row dbgen.SetCircleStatusRow, places []string) Circl
 		Status:                row.Status,
 		StatusReason:          row.StatusReason,
 		StatusSetAt:           nullableTime(row.StatusSetAt),
-		StatusSetByID:         nullableTextPtr(row.StatusSetBy),
+		StatusSetByID:         row.StatusSetBy,
 		Places:                places,
 	}
 }
 
+// nullableText converts a string to pgtype.Text for text (non-UUID) columns.
 func nullableText(value string) pgtype.Text {
 	if value == "" {
 		return pgtype.Text{}
@@ -834,6 +835,7 @@ func nullableText(value string) pgtype.Text {
 	return pgtype.Text{String: value, Valid: true}
 }
 
+// nullableTextValue extracts a string from pgtype.Text for text (non-UUID) columns.
 func nullableTextValue(value pgtype.Text) string {
 	if !value.Valid {
 		return ""
@@ -841,12 +843,19 @@ func nullableTextValue(value pgtype.Text) string {
 	return value.String
 }
 
-func nullableTextPtr(value pgtype.Text) *string {
-	if !value.Valid {
+func optionalString(value string) *string {
+	if value == "" {
 		return nil
 	}
-	s := value.String
+	s := value
 	return &s
+}
+
+func derefString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func nullableTime(value pgtype.Timestamptz) *time.Time {

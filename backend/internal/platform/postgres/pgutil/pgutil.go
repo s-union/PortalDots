@@ -44,3 +44,18 @@ func Int4ToPtr(value pgtype.Int4) *int32 {
 	result := value.Int32
 	return &result
 }
+
+func OptionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	s := value
+	return &s
+}
+
+func DerefString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}

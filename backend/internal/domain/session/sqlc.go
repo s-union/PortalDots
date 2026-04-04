@@ -40,7 +40,7 @@ func (s *SQLCStore) Create(user *auth.User) (string, Session, error) {
 		ID:                 id,
 		UserID:             user.ID,
 		CsrfToken:          csrfToken,
-		CurrentCircleID:    pgutil.Text(""),
+		CurrentCircleID:    nil,
 		StaffAuthorized:    false,
 		StaffVerifyCode:    "",
 		StaffVerifyExpires: pgutil.Timestamptz(time.Time{}),
@@ -82,8 +82,8 @@ func (s *SQLCStore) Get(id string) (Session, bool) {
 	}
 
 	currentCircleID := ""
-	if sessionRow.CurrentCircleID.Valid {
-		currentCircleID = sessionRow.CurrentCircleID.String
+	if sessionRow.CurrentCircleID != nil {
+		currentCircleID = *sessionRow.CurrentCircleID
 	}
 
 	return Session{
@@ -119,7 +119,7 @@ func (s *SQLCStore) Update(id string, update func(*Session)) bool {
 
 	err := s.queries.UpdateSession(context.Background(), dbgen.UpdateSessionParams{
 		ID:                 id,
-		CurrentCircleID:    pgutil.Text(current.CurrentCircleID),
+		CurrentCircleID:    pgutil.OptionalString(current.CurrentCircleID),
 		StaffAuthorized:    current.StaffAuthorized,
 		StaffVerifyCode:    current.StaffVerifyCode,
 		StaffVerifyExpires: pgutil.Timestamptz(current.StaffVerifyExpires),
