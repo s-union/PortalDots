@@ -6,6 +6,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const apiProxyTarget = String(env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:8080').trim()
 
   return {
     plugins: [VueRouter(), vue(), tailwindcss()],
@@ -17,10 +18,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       allowedHosts: true,
-      proxy: env.VITE_API_PROXY_TARGET
+      proxy: apiProxyTarget
         ? {
             '/v1': {
-              target: env.VITE_API_PROXY_TARGET,
+              target: apiProxyTarget,
               changeOrigin: true
             }
           }

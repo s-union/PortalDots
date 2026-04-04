@@ -147,6 +147,42 @@ func TestTransformExternalIDs(t *testing.T) {
 		}
 	})
 
+	t.Run("accepts raw uuid pending registration ids in json body", func(t *testing.T) {
+		t.Parallel()
+
+		e := echo.New()
+		pendingRegistrationID := "019d58d9-77ae-7012-97bf-2c68633849cb"
+		payload := `{"pendingRegistrationId":"` + pendingRegistrationID + `","token":"token-abc"}`
+		req := httptest.NewRequest(http.MethodPost, "/auth/register/verify", strings.NewReader(payload))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		handler := TransformExternalIDs()(func(c echo.Context) error {
+			var body struct {
+				PendingRegistrationID string `json:"pendingRegistrationId"`
+				Token                 string `json:"token"`
+			}
+			if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			if body.PendingRegistrationID != pendingRegistrationID {
+				t.Fatalf("expected raw uuid pending registration id to pass through as internal id, got %q", body.PendingRegistrationID)
+			}
+			if body.Token != "token-abc" {
+				t.Fatalf("expected token to be preserved, got %q", body.Token)
+			}
+			return c.NoContent(http.StatusNoContent)
+		})
+
+		if err := handler(c); err != nil {
+			t.Fatalf("expected middleware to pass through, got %v", err)
+		}
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("expected 204, got %d", rec.Code)
+		}
+	})
+
 	t.Run("preserves request id header on json responses", func(t *testing.T) {
 		t.Parallel()
 

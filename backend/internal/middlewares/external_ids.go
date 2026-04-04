@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
@@ -460,12 +461,30 @@ func transformRequestJSON(parentKey string, value any) (any, error) {
 		return decoded, nil
 	case string:
 		if _, ok := externalIDJSONKeys[parentKey]; ok && strings.TrimSpace(typed) != "" {
-			return externalid.DecodeToUUIDString(typed)
+			return decodeExternalIDRequestValue(parentKey, typed)
 		}
 		return typed, nil
 	default:
 		return value, nil
 	}
+}
+
+func decodeExternalIDRequestValue(parentKey string, value string) (string, error) {
+	decoded, err := externalid.DecodeToUUIDString(value)
+	if err == nil {
+		return decoded, nil
+	}
+
+	// Registration verify links were previously issued with raw UUIDs in the URL.
+	// Accept them only for pendingRegistrationId so already-sent links keep working.
+	if parentKey == "pendingRegistrationId" {
+		parsed, parseErr := uuid.Parse(strings.TrimSpace(value))
+		if parseErr == nil {
+			return parsed.String(), nil
+		}
+	}
+
+	return "", err
 }
 
 func transformResponseJSON(parentKey string, value any) (any, error) {

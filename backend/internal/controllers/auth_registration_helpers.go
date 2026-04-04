@@ -17,6 +17,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/registrationmail"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
 var errInvalidRegistrationToken = errors.New("invalid registration token")
@@ -170,7 +171,12 @@ func deriveRegistrationUnivemail(localPart, domainPart string) string {
 
 func buildRegistrationVerifyURL(appURL, pendingRegistrationID, token string) string {
 	base := strings.TrimRight(strings.TrimSpace(appURL), "/")
-	return fmt.Sprintf("%s/email/verify/univemail/%s?token=%s", base, pendingRegistrationID, url.QueryEscape(token))
+	return fmt.Sprintf(
+		"%s/email/verify/univemail/%s?token=%s",
+		base,
+		externalid.MaybeEncodeUUIDString(strings.TrimSpace(pendingRegistrationID)),
+		url.QueryEscape(token),
+	)
 }
 
 func generateRegistrationToken() (string, error) {
