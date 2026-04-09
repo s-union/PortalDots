@@ -110,6 +110,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 		}
 
 		answerValue := h.answers.Upsert(currentForm.ID, currentSession.CurrentCircleID, trimmedBody, map[string][]string{})
+		h.enqueueWorkspaceFormAnswerMail(c.Request().Context(), currentSession.User.ID, currentForm, answerValue)
 		return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
 			Answer: buildFormAnswerResponse(answerValue, existingUploads),
 		})
@@ -122,6 +123,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 
 	summaryBody := buildAnswerSummary(questions, normalizedDetails, existingUploads)
 	answerValue := h.answers.Upsert(currentForm.ID, currentSession.CurrentCircleID, summaryBody, normalizedDetails)
+	h.enqueueWorkspaceFormAnswerMail(c.Request().Context(), currentSession.User.ID, currentForm, answerValue)
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
 		Answer: buildFormAnswerResponse(answerValue, h.answers.ListUploads(currentForm.ID, currentSession.CurrentCircleID)),
 	})
@@ -162,6 +164,7 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 		if !updated {
 			return errorJSON(c, http.StatusNotFound, "answer_not_found")
 		}
+		h.enqueueWorkspaceFormAnswerMail(c.Request().Context(), currentSession.User.ID, currentForm, updatedAnswer)
 
 		return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
 			Answer: buildFormAnswerResponse(updatedAnswer, existingUploads),
@@ -178,6 +181,7 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 	if !updated {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
+	h.enqueueWorkspaceFormAnswerMail(c.Request().Context(), currentSession.User.ID, currentForm, updatedAnswer)
 
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
 		Answer: buildFormAnswerResponse(updatedAnswer, h.answers.ListUploadsByAnswer(answerValue.ID)),

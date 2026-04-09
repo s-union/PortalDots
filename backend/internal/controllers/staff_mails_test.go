@@ -48,7 +48,7 @@ func TestListStaffMailsAllowsMissingCircle(t *testing.T) {
 			ID:          "0195ec00-00b1-7000-8000-000000000001",
 			DisplayName: "Staff User",
 			Roles:       []string{"admin"},
-			Permissions: []string{"staff.mailQueue.use"},
+			Permissions: []string{"staff.pages.read,edit,send_emails"},
 		},
 	})
 

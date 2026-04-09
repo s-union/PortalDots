@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -352,6 +353,9 @@ func (h *staffMastersHandlers) createStaffContactCategory(c echo.Context) error 
 	if err != nil {
 		return internalError(c)
 	}
+	if err := h.enqueueContactCategoryAssignedMail(c.Request().Context(), currentSession.User.ID, created); err != nil {
+		return internalError(c)
+	}
 
 	recordActivity(h.activities, currentSession.User.ID, "staff.contact_category.created", "contact_category", created.ID, "", buildActivitySummary("staff が問い合わせカテゴリを作成しました", created.Name))
 	return c.JSON(http.StatusCreated, mapStaffContactCategory(created))
@@ -373,6 +377,9 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
 	}
 	if err != nil {
+		return internalError(c)
+	}
+	if err := h.enqueueContactCategoryAssignedMail(c.Request().Context(), currentSession.User.ID, updated); err != nil {
 		return internalError(c)
 	}
 
@@ -560,4 +567,37 @@ func mapStaffContactCategory(item contactcategory.Category) staffContactCategory
 		Name:  item.Name,
 		Email: item.Email,
 	}
+}
+
+func (h *staffMastersHandlers) enqueueContactCategoryAssignedMail(
+	ctx context.Context,
+	createdByUserID string,
+	category contactcategory.Category,
+) error {
+	recipients := normalizeRecipients([]string{category.Email})
+	if len(recipients) == 0 {
+		return fmt.Errorf("contact category recipient not found")
+	}
+
+	subject := "お問い合わせ先に設定されました"
+	body := strings.TrimSpace(fmt.Sprintf(
+		`お問い合わせ先のメールアドレスとして設定されました
+
+このメールアドレスは「%s」のお問い合わせ先として設定されています。
+
+設定の詳細
+- 項目名 : %s
+- メールアドレス : %s`,
+		h.appName,
+		category.Name,
+		category.Email,
+	))
+
+	job, err := h.mails.Enqueue(ctx, "", createdByUserID, subject, body, recipients)
+	if err != nil {
+		return err
+	}
+	logQueuedMail("contact_category_assigned", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+
+	return nil
 }

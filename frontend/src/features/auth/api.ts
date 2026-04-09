@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import {
   authVerificationStatusSchema,
+  passwordResetStartResultSchema,
+  passwordResetVerificationSchema,
   parseWithSchema,
   registrationStartResultSchema,
   registrationVerificationSchema,
@@ -35,9 +37,7 @@ export interface StartRegistrationPayload {
 }
 
 export interface RegistrationStartResult {
-  deliveryMode: 'email' | 'mock'
   message: string
-  verifyUrl?: string
 }
 
 export interface VerifyRegistrationPayload {
@@ -50,6 +50,31 @@ export interface RegistrationVerificationResult {
   univemail: string
   studentId: string
   verified: boolean
+}
+
+export interface StartPasswordResetPayload {
+  loginId: string
+}
+
+export interface PasswordResetStartResult {
+  message: string
+}
+
+export interface VerifyPasswordResetPayload {
+  userId: string
+  token: string
+}
+
+export interface PasswordResetVerificationResult {
+  userId: string
+  valid: boolean
+}
+
+export interface CompletePasswordResetPayload {
+  userId: string
+  token: string
+  password: string
+  passwordConfirmation: string
 }
 
 export interface CompleteRegistrationPayload {
@@ -76,9 +101,7 @@ export interface AuthVerificationStatus {
 }
 
 export interface AuthVerifyRequestResult {
-  deliveryMode: 'mock'
   message: string
-  verifyCode: string
 }
 
 export async function login(payload: LoginPayload) {
@@ -179,6 +202,59 @@ export async function completeRegistration(payload: CompleteRegistrationPayload)
       errorMessage: 'Failed to complete registration',
       errorParsers: {
         422: (error) => parseValidationError(error, 'register')
+      }
+    }
+  )
+}
+
+export async function startPasswordReset(payload: StartPasswordResetPayload) {
+  return $api.mutationData(
+    'post',
+    '/auth/password/reset/start',
+    {
+      headers: createJsonHeaders(),
+      body: payload
+    },
+    (value) => parseWithSchema(passwordResetStartResultSchema, value, 'password reset start'),
+    {
+      errorMessage: 'Failed to start password reset',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'password reset')
+      }
+    }
+  )
+}
+
+export async function verifyPasswordReset(payload: VerifyPasswordResetPayload) {
+  return $api.mutationData(
+    'post',
+    '/auth/password/reset/verify',
+    {
+      headers: createJsonHeaders(),
+      body: payload
+    },
+    (value) => parseWithSchema(passwordResetVerificationSchema, value, 'password reset verification'),
+    {
+      errorMessage: 'Failed to verify password reset token',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'password reset')
+      }
+    }
+  )
+}
+
+export async function completePasswordReset(payload: CompletePasswordResetPayload) {
+  await $api.noContentMutation(
+    'post',
+    '/auth/password/reset/complete',
+    {
+      headers: createJsonHeaders(),
+      body: payload
+    },
+    {
+      errorMessage: 'Failed to complete password reset',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'password reset')
       }
     }
   )
@@ -335,6 +411,24 @@ export function useCompleteRegistrationMutation() {
       sessionStore.hydrate(session)
       queryClient.setQueryData(['session', 'bootstrap'], session)
     }
+  })
+}
+
+export function useStartPasswordResetMutation() {
+  return useMutation<PasswordResetStartResult, unknown, StartPasswordResetPayload>({
+    mutationFn: async (payload: StartPasswordResetPayload) => startPasswordReset(payload)
+  })
+}
+
+export function useVerifyPasswordResetMutation() {
+  return useMutation<PasswordResetVerificationResult, unknown, VerifyPasswordResetPayload>({
+    mutationFn: async (payload: VerifyPasswordResetPayload) => verifyPasswordReset(payload)
+  })
+}
+
+export function useCompletePasswordResetMutation() {
+  return useMutation<void, unknown, CompletePasswordResetPayload>({
+    mutationFn: async (payload: CompletePasswordResetPayload) => completePasswordReset(payload)
   })
 }
 

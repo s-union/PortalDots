@@ -18,7 +18,7 @@ function createQueryPlugin() {
   ]
 }
 
-function buildFetchMock(verifyUrl = 'http://127.0.0.1:8080/email/verify/univemail/pending-123?token=token-abc') {
+function buildFetchMock() {
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     await Promise.resolve()
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
@@ -41,9 +41,7 @@ function buildFetchMock(verifyUrl = 'http://127.0.0.1:8080/email/verify/univemai
     if (pathname.endsWith('/auth/register/start') && method === 'POST') {
       return new Response(
         JSON.stringify({
-          deliveryMode: 'mock',
-          message: 'モック中: メールは送信していません。認証URLを開いて登録を続けてください。',
-          verifyUrl
+          message: '大学メールアドレスに認証URLを送信しました。'
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
@@ -53,7 +51,7 @@ function buildFetchMock(verifyUrl = 'http://127.0.0.1:8080/email/verify/univemai
   })
 }
 
-async function mountAtRegister(verifyUrl?: string) {
+async function mountAtRegister() {
   const pinia = createPinia()
   setActivePinia(pinia)
 
@@ -69,7 +67,7 @@ async function mountAtRegister(verifyUrl?: string) {
   await router.push('/register')
   await router.isReady()
 
-  vi.stubGlobal('fetch', buildFetchMock(verifyUrl))
+  vi.stubGlobal('fetch', buildFetchMock())
 
   const wrapper = mount(RegisterPage, {
     global: {
@@ -86,7 +84,7 @@ describe('RegisterPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('starts registration and shows the mock verify url', async () => {
+  it('starts registration and shows the sent message', async () => {
     const wrapper = await mountAtRegister()
 
     expect(wrapper.text()).toContain('ユーザー登録')
@@ -97,9 +95,7 @@ describe('RegisterPage', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('モック中: メールは送信していません')
-    const expectedVerifyUrl = new URL('/email/verify/univemail/pending-123?token=token-abc', window.location.origin)
-    expect(wrapper.get(`a[href="${expectedVerifyUrl.toString()}"]`).text()).toContain('認証URLを開く')
+    expect(wrapper.text()).toContain('大学メールアドレスに認証URLを送信しました。')
     expect(wrapper.get('a[href="/login"]').text()).toContain('ログイン画面へ')
   })
 })

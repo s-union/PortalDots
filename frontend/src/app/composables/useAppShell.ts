@@ -15,7 +15,6 @@ import {
   canReadPlaces,
   canReadTags,
   canReadUsers,
-  canUseMailQueue,
   canUseStaffExports,
   canViewActivityLogs,
   hasStaffAccess
@@ -88,7 +87,6 @@ export function useAppShell() {
     canManageParticipationTypes(sessionStore.roles, sessionStore.permissions)
   )
   const canAccessExports = computed(() => canUseStaffExports(sessionStore.roles, sessionStore.permissions))
-  const canAccessMails = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
   const canAccessActivityLogs = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
   const canAccessPortalSettings = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
   const isStaffRoute = computed(() => route.path.startsWith('/staff'))
@@ -305,13 +303,6 @@ export function useAppShell() {
       iconClass: 'fas fa-file-export fa-fw',
       active: route.path.startsWith('/staff/exports'),
       hidden: isDemoMode.value || !canAccessExports.value
-    },
-    {
-      to: '/staff/mails',
-      label: 'メールキュー',
-      iconClass: 'far fa-envelope fa-fw',
-      active: route.path.startsWith('/staff/mails'),
-      hidden: isDemoMode.value || !canAccessMails.value
     }
   ])
 

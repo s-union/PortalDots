@@ -203,6 +203,7 @@ func (h *staffFormHandlers) enqueueStaffFormAnswerMail(ctx context.Context, crea
 	if err != nil {
 		return
 	}
+	logQueuedMail("staff_form_answer", job.ID, formValue.CircleID, createdByUserID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
 		h.activities,
 		createdByUserID,

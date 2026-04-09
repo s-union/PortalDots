@@ -15,7 +15,6 @@ import (
 	"unicode"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
-	"github.com/s-union/PortalDots/backend/internal/domain/registrationmail"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
@@ -179,6 +178,16 @@ func buildRegistrationVerifyURL(appURL, pendingRegistrationID, token string) str
 	)
 }
 
+func buildPasswordResetURL(appURL, userID, token string) string {
+	base := strings.TrimRight(strings.TrimSpace(appURL), "/")
+	return fmt.Sprintf(
+		"%s/password/reset/%s?token=%s",
+		base,
+		externalid.MaybeEncodeUUIDString(strings.TrimSpace(userID)),
+		url.QueryEscape(token),
+	)
+}
+
 func generateRegistrationToken() (string, error) {
 	var raw [24]byte
 	if _, err := rand.Read(raw[:]); err != nil {
@@ -222,14 +231,6 @@ func (h *authHandlers) loadAndValidatePendingRegistration(pendingRegistrationID,
 	}
 
 	return pendingValue, nil
-}
-
-func registrationMailMessage(appName, to, verifyURL string) registrationmail.Message {
-	return registrationmail.Message{
-		AppName:   appName,
-		To:        to,
-		VerifyURL: verifyURL,
-	}
 }
 
 func generateVerificationCode() (string, error) {

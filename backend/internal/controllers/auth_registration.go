@@ -50,12 +50,6 @@ type startRegistrationRequest struct {
 	UnivemailLocalPart string `json:"univemailLocalPart"`
 }
 
-type startRegistrationResponse struct {
-	DeliveryMode string `json:"deliveryMode"`
-	Message      string `json:"message"`
-	VerifyURL    string `json:"verifyUrl,omitempty"`
-}
-
 type verifyRegistrationRequest struct {
 	PendingRegistrationID string `json:"pendingRegistrationId"`
 	Token                 string `json:"token"`
@@ -241,21 +235,17 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 	}
 
 	verifyURL := buildRegistrationVerifyURL(h.appURL, pendingValue.ID, token)
-	delivery, err := h.registrationMailSender.SendVerificationMail(registrationMailMessage(h.appName, univemail, verifyURL))
-	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "failed_to_send_registration_mail")
+	if h.allowInsecureDefaults {
+		logMockRegistrationVerifyURL(univemail, verifyURL)
+	} else {
+		if err := h.enqueueRegistrationVerifyMail(c.Request().Context(), univemail, verifyURL); err != nil {
+			return internalError(c)
+		}
 	}
 
-	response := startRegistrationResponse{
-		DeliveryMode: delivery.DeliveryMode,
-		Message:      "大学メールアドレスに認証URLを送信しました。",
-	}
-	if delivery.DeliveryMode == "mock" {
-		response.VerifyURL = delivery.VerifyURL
-		response.Message = "モック中: メールは送信していません。認証URLを開いて登録を続けてください。"
-	}
-
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, messageResponse{
+		Message: "大学メールアドレスに認証URLを送信しました。",
+	})
 }
 
 func (h *authHandlers) verifyRegistration(c echo.Context) error {
@@ -461,10 +451,8 @@ func (h *authHandlers) requestAuthVerification(c echo.Context) error {
 		})
 	}
 	if item.Verified {
-		return c.JSON(http.StatusOK, staffVerifyRequestResponse{
-			DeliveryMode: "mock",
-			Message:      "すでに認証済みです。",
-			VerifyCode:   "",
+		return c.JSON(http.StatusOK, messageResponse{
+			Message: "すでに認証済みです。",
 		})
 	}
 
@@ -473,11 +461,22 @@ func (h *authHandlers) requestAuthVerification(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
 	}
 	h.verifyCodes.Put(sessionID, request.Type, code, time.Now().UTC().Add(participantVerifyTTL))
+	if h.allowInsecureDefaults {
+		logMockVerificationCode("participant_verify_code", item.Address, code)
+	} else {
+		if err := h.enqueueParticipantVerifyCodeMail(
+			c.Request().Context(),
+			currentSession.User.ID,
+			request.Type,
+			item.Address,
+			code,
+		); err != nil {
+			return internalError(c)
+		}
+	}
 
-	return c.JSON(http.StatusOK, staffVerifyRequestResponse{
-		DeliveryMode: "mock",
-		Message:      "モック中: メールは送信していません。画面に表示された認証コードを入力してください。",
-		VerifyCode:   code,
+	return c.JSON(http.StatusOK, messageResponse{
+		Message: "認証コードを送信しました。",
 	})
 }
 

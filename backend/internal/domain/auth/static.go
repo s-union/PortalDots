@@ -28,6 +28,10 @@ type PasswordChanger interface {
 	ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error
 }
 
+type PasswordResetter interface {
+	ResetPassword(ctx context.Context, userID, newPassword string) error
+}
+
 type RegisterParams struct {
 	ID           string
 	DisplayName  string
@@ -135,6 +139,24 @@ func (a *StaticAuthenticator) ChangePassword(_ context.Context, userID, currentP
 		return ErrInvalidPassword
 	}
 	if bcrypt.CompareHashAndPassword([]byte(current.passwordHash), []byte(currentPassword)) != nil {
+		return ErrInvalidPassword
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	current.passwordHash = string(newHash)
+	a.users[userID] = current
+	return nil
+}
+
+func (a *StaticAuthenticator) ResetPassword(_ context.Context, userID, newPassword string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	current, ok := a.users[userID]
+	if !ok {
 		return ErrInvalidPassword
 	}
 

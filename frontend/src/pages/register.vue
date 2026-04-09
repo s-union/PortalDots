@@ -23,49 +23,21 @@ const form = reactive({
 
 const errorMessage = ref('')
 const successMessage = ref('')
-const verifyUrl = ref('')
 const canSubmit = computed(
   () => !isSubmitting.value && (publicConfigQuery.data.value?.portalUnivemailDomainPart?.trim().length ?? 0) > 0
 )
-const resolvedVerifyUrl = computed(() => resolveCurrentAppVerifyUrl(verifyUrl.value))
 
 async function handleSubmit() {
   errorMessage.value = ''
   successMessage.value = ''
-  verifyUrl.value = ''
 
   try {
     const result = await startRegistrationMutation.mutateAsync({
       univemailLocalPart: form.univemailLocalPart.trim()
     })
     successMessage.value = result.message
-    verifyUrl.value = result.verifyUrl ?? ''
   } catch (error) {
     errorMessage.value = extractFirstErrorMessage(error)
-  }
-}
-
-function resolveCurrentAppVerifyUrl(value: string) {
-  const normalized = value.trim()
-  if (normalized === '') {
-    return ''
-  }
-
-  if (typeof window === 'undefined') {
-    return normalized
-  }
-
-  try {
-    const url = new URL(normalized, window.location.origin)
-    if (!url.pathname.startsWith('/email/verify/')) {
-      return url.toString()
-    }
-    if (url.origin === window.location.origin) {
-      return url.toString()
-    }
-    return new URL(`${url.pathname}${url.search}${url.hash}`, `${window.location.origin}/`).toString()
-  } catch {
-    return normalized
   }
 }
 </script>
@@ -103,14 +75,6 @@ function resolveCurrentAppVerifyUrl(value: string) {
           </span>
         </div>
       </label>
-
-      <div v-if="verifyUrl" class="rounded border border-primary/20 bg-primary-light px-4 py-4 text-sm text-body">
-        <p>開発モードのため、認証URLを直接表示しています。</p>
-        <a class="mt-3 inline-flex font-semibold text-primary hover:underline" :href="resolvedVerifyUrl"
-          >認証URLを開く</a
-        >
-      </div>
-
       <div class="space-y-3">
         <button
           class="w-full rounded border border-primary bg-primary px-4 py-3 text-sm text-white transition hover:bg-primary-hover"

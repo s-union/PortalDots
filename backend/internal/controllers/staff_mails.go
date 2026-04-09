@@ -116,6 +116,7 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	logQueuedMail("staff_mail_queue", job.ID, job.CircleID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
 		h.activities,
 		currentSession.User.ID,
@@ -139,22 +140,4 @@ func mapStaffMail(job mailqueue.Job, circleValue staffManagedCircleResponse) sta
 		CreatedAt:   job.CreatedAt,
 		DeliveredAt: job.DeliveredAt,
 	}
-}
-
-func normalizeRecipients(recipients []string) []string {
-	normalized := make([]string, 0, len(recipients))
-	seen := map[string]struct{}{}
-	for _, recipient := range recipients {
-		trimmed := strings.TrimSpace(recipient)
-		if trimmed == "" {
-			continue
-		}
-		if _, ok := seen[trimmed]; ok {
-			continue
-		}
-		seen[trimmed] = struct{}{}
-		normalized = append(normalized, trimmed)
-	}
-
-	return normalized
 }

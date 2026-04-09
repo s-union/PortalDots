@@ -115,19 +115,14 @@ paths:
                   minLength: 1
       responses:
         "200":
-          description: Verification email prepared or sent
+          description: Verification email request accepted
           content:
             application/json:
               schema:
                 type: object
-                required: [deliveryMode, message]
+                required: [message]
                 properties:
-                  deliveryMode:
-                    type: string
-                    enum: [email, mock]
                   message:
-                    type: string
-                  verifyUrl:
                     type: string
         "422":
           description: Validation error
@@ -217,6 +212,96 @@ paths:
           description: Registered and logged in
         "422":
           description: Validation error
+  /auth/password/reset/start:
+    post:
+      operationId: postAuthPasswordResetStart
+      summary: Send a password reset URL to the user's contact email if the account exists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loginId]
+              properties:
+                loginId:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Reset request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+        "422":
+          description: Validation error
+  /auth/password/reset/verify:
+    post:
+      operationId: postAuthPasswordResetVerify
+      summary: Verify a password reset URL token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, token]
+              properties:
+                userId:
+                  type: string
+                  minLength: 1
+                token:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: Password reset token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [userId, valid]
+                properties:
+                  userId:
+                    type: string
+                  valid:
+                    type: boolean
+        "422":
+          description: Validation error
+  /auth/password/reset/complete:
+    post:
+      operationId: postAuthPasswordResetComplete
+      summary: Complete password reset and set a new password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, token, password, passwordConfirmation]
+              properties:
+                userId:
+                  type: string
+                  minLength: 1
+                token:
+                  type: string
+                  minLength: 1
+                password:
+                  type: string
+                  minLength: 1
+                passwordConfirmation:
+                  type: string
+                  minLength: 1
+      responses:
+        "204":
+          description: Password reset completed
+        "422":
+          description: Validation error
   /auth/verification:
     get:
       operationId: getAuthVerification
@@ -270,21 +355,15 @@ paths:
                   enum: [email, univemail]
       responses:
         "200":
-          description: Verification code prepared in mock mode
+          description: Verification code request accepted
           content:
             application/json:
               schema:
                 type: object
-                required: [deliveryMode, message]
+                required: [message]
                 properties:
-                  deliveryMode:
-                    type: string
-                    enum: [email, mock]
                   message:
                     type: string
-                  verifyCode:
-                    type: string
-                    nullable: true
         "401":
           description: Unauthenticated
         "403":
@@ -440,22 +519,15 @@ paths:
       summary: Start the staff verification flow for the current session
       responses:
         "200":
-          description: Verification code was prepared in mock mode
+          description: Verification code request accepted
           content:
             application/json:
               schema:
                 type: object
-                required: [deliveryMode, message]
+                required: [message]
                 properties:
-                  deliveryMode:
-                    type: string
-                    enum: [email, mock]
                   message:
                     type: string
-                  verifyCode:
-                    type: string
-                    minLength: 1
-                    nullable: true
         "401":
           description: Unauthenticated
         "403":
@@ -4512,6 +4584,129 @@ paths:
           description: Circle not found
         "422":
           description: Validation error
+  /staff/mails:
+    get:
+      operationId: getStaffMails
+      summary: Return queued mails in staff mode
+      responses:
+        "200":
+          description: Staff mail queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
+                  properties:
+                    circle:
+                      type: object
+                      required: [id, name]
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                    id:
+                      type: string
+                    subject:
+                      type: string
+                    body:
+                      type: string
+                    recipients:
+                      type: array
+                      items:
+                        type: string
+                    status:
+                      type: string
+                      enum: [queued, sent]
+                    createdAt:
+                      type: string
+                      format: date-time
+                    deliveredAt:
+                      type: string
+                      format: date-time
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification or mail queue capability is required
+    post:
+      operationId: postStaffMails
+      summary: Queue a mail in staff mode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [circleId, subject, body, recipients]
+              properties:
+                circleId:
+                  type: string
+                  minLength: 1
+                subject:
+                  type: string
+                  minLength: 1
+                body:
+                  type: string
+                  minLength: 1
+                recipients:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Queued mail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
+                properties:
+                  circle:
+                    type: object
+                    required: [id, name]
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                  id:
+                    type: string
+                  subject:
+                    type: string
+                  body:
+                    type: string
+                  recipients:
+                    type: array
+                    items:
+                      type: string
+                  status:
+                    type: string
+                    enum: [queued, sent]
+                  createdAt:
+                    type: string
+                    format: date-time
+                  deliveredAt:
+                    type: string
+                    format: date-time
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification or mail queue capability is required
+        "422":
+          description: Validation error
+    delete:
+      operationId: deleteStaffMails
+      summary: Cancel all queued mails in staff mode
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification or mail queue capability is required
   /staff/participation-types:
     get:
       operationId: getStaffParticipationTypes
@@ -5201,121 +5396,6 @@ paths:
           description: Staff verification is required
         "409":
           description: Current circle is not selected
-  /staff/mails:
-    get:
-      operationId: getStaffMails
-      summary: Return queued and sent staff mails from the global mail queue
-      responses:
-        "200":
-          description: Staff mail list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
-                  properties:
-                    circle:
-                      type: object
-                      required: [id, name]
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                    id:
-                      type: string
-                    subject:
-                      type: string
-                    body:
-                      type: string
-                    recipients:
-                      type: array
-                      items:
-                        type: string
-                    status:
-                      type: string
-                      enum: [queued, sent]
-                    createdAt:
-                      type: string
-                    deliveredAt:
-                      type: string
-        "401":
-          description: Unauthenticated
-        "403":
-          description: Staff verification is required
-    delete:
-      operationId: deleteStaffMails
-      summary: Delete all queued and sent staff mails from the global mail queue
-      responses:
-        "204":
-          description: Staff mails deleted
-        "401":
-          description: Unauthenticated
-        "403":
-          description: Staff verification is required
-    post:
-      operationId: postStaffMails
-      summary: Enqueue a manual staff mail for a selected circle
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [circleId, subject, body, recipients]
-              properties:
-                circleId:
-                  type: string
-                subject:
-                  type: string
-                body:
-                  type: string
-                recipients:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        "201":
-          description: Staff mail queued
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
-                properties:
-                  circle:
-                    type: object
-                    required: [id, name]
-                    properties:
-                      id:
-                        type: string
-                      name:
-                        type: string
-                  id:
-                    type: string
-                  subject:
-                    type: string
-                  body:
-                    type: string
-                  recipients:
-                    type: array
-                    items:
-                      type: string
-                  status:
-                    type: string
-                    enum: [queued, sent]
-                  createdAt:
-                    type: string
-                  deliveredAt:
-                    type: string
-        "401":
-          description: Unauthenticated
-        "403":
-          description: Staff verification is required
-        "422":
-          description: Validation error
   /circles:
     get:
       operationId: getSelectableCircles

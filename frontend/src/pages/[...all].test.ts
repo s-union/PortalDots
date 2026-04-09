@@ -90,12 +90,6 @@ describe('NotFoundPage', () => {
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy staff mail URL', async () => {
-    const wrapper = await mountAt('/staff/send_emails')
-
-    expectNotFoundMessage(wrapper.text())
-  })
-
   it('shows the non-migrated message for the legacy circle create URL', async () => {
     const wrapper = await mountAt('/circles/create')
 

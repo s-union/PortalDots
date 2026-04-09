@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -21,7 +20,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
 	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
-	"github.com/s-union/PortalDots/backend/internal/domain/registrationmail"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -63,16 +61,17 @@ type authHandlers struct {
 	activities                activitylog.Repository
 	authenticator             auth.Authenticator
 	passwordChanger           auth.PasswordChanger
+	passwordResetter          auth.PasswordResetter
 	registrationAuth          auth.RegistrationAuthenticator
 	circles                   circle.Catalog
 	contactCategories         contactcategory.Repository
 	mails                     mailqueue.Repository
 	pendingRegistrations      pendingregistration.Repository
+	passwordResetTokens       *passwordResetTokenStore
 	portalUnivemailDomainPart string
-	registrationMailSender    registrationmail.Sender
 	registrationVerifyTTL     time.Duration
-	appName                   string
 	appURL                    string
+	appName                   string
 	users                     useradmin.Repository
 	verifyCodes               *participantVerifyCodeStore
 }
@@ -80,6 +79,9 @@ type authHandlers struct {
 // staffVerifyHandlers handles staff verification endpoints.
 type staffVerifyHandlers struct {
 	sharedDeps
+	mails   mailqueue.Repository
+	users   useradmin.Repository
+	appName string
 }
 
 // staffUserHandlers handles staff user management endpoints.
@@ -142,8 +144,10 @@ type staffMastersHandlers struct {
 	booths            booth.Repository
 	circles           circle.Catalog
 	contactCategories contactcategory.Repository
+	mails             mailqueue.Repository
 	places            place.Repository
 	tags              tag.Repository
+	appName           string
 }
 
 // staffPermissionHandlers handles staff permission endpoints.
@@ -175,6 +179,7 @@ type workspaceHandlers struct {
 	documents          document.Repository
 	forms              form.Repository
 	formQuestions      formquestion.Repository
+	mails              mailqueue.Repository
 	pages              page.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
@@ -262,16 +267,9 @@ func NewServerWithDependencies(
 	if ra, ok := authenticator.(auth.RegistrationAuthenticator); ok {
 		registrationAuth = ra
 	}
-
-	var registrationMailSender registrationmail.Sender = registrationmail.NewMockSender()
-	if !cfg.AllowInsecureDefaults && strings.TrimSpace(cfg.SMTPHost) != "" {
-		registrationMailSender = registrationmail.NewSMTPSender(
-			cfg.SMTPHost,
-			cfg.SMTPPort,
-			cfg.SMTPUsername,
-			cfg.SMTPPassword,
-			cfg.SMTPFrom,
-		)
+	var passwordResetter auth.PasswordResetter
+	if pr, ok := authenticator.(auth.PasswordResetter); ok {
+		passwordResetter = pr
 	}
 
 	authH := &authHandlers{
@@ -279,16 +277,17 @@ func NewServerWithDependencies(
 		activities:                activities,
 		authenticator:             authenticator,
 		passwordChanger:           passwordChanger,
+		passwordResetter:          passwordResetter,
 		registrationAuth:          registrationAuth,
 		circles:                   circles,
 		contactCategories:         contactCategories,
 		mails:                     mails,
 		pendingRegistrations:      pendingRegistrations,
+		passwordResetTokens:       newPasswordResetTokenStore(),
 		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
-		registrationMailSender:    registrationMailSender,
 		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
-		appName:                   cfg.AppName,
 		appURL:                    cfg.AppURL,
+		appName:                   cfg.AppName,
 		users:                     users,
 		verifyCodes:               newParticipantVerifyCodeStore(),
 	}
@@ -308,6 +307,9 @@ func NewServerWithDependencies(
 
 	staffVerifyH := &staffVerifyHandlers{
 		sharedDeps: shared,
+		mails:      mails,
+		users:      users,
+		appName:    cfg.AppName,
 	}
 
 	staffUsersH := &staffUserHandlers{
@@ -364,8 +366,10 @@ func NewServerWithDependencies(
 		booths:            booths,
 		circles:           circles,
 		contactCategories: contactCategories,
+		mails:             mails,
 		places:            places,
 		tags:              tags,
+		appName:           cfg.AppName,
 	}
 
 	staffPermissionH := &staffPermissionHandlers{
@@ -394,6 +398,7 @@ func NewServerWithDependencies(
 		documents:          documents,
 		forms:              forms,
 		formQuestions:      formQuestions,
+		mails:              mails,
 		pages:              pages,
 		participationTypes: participationTypes,
 		users:              users,
@@ -426,6 +431,9 @@ func NewServerWithDependencies(
 		StartRegistration:        authH.startRegistration,
 		VerifyRegistration:       authH.verifyRegistration,
 		CompleteRegistration:     authH.completeRegistration,
+		StartPasswordReset:       authH.startPasswordReset,
+		VerifyPasswordReset:      authH.verifyPasswordReset,
+		CompletePasswordReset:    authH.completePasswordReset,
 		Login:                    authH.login,
 		Logout:                   authH.logout,
 		GetAuthVerification:      authH.getAuthVerification,
@@ -520,14 +528,14 @@ func NewServerWithDependencies(
 		GetStaffCircleMailForm:  staffCircleH.getStaffCircleMailForm,
 		SendStaffCircleMail:     staffCircleH.sendStaffCircleMail,
 		// Admin
+		ListStaffMails:            staffAdminH.listStaffMails,
+		EnqueueStaffMail:          staffAdminH.enqueueStaffMail,
+		DeleteStaffMails:          staffAdminH.deleteStaffMails,
 		ListStaffActivityLogs:     staffAdminH.listStaffActivityLogs,
 		GetStaffPortalSettings:    staffAdminH.getStaffPortalSettings,
 		UpdateStaffPortalSettings: staffAdminH.updateStaffPortalSettings,
 		DownloadStaffSummaryCSV:   staffAdminH.downloadStaffSummaryCSV,
 		DownloadStaffBundleZIP:    staffAdminH.downloadStaffBundleZIP,
-		ListStaffMails:            staffAdminH.listStaffMails,
-		EnqueueStaffMail:          staffAdminH.enqueueStaffMail,
-		DeleteStaffMails:          staffAdminH.deleteStaffMails,
 		// Users
 		ListStaffUsers:        staffUsersH.listStaffUsers,
 		DownloadStaffUsersCSV: staffUsersH.downloadStaffUsersCSV,

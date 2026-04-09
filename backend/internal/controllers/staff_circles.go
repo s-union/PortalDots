@@ -250,6 +250,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 	if !ok {
 		return statusError(c, status)
 	}
+	circleID := c.Param("circleID")
 
 	request, validationErrors, valid := bindAndValidateStaffCircle(c)
 	if !valid {
@@ -266,8 +267,16 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
+	beforeUpdate, err := h.circles.Find(circleID)
+	if errors.Is(err, circle.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
 	updated, err := h.circles.Update(
-		c.Param("circleID"),
+		circleID,
 		request.Name,
 		request.NameYomi,
 		request.GroupName,
@@ -297,6 +306,51 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		updated.ID,
 		buildActivitySummary("staff が企画を更新しました", updated.Name),
 	)
+	if beforeUpdate.Status != updated.Status {
+		members, err := h.circles.ListMembers(updated.ID)
+		if err != nil {
+			return internalError(c)
+		}
+		var (
+			subject string
+			body    string
+		)
+		switch updated.Status {
+		case "approved":
+			subject = fmt.Sprintf("【受理】「%s」の参加登録が受理されました", updated.Name)
+			body = buildCircleApprovedMailBody(updated, members)
+		case "rejected":
+			subject = fmt.Sprintf("【不受理】「%s」の参加登録は受理されませんでした", updated.Name)
+			body = buildCircleRejectedMailBody(updated, members, updated.StatusReason)
+		}
+		if subject != "" {
+			job, queued, err := enqueueCircleNotificationMail(
+				c.Request().Context(),
+				h.mails,
+				h.users,
+				members,
+				updated.ID,
+				currentSession.User.ID,
+				"circle_status",
+				subject,
+				body,
+			)
+			if err != nil {
+				return internalError(c)
+			}
+			if queued {
+				recordActivity(
+					h.activities,
+					currentSession.User.ID,
+					"staff.mail.queued",
+					"mail_job",
+					job.ID,
+					job.CircleID,
+					buildActivitySummary("staff が企画参加登録の通知メールをキューに追加しました", job.Subject),
+				)
+			}
+		}
+	}
 
 	return c.JSON(http.StatusOK, mapStaffCircle(updated))
 }
@@ -527,9 +581,11 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 		})
 	}
 
-	if _, err := h.mails.Enqueue(c.Request().Context(), circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails); err != nil {
+	job, err := h.mails.Enqueue(c.Request().Context(), circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails)
+	if err != nil {
 		return internalError(c)
 	}
+	logQueuedMail("staff_circle", job.ID, circleValue.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
 		h.activities,
 		currentSession.User.ID,

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -413,6 +414,7 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 	if len(memberErrors) > 0 {
 		return validationError(c, memberErrors)
 	}
+	answerSummary := ""
 	if len(questions) > 0 {
 		currentAnswer, found := h.answers.Get(formValue.ID, currentSession.CurrentCircleID)
 		if !found {
@@ -420,9 +422,12 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 				"answer": {"企画参加登録の設問に回答してください"},
 			})
 		}
-		if _, detailErrors := normalizeAnswerDetails(answerDetailsToAny(currentAnswer.Details), questions, h.answers.ListUploads(formValue.ID, currentSession.CurrentCircleID)); len(detailErrors) > 0 {
+		uploads := h.answers.ListUploads(formValue.ID, currentSession.CurrentCircleID)
+		normalizedAnswerDetails, detailErrors := normalizeAnswerDetails(answerDetailsToAny(currentAnswer.Details), questions, uploads)
+		if len(detailErrors) > 0 {
 			return validationError(c, detailErrors)
 		}
+		answerSummary = buildAnswerSummary(questions, normalizedAnswerDetails, uploads)
 	}
 
 	submitted, err := h.circles.Submit(currentSession.User, currentSession.CurrentCircleID)
@@ -436,6 +441,22 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 		return errorJSON(c, http.StatusConflict, "already_submitted")
 	}
 	if err != nil {
+		return internalError(c)
+	}
+
+	subject := fmt.Sprintf("【参加登録】「%s」の参加登録を提出しました", submitted.Name)
+	body := buildCircleSubmittedMailBody(submitted, members, formValue.ConfirmationMessage, answerSummary)
+	if _, _, err := enqueueCircleNotificationMail(
+		c.Request().Context(),
+		h.mails,
+		h.users,
+		members,
+		submitted.ID,
+		currentSession.User.ID,
+		"circle_submission",
+		subject,
+		body,
+	); err != nil {
 		return internalError(c)
 	}
 

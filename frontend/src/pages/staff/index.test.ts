@@ -66,6 +66,7 @@ describe('StaffDashboardPage', () => {
           component: { template: '<div>activity logs</div>' }
         },
         { path: '/staff/pages', component: { template: '<div>staff pages</div>' } },
+        { path: '/staff/mails', component: { template: '<div>staff mails</div>' } },
         { path: '/staff/documents', component: { template: '<div>staff documents</div>' } },
         { path: '/staff/tags', component: { template: '<div>staff tags</div>' } },
         { path: '/staff/places', component: { template: '<div>staff places</div>' } },
@@ -90,7 +91,6 @@ describe('StaffDashboardPage', () => {
         },
         { path: '/staff/users', component: { template: '<div>staff users</div>' } },
         { path: '/staff/exports', component: { template: '<div>exports</div>' } },
-        { path: '/staff/mails', component: { template: '<div>mails</div>' } },
         { path: '/circles/select', component: { template: '<div>circle selector</div>' } },
         { path: '/workspace', component: { template: '<div>workspace</div>' } }
       ]
@@ -106,6 +106,7 @@ describe('StaffDashboardPage', () => {
 
     expect(wrapper.text()).toContain('ユーザー情報管理')
     expect(wrapper.text()).toContain('お知らせ管理')
+    expect(wrapper.text()).toContain('メール配信設定')
     expect(wrapper.text()).toContain('配布資料管理')
     expect(wrapper.text()).toContain('企画タグ管理')
     expect(wrapper.text()).toContain('場所情報管理')
@@ -117,7 +118,6 @@ describe('StaffDashboardPage', () => {
     expect(wrapper.text()).toContain('CSV / ZIP 出力')
     expect(wrapper.text()).toContain('アクティビティログ')
     expect(wrapper.text()).toContain('PortalDots の設定')
-    expect(wrapper.text()).toContain('メールキュー')
     expect(wrapper.text()).toContain('PortalDotsに登録しているユーザーの情報を管理します')
     expect(wrapper.text()).toContain('PortalDots上に表示するお知らせを管理します')
   })
@@ -150,8 +150,7 @@ describe('StaffDashboardPage', () => {
           path: '/staff/circles/participation_types',
           component: { template: '<div>participation types</div>' }
         },
-        { path: '/staff/exports', component: { template: '<div>exports</div>' } },
-        { path: '/staff/mails', component: { template: '<div>mails</div>' } }
+        { path: '/staff/exports', component: { template: '<div>exports</div>' } }
       ]
     })
     await router.push('/staff')
@@ -163,13 +162,14 @@ describe('StaffDashboardPage', () => {
       }
     })
 
-    const visibleTitles = wrapper
-      .findAll('h3')
-      .filter((title) => title.isVisible())
-      .map((title) => title.text())
+    const visibleCards = wrapper
+      .findAll('a[href]')
+      .filter((link) => link.isVisible())
+      .map((link) => link.text())
+      .join('\n')
 
-    expect(visibleTitles).not.toContain('参加種別管理')
-    expect(visibleTitles).not.toContain('CSV / ZIP 出力')
-    expect(visibleTitles).not.toContain('メールキュー')
+    expect(visibleCards).not.toContain('参加種別管理')
+    expect(visibleCards).not.toContain('CSV / ZIP 出力')
+    expect(visibleCards).not.toContain('メール配信設定')
   })
 })

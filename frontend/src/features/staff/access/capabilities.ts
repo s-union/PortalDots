@@ -377,13 +377,6 @@ export function canDeleteContactCategories(roles: string[], permissions: string[
   )
 }
 
-export function canUseMailQueue(roles: string[], permissions: string[] = []) {
-  return (
-    hasAnyRole(roles, 'admin', 'content_manager') ||
-    hasAnyPermission(permissions, 'staff.pages', 'staff.pages.read,edit,send_emails')
-  )
-}
-
 export function canUseStaffExports(roles: string[], permissions: string[] = []) {
   return (
     hasAnyRole(roles, 'admin', 'content_manager', 'forms_manager') ||
@@ -397,6 +390,13 @@ export function canUseStaffExports(roles: string[], permissions: string[] = []) 
       'staff.forms.read,export',
       'staff.forms.answers.read,export'
     )
+  )
+}
+
+export function canUseMailQueue(roles: string[], permissions: string[] = []) {
+  return (
+    hasAnyRole(roles, 'admin', 'content_manager') ||
+    hasAnyPermission(permissions, 'staff.pages', 'staff.pages.read,edit,send_emails')
   )
 }
 

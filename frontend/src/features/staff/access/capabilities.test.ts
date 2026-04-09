@@ -73,8 +73,8 @@ describe('staff capabilities', () => {
     expect(canEditPlaces(roles)).toBe(true)
     expect(canReadContactCategories(roles)).toBe(true)
     expect(canEditContactCategories(roles)).toBe(true)
-    expect(canUseMailQueue(roles)).toBe(true)
     expect(canUseStaffExports(roles)).toBe(true)
+    expect(canUseMailQueue(roles)).toBe(true)
     expect(canViewActivityLogs(roles)).toBe(true)
     expect(canManagePortalSettings(roles)).toBe(true)
   })
@@ -139,17 +139,24 @@ describe('staff capabilities', () => {
     expect(canUseStaffExports([], ['staff.pages.read,export'])).toBe(true)
     expect(canUseStaffExports([], ['staff.documents.read,export'])).toBe(true)
     expect(canUseStaffExports([], ['staff.forms.answers.read,export'])).toBe(true)
+    expect(canUseMailQueue([], ['staff.pages.read,edit,send_emails'])).toBe(true)
   })
 
   it('resolves capability checks through the central dispatcher', () => {
     const roles = ['user_manager']
-    const permissions = ['staff.pages.read,edit', 'staff.documents.read,export', 'staff.forms.answers.read,export']
+    const permissions = [
+      'staff.pages.read,edit',
+      'staff.pages.read,edit,send_emails',
+      'staff.documents.read,export',
+      'staff.forms.answers.read,export'
+    ]
 
     expect(canAccessStaffCapability('users.read', roles, permissions)).toBe(true)
     expect(canAccessStaffCapability('users.edit', roles, permissions)).toBe(true)
     expect(canAccessStaffCapability('pages.edit', [], permissions)).toBe(true)
     expect(canAccessStaffCapability('documents.export', [], permissions)).toBe(true)
     expect(canAccessStaffCapability('formAnswers.export', [], permissions)).toBe(true)
+    expect(canAccessStaffCapability('mailQueue.use', [], permissions)).toBe(true)
     expect(canAccessStaffCapability('portalSettings.manage', [], permissions)).toBe(false)
   })
 })

@@ -36,7 +36,7 @@ async function handleRequestCode() {
 
   try {
     const result = await requestMutation.mutateAsync()
-    infoMessage.value = result.verifyCode ? `${result.message} 認証コード: ${result.verifyCode}` : result.message
+    infoMessage.value = result.message
   } catch {
     errorMessage.value = '認証コードの送信に失敗しました。'
   }
@@ -66,8 +66,7 @@ async function handleConfirm() {
       <div class="border-b border-border px-6 py-5">
         <h3 class="text-lg font-semibold text-body">認証コードを入力してください</h3>
         <p class="mt-2 text-sm leading-7 text-muted">
-          あなたの連絡先メールアドレス宛の認証を想定し、認証コードを確認します。コード確認後に staff session
-          を有効化します。
+          認証コードをサーバー側で発行し、そのコードを確認します。コード確認後に staff session を有効化します。
         </p>
       </div>
 

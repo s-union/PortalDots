@@ -46,7 +46,7 @@ async function handleDeleteAll() {
     <PageHeader
       eyebrow="Mail Queue"
       title="メール配信設定"
-      description="お知らせ保存時の配信予約を確認し、必要なら全件キャンセルできます。"
+      description="サーバー側で記録されている配信予約を確認し、不要なら全件キャンセルできます。"
     >
       <template #actions> </template>
     </PageHeader>
@@ -58,7 +58,9 @@ async function handleDeleteAll() {
         </SurfaceHeader>
         <div class="grid gap-3 px-6 py-5 text-sm leading-7 text-body">
           <p>お知らせ編集画面で「保存後にメール配信を予約する」を有効にすると、このキューに追加されます。</p>
-          <p>実送信は行わず、確認用のキューとして保持します。不要な予約はここで全件キャンセルできます。</p>
+          <p>
+            実送信は行わず、確認用としてサーバーログとキューに記録します。不要な予約はここで全件キャンセルできます。
+          </p>
           <div>
             <button
               class="rounded border border-danger bg-danger-light px-5 py-3 font-bold text-danger transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"

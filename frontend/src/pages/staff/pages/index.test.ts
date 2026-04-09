@@ -26,7 +26,7 @@ describe('StaffPagesIndexPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('lists staff pages and shows create/mail actions', async () => {
+  it('lists staff pages and shows create actions', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -53,8 +53,7 @@ describe('StaffPagesIndexPage', () => {
         { path: '/staff/verify', component: StaffVerifyPage },
         { path: '/staff/pages', component: StaffPagesIndexPage },
         { path: '/staff/pages/create', component: { template: '<div>create</div>' } },
-        { path: '/staff/pages/:pageId', component: { template: '<div>detail</div>' } },
-        { path: '/staff/mails', component: { template: '<div>mails</div>' } }
+        { path: '/staff/pages/:pageId', component: { template: '<div>detail</div>' } }
       ]
     })
     await router.push('/staff/pages')
@@ -327,7 +326,6 @@ describe('StaffPagesIndexPage', () => {
     expect(wrapper.text()).toContain('非公開メモ')
     expect(wrapper.text()).toContain('後続メモ')
     expect(wrapper.text()).toContain('お知らせID')
-    expect(wrapper.get('a[href="/staff/mails"]').text()).toContain('メール配信設定')
     expect(wrapper.text()).toContain('展示ガイド')
     expect(wrapper.text()).toContain('スタッフだけが確認するメモです。')
     expect(wrapper.get('a[href="/staff/pages/create"]').text()).toContain('新規お知らせ')

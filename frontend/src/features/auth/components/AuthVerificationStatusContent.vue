@@ -18,7 +18,7 @@ const verifyCode = reactive<Record<'email' | 'univemail', string>>({
   email: '',
   univemail: ''
 })
-const requestResult = ref<{ type: 'email' | 'univemail'; code: string; message: string } | null>(null)
+const requestResult = ref<{ type: 'email' | 'univemail'; message: string } | null>(null)
 const errorMessage = ref('')
 
 async function handleRequest(type: 'email' | 'univemail') {
@@ -28,7 +28,6 @@ async function handleRequest(type: 'email' | 'univemail') {
     const result = await requestMutation.mutateAsync(type)
     requestResult.value = {
       type,
-      code: result.verifyCode ?? '',
       message: result.message
     }
     await statusQuery.refetch()
@@ -104,15 +103,14 @@ async function handleConfirm(type: 'email' | 'univemail') {
         type="button"
         @click="handleRequest(item.type)"
       >
-        {{ item.verified ? '認証済み' : '認証コードを表示' }}
+        {{ item.verified ? '認証済み' : '認証コードを送信' }}
       </button>
 
       <div
-        v-if="requestResult?.type === item.type && requestResult.code"
+        v-if="requestResult?.type === item.type"
         class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
       >
         <p>{{ requestResult.message }}</p>
-        <p class="mt-2 font-semibold">認証コード: {{ requestResult.code }}</p>
       </div>
 
       <div v-if="!item.verified" class="flex flex-col gap-3 sm:flex-row">

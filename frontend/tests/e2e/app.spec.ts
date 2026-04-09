@@ -67,9 +67,7 @@ test.beforeEach(async ({ page }) => {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        deliveryMode: 'mock',
-        message: 'モック中: メールは送信していません。画面に表示された認証コードを入力してください。',
-        verifyCode: '123456'
+        message: '認証コードを送信しました。'
       })
     })
   })
@@ -400,7 +398,7 @@ test('staff verification flow authorizes admin user', async ({ page }) => {
   await expect(page).toHaveURL(/\/staff\/verify$/)
 
   await page.getByRole('button', { name: '認証コードを送信' }).click()
-  await expect(page.getByText(/モック中: メールは送信していません。/)).toBeVisible()
+  await expect(page.getByText('認証コードを送信しました。')).toBeVisible()
 
   await page.locator('input[name="verifyCode"]').fill('123456')
   await page.getByRole('button', { name: 'スタッフ認証を完了' }).click()

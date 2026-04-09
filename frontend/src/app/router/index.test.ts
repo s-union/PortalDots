@@ -139,10 +139,10 @@ describe('app router guards', () => {
       '/staff/tags',
       '/staff/contacts/categories',
       '/staff/pages',
+      '/staff/mails',
       '/staff/documents',
       '/staff/forms',
-      '/staff/exports',
-      '/staff/mails'
+      '/staff/exports'
     ]) {
       await router.push(path)
       expect(router.currentRoute.value.fullPath).toBe(path)
@@ -325,6 +325,27 @@ describe('app router guards', () => {
     await router.push('/staff/settings/portal')
 
     expect(router.currentRoute.value.fullPath).toBe('/staff')
+  })
+
+  it('redirects legacy staff mail paths to /staff/mails', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      permissions: [],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User',
+        canDeleteAccount: false
+      }
+    })
+
+    await router.push('/staff/send_emails')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/mails')
+
+    await router.push('/staff/mail')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/mails')
   })
 
   it('allows staff circle mail access with circle edit permission', async () => {

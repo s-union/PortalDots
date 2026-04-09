@@ -241,9 +241,6 @@ describe('StaffPageDetailPage', () => {
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('展示ガイド')
     expect(wrapper.text()).toContain('保存後にメール配信を予約する')
-    expect(wrapper.text()).toContain(
-      '実送信ではなくキュー登録のみ行います。不要なら `/staff/mails` で全件キャンセルできます。'
-    )
 
     await wrapper.get('input[name="title"]').setValue('展示担当向け更新連絡')
     await wrapper.get('textarea[name="body"]').setValue('更新後本文です。')

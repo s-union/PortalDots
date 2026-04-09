@@ -191,20 +191,18 @@ describe('EmailVerifyPage', () => {
   it('requests a verification code and refreshes the status', async () => {
     const { authHooks, wrapper } = await mountAtVerify()
     authHooks.requestMutateAsync.mockResolvedValue({
-      verifyCode: '654321',
-      message: '認証コードを表示しました'
+      message: '認証コードを送信しました。'
     })
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === '認証コードを表示')
+      .find((button) => button.text() === '認証コードを送信')
       ?.trigger('click')
     await flushPromises()
 
     expect(authHooks.requestMutateAsync).toHaveBeenCalledWith('email')
     expect(authHooks.refetch).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('認証コード: 654321')
-    expect(wrapper.text()).toContain('認証コードを表示しました')
+    expect(wrapper.text()).toContain('認証コードを送信しました。')
   })
 
   it('shows an extracted error message when requesting verification fails', async () => {
@@ -213,7 +211,7 @@ describe('EmailVerifyPage', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text() === '認証コードを表示')
+      .find((button) => button.text() === '認証コードを送信')
       ?.trigger('click')
     await flushPromises()
 

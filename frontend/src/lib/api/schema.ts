@@ -185,9 +185,7 @@ export const staffStatusSchema = z.object({
 })
 
 export const staffVerifyRequestResultSchema = z.object({
-  deliveryMode: z.enum(['email', 'mock']),
-  message: z.string(),
-  verifyCode: z.string().nullable().optional()
+  message: z.string()
 })
 
 export const authVerificationStatusItemSchema = z.object({
@@ -205,9 +203,16 @@ export const authVerificationStatusSchema = z.object({
 })
 
 export const registrationStartResultSchema = z.object({
-  deliveryMode: z.enum(['email', 'mock']),
-  message: z.string(),
-  verifyUrl: z.string().optional()
+  message: z.string()
+})
+
+export const passwordResetStartResultSchema = z.object({
+  message: z.string()
+})
+
+export const passwordResetVerificationSchema = z.object({
+  userId: z.string(),
+  valid: z.boolean()
 })
 
 export const registrationVerificationSchema = z.object({

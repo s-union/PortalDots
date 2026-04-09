@@ -6,10 +6,12 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -158,6 +160,66 @@ func TestContactCategoriesAndSubmitContact(t *testing.T) {
 	}
 }
 
+func TestSubmitContactQueuesConfirmationAndStaffCopy(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.ContactCategories = []config.ContactCategory{
+		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
+	}
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/contact", map[string]string{
+		"categoryId": "0195ec00-0081-7000-8000-000000000001",
+		"subject":    "搬入時間について",
+		"body":       "当日の搬入可能時刻を確認したいです。",
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var mails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &mails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+	if len(mails) != 2 {
+		t.Fatalf("expected 2 queued contact mails, got %#v", mails)
+	}
+
+	hasConfirmation := false
+	hasStaffCopy := false
+	for _, mail := range mails {
+		if mail.Subject == "お問い合わせを承りました" {
+			hasConfirmation = true
+		}
+		if mail.Subject == "搬入時間について" && slices.Equal(mail.Recipients, []string{"general@example.com"}) {
+			hasStaffCopy = true
+		}
+	}
+	if !hasConfirmation || !hasStaffCopy {
+		t.Fatalf("expected confirmation and staff copy mails, got %#v", mails)
+	}
+}
+
 func TestUpdateProfileReflectsInBootstrap(t *testing.T) {
 	t.Parallel()
 
@@ -234,6 +296,249 @@ func TestUpdatePasswordAllowsLoginWithNewPassword(t *testing.T) {
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestUpdatePasswordAllowsLoginWithoutNotificationRecipient(t *testing.T) {
+	t.Parallel()
+
+	cfg := testConfig()
+	cfg.AuthUser.LoginIDs = []string{"24a0000"}
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "24a0000",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/session/password", map[string]string{
+		"currentPassword": "password",
+		"newPassword":     "new-password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/logout", nil)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "24a0000",
+		"password": "new-password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestUpdatePasswordQueuesNotificationMail(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStrictStaffConfig()
+	for index := range cfg.Users {
+		if cfg.Users[index].ID != "0195ec00-0058-7000-8000-000000000001" {
+			continue
+		}
+		cfg.Users[index].ContactEmail = "circle-b-contact@example.com"
+	}
+
+	server := NewServer(cfg)
+	participantCookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, participantCookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	participantCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, participantCookies)}
+
+	recorder = doJSONRequest(t, server, participantCookies, http.MethodPut, "/v1/session/password", map[string]string{
+		"currentPassword": "password",
+		"newPassword":     "new-password",
+	}, participantCSRF)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	staffCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, staffCookies)
+	authorizeStaff(t, server, staffCookies)
+	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
+		"verifyCode": strictStaffVerifyCode,
+	}, staffCSRF)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+
+	found := false
+	for _, queued := range queuedMails {
+		if queued.Subject != "パスワードが変更されました" {
+			continue
+		}
+		if !slices.Contains(queued.Recipients, "0195ec00-0022-7000-8000-000000000001@example.com") {
+			continue
+		}
+		if !strings.Contains(queued.Body, "パスワードが変更されました") {
+			continue
+		}
+		found = true
+		break
+	}
+	if !found {
+		t.Fatalf("expected queued password changed mail, got %#v", queuedMails)
+	}
+}
+
+func TestPasswordResetFlow(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStrictStaffConfig()
+	for index := range cfg.Users {
+		if cfg.Users[index].ID != "0195ec00-0058-7000-8000-000000000001" {
+			continue
+		}
+		cfg.Users[index].ContactEmail = "circle-b-contact@example.com"
+	}
+	server := NewServer(cfg)
+
+	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/password/reset/start", map[string]string{
+		"loginId": "0195ec00-0022-7000-8000-000000000001@example.com",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	staffCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, staffCookies)
+	authorizeStaff(t, server, staffCookies)
+	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
+		"verifyCode": strictStaffVerifyCode,
+	}, staffCSRF)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+
+	resetURL := ""
+	for _, queued := range queuedMails {
+		if queued.Subject != "パスワードの再設定" {
+			continue
+		}
+		if !slices.Contains(queued.Recipients, "circle-b-contact@example.com") {
+			continue
+		}
+		matchedURL := regexp.MustCompile(`https://[^\s]+/password/reset/[^\s]+`).FindString(queued.Body)
+		if matchedURL == "" {
+			continue
+		}
+		resetURL = matchedURL
+		break
+	}
+	if resetURL == "" {
+		t.Fatalf("expected queued password reset mail with reset url, got %#v", queuedMails)
+	}
+
+	parsedURL, err := url.Parse(resetURL)
+	if err != nil {
+		t.Fatalf("parse reset url: %v", err)
+	}
+	token := parsedURL.Query().Get("token")
+	if token == "" {
+		t.Fatalf("expected token query in reset url: %s", resetURL)
+	}
+	pathParts := strings.Split(strings.Trim(parsedURL.Path, "/"), "/")
+	if len(pathParts) < 3 {
+		t.Fatalf("unexpected reset url path: %s", parsedURL.Path)
+	}
+	encodedUserID := pathParts[len(pathParts)-1]
+
+	recorder = doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/password/reset/verify", map[string]string{
+		"userId": encodedUserID,
+		"token":  token,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var verifyResponse passwordResetVerifyResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &verifyResponse); err != nil {
+		t.Fatalf("unmarshal verify response: %v", err)
+	}
+	if !verifyResponse.Valid {
+		t.Fatalf("expected valid reset token response, got %#v", verifyResponse)
+	}
+
+	recorder = doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/password/reset/complete", map[string]string{
+		"userId":               encodedUserID,
+		"token":                token,
+		"password":             "reset-password1",
+		"passwordConfirmation": "reset-password1",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	participantCookies := map[string]*http.Cookie{}
+	recorder = doJSONRequest(t, server, participantCookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "reset-password1",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails after reset complete: %v", err)
+	}
+
+	foundPasswordChangedMail := false
+	for _, queued := range queuedMails {
+		if queued.Subject != "パスワードが変更されました" {
+			continue
+		}
+		if slices.Contains(queued.Recipients, "0195ec00-0022-7000-8000-000000000001@example.com") {
+			foundPasswordChangedMail = true
+			break
+		}
+	}
+	if !foundPasswordChangedMail {
+		t.Fatalf("expected queued password changed mail after reset complete, got %#v", queuedMails)
 	}
 }
 
@@ -575,10 +880,14 @@ func TestRegisterValidationAndConflict(t *testing.T) {
 }
 
 func TestAuthVerificationFlow(t *testing.T) {
-	t.Parallel()
-
 	server := NewServer(testConfig())
 	cookies := map[string]*http.Cookie{}
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() {
+		slog.SetDefault(previousLogger)
+	})
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
 		"studentId":            "24v2001",
 		"univemailLocalPart":   "24v2001",
@@ -602,17 +911,18 @@ func TestAuthVerificationFlow(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var requestResponse staffVerifyRequestResponse
+	var requestResponse messageResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
 		t.Fatalf("unmarshal verification request response: %v", err)
 	}
-	if requestResponse.DeliveryMode != "mock" || requestResponse.VerifyCode == "" {
+	if requestResponse.Message != "認証コードを送信しました。" {
 		t.Fatalf("unexpected verification request response: %#v", requestResponse)
 	}
+	emailVerifyCode := extractLoggedVerifyCode(t, logs.String(), "participant_verify_code", "auth-flow@example.com")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
 		"type":       "email",
-		"verifyCode": requestResponse.VerifyCode,
+		"verifyCode": emailVerifyCode,
 	}, csrf)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -635,6 +945,8 @@ func TestAuthVerificationFlow(t *testing.T) {
 		t.Fatalf("expected verification to remain incomplete until all items verified, got %#v", status)
 	}
 
+	logs.Reset()
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/request", map[string]string{
 		"type": "univemail",
 	}, csrf)
@@ -642,17 +954,18 @@ func TestAuthVerificationFlow(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var secondRequest staffVerifyRequestResponse
+	var secondRequest messageResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &secondRequest); err != nil {
 		t.Fatalf("unmarshal univemail verification request response: %v", err)
 	}
-	if secondRequest.VerifyCode == "" {
-		t.Fatalf("expected univemail verification code, got %#v", secondRequest)
+	if secondRequest.Message != "認証コードを送信しました。" {
+		t.Fatalf("unexpected univemail verification request response: %#v", secondRequest)
 	}
+	univemailVerifyCode := extractLoggedVerifyCode(t, logs.String(), "participant_verify_code", "24v2001@example.ac.jp")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
 		"type":       "univemail",
-		"verifyCode": secondRequest.VerifyCode,
+		"verifyCode": univemailVerifyCode,
 	}, csrf)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -727,6 +1040,132 @@ func TestAuthVerificationRejectsInvalidInputAndWrongCode(t *testing.T) {
 	}
 	if len(wrongCode.Errors["verifyCode"]) == 0 {
 		t.Fatalf("expected verifyCode validation error, got %#v", wrongCode.Errors)
+	}
+}
+
+func TestStartRegistrationQueuesVerificationMailWhenSecure(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStrictStaffConfig())
+	staffCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, staffCookies)
+	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
+
+	recorder := doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/auth/register/start", map[string]string{
+		"univemailLocalPart": "secure-registration",
+	}, staffCSRF)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	authorizeStaff(t, server, staffCookies)
+	staffCSRF = map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
+		"verifyCode": strictStaffVerifyCode,
+	}, staffCSRF)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+
+	found := false
+	for _, queued := range queuedMails {
+		if queued.Subject != "【重要】メール認証のお願い" {
+			continue
+		}
+		if !slices.Contains(queued.Recipients, "secure-registration@example.ac.jp") {
+			continue
+		}
+		if !strings.Contains(queued.Body, "/email/verify/univemail/") {
+			continue
+		}
+		found = true
+		break
+	}
+	if !found {
+		t.Fatalf("expected queued registration verify mail, got %#v", queuedMails)
+	}
+}
+
+func TestAuthVerificationRequestQueuesMailWhenSecure(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStrictStaffConfig()
+	for index := range cfg.Users {
+		if cfg.Users[index].ID != "0195ec00-0058-7000-8000-000000000001" {
+			continue
+		}
+		cfg.Users[index].ContactEmail = "circle-b-contact@example.com"
+		cfg.Users[index].IsEmailVerified = false
+		cfg.Users[index].IsUnivemailVerified = false
+	}
+	server := NewServer(cfg)
+
+	participantCookies := map[string]*http.Cookie{}
+	recorder := doJSONRequest(t, server, participantCookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	participantCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, participantCookies)}
+
+	recorder = doJSONRequest(t, server, participantCookies, http.MethodPost, "/v1/auth/verification/request", map[string]string{
+		"type": "email",
+	}, participantCSRF)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	staffCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, staffCookies)
+	authorizeStaff(t, server, staffCookies)
+	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
+		"verifyCode": strictStaffVerifyCode,
+	}, staffCSRF)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+
+	found := false
+	for _, queued := range queuedMails {
+		if queued.Subject != "認証コードのご案内" {
+			continue
+		}
+		if !slices.Contains(queued.Recipients, "circle-b-contact@example.com") {
+			continue
+		}
+		if !strings.Contains(queued.Body, "認証コード:") {
+			continue
+		}
+		found = true
+		break
+	}
+	if !found {
+		t.Fatalf("expected queued verification code mail, got %#v", queuedMails)
 	}
 }
 
@@ -1387,6 +1826,62 @@ func TestRegenerateInvitationTokenAfterSubmitReturnsOK(t *testing.T) {
 	}
 }
 
+func TestSubmitCurrentCircleQueuesNotificationMail(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/circles/current/detail", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail circleDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal detail response: %v", err)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/submit", map[string]string{
+		"lastUpdatedAt": detail.LastUpdatedAt,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+	if len(queuedMails) != 1 {
+		t.Fatalf("expected one queued mail, got %#v", queuedMails)
+	}
+	if queuedMails[0].Circle.ID != "0195ec00-0022-7000-8000-000000000001" {
+		t.Fatalf("unexpected queued mail circle: %#v", queuedMails[0])
+	}
+	if queuedMails[0].Subject != "【参加登録】「デモ企画B」の参加登録を提出しました" {
+		t.Fatalf("unexpected queued mail subject: %#v", queuedMails[0])
+	}
+}
+
 func TestJoinCircleByTokenAfterSubmitReturnsOK(t *testing.T) {
 	t.Parallel()
 
@@ -2018,6 +2513,32 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+	hasCreatedCategoryMail := false
+	hasUpdatedCategoryMail := false
+	for _, queued := range queuedMails {
+		if queued.Subject != "お問い合わせ先に設定されました" {
+			continue
+		}
+		if slices.Equal(queued.Recipients, []string{"desk@example.com"}) {
+			hasCreatedCategoryMail = true
+		}
+		if slices.Equal(queued.Recipients, []string{"updated@example.com"}) {
+			hasUpdatedCategoryMail = true
+		}
+	}
+	if !hasCreatedCategoryMail || !hasUpdatedCategoryMail {
+		t.Fatalf("expected queued category assignment mails for create/update, got %#v", queuedMails)
+	}
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/tags/"+createdTag.ID, nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -2355,6 +2876,65 @@ func TestGetAndUpsertFormAnswerUsesCurrentCircle(t *testing.T) {
 	}
 }
 
+func TestUpsertFormAnswerQueuesNotificationMail(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	participantCookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, participantCookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, participantCookies, "0195ec00-0022-7000-8000-000000000001")
+
+	recorder = doJSONRequest(t, server, participantCookies, http.MethodPut, "/v1/forms/0195ec00-0014-7000-8000-000000000001/answer", map[string]string{
+		"body": "展示位置は正面入口側を希望します。",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	staffCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, staffCookies)
+	authorizeStaff(t, server, staffCookies)
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+
+	found := false
+	for _, queued := range queuedMails {
+		if queued.Circle.ID != "0195ec00-0022-7000-8000-000000000001" {
+			continue
+		}
+		if !strings.Contains(queued.Subject, "を承りました") {
+			continue
+		}
+		if !strings.Contains(queued.Body, "展示位置は正面入口側を希望します。") {
+			continue
+		}
+		if !slices.Contains(queued.Recipients, "0195ec00-0022-7000-8000-000000000001@example.com") {
+			continue
+		}
+		found = true
+		break
+	}
+	if !found {
+		t.Fatalf("expected queued form answer notification mail, got %#v", queuedMails)
+	}
+}
+
 func TestUploadAndDownloadFormAnswerFile(t *testing.T) {
 	t.Parallel()
 
@@ -2484,11 +3064,11 @@ func TestStaffVerificationFlow(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var requestResponse staffVerifyRequestResponse
+	var requestResponse messageResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
 		t.Fatalf("unmarshal staff verify request response: %v", err)
 	}
-	if requestResponse.DeliveryMode != "email" || requestResponse.VerifyCode != "" {
+	if requestResponse.Message != "認証コードを送信しました。" {
 		t.Fatalf("unexpected staff verify request response: %#v", requestResponse)
 	}
 
@@ -2510,6 +3090,30 @@ func TestStaffVerificationFlow(t *testing.T) {
 	}
 	if !verifiedStatus.Allowed || !verifiedStatus.Authorized {
 		t.Fatalf("unexpected verified staff status: %#v", verifiedStatus)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+	found := false
+	for _, queued := range queuedMails {
+		if queued.Subject != "スタッフ認証 (認証コード : "+strictStaffVerifyCode+")" {
+			continue
+		}
+		if !slices.Contains(queued.Recipients, "staff@example.com") {
+			continue
+		}
+		found = true
+		break
+	}
+	if !found {
+		t.Fatalf("expected queued staff verify mail, got %#v", queuedMails)
 	}
 }
 
@@ -2625,25 +3229,6 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	}
 	if detail.CreatedAt == "" || detail.UpdatedAt == "" {
 		t.Fatalf("expected detail timestamps to be populated, got %#v", detail)
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var mails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &mails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-	if len(mails) != 1 || mails[0].Subject != "スタッフ向け新着" {
-		t.Fatalf("unexpected queued mails: %#v", mails)
-	}
-	if len(mails[0].Recipients) != 1 || mails[0].Recipients[0] != "0195ec00-0022-7000-8000-000000000001@example.com" {
-		t.Fatalf("unexpected mail recipients: %#v", mails[0].Recipients)
-	}
-	if !strings.Contains(mails[0].Body, "関連する配布資料") {
-		t.Fatalf("expected related documents in mail body, got %#v", mails[0])
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages?query=スタッフ向け", nil)
@@ -3226,22 +3811,6 @@ func TestStaffFormAnswersManagement(t *testing.T) {
 		t.Fatalf("expected createdAt to be populated, got %#v", created)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var mails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &mails); err != nil {
-		t.Fatalf("unmarshal mails: %v", err)
-	}
-	if len(mails) != 1 || !strings.Contains(mails[0].Subject, "展示チェックフォーム") {
-		t.Fatalf("unexpected mail queue: %#v", mails)
-	}
-	if !slices.Contains(mails[0].Recipients, "0195ec00-0021-7000-8000-000000000001@example.com") || !slices.Contains(mails[0].Recipients, "staff@example.com") {
-		t.Fatalf("unexpected mail recipients: %#v", mails[0].Recipients)
-	}
-
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001/answers", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3654,6 +4223,48 @@ func TestStaffCirclesListCreateDetailAndUpdate(t *testing.T) {
 	}
 }
 
+func TestStaffCircleStatusUpdateQueuesNotificationMail(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001", map[string]any{
+		"name":                "デモ企画B",
+		"nameYomi":            "でもきかくびー",
+		"groupName":           "Bブロック",
+		"groupNameYomi":       "びーぶろっく",
+		"participationTypeId": "0195ec00-0002-7000-8000-000000000001",
+		"status":              "rejected",
+		"statusReason":        "書類に不足があります",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+	if len(queuedMails) != 1 {
+		t.Fatalf("expected one queued mail, got %#v", queuedMails)
+	}
+	if !strings.HasPrefix(queuedMails[0].Subject, "【不受理】") {
+		t.Fatalf("unexpected queued mail subject: %#v", queuedMails[0])
+	}
+	if !strings.Contains(queuedMails[0].Body, "書類に不足があります") {
+		t.Fatalf("expected status reason in body, got %#v", queuedMails[0])
+	}
+}
+
 func TestStaffCirclesHTTPBoundaryUsesExternalIDs(t *testing.T) {
 	t.Parallel()
 
@@ -3821,18 +4432,33 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
 
-	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var jobs []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &jobs); err != nil {
-		t.Fatalf("unmarshal circle mail jobs: %v", err)
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
 	}
-	if len(jobs) != 1 || !slices.Equal(jobs[0].Recipients, []string{"0195ec00-0022-7000-8000-000000000001@example.com"}) {
-		t.Fatalf("unexpected circle mail jobs: %#v", jobs)
+	if len(queuedMails) != 1 || queuedMails[0].Circle.ID != "0195ec00-0022-7000-8000-000000000001" {
+		t.Fatalf("unexpected queued mails response: %#v", queuedMails)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails after delete: %v", err)
+	}
+	if len(queuedMails) != 0 {
+		t.Fatalf("expected no queued mails after delete, got %#v", queuedMails)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001", nil)
@@ -4733,16 +5359,6 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
-		"circleId":   "0195ec00-0022-7000-8000-000000000001",
-		"subject":    "搬入のご案内",
-		"body":       "9:00 に集合してください。",
-		"recipients": []string{"demo@example.com"},
-	})
-	if recorder.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
-	}
-
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/activity-logs", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -4752,10 +5368,10 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &logs); err != nil {
 		t.Fatalf("unmarshal activity logs: %v", err)
 	}
-	if len(logs.Items) != 3 || logs.Total != 3 {
-		t.Fatalf("expected 3 activity logs, got %#v", logs)
+	if len(logs.Items) != 2 || logs.Total != 2 {
+		t.Fatalf("expected 2 activity logs, got %#v", logs)
 	}
-	if logs.Items[0].Action != "staff.mail.queued" || logs.Items[1].Action != "staff.form.created" || logs.Items[2].Action != "staff.page.created" {
+	if logs.Items[0].Action != "staff.form.created" || logs.Items[1].Action != "staff.page.created" {
 		t.Fatalf("unexpected activity logs order: %#v", logs)
 	}
 }
@@ -5239,104 +5855,6 @@ func TestStaffPlacesExportCSV(t *testing.T) {
 	}
 }
 
-func TestStaffMailsListAndEnqueue(t *testing.T) {
-	t.Parallel()
-
-	server := NewServer(testStaffConfig())
-	cookies := map[string]*http.Cookie{}
-
-	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
-	authorizeStaff(t, server, cookies)
-
-	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var jobs []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &jobs); err != nil {
-		t.Fatalf("unmarshal empty mail list: %v", err)
-	}
-	if len(jobs) != 0 {
-		t.Fatalf("expected empty mail list, got %#v", jobs)
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
-		"circleId":   "0195ec00-0022-7000-8000-000000000001",
-		"subject":    "搬入のご案内",
-		"body":       "9:00 に集合してください。",
-		"recipients": []string{"demo@example.com", "sub@example.com"},
-	})
-	if recorder.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
-	}
-
-	var created staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
-		t.Fatalf("unmarshal created mail: %v", err)
-	}
-	if created.Status != "queued" || len(created.Recipients) != 2 {
-		t.Fatalf("unexpected created mail: %#v", created)
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-	if err := json.Unmarshal(recorder.Body.Bytes(), &jobs); err != nil {
-		t.Fatalf("unmarshal mail list: %v", err)
-	}
-	if len(jobs) != 1 || jobs[0].Subject != "搬入のご案内" {
-		t.Fatalf("unexpected mail list: %#v", jobs)
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-	if err := json.Unmarshal(recorder.Body.Bytes(), &jobs); err != nil {
-		t.Fatalf("unmarshal empty mail list after delete: %v", err)
-	}
-	if len(jobs) != 0 {
-		t.Fatalf("expected empty mail list after delete, got %#v", jobs)
-	}
-}
-
-func TestStaffMailValidation(t *testing.T) {
-	t.Parallel()
-
-	server := NewServer(testStaffConfig())
-	cookies := map[string]*http.Cookie{}
-
-	loginAsStaff(t, server, cookies)
-	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
-	authorizeStaff(t, server, cookies)
-
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/mails", map[string]any{
-		"circleId":   "0195ec00-0022-7000-8000-000000000001",
-		"subject":    "   ",
-		"body":       "   ",
-		"recipients": []string{},
-	})
-	if recorder.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
-	}
-
-	var response models.ValidationErrorResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
-		t.Fatalf("unmarshal validation response: %v", err)
-	}
-	if len(response.Errors["subject"]) == 0 || len(response.Errors["recipients"]) == 0 {
-		t.Fatalf("expected validation errors, got %#v", response.Errors)
-	}
-}
-
 func loginAsStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Cookie) {
 	t.Helper()
 
@@ -5363,25 +5881,33 @@ func selectCircle(t *testing.T, server *echo.Echo, cookies map[string]*http.Cook
 func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Cookie) {
 	t.Helper()
 
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{})
+	csrf := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{}, csrf)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response staffVerifyRequestResponse
+	var response messageResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal staff verify request response: %v", err)
 	}
-	if strings.TrimSpace(response.VerifyCode) == "" {
-		t.Fatalf("expected mock verify code in insecure defaults, got %#v", response)
+	if strings.TrimSpace(response.Message) == "" {
+		t.Fatalf("expected non-empty staff verify response, got %#v", response)
+	}
+}
+
+func extractLoggedVerifyCode(t *testing.T, logs, kind, recipient string) string {
+	t.Helper()
+
+	pattern := regexp.MustCompile(
+		`kind=` + regexp.QuoteMeta(kind) + ` recipient=` + regexp.QuoteMeta(recipient) + ` verifyCode=([0-9]{6})`,
+	)
+	matches := pattern.FindStringSubmatch(logs)
+	if len(matches) != 2 {
+		t.Fatalf("expected verify code log for %s/%s, got logs=%s", kind, recipient, logs)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": response.VerifyCode,
-	})
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
+	return matches[1]
 }
 
 func testNowUTC() time.Time {

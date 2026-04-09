@@ -18,6 +18,9 @@ type PublicRoutes struct {
 	StartRegistration        echo.HandlerFunc
 	VerifyRegistration       echo.HandlerFunc
 	CompleteRegistration     echo.HandlerFunc
+	StartPasswordReset       echo.HandlerFunc
+	VerifyPasswordReset      echo.HandlerFunc
+	CompletePasswordReset    echo.HandlerFunc
 	Login                    echo.HandlerFunc
 	Logout                   echo.HandlerFunc
 	GetAuthVerification      echo.HandlerFunc
@@ -113,14 +116,14 @@ type StaffRoutes struct {
 	GetStaffCircleMailForm  echo.HandlerFunc
 	SendStaffCircleMail     echo.HandlerFunc
 	// Admin
+	ListStaffMails            echo.HandlerFunc
+	EnqueueStaffMail          echo.HandlerFunc
+	DeleteStaffMails          echo.HandlerFunc
 	ListStaffActivityLogs     echo.HandlerFunc
 	GetStaffPortalSettings    echo.HandlerFunc
 	UpdateStaffPortalSettings echo.HandlerFunc
 	DownloadStaffSummaryCSV   echo.HandlerFunc
 	DownloadStaffBundleZIP    echo.HandlerFunc
-	ListStaffMails            echo.HandlerFunc
-	EnqueueStaffMail          echo.HandlerFunc
-	DeleteStaffMails          echo.HandlerFunc
 	// Users
 	ListStaffUsers        echo.HandlerFunc
 	DownloadStaffUsersCSV echo.HandlerFunc
@@ -185,6 +188,9 @@ func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
 	v1.POST("/auth/register/start", r.StartRegistration)
 	v1.POST("/auth/register/verify", r.VerifyRegistration)
 	v1.POST("/auth/register/complete", r.CompleteRegistration)
+	v1.POST("/auth/password/reset/start", r.StartPasswordReset)
+	v1.POST("/auth/password/reset/verify", r.VerifyPasswordReset)
+	v1.POST("/auth/password/reset/complete", r.CompletePasswordReset)
 	v1.POST("/auth/login", r.Login)
 	v1.POST("/auth/logout", r.Logout)
 	v1.GET("/auth/verification", r.GetAuthVerification)
@@ -275,14 +281,14 @@ func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.Midd
 	staff.DELETE("/circles/:circleID/members/:userID", r.DeleteStaffCircleMember)
 	staff.GET("/circles/:circleID/email", r.GetStaffCircleMailForm)
 	staff.POST("/circles/:circleID/email", r.SendStaffCircleMail)
+	staff.GET("/mails", r.ListStaffMails)
+	staff.POST("/mails", r.EnqueueStaffMail)
+	staff.DELETE("/mails", r.DeleteStaffMails)
 	staff.GET("/activity-logs", r.ListStaffActivityLogs)
 	staff.GET("/portal-settings", r.GetStaffPortalSettings)
 	staff.PUT("/portal-settings", r.UpdateStaffPortalSettings)
 	staff.GET("/exports/summary.csv", r.DownloadStaffSummaryCSV)
 	staff.GET("/exports/bundle.zip", r.DownloadStaffBundleZIP)
-	staff.GET("/mails", r.ListStaffMails)
-	staff.POST("/mails", r.EnqueueStaffMail)
-	staff.DELETE("/mails", r.DeleteStaffMails)
 	staff.GET("/users", r.ListStaffUsers)
 	staff.GET("/users/export", r.DownloadStaffUsersCSV)
 	staff.GET("/users/:userID", r.GetStaffUser)

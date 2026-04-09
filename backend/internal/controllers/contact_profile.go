@@ -156,27 +156,55 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		return internalError(c)
 	}
 
-	body := fmt.Sprintf(
-		"PortalDots contact request\ncategory_id: %s\ncategory_name: %s\nfrom: %s (%s)\ncircle: %s (%s)\n\n%s",
+	staffBody := fmt.Sprintf(
+		"PortalDots contact request\ncategory_id: %s\ncategory_name: %s\nfrom: %s (%s)\ncircle: %s (%s)\nsubject: %s\n\n%s",
 		category.ID,
 		category.Name,
 		currentSession.User.DisplayName,
 		currentSession.User.ID,
 		selectedCircle.Name,
 		selectedCircle.ID,
+		request.Subject,
 		request.Body,
 	)
+
+	confirmationRecipients, err := h.contactConfirmationRecipients(selectedCircle.ID, currentSession.User.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	if len(confirmationRecipients) > 0 {
+		confirmationBody := fmt.Sprintf(
+			"お問い合わせを受け付けました。\n\nカテゴリ: %s\n件名: %s\n\n%s",
+			category.Name,
+			request.Subject,
+			request.Body,
+		)
+		confirmationJob, err := h.mails.Enqueue(
+			c.Request().Context(),
+			"",
+			currentSession.User.ID,
+			"お問い合わせを承りました",
+			confirmationBody,
+			confirmationRecipients,
+		)
+		if err != nil {
+			return internalError(c)
+		}
+		logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients)
+	}
+
 	job, err := h.mails.Enqueue(
 		c.Request().Context(),
 		selectedCircle.ID,
 		currentSession.User.ID,
 		request.Subject,
-		body,
+		staffBody,
 		[]string{category.Email},
 	)
 	if err != nil {
 		return internalError(c)
 	}
+	logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
 		h.activities,
 		currentSession.User.ID,
@@ -195,6 +223,34 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		Status:       job.Status,
 		CreatedAt:    job.CreatedAt,
 	})
+}
+
+func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID string) ([]string, error) {
+	users, err := h.users.ListByCircleIDs([]string{circleID})
+	if err != nil {
+		return nil, err
+	}
+	recipients := collectRecipientLoginIDs(users)
+	if len(recipients) > 0 {
+		return recipients, nil
+	}
+
+	senderUser, err := h.users.Find(senderUserID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	recipients = collectRecipientLoginIDs([]useradmin.User{senderUser})
+	if len(recipients) > 0 {
+		return recipients, nil
+	}
+	if contactEmail := strings.TrimSpace(senderUser.ContactEmail); contactEmail != "" {
+		return []string{contactEmail}, nil
+	}
+
+	return nil, nil
 }
 
 func extractContactMetadata(body string) (string, string) {
@@ -396,6 +452,13 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 		if errors.Is(err, auth.ErrInvalidPassword) {
 			return validationError(c, map[string][]string{"currentPassword": {"現在のパスワードが正しくありません"}})
 		}
+		return internalError(c)
+	}
+	managedUser, err := h.users.Find(currentSession.User.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	if err := h.enqueuePasswordChangedMail(c.Request().Context(), currentSession.User.ID, collectUserEmailRecipients(managedUser)); err != nil {
 		return internalError(c)
 	}
 

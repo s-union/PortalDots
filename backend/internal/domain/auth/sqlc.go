@@ -73,3 +73,24 @@ func (a *SQLCAuthenticator) ChangePassword(
 
 	return nil
 }
+
+func (a *SQLCAuthenticator) ResetPassword(ctx context.Context, userID, newPassword string) error {
+	if _, err := a.queries.GetUserByID(ctx, userID); err != nil {
+		return ErrInvalidPassword
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	_, err = a.queries.UpdateUserPassword(ctx, dbgen.UpdateUserPasswordParams{
+		ID:       userID,
+		Password: string(hashed),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+
+	return nil
+}

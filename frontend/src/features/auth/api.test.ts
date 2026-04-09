@@ -90,7 +90,7 @@ describe('auth api', () => {
     })
 
     apiClientMocks.$api.noContentMutation.mockResolvedValue(undefined)
-    apiClientMocks.$api.mutationData.mockResolvedValue({ verifyCode: '123456', message: 'sent' })
+    apiClientMocks.$api.mutationData.mockResolvedValue({ message: 'sent' })
     apiClientMocks.$api.queryData.mockResolvedValue(undefined)
     apiClientMocks.$api.useQueryData.mockImplementation((_method, _path, _request, _parser, options) => options)
     apiClientMocks.$apiSuspense.useSuspenseQueryData.mockImplementation(

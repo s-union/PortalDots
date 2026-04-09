@@ -99,9 +99,6 @@ function handleDocumentChange(documentId: string, event: Event) {
       <input v-model="form.sendEmails" name="sendEmails" type="checkbox" />
       保存後にメール配信を予約する
     </label>
-    <p class="text-sm text-muted">
-      実送信ではなくキュー登録のみ行います。不要なら `/staff/mails` で全件キャンセルできます。
-    </p>
 
     <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
     <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>

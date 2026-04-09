@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/binary"
@@ -21,9 +22,7 @@ type staffStatusResponse struct {
 }
 
 type staffVerifyRequestResponse struct {
-	DeliveryMode string `json:"deliveryMode"`
-	Message      string `json:"message"`
-	VerifyCode   string `json:"verifyCode,omitempty"`
+	Message string `json:"message"`
 }
 
 type confirmStaffVerificationRequest struct {
@@ -46,13 +45,13 @@ func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
 }
 
 func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
-	sessionID, _, status, ok := h.requireStaffUser(c)
+	sessionID, currentSession, status, ok := h.requireStaffUser(c)
 	if !ok {
 		return statusError(c, status)
 	}
 
 	verifyCode := h.staffVerifyCode
-	if h.allowInsecureDefaults {
+	if h.allowInsecureDefaults || strings.TrimSpace(verifyCode) == "" {
 		generatedCode, err := generateStaffVerifyCode()
 		if err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
@@ -66,16 +65,24 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		next.StaffVerifyExpires = time.Now().UTC().Add(staffVerifyTTL)
 	})
 
-	response := staffVerifyRequestResponse{DeliveryMode: "email"}
 	if h.allowInsecureDefaults {
-		response.DeliveryMode = "mock"
-		response.Message = "モック中: メールは送信していません。画面に表示された認証コードを入力してください。"
-		response.VerifyCode = verifyCode
-	} else {
-		response.Message = "認証コードを登録済みの連絡先メールアドレスに送信しました。メール内のコードを入力してください。"
+		logMockVerificationCode("staff_verify_code", currentSession.User.DisplayName, verifyCode)
+		return c.JSON(http.StatusOK, staffVerifyRequestResponse{
+			Message: "認証コードを送信しました。",
+		})
+	}
+	managedUser, err := h.users.Find(currentSession.User.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	recipients := collectUserEmailRecipients(managedUser)
+	if err := h.enqueueStaffVerifyCodeMail(c.Request().Context(), currentSession.User.ID, currentSession.CurrentCircleID, currentSession.User.DisplayName, verifyCode, recipients); err != nil {
+		return internalError(c)
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, staffVerifyRequestResponse{
+		Message: "認証コードを送信しました。",
+	})
 }
 
 func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {
@@ -147,4 +154,40 @@ func generateStaffVerifyCode() (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%06d", binary.BigEndian.Uint32(raw[:])%1000000), nil
+}
+
+func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
+	ctx context.Context,
+	createdByUserID,
+	circleID,
+	displayName,
+	verifyCode string,
+	recipients []string,
+) error {
+	normalizedRecipients := normalizeRecipients(recipients)
+	if len(normalizedRecipients) == 0 {
+		return fmt.Errorf("staff verify recipient not found")
+	}
+
+	subject := fmt.Sprintf("スタッフ認証 (認証コード : %s)", verifyCode)
+	body := strings.TrimSpace(fmt.Sprintf(
+		`スタッフ認証
+
+%s 様
+
+%s のスタッフモードにアクセスするには、以下の認証コードをスタッフ認証ページに入力してください。
+
+認証コード: %s`,
+		displayName,
+		h.appName,
+		verifyCode,
+	))
+
+	job, err := h.mails.Enqueue(ctx, circleID, createdByUserID, subject, body, normalizedRecipients)
+	if err != nil {
+		return err
+	}
+	logQueuedMail("staff_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+
+	return nil
 }

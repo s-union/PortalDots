@@ -219,12 +219,6 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
             <i class="fas fa-plus fa-fw" aria-hidden="true" />
             新規お知らせ
           </RouterLink>
-          <RouterLink
-            to="/staff/mails"
-            class="inline-flex items-center px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
-          >
-            メール配信設定
-          </RouterLink>
           <a
             :href="exportHref"
             class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"

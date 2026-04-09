@@ -98,9 +98,7 @@ describe('StaffVerifyPage', () => {
         if (pathname.endsWith('/staff/verify/request') && method === 'POST') {
           return new Response(
             JSON.stringify({
-              deliveryMode: 'mock',
-              message: 'モック中: メールは送信していません。画面に表示された認証コードを入力してください。',
-              verifyCode: '123456'
+              message: '認証コードを送信しました。'
             }),
             {
               status: 200,
@@ -127,10 +125,7 @@ describe('StaffVerifyPage', () => {
 
     await wrapper.get('button[type="button"]').trigger('click')
     await flushPromises()
-    expect(wrapper.text()).toContain(
-      'モック中: メールは送信していません。画面に表示された認証コードを入力してください。'
-    )
-    expect(wrapper.text()).toContain('認証コード: 123456')
+    expect(wrapper.text()).toContain('認証コードを送信しました。')
 
     await wrapper.get('input[name="verifyCode"]').setValue('123456')
     await wrapper.get('button[type="submit"]').trigger('submit')

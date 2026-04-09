@@ -21,9 +21,9 @@ import {
   canReadPages,
   canReadPlaces,
   canReadTags,
-  canUseMailQueue,
   canUseStaffExports,
   canManagePortalSettings,
+  canUseMailQueue,
   canViewActivityLogs
 } from '@/features/staff/access/capabilities'
 import { usePublicConfigQuery } from '@/features/public-home/api'
@@ -34,6 +34,7 @@ const publicConfigQuery = usePublicConfigQuery()
 const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalDots')
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 const pageAdminAvailable = computed(() => canReadPages(sessionStore.roles, sessionStore.permissions))
+const mailQueueAvailable = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
 const documentAdminAvailable = computed(() => canReadDocuments(sessionStore.roles, sessionStore.permissions))
 const tagAdminAvailable = computed(() => canReadTags(sessionStore.roles, sessionStore.permissions))
 const placeAdminAvailable = computed(() => canReadPlaces(sessionStore.roles, sessionStore.permissions))
@@ -46,7 +47,6 @@ const formsAdminAvailable = computed(() => canReadForms(sessionStore.roles, sess
 const userAdminAvailable = computed(() => canManageUsers(sessionStore.roles, sessionStore.permissions))
 const permissionAdminAvailable = computed(() => canManagePermissions(sessionStore.roles, sessionStore.permissions))
 const exportAvailable = computed(() => canUseStaffExports(sessionStore.roles, sessionStore.permissions))
-const mailQueueAvailable = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
 const activityLogAvailable = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
 const portalSettingsAvailable = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
 
@@ -104,6 +104,13 @@ const staffCards = computed<StaffCard[]>(() => [
     hidden: !pageAdminAvailable.value
   },
   {
+    to: '/staff/mails',
+    title: 'メール配信設定',
+    iconClass: 'far fa-envelope fa-fw',
+    description: '配信予約中のメールを確認し、必要に応じてキューを全件キャンセルします',
+    hidden: isDemoMode.value || !mailQueueAvailable.value
+  },
+  {
     to: '/staff/documents',
     title: '配布資料管理',
     iconClass: 'far fa-file-alt fa-fw',
@@ -159,13 +166,6 @@ const staffCards = computed<StaffCard[]>(() => [
     iconClass: 'fas fa-file-export fa-fw',
     description: '各種データのエクスポートを行います',
     hidden: isDemoMode.value || !exportAvailable.value
-  },
-  {
-    to: '/staff/mails',
-    title: 'メールキュー',
-    iconClass: 'far fa-envelope fa-fw',
-    description: 'メール配信の状態を確認します',
-    hidden: isDemoMode.value || !mailQueueAvailable.value
   }
 ])
 
