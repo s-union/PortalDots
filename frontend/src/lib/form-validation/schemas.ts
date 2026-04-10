@@ -131,6 +131,33 @@ export const userRegistrationFormSchema = z
 
 export type UserRegistrationFormData = z.infer<typeof userRegistrationFormSchema>
 
+export const registrationStartFormSchema = z.object({
+  univemailLocalPart: requiredTextSchema('大学メールアドレス').regex(
+    /^[^@\s]+$/,
+    '大学メールアドレスの @ より前の部分を入力してください'
+  )
+})
+
+export type RegistrationStartFormData = z.infer<typeof registrationStartFormSchema>
+
+export const directUserRegistrationFormSchema = z
+  .object({
+    studentId: requiredTextSchema('学籍番号'),
+    univemailLocalPart: requiredTextSchema('大学メールアドレス'),
+    name: fullNameSchema,
+    nameYomi: nameYomiSchema,
+    contactEmail: requiredEmailSchema,
+    phoneNumber: phoneNumberSchema,
+    password: passwordSchema,
+    passwordConfirmation: z.string()
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: '確認用パスワードが一致しません',
+    path: ['passwordConfirmation']
+  })
+
+export type DirectUserRegistrationFormData = z.infer<typeof directUserRegistrationFormSchema>
+
 /**
  * Circle registration form schema
  */

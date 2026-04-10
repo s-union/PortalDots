@@ -3,6 +3,7 @@ package controllers
 import (
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
@@ -138,9 +139,29 @@ func mapStaffUser(userValue useradmin.User) staffUserSummaryResponse {
 		DisplayName:      userValue.DisplayName,
 		LoginIDs:         slices.Clone(userValue.LoginIDs),
 		ContactEmail:     userValue.ContactEmail,
+		Univemail:        deriveStaffUserUnivemail(userValue.LoginIDs, userValue.ContactEmail),
 		PhoneNumber:      userValue.PhoneNumber,
 		Roles:            slices.Clone(userValue.Roles),
 		IsVerified:       userValue.IsVerified,
 		IsEmailVerified:  userValue.IsEmailVerified,
+		CreatedAt:        formatStaffUserTimestamp(userValue.CreatedAt),
+		UpdatedAt:        formatStaffUserTimestamp(userValue.UpdatedAt),
 	}
+}
+
+func deriveStaffUserUnivemail(loginIDs []string, contactEmail string) string {
+	for _, loginID := range loginIDs {
+		trimmed := strings.TrimSpace(loginID)
+		if strings.Contains(trimmed, "@") {
+			return trimmed
+		}
+	}
+	return strings.TrimSpace(contactEmail)
+}
+
+func formatStaffUserTimestamp(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format(time.RFC3339)
 }

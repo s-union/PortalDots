@@ -108,7 +108,7 @@ onMounted(() => {
 
 <template>
   <NarrowPageLayout class="space-y-6 py-8">
-    <section class="rounded border border-border bg-surface shadow-lv1">
+    <section class="mx-auto w-full max-w-[800px] rounded border border-border bg-surface shadow-lv1">
       <div class="border-b border-border px-6 py-5">
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">パスワードの再設定</h1>
       </div>
@@ -133,13 +133,15 @@ onMounted(() => {
             </RouterLink>
           </div>
         </template>
-        <form v-else class="space-y-4" @submit.prevent="handleSubmit">
+        <form id="password-reset-complete-form" v-else class="space-y-5" @submit.prevent="handleSubmit">
           <p v-if="submitErrorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
             {{ submitErrorMessage }}
           </p>
-          <label class="grid gap-2 font-semibold text-body">
-            新しいパスワード
+          <div class="grid gap-2">
+            <label class="font-semibold text-body" for="reset-password">新しいパスワード</label>
+            <p class="text-xs text-muted">8文字以上で入力してください</p>
             <input
+              id="reset-password"
               v-model="form.password"
               autocomplete="new-password"
               name="password"
@@ -147,29 +149,32 @@ onMounted(() => {
               required
               type="password"
             />
-          </label>
-          <label class="grid gap-2 font-semibold text-body">
-            新しいパスワード（確認）
+          </div>
+          <div class="grid gap-2">
+            <label class="font-semibold text-body" for="reset-password-confirmation">新しいパスワード（確認）</label>
+            <p class="text-xs text-muted">確認のため、パスワードをもう一度入力してください</p>
             <input
+              id="reset-password-confirmation"
               v-model="form.passwordConfirmation"
               autocomplete="new-password"
               name="passwordConfirmation"
               required
               type="password"
             />
-          </label>
-          <div class="pt-2 text-center">
-            <button
-              class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline disabled:opacity-60"
-              :disabled="completeMutation.isPending.value"
-              type="submit"
-            >
-              {{ completeMutation.isPending.value ? '再設定中...' : '新しいパスワードを設定' }}
-            </button>
           </div>
         </form>
       </div>
     </section>
+    <div v-if="!verificationErrorMessage && !verifyMutation.isPending.value && !completed" class="pt-2 text-center">
+      <button
+        class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline disabled:opacity-60"
+        :disabled="completeMutation.isPending.value"
+        form="password-reset-complete-form"
+        type="submit"
+      >
+        {{ completeMutation.isPending.value ? '再設定中...' : '新しいパスワードを設定' }}
+      </button>
+    </div>
     <div v-if="verificationErrorMessage" class="pt-2 text-center">
       <RouterLink
         class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline"

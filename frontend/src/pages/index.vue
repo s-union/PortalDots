@@ -11,6 +11,12 @@ import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePublicHomeQuery, usePublicConfigQuery } from '@/features/public-home/api'
 import { useFormsQuery, type FormSummary } from '@/features/forms/api'
+import {
+  useCurrentCircleDetailQuery,
+  useSelectableCirclesQuery,
+  type CircleDetail,
+  type SelectableCircle
+} from '@/features/circles/api'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
@@ -19,6 +25,8 @@ const sessionStore = useSessionStore()
 const publicHomeQuery = usePublicHomeQuery(computed(() => true))
 const publicConfigQuery = usePublicConfigQuery()
 const formsQuery = useFormsQuery()
+const selectableCirclesQuery = useSelectableCirclesQuery()
+const currentCircleDetailQuery = useCurrentCircleDetailQuery()
 
 const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions))
 const publicHome = computed(() => publicHomeQuery.data.value)
@@ -30,12 +38,19 @@ const publicLoginMethods = computed(() => publicHome.value?.loginMethods ?? [])
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
 const openForms = computed(() => (formsQuery.data.value ?? []).filter((form) => form.isOpen))
+const selectableCircles = computed(() => selectableCirclesQuery.data.value ?? [])
+const currentCircleDetail = computed(() => currentCircleDetailQuery.data.value ?? null)
 const shouldShowOpenFormsPanel = computed(
   () =>
     sessionStore.isAuthenticated &&
     sessionStore.currentCircle !== null &&
+    currentCircleDetail.value?.status === 'approved' &&
     (formsQuery.isPending.value || openForms.value.length > 0)
 )
+const shouldShowCircleStatusPanel = computed(
+  () => sessionStore.isAuthenticated && (selectableCirclesQuery.isPending.value || circleStatusItems.value.length > 0)
+)
+const shouldShowCurrentCirclePanel = computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null)
 const pagesIndexPath = computed(() => (sessionStore.isAuthenticated ? '/workspace/pages' : '/public/pages'))
 const documentsIndexPath = computed(() => (sessionStore.isAuthenticated ? '/workspace/documents' : '/public/documents'))
 const pageDetailPath = (pageId: string) =>
@@ -64,6 +79,168 @@ function formatOpenFormMeta(form: FormSummary) {
   const schedule = `${formatDateTime(form.closeAt)} まで受付`
   return form.maxAnswers > 1 ? `${schedule} • 1企画あたり${form.maxAnswers}つ回答可能` : schedule
 }
+
+interface CircleStatusItem {
+  id: string
+  to: string
+  title: string
+  titleClass: string
+  description: string
+  deadline: string
+  participationTypeName: string
+}
+
+function buildCircleSelectorPath(circleId: string) {
+  return `/circles/select?redirect=${encodeURIComponent('/')}&circle=${encodeURIComponent(circleId)}`
+}
+
+function buildSelectedCircleStatusItem(detail: CircleDetail): CircleStatusItem {
+  const deadline = detail.formCloseAt ? `${formatDateTime(detail.formCloseAt)} までに提出してください` : ''
+
+  if (detail.submittedAt === null) {
+    if (detail.isLeader && detail.canSubmit) {
+      return {
+        id: detail.id,
+        to: '/workspace/circles/confirm',
+        title: `📮 ここをクリックして「${detail.name}」の参加登録を提出しましょう！`,
+        titleClass: 'text-primary',
+        description:
+          '学園祭係(副責任者)の招待が完了しました。ここをクリックして登録内容に不備がないかどうかを確認し、参加登録を提出しましょう。',
+        deadline,
+        participationTypeName: detail.participationTypeName
+      }
+    }
+
+    if (detail.isLeader) {
+      return {
+        id: detail.id,
+        to: '/workspace/circles/members',
+        title: `📩 ここをクリックして「${detail.name}」の学園祭係(副責任者)を招待しましょう！`,
+        titleClass: 'text-primary',
+        description: '参加登録を提出するには、ここをクリックして学園祭係(副責任者)を招待しましょう。',
+        deadline,
+        participationTypeName: detail.participationTypeName
+      }
+    }
+
+    return {
+      id: detail.id,
+      to: '/workspace/circles/detail',
+      title: `📄 ここをクリックすると「${detail.name}」の参加登録の内容を確認できます`,
+      titleClass: '',
+      description: 'この企画の提出操作は責任者のみが行えます。',
+      deadline,
+      participationTypeName: detail.participationTypeName
+    }
+  }
+
+  if (detail.status === 'approved') {
+    return {
+      id: detail.id,
+      to: '/workspace/circles/detail',
+      title: `🎉 「${detail.name}」の参加登録は受理されました`,
+      titleClass: '',
+      description: '',
+      deadline: '',
+      participationTypeName: detail.participationTypeName
+    }
+  }
+
+  if (detail.status === 'rejected') {
+    return {
+      id: detail.id,
+      to: '/workspace/circles/detail',
+      title: `⚠️ 「${detail.name}」の参加登録は受理されませんでした`,
+      titleClass: 'text-danger',
+      description: '詳細はこちら',
+      deadline: '',
+      participationTypeName: detail.participationTypeName
+    }
+  }
+
+  return {
+    id: detail.id,
+    to: '/workspace/circles/detail',
+    title: `💭 「${detail.name}」の参加登録の内容を確認中です`,
+    titleClass: '',
+    description: detail.confirmationMessage || '確認が完了するまでしばらくお待ちください。',
+    deadline: '',
+    participationTypeName: detail.participationTypeName
+  }
+}
+
+function buildSelectableCircleStatusItem(circle: SelectableCircle): CircleStatusItem {
+  const status = circle.status ?? 'pending'
+  const isSubmitted = circle.submittedAt !== null && circle.submittedAt !== undefined
+
+  if (!isSubmitted) {
+    return {
+      id: circle.id,
+      to: buildCircleSelectorPath(circle.id),
+      title: `📄 「${circle.name}」の参加登録は未提出です`,
+      titleClass: 'text-primary',
+      description: 'この企画に切り替えて参加登録の状況を確認できます。',
+      deadline: '',
+      participationTypeName: circle.participationTypeName
+    }
+  }
+
+  if (status === 'approved') {
+    return {
+      id: circle.id,
+      to: buildCircleSelectorPath(circle.id),
+      title: `🎉 「${circle.name}」の参加登録は受理されました`,
+      titleClass: '',
+      description: 'この企画に切り替えて詳細を確認できます。',
+      deadline: '',
+      participationTypeName: circle.participationTypeName
+    }
+  }
+
+  if (status === 'rejected') {
+    return {
+      id: circle.id,
+      to: buildCircleSelectorPath(circle.id),
+      title: `⚠️ 「${circle.name}」の参加登録は受理されませんでした`,
+      titleClass: 'text-danger',
+      description: 'この企画に切り替えて差し戻し内容を確認できます。',
+      deadline: '',
+      participationTypeName: circle.participationTypeName
+    }
+  }
+
+  return {
+    id: circle.id,
+    to: buildCircleSelectorPath(circle.id),
+    title: `💭 「${circle.name}」の参加登録の内容を確認中です`,
+    titleClass: '',
+    description: 'この企画に切り替えて進行状況を確認できます。',
+    deadline: '',
+    participationTypeName: circle.participationTypeName
+  }
+}
+
+const currentCircle = computed(() => sessionStore.currentCircle)
+const circleStatusItems = computed(() => {
+  const currentCircleId = currentCircle.value?.id ?? ''
+  const selectedDetail = currentCircleDetail.value
+  const orderedCircles = [...selectableCircles.value].sort((left, right) => {
+    if (left.id === currentCircleId) {
+      return -1
+    }
+    if (right.id === currentCircleId) {
+      return 1
+    }
+    return left.name.localeCompare(right.name, 'ja')
+  })
+
+  return orderedCircles.map((circle) => {
+    if (selectedDetail && circle.id === currentCircleId && selectedDetail.id === circle.id) {
+      return buildSelectedCircleStatusItem(selectedDetail)
+    }
+    return buildSelectableCircleStatusItem(circle)
+  })
+})
 </script>
 
 <template>
@@ -192,6 +369,58 @@ function formatOpenFormMeta(form: FormSummary) {
             {{ pt.description }}
           </ListItemLink>
         </div>
+      </ListPanel>
+
+      <ListPanel v-if="shouldShowCircleStatusPanel" legacy title="参加登録の状況">
+        <LoadingMessage v-if="selectableCirclesQuery.isPending.value" />
+        <div v-else class="divide-y divide-border">
+          <ListItemLink v-for="item in circleStatusItems" :key="item.id" legacy :to="item.to">
+            <template #title>
+              <span :class="item.titleClass">{{ item.title }}</span>
+            </template>
+            <template #suffix>
+              <StatusBadge tone="muted" appearance="outlined">{{ item.participationTypeName }}</StatusBadge>
+            </template>
+            <span v-if="item.description">{{ item.description }}</span>
+            <br v-if="item.description && item.deadline" />
+            <span v-if="item.deadline">{{ item.deadline }}</span>
+          </ListItemLink>
+        </div>
+      </ListPanel>
+
+      <ListPanel v-if="shouldShowCurrentCirclePanel" legacy title="企画情報">
+        <LoadingMessage v-if="currentCircleDetailQuery.isPending.value" />
+        <template v-else-if="currentCircleDetail">
+          <div class="px-6 py-6 text-sm leading-7 text-body">
+            <dl class="grid gap-x-6 gap-y-2 md:grid-cols-[12rem_minmax(0,1fr)]">
+              <dt class="font-semibold text-muted">参加種別</dt>
+              <dd>{{ currentCircleDetail.participationTypeName }}</dd>
+
+              <dt class="font-semibold text-muted">企画名</dt>
+              <dd>{{ currentCircleDetail.name }}（{{ currentCircleDetail.nameYomi }}）</dd>
+
+              <dt class="font-semibold text-muted">企画を出店する団体の名称</dt>
+              <dd>{{ currentCircleDetail.groupName }}（{{ currentCircleDetail.groupNameYomi }}）</dd>
+
+              <template v-if="(currentCircleDetail.places?.length ?? 0) > 0">
+                <dt class="font-semibold text-muted">使用場所</dt>
+                <dd>
+                  <ul class="list-disc pl-5">
+                    <li v-for="place in currentCircleDetail.places ?? []" :key="place">
+                      {{ place }}
+                    </li>
+                  </ul>
+                </dd>
+              </template>
+            </dl>
+          </div>
+          <RouterLink
+            class="block border-t border-border px-6 py-6 text-center text-sm font-semibold text-primary transition hover:bg-form-control hover:no-underline"
+            to="/workspace/circles/detail"
+          >
+            より詳しい情報を見る
+          </RouterLink>
+        </template>
       </ListPanel>
 
       <ListPanel legacy title="お知らせ">

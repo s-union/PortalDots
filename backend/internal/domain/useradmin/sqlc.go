@@ -47,6 +47,8 @@ func (r *SQLCRepository) List() ([]User, error) {
 			IsVerified:          row.IsVerified,
 			IsEmailVerified:     row.IsEmailVerified,
 			IsUnivemailVerified: row.IsUnivemailVerified,
+			CreatedAt:           row.CreatedAt.Time,
+			UpdatedAt:           row.UpdatedAt.Time,
 		})
 	}
 
@@ -78,6 +80,8 @@ func (r *SQLCRepository) ListByQuery(query string) ([]User, error) {
 			IsVerified:          row.IsVerified,
 			IsEmailVerified:     row.IsEmailVerified,
 			IsUnivemailVerified: row.IsUnivemailVerified,
+			CreatedAt:           row.CreatedAt.Time,
+			UpdatedAt:           row.UpdatedAt.Time,
 		})
 	}
 
@@ -110,6 +114,8 @@ func (r *SQLCRepository) Find(userID string) (User, error) {
 		IsVerified:          row.IsVerified,
 		IsEmailVerified:     row.IsEmailVerified,
 		IsUnivemailVerified: row.IsUnivemailVerified,
+		CreatedAt:           row.CreatedAt.Time,
+		UpdatedAt:           row.UpdatedAt.Time,
 	}, nil
 }
 

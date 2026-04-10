@@ -66,8 +66,8 @@ describe('StaffFormCreatePage', () => {
           return new Response(
             JSON.stringify({
               circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
+                id: '',
+                name: ''
               },
               id: '0195ec00-00a1-7000-8000-000000000001',
               name: '追加ヒアリング',
@@ -97,21 +97,6 @@ describe('StaffFormCreatePage', () => {
           })
         }
 
-        if (pathname.endsWith('/staff/circles/managed') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
         if (pathname.endsWith('/staff/tags') && method === 'GET') {
           return new Response(
             JSON.stringify([
@@ -136,7 +121,6 @@ describe('StaffFormCreatePage', () => {
     })
     await flushPromises()
 
-    await wrapper.get('select[name="circleId"]').setValue('circle-b')
     await wrapper.get('input[name="name"]').setValue('追加ヒアリング')
     await wrapper.get('textarea[name="description"]').setValue('当日の搬入担当者を確認します。')
     await wrapper.get('input[name="openAt"]').setValue('2026-03-15T09:00')
@@ -159,11 +143,11 @@ describe('StaffFormCreatePage', () => {
     await flushPromises()
 
     expect(createdRequestBody).toMatchObject({
-      circleId: 'circle-b',
       maxAnswers: 3,
       answerableTags: ['展示', '必須'],
       confirmationMessage: '回答ありがとうございました。'
     })
+    expect(createdRequestBody).not.toHaveProperty('circleId')
     expect(String(createdRequestBody?.openAt)).toMatch(/^2026-03-15T/)
     expect(String(createdRequestBody?.closeAt)).toMatch(/^2026-03-30T/)
     expect(router.currentRoute.value.fullPath).toBe('/staff/forms/0195ec00-00a1-7000-8000-000000000001/editor')

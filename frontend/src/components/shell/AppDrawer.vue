@@ -59,19 +59,14 @@ const emit = defineEmits<{
       <div class="flex h-full flex-col">
         <div class="border-b border-border px-6 pb-6 pt-[6.5rem]">
           <p class="text-lg font-semibold text-body">{{ appName }}</p>
-          <div class="mt-2 flex flex-wrap items-center gap-2">
+          <div v-if="isStaffRoute || isDemoMode" class="mt-2 flex flex-col items-start gap-2">
             <span
               v-if="isStaffRoute"
               class="rounded bg-primary-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-primary"
             >
               {{ appModeLabel }}
             </span>
-            <span
-              v-if="isDemoMode"
-              class="rounded bg-muted-light px-1.5 py-0 text-[0.75em] font-medium leading-[1.75] text-muted"
-            >
-              デモサイト
-            </span>
+            <p v-if="isDemoMode" class="text-sm leading-6 text-muted">デモサイト</p>
           </div>
           <p v-if="topDescription !== ''" class="mt-3 text-sm text-muted">{{ topDescription }}</p>
         </div>

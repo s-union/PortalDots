@@ -17,11 +17,10 @@ import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useDocumentsPageQuery } from '@/features/documents/api'
-import { useSessionStore } from '@/features/session/store'
+import { calculateTotalPages } from '@/lib/pagination'
 
 const route = useRoute()
 const router = useRouter()
-const sessionStore = useSessionStore()
 const pageSize = 10
 const currentPage = computed(() => {
   const raw = Number(route.query.page ?? 1)
@@ -33,6 +32,14 @@ const documentsQuery = useDocumentsPageQuery(
     pageSize
   }))
 )
+const shouldShowPagination = computed(() => {
+  const pageData = documentsQuery.data.value
+  if (!pageData) {
+    return false
+  }
+
+  return calculateTotalPages(pageData.total, pageData.pageSize) > 1
+})
 
 watch(
   () => documentsQuery.data.value?.page,
@@ -70,11 +77,12 @@ async function movePage(nextPage: number) {
       配布資料はまだありません
     </div>
 
-    <ListPanel v-else title="配布資料" :description="sessionStore.currentCircle?.name ?? '企画未選択'" overflow-hidden>
+    <ListPanel v-else legacy overflow-hidden>
       <div class="divide-y divide-border">
         <ListItemLink
           v-for="document in documentsQuery.data.value?.items"
           :key="document.id"
+          legacy
           :href="buildApiUrl(document.downloadUrl)"
           new-tab
         >
@@ -97,7 +105,8 @@ async function movePage(nextPage: number) {
     </ListPanel>
 
     <PaginationFooter
-      v-if="documentsQuery.data.value && documentsQuery.data.value.total > 0"
+      v-if="documentsQuery.data.value && shouldShowPagination"
+      :bordered="false"
       :page="documentsQuery.data.value.page"
       :page-size="documentsQuery.data.value.pageSize"
       :total="documentsQuery.data.value.total"

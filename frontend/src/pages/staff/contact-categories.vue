@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePage({
-  path: '/staff/contacts/categories',
+  path: '/staff/contact-categories',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -10,7 +10,6 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffContactCategoryEditor from '@/components/staff/StaffContactCategoryEditor.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
@@ -58,8 +57,6 @@ function handleDeleted() {
 
 <template>
   <PageLayout>
-    <PageHeader title="お問い合わせ受付設定" />
-
     <StaffSideWindowContainer :is-open="isEditorOpen">
       <DataCard class="divide-y divide-border">
         <div class="px-6 py-5 text-sm leading-7 text-muted">

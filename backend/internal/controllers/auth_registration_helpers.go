@@ -126,6 +126,10 @@ func deriveUnivemail(userValue useradmin.User, domainPart string) string {
 			return normalized
 		}
 	}
+	contactEmail := strings.ToLower(strings.TrimSpace(userValue.ContactEmail))
+	if contactEmail != "" && domain != "" && strings.HasSuffix(contactEmail, "@"+domain) {
+		return contactEmail
+	}
 	return ""
 }
 

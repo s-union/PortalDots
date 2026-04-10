@@ -262,10 +262,10 @@ export function useAppShell() {
       hidden: !canAccessForms.value
     },
     {
-      to: '/staff/contacts/categories',
+      to: '/staff/contact-categories',
       label: 'お問い合わせ受付設定',
       iconClass: 'fas fa-at fa-fw',
-      active: route.path.startsWith('/staff/contacts/categories'),
+      active: route.path.startsWith('/staff/contact-categories'),
       hidden: !canAccessContactCategories.value
     },
     {
@@ -290,12 +290,6 @@ export function useAppShell() {
       active: route.path.startsWith('/staff/settings'),
       hidden: !canAccessPortalSettings.value,
       adminOnly: true
-    },
-    {
-      to: '/staff/about',
-      label: 'PortalDots のアップデートの確認',
-      iconClass: 'fa-solid fa-arrows-rotate fa-fw',
-      active: route.path.startsWith('/staff/about')
     },
     {
       to: '/staff/exports',

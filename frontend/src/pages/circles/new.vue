@@ -57,6 +57,8 @@ const selectedParticipationType = computed(
   () => participationTypesQuery.data.value?.find((item) => item.id === form.participationTypeId) ?? null
 )
 const registrationFormQuery = useParticipationTypeRegistrationFormQuery(computed(() => form.participationTypeId))
+const leaderDisplayName = computed(() => sessionStore.user?.displayName ?? '')
+const registrationFormDescription = computed(() => registrationFormQuery.data.value?.formDescription.trim() ?? '')
 const questions = computed(() => registrationFormQuery.data.value?.questions ?? [])
 const draft = useFormAnswerEditorDraft(
   computed(() => null),
@@ -140,12 +142,11 @@ async function handleSubmit() {
 
 <template>
   <PageLayout>
-    <SurfaceCard tag="header">
+    <SurfaceCard>
       <SurfaceCardBand borderless>
         <CircleRegistrationSteps :current-step="1" :requires-member-step="requiresMemberStep" />
-        <p class="mt-3 text-sm leading-7 text-muted">
-          まず企画情報と参加登録フォームの回答を入力します。保存後にメンバー確認または確認画面へ進みます。
-        </p>
+        <h1 class="mt-3 text-2xl font-semibold text-body">企画参加登録</h1>
+        <p class="mt-2 text-sm text-muted">参加登録する企画の情報を入力してください。</p>
         <p v-if="requestedParticipationTypeId" class="mt-2 text-sm text-muted">
           URL パラメータで指定された参加種別を自動選択しています。
         </p>
@@ -156,9 +157,28 @@ async function handleSubmit() {
       このアカウントでは新しい企画を登録できません。所属中の企画を選択して作業してください。
     </AlertMessage>
 
+    <SettingsSection v-if="canCreateCircleRegistration && registrationFormDescription" title="必ずお読みください">
+      <div class="px-6 py-6 whitespace-pre-wrap text-sm leading-7 text-body">
+        {{ registrationFormDescription }}
+      </div>
+    </SettingsSection>
+
     <SettingsSection v-if="canCreateCircleRegistration" title="企画基本情報">
       <SettingsRow>
         <div class="grid gap-4">
+          <AlertMessage v-if="selectedParticipationType && selectedParticipationType.usersCountMax > 1" tone="info">
+            企画情報の入力は、企画責任者の方が行ってください。企画責任者以外の方は、企画責任者の方の指示に従ってください。
+          </AlertMessage>
+
+          <AlertMessage v-if="selectedParticipationType && !canChangeGroupName" tone="danger">
+            すでに団体責任者として他の企画参加登録を提出しているため、「企画を出店する団体の名称」ならびに「企画を出店する団体の名称(よみ)」は自動入力されており、変更できません。
+          </AlertMessage>
+
+          <div class="grid gap-2 text-sm text-body">
+            <span class="font-semibold">企画責任者</span>
+            <input :value="leaderDisplayName" name="leaderDisplayName" readonly type="text" />
+          </div>
+
           <div class="grid gap-2 text-sm text-body">
             <span class="font-semibold">参加種別 <span class="text-danger">*</span></span>
             <select
@@ -220,7 +240,7 @@ async function handleSubmit() {
           </div>
 
           <div class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">団体名 <span class="text-danger">*</span></span>
+            <span class="font-semibold">企画を出店する団体の名称 <span class="text-danger">*</span></span>
             <input
               v-model="form.groupName"
               :disabled="!canChangeGroupName"
@@ -237,7 +257,7 @@ async function handleSubmit() {
           </div>
 
           <div class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">団体名（よみ） <span class="text-danger">*</span></span>
+            <span class="font-semibold">企画を出店する団体の名称（よみ） <span class="text-danger">*</span></span>
             <input
               v-model="form.groupNameYomi"
               :disabled="!canChangeGroupName"
@@ -276,12 +296,6 @@ async function handleSubmit() {
       </div>
 
       <div v-else-if="registrationFormQuery.data.value" class="grid gap-0">
-        <div class="border-b border-border px-6 py-5">
-          <p class="whitespace-pre-wrap text-sm leading-7 text-body">
-            {{ registrationFormQuery.data.value.formDescription || '追加の設問はありません。' }}
-          </p>
-        </div>
-
         <template v-for="question in questions" :key="question.id">
           <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
             <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
@@ -335,13 +349,7 @@ async function handleSubmit() {
               type="button"
               @click="handleSubmit"
             >
-              {{
-                createMutation.isPending.value
-                  ? '保存中...'
-                  : requiresMemberStep
-                    ? '保存してメンバー確認へ'
-                    : '保存して確認画面へ'
-              }}
+              {{ createMutation.isPending.value ? '保存中...' : requiresMemberStep ? '保存して次へ' : '確認画面へ' }}
             </button>
           </div>
         </div>

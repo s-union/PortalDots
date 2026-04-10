@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/forms/:formId/preview',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,

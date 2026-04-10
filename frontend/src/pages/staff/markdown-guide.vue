@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/markdown-guide',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -42,20 +43,10 @@ const guideSections = [
 
 <template>
   <PageLayout>
-    <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Markdown Guide</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">Markdown ガイド</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">
-        staff 画面の本文入力でよく使う記法をまとめた、legacy `/staff/markdown-guide` の migrated 版です。
-      </p>
-    </SurfaceCard>
-
     <SurfaceCard>
       <SurfaceHeader>
-        <template #title>よく使う記法</template>
-        <template #description>
-          お知らせ本文や案内文では Markdown をそのまま利用できます。必要最小限の早見表だけをここで確認できます。
-        </template>
+        <template #title>Markdown ガイド</template>
+        <template #description> このページでは、Markdown 記法のうち、よく利用されるものを紹介します。 </template>
       </SurfaceHeader>
 
       <div class="grid gap-4 px-6 py-5">

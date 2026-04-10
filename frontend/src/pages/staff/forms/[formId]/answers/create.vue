@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/forms/:formId/answers/create',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -98,11 +99,10 @@ async function handleCreateAnswer() {
     </div>
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
-      <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Create Answer</p>
+      <SurfaceCard>
         <SurfaceHeader>
           <template #title>{{ answersQuery.data.value.form.name }}</template>
-          <template #description> 回答対象の企画を選んで新規回答を作成します。 </template>
+          <template #description>回答対象の企画を選んで新規回答を作成します。</template>
         </SurfaceHeader>
       </SurfaceCard>
 

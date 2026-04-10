@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
@@ -30,6 +31,8 @@ type User struct {
 	IsVerified          bool
 	IsEmailVerified     bool
 	IsUnivemailVerified bool
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 type CreateParams struct {
@@ -80,6 +83,7 @@ type StaticRepository struct {
 }
 
 func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticRepository {
+	now := time.Now().UTC()
 	built := make([]User, 0, len(users)+1)
 	matchedAuthUserIndex := slices.IndexFunc(users, func(user config.User) bool {
 		return user.ID == authUser.ID
@@ -126,6 +130,8 @@ func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticR
 		IsVerified:          authIsVerified,
 		IsEmailVerified:     authIsEmailVerified,
 		IsUnivemailVerified: authIsUnivemailVerified,
+		CreatedAt:           now,
+		UpdatedAt:           now,
 	})
 	for _, user := range users {
 		if user.ID == authUser.ID {
@@ -148,6 +154,8 @@ func NewStaticRepository(authUser config.AuthUser, users []config.User) *StaticR
 			IsVerified:          user.IsVerified,
 			IsEmailVerified:     user.IsEmailVerified,
 			IsUnivemailVerified: user.IsUnivemailVerified,
+			CreatedAt:           now,
+			UpdatedAt:           now,
 		})
 	}
 
@@ -258,6 +266,7 @@ func (r *StaticRepository) Create(params CreateParams) (User, error) {
 		r.nextID++
 	}
 
+	now := time.Now().UTC()
 	created := User{
 		ID:                  id,
 		LastName:            params.LastName,
@@ -275,6 +284,8 @@ func (r *StaticRepository) Create(params CreateParams) (User, error) {
 		IsVerified:          params.IsVerified,
 		IsEmailVerified:     params.IsEmailVerified,
 		IsUnivemailVerified: params.IsUnivemailVerified,
+		CreatedAt:           now,
+		UpdatedAt:           now,
 	}
 
 	r.users = append(r.users, created)
@@ -290,6 +301,7 @@ func (r *StaticRepository) UpdateRoles(userID string, roles []string) (User, err
 			continue
 		}
 		r.users[index].Roles = slices.Clone(roles)
+		r.users[index].UpdatedAt = time.Now().UTC()
 		return cloneUser(r.users[index]), nil
 	}
 
@@ -312,6 +324,7 @@ func (r *StaticRepository) Update(userID, displayName string, loginIDs []string)
 			}
 			r.users[index].DisplayName = displayName
 			r.users[index].LoginIDs = slices.Clone(loginIDs)
+			r.users[index].UpdatedAt = time.Now().UTC()
 			return cloneUser(r.users[index]), nil
 		}
 	}
@@ -341,6 +354,7 @@ func (r *StaticRepository) UpdateFull(userID, displayName string, loginIDs []str
 			r.users[index].FirstNameReading = firstNameReading
 			r.users[index].ContactEmail = contactEmail
 			r.users[index].PhoneNumber = phoneNumber
+			r.users[index].UpdatedAt = time.Now().UTC()
 			return cloneUser(r.users[index]), nil
 		}
 	}
@@ -357,6 +371,7 @@ func (r *StaticRepository) UpdatePermissions(userID string, permissions []string
 			continue
 		}
 		r.users[index].Permissions = slices.Clone(permissions)
+		r.users[index].UpdatedAt = time.Now().UTC()
 		return cloneUser(r.users[index]), nil
 	}
 
@@ -372,6 +387,7 @@ func (r *StaticRepository) UpdateDisplayName(userID, displayName string) (User, 
 			continue
 		}
 		r.users[index].DisplayName = displayName
+		r.users[index].UpdatedAt = time.Now().UTC()
 		return cloneUser(r.users[index]), nil
 	}
 
@@ -392,6 +408,7 @@ func (r *StaticRepository) UpdateProfile(userID, lastName, lastNameReading, firs
 		r.users[index].FirstNameReading = firstNameReading
 		r.users[index].ContactEmail = contactEmail
 		r.users[index].PhoneNumber = phoneNumber
+		r.users[index].UpdatedAt = time.Now().UTC()
 		return cloneUser(r.users[index]), nil
 	}
 
@@ -407,6 +424,7 @@ func (r *StaticRepository) UpdateVerified(userID string, verified bool) (User, e
 			continue
 		}
 		r.users[index].IsVerified = verified
+		r.users[index].UpdatedAt = time.Now().UTC()
 		return cloneUser(r.users[index]), nil
 	}
 
@@ -422,6 +440,7 @@ func (r *StaticRepository) UpdateEmailVerified(userID string, verified bool) (Us
 			continue
 		}
 		r.users[index].IsEmailVerified = verified
+		r.users[index].UpdatedAt = time.Now().UTC()
 		return cloneUser(r.users[index]), nil
 	}
 
@@ -438,6 +457,7 @@ func (r *StaticRepository) UpdateUnivemailVerified(userID string, verified bool)
 		}
 		r.users[index].IsUnivemailVerified = verified
 		r.users[index].IsVerified = verified
+		r.users[index].UpdatedAt = time.Now().UTC()
 		return cloneUser(r.users[index]), nil
 	}
 

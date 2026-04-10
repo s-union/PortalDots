@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/settings',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -10,7 +11,6 @@ definePage({
 import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { canManagePortalSettings } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
@@ -26,7 +26,7 @@ const settingLinks = computed(() => [
     hidden: !portalSettingsAvailable.value
   },
   {
-    to: '/staff/contacts/categories',
+    to: '/staff/contact-categories',
     label: 'お問い合わせ受付設定',
     description: '問い合わせカテゴリと送信先メールを管理します。'
   },
@@ -60,13 +60,11 @@ const settingLinks = computed(() => [
 
 <template>
   <PageLayout>
-    <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Portal Settings</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">PortalDots の設定</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">ポータル全体で共有する設定群へここから移動できます。</p>
-    </SurfaceCard>
-
-    <ListPanel title="設定ハブ" :description="sessionStore.currentCircle?.name ?? '企画未選択'" overflow-hidden>
+    <ListPanel
+      title="PortalDots の設定"
+      :description="sessionStore.currentCircle?.name ?? '企画未選択'"
+      overflow-hidden
+    >
       <div class="divide-y divide-border">
         <ListItemLink v-for="link in settingLinks.filter((link) => link.hidden !== true)" :key="link.to" :to="link.to">
           <template #title>{{ link.label }}</template>

@@ -37,7 +37,10 @@ var staffUserFilterableFields = map[string]staffUserFilterFieldType{
 	"firstName":       staffUserFilterFieldTypeString,
 	"loginIds":        staffUserFilterFieldTypeString,
 	"contactEmail":    staffUserFilterFieldTypeString,
+	"univemail":       staffUserFilterFieldTypeString,
 	"phoneNumber":     staffUserFilterFieldTypeString,
+	"createdAt":       staffUserFilterFieldTypeString,
+	"updatedAt":       staffUserFilterFieldTypeString,
 	"isStaff":         staffUserFilterFieldTypeBool,
 	"isAdmin":         staffUserFilterFieldTypeBool,
 	"isEmailVerified": staffUserFilterFieldTypeBool,
@@ -50,7 +53,10 @@ var staffUserSortableFields = map[string]struct{}{
 	"firstName":       {},
 	"loginIds":        {},
 	"contactEmail":    {},
+	"univemail":       {},
 	"phoneNumber":     {},
+	"createdAt":       {},
+	"updatedAt":       {},
 	"isStaff":         {},
 	"isAdmin":         {},
 	"isEmailVerified": {},
@@ -275,8 +281,14 @@ func staffUserFilterStringValue(userValue useradmin.User, keyName string) string
 		return strings.Join(userValue.LoginIDs, " ")
 	case "contactEmail":
 		return userValue.ContactEmail
+	case "univemail":
+		return deriveStaffUserUnivemail(userValue.LoginIDs, userValue.ContactEmail)
 	case "phoneNumber":
 		return userValue.PhoneNumber
+	case "createdAt":
+		return formatStaffUserTimestamp(userValue.CreatedAt)
+	case "updatedAt":
+		return formatStaffUserTimestamp(userValue.UpdatedAt)
 	default:
 		return ""
 	}
@@ -349,8 +361,14 @@ func staffUserSortValue(userValue useradmin.User, sortKey string) string {
 		return strings.Join(userValue.LoginIDs, ",")
 	case "contactEmail":
 		return userValue.ContactEmail
+	case "univemail":
+		return deriveStaffUserUnivemail(userValue.LoginIDs, userValue.ContactEmail)
 	case "phoneNumber":
 		return userValue.PhoneNumber
+	case "createdAt":
+		return formatStaffUserTimestamp(userValue.CreatedAt)
+	case "updatedAt":
+		return formatStaffUserTimestamp(userValue.UpdatedAt)
 	case "isStaff":
 		if staffUserHasStaffRole(userValue) {
 			return "1"

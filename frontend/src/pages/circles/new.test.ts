@@ -203,16 +203,17 @@ describe('CircleCreatePage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('企画情報')
-    expect(wrapper.text()).toContain('メンバー')
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('模擬店')
-    expect(wrapper.text()).toContain('保存して確認画面へ')
+    expect((wrapper.get('input[name="leaderDisplayName"]').element as HTMLInputElement).value).toBe('Demo User')
+    expect(wrapper.text()).toContain('確認画面へ')
 
     await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
     await flushPromises()
 
+    expect(wrapper.text()).toContain('メンバー')
+    expect(wrapper.text()).toContain('必ずお読みください')
     expect(wrapper.text()).toContain('展示参加用の設問です')
-    expect(wrapper.text()).not.toContain('追加の設問はありません。')
     expect(
       fetchMock.mock.calls.some(([input]) => {
         const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
@@ -239,6 +240,7 @@ describe('CircleCreatePage', () => {
 
     expect(wrapper.text()).toContain('URL パラメータで指定された参加種別を自動選択しています')
     expect((wrapper.get('select[name="participationTypeId"]').element as HTMLSelectElement).value).toBe('pt-food')
+    expect(wrapper.text()).toContain('企画責任者の方が行ってください')
   })
 
   it('navigates to confirm page after successful creation', async () => {

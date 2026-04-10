@@ -5,13 +5,12 @@ import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useSuspenseFormsQuery, type FormSummary } from '@/features/forms/api'
-import { useSessionStore } from '@/features/session/store'
+import { formatDateTime } from '@/lib/format/datetime'
 
 type FormStatusTab = 'open' | 'closed' | 'all'
 type FormAvailability = 'open' | 'upcoming' | 'closed'
 
 const route = useRoute()
-const sessionStore = useSessionStore()
 const formsQuery = useSuspenseFormsQuery()
 await formsQuery.suspense()
 const allForms = computed(() => formsQuery.data.value ?? [])
@@ -45,10 +44,10 @@ function formMeta(form: FormSummary) {
   const availability = getFormAvailability(form)
   const schedule =
     availability === 'open'
-      ? `${form.closeAt} まで受付`
+      ? `${formatDateTime(form.closeAt)} まで受付`
       : availability === 'upcoming'
-        ? `${form.openAt} から受付開始`
-        : `${form.closeAt} で受付終了`
+        ? `${formatDateTime(form.openAt)} から受付開始`
+        : `${formatDateTime(form.closeAt)} で受付終了`
   return form.maxAnswers > 1 ? `${schedule} / 1企画あたり ${form.maxAnswers} 件まで` : schedule
 }
 
@@ -91,9 +90,9 @@ function isLimitedPublic(form: FormSummary) {
     </p>
   </div>
 
-  <ListPanel v-else title="申請" :description="sessionStore.currentCircle?.name ?? '企画未選択'" overflow-hidden>
+  <ListPanel v-else legacy overflow-hidden>
     <div class="divide-y divide-border">
-      <ListItemLink v-for="form in visibleForms" :key="form.id" :to="formHref(form)">
+      <ListItemLink v-for="form in visibleForms" :key="form.id" legacy :to="formHref(form)">
         <template #title>{{ form.name }}</template>
         <template #prefix>
           <StatusBadge :tone="isLimitedPublic(form) ? 'primary' : 'muted'" appearance="outlined">
@@ -110,13 +109,6 @@ function isLimitedPublic(form: FormSummary) {
         </template>
         {{ form.description }}
       </ListItemLink>
-    </div>
-
-    <div
-      v-if="closedForms.length > 0 || openForms.length > 0 || upcomingForms.length > 0"
-      class="border-t border-border px-6 py-4 text-xs text-muted"
-    >
-      受付中 {{ openForms.length }} 件 / 受付開始前 {{ upcomingForms.length }} 件 / 受付終了 {{ closedForms.length }} 件
     </div>
   </ListPanel>
 </template>

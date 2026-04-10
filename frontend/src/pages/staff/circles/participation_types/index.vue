@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/circles/participation_types',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -11,10 +12,10 @@ definePage({
 import { computed, ref } from 'vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -71,9 +72,7 @@ async function handleCreate() {
 
 <template>
   <PageLayout>
-    <PageHeader eyebrow="Participation Types" title="参加種別管理">
-      <template #actions> </template>
-    </PageHeader>
+    <p class="text-sm font-semibold text-body">参加種別管理</p>
 
     <SurfaceCard>
       <SurfaceHeader>
@@ -150,11 +149,15 @@ async function handleCreate() {
         </div>
         <label class="grid gap-2 text-sm text-body">
           <span>参加登録前に表示する内容</span>
-          <textarea v-model="form.formDescription" class="min-h-24" name="formDescription" />
+          <MarkdownEditorField v-model="form.formDescription" min-height-class="min-h-24" name="formDescription" />
         </label>
         <label class="grid gap-2 text-sm text-body">
           <span>提出後メッセージ</span>
-          <textarea v-model="form.formConfirmationMessage" class="min-h-24" name="formConfirmationMessage" />
+          <MarkdownEditorField
+            v-model="form.formConfirmationMessage"
+            min-height-class="min-h-24"
+            name="formConfirmationMessage"
+          />
         </label>
         <label class="flex items-center gap-3 text-sm text-body">
           <input v-model="form.isPublic" name="isPublic" type="checkbox" />

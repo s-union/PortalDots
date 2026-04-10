@@ -12,6 +12,7 @@ definePage({
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -113,7 +114,12 @@ async function handleSendMail() {
 
             <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">本文</span>
-              <textarea v-model="mailForm.body" class="min-h-40" name="body" />
+              <MarkdownEditorField
+                v-model="mailForm.body"
+                min-height-class="min-h-40"
+                name="body"
+                placeholder="本文を入力"
+              />
             </label>
 
             <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm leading-7 text-muted">

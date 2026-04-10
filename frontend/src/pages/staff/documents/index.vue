@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/documents',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -12,7 +13,6 @@ import { computed, ref, watch } from 'vue'
 import { useMutation } from '@tanstack/vue-query'
 import { RouterLink } from 'vue-router'
 import DataCard from '@/components/layouts/DataCard.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import { formatDateTimeTable } from '@/lib/format/datetime'
@@ -221,8 +221,6 @@ function resolveText(value: unknown) {
 
 <template>
   <PageLayout class="max-w-full">
-    <PageHeader title="配布資料管理" />
-
     <DataCard overflow-hidden>
       <StaffDataGrid
         :rows="rows"

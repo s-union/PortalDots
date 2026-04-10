@@ -24,7 +24,6 @@ import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import { canAccessCircleMail, canDeleteCircles, canEditCircles } from '@/features/staff/access/capabilities'
 import { extractStaffCircleValidationMessage, useDeleteStaffCircleMutation } from '@/features/staff/circles/api'
@@ -422,12 +421,11 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
       </div>
 
       <template v-else-if="detailQuery.data.value">
-        <SurfaceCard tag="header">
-          <h2 class="text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
-          <p class="mt-3 text-sm text-muted">{{ detailQuery.data.value.description || '説明は未設定です。' }}</p>
-        </SurfaceCard>
-
-        <DataCard title="企画一覧" description="この参加種別に登録された企画を確認できます。" overflow-hidden>
+        <DataCard
+          title="企画一覧"
+          :description="detailQuery.data.value.description || 'この参加種別に登録された企画を確認できます。'"
+          overflow-hidden
+        >
           <template #actions>
             <div class="flex flex-wrap gap-2">
               <a

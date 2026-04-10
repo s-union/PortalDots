@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
@@ -203,6 +204,41 @@ func TestEnsureSeedDataListsUsersWithQueryOnUUIDColumn(t *testing.T) {
 	}
 	if len(rows) != 1 || rows[0].ID != "0195ec00-0051-7000-8000-000000000001" {
 		t.Fatalf("expected demo-admin to match UUID query, got %#v", rows)
+	}
+}
+
+func TestUserQueriesReturnActualUpdatedAt(t *testing.T) {
+	cfg := integrationConfig(t, true)
+	store := openIntegrationStore(t, cfg)
+
+	ctx := context.Background()
+	if err := EnsureSeedData(ctx, store, cfg); err != nil {
+		t.Fatalf("seed integration data: %v", err)
+	}
+
+	userID := "0195ec00-0051-7000-8000-000000000001"
+	wantUpdatedAt := time.Date(2026, time.March, 10, 9, 30, 0, 0, time.UTC)
+	if _, err := store.Pool().Exec(ctx, `UPDATE users SET updated_at = $2 WHERE id = $1`, userID, wantUpdatedAt); err != nil {
+		t.Fatalf("update user updated_at: %v", err)
+	}
+
+	detail, err := store.Queries().GetUserWithRelationsByID(ctx, userID)
+	if err != nil {
+		t.Fatalf("get user with relations by id: %v", err)
+	}
+	if !detail.UpdatedAt.Time.Equal(wantUpdatedAt) {
+		t.Fatalf("expected detail updatedAt %s, got %s", wantUpdatedAt, detail.UpdatedAt.Time)
+	}
+
+	rows, err := store.Queries().ListUsersWithQuery(ctx, userID)
+	if err != nil {
+		t.Fatalf("list users with query: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 queried user, got %#v", rows)
+	}
+	if !rows[0].UpdatedAt.Time.Equal(wantUpdatedAt) {
+		t.Fatalf("expected list updatedAt %s, got %s", wantUpdatedAt, rows[0].UpdatedAt.Time)
 	}
 }
 

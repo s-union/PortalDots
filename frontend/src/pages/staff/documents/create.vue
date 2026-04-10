@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/documents/create',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -10,7 +11,6 @@ definePage({
 
 import { ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -68,10 +68,9 @@ async function handleCreateDocument() {
 
 <template>
   <PageLayout>
-    <PageHeader title="配布資料を新規作成" />
-
     <SurfaceCard>
       <SurfaceHeader>
+        <template #title>配布資料を新規作成</template>
         <template #description>アップロードした配布資料を企画向けに公開します。</template>
       </SurfaceHeader>
 

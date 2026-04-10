@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/circles/all',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,

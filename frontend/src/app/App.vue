@@ -54,7 +54,6 @@ const {
 
       <div v-if="hasDrawer" class="min-w-0">
         <p class="truncate text-lg font-semibold text-body">{{ pageTitle }}</p>
-        <p v-if="isStaffRoute" class="mt-1 text-xs text-muted">{{ appModeLabel }}</p>
       </div>
 
       <RouterLink

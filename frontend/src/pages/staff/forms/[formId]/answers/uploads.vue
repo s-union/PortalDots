@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/forms/:formId/answers/uploads',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -10,8 +11,6 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -41,16 +40,10 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
     </div>
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
-      <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Uploads</p>
-        <SurfaceHeader>
-          <template #title>アップロードファイルの一括ダウンロード</template>
-          <template #description>{{ answersQuery.data.value.form.name }}</template>
-        </SurfaceHeader>
-      </SurfaceCard>
-
       <section class="rounded border border-border bg-surface p-6 shadow-lv1">
         <div class="space-y-4 text-sm leading-7 text-body">
+          <h1 class="text-xl font-semibold text-body">アップロードファイルの一括ダウンロード</h1>
+          <p class="text-sm text-muted">{{ answersQuery.data.value.form.name }}</p>
           <p>
             フォーム「{{ answersQuery.data.value.form.name }}」にてアップロードされたファイルを ZIP
             形式で一括ダウンロードします。
@@ -59,6 +52,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
           <ul class="list-disc space-y-2 pl-5 text-muted">
             <li>CSV と ZIP を同じ階層に置くと、差し込みやデータ結合で扱いやすくなります。</li>
             <li>ファイル数が多い場合、ダウンロード完了まで時間がかかることがあります。</li>
+            <li>本機能はベータ版のため、アップロード件数が多い場合は時間がかかることがあります。</li>
             <li>
               アップロード件数:
               {{ answersQuery.data.value.answers.reduce((sum, answer) => sum + answer.uploadCount, 0) }}

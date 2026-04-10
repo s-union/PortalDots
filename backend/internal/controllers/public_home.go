@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -180,18 +182,10 @@ func (h *publicHomeHandlers) listPublicDocuments(c echo.Context) error {
 
 func (h *publicHomeHandlers) getPublicDocument(c echo.Context) error {
 	documentID := c.Param("documentID")
-	selectableCircles, err := h.circles.ListSelectable(nil)
-	if err != nil {
-		return internalError(c)
-	}
-
-	for _, currentCircle := range selectableCircles {
-		documentValue, found := h.documents.FindByCircle(currentCircle.ID, documentID)
-		if !found {
-			continue
-		}
-
+	documentValue, found := h.documents.FindPublic(documentID)
+	if found {
 		c.Response().Header().Set(echo.HeaderContentType, documentValue.MimeType)
+		c.Response().Header().Set(echo.HeaderContentDisposition, publicInlineContentDisposition(documentValue))
 		return c.Blob(http.StatusOK, documentValue.MimeType, documentValue.Content)
 	}
 
@@ -366,6 +360,18 @@ func normalizePublicHomeSummary(value string) string {
 	)
 
 	return strings.Join(strings.Fields(replacer.Replace(normalized)), " ")
+}
+
+func publicInlineContentDisposition(document backenddocument.Document) string {
+	filename := strings.TrimSpace(document.Filename)
+	if strings.TrimSpace(document.Name) != "" && strings.TrimSpace(document.Extension) != "" {
+		filename = document.Name + "." + document.Extension
+	}
+	if filename == "" {
+		filename = "document"
+	}
+
+	return fmt.Sprintf(`inline; filename="%s"; filename*=UTF-8''%s`, filename, url.PathEscape(filename))
 }
 
 func (h *publicHomeHandlers) buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {

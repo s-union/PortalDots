@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/workspace/settings/delete',
   meta: {
     requiresAuth: true
   }

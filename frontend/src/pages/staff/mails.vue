@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/mails',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -14,7 +15,6 @@ import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useDeleteStaffMailsMutation, useStaffMailsQuery } from '@/features/staff/admin/mails'
@@ -43,24 +43,25 @@ async function handleDeleteAll() {
 
 <template>
   <PageLayout>
-    <PageHeader
-      eyebrow="Mail Queue"
-      title="メール配信設定"
-      description="サーバー側で記録されている配信予約を確認し、不要なら全件キャンセルできます。"
-    >
-      <template #actions> </template>
-    </PageHeader>
-
     <div class="space-y-6">
       <SurfaceCard>
         <SurfaceHeader>
-          <template #title>配信の扱い</template>
+          <template #title>メール配信設定</template>
         </SurfaceHeader>
         <div class="grid gap-3 px-6 py-5 text-sm leading-7 text-body">
-          <p>お知らせ編集画面で「保存後にメール配信を予約する」を有効にすると、このキューに追加されます。</p>
-          <p>
-            実送信は行わず、確認用としてサーバーログとキューに記録します。不要な予約はここで全件キャンセルできます。
-          </p>
+          <p>メールの一斉送信機能を利用するには、サーバー側で定期実行の設定が必要です。</p>
+          <p>サーバーの CRON 設定で <code>php artisan schedule:run</code> が定期的に実行されるよう設定してください。</p>
+          <p class="text-muted">すでに設定が完了している場合でも、この案内は表示されます。</p>
+        </div>
+      </SurfaceCard>
+
+      <SurfaceCard>
+        <SurfaceHeader>
+          <template #title>メールの配信をすべてキャンセル</template>
+        </SurfaceHeader>
+        <div class="grid gap-3 px-6 py-5 text-sm leading-7 text-body">
+          <p>間違えて配信予約したメールは、ここからすべてキャンセルできます。</p>
+          <p>配信処理の途中だった場合、一部にはすでに送信されていることがあります。</p>
           <div>
             <button
               class="rounded border border-danger bg-danger-light px-5 py-3 font-bold text-danger transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"

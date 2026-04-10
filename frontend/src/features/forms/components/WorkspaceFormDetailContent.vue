@@ -6,8 +6,11 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import { updateDraftValue } from '@/features/forms/answers'
 import { useWorkspaceFormDetailPage } from '@/features/forms/composables/useWorkspaceFormDetailPage'
+import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import { useSessionStore } from '@/features/session/store'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { buttonVariants } from '@/lib/ui/variants'
+import { computed } from 'vue'
 
 const { formId: currentFormId, selectedAnswerId: currentSelectedAnswerId } = defineProps<{
   formId: string
@@ -18,6 +21,8 @@ const emit = defineEmits<{
   selectAnswer: [answerId: string]
   clearSelectedAnswer: []
 }>()
+
+const sessionStore = useSessionStore()
 
 const {
   answers,
@@ -49,6 +54,15 @@ const {
   onSelectAnswer: async (answerId) => emit('selectAnswer', answerId),
   onClearSelectedAnswer: async () => emit('clearSelectedAnswer')
 })
+
+const currentCircleLabel = computed(() => sessionStore.currentCircle?.name ?? '')
+const shouldShowMultiAnswerControls = computed(() => (form?.value?.maxAnswers ?? 1) > 1 || answers.value.length > 0)
+const remainingAnswerCount = computed(() => {
+  if (!form.value) {
+    return 0
+  }
+  return Math.max(form.value.maxAnswers - answers.value.length, 0)
+})
 </script>
 
 <template>
@@ -60,6 +74,7 @@ const {
         <form class="space-y-6 py-6" @submit.prevent="saveAnswer">
           <header class="space-y-4">
             <div>
+              <RouterLink to="/workspace/forms" class="text-sm text-primary hover:underline">申請</RouterLink>
               <h1 class="text-3xl font-semibold text-body">{{ form.name }}</h1>
               <p class="mt-3 text-sm text-muted">
                 受付期間 : {{ formatDateTime(form.openAt) }}〜{{ formatDateTime(form.closeAt) }}
@@ -70,9 +85,7 @@ const {
               </p>
             </div>
 
-            <p v-if="form.description" class="whitespace-pre-wrap text-sm leading-7 text-body">
-              {{ form.description }}
-            </p>
+            <PageMarkdownContent v-if="form.description" :source="form.description" />
 
             <AlertMessage v-if="isLimitedPublic" tone="info">
               <span
@@ -97,15 +110,22 @@ const {
 
           <AlertMessage v-if="selectedAnswer && confirmationMessage" tone="success" class="px-6 py-5 text-body">
             <p class="font-semibold text-success">回答後メッセージ</p>
-            <p class="mt-2 whitespace-pre-wrap leading-7">
-              {{ confirmationMessage }}
-            </p>
+            <PageMarkdownContent class="mt-2" :source="confirmationMessage" />
           </AlertMessage>
 
           <div class="rounded border border-border bg-surface px-6 py-5 shadow-lv1">
-            <div class="grid gap-4">
-              <p class="text-sm font-semibold text-body">回答一覧</p>
-              <p class="text-sm text-muted">現在 {{ answers.length }} / {{ form.maxAnswers }} 件</p>
+            <label class="grid gap-2 text-sm text-body">
+              <span>申請企画名</span>
+              <input :value="currentCircleLabel" readonly type="text" />
+            </label>
+          </div>
+
+          <section v-if="answers.length > 0" class="rounded border border-border bg-surface px-6 py-5 shadow-lv1">
+            <div class="grid gap-3">
+              <div>
+                <p class="text-sm font-semibold text-body">以前の回答を閲覧・変更</p>
+                <p v-if="form.isOpen" class="mt-1 text-sm text-muted">受付期間内に限り、回答の変更ができます</p>
+              </div>
               <div class="flex flex-wrap gap-3">
                 <button
                   v-for="answer in answers"
@@ -119,8 +139,29 @@ const {
                   "
                   @click="selectAnswer(answer.id)"
                 >
-                  回答 {{ formatDateTimeUpdated(answer.updatedAt) }}
+                  {{ formatDateTime(answer.updatedAt) }} に新規作成した回答 — 回答ID : {{ answer.id }}
                 </button>
+              </div>
+            </div>
+          </section>
+
+          <section
+            v-if="shouldShowMultiAnswerControls"
+            class="rounded border border-border bg-surface px-6 py-5 shadow-lv1"
+          >
+            <div class="grid gap-3">
+              <div>
+                <p class="text-sm font-semibold text-body">回答を新規作成</p>
+                <p v-if="remainingAnswerCount > 0" class="mt-1 text-sm text-muted">
+                  貴企画はこの申請を、あと{{ remainingAnswerCount }}つ新規作成できます
+                </p>
+                <p v-else class="mt-1 text-sm text-muted">
+                  回答数上限({{
+                    form.maxAnswers
+                  }}つ)に達したため、これ以上新規作成できません。以前の回答の編集は上記より可能です。
+                </p>
+              </div>
+              <div>
                 <button
                   :class="buttonVariants({ variant: 'secondary', size: 'md' })"
                   :disabled="!isFormWritable || hasReachedAnswerLimit || createAnswerMutation.isPending.value"
@@ -130,13 +171,16 @@ const {
                   {{ createAnswerMutation.isPending.value ? '作成中...' : '新しい回答を作成' }}
                 </button>
               </div>
-              <p v-if="hasReachedAnswerLimit" class="text-sm text-muted">
-                このフォームではこれ以上新しい回答を作成できません。
-              </p>
             </div>
-          </div>
+          </section>
 
           <div class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
+            <div v-if="selectedAnswer" class="border-b border-border px-6 py-5 text-sm text-body">
+              <p class="font-semibold">
+                {{ form.isOpen ? '回答を編集' : '回答を閲覧' }} — 回答ID : {{ selectedAnswer.id }}
+              </p>
+            </div>
+
             <div class="grid gap-0">
               <template v-if="form.questions.length === 0">
                 <div class="border-b border-border px-6 py-5 last:border-b-0">

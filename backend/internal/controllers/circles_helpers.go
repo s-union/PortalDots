@@ -34,6 +34,7 @@ func mapCircleDetail(c circle.Circle) circleDetailResponse {
 		InvitationToken:       c.InvitationToken,
 		SubmittedAt:           submittedAt,
 		Status:                c.Status,
+		Places:                slices.Clone(c.Places),
 	}
 }
 

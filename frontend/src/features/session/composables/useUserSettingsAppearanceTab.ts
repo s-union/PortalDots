@@ -1,3 +1,4 @@
+import { computed, ref, watch } from 'vue'
 import { useUiThemePreference, type UiTheme } from '@/features/session/theme'
 import { useUserSettingsTabs } from './useUserSettingsTabs'
 
@@ -26,9 +27,31 @@ const themeOptions: {
 export function useUserSettingsAppearanceTab() {
   const { tabs } = useUserSettingsTabs('appearance')
   const { theme, setTheme } = useUiThemePreference()
+  const selectedTheme = ref<UiTheme>(theme.value)
+
+  watch(
+    theme,
+    (value) => {
+      selectedTheme.value = value
+    },
+    { immediate: true }
+  )
+
+  const hasUnsavedChanges = computed(() => selectedTheme.value !== theme.value)
+
+  function chooseTheme(value: UiTheme) {
+    selectedTheme.value = value
+  }
+
+  function saveTheme() {
+    setTheme(selectedTheme.value)
+  }
 
   return {
-    setTheme,
+    chooseTheme,
+    hasUnsavedChanges,
+    saveTheme,
+    selectedTheme,
     tabs,
     theme,
     themeOptions

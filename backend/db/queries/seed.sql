@@ -76,7 +76,8 @@ SET last_name = EXCLUDED.last_name,
     password = EXCLUDED.password,
     is_verified = EXCLUDED.is_verified,
     is_email_verified = EXCLUDED.is_email_verified,
-    is_univemail_verified = EXCLUDED.is_univemail_verified;
+    is_univemail_verified = EXCLUDED.is_univemail_verified,
+    updated_at = now();
 
 -- name: SeedDeleteCircleUserByUserID :exec
 DELETE FROM circle_user WHERE user_id = $1;

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 )
 
@@ -147,13 +148,17 @@ func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	request, validationErrors, valid := bindAndValidateStaffForm(c, true)
+	request, validationErrors, valid := bindAndValidateStaffForm(c, false)
 	if !valid {
 		return validationError(c, validationErrors)
 	}
-	currentCircle, err := h.circles.Find(request.CircleID)
-	if err != nil {
-		return validationError(c, map[string][]string{"circleId": {"企画を選択してください"}})
+	currentCircle := circle.Circle{}
+	if request.CircleID != "" {
+		foundCircle, err := h.circles.Find(request.CircleID)
+		if err != nil {
+			return validationError(c, map[string][]string{"circleId": {"企画を選択してください"}})
+		}
+		currentCircle = foundCircle
 	}
 
 	created := h.forms.Create(

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/workspace/contact',
   meta: {
     requiresAuth: true,
     requiresCircle: true
@@ -9,7 +10,7 @@ definePage({
 import { computed, reactive, ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
 import {
   extractContactValidationMessage,
   useContactCategoriesQuery,
@@ -64,19 +65,22 @@ async function handleSubmit() {
 
 <template>
   <PageLayout>
-    <SurfaceCard>
-      <div class="border-b border-border px-6 py-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">お問い合わせ</h2>
-          <RouterLink class="text-sm text-primary" to="/workspace/settings">ユーザー設定</RouterLink>
-        </div>
-      </div>
-
+    <ListPanel legacy title="お問い合わせ">
       <form class="grid gap-5 px-6 py-6" @submit.prevent="handleSubmit">
-        <label class="grid gap-2 text-sm text-body">
-          <span class="sr-only">企画名</span>
-          <input :value="selectedCircleLabel" readonly type="text" />
-        </label>
+        <p class="text-sm leading-7 text-body">
+          お問い合わせへの返信は
+          <strong>{{ sessionStore.user?.contactEmail || '未設定のメールアドレス' }}</strong>
+          に送信されます。メールアドレスは
+          <RouterLink class="text-primary underline" to="/workspace/settings">ユーザー設定</RouterLink>
+          で変更できます。
+        </p>
+
+        <div class="grid gap-2">
+          <label class="grid gap-2 text-sm text-body">
+            <span>企画名</span>
+            <input :value="selectedCircleLabel" readonly type="text" />
+          </label>
+        </div>
 
         <div class="grid gap-2">
           <label class="grid gap-2 text-sm text-body">
@@ -129,6 +133,6 @@ async function handleSubmit() {
           </button>
         </div>
       </form>
-    </SurfaceCard>
+    </ListPanel>
   </PageLayout>
 </template>

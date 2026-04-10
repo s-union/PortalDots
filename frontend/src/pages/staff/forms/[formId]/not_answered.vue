@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/forms/:formId/not_answered',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -12,7 +13,6 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -40,16 +40,12 @@ const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTa
     </div>
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
-      <SurfaceCard tag="header">
-        <h2 class="text-3xl font-semibold text-body">未回答企画一覧</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">
-          {{ answersQuery.data.value.form.name }} に未回答の企画を確認します。
-        </p>
-      </SurfaceCard>
-
+      <div class="space-y-1 px-1">
+        <h1 class="text-2xl font-semibold text-body">未回答企画一覧</h1>
+      </div>
       <ListPanel
         :title="`未回答企画（${answersQuery.data.value.notAnsweredCircles.length}企画）`"
-        description="必要に応じて企画詳細を開き、状況確認や個別連絡へ進めます。"
+        :description="`${answersQuery.data.value.form.name} に未回答の企画を確認します。`"
         overflow-hidden
       >
         <div v-if="answersQuery.data.value.notAnsweredCircles.length === 0" class="px-6 py-5 text-sm text-muted-2">

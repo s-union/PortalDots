@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/documents/:documentId/edit',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -117,17 +118,16 @@ async function handleDeleteDocument() {
     </div>
 
     <form v-else-if="documentQuery.data.value" class="space-y-6" @submit.prevent="handleSaveDocument">
-      <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Document Detail</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">配布資料を編集</h2>
-        <div class="mt-3 text-sm text-muted">配布資料ID : {{ documentQuery.data.value.id }}</div>
-        <div class="mt-1 text-sm text-muted">対象企画 : {{ documentQuery.data.value.circle.name }}</div>
-        <div class="mt-3 text-sm text-muted">
+      <div class="space-y-1 px-1">
+        <h1 class="text-2xl font-semibold text-body">配布資料を編集</h1>
+        <p class="text-sm text-muted">配布資料ID : {{ documentQuery.data.value.id }}</p>
+        <p class="text-sm text-muted">対象企画 : {{ documentQuery.data.value.circle.name }}</p>
+        <p class="text-sm text-muted">
           {{ formatDateTimeUpdated(documentQuery.data.value.updatedAt) }} /
           {{ documentQuery.data.value.extension || 'FILE' }} /
           {{ formatFileSize(documentQuery.data.value.sizeBytes) }}
-        </div>
-      </SurfaceCard>
+        </p>
+      </div>
 
       <SettingsSection title="配布資料">
         <SettingsRow>

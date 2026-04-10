@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import { cn } from '@/lib/ui/cn'
 import { formControlVariants } from '@/lib/ui/variants'
 import type { MutateStaffPagePayload, StaffPageDocument } from '@/features/staff/pages/api'
@@ -42,7 +43,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 
     <label class="grid gap-2 text-sm text-body">
       <span class="font-medium">本文</span>
-      <textarea v-model="form.body" :class="cn(formControlVariants(), 'min-h-56')" name="body" />
+      <MarkdownEditorField v-model="form.body" min-height-class="min-h-56" name="body" />
       <p class="text-xs text-muted">
         Markdown で入力できます。表、取り消し線、タスクリスト、脚注は GFM として表示されます。
       </p>

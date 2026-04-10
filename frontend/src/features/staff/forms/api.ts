@@ -31,7 +31,7 @@ export const allowedQuestionTypes = [
 ] as const
 
 interface CreateStaffFormPayload {
-  circleId: string
+  circleId?: string
   name: string
   description: string
   openAt: string
@@ -523,7 +523,6 @@ export function createDefaultStaffFormPayload(): CreateStaffFormPayload {
   const closeAtISO = plusDaysEndOfDayISO(openAtISO, 14)
 
   return {
-    circleId: '',
     name: '',
     description: '',
     openAt: openAtISO,
@@ -531,7 +530,7 @@ export function createDefaultStaffFormPayload(): CreateStaffFormPayload {
     maxAnswers: 1,
     answerableTags: [],
     confirmationMessage: '',
-    isPublic: true
+    isPublic: false
   }
 }
 

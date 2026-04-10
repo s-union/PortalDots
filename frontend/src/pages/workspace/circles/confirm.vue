@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/workspace/circles/confirm',
   meta: {
     requiresAuth: true,
     requiresCircle: true
@@ -29,6 +30,7 @@ const requiresMemberStep = computed(() => {
   }
   return detail.usersCountMax > 1
 })
+const totalSteps = computed(() => (requiresMemberStep.value ? 3 : 2))
 
 async function handleSubmit() {
   const detail = detailQuery.data.value
@@ -66,8 +68,16 @@ function uploadNames(questionId: string) {
   <PageLayout>
     <SurfaceCard tag="header">
       <SurfaceCardBand borderless>
+        <div class="space-y-1">
+          <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">
+            {{ detailQuery.data.value?.participationTypeName ?? '企画' }} 参加登録
+            <small class="ml-2 text-sm font-normal text-muted"> (ステップ {{ totalSteps }} / {{ totalSteps }}) </small>
+          </h1>
+          <p v-if="detailQuery.data.value" class="text-sm text-muted">
+            {{ detailQuery.data.value.name }}
+          </p>
+        </div>
         <CircleRegistrationSteps :current-step="3" :requires-member-step="requiresMemberStep" />
-        <p class="mt-3 text-sm leading-7 text-muted">入力内容を確認し、問題なければ参加登録を提出してください。</p>
       </SurfaceCardBand>
     </SurfaceCard>
 
@@ -76,6 +86,12 @@ function uploadNames(questionId: string) {
     <template v-else-if="detailQuery.data.value">
       <SurfaceCard>
         <div class="grid gap-4 px-6 py-6 text-sm text-body">
+          <div>
+            <p class="font-semibold">参加登録の提出</p>
+            <p class="mt-1 text-muted">
+              以下の情報で参加登録を提出します。参加登録の提出後は、登録内容の変更ができなくなります。
+            </p>
+          </div>
           <div>
             <p class="font-semibold">企画名</p>
             <p class="mt-1">{{ detailQuery.data.value.name }}</p>
@@ -142,7 +158,7 @@ function uploadNames(questionId: string) {
           class="inline-flex rounded border border-border bg-surface px-4 py-3 text-sm font-semibold text-body transition hover:bg-surface-light hover:no-underline"
           :to="requiresMemberStep ? '/workspace/circles/members' : '/workspace/circles/detail'"
         >
-          戻って修正する
+          {{ requiresMemberStep ? '「メンバーを招待」へもどる' : '企画情報の編集' }}
         </RouterLink>
         <button
           :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
@@ -152,7 +168,7 @@ function uploadNames(questionId: string) {
           type="button"
           @click="handleSubmit"
         >
-          {{ submitMutation.isPending.value ? '提出中...' : '参加登録を提出する' }}
+          {{ submitMutation.isPending.value ? '提出中...' : '参加登録を提出' }}
         </button>
       </div>
     </template>

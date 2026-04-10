@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/pages',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -10,10 +11,10 @@ definePage({
 
 import { computed, watch } from 'vue'
 import DataCard from '@/components/layouts/DataCard.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import { formatDateTimeTable } from '@/lib/format/datetime'
+import { canUseMailQueue } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffPagesExportUrl,
@@ -33,6 +34,7 @@ const pagesQuery = useStaffPagesQuery('', enabled)
 const patchPinMutation = usePatchStaffPagePinByIdMutation()
 const deletePageMutation = useDeleteStaffPageByIdMutation()
 const exportHref = computed(() => buildStaffPagesExportUrl())
+const mailQueueAvailable = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
 
 const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt'] as const
 type StaffPageSortKey = (typeof sortKeys)[number]
@@ -188,8 +190,6 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
 
 <template>
   <PageLayout class="max-w-full">
-    <PageHeader title="お知らせ管理" />
-
     <DataCard overflow-hidden>
       <StaffDataGrid
         :rows="rows"
@@ -218,6 +218,14 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
           >
             <i class="fas fa-plus fa-fw" aria-hidden="true" />
             新規お知らせ
+          </RouterLink>
+          <RouterLink
+            v-if="mailQueueAvailable"
+            to="/staff/mails"
+            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
+          >
+            <i class="far fa-envelope fa-fw" aria-hidden="true" />
+            メール配信設定
           </RouterLink>
           <a
             :href="exportHref"

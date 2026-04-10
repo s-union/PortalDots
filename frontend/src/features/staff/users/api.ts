@@ -1,5 +1,5 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, staffUserSchema } from '@/lib/api/schema'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
@@ -47,10 +47,13 @@ export interface StaffUser {
   displayName: string
   loginIds: string[]
   contactEmail: string
+  univemail: string
   phoneNumber: string
   roles: string[]
   isVerified: boolean
   isEmailVerified: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export interface UpdateStaffUserPayload {
@@ -78,7 +81,10 @@ export type StaffUserFilterKey =
   | 'firstName'
   | 'loginIds'
   | 'contactEmail'
+  | 'univemail'
   | 'phoneNumber'
+  | 'createdAt'
+  | 'updatedAt'
   | 'isStaff'
   | 'isAdmin'
   | 'isEmailVerified'
@@ -89,7 +95,10 @@ export type StaffUserSortKey =
   | 'firstName'
   | 'loginIds'
   | 'contactEmail'
+  | 'univemail'
   | 'phoneNumber'
+  | 'createdAt'
+  | 'updatedAt'
   | 'isStaff'
   | 'isAdmin'
   | 'isEmailVerified'
@@ -139,21 +148,45 @@ function buildStaffUsersQueryParams(pagination: StaffUsersPagination) {
   }
 }
 
+function buildStaffUsersRequestUrl(pagination: StaffUsersPagination) {
+  const params = new URLSearchParams()
+  const query = buildStaffUsersQueryParams(pagination)
+
+  params.set('page', String(query.page))
+  params.set('pageSize', String(query.pageSize))
+
+  if (query.query) {
+    params.set('query', query.query)
+  }
+  if (query.sortKey) {
+    params.set('sortKey', query.sortKey)
+  }
+  if (query.sortDirection) {
+    params.set('sortDirection', query.sortDirection)
+  }
+  if (query.queries) {
+    params.set('queries', query.queries)
+  }
+  if (query.mode) {
+    params.set('mode', query.mode)
+  }
+
+  return buildApiUrl(`/staff/users?${params.toString()}`)
+}
+
 export async function fetchStaffUsers(pagination: StaffUsersPagination) {
-  return $api.queryData(
-    'get',
-    '/staff/users',
-    {
-      headers: createJsonHeaders(),
-      params: {
-        query: buildStaffUsersQueryParams(pagination)
-      }
-    },
-    (value) => parsePaginatedResult(value, parseStaffUser, 'staff users'),
-    {
-      errorMessage: 'Failed to fetch staff users'
-    }
-  )
+  const response = await fetch(buildStaffUsersRequestUrl(pagination), {
+    method: 'GET',
+    headers: createJsonHeaders(),
+    credentials: 'include'
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch staff users')
+  }
+
+  const data = await response.json()
+  return parsePaginatedResult(data, parseStaffUser, 'staff users')
 }
 
 export async function fetchStaffUser(userId: string) {
@@ -279,27 +312,13 @@ export function useStaffUsersQuery(
   enabled: MaybeRefOrGetter<boolean>,
   pagination: MaybeRefOrGetter<StaffUsersPagination>
 ) {
-  return $api.useQueryData(
-    'get',
-    '/staff/users',
-    () => {
-      const p = toValue(pagination)
-      return {
-        headers: createJsonHeaders(),
-        params: {
-          query: buildStaffUsersQueryParams(p)
-        }
-      }
-    },
-    (value) => parsePaginatedResult(value, parseStaffUser, 'staff users'),
-    {
-      queryKey: computed(() => ['staff', 'users', toValue(pagination)]),
-      enabled: computed(() => toValue(enabled)),
+  return useQuery(
+    computed(() => ({
+      queryKey: ['staff', 'users', toValue(pagination)],
+      queryFn: async () => fetchStaffUsers(toValue(pagination)),
+      enabled: toValue(enabled),
       retry: false
-    },
-    {
-      errorMessage: 'Failed to fetch staff users'
-    }
+    }))
   )
 }
 

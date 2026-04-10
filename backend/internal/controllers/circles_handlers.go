@@ -27,11 +27,19 @@ func (h *workspaceHandlers) listCircles(c echo.Context) error {
 
 	response := make([]selectableCircleResponse, 0, len(circles))
 	for _, selectable := range circles {
+		var submittedAt *string
+		if selectable.SubmittedAt != nil {
+			value := selectable.SubmittedAt.Format(time.RFC3339)
+			submittedAt = &value
+		}
+
 		response = append(response, selectableCircleResponse{
 			ID:                    selectable.ID,
 			Name:                  selectable.Name,
 			GroupName:             selectable.GroupName,
 			ParticipationTypeName: selectable.ParticipationTypeName,
+			SubmittedAt:           submittedAt,
+			Status:                selectable.Status,
 		})
 	}
 

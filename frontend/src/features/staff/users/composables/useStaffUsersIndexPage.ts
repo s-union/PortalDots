@@ -21,7 +21,10 @@ const staffUserSortKeys = [
   'firstName',
   'loginIds',
   'contactEmail',
+  'univemail',
   'phoneNumber',
+  'createdAt',
+  'updatedAt',
   'isStaff',
   'isAdmin',
   'isEmailVerified',
@@ -34,10 +37,13 @@ const filterFields: StaffFilterField[] = [
   { key: 'firstName', label: '名', type: 'string' },
   { key: 'loginIds', label: '学生番号', type: 'string' },
   { key: 'contactEmail', label: '連絡先メールアドレス', type: 'string' },
+  { key: 'univemail', label: '学生用メールアドレス', type: 'string' },
   { key: 'phoneNumber', label: '電話番号', type: 'string' },
+  { key: 'createdAt', label: '作成日時', type: 'string' },
+  { key: 'updatedAt', label: '更新日時', type: 'string' },
   { key: 'isStaff', label: 'スタッフ', type: 'bool' },
   { key: 'isAdmin', label: '管理者', type: 'bool' },
-  { key: 'isEmailVerified', label: 'メール確認', type: 'bool' },
+  { key: 'isEmailVerified', label: 'メール認証', type: 'bool' },
   { key: 'isVerified', label: '本人確認', type: 'bool' }
 ]
 
@@ -51,7 +57,10 @@ interface StaffUserRow extends StaffDataGridRow {
   firstName: string
   firstNameReading: string
   contactEmail: string
+  univemail: string
   phoneNumber: string
+  createdAt: string
+  updatedAt: string
   isStaff: boolean
   isAdmin: boolean
   isEmailVerified: boolean
@@ -105,7 +114,10 @@ export function useStaffUsersIndexPage() {
       firstName: user.firstName,
       firstNameReading: user.firstNameReading,
       contactEmail: user.contactEmail,
+      univemail: user.univemail,
       phoneNumber: user.phoneNumber,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
       isStaff: user.roles.some((role) => role !== 'participant'),
       isAdmin: user.roles.includes('admin'),
       isEmailVerified: user.isEmailVerified,

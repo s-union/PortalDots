@@ -63,18 +63,10 @@ function extractApiMessage(error: unknown) {
 
 <template>
   <PageLayout>
-    <SurfaceCard tag="header">
-      <p class="text-sm text-primary">Circle Invitation</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">企画招待を受け入れる</h2>
-      <p class="mt-3 text-sm leading-7 text-muted">招待リンクから、このアカウントを企画メンバーとして追加します。</p>
-    </SurfaceCard>
-
     <SurfaceCard>
       <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
-        <p>
-          このページでは、招待トークン
-          <code>{{ invitationToken }}</code> を使って参加中の企画へ加わります。
-        </p>
+        <h1 class="text-2xl font-semibold text-body">企画招待を受け入れる</h1>
+        <p>招待リンクから、このアカウントを企画メンバーとして追加します。</p>
         <p v-if="isAuthenticated">
           現在は <strong>{{ sessionStore.user?.displayName ?? 'ログイン中ユーザー' }}</strong>
           として受け入れます。受け入れ後は企画情報画面へ移動します。

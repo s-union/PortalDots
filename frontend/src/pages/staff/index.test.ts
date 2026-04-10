@@ -71,7 +71,7 @@ describe('StaffDashboardPage', () => {
         { path: '/staff/tags', component: { template: '<div>staff tags</div>' } },
         { path: '/staff/places', component: { template: '<div>staff places</div>' } },
         {
-          path: '/staff/contacts/categories',
+          path: '/staff/contact-categories',
           component: { template: '<div>staff contact categories</div>' }
         },
         { path: '/staff/forms', component: { template: '<div>staff forms</div>' } },

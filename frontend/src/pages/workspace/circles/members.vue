@@ -1,15 +1,15 @@
 <script setup lang="ts">
 definePage({
+  path: '/workspace/circles/members',
   meta: {
     requiresAuth: true,
     requiresCircle: true
   }
 })
 
-import { computed, ref, shallowRef, watchEffect } from 'vue'
+import { computed, shallowRef, watchEffect } from 'vue'
 import { renderSVG } from 'uqr'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -36,14 +36,25 @@ const copySuccess = shallowRef(false)
 const errorMessage = shallowRef('')
 
 const currentUserId = computed(() => sessionStore.user?.id ?? '')
-const memberRequirementText = computed(() => {
+const canProceedToConfirm = computed(() => detailQuery.data.value?.canSubmit ?? false)
+const memberRequirementMessage = computed(() => {
   const detail = detailQuery.data.value
   if (!detail) {
     return ''
   }
-  return `${detail.usersCountMin}〜${detail.usersCountMax}人`
+
+  const shortage = detail.usersCountMin - detail.memberCount
+  if (shortage > 0) {
+    return `企画参加登録を提出するには、あと${shortage}人がメンバーになる必要があります。`
+  }
+
+  const extra = detail.memberCount - detail.usersCountMax
+  if (extra > 0) {
+    return `企画参加登録を提出するには、メンバーを${extra}人減らす必要があります。`
+  }
+
+  return ''
 })
-const canProceedToConfirm = computed(() => detailQuery.data.value?.canSubmit ?? false)
 
 const invitationUrl = computed(() => {
   const token = detailQuery.data.value?.invitationToken
@@ -88,24 +99,26 @@ const canShare = computed(
 )
 
 async function handleShare() {
+  if (!invitationUrl.value) {
+    return
+  }
+
   try {
-    await navigator.share({ url: invitationUrl.value })
+    if (canShare.value) {
+      await navigator.share({ url: invitationUrl.value })
+      return
+    }
+
+    await navigator.clipboard.writeText(invitationUrl.value)
+    copySuccess.value = true
+    setTimeout(() => {
+      copySuccess.value = false
+    }, 2000)
   } catch (err) {
     if (err instanceof Error && err.name !== 'AbortError') {
       errorMessage.value = 'URLの共有に失敗しました。'
     }
   }
-}
-
-async function handleCopyUrl() {
-  if (!invitationUrl.value) {
-    return
-  }
-  await navigator.clipboard.writeText(invitationUrl.value)
-  copySuccess.value = true
-  setTimeout(() => {
-    copySuccess.value = false
-  }, 2000)
 }
 
 async function handleRegenerate() {
@@ -137,35 +150,27 @@ async function handleRemoveMember(userId: string, displayName: string) {
 
 <template>
   <PageLayout>
-    <BackLink to="/workspace/circles/detail"> 企画情報へ戻る </BackLink>
-
     <SurfaceCard tag="header">
       <SurfaceCardBand borderless>
+        <div class="space-y-1">
+          <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">
+            {{ detailQuery.data.value?.participationTypeName ?? '企画' }} 参加登録
+            <small class="ml-2 text-sm font-normal text-muted"> (ステップ 2 / 3) </small>
+          </h1>
+          <p v-if="detailQuery.data.value" class="text-sm text-muted">
+            {{ detailQuery.data.value.name }}
+          </p>
+        </div>
         <CircleRegistrationSteps :current-step="2" :requires-member-step="true" />
-        <p class="mt-3 text-sm leading-7 text-muted">
-          招待リンクの確認やメンバーの管理を行い、人数条件を満たしたら確認画面へ進みます。
-        </p>
       </SurfaceCardBand>
-    </SurfaceCard>
-
-    <SurfaceCard v-if="detailQuery.data.value">
-      <p class="text-sm font-semibold text-body">必要人数</p>
-      <p class="mt-2 text-sm text-muted">
-        現在 {{ detailQuery.data.value.memberCount }} 人 / 条件 {{ memberRequirementText }}
-      </p>
-      <p class="mt-2 text-sm" :class="canProceedToConfirm ? 'text-success' : 'text-warning'">
-        {{
-          canProceedToConfirm
-            ? '人数条件を満たしています。確認画面へ進めます。'
-            : '人数条件を満たしていません。メンバーを追加または整理してください。'
-        }}
-      </p>
     </SurfaceCard>
 
     <SettingsSection title="招待リンク">
       <SettingsRow>
         <div class="grid gap-3">
-          <p class="text-sm text-muted">このリンクを共有することで、メンバーを招待できます。</p>
+          <p class="text-sm text-muted">
+            あなたの企画「{{ detailQuery.data.value?.name ?? '' }}」の学園祭係(副責任者)に、このURLを共有してください。
+          </p>
           <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>
           <template v-else>
             <div class="flex items-center gap-2">
@@ -173,17 +178,9 @@ async function handleRemoveMember(userId: string, displayName: string) {
               <button
                 :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
                 type="button"
-                @click="handleCopyUrl"
-              >
-                {{ copySuccess ? 'コピー完了!' : 'コピー' }}
-              </button>
-              <button
-                v-if="canShare"
-                :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
-                type="button"
                 @click="handleShare"
               >
-                共有
+                {{ copySuccess ? 'コピー完了!' : 'URLを共有' }}
               </button>
             </div>
             <p v-if="invitationQrError" class="text-sm text-warning">{{ invitationQrError }}</p>
@@ -244,16 +241,26 @@ async function handleRemoveMember(userId: string, displayName: string) {
       </template>
     </SettingsSection>
 
-    <div
-      v-if="detailQuery.data.value?.isLeader && detailQuery.data.value.submittedAt === null"
-      class="flex justify-end"
-    >
-      <RouterLink
-        :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
-        :to="canProceedToConfirm ? '/workspace/circles/confirm' : '/workspace/circles/detail'"
-      >
-        {{ canProceedToConfirm ? '確認画面へ進む' : '入力画面へ戻る' }}
-      </RouterLink>
+    <div v-if="detailQuery.data.value?.isLeader && detailQuery.data.value.submittedAt === null" class="space-y-3">
+      <p v-if="memberRequirementMessage" class="text-sm text-danger">
+        {{ memberRequirementMessage }}
+      </p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <RouterLink
+          class="inline-flex rounded border border-border bg-surface px-4 py-3 text-sm font-semibold text-body transition hover:bg-surface-light hover:no-underline"
+          to="/workspace/circles/detail"
+        >
+          企画情報の編集
+        </RouterLink>
+        <RouterLink
+          :class="
+            buttonVariants({ variant: canProceedToConfirm ? 'primary' : 'secondary', size: 'lg', weight: 'bold' })
+          "
+          :to="canProceedToConfirm ? '/workspace/circles/confirm' : '/workspace/circles/detail'"
+        >
+          {{ canProceedToConfirm ? '確認画面へ' : '入力画面へ戻る' }}
+        </RouterLink>
+      </div>
     </div>
   </PageLayout>
 </template>

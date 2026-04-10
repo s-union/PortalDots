@@ -91,6 +91,22 @@ const renderedHtml = computed(() => {
   padding-left: 1.5rem;
 }
 
+.page-markdown:deep(ul) {
+  list-style: disc;
+}
+
+.page-markdown:deep(ol) {
+  list-style: decimal;
+}
+
+.page-markdown:deep(ul ul) {
+  list-style: circle;
+}
+
+.page-markdown:deep(ol ol) {
+  list-style: lower-alpha;
+}
+
 .page-markdown:deep(li + li) {
   margin-top: 0.35rem;
 }

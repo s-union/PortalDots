@@ -14,6 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime, formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -250,10 +251,10 @@ async function handleDeleteForm() {
             </div>
             <label class="grid gap-2 text-sm text-body">
               <span class="sr-only">説明</span>
-              <textarea
+              <MarkdownEditorField
                 v-model="editForm.description"
                 :disabled="isParticipationForm"
-                class="min-h-32 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+                min-height-class="min-h-32"
                 name="description"
               />
             </label>
@@ -334,10 +335,10 @@ async function handleDeleteForm() {
             </div>
             <label class="grid gap-2 text-sm text-body">
               <span class="sr-only">回答完了メッセージ</span>
-              <textarea
+              <MarkdownEditorField
                 v-model="editForm.confirmationMessage"
                 :disabled="isParticipationForm"
-                class="min-h-24 rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
+                min-height-class="min-h-24"
                 name="confirmationMessage"
               />
             </label>

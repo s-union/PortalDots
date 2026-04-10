@@ -138,9 +138,10 @@ describe('StaffCirclesIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('参加種別から探す')
+    expect(wrapper.text()).toContain('参加種別')
     expect(wrapper.text()).toContain('模擬店')
     expect(wrapper.text()).toContain('展示')
+    expect(wrapper.text()).toContain('受付期間 : 2025年1月10日(金) 09:00〜2025年2月10日(月) 09:00')
     expect(wrapper.get('a[href="/staff/circles/participation_types/participation-type-food"]').text()).toContain(
       '模擬店'
     )
@@ -203,9 +204,9 @@ describe('StaffCirclesIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('企画管理')
+    expect(wrapper.text()).toContain('参加種別')
     expect(wrapper.get('a[href="/staff/circles/all"]').text()).toContain('すべての企画を表示')
-    expect(wrapper.text()).not.toContain('参加種別から探す')
+    expect(wrapper.text()).not.toContain('受付期間 :')
     expect(wrapper.find('a[href="/staff/circles/participation_types"]').exists()).toBe(false)
   })
 })

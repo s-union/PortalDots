@@ -65,6 +65,7 @@ watch(
 <template>
   <PageLayout>
     <ListPanel
+      legacy
       title="作業対象の企画を選択します。"
       :description="
         redirectDestination === '/'
@@ -98,6 +99,7 @@ watch(
 
     <ListPanel
       v-if="canCreateCircleRegistration"
+      legacy
       title="別の企画を参加登録する"
       description="参加種別ごとに新しい企画を作成します。作成後はワークスペースで続けて編集できます。"
     >

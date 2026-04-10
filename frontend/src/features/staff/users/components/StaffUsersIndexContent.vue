@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import DataCard from '@/components/layouts/DataCard.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn } from '@/components/staff/StaffDataGrid.vue'
 import StaffFilterDrawer from '@/components/staff/StaffFilterDrawer.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
 import { useStaffUsersIndexPage } from '@/features/staff/users/composables/useStaffUsersIndexPage'
 import StaffUserEditor from './StaffUserEditor.vue'
@@ -49,19 +47,20 @@ const columns: StaffDataGridColumn[] = [
   { key: 'firstName', label: '名', sortable: true },
   { key: 'firstNameReading', label: '名(よみ)', sortable: false },
   { key: 'contactEmail', label: '連絡先メールアドレス', sortable: true },
+  { key: 'univemail', label: '学生用メールアドレス', sortable: false },
   { key: 'phoneNumber', label: '電話番号', sortable: true },
   { key: 'isStaff', label: 'スタッフ', sortable: true, align: 'center' },
   { key: 'isAdmin', label: '管理者', sortable: true, align: 'center' },
-  { key: 'isEmailVerified', label: 'メール確認', sortable: true, align: 'center' },
-  { key: 'isVerified', label: '本人確認', sortable: true, align: 'center' }
+  { key: 'isEmailVerified', label: 'メール認証', sortable: true, align: 'center' },
+  { key: 'isVerified', label: '本人確認', sortable: true, align: 'center' },
+  { key: 'createdAt', label: '作成日時', sortable: true },
+  { key: 'updatedAt', label: '更新日時', sortable: true }
 ]
 </script>
 
 <template>
   <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
     <PageLayout class="max-w-full">
-      <PageHeader title="ユーザー情報管理" />
-
       <DataCard overflow-hidden>
         <StaffDataGrid
           :rows="gridRows"
@@ -109,28 +108,24 @@ const columns: StaffDataGridColumn[] = [
             <span class="block min-w-[16rem]">{{ value }}</span>
           </template>
 
+          <template #cell-univemail="{ value }">
+            <span class="block min-w-[16rem]">{{ value }}</span>
+          </template>
+
           <template #cell-isStaff="{ value }">
-            <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
-              {{ value === true ? 'スタッフ' : '-' }}
-            </StatusBadge>
+            {{ value === true ? 'はい' : '-' }}
           </template>
 
           <template #cell-isAdmin="{ value }">
-            <StatusBadge :tone="value === true ? 'primary' : 'muted'" size="sm">
-              {{ value === true ? '管理者' : '-' }}
-            </StatusBadge>
+            {{ value === true ? 'はい' : '-' }}
           </template>
 
           <template #cell-isEmailVerified="{ value }">
-            <StatusBadge :tone="value === true ? 'success' : 'muted'" size="sm">
-              {{ value === true ? '確認済み' : '未確認' }}
-            </StatusBadge>
+            {{ value === true ? '認証済み' : '未認証' }}
           </template>
 
           <template #cell-isVerified="{ value }">
-            <StatusBadge :tone="value === true ? 'success' : 'danger'" size="sm">
-              {{ value === true ? '確認済み' : '未確認' }}
-            </StatusBadge>
+            {{ value === true ? '確認済み' : '未確認' }}
           </template>
         </StaffDataGrid>
       </DataCard>

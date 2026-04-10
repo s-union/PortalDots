@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/exports',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -18,20 +19,10 @@ const bundleHref = buildApiUrl('/staff/exports/bundle.zip')
 
 <template>
   <PageLayout>
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm text-primary">Staff Exports</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">CSV / ZIP 出力</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">
-          全企画のお知らせ・資料・フォーム・回答を staff mode で書き出します。
-        </p>
-      </div>
-    </header>
-
     <SurfaceCard>
       <SurfaceHeader>
-        <template #title>書き出しメニュー</template>
-        <template #description> 全企画横断の staff export を CSV / ZIP で取得します。 </template>
+        <template #title>CSV / ZIP 出力</template>
+        <template #description>全企画横断の staff export を CSV / ZIP で取得します。</template>
       </SurfaceHeader>
 
       <div class="divide-y divide-border">

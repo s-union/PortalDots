@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/circles/:circleId',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -11,6 +12,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -241,7 +243,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
               </div>
               <label v-if="form.status === 'rejected'" class="grid gap-2 text-sm text-body">
                 <span class="font-medium">不受理理由</span>
-                <textarea v-model="form.statusReason" class="min-h-16" name="statusReason" />
+                <MarkdownEditorField v-model="form.statusReason" min-height-class="min-h-16" name="statusReason" />
               </label>
               <div class="grid gap-2 text-sm text-body">
                 <span class="font-medium">使用場所</span>

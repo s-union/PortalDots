@@ -88,7 +88,7 @@ describe('PublicDocumentsIndexPage', () => {
       expect(wrapper.text()).toContain('サンプル配布資料')
       expect(wrapper.text()).toContain('PDFファイル')
       expect(wrapper.text()).toContain('NEW')
-      expect(wrapper.get('a[href="https://api.test/v1/public/documents/document-1"]').exists()).toBe(true)
+      expect(wrapper.get('a[href="/public/documents/document-1"]').exists()).toBe(true)
     })
   })
 })

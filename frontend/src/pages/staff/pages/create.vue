@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/pages/create',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -62,8 +63,7 @@ async function handleCreatePage() {
     <form class="space-y-6" @submit.prevent="handleCreatePage">
       <SurfaceCard>
         <div class="border-b border-border px-6 py-5">
-          <p class="text-sm text-primary">Create Notice</p>
-          <h2 class="mt-2 text-2xl font-semibold text-body">お知らせを新規作成</h2>
+          <h1 class="text-2xl font-semibold text-body">お知らせを新規作成</h1>
         </div>
         <div class="px-6 py-6">
           <StaffPageEditorForm

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/verify',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true
@@ -9,7 +10,7 @@ definePage({
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
 import { buttonVariants, formControlVariants } from '@/lib/ui/variants'
 import {
   extractStaffVerifyError,
@@ -56,32 +57,13 @@ async function handleConfirm() {
 </script>
 
 <template>
-  <NarrowPageLayout class="space-y-6 py-8">
-    <header class="text-center">
-      <p class="text-sm text-primary">Staff Verify</p>
-      <h2 class="mt-3 text-3xl font-semibold text-body">スタッフ認証</h2>
-    </header>
-
-    <SurfaceCard tag="div">
-      <div class="border-b border-border px-6 py-5">
-        <h3 class="text-lg font-semibold text-body">認証コードを入力してください</h3>
-        <p class="mt-2 text-sm leading-7 text-muted">
-          認証コードをサーバー側で発行し、そのコードを確認します。コード確認後に staff session を有効化します。
-        </p>
-      </div>
-
-      <div class="border-b border-border px-6 py-5">
-        <button
-          :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
-          :disabled="requestMutation.isPending.value"
-          type="button"
-          @click="handleRequestCode"
-        >
-          {{ requestMutation.isPending.value ? '送信中...' : '認証コードを送信' }}
-        </button>
-      </div>
-
-      <form class="px-6 py-5" @submit.prevent="handleConfirm">
+  <NarrowPageLayout class="py-8">
+    <ListPanel
+      legacy
+      title="スタッフ認証"
+      description="あなたの連絡先メールアドレス宛に認証メールを送信できます。認証メールに記載されている認証コードを入力してください。"
+    >
+      <form class="px-6 py-6" @submit.prevent="handleConfirm">
         <label class="grid gap-2 text-sm text-body">
           <span class="font-medium">認証コード</span>
           <input v-model="form.verifyCode" :class="formControlVariants()" name="verifyCode" type="text" />
@@ -98,7 +80,15 @@ async function handleConfirm() {
           {{ errorMessage }}
         </p>
 
-        <div class="pt-6 text-center">
+        <div class="flex flex-wrap items-center justify-center gap-3 pt-6">
+          <button
+            :class="buttonVariants({ variant: 'secondary', size: 'lg', weight: 'semibold' })"
+            :disabled="requestMutation.isPending.value"
+            type="button"
+            @click="handleRequestCode"
+          >
+            {{ requestMutation.isPending.value ? '送信中...' : '認証コードを再送する' }}
+          </button>
           <button
             :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })"
             :disabled="confirmMutation.isPending.value"
@@ -108,6 +98,6 @@ async function handleConfirm() {
           </button>
         </div>
       </form>
-    </SurfaceCard>
+    </ListPanel>
   </NarrowPageLayout>
 </template>

@@ -47,6 +47,23 @@ function buildFetchMock() {
       )
     }
 
+    if (pathname.endsWith('/session/bootstrap')) {
+      return new Response(
+        JSON.stringify({
+          csrfToken: 'csrf-token',
+          currentCircle: null,
+          featureFlags: [],
+          roles: ['participant'],
+          permissions: [],
+          user: {
+            id: 'user-1',
+            displayName: 'PortalDots Demo User'
+          }
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
     throw new Error(`Unexpected request: ${url}`)
   })
 }
@@ -59,7 +76,6 @@ async function mountAtRegister() {
     history: createMemoryHistory(),
     routes: [
       { path: '/', component: { template: '<div>home</div>' } },
-      { path: '/login', component: { template: '<div>login</div>' } },
       { path: '/register', component: RegisterPage }
     ]
   })
@@ -76,7 +92,7 @@ async function mountAtRegister() {
   })
   await flushPromises()
 
-  return wrapper
+  return { wrapper, router }
 }
 
 describe('RegisterPage', () => {
@@ -84,11 +100,10 @@ describe('RegisterPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('starts registration and shows the sent message', async () => {
-    const wrapper = await mountAtRegister()
+  it('starts registration and shows the success guidance', async () => {
+    const { wrapper, router } = await mountAtRegister()
 
     expect(wrapper.text()).toContain('ユーザー登録')
-    expect(wrapper.text()).toContain('まず大学メールアドレスを確認し、その後に登録情報を入力します')
     expect(wrapper.get('input[name="univemailLocalPart"]').exists()).toBe(true)
 
     await wrapper.get('input[name="univemailLocalPart"]').setValue('24z9999')
@@ -96,6 +111,6 @@ describe('RegisterPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('大学メールアドレスに認証URLを送信しました。')
-    expect(wrapper.get('a[href="/login"]').text()).toContain('ログイン画面へ')
+    expect(router.currentRoute.value.fullPath).toBe('/register')
   })
 })

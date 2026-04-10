@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/about',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,

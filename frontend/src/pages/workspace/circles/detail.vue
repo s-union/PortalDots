@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/workspace/circles/detail',
   meta: {
     requiresAuth: true,
     requiresCircle: true
@@ -24,7 +25,6 @@ import {
   useFormAnswerUploadMutation
 } from '@/features/forms/answers'
 import { extractValidationMessage } from '@/lib/api/validation'
-import { formatDate } from '@/lib/format/datetime'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
 
@@ -53,6 +53,7 @@ const draft = useFormAnswerEditorDraft(
   questions
 )
 const uploadMutation = useFormAnswerUploadMutation(computed(() => detailQuery.data.value?.formId ?? ''))
+const formDescription = computed(() => detailQuery.data.value?.formDescription.trim() ?? '')
 const requiresMemberStep = computed(() => {
   const detail = detailQuery.data.value
   if (!detail) {
@@ -60,6 +61,7 @@ const requiresMemberStep = computed(() => {
   }
   return detail.usersCountMax > 1
 })
+const totalSteps = computed(() => (requiresMemberStep.value ? 3 : 2))
 const canEdit = computed(() => {
   const detail = detailQuery.data.value
   return detail?.isLeader === true && detail.submittedAt === null
@@ -201,47 +203,48 @@ function downloadHref(questionId: string) {
   <PageLayout>
     <SurfaceCard tag="header">
       <SurfaceCardBand borderless>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="space-y-1">
+            <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">
+              {{ detailQuery.data.value?.participationTypeName ?? '企画' }} 参加登録
+              <small class="ml-2 text-sm font-normal text-muted"> (ステップ 1 / {{ totalSteps }}) </small>
+            </h1>
+            <p v-if="detailQuery.data.value" class="text-sm text-muted">
+              {{ detailQuery.data.value.name }}
+              <span class="mx-1">/</span>
+              {{ detailQuery.data.value.submittedAt ? '提出済み' : '未提出' }}
+            </p>
+          </div>
+        </div>
         <CircleRegistrationSteps :current-step="1" :requires-member-step="requiresMemberStep" />
-        <p class="mt-3 text-sm leading-7 text-muted">
-          企画情報と参加登録フォームの回答を編集します。保存後にメンバー確認または確認画面へ進みます。
-        </p>
       </SurfaceCardBand>
     </SurfaceCard>
 
     <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>
 
     <template v-else-if="detailQuery.data.value">
-      <div
-        class="rounded border px-6 py-4"
-        :class="
-          detailQuery.data.value.submittedAt ? 'border-success bg-success-light' : 'border-warning bg-warning-light'
-        "
-      >
-        <p class="text-sm font-semibold">
-          {{
-            detailQuery.data.value.submittedAt
-              ? `提出済み (${formatDate(detailQuery.data.value.submittedAt)})`
-              : '未提出'
-          }}
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          参加種別: {{ detailQuery.data.value.participationTypeName }} / 代表者:
-          {{ detailQuery.data.value.leaderDisplayName }}
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          メンバー数: {{ detailQuery.data.value.memberCount }}人 ({{ detailQuery.data.value.usersCountMin }}〜{{
-            detailQuery.data.value.usersCountMax
-          }}人)
-        </p>
-      </div>
+      <AlertMessage v-if="detailQuery.data.value.submittedAt === null" tone="info">
+        <strong>企画情報の修正や、企画参加登録を提出することができるのは、企画責任者のみです。</strong>
+      </AlertMessage>
 
       <AlertMessage v-if="!detailQuery.data.value.isLeader" tone="danger">
         この企画の編集と提出は責任者のみが行えます。
       </AlertMessage>
 
-      <SettingsSection title="企画基本情報">
+      <SettingsSection v-if="formDescription" title="必ずお読みください">
+        <div class="px-6 py-6 whitespace-pre-wrap text-sm leading-7 text-body">
+          {{ formDescription }}
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="企画情報">
         <SettingsRow>
           <div class="grid gap-4">
+            <label class="grid gap-2 text-sm text-body">
+              <span class="font-semibold">企画責任者</span>
+              <input :value="detailQuery.data.value.leaderDisplayName" disabled name="leaderDisplayName" type="text" />
+            </label>
+
             <label class="grid gap-2 text-sm text-body">
               <span class="font-semibold">企画名 <span class="text-danger">*</span></span>
               <input
@@ -277,7 +280,7 @@ function downloadHref(questionId: string) {
             </label>
 
             <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">団体名 <span class="text-danger">*</span></span>
+              <span class="font-semibold">企画を出店する団体の名称 <span class="text-danger">*</span></span>
               <input
                 v-model="form.groupName"
                 :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
@@ -299,7 +302,7 @@ function downloadHref(questionId: string) {
             </label>
 
             <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">団体名（よみ） <span class="text-danger">*</span></span>
+              <span class="font-semibold">企画を出店する団体の名称（よみ） <span class="text-danger">*</span></span>
               <input
                 v-model="form.groupNameYomi"
                 :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
@@ -400,7 +403,7 @@ function downloadHref(questionId: string) {
                   class="inline-flex rounded border border-border bg-surface px-4 py-3 text-sm font-semibold text-body transition hover:bg-surface-light hover:no-underline"
                   to="/workspace/circles/members"
                 >
-                  メンバー管理
+                  メンバーを招待
                 </RouterLink>
                 <button
                   v-if="canEdit"
@@ -418,7 +421,7 @@ function downloadHref(questionId: string) {
                   type="button"
                   @click="handleSaveAndContinue"
                 >
-                  {{ requiresMemberStep ? '保存してメンバー確認へ' : '保存して確認画面へ' }}
+                  {{ requiresMemberStep ? '保存して次へ' : '確認画面へ' }}
                 </button>
               </div>
             </div>

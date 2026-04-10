@@ -8,14 +8,18 @@ export {
   requiredEmailSchema,
   hiraganaSchema,
   requiredTextSchema,
+  registrationStartFormSchema,
   profileUpdateFormSchema,
   passwordChangeFormSchema,
   contactFormSchema,
   userRegistrationFormSchema,
+  directUserRegistrationFormSchema,
   circleRegistrationFormSchema,
   type ProfileUpdateFormData,
   type PasswordChangeFormData,
   type ContactFormData,
   type UserRegistrationFormData,
+  type RegistrationStartFormData,
+  type DirectUserRegistrationFormData,
   type CircleRegistrationFormData
 } from './schemas'

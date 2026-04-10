@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/permissions',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -11,7 +12,6 @@ definePage({
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import DataCard from '@/components/layouts/DataCard.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import { canEditPermissions, canManagePermissions } from '@/features/staff/access/capabilities'
@@ -105,9 +105,11 @@ function handlePageSize(nextPageSize: number) {
 
 <template>
   <PageLayout>
-    <PageHeader title="スタッフの権限設定" />
-
     <DataCard>
+      <div class="border-b border-border px-6 py-5">
+        <h2 class="text-lg font-semibold text-body">スタッフの権限設定</h2>
+      </div>
+
       <div v-if="!canReadPermissions" class="px-6 py-6 text-sm text-muted">
         この画面の閲覧には `staff.permissions.read` 系または `admin` が必要です。
       </div>

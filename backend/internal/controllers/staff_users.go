@@ -20,10 +20,13 @@ type staffUserSummaryResponse struct {
 	DisplayName      string   `json:"displayName"`
 	LoginIDs         []string `json:"loginIds"`
 	ContactEmail     string   `json:"contactEmail"`
+	Univemail        string   `json:"univemail"`
 	PhoneNumber      string   `json:"phoneNumber"`
 	Roles            []string `json:"roles"`
 	IsVerified       bool     `json:"isVerified"`
 	IsEmailVerified  bool     `json:"isEmailVerified"`
+	CreatedAt        string   `json:"createdAt"`
+	UpdatedAt        string   `json:"updatedAt"`
 }
 
 type updateStaffUserRequest struct {
@@ -312,7 +315,7 @@ func (h *staffUserHandlers) downloadStaffUsersCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	rows := [][]string{{"id", "last_name", "last_name_reading", "first_name", "first_name_reading", "display_name", "login_ids", "contact_email", "phone_number", "roles", "is_verified", "is_email_verified"}}
+	rows := [][]string{{"id", "last_name", "last_name_reading", "first_name", "first_name_reading", "display_name", "login_ids", "contact_email", "univemail", "phone_number", "roles", "is_verified", "is_email_verified", "created_at", "updated_at"}}
 	for _, userValue := range users {
 		rows = append(rows, []string{
 			userValue.ID,
@@ -323,10 +326,13 @@ func (h *staffUserHandlers) downloadStaffUsersCSV(c echo.Context) error {
 			userValue.DisplayName,
 			strings.Join(userValue.LoginIDs, ","),
 			userValue.ContactEmail,
+			deriveStaffUserUnivemail(userValue.LoginIDs, userValue.ContactEmail),
 			userValue.PhoneNumber,
 			strings.Join(userValue.Roles, ","),
 			boolString(userValue.IsVerified),
 			boolString(userValue.IsEmailVerified),
+			formatStaffUserTimestamp(userValue.CreatedAt),
+			formatStaffUserTimestamp(userValue.UpdatedAt),
 		})
 	}
 

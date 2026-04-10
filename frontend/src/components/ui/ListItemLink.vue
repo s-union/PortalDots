@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const {
   to = '',
@@ -28,10 +29,32 @@ const bodyClass = computed(() =>
 </script>
 
 <template>
-  <component
-    :is="to ? 'RouterLink' : href ? 'a' : 'div'"
-    :to="to || undefined"
-    :href="href || undefined"
+  <RouterLink v-if="to" :to="to" :class="rootClass">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <slot name="prefix" />
+          <h3 :class="titleClass">
+            <slot name="title" />
+          </h3>
+          <slot name="suffix" />
+        </div>
+        <div v-if="$slots.meta" :class="metaClass">
+          <slot name="meta" />
+        </div>
+        <div v-if="$slots.default" :class="bodyClass">
+          <slot />
+        </div>
+      </div>
+      <div v-if="$slots.right">
+        <slot name="right" />
+      </div>
+    </div>
+  </RouterLink>
+
+  <a
+    v-else-if="href"
+    :href="href"
     :target="newTab ? '_blank' : undefined"
     :rel="newTab ? 'noreferrer' : undefined"
     :class="rootClass"
@@ -56,5 +79,28 @@ const bodyClass = computed(() =>
         <slot name="right" />
       </div>
     </div>
-  </component>
+  </a>
+
+  <div v-else :class="rootClass">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <slot name="prefix" />
+          <h3 :class="titleClass">
+            <slot name="title" />
+          </h3>
+          <slot name="suffix" />
+        </div>
+        <div v-if="$slots.meta" :class="metaClass">
+          <slot name="meta" />
+        </div>
+        <div v-if="$slots.default" :class="bodyClass">
+          <slot />
+        </div>
+      </div>
+      <div v-if="$slots.right">
+        <slot name="right" />
+      </div>
+    </div>
+  </div>
 </template>

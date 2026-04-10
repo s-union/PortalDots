@@ -1905,7 +1905,10 @@ paths:
                 firstName,
                 loginIds,
                 contactEmail,
+                univemail,
                 phoneNumber,
+                createdAt,
+                updatedAt,
                 isStaff,
                 isAdmin,
                 isEmailVerified,
@@ -1945,7 +1948,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
+                      required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, univemail, phoneNumber, roles, isVerified, isEmailVerified, createdAt, updatedAt]
                       properties:
                         id:
                           type: string
@@ -1965,6 +1968,8 @@ paths:
                             type: string
                         contactEmail:
                           type: string
+                        univemail:
+                          type: string
                         phoneNumber:
                           type: string
                         roles:
@@ -1975,6 +1980,10 @@ paths:
                           type: boolean
                         isEmailVerified:
                           type: boolean
+                        createdAt:
+                          type: string
+                        updatedAt:
+                          type: string
                   page:
                     type: integer
                   pageSize:
@@ -2018,7 +2027,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, univemail, phoneNumber, roles, isVerified, isEmailVerified, createdAt, updatedAt]
                 properties:
                   id:
                     type: string
@@ -2038,6 +2047,8 @@ paths:
                       type: string
                   contactEmail:
                     type: string
+                  univemail:
+                    type: string
                   phoneNumber:
                     type: string
                   roles:
@@ -2048,6 +2059,10 @@ paths:
                     type: boolean
                   isEmailVerified:
                     type: boolean
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
         "401":
           description: Unauthenticated
         "403":
@@ -2097,7 +2112,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, univemail, phoneNumber, roles, isVerified, isEmailVerified, createdAt, updatedAt]
                 properties:
                   id:
                     type: string
@@ -2117,6 +2132,8 @@ paths:
                       type: string
                   contactEmail:
                     type: string
+                  univemail:
+                    type: string
                   phoneNumber:
                     type: string
                   roles:
@@ -2127,6 +2144,10 @@ paths:
                     type: boolean
                   isEmailVerified:
                     type: boolean
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
         "401":
           description: Unauthenticated
         "403":
@@ -2172,7 +2193,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, univemail, phoneNumber, roles, isVerified, isEmailVerified, createdAt, updatedAt]
                 properties:
                   id:
                     type: string
@@ -2192,6 +2213,8 @@ paths:
                       type: string
                   contactEmail:
                     type: string
+                  univemail:
+                    type: string
                   phoneNumber:
                     type: string
                   roles:
@@ -2202,6 +2225,10 @@ paths:
                     type: boolean
                   isEmailVerified:
                     type: boolean
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
         "401":
           description: Unauthenticated
         "403":
@@ -2239,7 +2266,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, phoneNumber, roles, isVerified, isEmailVerified]
+                required: [id, lastName, lastNameReading, firstName, firstNameReading, displayName, loginIds, contactEmail, univemail, phoneNumber, roles, isVerified, isEmailVerified, createdAt, updatedAt]
                 properties:
                   id:
                     type: string
@@ -2259,6 +2286,8 @@ paths:
                       type: string
                   contactEmail:
                     type: string
+                  univemail:
+                    type: string
                   phoneNumber:
                     type: string
                   roles:
@@ -2269,6 +2298,10 @@ paths:
                     type: boolean
                   isEmailVerified:
                     type: boolean
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
         "401":
           description: Unauthenticated
         "403":
@@ -3334,6 +3367,14 @@ paths:
                       type: string
                     participationTypeName:
                       type: string
+                    submittedAt:
+                      anyOf:
+                        - type: "null"
+                        - type: string
+                          format: date-time
+                    status:
+                      type: string
+                      enum: [pending, approved, rejected]
   /staff/forms/{formID}/not_answered:
     get:
       operationId: getStaffFormNotAnswered
@@ -5640,6 +5681,8 @@ paths:
                     invitationToken,
                     submittedAt,
                     status,
+                    formCloseAt,
+                    places,
                   ]
                 properties:
                   id:
@@ -5668,6 +5711,13 @@ paths:
                   status:
                     type: string
                     enum: [pending, approved, rejected]
+                  formCloseAt:
+                    type: string
+                    format: date-time
+                  places:
+                    type: array
+                    items:
+                      type: string
         "401":
           description: Unauthenticated
         "404":

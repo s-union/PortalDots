@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/forms/:formId/answers',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,

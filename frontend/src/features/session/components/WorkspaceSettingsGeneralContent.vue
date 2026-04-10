@@ -33,7 +33,7 @@ const {
             {{ publicConfigQuery.data.value?.portalStudentIdName ?? '学生番号' }}
           </p>
           <div class="grid gap-2">
-            <input :value="studentId" name="studentId" readonly type="text" />
+            <input :value="studentId" aria-label="学生番号" name="studentId" readonly type="text" />
           </div>
         </div>
       </SettingsRow>
@@ -43,7 +43,13 @@ const {
             {{ publicConfigQuery.data.value?.portalUnivemailName ?? '学生用メールアドレス' }}
           </p>
           <div class="grid gap-2">
-            <input :value="univemail" name="univemail" readonly type="text" />
+            <input
+              :value="univemail"
+              :aria-label="publicConfigQuery.data.value?.portalUnivemailName ?? '学生用メールアドレス'"
+              name="univemail"
+              readonly
+              type="text"
+            />
           </div>
         </div>
       </SettingsRow>
@@ -53,6 +59,7 @@ const {
           <div class="grid gap-2">
             <input
               v-model="form.name"
+              aria-label="名前"
               name="name"
               placeholder="姓 名"
               type="text"
@@ -70,6 +77,7 @@ const {
           <div class="grid gap-2">
             <input
               v-model="form.nameYomi"
+              aria-label="名前(よみ)"
               name="nameYomi"
               placeholder="せい めい"
               type="text"
@@ -87,6 +95,7 @@ const {
           <div class="grid gap-2">
             <input
               v-model="form.contactEmail"
+              aria-label="連絡先メールアドレス"
               name="contactEmail"
               type="email"
               :class="{ 'border-danger': getFieldError('contactEmail') }"
@@ -105,6 +114,7 @@ const {
           <div class="grid gap-2">
             <input
               v-model="form.phoneNumber"
+              aria-label="連絡先電話番号"
               name="phoneNumber"
               type="tel"
               :class="{ 'border-danger': getFieldError('phoneNumber') }"
@@ -128,6 +138,7 @@ const {
           <div class="grid gap-2">
             <input
               v-model="form.currentPassword"
+              aria-label="現在のパスワード"
               name="currentPassword"
               type="password"
               :class="{ 'border-danger': getFieldError('currentPassword') }"

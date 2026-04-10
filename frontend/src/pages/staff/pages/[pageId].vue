@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/pages/:pageId',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -134,8 +135,7 @@ async function handleDeletePage() {
     <form v-else-if="pageQuery.data.value" class="space-y-6" @submit.prevent="handleSavePage">
       <SurfaceCard>
         <div class="border-b border-border px-6 py-5">
-          <p class="text-sm text-primary">Notice Detail</p>
-          <h2 class="mt-2 text-2xl font-semibold text-body">お知らせを編集</h2>
+          <h1 class="text-2xl font-semibold text-body">お知らせを編集</h1>
           <div class="mt-3 flex flex-wrap gap-2">
             <StatusBadge :tone="pageQuery.data.value.isPublic ? 'success' : 'muted'" appearance="outlined">
               {{ pageQuery.data.value.isPublic ? '公開中' : '非公開' }}

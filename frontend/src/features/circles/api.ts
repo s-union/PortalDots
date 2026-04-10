@@ -19,6 +19,8 @@ export interface SelectableCircle {
   name: string
   groupName: string
   participationTypeName: string
+  submittedAt?: string | null
+  status?: 'pending' | 'approved' | 'rejected'
 }
 
 export interface CircleDetail {
@@ -46,6 +48,8 @@ export interface CircleDetail {
   invitationToken: string
   submittedAt: string | null
   status: 'pending' | 'approved' | 'rejected'
+  formCloseAt?: string
+  places?: string[]
 }
 
 export interface CircleMember {

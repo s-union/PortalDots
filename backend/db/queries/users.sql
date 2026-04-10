@@ -20,6 +20,8 @@ SELECT
     users.is_verified,
     users.is_email_verified,
     users.is_univemail_verified,
+    users.created_at,
+    users.updated_at,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -47,7 +49,7 @@ LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 LEFT JOIN circle_user ON circle_user.user_id = users.id
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
-         users.is_univemail_verified
+         users.is_univemail_verified, users.created_at, users.updated_at
 ORDER BY users.id;
 
 -- name: GetUserByID :one
@@ -68,6 +70,8 @@ SELECT
     users.is_verified,
     users.is_email_verified,
     users.is_univemail_verified,
+    users.created_at,
+    users.updated_at,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -96,7 +100,7 @@ LEFT JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.id = $1
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
-         users.is_univemail_verified;
+         users.is_univemail_verified, users.created_at, users.updated_at;
 
 -- name: GetUserByLoginID :one
 SELECT users.id, users.display_name, users.password, users.is_verified, users.created_at
@@ -195,26 +199,30 @@ RETURNING id, last_name, last_name_reading, first_name, first_name_reading, disp
 
 -- name: UpdateUserDisplayName :one
 UPDATE users
-SET display_name = $2
+SET display_name = $2,
+    updated_at = now()
 WHERE id = $1
 RETURNING id, display_name, password, is_verified, created_at;
 
 -- name: UpdateUserIsVerified :one
 UPDATE users
-SET is_verified = $2
+SET is_verified = $2,
+    updated_at = now()
 WHERE id = $1
 RETURNING id, display_name, password, is_verified, created_at;
 
 -- name: UpdateUserEmailVerification :one
 UPDATE users
-SET is_email_verified = $2
+SET is_email_verified = $2,
+    updated_at = now()
 WHERE id = $1
 RETURNING id, last_name, last_name_reading, first_name, first_name_reading, display_name, contact_email, phone_number, password, is_verified, is_email_verified, is_univemail_verified, created_at;
 
 -- name: UpdateUserUnivemailVerification :one
 UPDATE users
 SET is_univemail_verified = $2,
-    is_verified = $2
+    is_verified = $2,
+    updated_at = now()
 WHERE id = $1
 RETURNING id, last_name, last_name_reading, first_name, first_name_reading, display_name, contact_email, phone_number, password, is_verified, is_email_verified, is_univemail_verified, created_at;
 
@@ -224,7 +232,8 @@ WHERE id = $1;
 
 -- name: UpdateUserPassword :one
 UPDATE users
-SET password = $2
+SET password = $2,
+    updated_at = now()
 WHERE id = $1
 RETURNING id, display_name, password, is_verified, created_at;
 
@@ -453,6 +462,8 @@ SELECT
     users.is_verified,
     users.is_email_verified,
     users.is_univemail_verified,
+    users.created_at,
+    users.updated_at,
     COALESCE(
         array_agg(DISTINCT user_login_ids.login_id) FILTER (WHERE user_login_ids.login_id IS NOT NULL),
         ARRAY[]::text[]
@@ -488,7 +499,7 @@ WHERE ($1::text = '' OR
 )
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
-         users.is_univemail_verified
+         users.is_univemail_verified, users.created_at, users.updated_at
 ORDER BY users.id;
 
 -- name: UpdateUserProfile :one
@@ -498,6 +509,7 @@ SET last_name = $2,
     first_name = $4,
     first_name_reading = $5,
     contact_email = $6,
-    phone_number = $7
+    phone_number = $7,
+    updated_at = now()
 WHERE id = $1
 RETURNING id, last_name, last_name_reading, first_name, first_name_reading, display_name, contact_email, phone_number, password, is_verified, is_email_verified, is_univemail_verified, created_at;

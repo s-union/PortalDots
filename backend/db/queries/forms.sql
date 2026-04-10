@@ -18,13 +18,13 @@ LIMIT 1;
 -- name: ListStaffFormsByCircle :many
 SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 FROM forms
-WHERE circle_id = $1
+WHERE circle_id IS NOT DISTINCT FROM $1
 ORDER BY close_at ASC, id ASC;
 
 -- name: GetStaffFormByID :one
 SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
 FROM forms
-WHERE circle_id = $1
+WHERE circle_id IS NOT DISTINCT FROM $1
   AND id = $2
 LIMIT 1;
 
@@ -72,5 +72,5 @@ RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_a
 
 -- name: DeleteForm :execrows
 DELETE FROM forms
-WHERE circle_id = $1
+WHERE circle_id IS NOT DISTINCT FROM $1
   AND id = $2;

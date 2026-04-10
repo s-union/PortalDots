@@ -12,8 +12,8 @@ const {
 }>()
 
 const widthClass = {
-  sm: 'max-w-[560px]',
-  md: 'max-w-[760px]'
+  sm: 'max-w-[400px]',
+  md: 'max-w-[800px]'
 } as const
 </script>
 

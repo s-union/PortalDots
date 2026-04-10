@@ -47,6 +47,7 @@ export function useUserSettingsDeleteTab() {
   }
 
   return {
+    belongsToCircle,
     blockedReason,
     canDeleteAccount,
     deleteAccount,

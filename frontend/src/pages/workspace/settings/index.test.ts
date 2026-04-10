@@ -53,6 +53,7 @@ describe('UserSettingsPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
         { path: '/workspace', component: { template: '<div>workspace</div>' } },
         { path: '/workspace/settings', component: UserSettingsPage },
         { path: '/workspace/settings/appearance', component: UserSettingsAppearancePage },
@@ -270,7 +271,7 @@ describe('UserSettingsPage', () => {
     expect(tabLinks.some((link) => link.props('to') === '/workspace/settings/delete')).toBe(true)
   })
 
-  it('updates theme preference immediately and stores it in browser storage', async () => {
+  it('updates theme preference after saving and stores it in browser storage', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -338,6 +339,9 @@ describe('UserSettingsPage', () => {
     await flushPromises()
 
     await wrapper.get('input[type="radio"][value="dark"]').setValue()
+    expect(document.documentElement.dataset.theme).toBeUndefined()
+
+    await wrapper.get('button').trigger('click')
 
     expect(document.documentElement.dataset.theme).toBe('dark')
     expect(window.localStorage.getItem('ui_theme')).toBe('dark')
@@ -491,14 +495,7 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
-    const deleteButton = wrapper
-      .findAll('button[type="button"]')
-      .find((button) => button.text().includes('アカウントを削除'))
-    if (!deleteButton) {
-      throw new Error('delete account button not found')
-    }
-
-    expect(deleteButton.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('a[href="/"]').text()).toContain('ホームに戻る')
     expect(wrapper.text()).toContain('企画に所属しているか、参加登録の途中のため、アカウント削除はできません。')
   })
 
@@ -521,6 +518,7 @@ describe('UserSettingsPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
         { path: '/workspace', component: { template: '<div>workspace</div>' } },
         { path: '/workspace/settings', component: UserSettingsPage },
         { path: '/workspace/settings/appearance', component: UserSettingsAppearancePage },
@@ -540,14 +538,7 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
-    const deleteButton = wrapper
-      .findAll('button[type="button"]')
-      .find((button) => button.text().includes('アカウントを削除'))
-    if (!deleteButton) {
-      throw new Error('delete account button not found')
-    }
-
-    expect(deleteButton.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('a[href="/"]').text()).toContain('ホームに戻る')
     expect(wrapper.text()).toContain('企画所属または権限状態のため、現在はアカウント削除できません。')
   })
 

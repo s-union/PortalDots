@@ -6,10 +6,12 @@ package controllers
 // Membership/validation/helper utilities are in circles_helpers.go.
 
 type selectableCircleResponse struct {
-	ID                    string `json:"id"`
-	Name                  string `json:"name"`
-	GroupName             string `json:"groupName"`
-	ParticipationTypeName string `json:"participationTypeName"`
+	ID                    string  `json:"id"`
+	Name                  string  `json:"name"`
+	GroupName             string  `json:"groupName"`
+	ParticipationTypeName string  `json:"participationTypeName"`
+	SubmittedAt           *string `json:"submittedAt"`
+	Status                string  `json:"status"`
 }
 
 type setCurrentCircleRequest struct {
@@ -41,6 +43,8 @@ type circleDetailResponse struct {
 	InvitationToken       string              `json:"invitationToken"`
 	SubmittedAt           *string             `json:"submittedAt"`
 	Status                string              `json:"status"`
+	FormCloseAt           string              `json:"formCloseAt"`
+	Places                []string            `json:"places"`
 }
 
 type circleMemberResponse struct {

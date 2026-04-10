@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/settings/portal',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -81,13 +82,7 @@ async function handleSave() {
     </div>
 
     <form v-else class="space-y-6" @submit.prevent="handleSave">
-      <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Portal Settings</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">Portal 設定</h2>
-        <p class="mt-3 text-sm leading-7 text-muted">
-          legacy `/admin/portal` で管理していたポータル全体の表示名・連絡先・URL・基本配色をここで更新します。
-        </p>
-      </SurfaceCard>
+      <p class="text-sm font-semibold text-body">Portal 設定</p>
 
       <SettingsSection title="基本情報">
         <SettingsRow>

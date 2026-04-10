@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/workspace/settings/appearance',
   meta: {
     requiresAuth: false
   }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -125,7 +126,7 @@ const staffCards = computed<StaffCard[]>(() => [
     hidden: !formsAdminAvailable.value
   },
   {
-    to: '/staff/contacts/categories',
+    to: '/staff/contact-categories',
     title: 'お問い合わせ受付設定',
     iconClass: 'fas fa-at fa-fw',
     description: `${appName.value}のお問い合わせフォームの受付方法を設定します`,

@@ -66,7 +66,9 @@ export const selectableCircleSchema = z.object({
   id: z.string(),
   name: z.string(),
   groupName: z.string(),
-  participationTypeName: z.string()
+  participationTypeName: z.string(),
+  submittedAt: z.string().nullable().default(null),
+  status: z.enum(['pending', 'approved', 'rejected']).default('pending')
 })
 
 export const circleDetailSchema = z.object({
@@ -111,7 +113,9 @@ export const circleDetailSchema = z.object({
     .default(null),
   invitationToken: z.string(),
   submittedAt: z.string().nullable(),
-  status: z.enum(['pending', 'approved', 'rejected']).default('pending')
+  status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+  formCloseAt: z.string().default(''),
+  places: z.array(z.string()).default([])
 })
 
 export const circleMemberSchema = z.object({
@@ -296,10 +300,13 @@ export const staffUserSchema = z.object({
   displayName: z.string(),
   loginIds: stringArraySchema,
   contactEmail: z.string().default(''),
+  univemail: z.string().default(''),
   phoneNumber: z.string().default(''),
   roles: stringArraySchema,
   isVerified: z.boolean(),
-  isEmailVerified: z.boolean().default(false)
+  isEmailVerified: z.boolean().default(false),
+  createdAt: z.string().default(''),
+  updatedAt: z.string().default('')
 })
 
 export const staffCircleSchema = z.object({

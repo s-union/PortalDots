@@ -107,7 +107,7 @@ describe('FormsIndexPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('展示チェックフォーム')
-    expect(wrapper.text()).toContain('デモ企画B')
+    expect(wrapper.text()).toContain('2026年3月23日(月) 08:59 まで受付')
     expect(wrapper.text()).toContain('1企画あたり 2 件まで')
     expect(wrapper.text()).toContain('限定公開')
     expect(wrapper.text()).not.toContain('備品返却報告')
@@ -182,6 +182,7 @@ describe('FormsIndexPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('備品返却報告')
+    expect(wrapper.text()).toContain('2026年2月21日(土) 08:59 で受付終了')
     expect(wrapper.text()).not.toContain('展示チェックフォーム')
   })
 

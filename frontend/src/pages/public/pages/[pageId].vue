@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/public/pages/:pageId',
   meta: {
     requiresAuth: false
   }

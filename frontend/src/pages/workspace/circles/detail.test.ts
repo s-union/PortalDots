@@ -150,11 +150,13 @@ describe('CircleDetailPage', () => {
 
     expect(wrapper.text()).toContain('展示')
     expect(wrapper.text()).toContain('未提出')
+    expect(wrapper.get('input[name="leaderDisplayName"]').element.value).toBe('Demo User')
     expect(wrapper.get('input[name="name"]').element.value).toBe('テスト企画A')
     expect(wrapper.get('input[name="nameYomi"]').element.value).toBe('てすときかくえー')
     expect(wrapper.get('input[name="groupName"]').element.value).toBe('テスト大学')
     expect(wrapper.get('input[name="groupNameYomi"]').element.value).toBe('てすとだいがく')
-    expect(wrapper.text()).not.toContain('登録フォーム説明')
+    expect(wrapper.text()).toContain('必ずお読みください')
+    expect(wrapper.text()).toContain('登録フォーム説明')
   })
 
   it('shows submitted status when submittedAt is set', async () => {

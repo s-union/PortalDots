@@ -47,6 +47,7 @@ func (h *workspaceHandlers) buildCircleRegistrationResponse(
 	response.CanSubmit = h.canSubmitCircle(pt, members)
 	response.FormDescription = formValue.Description
 	response.ConfirmationMessage = formValue.ConfirmationMessage
+	response.FormCloseAt = formValue.CloseAt
 	response.Questions = mapStaffFormQuestions(questions)
 	if currentAnswer, found := h.answers.Get(formValue.ID, circleValue.ID); found {
 		response.Answer = buildFormAnswerResponse(currentAnswer, h.answers.ListUploads(formValue.ID, circleValue.ID))

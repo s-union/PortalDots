@@ -62,10 +62,13 @@ describe('StaffUsersIndexPage', () => {
             displayName: 'デモ スタッフ',
             loginIds: ['DEMO-STAFF'],
             contactEmail: 'demo-staff@portaldots.com',
+            univemail: 'demo-staff@example.ac.jp',
             phoneNumber: '090-0000-0001',
             roles: ['admin'],
             isVerified: true,
-            isEmailVerified: true
+            isEmailVerified: true,
+            createdAt: '2026-04-01T12:00:00Z',
+            updatedAt: '2026-04-02T12:00:00Z'
           },
           {
             id: 'demo-user',
@@ -76,10 +79,13 @@ describe('StaffUsersIndexPage', () => {
             displayName: 'デモ 企画者',
             loginIds: ['DEMO-CIRCLE'],
             contactEmail: 'demo-circle@portaldots.com',
+            univemail: '',
             phoneNumber: '',
             roles: ['participant'],
             isVerified: false,
-            isEmailVerified: false
+            isEmailVerified: false,
+            createdAt: '',
+            updatedAt: ''
           }
         ],
         page: 1,
@@ -111,8 +117,12 @@ describe('StaffUsersIndexPage', () => {
     expect(wrapper.text()).toContain('DEMO-CIRCLE')
     expect(wrapper.text()).toContain('でも')
     expect(wrapper.text()).toContain('demo-staff@portaldots.com')
-    expect(wrapper.text()).toContain('確認済み')
-    expect(wrapper.text()).toContain('未確認')
+    expect(wrapper.text()).toContain('demo-staff@example.ac.jp')
+    expect(wrapper.text()).toContain('認証済み')
+    expect(wrapper.text()).toContain('未認証')
+    expect(wrapper.text()).toContain('学生用メールアドレス')
+    expect(wrapper.text()).toContain('作成日時')
+    expect(wrapper.text()).toContain('更新日時')
     expect(wrapper.text()).toContain('表示件数:')
     expect(wrapper.text()).toContain('全2件')
     expect(wrapper.text()).toContain('絞り込み')

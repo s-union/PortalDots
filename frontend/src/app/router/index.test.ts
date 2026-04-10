@@ -137,7 +137,7 @@ describe('app router guards', () => {
     for (const path of [
       '/staff/places',
       '/staff/tags',
-      '/staff/contacts/categories',
+      '/staff/contact-categories',
       '/staff/pages',
       '/staff/mails',
       '/staff/documents',

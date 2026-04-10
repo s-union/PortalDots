@@ -2,7 +2,6 @@
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useSuspensePublicDocumentsQuery } from '@/features/public-home/api'
@@ -26,8 +25,7 @@ const documents = documentsQuery.data
         v-for="document in documents"
         :key="document.id"
         legacy
-        :href="buildApiUrl(document.downloadUrl)"
-        new-tab
+        :to="`/public/documents/${encodeURIComponent(document.id)}`"
       >
         <template #title>
           <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />

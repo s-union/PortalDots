@@ -1097,6 +1097,37 @@ func TestStartRegistrationQueuesVerificationMailWhenSecure(t *testing.T) {
 	}
 }
 
+func TestStartRegistrationLogsVerifyURLWhenInsecure(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() {
+		slog.SetDefault(previousLogger)
+	})
+
+	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/register/start", map[string]string{
+		"univemailLocalPart": "mock-registration",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response messageResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal start registration response: %v", err)
+	}
+	if response.Message != "大学メールアドレスに認証URLを送信しました。" {
+		t.Fatalf("expected mock delivery mode, got %#v", response)
+	}
+	if !strings.Contains(logs.String(), "recipient=mock-registration@example.ac.jp") ||
+		!strings.Contains(logs.String(), "/email/verify/univemail/") {
+		t.Fatalf("expected verify URL to be logged, got logs=%s", logs.String())
+	}
+}
+
 func TestAuthVerificationRequestQueuesMailWhenSecure(t *testing.T) {
 	t.Parallel()
 
@@ -2692,6 +2723,71 @@ func TestGetFormScopesToCurrentCircle(t *testing.T) {
 	}
 }
 
+func TestListAndGetFormsIncludeGlobalAccessibleForm(t *testing.T) {
+	t.Parallel()
+
+	cfg := demoCircleConfig()
+	cfg.Forms = append(cfg.Forms, config.Form{
+		ID:                  "0195ec00-0016-7000-8000-000000000001",
+		CircleID:            "",
+		Name:                "全体向け搬入申請",
+		Description:         "全企画向けの搬入申請です。",
+		IsPublic:            true,
+		IsOpen:              true,
+		OpenAt:              "2026-03-05T00:00:00Z",
+		CloseAt:             "2026-04-30T23:59:59Z",
+		CreatedAt:           "2026-03-05T00:00:00Z",
+		UpdatedAt:           "2026-03-05T00:00:00Z",
+		MaxAnswers:          1,
+		AnswerableTags:      []string{},
+		ConfirmationMessage: "全体向け搬入申請への回答ありがとうございました。",
+	})
+
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response []formSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal forms response: %v", err)
+	}
+	if len(response) != 3 {
+		t.Fatalf("expected 3 accessible forms including global form, got %#v", response)
+	}
+	if !slices.ContainsFunc(response, func(form formSummaryResponse) bool {
+		return form.ID == "0195ec00-0016-7000-8000-000000000001" && form.Name == "全体向け搬入申請"
+	}) {
+		t.Fatalf("expected global form to be listed, got %#v", response)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms/0195ec00-0016-7000-8000-000000000001", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail formDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal global form detail: %v", err)
+	}
+	if detail.Name != "全体向け搬入申請" || detail.ConfirmationMessage != "全体向け搬入申請への回答ありがとうございました。" {
+		t.Fatalf("unexpected global form detail: %#v", detail)
+	}
+}
+
 func TestClosedFormAnswerMutationsRemainBlocked(t *testing.T) {
 	t.Parallel()
 
@@ -3556,6 +3652,70 @@ func TestStaffFormsListCreateAndDetailUseCurrentCircle(t *testing.T) {
 	}
 	if created.ID == "" || created.Name != "追加ヒアリング" || created.MaxAnswers != 3 || created.IsOpen {
 		t.Fatalf("unexpected created staff form: %#v", created)
+	}
+}
+
+func TestStaffFormsCreateAndDetailSupportGlobalForms(t *testing.T) {
+	t.Parallel()
+
+	now := testNowUTC()
+	futureOpenAt := formatRFC3339(now, 24*time.Hour)
+	futureCloseAt := formatRFC3339(now, 48*time.Hour)
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/forms", map[string]any{
+		"name":                "全体申請フォーム",
+		"description":         "全企画向けの確認フォームです。",
+		"openAt":              futureOpenAt,
+		"closeAt":             futureCloseAt,
+		"maxAnswers":          2,
+		"answerableTags":      []string{},
+		"confirmationMessage": "全体申請フォームへの回答ありがとうございました。",
+		"isPublic":            true,
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+
+	var created staffFormSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("unmarshal created global staff form: %v", err)
+	}
+	if created.ID == "" || created.Circle.ID != "" || created.Circle.Name != "" {
+		t.Fatalf("expected global staff form without circle, got %#v", created)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var forms []staffFormSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &forms); err != nil {
+		t.Fatalf("unmarshal staff forms response: %v", err)
+	}
+	if !slices.ContainsFunc(forms, func(form staffFormSummaryResponse) bool {
+		return form.ID == created.ID && form.Circle.ID == "" && form.Name == "全体申請フォーム"
+	}) {
+		t.Fatalf("expected global staff form in index, got %#v", forms)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/"+created.ID, nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail staffFormDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal global staff form detail: %v", err)
+	}
+	if detail.ID != created.ID || detail.Circle.ID != "" || detail.Name != "全体申請フォーム" {
+		t.Fatalf("unexpected global staff form detail: %#v", detail)
 	}
 }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/public/documents',
   meta: {
     requiresAuth: false,
     redirectWhenAuth: '/workspace/documents'

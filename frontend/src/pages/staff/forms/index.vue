@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/forms',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -10,7 +11,6 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
@@ -225,8 +225,6 @@ function resolveDescription(form: StaffFormSummary) {
 
 <template>
   <PageLayout class="max-w-full">
-    <PageHeader title="申請管理" />
-
     <DataCard overflow-hidden>
       <AlertMessage v-if="errorMessage" class="mx-6 mt-4">{{ errorMessage }}</AlertMessage>
 

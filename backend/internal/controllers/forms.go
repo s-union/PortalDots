@@ -111,6 +111,12 @@ func (h *workspaceHandlers) listAccessibleWorkspaceForms(currentCircle circle.Ci
 		}
 		formsByID[formValue.ID] = formValue
 	}
+	for _, formValue := range h.forms.ListByCircleForStaff("") {
+		if !h.canAccessWorkspaceForm(currentCircle, formValue) {
+			continue
+		}
+		formsByID[formValue.ID] = formValue
+	}
 
 	forms := make([]backendform.Form, 0, len(formsByID))
 	for _, formValue := range formsByID {
@@ -127,7 +133,11 @@ func (h *workspaceHandlers) listAccessibleWorkspaceForms(currentCircle circle.Ci
 }
 
 func (h *workspaceHandlers) findAccessibleWorkspaceForm(formID string, currentCircle circle.Circle) (backendform.Form, bool) {
-	formValue, found := h.forms.FindByCircleForStaff(currentCircle.ID, formID)
+	if formValue, found := h.forms.FindByCircleForStaff(currentCircle.ID, formID); found && h.canAccessWorkspaceForm(currentCircle, formValue) {
+		return formValue, true
+	}
+
+	formValue, found := h.forms.FindByCircleForStaff("", formID)
 	if !found || !h.canAccessWorkspaceForm(currentCircle, formValue) {
 		return backendform.Form{}, false
 	}
@@ -136,7 +146,7 @@ func (h *workspaceHandlers) findAccessibleWorkspaceForm(formID string, currentCi
 }
 
 func (h *workspaceHandlers) canAccessWorkspaceForm(currentCircle circle.Circle, formValue backendform.Form) bool {
-	if formValue.CircleID != currentCircle.ID {
+	if formValue.CircleID != "" && formValue.CircleID != currentCircle.ID {
 		return false
 	}
 	if !formValue.IsPublic || h.isWorkspaceParticipationForm(formValue.ID) {

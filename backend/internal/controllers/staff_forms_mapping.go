@@ -101,6 +101,7 @@ func (h *staffFormHandlers) listManagedStaffForms() ([]circle.Circle, map[string
 	for _, currentCircle := range circles {
 		forms = append(forms, h.forms.ListByCircleForStaff(currentCircle.ID)...)
 	}
+	forms = append(forms, h.forms.ListByCircleForStaff("")...)
 
 	return circles, circlesByID, forms, nil
 }
@@ -112,6 +113,12 @@ func (h *staffFormHandlers) findManagedStaffForm(formID string, allowParticipati
 			if formValue, found := h.forms.FindByCircleForStaff(currentCircle.ID, formID); found {
 				return formValue, currentCircle, true
 			}
+		}
+	}
+
+	if formValue, found := h.forms.FindByCircleForStaff("", formID); found {
+		if allowParticipation || !h.isParticipationForm(formValue.ID) {
+			return formValue, circle.Circle{}, true
 		}
 	}
 

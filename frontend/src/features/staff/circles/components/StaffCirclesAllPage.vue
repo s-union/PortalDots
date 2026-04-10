@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DataCard from '@/components/layouts/DataCard.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StaffFilterDrawer from '@/components/staff/StaffFilterDrawer.vue'
@@ -81,26 +80,23 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
 <template>
   <StaffSideWindowContainer :is-open="isFilterOpen">
     <PageLayout class="max-w-full">
-      <PageHeader eyebrow="Circles" title="全企画一覧" description="参加種別をまたいで企画を一覧管理します。">
+      <DataCard title="全企画一覧" description="全企画を横断して検索・絞り込みできます。" overflow-hidden>
         <template #actions>
-          <RouterLink :class="buttonVariants({ variant: 'secondary', size: 'md' })" to="/staff/circles">
-            参加種別から探す
-          </RouterLink>
-          <RouterLink
-            :class="buttonVariants({ variant: 'secondary', size: 'md' })"
-            to="/staff/circles/participation_types"
-          >
-            参加種別管理
-          </RouterLink>
-        </template>
-      </PageHeader>
-
-      <DataCard title="企画一覧" description="全企画を横断して検索・絞り込みできます。" overflow-hidden>
-        <template #actions>
-          <a :href="exportUrl" :class="buttonVariants({ variant: 'secondary', size: 'xs' })">
-            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-            CSVで出力
-          </a>
+          <div class="flex flex-wrap items-center gap-2">
+            <RouterLink :class="buttonVariants({ variant: 'secondary', size: 'xs' })" to="/staff/circles">
+              参加種別から探す
+            </RouterLink>
+            <RouterLink
+              :class="buttonVariants({ variant: 'secondary', size: 'xs' })"
+              to="/staff/circles/participation_types"
+            >
+              参加種別管理
+            </RouterLink>
+            <a :href="exportUrl" :class="buttonVariants({ variant: 'secondary', size: 'xs' })">
+              <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+              CSVで出力
+            </a>
+          </div>
         </template>
 
         <StaffDataGrid

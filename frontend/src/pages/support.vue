@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
 import { computed } from 'vue'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 
@@ -10,21 +11,16 @@ const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalD
 
 <template>
   <PageLayout>
-    <section class="pb-2 pt-4">
-      <div class="rounded-[0.45rem] bg-surface shadow-lv1">
-        <div class="border-b border-border px-6 py-[1.2rem] max-[1000px]:px-4">
-          <h2 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ブラウザ環境について</h2>
-        </div>
-        <div class="px-6 py-[1.2rem] text-base leading-[1.7] text-body max-[1000px]:px-4">
-          <p>{{ appName }}は以下の環境でご覧いただくことを推奨いたします。</p>
-          <ul class="mt-2 list-disc space-y-1 pl-6">
-            <li v-for="browser in supportBrowsers" :key="browser">{{ browser }}</li>
-          </ul>
-          <p class="mt-4">
-            推奨環境以外で利用された場合や、推奨環境下でもご利用のブラウザの設定等によっては、正しく表示されない場合がありますのでご了承ください。
-          </p>
-        </div>
+    <ListPanel legacy title="ブラウザ環境について">
+      <div class="px-6 py-[1.2rem] text-base leading-[1.7] text-body max-[1000px]:px-4">
+        <p>{{ appName }}は以下の環境でご覧いただくことを推奨いたします。</p>
+        <ul class="mt-2 list-disc space-y-1 pl-6">
+          <li v-for="browser in supportBrowsers" :key="browser">{{ browser }}</li>
+        </ul>
+        <p class="mt-4">
+          推奨環境以外で利用された場合や、推奨環境下でもご利用のブラウザの設定等によっては、正しく表示されない場合がありますのでご了承ください。
+        </p>
       </div>
-    </section>
+    </ListPanel>
   </PageLayout>
 </template>

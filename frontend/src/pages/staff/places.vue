@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/places',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -11,7 +12,6 @@ definePage({
 import { computed, ref } from 'vue'
 import { useMutation } from '@tanstack/vue-query'
 import DataCard from '@/components/layouts/DataCard.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StaffPlaceEditor from '@/components/staff/StaffPlaceEditor.vue'
@@ -178,8 +178,6 @@ function compareString(left: string, right: string) {
 
 <template>
   <PageLayout>
-    <PageHeader title="場所情報管理" />
-
     <StaffSideWindowContainer :is-open="isEditorOpen">
       <DataCard>
         <StaffDataGrid

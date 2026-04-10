@@ -14,12 +14,11 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { usePagesQuery } from '@/features/pages/api'
-import { useSessionStore } from '@/features/session/store'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
+import { calculateTotalPages } from '@/lib/pagination'
 
 const route = useRoute()
 const router = useRouter()
-const sessionStore = useSessionStore()
 const searchQuery = ref(String(route.query.query ?? ''))
 const page = computed(() => Number.parseInt(String(route.query.page ?? '1'), 10) || 1)
 const pageSize = 10
@@ -28,6 +27,7 @@ const pagesQuery = usePagesQuery(
   computed(() => ({ page: page.value, pageSize }))
 )
 const pageList = computed(() => pagesQuery.data.value ?? { items: [], page: 1, pageSize, total: 0 })
+const shouldShowPagination = computed(() => calculateTotalPages(pageList.value.total, pageList.value.pageSize) > 1)
 
 watch(
   () => route.query.query,
@@ -62,9 +62,6 @@ async function handlePageChange(nextPage: number) {
   <PageLayout>
     <div class="rounded border border-border bg-surface p-6 shadow-lv1">
       <h2 class="text-xl font-semibold text-body">お知らせ</h2>
-      <p class="mt-2 text-sm text-muted">
-        {{ sessionStore.currentCircle?.name ?? '企画未選択' }}
-      </p>
 
       <form class="mt-4 flex flex-wrap gap-3" @submit.prevent="handleSearchSubmit">
         <input
@@ -105,9 +102,9 @@ async function handlePageChange(nextPage: number) {
       </p>
     </div>
 
-    <ListPanel v-else overflow-hidden>
+    <ListPanel v-else legacy overflow-hidden>
       <div class="divide-y divide-border">
-        <ListItemLink v-for="page in pageList.items" :key="page.id" :to="`/workspace/pages/${page.id}`">
+        <ListItemLink v-for="page in pageList.items" :key="page.id" legacy :to="`/workspace/pages/${page.id}`">
           <template #title>{{ page.title }}</template>
           <template #prefix>
             <StatusBadge :tone="page.isLimited ? 'primary' : 'muted'" appearance="outlined">
@@ -125,6 +122,8 @@ async function handlePageChange(nextPage: number) {
         </ListItemLink>
       </div>
       <PaginationFooter
+        v-if="shouldShowPagination"
+        :bordered="false"
         :page="pageList.page"
         :page-size="pageList.pageSize"
         :total="pageList.total"

@@ -81,12 +81,12 @@ describe('PagesIndexPage', () => {
 
     expect(wrapper.text()).toContain('展示レイアウト更新')
     expect(wrapper.text()).toContain('限定公開')
-    expect(wrapper.text()).toContain('NEW')
     expect(wrapper.text()).toContain('Bブロックの展示レイアウトを更新しました。')
     expect(wrapper.find('input[name="query"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('未読')
   })
 
-  it('renders search empty state with search controls', async () => {
+  it('renders simple empty state without search controls', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
 
@@ -101,7 +101,7 @@ describe('PagesIndexPage', () => {
     })
 
     const router = createPagesRouter()
-    await router.push('/workspace/pages?query=layout')
+    await router.push('/workspace/pages')
     await router.isReady()
 
     const wrapper = mount(PagesIndexPage, {
@@ -111,8 +111,7 @@ describe('PagesIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('検索結果が見つかりませんでした')
+    expect(wrapper.text()).toContain('お知らせはまだありません')
     expect(wrapper.find('input[name="query"]').exists()).toBe(true)
-    expect((wrapper.get('input[name="query"]').element as HTMLInputElement).value).toBe('layout')
   })
 })

@@ -10,7 +10,8 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import ListItemLink from '@/components/ui/ListItemLink.vue'
+import ListPanel from '@/components/ui/ListPanel.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
@@ -30,44 +31,49 @@ const pageQuery = usePageDetailQuery(pageId)
     </div>
 
     <article v-else-if="pageQuery.data.value" class="space-y-6">
-      <SurfaceCard>
-        <div class="border-b border-border px-6 py-5">
-          <h2 class="text-2xl font-semibold text-body">{{ pageQuery.data.value.title }}</h2>
-          <div class="mt-3 text-sm text-muted">{{ formatDateTimeUpdated(pageQuery.data.value.updatedAt) }}</div>
-          <div class="mt-3 text-sm text-muted">
-            <StatusBadge v-if="pageQuery.data.value.isLimited" tone="primary" appearance="outlined">
-              限定公開
-            </StatusBadge>
-          </div>
-        </div>
-        <div class="px-6 py-6">
-          <PageMarkdownContent :source="pageQuery.data.value.body" />
+      <RouterLink
+        to="/workspace/pages"
+        class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+      >
+        <span aria-hidden="true">‹</span>
+        お知らせ
+      </RouterLink>
 
-          <div v-if="pageQuery.data.value.documents.length > 0" class="mt-8 border-t border-border pt-6">
-            <h3 class="text-base font-semibold text-body">関連する配布資料</h3>
-            <ul class="mt-4 space-y-3 text-sm">
-              <li v-for="document in pageQuery.data.value.documents" :key="document.id">
-                <a
-                  :href="buildApiUrl(document.downloadUrl)"
-                  class="text-primary hover:underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span v-if="document.isImportant" class="mr-1 text-danger">!</span>
-                  {{ document.name }}
-                </a>
-                <p class="mt-1 text-xs text-muted">
-                  {{ formatDateTimeUpdated(document.updatedAt) }} / {{ document.extension || 'FILE' }} /
-                  {{ formatFileSize(document.sizeBytes) }}
-                </p>
-                <p v-if="document.description" class="mt-1 text-muted">
-                  {{ document.description }}
-                </p>
-              </li>
-            </ul>
-          </div>
+      <section class="border-b border-border pb-6">
+        <h1 class="text-[2rem] font-semibold leading-[1.4] text-body">{{ pageQuery.data.value.title }}</h1>
+        <div class="mt-3 text-base text-muted">{{ formatDateTimeUpdated(pageQuery.data.value.updatedAt) }}</div>
+        <div v-if="pageQuery.data.value.isLimited" class="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
+          <StatusBadge tone="primary" appearance="outlined">限定公開</StatusBadge>
         </div>
-      </SurfaceCard>
+      </section>
+
+      <div class="py-2">
+        <PageMarkdownContent :source="pageQuery.data.value.body" />
+      </div>
+
+      <ListPanel v-if="pageQuery.data.value.documents.length > 0" legacy title="関連する配布資料" overflow-hidden>
+        <div class="divide-y divide-border">
+          <ListItemLink
+            v-for="document in pageQuery.data.value.documents"
+            :key="document.id"
+            legacy
+            :href="buildApiUrl(document.downloadUrl)"
+            new-tab
+          >
+            <template #title>
+              <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
+              <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+              {{ document.name }}
+            </template>
+            <template #meta>
+              {{ formatDateTimeUpdated(document.updatedAt) }}
+              <br />
+              {{ document.extension || 'FILE' }}ファイル • {{ formatFileSize(document.sizeBytes) }}
+            </template>
+            {{ document.description }}
+          </ListItemLink>
+        </div>
+      </ListPanel>
     </article>
 
     <AlertMessage v-else tone="danger"> お知らせを取得できませんでした。 </AlertMessage>

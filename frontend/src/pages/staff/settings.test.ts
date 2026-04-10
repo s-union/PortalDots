@@ -41,7 +41,7 @@ describe('StaffSettingsPage', () => {
         { path: '/staff', component: { template: '<div>staff</div>' } },
         { path: '/staff/settings', component: StaffSettingsPage },
         {
-          path: '/staff/contacts/categories',
+          path: '/staff/contact-categories',
           component: { template: '<div>contacts</div>' }
         },
         { path: '/staff/tags', component: { template: '<div>tags</div>' } },

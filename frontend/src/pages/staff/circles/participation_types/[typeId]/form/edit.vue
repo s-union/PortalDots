@@ -12,6 +12,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -178,7 +179,11 @@ async function handleSave() {
             <div class="grid gap-2">
               <label class="grid gap-2 text-sm text-body">
                 <span class="sr-only">参加登録前に表示する内容</span>
-                <textarea v-model="form.formDescription" class="min-h-32" name="formDescription" />
+                <MarkdownEditorField
+                  v-model="form.formDescription"
+                  min-height-class="min-h-32"
+                  name="formDescription"
+                />
               </label>
               <p class="text-xs text-muted-2">Markdown 記法をそのまま利用できます。</p>
             </div>
@@ -194,7 +199,11 @@ async function handleSave() {
             <div class="grid gap-2">
               <label class="grid gap-2 text-sm text-body">
                 <span class="sr-only">提出後メッセージ</span>
-                <textarea v-model="form.formConfirmationMessage" class="min-h-32" name="formConfirmationMessage" />
+                <MarkdownEditorField
+                  v-model="form.formConfirmationMessage"
+                  min-height-class="min-h-32"
+                  name="formConfirmationMessage"
+                />
               </label>
               <p class="text-xs text-muted-2">こちらも Markdown 記法を利用できます。</p>
             </div>

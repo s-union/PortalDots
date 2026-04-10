@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/permissions/:userId',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -13,7 +14,6 @@ import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
@@ -98,14 +98,12 @@ function handlePermissionChange(event: Event, permissionName: string) {
     </div>
 
     <article v-else-if="detailQuery.data.value" class="space-y-6">
-      <SurfaceCard tag="header">
-        <p class="text-sm text-primary">Staff Permission Detail</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">スタッフ権限を編集</h2>
-        <div class="mt-3 text-sm text-muted">
-          {{ detailQuery.data.value.user.displayName }} /
-          {{ detailQuery.data.value.user.loginIds.join(', ') }}
-        </div>
-      </SurfaceCard>
+      <div class="space-y-1 px-1">
+        <h1 class="text-2xl font-semibold text-body">スタッフ権限を編集</h1>
+        <p class="text-sm text-muted">
+          {{ detailQuery.data.value.user.displayName }} / {{ detailQuery.data.value.user.loginIds.join(', ') }}
+        </p>
+      </div>
 
       <SettingsSection title="対象ユーザー">
         <SettingsRow>

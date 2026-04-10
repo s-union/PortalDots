@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePage({
+  path: '/staff/activity-logs',
   meta: {
     requiresAuth: true,
     requiresStaffRole: true,
@@ -9,10 +10,8 @@ definePage({
 })
 
 import { ref } from 'vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import PageHeader from '@/components/layouts/PageHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import AsyncBoundary from '@/components/async/AsyncBoundary.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
@@ -28,20 +27,9 @@ function movePage(nextPage: number) {
 
 <template>
   <PageLayout>
-    <PageHeader
-      eyebrow="Staff Activity Logs"
-      title="活動ログ"
-      description="staff 操作の主要な mutation を時系列で確認します。"
-    >
-      <template #actions> </template>
-    </PageHeader>
-
     <SurfaceCard overflow-hidden>
       <SurfaceHeader>
-        <template #title>
-          アクティビティログ
-          <StatusBadge tone="muted" size="sm">BETA</StatusBadge>
-        </template>
+        <template #title>アクティビティログ</template>
         <template #description>
           「アクティビティログ」では、PortalDots 内で行われた各種データ操作の履歴を確認できます。
         </template>

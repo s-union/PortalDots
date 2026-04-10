@@ -121,7 +121,7 @@ describe('StaffActivityLogsPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('活動ログ')
+    expect(wrapper.text()).toContain('アクティビティログ')
     expect(wrapper.text()).toContain('staff.user.roles_updated')
     expect(wrapper.text()).toContain('Demo User')
     expect(wrapper.text()).toContain('circle-b')

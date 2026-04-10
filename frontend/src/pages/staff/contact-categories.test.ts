@@ -46,10 +46,10 @@ describe('StaffContactCategoriesPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/staff', component: { template: '<div>staff</div>' } },
-        { path: '/staff/contacts/categories', component: StaffContactCategoriesPage }
+        { path: '/staff/contact-categories', component: StaffContactCategoriesPage }
       ]
     })
-    await router.push('/staff/contacts/categories')
+    await router.push('/staff/contact-categories')
     await router.isReady()
 
     const confirmMock = vi.fn(() => true)
@@ -192,10 +192,10 @@ describe('StaffContactCategoriesPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/staff', component: { template: '<div>staff</div>' } },
-        { path: '/staff/contacts/categories', component: StaffContactCategoriesPage }
+        { path: '/staff/contact-categories', component: StaffContactCategoriesPage }
       ]
     })
-    await router.push('/staff/contacts/categories')
+    await router.push('/staff/contact-categories')
     await router.isReady()
 
     const confirmMock = vi.fn(() => false)
@@ -275,10 +275,10 @@ describe('StaffContactCategoriesPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/staff', component: { template: '<div>staff</div>' } },
-        { path: '/staff/contacts/categories', component: StaffContactCategoriesPage }
+        { path: '/staff/contact-categories', component: StaffContactCategoriesPage }
       ]
     })
-    await router.push('/staff/contacts/categories')
+    await router.push('/staff/contact-categories')
     await router.isReady()
 
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
