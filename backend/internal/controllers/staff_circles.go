@@ -233,6 +233,7 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 		return internalError(c)
 	}
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.circle.created",
@@ -298,6 +299,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.circle.updated",
@@ -340,6 +342,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 			}
 			if queued {
 				recordActivity(
+					c.Request().Context(),
 					h.activities,
 					currentSession.User.ID,
 					"staff.mail.queued",
@@ -381,6 +384,7 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 	}
 	h.mails.DeleteByCircle(circleID)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.circle.deleted",
@@ -454,6 +458,7 @@ func (h *staffCircleHandlers) addStaffCircleMember(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.circle.member_added",
@@ -500,6 +505,7 @@ func (h *staffCircleHandlers) deleteStaffCircleMember(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.circle.member_removed",
@@ -587,6 +593,7 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 	}
 	logQueuedMail("staff_circle", job.ID, circleValue.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.circle.mail_queued",

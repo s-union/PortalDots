@@ -130,6 +130,7 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.document.created",
@@ -191,6 +192,7 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.document.updated",
@@ -223,6 +225,7 @@ func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.document.deleted",

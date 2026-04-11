@@ -136,6 +136,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 		h.enqueueStaffFormAnswerMail(c.Request().Context(), currentSession.User.ID, formValue, created)
 	}
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form_answer.created",
@@ -188,6 +189,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form_answer.updated",
@@ -216,6 +218,7 @@ func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form_answer.deleted",
@@ -303,6 +306,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form_answer.uploaded",

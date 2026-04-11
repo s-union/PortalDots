@@ -1,6 +1,7 @@
 package activitylog
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -22,8 +23,8 @@ type Entry struct {
 }
 
 type Repository interface {
-	List() ([]Entry, error)
-	Record(actorUserID, action, targetType, targetID, circleID, summary string) error
+	List(ctx context.Context) ([]Entry, error)
+	Record(ctx context.Context, actorUserID, action, targetType, targetID, circleID, summary string) error
 }
 
 type MemoryRepository struct {
@@ -37,7 +38,7 @@ func NewMemoryRepository() *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) List() ([]Entry, error) {
+func (r *MemoryRepository) List(_ context.Context) ([]Entry, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -50,6 +51,7 @@ func (r *MemoryRepository) List() ([]Entry, error) {
 }
 
 func (r *MemoryRepository) Record(
+	_ context.Context,
 	actorUserID string,
 	action string,
 	targetType string,

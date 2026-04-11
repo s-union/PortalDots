@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -25,7 +26,7 @@ func (h *staffAdminHandlers) listStaffActivityLogs(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	logs, err := h.activities.List()
+	logs, err := h.activities.List(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -40,6 +41,7 @@ func (h *staffAdminHandlers) listStaffActivityLogs(c echo.Context) error {
 }
 
 func recordActivity(
+	ctx context.Context,
 	activities activitylog.Repository,
 	actorUserID string,
 	action string,
@@ -52,7 +54,7 @@ func recordActivity(
 		return
 	}
 
-	_ = activities.Record(actorUserID, action, targetType, targetID, circleID, summary)
+	_ = activities.Record(ctx, actorUserID, action, targetType, targetID, circleID, summary)
 }
 
 func mapStaffActivityLog(entry activitylog.Entry) staffActivityLogResponse {

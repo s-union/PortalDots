@@ -112,6 +112,7 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 		request.DocumentIDs,
 	)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.page.created",
@@ -163,6 +164,7 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.page.updated",
@@ -195,6 +197,7 @@ func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.page.deleted",
@@ -236,6 +239,7 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		action,
@@ -414,6 +418,7 @@ func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID
 	}
 	logQueuedMail("staff_page", job.ID, "", createdByUserID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
+		ctx,
 		h.activities,
 		createdByUserID,
 		"staff.mail.queued",

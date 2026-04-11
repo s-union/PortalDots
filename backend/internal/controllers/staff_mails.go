@@ -60,6 +60,7 @@ func (h *staffAdminHandlers) deleteStaffMails(c echo.Context) error {
 
 	h.mails.DeleteAll()
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.mail.deleted_all",
@@ -118,6 +119,7 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 	}
 	logQueuedMail("staff_mail_queue", job.ID, job.CircleID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.mail.queued",

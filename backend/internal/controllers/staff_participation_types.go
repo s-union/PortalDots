@@ -224,6 +224,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.participation_type.created",
@@ -286,6 +287,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.participation_type.updated",
@@ -323,6 +325,7 @@ func (h *staffCircleHandlers) deleteStaffParticipationType(c echo.Context) error
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.participation_type.deleted",

@@ -206,6 +206,7 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 	}
 	logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"contact.submitted",
@@ -368,6 +369,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 			next.User.DisplayName = updatedUser.DisplayName
 		})
 		recordActivity(
+			c.Request().Context(),
 			h.activities,
 			updatedUser.ID,
 			"user.profile.updated",
@@ -399,6 +401,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 		next.User.DisplayName = updatedUser.DisplayName
 	})
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		updatedUser.ID,
 		"user.profile.updated",
@@ -471,6 +474,7 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 		next.StaffVerifyExpires = time.Time{}
 	})
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"user.password.updated",
@@ -509,6 +513,7 @@ func (h *authHandlers) deleteAccount(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentUser.ID,
 		"user.deleted",

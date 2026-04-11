@@ -15,8 +15,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) List() ([]Entry, error) {
-	rows, err := r.queries.ListActivityLogs(context.Background())
+func (r *SQLCRepository) List(ctx context.Context) ([]Entry, error) {
+	rows, err := r.queries.ListActivityLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +39,7 @@ func (r *SQLCRepository) List() ([]Entry, error) {
 }
 
 func (r *SQLCRepository) Record(
+	ctx context.Context,
 	actorUserID string,
 	action string,
 	targetType string,
@@ -46,7 +47,7 @@ func (r *SQLCRepository) Record(
 	circleID string,
 	summary string,
 ) error {
-	_, err := r.queries.CreateActivityLog(context.Background(), dbgen.CreateActivityLogParams{
+	_, err := r.queries.CreateActivityLog(ctx, dbgen.CreateActivityLogParams{
 		ActorUserID: actorUserID,
 		Action:      action,
 		TargetType:  targetType,

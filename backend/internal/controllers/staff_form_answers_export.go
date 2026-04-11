@@ -205,6 +205,7 @@ func (h *staffFormHandlers) enqueueStaffFormAnswerMail(ctx context.Context, crea
 	}
 	logQueuedMail("staff_form_answer", job.ID, formValue.CircleID, createdByUserID, job.Subject, job.Body, job.Recipients)
 	recordActivity(
+		ctx,
 		h.activities,
 		createdByUserID,
 		"staff.mail.queued",

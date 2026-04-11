@@ -159,7 +159,7 @@ func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	recordActivity(h.activities, currentSession.User.ID, "staff.tag.created", "tag", created.ID, "", buildActivitySummary("staff がタグを作成しました", created.Name))
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.tag.created", "tag", created.ID, "", buildActivitySummary("staff がタグを作成しました", created.Name))
 	return c.JSON(http.StatusCreated, mapStaffTag(created))
 }
 
@@ -186,7 +186,7 @@ func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
 		return internalError(c)
 	}
 
-	recordActivity(h.activities, currentSession.User.ID, "staff.tag.updated", "tag", updated.ID, "", buildActivitySummary("staff がタグを更新しました", updated.Name))
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.tag.updated", "tag", updated.ID, "", buildActivitySummary("staff がタグを更新しました", updated.Name))
 	return c.JSON(http.StatusOK, mapStaffTag(updated))
 }
 
@@ -202,7 +202,7 @@ func (h *staffMastersHandlers) deleteStaffTag(c echo.Context) error {
 		return internalError(c)
 	}
 
-	recordActivity(h.activities, currentSession.User.ID, "staff.tag.deleted", "tag", c.Param("tagID"), "", "staff がタグを削除しました")
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.tag.deleted", "tag", c.Param("tagID"), "", "staff がタグを削除しました")
 	return c.NoContent(http.StatusNoContent)
 }
 
@@ -275,7 +275,7 @@ func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	recordActivity(h.activities, currentSession.User.ID, "staff.place.created", "place", created.ID, "", buildActivitySummary("staff が場所を作成しました", created.Name))
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.place.created", "place", created.ID, "", buildActivitySummary("staff が場所を作成しました", created.Name))
 	return c.JSON(http.StatusCreated, mapStaffPlace(created))
 }
 
@@ -298,7 +298,7 @@ func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
 		return internalError(c)
 	}
 
-	recordActivity(h.activities, currentSession.User.ID, "staff.place.updated", "place", updated.ID, "", buildActivitySummary("staff が場所を更新しました", updated.Name))
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.place.updated", "place", updated.ID, "", buildActivitySummary("staff が場所を更新しました", updated.Name))
 	return c.JSON(http.StatusOK, mapStaffPlace(updated))
 }
 
@@ -317,7 +317,7 @@ func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
 		return internalError(c)
 	}
 
-	recordActivity(h.activities, currentSession.User.ID, "staff.place.deleted", "place", c.Param("placeID"), "", "staff が場所を削除しました")
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.place.deleted", "place", c.Param("placeID"), "", "staff が場所を削除しました")
 	return c.NoContent(http.StatusNoContent)
 }
 
@@ -357,7 +357,7 @@ func (h *staffMastersHandlers) createStaffContactCategory(c echo.Context) error 
 		return internalError(c)
 	}
 
-	recordActivity(h.activities, currentSession.User.ID, "staff.contact_category.created", "contact_category", created.ID, "", buildActivitySummary("staff が問い合わせカテゴリを作成しました", created.Name))
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.contact_category.created", "contact_category", created.ID, "", buildActivitySummary("staff が問い合わせカテゴリを作成しました", created.Name))
 	return c.JSON(http.StatusCreated, mapStaffContactCategory(created))
 }
 
@@ -383,7 +383,7 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 		return internalError(c)
 	}
 
-	recordActivity(h.activities, currentSession.User.ID, "staff.contact_category.updated", "contact_category", updated.ID, "", buildActivitySummary("staff が問い合わせカテゴリを更新しました", updated.Name))
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.contact_category.updated", "contact_category", updated.ID, "", buildActivitySummary("staff が問い合わせカテゴリを更新しました", updated.Name))
 	return c.JSON(http.StatusOK, mapStaffContactCategory(updated))
 }
 
@@ -399,7 +399,7 @@ func (h *staffMastersHandlers) deleteStaffContactCategory(c echo.Context) error 
 		return internalError(c)
 	}
 
-	recordActivity(h.activities, currentSession.User.ID, "staff.contact_category.deleted", "contact_category", c.Param("categoryID"), "", "staff が問い合わせカテゴリを削除しました")
+	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.contact_category.deleted", "contact_category", c.Param("categoryID"), "", "staff が問い合わせカテゴリを削除しました")
 	return c.NoContent(http.StatusNoContent)
 }
 

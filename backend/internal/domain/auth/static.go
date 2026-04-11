@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -22,7 +23,10 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, loginID, password string) (*User, bool)
 }
 
-var ErrInvalidPassword = errors.New("invalid password")
+var (
+	ErrInvalidPassword               = errors.New("invalid password")
+	ErrDuplicateStaticAuthIdentifier = errors.New("duplicate static auth identifier")
+)
 
 type PasswordChanger interface {
 	ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error
@@ -173,12 +177,11 @@ func (a *StaticAuthenticator) RegisterUser(params RegisterParams) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
+	if _, exists := a.users[params.ID]; exists {
+		return fmt.Errorf("%w: user id %s", ErrDuplicateStaticAuthIdentifier, params.ID)
 	}
 
-	a.users[params.ID] = staticCredential{
+	credential := staticCredential{
 		user: User{
 			ID:          params.ID,
 			DisplayName: params.DisplayName,
@@ -187,8 +190,18 @@ func (a *StaticAuthenticator) RegisterUser(params RegisterParams) error {
 		},
 		loginIDs:     slices.Clone(params.LoginIDs),
 		contactEmail: params.ContactEmail,
-		passwordHash: string(passwordHash),
 	}
+	if identifier, ownerID, ok := findDuplicateStaticAuthIdentifier(a.users, params.ID, credential); ok {
+		return fmt.Errorf("%w: %s already used by %s", ErrDuplicateStaticAuthIdentifier, identifier, ownerID)
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	credential.passwordHash = string(passwordHash)
+	a.users[params.ID] = credential
 	return nil
 }
 
@@ -216,6 +229,30 @@ func validateUniqueStaticAuthIdentifiers(users map[string]staticCredential) {
 			owners[identifier] = userID
 		}
 	}
+}
+
+func findDuplicateStaticAuthIdentifier(
+	users map[string]staticCredential,
+	candidateUserID string,
+	candidate staticCredential,
+) (string, string, bool) {
+	owners := make(map[string]string, len(users))
+	for userID, credential := range users {
+		if userID == candidateUserID {
+			continue
+		}
+		for _, identifier := range staticAuthIdentifiers(credential) {
+			owners[identifier] = userID
+		}
+	}
+
+	for _, identifier := range staticAuthIdentifiers(candidate) {
+		if ownerID, ok := owners[identifier]; ok {
+			return identifier, ownerID, true
+		}
+	}
+
+	return "", "", false
 }
 
 func staticAuthIdentifiers(credential staticCredential) []string {

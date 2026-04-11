@@ -173,6 +173,7 @@ func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
 		request.ConfirmationMessage,
 	)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.created",
@@ -220,6 +221,7 @@ func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.updated",
@@ -314,6 +316,7 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.copied",
@@ -344,6 +347,7 @@ func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.deleted",
@@ -450,6 +454,7 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.question.created",
@@ -510,6 +515,7 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.question.updated",
@@ -540,6 +546,7 @@ func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.question.deleted",
@@ -583,6 +590,7 @@ func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.form.question.reordered",

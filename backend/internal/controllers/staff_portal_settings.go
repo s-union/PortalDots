@@ -136,6 +136,7 @@ func (h *staffAdminHandlers) updateStaffPortalSettings(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.portal.updated",

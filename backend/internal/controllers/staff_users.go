@@ -138,6 +138,7 @@ func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 
 	updateOrInvalidateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.user.updated",
@@ -205,6 +206,7 @@ func (h *staffUserHandlers) updateStaffUserRoles(c echo.Context) error {
 
 	updateOrInvalidateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.user.roles_updated",
@@ -245,6 +247,7 @@ func (h *staffUserHandlers) verifyStaffUser(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.user.verified",
@@ -292,6 +295,7 @@ func (h *staffUserHandlers) deleteStaffUser(c echo.Context) error {
 	}
 
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.user.deleted",

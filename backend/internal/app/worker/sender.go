@@ -3,6 +3,7 @@ package worker
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"log/slog"
 	"mime"
 	"net/smtp"
@@ -26,12 +27,30 @@ func (s *LogMailSender) Send(recipient, subject, body string) error {
 	return nil
 }
 
+type smtpClient interface {
+	Extension(ext string) (bool, string)
+	StartTLS(config *tls.Config) error
+	Auth(auth smtp.Auth) error
+	Mail(from string) error
+	Rcpt(to string) error
+	Data() (io.WriteCloser, error)
+	Quit() error
+	Close() error
+}
+
+type smtpDialFunc func(addr string) (smtpClient, error)
+
+func defaultSMTPDial(addr string) (smtpClient, error) {
+	return smtp.Dial(addr)
+}
+
 type SMTPMailSender struct {
 	addr     string
 	from     string
 	host     string
 	username string
 	password string
+	dial     smtpDialFunc
 }
 
 func NewSMTPMailSender(host string, port int, username, password, from string) *SMTPMailSender {
@@ -41,6 +60,7 @@ func NewSMTPMailSender(host string, port int, username, password, from string) *
 		host:     strings.TrimSpace(host),
 		username: strings.TrimSpace(username),
 		password: password,
+		dial:     defaultSMTPDial,
 	}
 }
 
@@ -63,13 +83,23 @@ func (s *SMTPMailSender) Send(recipient, subject, body string) error {
 		return fmt.Errorf("smtp from address is required")
 	}
 
-	client, err := smtp.Dial(s.addr)
+	dial := s.dial
+	if dial == nil {
+		dial = defaultSMTPDial
+	}
+
+	client, err := dial(s.addr)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
-	if ok, _ := client.Extension("STARTTLS"); ok {
+	supportsStartTLS, _ := client.Extension("STARTTLS")
+	if s.username != "" && !supportsStartTLS {
+		return fmt.Errorf("smtp server does not support STARTTLS while authentication is enabled")
+	}
+
+	if supportsStartTLS {
 		if err := client.StartTLS(&tls.Config{
 			ServerName: s.host,
 			MinVersion: tls.VersionTLS12,

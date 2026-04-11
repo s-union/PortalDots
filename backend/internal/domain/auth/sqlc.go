@@ -2,8 +2,11 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
+	"github.com/jackc/pgx/v5"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,6 +24,9 @@ func NewSQLCAuthenticator(queries *dbgen.Queries) *SQLCAuthenticator {
 func (a *SQLCAuthenticator) Authenticate(ctx context.Context, loginID, password string) (*User, bool) {
 	userRow, err := a.queries.GetUserByAuthIdentifier(ctx, loginID)
 	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			slog.Error("failed to load auth user", "loginID", loginID, "error", err.Error())
+		}
 		return nil, false
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(userRow.Password), []byte(password)); err != nil {
@@ -29,10 +35,12 @@ func (a *SQLCAuthenticator) Authenticate(ctx context.Context, loginID, password 
 
 	roles, err := a.queries.ListUserRoles(ctx, userRow.ID)
 	if err != nil {
+		slog.Error("failed to load user roles for authentication", "userID", userRow.ID, "error", err.Error())
 		return nil, false
 	}
 	permissions, err := a.queries.ListUserPermissions(ctx, userRow.ID)
 	if err != nil {
+		slog.Error("failed to load user permissions for authentication", "userID", userRow.ID, "error", err.Error())
 		return nil, false
 	}
 

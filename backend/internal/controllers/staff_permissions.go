@@ -131,6 +131,7 @@ func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
 		actorUserID = currentSession.User.ID
 	}
 	recordActivity(
+		c.Request().Context(),
 		h.activities,
 		actorUserID,
 		"staff.permission.updated",
