@@ -18,6 +18,7 @@ func enqueueCircleNotificationMail(
 	circleID string,
 	createdByUserID string,
 	source string,
+	allowInsecureDefaults bool,
 	subject string,
 	body string,
 ) (mailqueue.Job, bool, error) {
@@ -30,7 +31,7 @@ func enqueueCircleNotificationMail(
 	if err != nil {
 		return mailqueue.Job{}, false, err
 	}
-	logQueuedMail(source, job.ID, circleID, createdByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail(source, job.ID, circleID, createdByUserID, job.Subject, job.Body, job.Recipients, allowInsecureDefaults)
 	return job, true, nil
 }
 

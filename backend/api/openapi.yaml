@@ -4663,7 +4663,7 @@ paths:
                         type: string
                     status:
                       type: string
-                      enum: [queued, sent]
+                      enum: [queued, sent, undeliverable]
                     createdAt:
                       type: string
                       format: date-time
@@ -4728,7 +4728,7 @@ paths:
                       type: string
                   status:
                     type: string
-                    enum: [queued, sent]
+                    enum: [queued, sent, undeliverable]
                   createdAt:
                     type: string
                     format: date-time

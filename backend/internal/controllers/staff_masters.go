@@ -597,7 +597,7 @@ func (h *staffMastersHandlers) enqueueContactCategoryAssignedMail(
 	if err != nil {
 		return err
 	}
-	logQueuedMail("contact_category_assigned", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("contact_category_assigned", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 
 	return nil
 }

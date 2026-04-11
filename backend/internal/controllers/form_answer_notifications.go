@@ -29,7 +29,7 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 	if err != nil {
 		return
 	}
-	logQueuedMail("workspace_form_answer", job.ID, answerValue.CircleID, createdByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("workspace_form_answer", job.ID, answerValue.CircleID, createdByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 }
 
 func (h *workspaceHandlers) workspaceFormAnswerMailRecipients(createdByUserID, targetCircleID string) []string {

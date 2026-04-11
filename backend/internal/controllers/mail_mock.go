@@ -35,17 +35,38 @@ func logMockVerificationCode(kind, recipient, code string) {
 	)
 }
 
-func logQueuedMail(source, jobID, circleID, createdByUserID, subject, body string, recipients []string) {
-	slog.Info("mock queued mail prepared",
+func logQueuedMail(
+	source,
+	jobID,
+	circleID,
+	createdByUserID,
+	subject,
+	body string,
+	recipients []string,
+	allowInsecureDefaults bool,
+) {
+	attrs := []any{
 		"kind", "queued_mail",
 		"source", source,
 		"jobID", jobID,
 		"circleID", circleID,
 		"createdByUserID", createdByUserID,
-		"subject", subject,
-		"body", body,
-		"recipients", slices.Clone(recipients),
-	)
+	}
+	if allowInsecureDefaults {
+		attrs = append(attrs,
+			"subject", subject,
+			"body", body,
+			"recipients", slices.Clone(recipients),
+		)
+	} else {
+		attrs = append(attrs,
+			"subject", "[redacted]",
+			"body", "[redacted]",
+			"recipientsCount", len(recipients),
+		)
+	}
+
+	slog.Info("mock queued mail prepared", attrs...)
 }
 
 func normalizeRecipients(recipients []string) []string {

@@ -83,6 +83,12 @@ func (r *SQLCRepository) MarkSent(id string, deliveredAt time.Time) bool {
 	return err == nil
 }
 
+func (r *SQLCRepository) MarkUndeliverable(id string) bool {
+	_, err := r.queries.MarkMailJobUndeliverable(context.Background(), id)
+
+	return err == nil
+}
+
 func (r *SQLCRepository) DeleteByCircle(circleID string) {
 	_ = r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.OptionalString(circleID))
 }

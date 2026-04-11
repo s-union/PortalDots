@@ -416,7 +416,7 @@ func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID
 	if err != nil {
 		return
 	}
-	logQueuedMail("staff_page", job.ID, "", createdByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("staff_page", job.ID, "", createdByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 	recordActivity(
 		ctx,
 		h.activities,

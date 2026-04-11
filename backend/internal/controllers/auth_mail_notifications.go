@@ -29,7 +29,7 @@ func (h *authHandlers) enqueueRegistrationVerifyMail(ctx context.Context, recipi
 	if err != nil {
 		return err
 	}
-	logQueuedMail("registration_verify", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("registration_verify", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 
 	return nil
 }
@@ -66,7 +66,7 @@ func (h *authHandlers) enqueueParticipantVerifyCodeMail(
 	if err != nil {
 		return err
 	}
-	logQueuedMail("participant_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("participant_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 
 	return nil
 }
@@ -90,7 +90,7 @@ func (h *authHandlers) enqueuePasswordChangedMail(ctx context.Context, userID st
 	if err != nil {
 		return err
 	}
-	logQueuedMail("password_changed", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("password_changed", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 
 	return nil
 }
@@ -126,7 +126,7 @@ func (h *authHandlers) enqueuePasswordResetStartMail(
 	if err != nil {
 		return err
 	}
-	logQueuedMail("password_reset_start", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("password_reset_start", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 
 	return nil
 }

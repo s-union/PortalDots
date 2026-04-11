@@ -21,12 +21,19 @@ type Job struct {
 	DeliveredAt     string
 }
 
+const (
+	JobStatusQueued        = "queued"
+	JobStatusSent          = "sent"
+	JobStatusUndeliverable = "undeliverable"
+)
+
 type Repository interface {
 	Enqueue(ctx context.Context, circleID, createdByUserID, subject, body string, recipients []string) (Job, error)
 	ListAll() []Job
 	ListByCircle(circleID string) []Job
 	ListQueued(limit int) []Job
 	MarkSent(id string, deliveredAt time.Time) bool
+	MarkUndeliverable(id string) bool
 	DeleteAll()
 	DeleteByCircle(circleID string)
 }
@@ -54,7 +61,7 @@ func (r *MemoryRepository) Enqueue(_ context.Context, circleID, createdByUserID,
 		Subject:         subject,
 		Body:            body,
 		Recipients:      slices.Clone(recipients),
-		Status:          "queued",
+		Status:          JobStatusQueued,
 		CreatedByUserID: createdByUserID,
 		CreatedAt:       time.Now().UTC().Format(time.RFC3339),
 	}
@@ -103,7 +110,7 @@ func (r *MemoryRepository) ListQueued(limit int) []Job {
 	jobs := make([]Job, 0, capHint)
 	for index := 0; index < len(r.jobs); index++ {
 		job := r.jobs[index]
-		if job.Status != "queued" {
+		if job.Status != JobStatusQueued {
 			continue
 		}
 		jobs = append(jobs, cloneJob(job))
@@ -123,11 +130,29 @@ func (r *MemoryRepository) MarkSent(id string, deliveredAt time.Time) bool {
 		if r.jobs[index].ID != id {
 			continue
 		}
-		if r.jobs[index].Status != "queued" {
+		if r.jobs[index].Status != JobStatusQueued {
 			return false
 		}
-		r.jobs[index].Status = "sent"
+		r.jobs[index].Status = JobStatusSent
 		r.jobs[index].DeliveredAt = deliveredAt.UTC().Format(time.RFC3339)
+		return true
+	}
+
+	return false
+}
+
+func (r *MemoryRepository) MarkUndeliverable(id string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for index := range r.jobs {
+		if r.jobs[index].ID != id {
+			continue
+		}
+		if r.jobs[index].Status != JobStatusQueued {
+			return false
+		}
+		r.jobs[index].Status = JobStatusUndeliverable
 		return true
 	}
 

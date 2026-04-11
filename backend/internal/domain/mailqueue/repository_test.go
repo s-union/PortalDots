@@ -57,6 +57,45 @@ func TestMarkSentReturnsFalseWhenAlreadySent(t *testing.T) {
 	}
 }
 
+func TestMarkUndeliverableRemovesJobFromQueuedList(t *testing.T) {
+	t.Parallel()
+
+	repository := NewMemoryRepository()
+	first, err := repository.Enqueue(context.Background(), "circle-a", "staff", "subject-1", "body-1", []string{"a@example.com"})
+	if err != nil {
+		t.Fatalf("enqueue first mail: %v", err)
+	}
+	second, err := repository.Enqueue(context.Background(), "circle-a", "staff", "subject-2", "body-2", []string{"b@example.com"})
+	if err != nil {
+		t.Fatalf("enqueue second mail: %v", err)
+	}
+
+	if !repository.MarkUndeliverable(first.ID) {
+		t.Fatal("expected mark undeliverable to succeed")
+	}
+	if repository.MarkUndeliverable(first.ID) {
+		t.Fatal("expected second mark undeliverable to fail for non-queued job")
+	}
+
+	queued := repository.ListQueued(0)
+	if len(queued) != 1 || queued[0].ID != second.ID {
+		t.Fatalf("expected only second job to remain queued, got %#v", queued)
+	}
+
+	allJobs := repository.ListAll()
+	for _, job := range allJobs {
+		if job.ID != first.ID {
+			continue
+		}
+		if job.Status != JobStatusUndeliverable {
+			t.Fatalf("expected first job status undeliverable, got %#v", job)
+		}
+		return
+	}
+
+	t.Fatalf("expected first job to exist in %#v", allJobs)
+}
+
 func nowUTC() time.Time {
 	return time.Now().UTC()
 }

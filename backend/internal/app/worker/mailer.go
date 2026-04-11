@@ -13,6 +13,14 @@ type MailSender interface {
 	Send(recipient, subject, body string) error
 }
 
+type deliveryResult uint8
+
+const (
+	deliveryResultRetryableFailure deliveryResult = iota
+	deliveryResultSent
+	deliveryResultUndeliverable
+)
+
 func ProcessMailJobsOnce(repository mailqueue.Repository, sender MailSender, limit int) int {
 	if sender == nil {
 		sender = NewLogMailSender()
@@ -22,22 +30,35 @@ func ProcessMailJobsOnce(repository mailqueue.Repository, sender MailSender, lim
 	processed := 0
 
 	for _, job := range jobs {
-		if !deliverQueuedMailJob(sender, job) {
-			continue
-		}
-		if repository.MarkSent(job.ID, time.Now().UTC()) {
-			processed++
+		switch deliverQueuedMailJob(sender, job) {
+		case deliveryResultSent:
+			if repository.MarkSent(job.ID, time.Now().UTC()) {
+				processed++
+			}
+		case deliveryResultUndeliverable:
+			if !repository.MarkUndeliverable(job.ID) {
+				slog.Error(
+					"failed to mark queued mail as undeliverable",
+					"jobID", job.ID,
+					"circleID", job.CircleID,
+				)
+			}
 		}
 	}
 
 	return processed
 }
 
-func deliverQueuedMailJob(sender MailSender, job mailqueue.Job) bool {
+func deliverQueuedMailJob(sender MailSender, job mailqueue.Job) deliveryResult {
 	recipients := normalizeRecipients(job.Recipients)
 	if len(recipients) == 0 {
-		slog.Warn("skip queued mail without recipients", "jobID", job.ID, "circleID", job.CircleID)
-		return true
+		slog.Warn(
+			"queued mail has no deliverable recipients after normalization; marking as undeliverable",
+			"jobID", job.ID,
+			"circleID", job.CircleID,
+			"rawRecipientCount", len(job.Recipients),
+		)
+		return deliveryResultUndeliverable
 	}
 
 	for _, recipient := range recipients {
@@ -49,11 +70,11 @@ func deliverQueuedMailJob(sender MailSender, job mailqueue.Job) bool {
 				"recipient", recipient,
 				"error", err.Error(),
 			)
-			return false
+			return deliveryResultRetryableFailure
 		}
 	}
 
-	return true
+	return deliveryResultSent
 }
 
 func normalizeRecipients(recipients []string) []string {

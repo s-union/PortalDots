@@ -1165,9 +1165,14 @@ func TestAuthVerificationRejectsInvalidInputAndWrongCode(t *testing.T) {
 }
 
 func TestStartRegistrationQueuesVerificationMailWhenSecure(t *testing.T) {
-	t.Parallel()
-
 	server := NewServer(testStrictStaffConfig())
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() {
+		slog.SetDefault(previousLogger)
+	})
+
 	staffCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, staffCookies)
 	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
@@ -1216,11 +1221,18 @@ func TestStartRegistrationQueuesVerificationMailWhenSecure(t *testing.T) {
 	if !found {
 		t.Fatalf("expected queued registration verify mail, got %#v", queuedMails)
 	}
+	if !strings.Contains(logs.String(), "kind=queued_mail source=registration_verify") {
+		t.Fatalf("expected queued mail log in secure mode, got logs=%s", logs.String())
+	}
+	if !strings.Contains(logs.String(), "subject=[redacted]") || !strings.Contains(logs.String(), "body=[redacted]") || !strings.Contains(logs.String(), "recipientsCount=1") {
+		t.Fatalf("expected redacted queued mail log in secure mode, got logs=%s", logs.String())
+	}
+	if strings.Contains(logs.String(), "secure-registration@example.ac.jp") || strings.Contains(logs.String(), "【重要】メール認証のお願い") || strings.Contains(logs.String(), "/email/verify/univemail/") {
+		t.Fatalf("expected secure mode logs to avoid raw queued mail payloads, got logs=%s", logs.String())
+	}
 }
 
 func TestStartRegistrationLogsVerifyURLWhenInsecure(t *testing.T) {
-	t.Parallel()
-
 	server := NewServer(testConfig())
 	var logs bytes.Buffer
 	previousLogger := slog.Default()

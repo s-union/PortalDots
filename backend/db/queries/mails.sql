@@ -33,4 +33,12 @@ UPDATE mail_jobs
 SET status = 'sent',
     delivered_at = $2
 WHERE id = $1
+  AND status = 'queued'
+RETURNING id, circle_id, subject, body, recipients, status, created_by_user_id, created_at, delivered_at;
+
+-- name: MarkMailJobUndeliverable :one
+UPDATE mail_jobs
+SET status = 'undeliverable'
+WHERE id = $1
+  AND status = 'queued'
 RETURNING id, circle_id, subject, body, recipients, status, created_by_user_id, created_at, delivered_at;

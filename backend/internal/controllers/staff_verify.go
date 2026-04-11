@@ -189,7 +189,7 @@ func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
 	if err != nil {
 		return err
 	}
-	logQueuedMail("staff_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("staff_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 
 	return nil
 }

@@ -14,7 +14,7 @@ export interface StaffMail {
   subject: string
   body: string
   recipients: string[]
-  status: 'queued' | 'sent'
+  status: 'queued' | 'sent' | 'undeliverable'
   createdAt: string
   deliveredAt: string
 }

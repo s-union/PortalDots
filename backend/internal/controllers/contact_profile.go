@@ -190,7 +190,7 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		if err != nil {
 			return internalError(c)
 		}
-		logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients)
+		logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients, h.allowInsecureDefaults)
 	}
 
 	job, err := h.mails.Enqueue(
@@ -204,7 +204,7 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,

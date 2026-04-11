@@ -39,6 +39,26 @@ async function handleDeleteAll() {
     errorMessage.value = 'メールキューの全件キャンセルに失敗しました。'
   }
 }
+
+function mailStatusTone(status: 'queued' | 'sent' | 'undeliverable') {
+  if (status === 'sent') {
+    return 'success'
+  }
+  if (status === 'undeliverable') {
+    return 'danger'
+  }
+  return 'primary'
+}
+
+function mailStatusLabel(status: 'queued' | 'sent' | 'undeliverable') {
+  if (status === 'sent') {
+    return '送信済み'
+  }
+  if (status === 'undeliverable') {
+    return '配信不能'
+  }
+  return '待機中'
+}
 </script>
 
 <template>
@@ -91,8 +111,8 @@ async function handleDeleteAll() {
           <article v-for="mail in mailsQuery.data.value" :key="mail.id" class="px-6 py-5">
             <div class="flex items-center justify-between gap-3">
               <h3 class="text-lg font-medium text-body">{{ mail.subject }}</h3>
-              <StatusBadge :tone="mail.status === 'sent' ? 'success' : 'primary'">
-                {{ mail.status === 'sent' ? '送信済み' : '待機中' }}
+              <StatusBadge :tone="mailStatusTone(mail.status)">
+                {{ mailStatusLabel(mail.status) }}
               </StatusBadge>
             </div>
             <p class="mt-2 text-sm text-muted-2">recipients: {{ mail.recipients.join(', ') || 'なし' }}</p>

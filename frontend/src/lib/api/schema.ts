@@ -274,7 +274,7 @@ export const staffMailSchema = z.object({
   subject: z.string(),
   body: z.string(),
   recipients: stringArraySchema,
-  status: z.enum(['queued', 'sent']),
+  status: z.enum(['queued', 'sent', 'undeliverable']),
   createdAt: z.string(),
   deliveredAt: z.string()
 })

@@ -334,6 +334,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 				updated.ID,
 				currentSession.User.ID,
 				"circle_status",
+				h.allowInsecureDefaults,
 				subject,
 				body,
 			)
@@ -591,7 +592,7 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	logQueuedMail("staff_circle", job.ID, circleValue.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients)
+	logQueuedMail("staff_circle", job.ID, circleValue.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
