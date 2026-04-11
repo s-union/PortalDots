@@ -249,7 +249,7 @@ func (h *staffDocumentHandlers) downloadStaffDocumentFile(c echo.Context) error 
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+documentValue.Filename+`"`)
+	c.Response().Header().Set(echo.HeaderContentDisposition, attachmentContentDisposition(documentValue.Filename))
 	return c.Blob(http.StatusOK, documentValue.MimeType, documentValue.Content)
 }
 

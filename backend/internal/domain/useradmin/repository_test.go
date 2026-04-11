@@ -1,6 +1,7 @@
 package useradmin
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
@@ -55,5 +56,50 @@ func TestNewStaticRepositoryAssignsTimestampsToSeededUsers(t *testing.T) {
 		if !user.CreatedAt.Equal(user.UpdatedAt) {
 			t.Fatalf("expected %s timestamps to match on initialization, got %s and %s", user.ID, user.CreatedAt, user.UpdatedAt)
 		}
+	}
+}
+
+func TestStaticRepositoryFindByNormalizedLoginID(t *testing.T) {
+	t.Parallel()
+
+	repo := NewStaticRepository(
+		config.AuthUser{
+			ID:          "auth-user",
+			LoginIDs:    []string{"staff"},
+			DisplayName: "Staff User",
+			Roles:       []string{"staff"},
+			Permissions: []string{"forms.read"},
+		},
+		[]config.User{
+			{
+				ID:              "auth-user",
+				LoginIDs:        []string{"staff"},
+				DisplayName:     "Staff User",
+				ContactEmail:    "staff@example.com",
+				IsVerified:      true,
+				IsEmailVerified: true,
+			},
+			{
+				ID:              "mixed-user",
+				LoginIDs:        []string{"MiXeDLoginID"},
+				DisplayName:     "Mixed User",
+				ContactEmail:    "mixed@example.com",
+				IsVerified:      true,
+				IsEmailVerified: true,
+			},
+		},
+	)
+
+	userValue, err := repo.FindByNormalizedLoginID(" mixedloginid ")
+	if err != nil {
+		t.Fatalf("expected to find user by normalized login id: %v", err)
+	}
+	if userValue.ID != "mixed-user" {
+		t.Fatalf("expected mixed-user, got %s", userValue.ID)
+	}
+
+	_, err = repo.FindByNormalizedLoginID("mixed")
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound for fuzzy login id, got %v", err)
 	}
 }

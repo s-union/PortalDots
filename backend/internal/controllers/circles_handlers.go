@@ -472,15 +472,12 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) listCurrentCircleMembers(c echo.Context) error {
-	_, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
-	}
-	if currentSession.CurrentCircleID == "" {
-		return errorJSON(c, http.StatusNotFound, "no_current_circle")
+	_, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	if !ok {
+		return statusError(c, status)
 	}
 
-	members, err := h.circles.ListMembers(currentSession.CurrentCircleID)
+	members, err := h.circles.ListMembers(currentCircle.ID)
 	if err != nil {
 		return internalError(c)
 	}

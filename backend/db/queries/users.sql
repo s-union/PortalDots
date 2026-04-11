@@ -109,6 +109,13 @@ JOIN user_login_ids ON user_login_ids.user_id = users.id
 WHERE user_login_ids.login_id = $1
 LIMIT 1;
 
+-- name: GetUserByNormalizedLoginID :one
+SELECT users.id, users.display_name, users.password, users.is_verified, users.created_at
+FROM users
+JOIN user_login_ids ON user_login_ids.user_id = users.id
+WHERE lower(user_login_ids.login_id) = $1
+LIMIT 1;
+
 -- name: GetUserByContactEmail :one
 SELECT id, display_name, password, is_verified, created_at
 FROM users

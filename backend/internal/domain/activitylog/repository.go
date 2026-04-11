@@ -29,13 +29,11 @@ type Repository interface {
 type MemoryRepository struct {
 	mu      sync.RWMutex
 	entries []Entry
-	nextID  int
 }
 
 func NewMemoryRepository() *MemoryRepository {
 	return &MemoryRepository{
 		entries: []Entry{},
-		nextID:  1,
 	}
 }
 
@@ -73,7 +71,6 @@ func (r *MemoryRepository) Record(
 		CreatedAt:   time.Now().UTC().Format(time.RFC3339),
 	}
 
-	r.nextID++
 	r.entries = append(r.entries, entry)
 
 	return nil

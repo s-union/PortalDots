@@ -156,6 +156,9 @@ describe('CircleMembersPage', () => {
     expect(wrapper.text()).toContain('メンバーさん')
     expect(wrapper.text()).toContain('リーダー')
     expect(wrapper.text()).toContain('メンバー')
+
+    const qrImage = wrapper.get('img[alt="招待URLのQRコード"]')
+    expect(qrImage.attributes('src')).toMatch(/^data:image\/svg\+xml;charset=utf-8,/)
   })
 
   it('shows empty state when no members', async () => {

@@ -243,7 +243,7 @@ func (h *staffMastersHandlers) downloadStaffPlacesCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	assignments, err := h.booths.List()
+	assignments, err := h.booths.List(c.Request().Context())
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
@@ -313,7 +313,7 @@ func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
 	} else if err != nil {
 		return internalError(c)
 	}
-	if err := h.booths.DeleteByPlace(c.Param("placeID")); err != nil {
+	if err := h.booths.DeleteByPlace(c.Request().Context(), c.Param("placeID")); err != nil {
 		return internalError(c)
 	}
 

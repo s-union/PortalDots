@@ -14,8 +14,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) List() ([]Assignment, error) {
-	rows, err := r.queries.ListBooths(context.Background())
+func (r *SQLCRepository) List(ctx context.Context) ([]Assignment, error) {
+	rows, err := r.queries.ListBooths(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -28,10 +28,10 @@ func (r *SQLCRepository) List() ([]Assignment, error) {
 	return items, nil
 }
 
-func (r *SQLCRepository) DeleteByPlace(placeID string) error {
-	return r.queries.DeleteBoothsByPlace(context.Background(), placeID)
+func (r *SQLCRepository) DeleteByPlace(ctx context.Context, placeID string) error {
+	return r.queries.DeleteBoothsByPlace(ctx, placeID)
 }
 
-func (r *SQLCRepository) DeleteByCircle(circleID string) error {
-	return r.queries.DeleteBoothsByCircle(context.Background(), circleID)
+func (r *SQLCRepository) DeleteByCircle(ctx context.Context, circleID string) error {
+	return r.queries.DeleteBoothsByCircle(ctx, circleID)
 }

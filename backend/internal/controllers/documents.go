@@ -23,12 +23,9 @@ type documentSummaryResponse struct {
 }
 
 func (h *workspaceHandlers) listDocuments(c echo.Context) error {
-	_, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return statusError(c, http.StatusUnauthorized)
-	}
-	if currentSession.CurrentCircleID == "" {
-		return statusError(c, http.StatusConflict)
+	_, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	if !ok {
+		return statusError(c, status)
 	}
 
 	documents := h.documents.ListPublic()
@@ -52,12 +49,9 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) getDocument(c echo.Context) error {
-	_, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return statusError(c, http.StatusUnauthorized)
-	}
-	if currentSession.CurrentCircleID == "" {
-		return statusError(c, http.StatusConflict)
+	_, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	if !ok {
+		return statusError(c, status)
 	}
 
 	document, found := h.documents.FindPublic(c.Param("documentID"))

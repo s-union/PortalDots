@@ -364,7 +364,7 @@ func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
 
-	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
+	c.Response().Header().Set(echo.HeaderContentDisposition, attachmentContentDisposition(upload.Filename))
 	return c.Blob(http.StatusOK, upload.MimeType, upload.Content)
 }
 
@@ -384,6 +384,6 @@ func (h *workspaceHandlers) downloadFormAnswerFileByID(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
 
-	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
+	c.Response().Header().Set(echo.HeaderContentDisposition, attachmentContentDisposition(upload.Filename))
 	return c.Blob(http.StatusOK, upload.MimeType, upload.Content)
 }

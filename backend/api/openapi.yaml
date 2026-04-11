@@ -528,6 +528,9 @@ paths:
                 properties:
                   message:
                     type: string
+                  verifyCode:
+                    type: string
+                    description: Demo mode only. Included when insecure defaults are enabled.
         "401":
           description: Unauthenticated
         "403":

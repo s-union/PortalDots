@@ -21,6 +21,10 @@ export function parseWithSchema<T>(schema: z.ZodType<T>, value: unknown, label: 
 }
 
 export const stringArraySchema = z.array(z.string())
+const apiRelativePathSchema = z
+  .string()
+  .trim()
+  .regex(/^\/(?!\/)/)
 
 export const paginatedResultSchema = <TItem extends z.ZodType>(itemSchema: TItem) =>
   z.object({
@@ -49,7 +53,7 @@ export const pageDocumentSchema = z.object({
   extension: z.string(),
   sizeBytes: z.number(),
   updatedAt: z.string(),
-  downloadUrl: z.string()
+  downloadUrl: apiRelativePathSchema
 })
 
 export const pageDetailSchema = z.object({
@@ -166,7 +170,7 @@ export const documentSummarySchema = z.object({
   extension: z.string(),
   sizeBytes: z.number(),
   updatedAt: z.string(),
-  downloadUrl: z.string()
+  downloadUrl: apiRelativePathSchema
 })
 
 export const contactCategorySchema = z.object({
@@ -542,7 +546,7 @@ export const staffDocumentSummarySchema = z.object({
   isPublic: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  downloadUrl: z.string()
+  downloadUrl: apiRelativePathSchema
 })
 
 export const staffDocumentDetailSchema = staffDocumentSummarySchema.extend({
@@ -633,7 +637,7 @@ export const publicHomeDocumentSchema = z.object({
   extension: z.string(),
   sizeBytes: z.number(),
   updatedAt: z.string(),
-  downloadUrl: z.string()
+  downloadUrl: apiRelativePathSchema
 })
 
 export const publicConfigSchema = z.object({

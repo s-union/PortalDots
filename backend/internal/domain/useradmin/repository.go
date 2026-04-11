@@ -58,6 +58,7 @@ type Repository interface {
 	ListByQuery(query string) ([]User, error)
 	Find(userID string) (User, error)
 	FindByLoginID(loginID string) (User, error)
+	FindByNormalizedLoginID(loginID string) (User, error)
 	FindByContactEmail(contactEmail string) (User, error)
 	Create(params CreateParams) (User, error)
 	Update(userID, displayName string, loginIDs []string) (User, error)
@@ -225,6 +226,26 @@ func (r *StaticRepository) FindByLoginID(loginID string) (User, error) {
 	for _, user := range r.users {
 		for _, current := range user.LoginIDs {
 			if current == loginID {
+				return cloneUser(user), nil
+			}
+		}
+	}
+
+	return User{}, ErrNotFound
+}
+
+func (r *StaticRepository) FindByNormalizedLoginID(loginID string) (User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	normalizedLoginID := normalizeLoginID(loginID)
+	if normalizedLoginID == "" {
+		return User{}, ErrNotFound
+	}
+
+	for _, user := range r.users {
+		for _, current := range user.LoginIDs {
+			if normalizeLoginID(current) == normalizedLoginID {
 				return cloneUser(user), nil
 			}
 		}
@@ -576,4 +597,8 @@ func hasLoginIDConflict(existing []string, candidates []string) bool {
 	}
 
 	return false
+}
+
+func normalizeLoginID(loginID string) string {
+	return strings.ToLower(strings.TrimSpace(loginID))
 }

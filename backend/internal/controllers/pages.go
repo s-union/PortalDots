@@ -44,17 +44,9 @@ type pageDocumentResponse struct {
 }
 
 func (h *workspaceHandlers) listPages(c echo.Context) error {
-	_, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return statusError(c, http.StatusUnauthorized)
-	}
-	if currentSession.CurrentCircleID == "" {
-		return statusError(c, http.StatusConflict)
-	}
-
-	currentCircle, err := h.circles.Find(currentSession.CurrentCircleID)
-	if err != nil {
-		return internalError(c)
+	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	if !ok {
+		return statusError(c, status)
 	}
 
 	pages := h.pages.ListForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.QueryParam("query"))
@@ -69,17 +61,9 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) getPage(c echo.Context) error {
-	_, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return statusError(c, http.StatusUnauthorized)
-	}
-	if currentSession.CurrentCircleID == "" {
-		return statusError(c, http.StatusConflict)
-	}
-
-	currentCircle, err := h.circles.Find(currentSession.CurrentCircleID)
-	if err != nil {
-		return internalError(c)
+	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	if !ok {
+		return statusError(c, status)
 	}
 
 	pageValue, found := h.pages.FindForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.Param("pageID"))

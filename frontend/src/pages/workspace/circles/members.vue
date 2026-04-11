@@ -61,32 +61,33 @@ const invitationUrl = computed(() => {
   if (!token) {
     return ''
   }
-  return `${window.location.origin}/circles/join/${token}`
+  return `${window.location.origin}/circles/join/${encodeURIComponent(token)}`
 })
 
 const isCurrentUserLeader = computed(() => {
   return membersQuery.data.value?.some((m) => m.userId === currentUserId.value && m.isLeader) ?? false
 })
 
-const invitationQrSvg = shallowRef('')
+const invitationQrDataUrl = shallowRef('')
 const invitationQrError = shallowRef('')
 watchEffect(() => {
   const url = invitationUrl.value
   invitationQrError.value = ''
   if (!url) {
-    invitationQrSvg.value = ''
+    invitationQrDataUrl.value = ''
     return
   }
   try {
     const renderedSvg = renderSVG(url)
-    if (renderedSvg.trim() === '') {
-      invitationQrSvg.value = ''
+    const normalizedSvg = renderedSvg.trim()
+    if (normalizedSvg === '' || !normalizedSvg.startsWith('<svg')) {
+      invitationQrDataUrl.value = ''
       invitationQrError.value = 'QRコードの生成に失敗しました。招待URLをそのまま共有してください。'
       return
     }
-    invitationQrSvg.value = renderedSvg
+    invitationQrDataUrl.value = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(normalizedSvg)}`
   } catch {
-    invitationQrSvg.value = ''
+    invitationQrDataUrl.value = ''
     invitationQrError.value = 'QRコードの生成に失敗しました。招待URLをそのまま共有してください。'
   }
 })
@@ -184,7 +185,9 @@ async function handleRemoveMember(userId: string, displayName: string) {
               </button>
             </div>
             <p v-if="invitationQrError" class="text-sm text-warning">{{ invitationQrError }}</p>
-            <div v-if="invitationQrSvg" class="flex justify-center" v-html="invitationQrSvg" />
+            <div v-if="invitationQrDataUrl" class="flex justify-center">
+              <img :src="invitationQrDataUrl" alt="招待URLのQRコード" class="h-44 w-44" />
+            </div>
           </template>
         </div>
       </SettingsRow>

@@ -1,6 +1,7 @@
 package booth
 
 import (
+	"context"
 	"slices"
 	"sync"
 
@@ -13,9 +14,9 @@ type Assignment struct {
 }
 
 type Repository interface {
-	List() ([]Assignment, error)
-	DeleteByPlace(placeID string) error
-	DeleteByCircle(circleID string) error
+	List(ctx context.Context) ([]Assignment, error)
+	DeleteByPlace(ctx context.Context, placeID string) error
+	DeleteByCircle(ctx context.Context, circleID string) error
 }
 
 type MemoryRepository struct {
@@ -32,14 +33,14 @@ func NewMemoryRepository(cfg []config.BoothAssignment) *MemoryRepository {
 	return &MemoryRepository{items: items}
 }
 
-func (r *MemoryRepository) List() ([]Assignment, error) {
+func (r *MemoryRepository) List(_ context.Context) ([]Assignment, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	return slices.Clone(r.items), nil
 }
 
-func (r *MemoryRepository) DeleteByPlace(placeID string) error {
+func (r *MemoryRepository) DeleteByPlace(_ context.Context, placeID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -49,7 +50,7 @@ func (r *MemoryRepository) DeleteByPlace(placeID string) error {
 	return nil
 }
 
-func (r *MemoryRepository) DeleteByCircle(circleID string) error {
+func (r *MemoryRepository) DeleteByCircle(_ context.Context, circleID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

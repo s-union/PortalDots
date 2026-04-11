@@ -42,6 +42,7 @@ function resolvePublicApiOrigin(baseUrl: string) {
 
 const apiClientBaseUrl = resolveApiClientBaseUrl(apiBaseUrl)
 const publicApiOrigin = resolvePublicApiOrigin(apiBaseUrl)
+const apiClientOrigin = new URL(apiClientBaseUrl).origin
 
 const fetchWithCredentials: typeof fetch = async (input, init) => {
   return globalThis.fetch(input, {
@@ -85,14 +86,12 @@ function stripDuplicatedBasePath(path: string, apiBasePath: string) {
 }
 
 export function buildApiUrl(path: string) {
-  if (/^https?:\/\//.test(path)) {
-    return path
-  }
+  const normalizedInput = normalizeApiInputPath(path)
 
-  const normalizedInputPath = path.startsWith('/') ? path : `/${path}`
+  const normalizedInputPath = normalizedInput.startsWith('/') ? normalizedInput : `/${normalizedInput}`
   const apiBasePath = resolveApiBasePath(apiBaseUrl)
   const effectivePath = stripDuplicatedBasePath(normalizedInputPath, apiBasePath)
-  const normalizedPath = effectivePath.replace(/^\//, '')
+  const normalizedPath = effectivePath.replace(/^\/+/, '')
 
   if (/^https?:\/\//.test(apiBaseUrl)) {
     return new URL(normalizedPath, `${apiBaseUrl}/`).toString()
@@ -100,6 +99,27 @@ export function buildApiUrl(path: string) {
 
   const normalizedBasePath = apiBasePath === '/' ? '/' : apiBasePath
   return new URL(normalizedPath, `${publicApiOrigin}${normalizedBasePath}/`).toString()
+}
+
+function normalizeApiInputPath(path: string) {
+  const normalized = path.trim()
+  if (normalized === '') {
+    return '/'
+  }
+
+  if (!/^https?:\/\//.test(normalized)) {
+    return normalized
+  }
+
+  try {
+    const parsed = new URL(normalized)
+    if (parsed.origin !== publicApiOrigin && parsed.origin !== apiClientOrigin) {
+      return '/'
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return '/'
+  }
 }
 
 export function encodePathSegment(segment: string) {

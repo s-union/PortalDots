@@ -12,6 +12,7 @@ interface StaffStatus {
 
 interface StaffVerifyRequestResult {
   message: string
+  verifyCode?: string
 }
 
 export async function fetchStaffStatus() {

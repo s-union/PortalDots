@@ -131,6 +131,23 @@ func (r *SQLCRepository) FindByLoginID(loginID string) (User, error) {
 	return r.Find(userRow.ID)
 }
 
+func (r *SQLCRepository) FindByNormalizedLoginID(loginID string) (User, error) {
+	normalizedLoginID := normalizeLoginID(loginID)
+	if normalizedLoginID == "" {
+		return User{}, ErrNotFound
+	}
+
+	userRow, err := r.queries.GetUserByNormalizedLoginID(context.Background(), normalizedLoginID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+
+	return r.Find(userRow.ID)
+}
+
 func (r *SQLCRepository) FindByContactEmail(contactEmail string) (User, error) {
 	userRow, err := r.queries.GetUserByContactEmail(context.Background(), contactEmail)
 	if err != nil {

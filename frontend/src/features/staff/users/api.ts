@@ -9,6 +9,7 @@ import { useSessionStore } from '@/features/session/store'
 
 export const manageableRoles = [
   'participant',
+  'staff',
   'content_manager',
   'forms_manager',
   'circle_manager',
@@ -18,6 +19,7 @@ export const manageableRoles = [
 
 export const roleDisplayNames: Record<string, string> = {
   participant: '参加者',
+  staff: 'スタッフ',
   content_manager: 'コンテンツ管理',
   forms_manager: '申請管理',
   circle_manager: '企画管理',
@@ -27,6 +29,7 @@ export const roleDisplayNames: Record<string, string> = {
 
 export const roleDescriptions: Record<string, string> = {
   participant: '企画への参加登録ができます。',
+  staff: '互換性維持のための既存ロールです。',
   content_manager: 'お知らせ・配布資料の管理ができます。',
   forms_manager: '申請フォームの管理ができます。',
   circle_manager: '企画情報の管理ができます。',

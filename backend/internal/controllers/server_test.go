@@ -542,6 +542,127 @@ func TestPasswordResetFlow(t *testing.T) {
 	}
 }
 
+func TestPasswordResetStartMatchesLoginIDCaseInsensitive(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStrictStaffConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:           "0195ec00-00b3-7000-8000-000000000001",
+		LoginIDs:     []string{"MiXeDLoginID"},
+		DisplayName:  "Mixed Login User",
+		Password:     "password",
+		Roles:        []string{"participant"},
+		ContactEmail: "mixed-login@example.com",
+		IsVerified:   true,
+	})
+	server := NewServer(cfg)
+
+	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/password/reset/start", map[string]string{
+		"loginId": "mixedloginid",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	staffCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, staffCookies)
+	authorizeStaff(t, server, staffCookies)
+	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
+		"verifyCode": strictStaffVerifyCode,
+	}, staffCSRF)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+
+	found := false
+	for _, queued := range queuedMails {
+		if queued.Subject != "パスワードの再設定" {
+			continue
+		}
+		if slices.Contains(queued.Recipients, "mixed-login@example.com") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected queued password reset mail for mixed-case login ID, got %#v", queuedMails)
+	}
+}
+
+func TestPasswordResetStartDoesNotFuzzyMatchLoginID(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStrictStaffConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:           "0195ec00-00b4-7000-8000-000000000001",
+		LoginIDs:     []string{"MiXeDLoginID"},
+		DisplayName:  "Mixed Login User",
+		Password:     "password",
+		Roles:        []string{"participant"},
+		ContactEmail: "mixed-login@example.com",
+		IsVerified:   true,
+	})
+	server := NewServer(cfg)
+
+	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/password/reset/start", map[string]string{
+		"loginId": "mixed",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response messageResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal password reset start response: %v", err)
+	}
+	if response.Message != "再設定URLを連絡先メールアドレスに送信しました。メールをご確認ください。" {
+		t.Fatalf("expected generic success message, got %q", response.Message)
+	}
+
+	staffCookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, staffCookies)
+	authorizeStaff(t, server, staffCookies)
+	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
+		"verifyCode": strictStaffVerifyCode,
+	}, staffCSRF)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+
+	for _, queued := range queuedMails {
+		if queued.Subject != "パスワードの再設定" {
+			continue
+		}
+		if slices.Contains(queued.Recipients, "mixed-login@example.com") {
+			t.Fatalf("expected no queued password reset mail for fuzzy login ID, got %#v", queuedMails)
+		}
+	}
+}
+
 func TestDeleteOwnAccountClearsSession(t *testing.T) {
 	t.Parallel()
 
@@ -3160,12 +3281,15 @@ func TestStaffVerificationFlow(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var requestResponse messageResponse
+	var requestResponse staffVerifyRequestResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
 		t.Fatalf("unmarshal staff verify request response: %v", err)
 	}
 	if requestResponse.Message != "認証コードを送信しました。" {
 		t.Fatalf("unexpected staff verify request response: %#v", requestResponse)
+	}
+	if requestResponse.VerifyCode != "" {
+		t.Fatalf("expected verifyCode to be hidden in strict mode, got %#v", requestResponse)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
@@ -3210,6 +3334,38 @@ func TestStaffVerificationFlow(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("expected queued staff verify mail, got %#v", queuedMails)
+	}
+}
+
+func TestStaffVerificationRequestReturnsCodeInInsecureMode(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "staff@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	csrf := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/request", map[string]string{}, csrf)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var response staffVerifyRequestResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal staff verify request response: %v", err)
+	}
+	if response.Message != "認証コードを送信しました。" {
+		t.Fatalf("unexpected staff verify request response: %#v", response)
+	}
+	if strings.TrimSpace(response.VerifyCode) == "" {
+		t.Fatalf("expected verifyCode in insecure mode response, got %#v", response)
 	}
 }
 
@@ -6047,7 +6203,7 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response messageResponse
+	var response staffVerifyRequestResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal staff verify request response: %v", err)
 	}

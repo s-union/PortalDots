@@ -3,7 +3,8 @@ package controllers
 import (
 	"log/slog"
 	"slices"
-	"strings"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/mailrecipients"
 )
 
 type messageResponse struct {
@@ -48,19 +49,5 @@ func logQueuedMail(source, jobID, circleID, createdByUserID, subject, body strin
 }
 
 func normalizeRecipients(recipients []string) []string {
-	normalized := make([]string, 0, len(recipients))
-	seen := map[string]struct{}{}
-	for _, recipient := range recipients {
-		trimmed := strings.TrimSpace(recipient)
-		if trimmed == "" {
-			continue
-		}
-		if _, ok := seen[trimmed]; ok {
-			continue
-		}
-		seen[trimmed] = struct{}{}
-		normalized = append(normalized, trimmed)
-	}
-
-	return normalized
+	return mailrecipients.Normalize(recipients)
 }

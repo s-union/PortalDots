@@ -376,7 +376,7 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
-	if err := h.booths.DeleteByCircle(circleID); err != nil {
+	if err := h.booths.DeleteByCircle(c.Request().Context(), circleID); err != nil {
 		return internalError(c)
 	}
 	h.mails.DeleteByCircle(circleID)

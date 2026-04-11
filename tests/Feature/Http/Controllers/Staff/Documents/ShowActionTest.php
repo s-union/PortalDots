@@ -80,4 +80,26 @@ class ShowActionTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    /**
+     * @test
+     */
+    public function documentsディレクトリ外のパスはダウンロードできない()
+    {
+        Permission::create(['name' => 'staff.documents.read']);
+        $this->staff->syncPermissions(['staff.documents.read']);
+
+        $outside_path = '../outside-file.txt';
+        file_put_contents(Storage::path($outside_path), 'outside');
+        $this->document->path = $outside_path;
+        $this->document->save();
+
+        $response = $this->actingAs($this->staff)
+            ->withSession(['staff_authorized' => true])
+            ->get(route('staff.documents.show', [
+                'document' => $this->document,
+            ]));
+
+        $response->assertStatus(404);
+    }
 }

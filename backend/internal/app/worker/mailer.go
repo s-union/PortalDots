@@ -3,10 +3,10 @@ package worker
 import (
 	"log/slog"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
+	"github.com/s-union/PortalDots/backend/internal/shared/mailrecipients"
 )
 
 type MailSender interface {
@@ -57,19 +57,7 @@ func deliverQueuedMailJob(sender MailSender, job mailqueue.Job) bool {
 }
 
 func normalizeRecipients(recipients []string) []string {
-	normalized := make([]string, 0, len(recipients))
-	seen := map[string]struct{}{}
-	for _, recipient := range recipients {
-		trimmed := strings.TrimSpace(recipient)
-		if trimmed == "" {
-			continue
-		}
-		if _, ok := seen[trimmed]; ok {
-			continue
-		}
-		seen[trimmed] = struct{}{}
-		normalized = append(normalized, trimmed)
-	}
+	normalized := mailrecipients.Normalize(recipients)
 	slices.Sort(normalized)
 
 	return normalized

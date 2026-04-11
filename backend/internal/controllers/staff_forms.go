@@ -416,7 +416,7 @@ func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {
 			if !found {
 				return errorJSON(c, http.StatusNotFound, "upload_not_found")
 			}
-			c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+upload.Filename+`"`)
+			c.Response().Header().Set(echo.HeaderContentDisposition, attachmentContentDisposition(upload.Filename))
 			return c.Blob(http.StatusOK, upload.MimeType, upload.Content)
 		}
 	}

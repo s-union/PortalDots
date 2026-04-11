@@ -12,6 +12,7 @@ import (
 
 var manageableRoles = []string{
 	"participant",
+	"staff",
 	"content_manager",
 	"forms_manager",
 	"circle_manager",

@@ -40,7 +40,7 @@ func (h *authHandlers) startPasswordReset(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
-	request.LoginID = strings.TrimSpace(strings.ToLower(request.LoginID))
+	request.LoginID = strings.TrimSpace(request.LoginID)
 	if request.LoginID == "" {
 		return validationError(c, map[string][]string{
 			"loginId": {"学籍番号または連絡先メールアドレスを入力してください"},
@@ -190,7 +190,12 @@ func (h *authHandlers) completePasswordReset(c echo.Context) error {
 }
 
 func (h *authHandlers) findPasswordResetTargetUser(loginID string) (useradmin.User, bool, error) {
-	userValue, err := h.users.FindByLoginID(loginID)
+	normalizedLoginID := strings.TrimSpace(loginID)
+	if normalizedLoginID == "" {
+		return useradmin.User{}, false, nil
+	}
+
+	userValue, err := h.users.FindByLoginID(normalizedLoginID)
 	if err == nil {
 		return userValue, true, nil
 	}
@@ -198,13 +203,21 @@ func (h *authHandlers) findPasswordResetTargetUser(loginID string) (useradmin.Us
 		return useradmin.User{}, false, err
 	}
 
-	userValue, err = h.users.FindByContactEmail(loginID)
+	userValue, err = h.users.FindByNormalizedLoginID(normalizedLoginID)
 	if err == nil {
 		return userValue, true, nil
 	}
-	if errors.Is(err, useradmin.ErrNotFound) {
-		return useradmin.User{}, false, nil
+	if err != nil && !errors.Is(err, useradmin.ErrNotFound) {
+		return useradmin.User{}, false, err
 	}
 
-	return useradmin.User{}, false, err
+	userValue, err = h.users.FindByContactEmail(normalizedLoginID)
+	if err == nil {
+		return userValue, true, nil
+	}
+	if err != nil && !errors.Is(err, useradmin.ErrNotFound) {
+		return useradmin.User{}, false, err
+	}
+
+	return useradmin.User{}, false, nil
 }

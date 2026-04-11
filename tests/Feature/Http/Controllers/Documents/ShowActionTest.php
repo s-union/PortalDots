@@ -3,7 +3,6 @@
 namespace Tests\Feature\Http\Controllers\Documents;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -59,6 +58,24 @@ class ShowActionTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('documents.show', [
                 'document' => $this->document
+            ]));
+
+        $response->assertStatus(404);
+    }
+
+    /**
+     * @test
+     */
+    public function documentsディレクトリ外のパスはダウンロードできない()
+    {
+        $outside_path = '../outside-file.txt';
+        file_put_contents(Storage::path($outside_path), 'outside');
+        $this->document->path = $outside_path;
+        $this->document->save();
+
+        $response = $this->actingAs($this->user)
+            ->get(route('documents.show', [
+                'document' => $this->document,
             ]));
 
         $response->assertStatus(404);

@@ -22,7 +22,8 @@ type staffStatusResponse struct {
 }
 
 type staffVerifyRequestResponse struct {
-	Message string `json:"message"`
+	Message    string `json:"message"`
+	VerifyCode string `json:"verifyCode,omitempty"`
 }
 
 type confirmStaffVerificationRequest struct {
@@ -68,7 +69,8 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 	if h.allowInsecureDefaults {
 		logMockVerificationCode("staff_verify_code", currentSession.User.DisplayName, verifyCode)
 		return c.JSON(http.StatusOK, staffVerifyRequestResponse{
-			Message: "認証コードを送信しました。",
+			Message:    "認証コードを送信しました。",
+			VerifyCode: verifyCode,
 		})
 	}
 	managedUser, err := h.users.Find(currentSession.User.ID)
