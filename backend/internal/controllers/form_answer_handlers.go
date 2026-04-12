@@ -255,10 +255,7 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 		}
 	}
 
-	mimeType := strings.TrimSpace(fileHeader.Header.Get(echo.HeaderContentType))
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
+	mimeType := http.DetectContentType(content)
 
 	upload, created := h.answers.AddUpload(currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
 	if !created {
@@ -340,10 +337,7 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 		}
 	}
 
-	mimeType := strings.TrimSpace(fileHeader.Header.Get(echo.HeaderContentType))
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
+	mimeType := http.DetectContentType(content)
 
 	upload, created := h.answers.AddUploadToAnswer(answerValue.ID, questionID, filename, mimeType, content)
 	if !created {
