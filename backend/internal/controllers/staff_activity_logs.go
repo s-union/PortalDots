@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -54,7 +55,17 @@ func recordActivity(
 		return
 	}
 
-	_ = activities.Record(ctx, actorUserID, action, targetType, targetID, circleID, summary)
+	if err := activities.Record(ctx, actorUserID, action, targetType, targetID, circleID, summary); err != nil {
+		slog.Error(
+			"failed to record activity log",
+			"actorUserID", actorUserID,
+			"action", action,
+			"targetType", targetType,
+			"targetID", targetID,
+			"circleID", circleID,
+			"error", err.Error(),
+		)
+	}
 }
 
 func mapStaffActivityLog(entry activitylog.Entry) staffActivityLogResponse {

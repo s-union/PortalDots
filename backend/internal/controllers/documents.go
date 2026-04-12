@@ -56,9 +56,7 @@ func (h *workspaceHandlers) getDocument(c echo.Context) error {
 
 	document, found := h.documents.FindPublic(c.Param("documentID"))
 	if !found {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"message": "document_not_found",
-		})
+		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
 	c.Response().Header().Set(echo.HeaderContentType, document.MimeType)
