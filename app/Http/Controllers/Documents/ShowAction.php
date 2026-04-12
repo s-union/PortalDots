@@ -15,23 +15,6 @@ class ShowAction extends Controller
             return;
         }
 
-        $path = $this->getSafeDocumentPath($document->path);
-
-        return response()->file(Storage::path($path));
-    }
-
-    private function getSafeDocumentPath(string $path): string
-    {
-        $normalized_path = ltrim(str_replace('\\', '/', $path), '/');
-
-        if (
-            strpos($normalized_path, 'documents/') !== 0 ||
-            preg_match('#(^|/)\.\.(?:/|$)#', $normalized_path) === 1 ||
-            !Storage::exists($normalized_path)
-        ) {
-            abort(404);
-        }
-
-        return $normalized_path;
+        return response()->file(Storage::path($document->path));
     }
 }
