@@ -13,6 +13,7 @@ import {
   useFormAnswersQuery,
   useUpdateFormAnswerMutation
 } from '@/features/forms/answers'
+import { useFormValidation, buildFormAnswerSchema } from '@/lib/form-validation'
 
 interface UseWorkspaceFormDetailPageOptions {
   formId: MaybeRefOrGetter<string>
@@ -36,6 +37,14 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
     return legacyAnswerQuery.data.value?.answer ?? null
   })
   const draft = useFormAnswerEditorDraft(selectedAnswer, questions)
+
+  const answerSchema = computed(() => buildFormAnswerSchema(questions.value))
+  const {
+    getFieldError: getAnswerFieldError,
+    validateAll: validateAnswerFields,
+    markTouched: markAnswerTouched
+  } = useFormValidation({ schema: answerSchema, form: draft })
+
   const createAnswerMutation = useCreateFormAnswerMutation(formId)
   const legacyAnswerMutation = useFormAnswerMutation(formId)
   const answerMutation = useUpdateFormAnswerMutation(formId, selectedAnswerId)
@@ -92,6 +101,10 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
       return
     }
     errorMessage.value = ''
+
+    if (!validateAnswerFields()) {
+      return
+    }
 
     try {
       if (selectedAnswerId.value) {
@@ -197,12 +210,14 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
     errorMessage,
     form,
     formQuery,
+    getAnswerFieldError,
     handleFileChange,
     hasReachedAnswerLimit,
     isCircleApproved,
     isFormWritable,
     isLimitedPublic,
     isSavingAnswer,
+    markAnswerTouched,
     resolveUploadDownloadHref,
     saveAnswer,
     selectAnswer,

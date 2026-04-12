@@ -8,16 +8,27 @@ import type { MutateStaffPagePayload, StaffPageDocument } from '@/features/staff
 
 const form = defineModel<MutateStaffPagePayload>({ required: true })
 
-const { availableTags, availableDocuments, documentsLoading, errorMessage, successMessage, submitLabel, submitting } =
-  defineProps<{
-    availableTags: string[]
-    availableDocuments: StaffPageDocument[]
-    documentsLoading: boolean
-    errorMessage?: string
-    successMessage?: string
-    submitLabel: string
-    submitting: boolean
-  }>()
+const {
+  availableTags,
+  availableDocuments,
+  documentsLoading,
+  errorMessage,
+  successMessage,
+  submitLabel,
+  submitting,
+  fieldErrors,
+  onBlurField
+} = defineProps<{
+  availableTags: string[]
+  availableDocuments: StaffPageDocument[]
+  documentsLoading: boolean
+  errorMessage?: string
+  successMessage?: string
+  submitLabel: string
+  submitting: boolean
+  fieldErrors?: Record<string, string>
+  onBlurField?: (field: 'title' | 'body') => void
+}>()
 
 function handleDocumentChange(documentId: string, event: Event) {
   const target = event.target
@@ -36,18 +47,27 @@ function handleDocumentChange(documentId: string, event: Event) {
 
 <template>
   <div class="grid gap-4">
-    <label class="grid gap-2 text-sm text-body">
+    <div class="grid gap-2 text-sm text-body">
       <span class="font-medium">タイトル</span>
-      <input v-model="form.title" :class="formControlVariants()" name="title" type="text" />
-    </label>
+      <input
+        v-model="form.title"
+        :class="[formControlVariants(), { 'border-danger': fieldErrors?.title }]"
+        name="title"
+        type="text"
+        @blur="onBlurField?.('title')"
+        @input="onBlurField?.('title')"
+      />
+      <p v-if="fieldErrors?.title" class="text-xs text-danger">{{ fieldErrors.title }}</p>
+    </div>
 
-    <label class="grid gap-2 text-sm text-body">
+    <div class="grid gap-2 text-sm text-body">
       <span class="font-medium">本文</span>
       <MarkdownEditorField v-model="form.body" min-height-class="min-h-56" name="body" />
+      <p v-if="fieldErrors?.body" class="text-xs text-danger">{{ fieldErrors.body }}</p>
       <p class="text-xs text-muted">
         Markdown で入力できます。表、取り消し線、タスクリスト、脚注は GFM として表示されます。
       </p>
-    </label>
+    </div>
 
     <label class="grid gap-2 text-sm text-body">
       <span class="font-medium">スタッフ用メモ</span>

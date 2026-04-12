@@ -1,4 +1,4 @@
-import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
 import type { z } from 'zod'
 
 export interface FieldError {
@@ -11,8 +11,8 @@ function hasValueRef<T>(value: unknown): value is Ref<T> {
 }
 
 export interface UseFormValidationOptions<T extends z.ZodTypeAny> {
-  /** Zod schema for validation */
-  schema: T
+  /** Zod schema for validation. Accepts a plain schema, a Ref, or a getter function for dynamic schemas. */
+  schema: MaybeRefOrGetter<T>
   /** Reactive form data object */
   form: Ref<z.input<T>> | z.input<T>
   /** Debounce delay in ms (default: 300) */
@@ -49,7 +49,8 @@ export interface UseFormValidationReturn<T extends z.ZodTypeAny> {
 export function useFormValidation<T extends z.ZodTypeAny>(
   options: UseFormValidationOptions<T>
 ): UseFormValidationReturn<T> {
-  const { schema, form, debounceMs = 300 } = options
+  const { schema: schemaSource, form, debounceMs = 300 } = options
+  const getSchema = () => toValue(schemaSource)
 
   const fieldErrors = ref<Record<string, string>>({})
   const touchedFields = ref(new Set<string>())
@@ -84,7 +85,7 @@ export function useFormValidation<T extends z.ZodTypeAny>(
 
   const validateFieldByKey = (fieldKey: string) => {
     const formData = getFormData()
-    const result = schema.safeParse(formData)
+    const result = getSchema().safeParse(formData)
 
     if (result.success) {
       // Clear error for this field if validation passes
@@ -119,7 +120,7 @@ export function useFormValidation<T extends z.ZodTypeAny>(
 
   const validateAll = (): boolean => {
     const formData = getFormData()
-    const result = schema.safeParse(formData)
+    const result = getSchema().safeParse(formData)
 
     if (result.success) {
       fieldErrors.value = {}
@@ -171,9 +172,18 @@ export function useFormValidation<T extends z.ZodTypeAny>(
 
   const isFormValid = computed(() => {
     const formData = getFormData()
-    const result = schema.safeParse(formData)
+    const result = getSchema().safeParse(formData)
     return result.success
   })
+
+  // When schema changes (dynamic schemas), clear errors and touched state
+  const stopWatchingSchema = watch(
+    () => toValue(schemaSource),
+    () => {
+      fieldErrors.value = {}
+      touchedFields.value = new Set()
+    }
+  )
 
   // Watch form data changes and validate touched fields
   const stopWatchingForm = watch(
@@ -188,6 +198,7 @@ export function useFormValidation<T extends z.ZodTypeAny>(
   )
 
   const cleanup = () => {
+    stopWatchingSchema()
     stopWatchingForm()
     for (const field of Object.keys(debounceTimers)) {
       clearFieldDebounceTimer(field)

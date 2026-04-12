@@ -20,7 +20,7 @@ import { useParticipationTypesQuery } from '@/features/participation-types/api'
 import { useFormAnswerEditorDraft } from '@/features/forms/answers'
 import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage } from '@/lib/api/validation'
-import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
+import { useFormValidation, circleRegistrationFormSchema, buildFormAnswerSchema } from '@/lib/form-validation'
 
 const route = useRoute()
 const router = useRouter()
@@ -64,6 +64,13 @@ const draft = useFormAnswerEditorDraft(
   computed(() => null),
   questions
 )
+const answerSchema = computed(() => buildFormAnswerSchema(questions.value))
+const {
+  getFieldError: getAnswerFieldError,
+  validateAll: validateAnswerFields,
+  markTouched: markAnswerTouched
+} = useFormValidation({ schema: answerSchema, form: draft })
+
 const canChangeGroupName = computed(() => registrationFormQuery.data.value?.canChangeGroupName ?? true)
 const requiresMemberStep = computed(() => {
   if (selectedParticipationType.value) {
@@ -118,6 +125,9 @@ async function handleSubmit() {
 
   // Validate all fields before submitting
   if (!validateAll()) {
+    return
+  }
+  if (!validateAnswerFields()) {
     return
   }
 
@@ -323,15 +333,21 @@ async function handleSubmit() {
                 添付ファイルは企画作成後の編集画面でアップロードできます。
               </div>
 
-              <AnswerQuestionFields
-                v-else
-                :answer="null"
-                :draft="draft"
-                :question="question"
-                :disabled="createMutation.isPending.value"
-                :upload-button-label="'ファイルを追加'"
-                :download-href="() => ''"
-              />
+              <template v-else>
+                <div @focusout.capture="markAnswerTouched(question.id)">
+                  <AnswerQuestionFields
+                    :answer="null"
+                    :draft="draft"
+                    :question="question"
+                    :disabled="createMutation.isPending.value"
+                    :upload-button-label="'ファイルを追加'"
+                    :download-href="() => ''"
+                  />
+                </div>
+                <p v-if="getAnswerFieldError(question.id)" class="text-xs text-danger">
+                  {{ getAnswerFieldError(question.id) }}
+                </p>
+              </template>
             </div>
           </div>
         </template>

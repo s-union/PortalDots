@@ -34,6 +34,7 @@ import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { buildStaffFormTabs } from '@/features/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { useFormValidation, staffFormSchema } from '@/lib/form-validation'
 
 const route = useRoute('/staff/forms/[formId]/edit')
 const router = useRouter()
@@ -61,6 +62,11 @@ const editForm = ref({
   isPublic: true
 })
 
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: staffFormSchema,
+  form: editForm
+})
+
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
 const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
@@ -69,6 +75,7 @@ const openAtInput = computed({
   get: () => formatDateTimeLocalValue(editForm.value.openAt),
   set: (value: string) => {
     editForm.value.openAt = parseDateTimeLocalValue(value, editForm.value.openAt)
+    markTouched('openAt')
   }
 })
 
@@ -76,6 +83,7 @@ const closeAtInput = computed({
   get: () => formatDateTimeLocalValue(editForm.value.closeAt),
   set: (value: string) => {
     editForm.value.closeAt = parseDateTimeLocalValue(value, editForm.value.closeAt)
+    markTouched('closeAt')
   }
 })
 
@@ -103,6 +111,10 @@ watch(
 
 async function handleSaveForm() {
   errorMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
 
   try {
     await updateFormMutation.mutateAsync({
@@ -230,7 +242,7 @@ async function handleDeleteForm() {
               <p class="text-sm font-semibold text-body">フォーム名</p>
               <p class="text-xs text-muted-2">一覧と回答画面で表示する名称です。必須項目です。</p>
             </div>
-            <label class="grid gap-2 text-sm text-body">
+            <div class="grid gap-2 text-sm text-body">
               <span class="sr-only">フォーム名</span>
               <input
                 v-model="editForm.name"
@@ -238,8 +250,14 @@ async function handleDeleteForm() {
                 class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
                 name="name"
                 type="text"
+                :class="{ 'border-danger': getFieldError('name') && !isParticipationForm }"
+                @blur="markTouched('name')"
+                @input="markTouched('name')"
               />
-            </label>
+              <p v-if="getFieldError('name') && !isParticipationForm" class="text-xs text-danger">
+                {{ getFieldError('name') }}
+              </p>
+            </div>
           </div>
         </SettingsRow>
 
@@ -268,15 +286,35 @@ async function handleDeleteForm() {
               <p class="text-xs text-muted-2">受付開始日時と受付終了日時を指定します。</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm text-body">
+              <div class="grid gap-2 text-sm text-body">
                 <span>開始日時</span>
-                <input v-model="openAtInput" :disabled="isParticipationForm" name="openAt" type="datetime-local" />
-              </label>
+                <input
+                  v-model="openAtInput"
+                  :disabled="isParticipationForm"
+                  name="openAt"
+                  type="datetime-local"
+                  :class="{ 'border-danger': getFieldError('openAt') && !isParticipationForm }"
+                  @blur="markTouched('openAt')"
+                />
+                <p v-if="getFieldError('openAt') && !isParticipationForm" class="text-xs text-danger">
+                  {{ getFieldError('openAt') }}
+                </p>
+              </div>
 
-              <label class="grid gap-2 text-sm text-body">
+              <div class="grid gap-2 text-sm text-body">
                 <span>締切日時</span>
-                <input v-model="closeAtInput" :disabled="isParticipationForm" name="closeAt" type="datetime-local" />
-              </label>
+                <input
+                  v-model="closeAtInput"
+                  :disabled="isParticipationForm"
+                  name="closeAt"
+                  type="datetime-local"
+                  :class="{ 'border-danger': getFieldError('closeAt') && !isParticipationForm }"
+                  @blur="markTouched('closeAt')"
+                />
+                <p v-if="getFieldError('closeAt') && !isParticipationForm" class="text-xs text-danger">
+                  {{ getFieldError('closeAt') }}
+                </p>
+              </div>
             </div>
           </div>
         </SettingsRow>
@@ -303,7 +341,7 @@ async function handleDeleteForm() {
               <p class="text-xs text-muted-2">回答数上限と回答可能タグを設定します。</p>
             </div>
             <div class="grid gap-4">
-              <label class="grid gap-2 text-sm text-body">
+              <div class="grid gap-2 text-sm text-body">
                 <span>最大回答数</span>
                 <input
                   v-model.number="editForm.maxAnswers"
@@ -312,8 +350,14 @@ async function handleDeleteForm() {
                   min="1"
                   name="maxAnswers"
                   type="number"
+                  :class="{ 'border-danger': getFieldError('maxAnswers') && !isParticipationForm }"
+                  @blur="markTouched('maxAnswers')"
+                  @input="markTouched('maxAnswers')"
                 />
-              </label>
+                <p v-if="getFieldError('maxAnswers') && !isParticipationForm" class="text-xs text-danger">
+                  {{ getFieldError('maxAnswers') }}
+                </p>
+              </div>
               <label class="grid gap-2 text-sm text-body">
                 <span>回答可能タグ</span>
                 <StaffTagPicker

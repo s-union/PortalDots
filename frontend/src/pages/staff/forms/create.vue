@@ -23,6 +23,7 @@ import {
   extractStaffFormValidationMessage,
   useCreateStaffFormMutation
 } from '@/features/staff/forms/api'
+import { useFormValidation, staffFormSchema } from '@/lib/form-validation'
 
 const router = useRouter()
 const createFormMutation = useCreateStaffFormMutation()
@@ -31,10 +32,16 @@ const errorMessage = ref('')
 const tagsQuery = useStaffTagsQuery(true)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: staffFormSchema,
+  form
+})
+
 const openAtInput = computed({
   get: () => formatDateTimeLocalValue(form.value.openAt),
   set: (value: string) => {
     form.value.openAt = parseDateTimeLocalValue(value, form.value.openAt)
+    markTouched('openAt')
   }
 })
 
@@ -42,11 +49,16 @@ const closeAtInput = computed({
   get: () => formatDateTimeLocalValue(form.value.closeAt),
   set: (value: string) => {
     form.value.closeAt = parseDateTimeLocalValue(value, form.value.closeAt)
+    markTouched('closeAt')
   }
 })
 
 async function handleCreateForm() {
   errorMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
 
   try {
     const created = await createFormMutation.mutateAsync({
@@ -72,15 +84,23 @@ async function handleCreateForm() {
           <h1 class="text-2xl font-semibold text-body">フォームを新規作成</h1>
         </header>
 
-        <label class="grid gap-2 text-sm text-body">
+        <div class="grid gap-2 text-sm text-body">
           <span>
             フォーム名
             <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
           </span>
-          <input v-model="form.name" name="name" type="text" />
-        </label>
+          <input
+            v-model="form.name"
+            name="name"
+            type="text"
+            :class="{ 'border-danger': getFieldError('name') }"
+            @blur="markTouched('name')"
+            @input="markTouched('name')"
+          />
+          <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
+        </div>
 
-        <label class="grid gap-2 text-sm text-body">
+        <div class="grid gap-2 text-sm text-body">
           <span>
             企画毎に回答可能とする回答数
             <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
@@ -88,27 +108,50 @@ async function handleCreateForm() {
           <span class="text-xs text-muted">
             通常は「1」にします。1企画がこのフォームに対し複数の回答を作成できるようにするには、2以上の値を入力してください。
           </span>
-          <input v-model.number="form.maxAnswers" min="1" name="maxAnswers" type="number" />
-        </label>
+          <input
+            v-model.number="form.maxAnswers"
+            min="1"
+            name="maxAnswers"
+            type="number"
+            :class="{ 'border-danger': getFieldError('maxAnswers') }"
+            @blur="markTouched('maxAnswers')"
+            @input="markTouched('maxAnswers')"
+          />
+          <p v-if="getFieldError('maxAnswers')" class="text-xs text-danger">{{ getFieldError('maxAnswers') }}</p>
+        </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
+          <div class="grid gap-2 text-sm text-body">
             <span>
               受付開始日時
               <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
             </span>
             <span class="text-xs text-muted">フォームへの回答受付を開始する日時。</span>
-            <input v-model="openAtInput" name="openAt" type="datetime-local" />
-          </label>
+            <input
+              v-model="openAtInput"
+              name="openAt"
+              type="datetime-local"
+              :class="{ 'border-danger': getFieldError('openAt') }"
+              @blur="markTouched('openAt')"
+            />
+            <p v-if="getFieldError('openAt')" class="text-xs text-danger">{{ getFieldError('openAt') }}</p>
+          </div>
 
-          <label class="grid gap-2 text-sm text-body">
+          <div class="grid gap-2 text-sm text-body">
             <span>
               受付終了日時
               <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
             </span>
             <span class="text-xs text-muted">フォームへの回答受付を終了する日時。</span>
-            <input v-model="closeAtInput" name="closeAt" type="datetime-local" />
-          </label>
+            <input
+              v-model="closeAtInput"
+              name="closeAt"
+              type="datetime-local"
+              :class="{ 'border-danger': getFieldError('closeAt') }"
+              @blur="markTouched('closeAt')"
+            />
+            <p v-if="getFieldError('closeAt')" class="text-xs text-danger">{{ getFieldError('closeAt') }}</p>
+          </div>
         </div>
 
         <div class="grid gap-2 text-sm text-body">

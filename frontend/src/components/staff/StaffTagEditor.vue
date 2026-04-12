@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -12,6 +12,7 @@ import {
   useDeleteStaffTagMutation,
   useUpdateStaffTagMutation
 } from '@/features/staff/masters/tags'
+import { useFormValidation, staffTagFormSchema } from '@/lib/form-validation'
 
 const { tag } = defineProps<{
   tag: StaffTag | null
@@ -29,6 +30,11 @@ const name = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: staffTagFormSchema,
+  form: computed(() => ({ name: name.value }))
+})
+
 watch(
   () => tag,
   (value) => {
@@ -42,6 +48,10 @@ watch(
 async function handleSave() {
   errorMessage.value = ''
   successMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
 
   try {
     if (tag) {
@@ -94,10 +104,18 @@ async function handleDelete() {
     <form class="space-y-6" @submit.prevent="handleSave">
       <SettingsSection title="タグ設定">
         <SettingsRow>
-          <label class="grid gap-2 text-sm text-body">
+          <div class="grid gap-2 text-sm text-body">
             <span class="font-medium">タグ名</span>
-            <input v-model="name" name="name" type="text" />
-          </label>
+            <input
+              v-model="name"
+              name="name"
+              type="text"
+              :class="{ 'border-danger': getFieldError('name') }"
+              @blur="markTouched('name')"
+              @input="markTouched('name')"
+            />
+            <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
+          </div>
         </SettingsRow>
 
         <template #footer>

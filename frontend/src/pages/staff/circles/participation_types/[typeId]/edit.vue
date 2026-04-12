@@ -31,6 +31,7 @@ import {
   useUpdateStaffParticipationTypeMutation
 } from '@/features/staff/participation-types/api'
 import { buildStaffParticipationTypeTabs } from '@/features/ui/tabStrip'
+import { useFormValidation, staffParticipationTypeEditFormSchema } from '@/lib/form-validation'
 
 const route = useRoute('/staff/circles/participation_types/[typeId]/edit')
 const router = useRouter()
@@ -57,6 +58,11 @@ const form = ref({
 
 const errorMessage = ref('')
 const successMessage = ref('')
+
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: staffParticipationTypeEditFormSchema,
+  form
+})
 
 const participationTypeTabs = computed(() =>
   buildStaffParticipationTypeTabs(typeId.value, 'edit', detailQuery.data.value?.form)
@@ -87,6 +93,11 @@ watch(
 async function handleSave() {
   errorMessage.value = ''
   successMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
+
   try {
     await updateMutation.mutateAsync({
       ...form.value
@@ -152,10 +163,18 @@ async function handleDelete() {
                 一般ユーザーに表示する名称です。模擬店や展示など、参加区分を分かりやすく入力します。
               </p>
             </div>
-            <label class="grid gap-2 text-sm text-body">
+            <div class="grid gap-2 text-sm text-body">
               <span class="sr-only">参加種別名</span>
-              <input v-model="form.name" name="name" type="text" />
-            </label>
+              <input
+                v-model="form.name"
+                name="name"
+                type="text"
+                :class="{ 'border-danger': getFieldError('name') }"
+                @blur="markTouched('name')"
+                @input="markTouched('name')"
+              />
+              <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
+            </div>
           </div>
         </SettingsRow>
 
@@ -181,14 +200,36 @@ async function handleDelete() {
               </p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm text-body">
+              <div class="grid gap-2 text-sm text-body">
                 <span>最低人数</span>
-                <input v-model.number="form.usersCountMin" min="1" name="usersCountMin" type="number" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
+                <input
+                  v-model.number="form.usersCountMin"
+                  min="1"
+                  name="usersCountMin"
+                  type="number"
+                  :class="{ 'border-danger': getFieldError('usersCountMin') }"
+                  @blur="markTouched('usersCountMin')"
+                  @input="markTouched('usersCountMin')"
+                />
+                <p v-if="getFieldError('usersCountMin')" class="text-xs text-danger">
+                  {{ getFieldError('usersCountMin') }}
+                </p>
+              </div>
+              <div class="grid gap-2 text-sm text-body">
                 <span>最大人数</span>
-                <input v-model.number="form.usersCountMax" min="1" name="usersCountMax" type="number" />
-              </label>
+                <input
+                  v-model.number="form.usersCountMax"
+                  min="1"
+                  name="usersCountMax"
+                  type="number"
+                  :class="{ 'border-danger': getFieldError('usersCountMax') }"
+                  @blur="markTouched('usersCountMax')"
+                  @input="markTouched('usersCountMax')"
+                />
+                <p v-if="getFieldError('usersCountMax')" class="text-xs text-danger">
+                  {{ getFieldError('usersCountMax') }}
+                </p>
+              </div>
             </div>
           </div>
         </SettingsRow>

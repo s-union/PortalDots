@@ -34,12 +34,14 @@ const {
   errorMessage,
   form,
   formQuery,
+  getAnswerFieldError,
   handleFileChange,
   hasReachedAnswerLimit,
   isCircleApproved,
   isFormWritable,
   isLimitedPublic,
   isSavingAnswer,
+  markAnswerTouched,
   resolveUploadDownloadHref,
   saveAnswer,
   selectAnswer,
@@ -218,19 +220,24 @@ const remainingAnswerCount = computed(() => {
                       </p>
                     </div>
 
-                    <AnswerQuestionFields
-                      :answer="selectedAnswer"
-                      :draft="draft"
-                      :question="question"
-                      :disabled="!isFormWritable"
-                      upload-button-label="ファイルを追加"
-                      :upload-pending="uploadMutation.isPending.value"
-                      :upload-error-message="uploadErrorMessages[question.id]"
-                      :download-label="selectedAnswerId ? 'ダウンロード' : '表示'"
-                      :download-href="(currentQuestion) => resolveUploadDownloadHref(currentQuestion.id)"
-                      @upload="uploadFile"
-                      @file-change="handleFileChange"
-                    />
+                    <div @focusout.capture="markAnswerTouched(question.id)">
+                      <AnswerQuestionFields
+                        :answer="selectedAnswer"
+                        :draft="draft"
+                        :question="question"
+                        :disabled="!isFormWritable"
+                        upload-button-label="ファイルを追加"
+                        :upload-pending="uploadMutation.isPending.value"
+                        :upload-error-message="uploadErrorMessages[question.id]"
+                        :download-label="selectedAnswerId ? 'ダウンロード' : '表示'"
+                        :download-href="(currentQuestion) => resolveUploadDownloadHref(currentQuestion.id)"
+                        @upload="uploadFile"
+                        @file-change="handleFileChange"
+                      />
+                    </div>
+                    <p v-if="getAnswerFieldError(question.id)" class="text-xs text-danger">
+                      {{ getAnswerFieldError(question.id) }}
+                    </p>
                   </div>
                 </div>
               </template>

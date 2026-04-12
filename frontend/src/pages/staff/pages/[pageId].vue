@@ -29,6 +29,7 @@ import {
 } from '@/features/staff/pages/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
+import { useFormValidation, staffPageFormSchema } from '@/lib/form-validation'
 
 const route = useRoute('/staff/pages/[pageId]')
 const router = useRouter()
@@ -45,6 +46,11 @@ const patchPinMutation = usePatchStaffPagePinMutation(pageId)
 const form = useStaffPageForm()
 const errorMessage = ref('')
 const successMessage = ref('')
+
+const { fieldErrors, validateAll, markTouched } = useFormValidation({
+  schema: staffPageFormSchema,
+  form: computed(() => ({ title: form.value.title, body: form.value.body }))
+})
 
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
@@ -73,6 +79,10 @@ watch(
 async function handleSavePage() {
   errorMessage.value = ''
   successMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
 
   try {
     await updatePageMutation.mutateAsync({
@@ -158,6 +168,8 @@ async function handleDeletePage() {
             :success-message="successMessage"
             submit-label="保存"
             :submitting="updatePageMutation.isPending.value"
+            :field-errors="fieldErrors"
+            :on-blur-field="markTouched"
           />
         </div>
       </SurfaceCard>

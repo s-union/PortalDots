@@ -414,6 +414,13 @@ describe('FormDetailPage', () => {
     })
     await flushPromises()
 
+    // Fill in a value so client-side validation passes; the mock API returns 422 regardless
+    const inputs = wrapper.findAll('input[type="text"]').filter((input) => !input.element.hasAttribute('readonly'))
+    const textInput = inputs[0]
+    if (textInput) {
+      await textInput.setValue('some value')
+    }
+
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 

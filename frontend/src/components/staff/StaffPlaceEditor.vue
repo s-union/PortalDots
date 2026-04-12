@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -12,6 +12,7 @@ import {
   useDeleteStaffPlaceMutation,
   useUpdateStaffPlaceMutation
 } from '@/features/staff/masters/places'
+import { useFormValidation, staffPlaceFormSchema } from '@/lib/form-validation'
 
 const { place } = defineProps<{
   place: StaffPlace | null
@@ -31,6 +32,11 @@ const notes = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: staffPlaceFormSchema,
+  form: computed(() => ({ name: name.value, type: type.value }))
+})
+
 watch(
   () => place,
   (value) => {
@@ -46,6 +52,10 @@ watch(
 async function handleSave() {
   errorMessage.value = ''
   successMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
 
   try {
     if (place) {
@@ -107,19 +117,34 @@ async function handleDelete() {
       <SettingsSection title="場所設定">
         <SettingsRow>
           <div class="grid gap-4">
-            <label class="grid gap-2 text-sm text-body">
+            <div class="grid gap-2 text-sm text-body">
               <span class="font-medium">場所名</span>
-              <input v-model="name" name="name" type="text" />
-            </label>
+              <input
+                v-model="name"
+                name="name"
+                type="text"
+                :class="{ 'border-danger': getFieldError('name') }"
+                @blur="markTouched('name')"
+                @input="markTouched('name')"
+              />
+              <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
+            </div>
 
-            <label class="grid gap-2 text-sm text-body">
+            <div class="grid gap-2 text-sm text-body">
               <span class="font-medium">タイプ</span>
-              <select v-model.number="type" name="type">
+              <select
+                v-model.number="type"
+                name="type"
+                :class="{ 'border-danger': getFieldError('type') }"
+                @blur="markTouched('type')"
+                @change="markTouched('type')"
+              >
                 <option :value="1">屋内</option>
                 <option :value="2">屋外</option>
                 <option :value="3">特殊場所</option>
               </select>
-            </label>
+              <p v-if="getFieldError('type')" class="text-xs text-danger">{{ getFieldError('type') }}</p>
+            </div>
 
             <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">スタッフ用メモ</span>

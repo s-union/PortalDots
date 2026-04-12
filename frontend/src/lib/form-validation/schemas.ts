@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { FormQuestion } from '@/features/forms/api'
 
 /**
  * Password validation schema
@@ -171,3 +172,137 @@ export const circleRegistrationFormSchema = z.object({
 })
 
 export type CircleRegistrationFormData = z.infer<typeof circleRegistrationFormSchema>
+
+/**
+ * Staff form (application form) schema
+ */
+export const staffFormSchema = z
+  .object({
+    name: requiredTextSchema('フォーム名'),
+    maxAnswers: z.number().int().min(1, '1以上の値を入力してください'),
+    openAt: z.string().min(1, '受付開始日時を入力してください'),
+    closeAt: z.string().min(1, '受付終了日時を入力してください')
+  })
+  .refine((data) => !data.openAt || !data.closeAt || data.closeAt > data.openAt, {
+    message: '受付終了日時は受付開始日時より後にしてください',
+    path: ['closeAt']
+  })
+
+export type StaffFormData = z.infer<typeof staffFormSchema>
+
+/**
+ * Staff participation type create form schema (includes dates)
+ */
+export const staffParticipationTypeFormSchema = z
+  .object({
+    name: requiredTextSchema('参加種別名'),
+    usersCountMin: z.number().int().min(1, '1以上の値を入力してください'),
+    usersCountMax: z.number().int().min(1, '1以上の値を入力してください'),
+    openAt: z.string().min(1, '受付開始日時を入力してください'),
+    closeAt: z.string().min(1, '受付終了日時を入力してください')
+  })
+  .refine((data) => data.usersCountMax >= data.usersCountMin, {
+    message: '最大人数は最低人数以上にしてください',
+    path: ['usersCountMax']
+  })
+  .refine((data) => !data.openAt || !data.closeAt || data.closeAt > data.openAt, {
+    message: '受付終了日時は受付開始日時より後にしてください',
+    path: ['closeAt']
+  })
+
+export type StaffParticipationTypeFormData = z.infer<typeof staffParticipationTypeFormSchema>
+
+/**
+ * Staff participation type edit form schema (name + member count only)
+ */
+export const staffParticipationTypeEditFormSchema = z
+  .object({
+    name: requiredTextSchema('参加種別名'),
+    usersCountMin: z.number().int().min(1, '1以上の値を入力してください'),
+    usersCountMax: z.number().int().min(1, '1以上の値を入力してください')
+  })
+  .refine((data) => data.usersCountMax >= data.usersCountMin, {
+    message: '最大人数は最低人数以上にしてください',
+    path: ['usersCountMax']
+  })
+
+export type StaffParticipationTypeEditFormData = z.infer<typeof staffParticipationTypeEditFormSchema>
+
+/**
+ * Staff page (notice) form schema
+ */
+export const staffPageFormSchema = z.object({
+  title: requiredTextSchema('タイトル'),
+  body: requiredTextSchema('本文')
+})
+
+export type StaffPageFormData = z.infer<typeof staffPageFormSchema>
+
+/**
+ * Staff tag form schema
+ */
+export const staffTagFormSchema = z.object({
+  name: requiredTextSchema('タグ名')
+})
+
+export type StaffTagFormData = z.infer<typeof staffTagFormSchema>
+
+/**
+ * Staff place form schema
+ */
+export const staffPlaceFormSchema = z.object({
+  name: requiredTextSchema('場所名'),
+  type: z.number().refine((v) => [1, 2, 3].includes(v), { message: 'タイプを選択してください' })
+})
+
+export type StaffPlaceFormData = z.infer<typeof staffPlaceFormSchema>
+
+/**
+ * Build a dynamic Zod schema for FormAnswerDraft based on the loaded questions.
+ * heading/upload type questions are excluded from validation.
+ */
+export function buildFormAnswerSchema(questions: FormQuestion[]) {
+  const shape: Record<string, z.ZodTypeAny> = {}
+
+  for (const question of questions) {
+    if (question.type === 'heading' || question.type === 'upload') {
+      continue
+    }
+
+    let fieldSchema: z.ZodTypeAny = z.unknown()
+
+    if (question.type === 'number') {
+      fieldSchema = z.string().superRefine((val, ctx) => {
+        if (val === '' && !question.isRequired) {
+          return
+        }
+        if (val === '') {
+          ctx.addIssue({ code: 'custom', message: `${question.name}を入力してください` })
+          return
+        }
+        const num = Number(val)
+        if (isNaN(num)) {
+          ctx.addIssue({ code: 'custom', message: '数値を入力してください' })
+          return
+        }
+        if (question.numberMin !== null && num < question.numberMin) {
+          ctx.addIssue({ code: 'custom', message: `${question.numberMin}以上の値を入力してください` })
+        }
+        if (question.numberMax !== null && num > question.numberMax) {
+          ctx.addIssue({ code: 'custom', message: `${question.numberMax}以下の値を入力してください` })
+        }
+      })
+    } else if (question.type === 'checkbox') {
+      const base = z.array(z.string())
+      fieldSchema = question.isRequired ? base.min(1, `${question.name}を選択してください`) : base
+    } else {
+      // Text, textarea, select, radio
+      fieldSchema = question.isRequired ? z.string().min(1, `${question.name}を入力してください`) : z.string()
+    }
+
+    shape[question.id] = fieldSchema
+  }
+
+  // Passthrough: allow 'legacy-body' and upload keys not in the schema
+  return z.object(shape).passthrough()
+}

@@ -27,6 +27,7 @@ import {
   useStaffParticipationTypesQuery
 } from '@/features/staff/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
+import { useFormValidation, staffParticipationTypeFormSchema } from '@/lib/form-validation'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -39,12 +40,18 @@ const form = useStaffParticipationTypeForm()
 const errorMessage = ref('')
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: staffParticipationTypeFormSchema,
+  form
+})
+
 function handleOpenAtInput(event: Event) {
   const target = event.target
   if (!(target instanceof HTMLInputElement)) {
     return
   }
   form.value.openAt = parseDateTimeLocalValue(target.value)
+  markTouched('openAt')
 }
 
 function handleCloseAtInput(event: Event) {
@@ -53,10 +60,16 @@ function handleCloseAtInput(event: Event) {
     return
   }
   form.value.closeAt = parseDateTimeLocalValue(target.value)
+  markTouched('closeAt')
 }
 
 async function handleCreate() {
   errorMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
+
   try {
     await createMutation.mutateAsync({
       ...form.value,
@@ -105,47 +118,83 @@ async function handleCreate() {
     <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreate">
       <h3 class="text-lg font-semibold text-body">参加種別を新規作成</h3>
       <div class="mt-4 grid gap-4">
-        <label class="grid gap-2 text-sm text-body">
+        <div class="grid gap-2 text-sm text-body">
           <span>参加種別名</span>
-          <input v-model="form.name" name="name" type="text" />
-        </label>
+          <input
+            v-model="form.name"
+            name="name"
+            type="text"
+            :class="{ 'border-danger': getFieldError('name') }"
+            @blur="markTouched('name')"
+            @input="markTouched('name')"
+          />
+          <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
+        </div>
         <label class="grid gap-2 text-sm text-body">
           <span>説明</span>
           <textarea v-model="form.description" class="min-h-24" name="description" />
         </label>
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
+          <div class="grid gap-2 text-sm text-body">
             <span>最低人数</span>
-            <input v-model.number="form.usersCountMin" min="1" name="usersCountMin" type="number" />
-          </label>
-          <label class="grid gap-2 text-sm text-body">
+            <input
+              v-model.number="form.usersCountMin"
+              min="1"
+              name="usersCountMin"
+              type="number"
+              :class="{ 'border-danger': getFieldError('usersCountMin') }"
+              @blur="markTouched('usersCountMin')"
+              @input="markTouched('usersCountMin')"
+            />
+            <p v-if="getFieldError('usersCountMin')" class="text-xs text-danger">
+              {{ getFieldError('usersCountMin') }}
+            </p>
+          </div>
+          <div class="grid gap-2 text-sm text-body">
             <span>最大人数</span>
-            <input v-model.number="form.usersCountMax" min="1" name="usersCountMax" type="number" />
-          </label>
+            <input
+              v-model.number="form.usersCountMax"
+              min="1"
+              name="usersCountMax"
+              type="number"
+              :class="{ 'border-danger': getFieldError('usersCountMax') }"
+              @blur="markTouched('usersCountMax')"
+              @input="markTouched('usersCountMax')"
+            />
+            <p v-if="getFieldError('usersCountMax')" class="text-xs text-danger">
+              {{ getFieldError('usersCountMax') }}
+            </p>
+          </div>
         </div>
         <label class="grid gap-2 text-sm text-body">
           <span>付与タグ</span>
           <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
         </label>
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
+          <div class="grid gap-2 text-sm text-body">
             <span>受付開始日時</span>
             <input
               :value="formatDateTimeLocalValue(form.openAt)"
               name="openAt"
               type="datetime-local"
+              :class="{ 'border-danger': getFieldError('openAt') }"
               @input="handleOpenAtInput"
+              @blur="markTouched('openAt')"
             />
-          </label>
-          <label class="grid gap-2 text-sm text-body">
+            <p v-if="getFieldError('openAt')" class="text-xs text-danger">{{ getFieldError('openAt') }}</p>
+          </div>
+          <div class="grid gap-2 text-sm text-body">
             <span>受付終了日時</span>
             <input
               :value="formatDateTimeLocalValue(form.closeAt)"
               name="closeAt"
               type="datetime-local"
+              :class="{ 'border-danger': getFieldError('closeAt') }"
               @input="handleCloseAtInput"
+              @blur="markTouched('closeAt')"
             />
-          </label>
+            <p v-if="getFieldError('closeAt')" class="text-xs text-danger">{{ getFieldError('closeAt') }}</p>
+          </div>
         </div>
         <label class="grid gap-2 text-sm text-body">
           <span>参加登録前に表示する内容</span>

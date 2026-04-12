@@ -154,6 +154,10 @@ describe('StaffParticipationTypesIndexPage', () => {
     await wrapper.get('textarea[name="description"]').setValue('ステージ企画向けの参加種別です。')
     await wrapper.get('input[name="usersCountMin"]').setValue('2')
     await wrapper.get('input[name="usersCountMax"]').setValue('8')
+    await wrapper.get('input[name="openAt"]').setValue('2026-04-01T10:00')
+    await wrapper.get('input[name="openAt"]').trigger('input')
+    await wrapper.get('input[name="closeAt"]').setValue('2026-04-30T17:00')
+    await wrapper.get('input[name="closeAt"]').trigger('input')
     await wrapper.get('input[name="tags"]').setValue('ステ')
     const stageTagButton = wrapper.findAll('button').find((button) => button.text() === 'ステージ')
     if (!stageTagButton) {
