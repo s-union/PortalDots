@@ -20,6 +20,12 @@ type SetupConfig struct {
 func Setup(e *echo.Echo, cfg SetupConfig) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
+	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+		XSSProtection:      "1; mode=block",
+		ContentTypeNosniff: "nosniff",
+		XFrameOptions:      "DENY",
+		HSTSMaxAge:         31536000,
+	}))
 	e.Use(TransformExternalIDs())
 	if len(cfg.AllowedOrigins) > 0 {
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{

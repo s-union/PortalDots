@@ -100,12 +100,22 @@ func (s *SMTPSender) SendVerificationMail(message Message) (DeliveryResult, erro
 	return DeliveryResult{DeliveryMode: "email"}, nil
 }
 
+// sanitizeHeaderValue removes CR and LF characters to prevent header injection.
+func sanitizeHeaderValue(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\r' || r == '\n' {
+			return -1
+		}
+		return r
+	}, s)
+}
+
 func buildVerificationMailBody(from string, message Message) string {
 	subject := fmt.Sprintf("%s ユーザー登録の確認", strings.TrimSpace(message.AppName))
 	encodedSubject := mime.BEncoding.Encode("UTF-8", subject)
 	lines := []string{
 		fmt.Sprintf("From: %s", strings.TrimSpace(from)),
-		fmt.Sprintf("To: %s", message.To),
+		fmt.Sprintf("To: %s", sanitizeHeaderValue(message.To)),
 		fmt.Sprintf("Subject: %s", encodedSubject),
 		"MIME-Version: 1.0",
 		"Content-Type: text/plain; charset=UTF-8",
