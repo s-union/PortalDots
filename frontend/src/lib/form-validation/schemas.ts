@@ -269,36 +269,37 @@ export function buildFormAnswerSchema(questions: FormQuestion[]) {
       continue
     }
 
-    let fieldSchema: z.ZodTypeAny = z.unknown()
-
-    if (question.type === 'number') {
-      fieldSchema = z.string().superRefine((val, ctx) => {
-        if (val === '' && !question.isRequired) {
-          return
-        }
-        if (val === '') {
-          ctx.addIssue({ code: 'custom', message: `${question.name}を入力してください` })
-          return
-        }
-        const num = Number(val)
-        if (isNaN(num)) {
-          ctx.addIssue({ code: 'custom', message: '数値を入力してください' })
-          return
-        }
-        if (question.numberMin !== null && num < question.numberMin) {
-          ctx.addIssue({ code: 'custom', message: `${question.numberMin}以上の値を入力してください` })
-        }
-        if (question.numberMax !== null && num > question.numberMax) {
-          ctx.addIssue({ code: 'custom', message: `${question.numberMax}以下の値を入力してください` })
-        }
-      })
-    } else if (question.type === 'checkbox') {
-      const base = z.array(z.string())
-      fieldSchema = question.isRequired ? base.min(1, `${question.name}を選択してください`) : base
-    } else {
-      // Text, textarea, select, radio
-      fieldSchema = question.isRequired ? z.string().min(1, `${question.name}を入力してください`) : z.string()
-    }
+    const fieldSchema: z.ZodTypeAny =
+      question.type === 'number'
+        ? z.string().superRefine((val, ctx) => {
+            if (val === '' && !question.isRequired) {
+              return
+            }
+            if (val === '') {
+              ctx.addIssue({ code: 'custom', message: `${question.name}を入力してください` })
+              return
+            }
+            const num = Number(val)
+            if (isNaN(num)) {
+              ctx.addIssue({ code: 'custom', message: '数値を入力してください' })
+              return
+            }
+            if (question.numberMin !== null && num < question.numberMin) {
+              ctx.addIssue({ code: 'custom', message: `${question.numberMin}以上の値を入力してください` })
+            }
+            if (question.numberMax !== null && num > question.numberMax) {
+              ctx.addIssue({ code: 'custom', message: `${question.numberMax}以下の値を入力してください` })
+            }
+          })
+        : question.type === 'checkbox'
+          ? (() => {
+              const base = z.array(z.string())
+              return question.isRequired ? base.min(1, `${question.name}を選択してください`) : base
+            })()
+          : // Text, textarea, select, radio
+            question.isRequired
+            ? z.string().min(1, `${question.name}を入力してください`)
+            : z.string()
 
     shape[question.id] = fieldSchema
   }
