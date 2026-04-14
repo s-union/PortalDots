@@ -8,7 +8,7 @@ prek = "latest"
 
 [tasks.frontend-install]
 description = "Install dependencies for the new frontend workspace"
-run = "pnpm install"
+run = "ni"
 
 [tasks.dev]
 description = "Reset local db, then start backend and frontend dev servers"
@@ -21,16 +21,31 @@ run = "pnpm run dev -- --host 127.0.0.1"
 
 [tasks.frontend-check]
 description = "Run frontend static checks"
-run = "pnpm run ci:check"
+run = "nr ci:check"
 
 [tasks.frontend-format]
 description = "Run frontend formatter"
-run = "pnpm run format"
+run = "nr format"
 
 [tasks.frontend-generate]
 description = "Run openapi-typescript"
 dir = "packages/api-client"
-run = "pnpm run codegen:api"
+run = "nr codegen:api"
+
+[tasks.email-templates-dev]
+description = "Start the React Email preview server"
+dir = "packages/email-templates"
+run = "nr dev"
+
+[tasks.email-templates-generate]
+description = "Generate Go email templates from React Email sources"
+dir = "packages/email-templates"
+run = "nr generate"
+
+[tasks.email-templates-check]
+description = "Run static checks for the React Email workspace"
+dir = "packages/email-templates"
+run = "nr typecheck:tsc"
 
 [tasks.backend-dev]
 description = "Start the new Go API"
@@ -67,7 +82,7 @@ run = "go test ./..."
 [tasks.backend-cover]
 description = "Run Go tests with coverage for backend"
 dir = "backend"
-run = "GOCACHE=/tmp/portaldots-go-cache go test -coverprofile=/tmp/portaldots-backend-cover.out ./..."
+run = "mkdir -p ../generated/go && go test -coverprofile=../generated/go/backend-cover.out ./..."
 
 [tasks.backend-check]
 description = "Run staticcheck for Go backend"
@@ -89,8 +104,16 @@ description = "Run the sqlc smoke command against PORTALDOTS_DATABASE_URL"
 dir = "backend"
 run = "go run ./cmd/sqlc-smoke"
 
+[tasks.generate]
+description = "Run code generation for frontend, email templates, and backend"
+depends = ["frontend-generate", "email-templates-generate", "backend-sqlc-generate"]
+
 [tasks.check]
-depends = ["frontend-check", "backend-check"]
+depends = ["generate", "frontend-check", "email-templates-check", "backend-check"]
+
+[tasks.prepare]
+description = "Install dependencies and regenerate assets needed before startup"
+depends = ["frontend-install", "generate"]
 
 [tasks.format]
 depends = ["frontend-format", "backend-format"]

@@ -3,9 +3,10 @@ package registrationmail
 import (
 	"crypto/tls"
 	"fmt"
-	"mime"
 	"net/smtp"
 	"strings"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/mailrender"
 )
 
 type DeliveryResult struct {
@@ -38,15 +39,22 @@ func (s *MockSender) SendVerificationMail(message Message) (DeliveryResult, erro
 
 type SMTPSender struct {
 	addr     string
+	branding mailrender.Branding
 	from     string
 	host     string
 	username string
 	password string
 }
 
-func NewSMTPSender(host string, port int, username, password, from string) *SMTPSender {
+func NewSMTPSender(
+	host string,
+	port int,
+	username, password, from string,
+	branding mailrender.Branding,
+) *SMTPSender {
 	return &SMTPSender{
 		addr:     fmt.Sprintf("%s:%d", strings.TrimSpace(host), port),
+		branding: branding,
 		from:     strings.TrimSpace(from),
 		host:     strings.TrimSpace(host),
 		username: strings.TrimSpace(username),
@@ -75,7 +83,17 @@ func (s *SMTPSender) SendVerificationMail(message Message) (DeliveryResult, erro
 		return DeliveryResult{}, err
 	}
 
-	body := buildVerificationMailBody(s.from, message)
+	resolvedBranding := s.branding
+	if strings.TrimSpace(message.AppName) != "" {
+		resolvedBranding.AppName = strings.TrimSpace(message.AppName)
+	}
+
+	subject := fmt.Sprintf("%s ユーザー登録の確認", strings.TrimSpace(resolvedBranding.AppName))
+	rendered, err := mailrender.RenderRegistrationVerify(resolvedBranding, subject, message.VerifyURL)
+	if err != nil {
+		return DeliveryResult{}, err
+	}
+	body := mailrender.BuildMultipartAlternativeMessage(s.from, message.To, rendered)
 	if err := client.Mail(s.from); err != nil {
 		return DeliveryResult{}, err
 	}
@@ -98,34 +116,4 @@ func (s *SMTPSender) SendVerificationMail(message Message) (DeliveryResult, erro
 	}
 
 	return DeliveryResult{DeliveryMode: "email"}, nil
-}
-
-// sanitizeHeaderValue removes CR and LF characters to prevent header injection.
-func sanitizeHeaderValue(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r == '\r' || r == '\n' {
-			return -1
-		}
-		return r
-	}, s)
-}
-
-func buildVerificationMailBody(from string, message Message) string {
-	subject := fmt.Sprintf("%s ユーザー登録の確認", strings.TrimSpace(message.AppName))
-	encodedSubject := mime.BEncoding.Encode("UTF-8", subject)
-	lines := []string{
-		fmt.Sprintf("From: %s", strings.TrimSpace(from)),
-		fmt.Sprintf("To: %s", sanitizeHeaderValue(message.To)),
-		fmt.Sprintf("Subject: %s", encodedSubject),
-		"MIME-Version: 1.0",
-		"Content-Type: text/plain; charset=UTF-8",
-		"",
-		fmt.Sprintf("%s のユーザー登録を続けるには、以下のURLを開いてください。", strings.TrimSpace(message.AppName)),
-		"",
-		message.VerifyURL,
-		"",
-		"このURLに覚えがない場合は、このメールを破棄してください。",
-	}
-
-	return strings.Join(lines, "\r\n")
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/app/worker"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/platform/database"
+	"github.com/s-union/PortalDots/backend/internal/shared/mailrender"
 )
 
 func main() {
@@ -64,5 +65,17 @@ func buildMailSender(cfg config.Config) (worker.MailSender, error) {
 		)
 	}
 
-	return worker.NewSMTPMailSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPFrom), nil
+	return worker.NewSMTPMailSender(
+		cfg.SMTPHost,
+		cfg.SMTPPort,
+		cfg.SMTPUsername,
+		cfg.SMTPPassword,
+		cfg.SMTPFrom,
+		mailrender.Branding{
+			AppName:      cfg.AppName,
+			AppURL:       cfg.AppURL,
+			AdminName:    cfg.PortalAdminName,
+			ContactEmail: cfg.PortalContactEmail,
+		},
+	), nil
 }

@@ -51,6 +51,8 @@ pnpm-debug.log
 
 # Generated files (do not edit manually)
 /packages/api-client/src/generated/
+/backend/internal/shared/mailrender/generated/
+/generated/
 /backend/internal/platform/postgres/db/
 /frontend/typed-router.d.ts
 *.tsbuildinfo

@@ -6,6 +6,8 @@ import (
 	"net/smtp"
 	"strings"
 	"testing"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/mailrender"
 )
 
 type smtpClientStub struct {
@@ -84,7 +86,7 @@ func TestSMTPMailSenderRequiresStartTLSWhenAuthIsEnabled(t *testing.T) {
 	t.Parallel()
 
 	client := &smtpClientStub{supportsStartTLS: false}
-	sender := NewSMTPMailSender("smtp.example.com", 587, "staff@example.com", "password", "noreply@example.com")
+	sender := NewSMTPMailSender("smtp.example.com", 587, "staff@example.com", "password", "noreply@example.com", mailrender.Branding{})
 	sender.dial = func(addr string) (smtpClient, error) {
 		if addr != "smtp.example.com:587" {
 			t.Fatalf("unexpected smtp address: %s", addr)
@@ -108,7 +110,7 @@ func TestSMTPMailSenderRequiresStartTLSWithoutAuth(t *testing.T) {
 	t.Parallel()
 
 	client := &smtpClientStub{supportsStartTLS: false}
-	sender := NewSMTPMailSender("smtp.example.com", 587, "", "", "noreply@example.com")
+	sender := NewSMTPMailSender("smtp.example.com", 587, "", "", "noreply@example.com", mailrender.Branding{})
 	sender.dial = func(addr string) (smtpClient, error) {
 		if addr != "smtp.example.com:587" {
 			t.Fatalf("unexpected smtp address: %s", addr)
@@ -132,7 +134,12 @@ func TestSMTPMailSenderUsesStartTLSBeforeAuth(t *testing.T) {
 	t.Parallel()
 
 	client := &smtpClientStub{supportsStartTLS: true}
-	sender := NewSMTPMailSender("smtp.example.com", 587, "staff@example.com", "password", "")
+	sender := NewSMTPMailSender("smtp.example.com", 587, "staff@example.com", "password", "", mailrender.Branding{
+		AppName:      "PortalDots",
+		AppURL:       "https://portal.example.com",
+		AdminName:    "PortalDots 実行委員会",
+		ContactEmail: "contact@example.com",
+	})
 	sender.dial = func(addr string) (smtpClient, error) {
 		if addr != "smtp.example.com:587" {
 			t.Fatalf("unexpected smtp address: %s", addr)
@@ -157,6 +164,12 @@ func TestSMTPMailSenderUsesStartTLSBeforeAuth(t *testing.T) {
 	}
 	if client.writtenMessage == "" {
 		t.Fatal("expected message body to be written")
+	}
+	if !strings.Contains(client.writtenMessage, "Content-Type: multipart/alternative") {
+		t.Fatalf("expected multipart message, got %q", client.writtenMessage)
+	}
+	if !strings.Contains(client.writtenMessage, "Content-Type: text/html; charset=UTF-8") {
+		t.Fatalf("expected html part, got %q", client.writtenMessage)
 	}
 	if !client.quitCalled {
 		t.Fatal("expected SMTP QUIT to be called")

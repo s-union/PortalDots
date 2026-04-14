@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"mime"
 	"net/smtp"
 	"strings"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/mailrender"
 )
 
 type LogMailSender struct{}
@@ -46,6 +47,7 @@ func defaultSMTPDial(addr string) (smtpClient, error) {
 
 type SMTPMailSender struct {
 	addr     string
+	branding mailrender.Branding
 	from     string
 	host     string
 	username string
@@ -53,9 +55,15 @@ type SMTPMailSender struct {
 	dial     smtpDialFunc
 }
 
-func NewSMTPMailSender(host string, port int, username, password, from string) *SMTPMailSender {
+func NewSMTPMailSender(
+	host string,
+	port int,
+	username, password, from string,
+	branding mailrender.Branding,
+) *SMTPMailSender {
 	return &SMTPMailSender{
 		addr:     fmt.Sprintf("%s:%d", strings.TrimSpace(host), port),
+		branding: branding,
 		from:     strings.TrimSpace(from),
 		host:     strings.TrimSpace(host),
 		username: strings.TrimSpace(username),
@@ -123,7 +131,11 @@ func (s *SMTPMailSender) Send(recipient, subject, body string) error {
 	if err != nil {
 		return err
 	}
-	message := buildPlainMailMessage(from, trimmedRecipient, subject, body)
+	rendered, err := mailrender.RenderMarkdownNotice(s.branding, subject, body)
+	if err != nil {
+		return err
+	}
+	message := mailrender.BuildMultipartAlternativeMessage(from, trimmedRecipient, rendered)
 	if _, err := writer.Write([]byte(message)); err != nil {
 		_ = writer.Close()
 		return err
@@ -136,29 +148,4 @@ func (s *SMTPMailSender) Send(recipient, subject, body string) error {
 	}
 
 	return nil
-}
-
-func buildPlainMailMessage(from, recipient, subject, body string) string {
-	safeFrom := sanitizeMailHeaderValue(from)
-	safeRecipient := sanitizeMailHeaderValue(recipient)
-	safeSubject := sanitizeMailHeaderValue(subject)
-	encodedSubject := mime.BEncoding.Encode("UTF-8", safeSubject)
-	lines := []string{
-		fmt.Sprintf("From: %s", safeFrom),
-		fmt.Sprintf("To: %s", safeRecipient),
-		fmt.Sprintf("Subject: %s", encodedSubject),
-		"MIME-Version: 1.0",
-		"Content-Type: text/plain; charset=UTF-8",
-		"",
-		body,
-	}
-
-	return strings.Join(lines, "\r\n")
-}
-
-func sanitizeMailHeaderValue(value string) string {
-	trimmed := strings.TrimSpace(value)
-	trimmed = strings.ReplaceAll(trimmed, "\r", " ")
-	trimmed = strings.ReplaceAll(trimmed, "\n", " ")
-	return strings.TrimSpace(trimmed)
 }
