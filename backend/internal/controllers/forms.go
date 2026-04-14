@@ -194,6 +194,8 @@ func (h *workspaceHandlers) buildWorkspaceFormDetailResponse(
 	currentCircle circle.Circle,
 	questions []staffFormQuestion,
 ) formDetailResponse {
+	_, answered := h.answers.Get(formValue.ID, currentCircleID)
+
 	return formDetailResponse{
 		ID:                  formValue.ID,
 		Name:                formValue.Name,
@@ -204,7 +206,7 @@ func (h *workspaceHandlers) buildWorkspaceFormDetailResponse(
 		IsOpen:              formValue.IsOpen,
 		CurrentCircleStatus: currentCircle.Status,
 		MaxAnswers:          formValue.MaxAnswers,
-		HasAnswer:           len(h.answers.ListByFormAndCircle(formValue.ID, currentCircleID)) > 0,
+		HasAnswer:           answered,
 		AnswerableTags:      slices.Clone(formValue.AnswerableTags),
 		ConfirmationMessage: formValue.ConfirmationMessage,
 		Questions:           questions,

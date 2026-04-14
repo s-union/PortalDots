@@ -104,6 +104,30 @@ func TestSMTPMailSenderRequiresStartTLSWhenAuthIsEnabled(t *testing.T) {
 	}
 }
 
+func TestSMTPMailSenderRequiresStartTLSWithoutAuth(t *testing.T) {
+	t.Parallel()
+
+	client := &smtpClientStub{supportsStartTLS: false}
+	sender := NewSMTPMailSender("smtp.example.com", 587, "", "", "noreply@example.com")
+	sender.dial = func(addr string) (smtpClient, error) {
+		if addr != "smtp.example.com:587" {
+			t.Fatalf("unexpected smtp address: %s", addr)
+		}
+		return client, nil
+	}
+
+	err := sender.Send("user@example.com", "subject", "body")
+	if err == nil {
+		t.Fatal("expected error when STARTTLS is unavailable")
+	}
+	if !strings.Contains(err.Error(), "STARTTLS") {
+		t.Fatalf("expected STARTTLS error, got %v", err)
+	}
+	if client.authCalled {
+		t.Fatal("did not expect SMTP AUTH without credentials")
+	}
+}
+
 func TestSMTPMailSenderUsesStartTLSBeforeAuth(t *testing.T) {
 	t.Parallel()
 

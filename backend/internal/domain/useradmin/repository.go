@@ -590,7 +590,7 @@ func intersects(values []string, targets []string) bool {
 func hasLoginIDConflict(existing []string, candidates []string) bool {
 	for _, candidate := range candidates {
 		for _, current := range existing {
-			if candidate == current {
+			if normalizeLoginID(candidate) == normalizeLoginID(current) {
 				return true
 			}
 		}

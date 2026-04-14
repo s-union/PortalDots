@@ -95,17 +95,15 @@ func (s *SMTPMailSender) Send(recipient, subject, body string) error {
 	defer client.Close()
 
 	supportsStartTLS, _ := client.Extension("STARTTLS")
-	if s.username != "" && !supportsStartTLS {
-		return fmt.Errorf("smtp server does not support STARTTLS while authentication is enabled")
+	if !supportsStartTLS {
+		return fmt.Errorf("smtp server does not support STARTTLS")
 	}
 
-	if supportsStartTLS {
-		if err := client.StartTLS(&tls.Config{
-			ServerName: s.host,
-			MinVersion: tls.VersionTLS12,
-		}); err != nil {
-			return err
-		}
+	if err := client.StartTLS(&tls.Config{
+		ServerName: s.host,
+		MinVersion: tls.VersionTLS12,
+	}); err != nil {
+		return err
 	}
 
 	if s.username != "" {

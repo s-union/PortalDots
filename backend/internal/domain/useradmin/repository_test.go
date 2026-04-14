@@ -103,3 +103,68 @@ func TestStaticRepositoryFindByNormalizedLoginID(t *testing.T) {
 		t.Fatalf("expected ErrNotFound for fuzzy login id, got %v", err)
 	}
 }
+
+func TestStaticRepositoryCreateRejectsCaseInsensitiveDuplicateLoginID(t *testing.T) {
+	t.Parallel()
+
+	repo := NewStaticRepository(config.AuthUser{
+		ID:          "auth-user",
+		LoginIDs:    []string{"staff"},
+		DisplayName: "Staff User",
+		Roles:       []string{"staff"},
+		Permissions: []string{"forms.read"},
+	}, nil)
+
+	if _, err := repo.Create(CreateParams{
+		ID:           "user-a",
+		DisplayName:  "User A",
+		LoginIDs:     []string{"S001"},
+		ContactEmail: "a@example.com",
+	}); err != nil {
+		t.Fatalf("create first user: %v", err)
+	}
+
+	_, err := repo.Create(CreateParams{
+		ID:           "user-b",
+		DisplayName:  "User B",
+		LoginIDs:     []string{" s001 "},
+		ContactEmail: "b@example.com",
+	})
+	if !errors.Is(err, ErrConflict) {
+		t.Fatalf("expected ErrConflict, got %v", err)
+	}
+}
+
+func TestStaticRepositoryUpdateRejectsCaseInsensitiveDuplicateLoginID(t *testing.T) {
+	t.Parallel()
+
+	repo := NewStaticRepository(config.AuthUser{
+		ID:          "auth-user",
+		LoginIDs:    []string{"staff"},
+		DisplayName: "Staff User",
+		Roles:       []string{"staff"},
+		Permissions: []string{"forms.read"},
+	}, nil)
+
+	if _, err := repo.Create(CreateParams{
+		ID:           "user-a",
+		DisplayName:  "User A",
+		LoginIDs:     []string{"S001"},
+		ContactEmail: "a@example.com",
+	}); err != nil {
+		t.Fatalf("create first user: %v", err)
+	}
+	if _, err := repo.Create(CreateParams{
+		ID:           "user-b",
+		DisplayName:  "User B",
+		LoginIDs:     []string{"S002"},
+		ContactEmail: "b@example.com",
+	}); err != nil {
+		t.Fatalf("create second user: %v", err)
+	}
+
+	_, err := repo.Update("user-b", "User B", []string{" s001 "})
+	if !errors.Is(err, ErrConflict) {
+		t.Fatalf("expected ErrConflict, got %v", err)
+	}
+}

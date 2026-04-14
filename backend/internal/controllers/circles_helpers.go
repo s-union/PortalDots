@@ -19,6 +19,10 @@ func mapCircleDetail(c circle.Circle) circleDetailResponse {
 		s := c.SubmittedAt.Format(time.RFC3339)
 		submittedAt = &s
 	}
+	places := slices.Clone(c.Places)
+	if places == nil {
+		places = []string{}
+	}
 	return circleDetailResponse{
 		ID:                    c.ID,
 		Name:                  c.Name,
@@ -34,7 +38,7 @@ func mapCircleDetail(c circle.Circle) circleDetailResponse {
 		InvitationToken:       c.InvitationToken,
 		SubmittedAt:           submittedAt,
 		Status:                c.Status,
-		Places:                slices.Clone(c.Places),
+		Places:                places,
 	}
 }
 

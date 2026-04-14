@@ -96,10 +96,11 @@ func normalizeRequestedLoginIDs(input []string) []string {
 		if trimmed == "" {
 			continue
 		}
-		if _, ok := seen[trimmed]; ok {
+		key := strings.ToLower(trimmed)
+		if _, ok := seen[key]; ok {
 			continue
 		}
-		seen[trimmed] = struct{}{}
+		seen[key] = struct{}{}
 		normalized = append(normalized, trimmed)
 	}
 

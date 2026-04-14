@@ -169,6 +169,16 @@ func (r *SQLCRepository) Create(params CreateParams) (User, error) {
 	defer tx.Rollback(ctx)
 
 	queries := r.queries.WithTx(tx)
+	for _, loginID := range params.LoginIDs {
+		owner, ownerErr := queries.GetUserByNormalizedLoginID(ctx, normalizeLoginID(loginID))
+		if ownerErr == nil && owner.ID != params.ID {
+			return User{}, ErrConflict
+		}
+		if ownerErr != nil && !errors.Is(ownerErr, pgx.ErrNoRows) {
+			return User{}, ownerErr
+		}
+	}
+
 	row, err := queries.CreateUser(ctx, dbgen.CreateUserParams{
 		Column1:             params.ID,
 		LastName:            params.LastName,
@@ -263,7 +273,7 @@ func (r *SQLCRepository) Update(userID, displayName string, loginIDs []string) (
 	defer tx.Rollback(ctx)
 
 	queries := r.queries.WithTx(tx)
-	userRow, err := queries.GetUserWithRelationsByID(ctx, userID)
+	_, err = queries.GetUserWithRelationsByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return User{}, ErrNotFound
@@ -272,11 +282,7 @@ func (r *SQLCRepository) Update(userID, displayName string, loginIDs []string) (
 	}
 
 	for _, loginID := range loginIDs {
-		if slices.Contains(userRow.LoginIds, loginID) {
-			continue
-		}
-
-		owner, ownerErr := queries.GetUserByLoginID(ctx, loginID)
+		owner, ownerErr := queries.GetUserByNormalizedLoginID(ctx, normalizeLoginID(loginID))
 		if ownerErr == nil && owner.ID != userID {
 			return User{}, ErrConflict
 		}
@@ -323,7 +329,7 @@ func (r *SQLCRepository) UpdateFull(userID, displayName string, loginIDs []strin
 	defer tx.Rollback(ctx)
 
 	queries := r.queries.WithTx(tx)
-	userRow, err := queries.GetUserWithRelationsByID(ctx, userID)
+	_, err = queries.GetUserWithRelationsByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return User{}, ErrNotFound
@@ -332,11 +338,7 @@ func (r *SQLCRepository) UpdateFull(userID, displayName string, loginIDs []strin
 	}
 
 	for _, loginID := range loginIDs {
-		if slices.Contains(userRow.LoginIds, loginID) {
-			continue
-		}
-
-		owner, ownerErr := queries.GetUserByLoginID(ctx, loginID)
+		owner, ownerErr := queries.GetUserByNormalizedLoginID(ctx, normalizeLoginID(loginID))
 		if ownerErr == nil && owner.ID != userID {
 			return User{}, ErrConflict
 		}
