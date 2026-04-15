@@ -35,6 +35,14 @@ func logMockVerificationCode(kind, recipient, code string) {
 	)
 }
 
+func logMockVerificationURL(kind, recipient, verifyURL string) {
+	slog.Info("mock verification prepared",
+		"kind", kind,
+		"recipient", recipient,
+		"verifyURL", verifyURL,
+	)
+}
+
 func logQueuedMail(
 	source,
 	jobID,

@@ -94,7 +94,10 @@ async function handleSubmit() {
       password: form.password,
       passwordConfirmation: form.passwordConfirmation
     })
-    await router.replace('/email/verify/completed')
+    await router.replace({
+      path: '/email/verify',
+      query: form.contactEmail ? { sent: 'email' } : {}
+    })
   } catch (error) {
     submitErrorMessage.value = extractFirstErrorMessage(error)
   }

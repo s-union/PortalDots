@@ -222,22 +222,11 @@ func (h *staffFormHandlers) staffFormAnswerMailRecipients(createdByUserID, targe
 		return nil
 	}
 
-	recipients := make([]string, 0, len(users)+1)
-	for _, userValue := range users {
-		for _, loginID := range userValue.LoginIDs {
-			if strings.Contains(loginID, "@") {
-				recipients = append(recipients, loginID)
-			}
-		}
-	}
+	recipients := collectUsersEmailRecipients(users)
 
 	creator, err := h.users.Find(createdByUserID)
 	if err == nil {
-		for _, loginID := range creator.LoginIDs {
-			if strings.Contains(loginID, "@") {
-				recipients = append(recipients, loginID)
-			}
-		}
+		recipients = append(recipients, collectUserEmailRecipients(creator)...)
 	}
 
 	return normalizeRecipients(recipients)

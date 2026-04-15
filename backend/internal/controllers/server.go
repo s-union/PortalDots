@@ -68,12 +68,12 @@ type authHandlers struct {
 	mails                     mailqueue.Repository
 	pendingRegistrations      pendingregistration.Repository
 	passwordResetTokens       *passwordResetTokenStore
+	authVerificationTokens    *authVerificationTokenStore
 	portalUnivemailDomainPart string
 	registrationVerifyTTL     time.Duration
 	appURL                    string
 	appName                   string
 	users                     useradmin.Repository
-	verifyCodes               *participantVerifyCodeStore
 }
 
 // staffVerifyHandlers handles staff verification endpoints.
@@ -284,12 +284,12 @@ func NewServerWithDependencies(
 		mails:                     mails,
 		pendingRegistrations:      pendingRegistrations,
 		passwordResetTokens:       newPasswordResetTokenStore(),
+		authVerificationTokens:    newAuthVerificationTokenStore(),
 		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
 		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
 		appURL:                    cfg.AppURL,
 		appName:                   cfg.AppName,
 		users:                     users,
-		verifyCodes:               newParticipantVerifyCodeStore(),
 	}
 
 	publicHomeH := &publicHomeHandlers{
@@ -438,7 +438,7 @@ func NewServerWithDependencies(
 		Logout:                   authH.logout,
 		GetAuthVerification:      authH.getAuthVerification,
 		RequestAuthVerification:  authH.requestAuthVerification,
-		ConfirmAuthVerification:  authH.confirmAuthVerification,
+		VerifyAuthVerification:   authH.verifyAuthVerification,
 		ListContactCategories:    authH.listContactCategories,
 		ListContactHistory:       authH.listContactHistory,
 		SubmitContact:            authH.submitContact,

@@ -37,7 +37,7 @@ func (h *workspaceHandlers) workspaceFormAnswerMailRecipients(createdByUserID, t
 	if err != nil {
 		return nil
 	}
-	recipients := collectRecipientLoginIDs(users)
+	recipients := collectUsersEmailRecipients(users)
 
 	creator, err := h.users.Find(createdByUserID)
 	if err == nil {

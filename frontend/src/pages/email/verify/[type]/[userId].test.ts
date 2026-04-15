@@ -101,7 +101,7 @@ describe('EmailVerifyActionPage', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(router.currentRoute.value.fullPath).toBe('/email/verify/completed')
+    expect(router.currentRoute.value.fullPath).toBe('/email/verify')
   })
 
   it('shows real-time validation error for name on input', async () => {

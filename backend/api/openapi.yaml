@@ -341,7 +341,7 @@ paths:
   /auth/verification/request:
     post:
       operationId: postAuthVerificationRequest
-      summary: Request a participant verification code
+      summary: Request a participant verification URL
       requestBody:
         required: true
         content:
@@ -355,7 +355,7 @@ paths:
                   enum: [email, univemail]
       responses:
         "200":
-          description: Verification code request accepted
+          description: Verification URL request accepted
           content:
             application/json:
               schema:
@@ -370,28 +370,37 @@ paths:
           description: Creating a new circle is not allowed for this user
         "422":
           description: Validation error
-  /auth/verification/confirm:
+  /auth/verification/verify:
     post:
-      operationId: postAuthVerificationConfirm
-      summary: Confirm a participant verification code
+      operationId: postAuthVerificationVerify
+      summary: Verify a participant email verification URL token
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [type, verifyCode]
+              required: [type, userId, token]
               properties:
                 type:
                   type: string
                   enum: [email, univemail]
-                verifyCode:
+                userId:
+                  type: string
+                  minLength: 1
+                token:
                   type: string
       responses:
-        "204":
+        "200":
           description: Verification completed
-        "401":
-          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [completed]
+                properties:
+                  completed:
+                    type: boolean
         "422":
           description: Validation error
   /contact-categories:

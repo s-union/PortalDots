@@ -34,12 +34,12 @@ func (h *authHandlers) enqueueRegistrationVerifyMail(ctx context.Context, recipi
 	return nil
 }
 
-func (h *authHandlers) enqueueParticipantVerifyCodeMail(
+func (h *authHandlers) enqueueParticipantVerifyLinkMail(
 	ctx context.Context,
 	createdByUserID,
 	verificationType,
 	recipientEmail,
-	verifyCode string,
+	verifyURL string,
 ) error {
 	recipients := normalizeRecipients([]string{recipientEmail})
 	if len(recipients) == 0 {
@@ -50,15 +50,16 @@ func (h *authHandlers) enqueueParticipantVerifyCodeMail(
 	if verificationType == "univemail" {
 		verificationLabel = "大学メールアドレス"
 	}
-	subject := "認証コードのご案内"
+	subject := "メール認証のお願い"
 	body := strings.TrimSpace(fmt.Sprintf(
-		`%s の認証コードをご案内します。
+		`%s のメール認証を完了してください。
 
-認証コード: %s
+以下のURLを開いて認証を完了してください。
+%s
 
-認証コードの有効期限は %d 分です。`,
+認証URLの有効期限は %d 分です。`,
 		verificationLabel,
-		verifyCode,
+		verifyURL,
 		int(participantVerifyTTL/time.Minute),
 	))
 
@@ -66,7 +67,7 @@ func (h *authHandlers) enqueueParticipantVerifyCodeMail(
 	if err != nil {
 		return err
 	}
-	logQueuedMail("participant_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
+	logQueuedMail("participant_verify_url", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
 
 	return nil
 }

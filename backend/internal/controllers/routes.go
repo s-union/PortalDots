@@ -25,7 +25,7 @@ type PublicRoutes struct {
 	Logout                   echo.HandlerFunc
 	GetAuthVerification      echo.HandlerFunc
 	RequestAuthVerification  echo.HandlerFunc
-	ConfirmAuthVerification  echo.HandlerFunc
+	VerifyAuthVerification   echo.HandlerFunc
 	ListContactCategories    echo.HandlerFunc
 	ListContactHistory       echo.HandlerFunc
 	SubmitContact            echo.HandlerFunc
@@ -195,7 +195,7 @@ func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
 	v1.POST("/auth/logout", r.Logout)
 	v1.GET("/auth/verification", r.GetAuthVerification)
 	v1.POST("/auth/verification/request", r.RequestAuthVerification)
-	v1.POST("/auth/verification/confirm", r.ConfirmAuthVerification)
+	v1.POST("/auth/verification/verify", r.VerifyAuthVerification)
 	v1.GET("/contact-categories", r.ListContactCategories)
 	v1.GET("/contact", r.ListContactHistory)
 	v1.POST("/contact", r.SubmitContact)

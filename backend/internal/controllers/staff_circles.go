@@ -581,7 +581,7 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 		return internalError(c)
 	}
 
-	recipientEmails := collectRecipientLoginIDs(recipients)
+	recipientEmails := collectUsersEmailRecipients(recipients)
 	if len(recipientEmails) == 0 {
 		return validationError(c, map[string][]string{
 			"recipient": {"宛先が存在しないため送信できませんでした"},

@@ -210,6 +210,10 @@ export const authVerificationStatusSchema = z.object({
   items: z.array(authVerificationStatusItemSchema)
 })
 
+export const authVerificationLinkVerifySchema = z.object({
+  completed: z.boolean()
+})
+
 export const registrationStartResultSchema = z.object({
   message: z.string()
 })

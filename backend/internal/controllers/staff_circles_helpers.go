@@ -129,24 +129,3 @@ func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, lea
 
 	return circleValue, recipients, nil
 }
-
-func collectRecipientLoginIDs(users []useradmin.User) []string {
-	recipients := make([]string, 0)
-	seen := map[string]struct{}{}
-	for _, userValue := range users {
-		for _, loginID := range userValue.LoginIDs {
-			trimmed := strings.TrimSpace(loginID)
-			if trimmed == "" || !strings.Contains(trimmed, "@") {
-				continue
-			}
-			if _, ok := seen[trimmed]; ok {
-				continue
-			}
-			seen[trimmed] = struct{}{}
-			recipients = append(recipients, trimmed)
-		}
-	}
-
-	slices.Sort(recipients)
-	return recipients
-}

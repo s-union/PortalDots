@@ -51,7 +51,7 @@ func (h *authHandlers) startPasswordReset(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	if found && strings.TrimSpace(targetUser.ContactEmail) != "" {
+	if recipients := collectUserEmailRecipients(targetUser); found && len(recipients) > 0 {
 		token, err := generateRegistrationToken()
 		if err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_password_reset_token")
@@ -59,13 +59,13 @@ func (h *authHandlers) startPasswordReset(c echo.Context) error {
 		h.passwordResetTokens.Put(targetUser.ID, token, time.Now().UTC().Add(passwordResetTokenTTL))
 		resetURL := buildPasswordResetURL(h.appURL, targetUser.ID, token)
 		if h.allowInsecureDefaults {
-			logMockPasswordResetURL(targetUser.ContactEmail, resetURL)
+			logMockPasswordResetURL(recipients[0], resetURL)
 		} else {
 			if err := h.enqueuePasswordResetStartMail(
 				c.Request().Context(),
 				targetUser.ID,
 				targetUser.DisplayName,
-				targetUser.ContactEmail,
+				recipients[0],
 				resetURL,
 			); err != nil {
 				return internalError(c)
@@ -74,7 +74,7 @@ func (h *authHandlers) startPasswordReset(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, messageResponse{
-		Message: "再設定URLを連絡先メールアドレスに送信しました。メールをご確認ください。",
+		Message: "再設定URLを送信しました。メールをご確認ください。",
 	})
 }
 

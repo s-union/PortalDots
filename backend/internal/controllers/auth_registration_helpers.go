@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"net/url"
@@ -71,10 +70,13 @@ func buildAuthVerificationStatus(userValue useradmin.User, univemail string) aut
 
 	completed := true
 	for _, item := range items {
-		if item.Type != "univemail" {
+		if item.Address == "" {
+			if item.Type == "univemail" {
+				completed = false
+			}
 			continue
 		}
-		if item.Address == "" || !item.Verified {
+		if !item.Verified {
 			completed = false
 		}
 	}
@@ -105,6 +107,18 @@ func normalizeVerificationType(value string) string {
 	default:
 		return ""
 	}
+}
+
+func decodeMaybeExternalID(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	decoded, err := externalid.DecodeToUUIDString(trimmed)
+	if err == nil {
+		return decoded
+	}
+	return trimmed
 }
 
 func splitFullName(value string) (string, string, string, bool) {
@@ -182,6 +196,17 @@ func buildRegistrationVerifyURL(appURL, pendingRegistrationID, token string) str
 	)
 }
 
+func buildAuthVerificationVerifyURL(appURL, verificationType, userID, token string) string {
+	base := strings.TrimRight(strings.TrimSpace(appURL), "/")
+	return fmt.Sprintf(
+		"%s/email/verify/account/%s/%s?token=%s",
+		base,
+		url.PathEscape(strings.TrimSpace(verificationType)),
+		externalid.MaybeEncodeUUIDString(strings.TrimSpace(userID)),
+		url.QueryEscape(token),
+	)
+}
+
 func buildPasswordResetURL(appURL, userID, token string) string {
 	base := strings.TrimRight(strings.TrimSpace(appURL), "/")
 	return fmt.Sprintf(
@@ -235,12 +260,4 @@ func (h *authHandlers) loadAndValidatePendingRegistration(pendingRegistrationID,
 	}
 
 	return pendingValue, nil
-}
-
-func generateVerificationCode() (string, error) {
-	var raw [4]byte
-	if _, err := rand.Read(raw[:]); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%06d", binary.BigEndian.Uint32(raw[:])%1000000), nil
 }

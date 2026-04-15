@@ -6,15 +6,34 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
 
-func collectUserEmailRecipients(userValue useradmin.User) []string {
-	recipients := make([]string, 0, len(userValue.LoginIDs)+1)
+func primaryUserEmailRecipient(userValue useradmin.User) string {
+	if contactEmail := strings.TrimSpace(userValue.ContactEmail); contactEmail != "" && userValue.IsEmailVerified {
+		return contactEmail
+	}
+
 	for _, loginID := range userValue.LoginIDs {
-		if strings.Contains(loginID, "@") {
-			recipients = append(recipients, loginID)
+		trimmed := strings.TrimSpace(loginID)
+		if trimmed != "" && strings.Contains(trimmed, "@") {
+			return trimmed
 		}
 	}
-	if contactEmail := strings.TrimSpace(userValue.ContactEmail); contactEmail != "" {
-		recipients = append(recipients, contactEmail)
+
+	// Fallback for legacy users that only have contactEmail.
+	return strings.TrimSpace(userValue.ContactEmail)
+}
+
+func collectUserEmailRecipients(userValue useradmin.User) []string {
+	if recipient := primaryUserEmailRecipient(userValue); recipient != "" {
+		return normalizeRecipients([]string{recipient})
+	}
+
+	return nil
+}
+
+func collectUsersEmailRecipients(users []useradmin.User) []string {
+	recipients := make([]string, 0, len(users))
+	for _, userValue := range users {
+		recipients = append(recipients, collectUserEmailRecipients(userValue)...)
 	}
 
 	return normalizeRecipients(recipients)

@@ -2,6 +2,7 @@ import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import {
+  authVerificationLinkVerifySchema,
   authVerificationStatusSchema,
   passwordResetStartResultSchema,
   passwordResetVerificationSchema,
@@ -102,6 +103,16 @@ export interface AuthVerificationStatus {
 
 export interface AuthVerifyRequestResult {
   message: string
+}
+
+export interface VerifyAuthVerificationLinkPayload {
+  type: 'email' | 'univemail'
+  userId: string
+  token: string
+}
+
+export interface AuthVerificationLinkVerifyResult {
+  completed: boolean
 }
 
 export async function login(payload: LoginPayload) {
@@ -292,16 +303,17 @@ export async function requestAuthVerification(type: 'email' | 'univemail', csrfT
   )
 }
 
-export async function confirmAuthVerification(type: 'email' | 'univemail', verifyCode: string, csrfToken: string) {
-  await $api.noContentMutation(
+export async function verifyAuthVerificationLink(payload: VerifyAuthVerificationLinkPayload) {
+  return $api.mutationData(
     'post',
-    '/auth/verification/confirm',
+    '/auth/verification/verify',
     {
-      headers: createJsonHeaders(csrfToken),
-      body: { type, verifyCode }
+      headers: createJsonHeaders(),
+      body: payload
     },
+    (value) => parseWithSchema(authVerificationLinkVerifySchema, value, 'auth verification link verify'),
     {
-      errorMessage: 'Failed to confirm auth verification',
+      errorMessage: 'Failed to verify auth verification link',
       errorParsers: {
         422: (error) => parseValidationError(error, 'auth verification')
       }
@@ -471,13 +483,11 @@ export function useRequestAuthVerificationMutation() {
   })
 }
 
-export function useConfirmAuthVerificationMutation() {
-  const sessionStore = useSessionStore()
+export function useVerifyAuthVerificationLinkMutation() {
   const queryClient = useQueryClient()
 
-  return useMutation({
-    mutationFn: async (payload: { type: 'email' | 'univemail'; verifyCode: string }) =>
-      confirmAuthVerification(payload.type, payload.verifyCode, sessionStore.csrfToken),
+  return useMutation<AuthVerificationLinkVerifyResult, unknown, VerifyAuthVerificationLinkPayload>({
+    mutationFn: async (payload: VerifyAuthVerificationLinkPayload) => verifyAuthVerificationLink(payload),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['auth', 'verification'] }),

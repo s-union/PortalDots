@@ -23,7 +23,7 @@ func enqueueCircleNotificationMail(
 	body string,
 ) (mailqueue.Job, bool, error) {
 	memberUsers := listCircleMemberUsers(users, members)
-	recipients := collectRecipientLoginIDs(memberUsers)
+	recipients := collectUsersEmailRecipients(memberUsers)
 	if len(recipients) == 0 {
 		return mailqueue.Job{}, false, nil
 	}

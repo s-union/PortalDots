@@ -64,13 +64,14 @@ import {
   login,
   logout,
   requestAuthVerification,
+  verifyAuthVerificationLink,
   useAuthVerificationStatusQuery,
   useCompleteRegistrationMutation,
-  useConfirmAuthVerificationMutation,
   useLoginMutation,
   useLogoutMutation,
   useRegisterMutation,
-  useRequestAuthVerificationMutation
+  useRequestAuthVerificationMutation,
+  useVerifyAuthVerificationLinkMutation
 } from './api'
 
 describe('auth api', () => {
@@ -180,6 +181,25 @@ describe('auth api', () => {
     )
   })
 
+  it('passes payload when verifying an auth verification link', async () => {
+    await verifyAuthVerificationLink({
+      type: 'email',
+      userId: 'user-123',
+      token: 'token-abc'
+    })
+
+    expect(apiClientMocks.$api.mutationData).toHaveBeenCalledWith(
+      'post',
+      '/auth/verification/verify',
+      {
+        headers: { 'Content-Type': 'application/json' },
+        body: { type: 'email', userId: 'user-123', token: 'token-abc' }
+      },
+      expect.any(Function),
+      expect.objectContaining({ errorMessage: 'Failed to verify auth verification link' })
+    )
+  })
+
   it('hydrates the session and updates the bootstrap cache after login/register/complete', async () => {
     const loginMutation = useLoginMutation()
     const registerMutation = useRegisterMutation()
@@ -208,12 +228,12 @@ describe('auth api', () => {
     expect(clear).toHaveBeenCalledTimes(1)
   })
 
-  it('invalidates verification queries after request and confirm mutations succeed', async () => {
+  it('invalidates verification queries after request and verify-link mutations succeed', async () => {
     const requestMutation = useRequestAuthVerificationMutation()
-    const confirmMutation = useConfirmAuthVerificationMutation()
+    const verifyLinkMutation = useVerifyAuthVerificationLinkMutation()
 
     await requestMutation.onSuccess?.()
-    await confirmMutation.onSuccess?.()
+    await verifyLinkMutation.onSuccess?.()
 
     expect(invalidateQueries).toHaveBeenNthCalledWith(1, { queryKey: ['auth', 'verification'] })
     expect(invalidateQueries).toHaveBeenNthCalledWith(2, { queryKey: ['auth', 'verification'] })

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"slices"
@@ -44,6 +45,16 @@ type authVerificationStatusItem struct {
 
 type authVerificationRequest struct {
 	Type string `json:"type"`
+}
+
+type authVerificationLinkVerifyRequest struct {
+	Type   string `json:"type"`
+	UserID string `json:"userId"`
+	Token  string `json:"token"`
+}
+
+type authVerificationLinkVerifyResponse struct {
+	Completed bool `json:"completed"`
 }
 
 type startRegistrationRequest struct {
@@ -189,7 +200,12 @@ func (h *authHandlers) register(c echo.Context) error {
 		}
 	}
 
-	return h.loginRegisteredUser(c, createdUser)
+	_, err = h.issueRegisteredUserSession(c, createdUser)
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *authHandlers) startRegistration(c echo.Context) error {
@@ -253,6 +269,7 @@ func (h *authHandlers) verifyRegistration(c echo.Context) error {
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
+	request.PendingRegistrationID = decodeMaybeExternalID(request.PendingRegistrationID)
 
 	pendingValue, err := h.loadAndValidatePendingRegistration(request.PendingRegistrationID, request.Token)
 	if err != nil {
@@ -289,6 +306,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
+	request.PendingRegistrationID = decodeMaybeExternalID(request.PendingRegistrationID)
 
 	pendingValue, err := h.loadAndValidatePendingRegistration(request.PendingRegistrationID, request.Token)
 	if err != nil {
@@ -309,6 +327,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	request.NameYomi = strings.TrimSpace(request.NameYomi)
 	request.ContactEmail = strings.TrimSpace(strings.ToLower(request.ContactEmail))
 	request.PhoneNumber = strings.TrimSpace(request.PhoneNumber)
+	contactEmailMatchesUnivemail := strings.EqualFold(request.ContactEmail, pendingValue.Univemail)
 
 	lastName, firstName, normalizedName, ok := splitFullName(request.Name)
 	lastNameReading, firstNameReading, _, yomiOK := splitFullName(request.NameYomi)
@@ -367,8 +386,8 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 		PasswordHash:        string(passwordHash),
 		Roles:               []string{"participant"},
 		Permissions:         []string{},
-		IsVerified:          true,
-		IsEmailVerified:     false,
+		IsVerified:          contactEmailMatchesUnivemail || request.ContactEmail == "",
+		IsEmailVerified:     contactEmailMatchesUnivemail,
 		IsUnivemailVerified: true,
 	})
 	if errors.Is(err, useradmin.ErrConflict) {
@@ -398,7 +417,21 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_finalize_registration")
 	}
 
-	return h.loginRegisteredUser(c, createdUser)
+	if _, err := h.issueRegisteredUserSession(c, createdUser); err != nil {
+		return err
+	}
+	if request.ContactEmail != "" && !contactEmailMatchesUnivemail {
+		if err := h.sendParticipantVerificationLink(
+			c.Request().Context(),
+			createdUser.ID,
+			"email",
+			request.ContactEmail,
+		); err != nil {
+			return internalError(c)
+		}
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *authHandlers) getAuthVerification(c echo.Context) error {
@@ -419,7 +452,7 @@ func (h *authHandlers) getAuthVerification(c echo.Context) error {
 }
 
 func (h *authHandlers) requestAuthVerification(c echo.Context) error {
-	sessionID, currentSession, ok := h.getSession(c)
+	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
@@ -456,68 +489,57 @@ func (h *authHandlers) requestAuthVerification(c echo.Context) error {
 		})
 	}
 
-	code, err := generateVerificationCode()
-	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
-	}
-	h.verifyCodes.Put(sessionID, request.Type, code, time.Now().UTC().Add(participantVerifyTTL))
-	if h.allowInsecureDefaults {
-		logMockVerificationCode("participant_verify_code", item.Address, code)
-	} else {
-		if err := h.enqueueParticipantVerifyCodeMail(
-			c.Request().Context(),
-			currentSession.User.ID,
-			request.Type,
-			item.Address,
-			code,
-		); err != nil {
-			return internalError(c)
-		}
+	if err := h.sendParticipantVerificationLink(
+		c.Request().Context(),
+		currentSession.User.ID,
+		request.Type,
+		item.Address,
+	); err != nil {
+		return internalError(c)
 	}
 
 	return c.JSON(http.StatusOK, messageResponse{
-		Message: "認証コードを送信しました。",
+		Message: "認証URLを送信しました。",
 	})
 }
 
-func (h *authHandlers) confirmAuthVerification(c echo.Context) error {
-	sessionID, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
-	}
-
-	var request struct {
-		Type       string `json:"type"`
-		VerifyCode string `json:"verifyCode"`
-	}
+func (h *authHandlers) verifyAuthVerification(c echo.Context) error {
+	var request authVerificationLinkVerifyRequest
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
 	request.Type = normalizeVerificationType(request.Type)
-	request.VerifyCode = strings.TrimSpace(request.VerifyCode)
+	request.UserID = decodeMaybeExternalID(request.UserID)
+	request.Token = strings.TrimSpace(request.Token)
+
+	validationErrors := map[string][]string{}
 	if request.Type == "" {
-		return validationError(c, map[string][]string{
-			"type": {"認証種別を選択してください"},
-		})
+		validationErrors["type"] = []string{"認証種別を選択してください"}
 	}
-	if request.VerifyCode == "" {
-		return validationError(c, map[string][]string{
-			"verifyCode": {"認証コードを入力してください"},
-		})
+	if request.UserID == "" {
+		validationErrors["userId"] = []string{"ユーザーIDが不正です"}
 	}
-	if !h.verifyCodes.Match(sessionID, request.Type, request.VerifyCode, time.Now().UTC()) {
+	if request.Token == "" {
+		validationErrors["token"] = []string{"認証URLが無効か期限切れです。もう一度お試しください。"}
+	}
+	if len(validationErrors) > 0 {
+		return validationError(c, validationErrors)
+	}
+	if !h.authVerificationTokens.Match(request.UserID, request.Type, request.Token, time.Now().UTC()) {
 		return validationError(c, map[string][]string{
-			"verifyCode": {"認証コードが間違っているか、期限切れです。再度お試しください。"},
+			"token": {"認証URLが無効か期限切れです。もう一度お試しください。"},
 		})
 	}
 
-	managedUser, err := h.users.Find(currentSession.User.ID)
+	managedUser, err := h.users.Find(request.UserID)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
+		return validationError(c, map[string][]string{
+			"token": {"認証URLが無効か期限切れです。もう一度お試しください。"},
+		})
 	}
 	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "failed_to_load_user")
+		return internalError(c)
 	}
 
 	univemail := deriveUnivemail(managedUser, h.portalUnivemailDomainPart)
@@ -542,17 +564,45 @@ func (h *authHandlers) confirmAuthVerification(c echo.Context) error {
 				return errorJSON(c, http.StatusInternalServerError, "failed_to_update_user")
 			}
 		}
-	default:
-		return validationError(c, map[string][]string{
-			"type": {"認証種別を選択してください"},
-		})
 	}
 
-	h.verifyCodes.Clear(sessionID, request.Type)
-	return c.NoContent(http.StatusNoContent)
+	h.authVerificationTokens.Delete(managedUser.ID, request.Type)
+
+	updatedUser, err := h.users.Find(managedUser.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	status := buildAuthVerificationStatus(updatedUser, deriveUnivemail(updatedUser, h.portalUnivemailDomainPart))
+	if _, err := h.users.UpdateVerified(updatedUser.ID, status.Completed); err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_update_user")
+	}
+
+	return c.JSON(http.StatusOK, authVerificationLinkVerifyResponse{
+		Completed: status.Completed,
+	})
 }
 
-func (h *authHandlers) loginRegisteredUser(c echo.Context, managedUser useradmin.User) error {
+func (h *authHandlers) sendParticipantVerificationLink(
+	ctx context.Context,
+	userID,
+	verificationType,
+	recipientEmail string,
+) error {
+	token, err := generateRegistrationToken()
+	if err != nil {
+		return err
+	}
+	h.authVerificationTokens.Put(userID, verificationType, token, time.Now().UTC().Add(participantVerifyTTL))
+	verifyURL := buildAuthVerificationVerifyURL(h.appURL, verificationType, userID, token)
+	if h.allowInsecureDefaults {
+		logMockVerificationURL("participant_verify_url", recipientEmail, verifyURL)
+		return nil
+	}
+
+	return h.enqueueParticipantVerifyLinkMail(ctx, userID, verificationType, recipientEmail, verifyURL)
+}
+
+func (h *authHandlers) issueRegisteredUserSession(c echo.Context, managedUser useradmin.User) (string, error) {
 	sessionUser := &auth.User{
 		ID:          managedUser.ID,
 		DisplayName: managedUser.DisplayName,
@@ -562,7 +612,7 @@ func (h *authHandlers) loginRegisteredUser(c echo.Context, managedUser useradmin
 
 	sessionID, _, err := h.sessions.Create(sessionUser)
 	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_session")
+		return "", errorJSON(c, http.StatusInternalServerError, "failed_to_create_session")
 	}
 
 	c.SetCookie(&http.Cookie{
@@ -574,5 +624,5 @@ func (h *authHandlers) loginRegisteredUser(c echo.Context, managedUser useradmin
 		Secure:   h.sessionCookieSecure,
 	})
 
-	return c.NoContent(http.StatusNoContent)
+	return sessionID, nil
 }

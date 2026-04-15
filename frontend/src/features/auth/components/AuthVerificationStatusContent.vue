@@ -1,25 +1,34 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   extractFirstErrorMessage,
-  useConfirmAuthVerificationMutation,
   useRequestAuthVerificationMutation,
   useSuspenseAuthVerificationStatusQuery
 } from '@/features/auth/api'
 
 const router = useRouter()
+const route = useRoute()
 const statusQuery = useSuspenseAuthVerificationStatusQuery()
 await statusQuery.suspense()
 
+if (statusQuery.data.value?.completed) {
+  await router.replace('/email/verify/completed')
+}
+
 const requestMutation = useRequestAuthVerificationMutation()
-const confirmMutation = useConfirmAuthVerificationMutation()
-const verifyCode = reactive<Record<'email' | 'univemail', string>>({
-  email: '',
-  univemail: ''
-})
 const requestResult = ref<{ type: 'email' | 'univemail'; message: string } | null>(null)
 const errorMessage = ref('')
+const autoSentMessage = computed(() => {
+  const sent = route.query.sent
+  if (sent === 'email') {
+    return '連絡先メールアドレスに認証URLを送信しました。メール内のリンクを開いて認証してください。'
+  }
+  if (sent === 'univemail') {
+    return '大学メールアドレスに認証URLを送信しました。メール内のリンクを開いて認証してください。'
+  }
+  return ''
+})
 
 async function handleRequest(type: 'email' | 'univemail') {
   errorMessage.value = ''
@@ -31,24 +40,6 @@ async function handleRequest(type: 'email' | 'univemail') {
       message: result.message
     }
     await statusQuery.refetch()
-  } catch (error) {
-    errorMessage.value = extractFirstErrorMessage(error)
-  }
-}
-
-async function handleConfirm(type: 'email' | 'univemail') {
-  errorMessage.value = ''
-
-  try {
-    await confirmMutation.mutateAsync({
-      type,
-      verifyCode: verifyCode[type]
-    })
-    verifyCode[type] = ''
-    await statusQuery.refetch()
-    if (statusQuery.data.value?.completed) {
-      await router.replace('/email/verify/completed')
-    }
   } catch (error) {
     errorMessage.value = extractFirstErrorMessage(error)
   }
@@ -69,6 +60,9 @@ async function handleConfirm(type: 'email' | 'univemail') {
         <RouterLink class="font-semibold text-primary hover:underline" to="/workspace/settings"
           >登録情報の変更</RouterLink
         >
+      </p>
+      <p v-if="autoSentMessage" class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-body">
+        {{ autoSentMessage }}
       </p>
       <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
         {{ errorMessage }}
@@ -103,7 +97,7 @@ async function handleConfirm(type: 'email' | 'univemail') {
         type="button"
         @click="handleRequest(item.type)"
       >
-        {{ item.verified ? '認証済み' : '認証コードを送信' }}
+        {{ item.verified ? '認証済み' : '認証メールを送信' }}
       </button>
 
       <div
@@ -111,24 +105,6 @@ async function handleConfirm(type: 'email' | 'univemail') {
         class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
       >
         <p>{{ requestResult.message }}</p>
-      </div>
-
-      <div v-if="!item.verified" class="flex flex-col gap-3 sm:flex-row">
-        <input
-          v-model="verifyCode[item.type]"
-          class="min-w-0 flex-1"
-          :name="`${item.type}-verify-code`"
-          placeholder="6桁の認証コード"
-          type="text"
-        />
-        <button
-          class="rounded border border-border bg-surface px-4 py-2 text-sm font-semibold text-body transition hover:bg-surface-light disabled:opacity-60"
-          :disabled="confirmMutation.isPending.value"
-          type="button"
-          @click="handleConfirm(item.type)"
-        >
-          {{ confirmMutation.isPending.value ? '認証中...' : '認証する' }}
-        </button>
       </div>
     </div>
   </section>

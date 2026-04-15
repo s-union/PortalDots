@@ -452,16 +452,7 @@ func (h *staffPageHandlers) pageMailRecipients(viewableTags []string) []string {
 		return nil
 	}
 
-	recipients := []string{}
-	for _, userValue := range users {
-		for _, loginID := range userValue.LoginIDs {
-			if strings.Contains(loginID, "@") {
-				recipients = append(recipients, loginID)
-			}
-		}
-	}
-
-	return normalizeRecipients(recipients)
+	return collectUsersEmailRecipients(users)
 }
 
 func pageVisibleToCircleTags(viewableTags []string, circleTags []string) bool {

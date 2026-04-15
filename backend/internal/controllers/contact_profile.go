@@ -231,7 +231,7 @@ func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID stri
 	if err != nil {
 		return nil, err
 	}
-	recipients := collectRecipientLoginIDs(users)
+	recipients := collectUsersEmailRecipients(users)
 	if len(recipients) > 0 {
 		return recipients, nil
 	}
@@ -243,7 +243,7 @@ func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID stri
 	if err != nil {
 		return nil, err
 	}
-	recipients = collectRecipientLoginIDs([]useradmin.User{senderUser})
+	recipients = collectUsersEmailRecipients([]useradmin.User{senderUser})
 	if len(recipients) > 0 {
 		return recipients, nil
 	}
@@ -292,7 +292,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 	request.DisplayName = strings.TrimSpace(request.DisplayName)
 	request.Name = strings.TrimSpace(request.Name)
 	request.NameYomi = strings.TrimSpace(request.NameYomi)
-	request.ContactEmail = strings.TrimSpace(request.ContactEmail)
+	request.ContactEmail = strings.TrimSpace(strings.ToLower(request.ContactEmail))
 	request.PhoneNumber = strings.TrimSpace(request.PhoneNumber)
 	request.CurrentPassword = strings.TrimSpace(request.CurrentPassword)
 
@@ -341,6 +341,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 			return validationError(c, map[string][]string{"currentPassword": {"現在のパスワードが正しくありません"}})
 		}
 
+		previousContactEmail := strings.TrimSpace(strings.ToLower(managedUser.ContactEmail))
 		updatedUser, err := h.users.UpdateFull(
 			currentSession.User.ID,
 			normalizedName,
@@ -360,6 +361,25 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 		}
 		if err != nil {
 			return internalError(c)
+		}
+		contactEmailChanged := !strings.EqualFold(previousContactEmail, updatedUser.ContactEmail)
+		univemail := deriveUnivemail(updatedUser, h.portalUnivemailDomainPart)
+		emailMatchesUnivemail := strings.EqualFold(strings.TrimSpace(updatedUser.ContactEmail), strings.TrimSpace(univemail))
+		emailVerified := emailMatchesUnivemail && updatedUser.IsUnivemailVerified
+		if contactEmailChanged {
+			updatedUser, err = h.users.UpdateEmailVerified(updatedUser.ID, emailVerified)
+			if err != nil {
+				return internalError(c)
+			}
+			updatedUser, err = h.users.UpdateVerified(updatedUser.ID, updatedUser.IsUnivemailVerified && (updatedUser.ContactEmail == "" || updatedUser.IsEmailVerified))
+			if err != nil {
+				return internalError(c)
+			}
+			if updatedUser.ContactEmail != "" && !emailMatchesUnivemail {
+				if err := h.sendParticipantVerificationLink(c.Request().Context(), updatedUser.ID, "email", updatedUser.ContactEmail); err != nil {
+					return internalError(c)
+				}
+			}
 		}
 
 		h.sessions.Update(sessionID, func(next *session.Session) {

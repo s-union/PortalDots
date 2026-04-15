@@ -263,6 +263,60 @@ func TestUpdateProfileReflectsInBootstrap(t *testing.T) {
 	}
 }
 
+func TestUpdateProfileResetsChangedContactEmailVerificationAndSendsVerifyURL(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() {
+		slog.SetDefault(previousLogger)
+	})
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "demo@example.com",
+		"password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+	csrf := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/session/profile", map[string]string{
+		"displayName":     "Demo User",
+		"name":            "デモ 太郎",
+		"nameYomi":        "でも たろう",
+		"contactEmail":    "changed-contact@example.com",
+		"phoneNumber":     "090-1234-5678",
+		"currentPassword": "password",
+	}, csrf)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var status authVerificationStatusResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
+		t.Fatalf("unmarshal verification status response: %v", err)
+	}
+	emailItem, found := findVerificationItem(status.Items, "email")
+	if !found || emailItem.Verified || emailItem.Address != "changed-contact@example.com" {
+		t.Fatalf("expected updated unverified contact email item, got %#v", status.Items)
+	}
+	if status.Completed {
+		t.Fatalf("expected verification to remain incomplete after contact email change, got %#v", status)
+	}
+	if !strings.Contains(logs.String(), "kind=participant_verify_url") || !strings.Contains(logs.String(), "recipient=changed-contact@example.com") {
+		t.Fatalf("expected participant verification url log after profile update, got logs=%s", logs.String())
+	}
+}
+
 func TestUpdatePasswordAllowsLoginWithNewPassword(t *testing.T) {
 	t.Parallel()
 
@@ -419,6 +473,7 @@ func TestPasswordResetFlow(t *testing.T) {
 			continue
 		}
 		cfg.Users[index].ContactEmail = "circle-b-contact@example.com"
+		cfg.Users[index].IsEmailVerified = true
 	}
 	server := NewServer(cfg)
 
@@ -532,7 +587,7 @@ func TestPasswordResetFlow(t *testing.T) {
 		if queued.Subject != "パスワードが変更されました" {
 			continue
 		}
-		if slices.Contains(queued.Recipients, "0195ec00-0022-7000-8000-000000000001@example.com") {
+		if slices.Contains(queued.Recipients, "circle-b-contact@example.com") {
 			foundPasswordChangedMail = true
 			break
 		}
@@ -627,7 +682,7 @@ func TestPasswordResetStartDoesNotFuzzyMatchLoginID(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal password reset start response: %v", err)
 	}
-	if response.Message != "再設定URLを連絡先メールアドレスに送信しました。メールをご確認ください。" {
+	if response.Message != "再設定URLを送信しました。メールをご確認ください。" {
 		t.Fatalf("expected generic success message, got %q", response.Message)
 	}
 
@@ -1025,6 +1080,16 @@ func TestAuthVerificationFlow(t *testing.T) {
 	}
 	csrf := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
 
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var status authVerificationStatusResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
+		t.Fatalf("unmarshal verification status response: %v", err)
+	}
+	userID := status.UserID
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/request", map[string]string{
 		"type": "email",
 	}, csrf)
@@ -1036,24 +1101,24 @@ func TestAuthVerificationFlow(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &requestResponse); err != nil {
 		t.Fatalf("unmarshal verification request response: %v", err)
 	}
-	if requestResponse.Message != "認証コードを送信しました。" {
+	if requestResponse.Message != "認証URLを送信しました。" {
 		t.Fatalf("unexpected verification request response: %#v", requestResponse)
 	}
-	emailVerifyCode := extractLoggedVerifyCode(t, logs.String(), "participant_verify_code", "auth-flow@example.com")
+	emailVerifyToken := extractLoggedVerifyToken(t, logs.String(), "participant_verify_url", "auth-flow@example.com")
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
-		"type":       "email",
-		"verifyCode": emailVerifyCode,
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/verify", map[string]string{
+		"type":   "email",
+		"userId": userID,
+		"token":  emailVerifyToken,
 	}, csrf)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
-	var status authVerificationStatusResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
 		t.Fatalf("unmarshal verification status response: %v", err)
 	}
@@ -1079,17 +1144,18 @@ func TestAuthVerificationFlow(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &secondRequest); err != nil {
 		t.Fatalf("unmarshal univemail verification request response: %v", err)
 	}
-	if secondRequest.Message != "認証コードを送信しました。" {
+	if secondRequest.Message != "認証URLを送信しました。" {
 		t.Fatalf("unexpected univemail verification request response: %#v", secondRequest)
 	}
-	univemailVerifyCode := extractLoggedVerifyCode(t, logs.String(), "participant_verify_code", "24v2001@example.ac.jp")
+	univemailVerifyToken := extractLoggedVerifyToken(t, logs.String(), "participant_verify_url", "24v2001@example.ac.jp")
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
-		"type":       "univemail",
-		"verifyCode": univemailVerifyCode,
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/verify", map[string]string{
+		"type":   "univemail",
+		"userId": userID,
+		"token":  univemailVerifyToken,
 	}, csrf)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
@@ -1104,7 +1170,7 @@ func TestAuthVerificationFlow(t *testing.T) {
 	}
 }
 
-func TestAuthVerificationRejectsInvalidInputAndWrongCode(t *testing.T) {
+func TestAuthVerificationRejectsInvalidInputAndWrongToken(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testConfig())
@@ -1147,20 +1213,31 @@ func TestAuthVerificationRejectsInvalidInputAndWrongCode(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/confirm", map[string]string{
-		"type":       "email",
-		"verifyCode": "999999",
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var status authVerificationStatusResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
+		t.Fatalf("unmarshal verification status response: %v", err)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/verification/verify", map[string]string{
+		"type":   "email",
+		"userId": status.UserID,
+		"token":  "invalid-token",
 	}, csrf)
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
-	var wrongCode models.ValidationErrorResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &wrongCode); err != nil {
+	var wrongToken models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &wrongToken); err != nil {
 		t.Fatalf("unmarshal confirm validation response: %v", err)
 	}
-	if len(wrongCode.Errors["verifyCode"]) == 0 {
-		t.Fatalf("expected verifyCode validation error, got %#v", wrongCode.Errors)
+	if len(wrongToken.Errors["token"]) == 0 {
+		t.Fatalf("expected token validation error, got %#v", wrongToken.Errors)
 	}
 }
 
@@ -1261,6 +1338,93 @@ func TestStartRegistrationLogsVerifyURLWhenInsecure(t *testing.T) {
 	}
 }
 
+func TestCompleteRegistrationAutoSendsContactVerificationWhenNeeded(t *testing.T) {
+	server := NewServer(testConfig())
+	cookies := map[string]*http.Cookie{}
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() {
+		slog.SetDefault(previousLogger)
+	})
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register/start", map[string]string{
+		"univemailLocalPart": "24v4001",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	verifyURLMatch := regexp.MustCompile(`verifyURL=([^\s]+)`).FindStringSubmatch(logs.String())
+	if len(verifyURLMatch) != 2 {
+		t.Fatalf("expected verify URL to be logged, got logs=%s", logs.String())
+	}
+	verifyURLRaw, err := strconv.Unquote(verifyURLMatch[1])
+	if err != nil {
+		verifyURLRaw = verifyURLMatch[1]
+	}
+	verifyURL, err := url.Parse(verifyURLRaw)
+	if err != nil {
+		t.Fatalf("parse verify url: %v", err)
+	}
+	pathParts := strings.Split(strings.Trim(verifyURL.Path, "/"), "/")
+	if len(pathParts) == 0 {
+		t.Fatalf("expected verify url path to contain pending registration id, got %q", verifyURL.Path)
+	}
+	pendingRegistrationID := pathParts[len(pathParts)-1]
+	token := verifyURL.Query().Get("token")
+	if token == "" {
+		t.Fatalf("expected verify url token, got %q", verifyURL.String())
+	}
+
+	recorder = doRawJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register/verify", map[string]string{
+		"pendingRegistrationId": pendingRegistrationID,
+		"token":                 token,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doRawJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register/complete", map[string]string{
+		"pendingRegistrationId": pendingRegistrationID,
+		"token":                 token,
+		"name":                  "新規 登録",
+		"nameYomi":              "しんき とうろく",
+		"contactEmail":          "followup@example.com",
+		"phoneNumber":           "090-5555-5555",
+		"password":              "password123",
+		"passwordConfirmation":  "password123",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var status authVerificationStatusResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
+		t.Fatalf("unmarshal verification status response: %v", err)
+	}
+	if status.Completed {
+		t.Fatalf("expected verification to remain incomplete until contact email is confirmed, got %#v", status)
+	}
+
+	emailItem, found := findVerificationItem(status.Items, "email")
+	if !found || emailItem.Verified || emailItem.Address != "followup@example.com" {
+		t.Fatalf("expected unverified contact email item, got %#v", status.Items)
+	}
+	univemailItem, found := findVerificationItem(status.Items, "univemail")
+	if !found || !univemailItem.Verified {
+		t.Fatalf("expected verified university email item, got %#v", status.Items)
+	}
+	if !strings.Contains(logs.String(), "kind=participant_verify_url") || !strings.Contains(logs.String(), "recipient=followup@example.com") {
+		t.Fatalf("expected auto-sent participant verification url log, got logs=%s", logs.String())
+	}
+}
+
 func TestAuthVerificationRequestQueuesMailWhenSecure(t *testing.T) {
 	t.Parallel()
 
@@ -1316,20 +1480,20 @@ func TestAuthVerificationRequestQueuesMailWhenSecure(t *testing.T) {
 
 	found := false
 	for _, queued := range queuedMails {
-		if queued.Subject != "認証コードのご案内" {
+		if queued.Subject != "メール認証のお願い" {
 			continue
 		}
 		if !slices.Contains(queued.Recipients, "circle-b-contact@example.com") {
 			continue
 		}
-		if !strings.Contains(queued.Body, "認証コード:") {
+		if !strings.Contains(queued.Body, "/email/verify/account/email/") {
 			continue
 		}
 		found = true
 		break
 	}
 	if !found {
-		t.Fatalf("expected queued verification code mail, got %#v", queuedMails)
+		t.Fatalf("expected queued verification url mail, got %#v", queuedMails)
 	}
 }
 
@@ -6224,18 +6388,31 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 	}
 }
 
-func extractLoggedVerifyCode(t *testing.T, logs, kind, recipient string) string {
+func extractLoggedVerifyToken(t *testing.T, logs, kind, recipient string) string {
 	t.Helper()
 
 	pattern := regexp.MustCompile(
-		`kind=` + regexp.QuoteMeta(kind) + ` recipient=` + regexp.QuoteMeta(recipient) + ` verifyCode=([0-9]{6})`,
+		`kind=` + regexp.QuoteMeta(kind) + ` recipient=` + regexp.QuoteMeta(recipient) + ` verifyURL=([^\s]+)`,
 	)
 	matches := pattern.FindStringSubmatch(logs)
 	if len(matches) != 2 {
-		t.Fatalf("expected verify code log for %s/%s, got logs=%s", kind, recipient, logs)
+		t.Fatalf("expected verify url log for %s/%s, got logs=%s", kind, recipient, logs)
 	}
 
-	return matches[1]
+	verifyURLRaw, err := strconv.Unquote(matches[1])
+	if err != nil {
+		verifyURLRaw = matches[1]
+	}
+	verifyURL, err := url.Parse(verifyURLRaw)
+	if err != nil {
+		t.Fatalf("parse verify url: %v", err)
+	}
+	token := verifyURL.Query().Get("token")
+	if token == "" {
+		t.Fatalf("expected verify url token, got %q", verifyURL.String())
+	}
+
+	return token
 }
 
 func testNowUTC() time.Time {
@@ -6262,6 +6439,7 @@ func testConfig() config.Config {
 		PortalDescription:         "学園祭参加団体向けポータル",
 		AppURL:                    "https://portal.example.com",
 		AppForceHTTPS:             true,
+		RegistrationVerifyTTL:     time.Hour,
 		PortalAdminName:           "PortalDots 実行委員会",
 		PortalContactEmail:        "contact@example.com",
 		PortalUnivemailLocalPart:  "student_id",
