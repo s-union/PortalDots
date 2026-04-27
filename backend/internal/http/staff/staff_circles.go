@@ -384,10 +384,16 @@ func (h *staffCircleHandlers) addStaffCircleMember(c echo.Context) error {
 	}
 
 	targetUser, err := h.users.FindByLoginID(request.LoginID)
+	if err != nil && !errors.Is(err, useradmin.ErrNotFound) {
+		return internalError(c)
+	}
 	if errors.Is(err, useradmin.ErrNotFound) {
 		targetUser, err = h.users.FindByContactEmail(request.LoginID)
+		if err != nil && !errors.Is(err, useradmin.ErrNotFound) {
+			return internalError(c)
+		}
 	}
-	if err != nil {
+	if errors.Is(err, useradmin.ErrNotFound) {
 		return validationError(c, map[string][]string{
 			"loginId": {"この学籍番号または連絡先メールアドレスは登録されていません"},
 		})

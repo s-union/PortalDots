@@ -295,10 +295,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 		})
 	}
 
-	mimeType := strings.TrimSpace(fileHeader.Header.Get(echo.HeaderContentType))
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
+	mimeType := http.DetectContentType(content)
 
 	upload, ok := h.answers.AddUploadToAnswer(answerValue.ID, questionID, filename, mimeType, content)
 	if !ok {

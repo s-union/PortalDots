@@ -89,6 +89,15 @@ func (r *SQLCRepository) MarkUndeliverable(id string) bool {
 	return err == nil
 }
 
+func (r *SQLCRepository) MarkRecipientDelivered(id, recipient string) bool {
+	_, err := r.queries.MarkMailJobRecipientDelivered(context.Background(), dbgen.MarkMailJobRecipientDeliveredParams{
+		ID:          id,
+		ArrayAppend: recipient,
+	})
+
+	return err == nil
+}
+
 func (r *SQLCRepository) DeleteByCircle(circleID string) {
 	_ = r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.OptionalString(circleID))
 }
@@ -104,6 +113,7 @@ func mapJob(row dbgen.MailJob) Job {
 		Subject:         row.Subject,
 		Body:            row.Body,
 		Recipients:      row.Recipients,
+		DeliveredTo:     row.DeliveredTo,
 		Status:          row.Status,
 		CreatedByUserID: row.CreatedByUserID,
 		CreatedAt:       pgutil.FormatTimestamptz(row.CreatedAt),

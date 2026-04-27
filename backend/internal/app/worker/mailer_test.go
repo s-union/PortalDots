@@ -56,11 +56,12 @@ func TestProcessMailJobsOnceKeepsFailedJobQueued(t *testing.T) {
 	t.Parallel()
 
 	repository := mailqueue.NewMemoryRepository()
-	if _, err := repository.Enqueue(context.Background(), "0195ec00-0022-7000-8000-000000000001", "0195ec00-00b1-7000-8000-000000000001", "件名", "本文", []string{"ok@example.com", "ng@example.com"}); err != nil {
+	// "a_ok@" sorts before "z_ng@" so a_ok@ is attempted first.
+	if _, err := repository.Enqueue(context.Background(), "0195ec00-0022-7000-8000-000000000001", "0195ec00-00b1-7000-8000-000000000001", "件名", "本文", []string{"a_ok@example.com", "z_ng@example.com"}); err != nil {
 		t.Fatalf("enqueue mail: %v", err)
 	}
 
-	sender := &fakeMailSender{failRecipient: "ng@example.com"}
+	sender := &fakeMailSender{failRecipient: "z_ng@example.com"}
 	processed := ProcessMailJobsOnce(repository, sender, 10)
 	if processed != 0 {
 		t.Fatalf("expected 0 processed jobs, got %d", processed)
@@ -72,6 +73,36 @@ func TestProcessMailJobsOnceKeepsFailedJobQueued(t *testing.T) {
 	}
 	if jobs[0].Status != mailqueue.JobStatusQueued {
 		t.Fatalf("expected queued status after send failure, got %#v", jobs[0])
+	}
+	if len(jobs[0].DeliveredTo) != 1 || jobs[0].DeliveredTo[0] != "a_ok@example.com" {
+		t.Fatalf("expected a_ok@example.com tracked as delivered, got %#v", jobs[0].DeliveredTo)
+	}
+}
+
+func TestProcessMailJobsOnceDoesNotResendOnRetry(t *testing.T) {
+	t.Parallel()
+
+	repository := mailqueue.NewMemoryRepository()
+	// "a_ok@" sorts before "z_ng@" so a_ok@ is attempted first.
+	if _, err := repository.Enqueue(context.Background(), "0195ec00-0025-7000-8000-000000000001", "0195ec00-00b1-7000-8000-000000000001", "件名", "本文", []string{"a_ok@example.com", "z_ng@example.com"}); err != nil {
+		t.Fatalf("enqueue mail: %v", err)
+	}
+
+	sender := &fakeMailSender{failRecipient: "z_ng@example.com"}
+
+	// First run: a_ok@ succeeds, z_ng@ fails — job stays queued.
+	ProcessMailJobsOnce(repository, sender, 10)
+	if len(sender.sentRecipients) != 1 || sender.sentRecipients[0] != "a_ok@example.com" {
+		t.Fatalf("expected only a_ok@ on first run, got %#v", sender.sentRecipients)
+	}
+
+	// Second run (simulated retry): z_ng@ still fails, but a_ok@ must NOT be re-sent.
+	sender.sentRecipients = nil
+	ProcessMailJobsOnce(repository, sender, 10)
+	for _, r := range sender.sentRecipients {
+		if r == "a_ok@example.com" {
+			t.Fatalf("a_ok@example.com was sent again on retry — duplicate delivery bug not fixed")
+		}
 	}
 }
 

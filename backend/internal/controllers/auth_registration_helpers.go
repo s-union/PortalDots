@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -39,10 +38,12 @@ func isValidEmail(s string) bool {
 func passwordHasLetterAndDigit(s string) bool {
 	hasLetter := false
 	hasDigit := false
-	for _, r := range s {
-		if unicode.IsLetter(r) {
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		switch {
+		case (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z'):
 			hasLetter = true
-		} else if unicode.IsDigit(r) {
+		case b >= '0' && b <= '9':
 			hasDigit = true
 		}
 		if hasLetter && hasDigit {

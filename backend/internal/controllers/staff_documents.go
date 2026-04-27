@@ -461,10 +461,7 @@ func readStaffDocumentUpload(
 		}, false
 	}
 
-	mimeType := strings.TrimSpace(fileHeader.Header.Get(echo.HeaderContentType))
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
+	mimeType := http.DetectContentType(content)
 
 	return filename, mimeType, content, nil, true
 }

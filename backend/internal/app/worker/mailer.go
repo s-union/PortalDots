@@ -9,6 +9,10 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/shared/mailrecipients"
 )
 
+func isDelivered(deliveredTo []string, recipient string) bool {
+	return slices.Contains(deliveredTo, recipient)
+}
+
 type MailSender interface {
 	Send(recipient, subject, body string) error
 }
@@ -30,7 +34,7 @@ func ProcessMailJobsOnce(repository mailqueue.Repository, sender MailSender, lim
 	processed := 0
 
 	for _, job := range jobs {
-		switch deliverQueuedMailJob(sender, job) {
+		switch deliverQueuedMailJob(repository, sender, job) {
 		case deliveryResultSent:
 			if repository.MarkSent(job.ID, time.Now().UTC()) {
 				processed++
@@ -49,7 +53,7 @@ func ProcessMailJobsOnce(repository mailqueue.Repository, sender MailSender, lim
 	return processed
 }
 
-func deliverQueuedMailJob(sender MailSender, job mailqueue.Job) deliveryResult {
+func deliverQueuedMailJob(repository mailqueue.Repository, sender MailSender, job mailqueue.Job) deliveryResult {
 	recipients := normalizeRecipients(job.Recipients)
 	if len(recipients) == 0 {
 		slog.Warn(
@@ -62,6 +66,9 @@ func deliverQueuedMailJob(sender MailSender, job mailqueue.Job) deliveryResult {
 	}
 
 	for _, recipient := range recipients {
+		if isDelivered(job.DeliveredTo, recipient) {
+			continue
+		}
 		if err := sender.Send(recipient, job.Subject, job.Body); err != nil {
 			slog.Error(
 				"failed to deliver queued mail",
@@ -72,6 +79,7 @@ func deliverQueuedMailJob(sender MailSender, job mailqueue.Job) deliveryResult {
 			)
 			return deliveryResultRetryableFailure
 		}
+		repository.MarkRecipientDelivered(job.ID, recipient)
 	}
 
 	return deliveryResultSent

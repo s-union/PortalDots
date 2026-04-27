@@ -15,6 +15,7 @@ type Job struct {
 	Subject         string
 	Body            string
 	Recipients      []string
+	DeliveredTo     []string
 	Status          string
 	CreatedByUserID string
 	CreatedAt       string
@@ -34,6 +35,7 @@ type Repository interface {
 	ListQueued(limit int) []Job
 	MarkSent(id string, deliveredAt time.Time) bool
 	MarkUndeliverable(id string) bool
+	MarkRecipientDelivered(id, recipient string) bool
 	DeleteAll()
 	DeleteByCircle(circleID string)
 }
@@ -61,6 +63,7 @@ func (r *MemoryRepository) Enqueue(_ context.Context, circleID, createdByUserID,
 		Subject:         subject,
 		Body:            body,
 		Recipients:      slices.Clone(recipients),
+		DeliveredTo:     []string{},
 		Status:          JobStatusQueued,
 		CreatedByUserID: createdByUserID,
 		CreatedAt:       time.Now().UTC().Format(time.RFC3339),
@@ -159,6 +162,24 @@ func (r *MemoryRepository) MarkUndeliverable(id string) bool {
 	return false
 }
 
+func (r *MemoryRepository) MarkRecipientDelivered(id, recipient string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for index := range r.jobs {
+		if r.jobs[index].ID != id {
+			continue
+		}
+		if r.jobs[index].Status != JobStatusQueued {
+			return false
+		}
+		r.jobs[index].DeliveredTo = append(r.jobs[index].DeliveredTo, recipient)
+		return true
+	}
+
+	return false
+}
+
 func (r *MemoryRepository) DeleteByCircle(circleID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -182,5 +203,6 @@ func (r *MemoryRepository) DeleteAll() {
 
 func cloneJob(job Job) Job {
 	job.Recipients = slices.Clone(job.Recipients)
+	job.DeliveredTo = slices.Clone(job.DeliveredTo)
 	return job
 }
