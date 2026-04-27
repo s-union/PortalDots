@@ -31,6 +31,9 @@ jobs:
       - name: Generate API client
         run: mise run frontend-generate
 
+      - name: Build (generates typed-router.d.ts)
+        run: pnpm --filter @portaldots/frontend run build
+
       - name: Check
         run: mise run frontend-check
 
@@ -85,7 +88,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: portaldots
           POSTGRES_PASSWORD: portaldots
