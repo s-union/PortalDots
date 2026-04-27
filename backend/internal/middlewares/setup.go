@@ -40,14 +40,9 @@ func Setup(e *echo.Echo, cfg SetupConfig) {
 // VerifyCSRF validates the X-CSRF-Token header against the session's CSRF token
 // for state-mutating requests (POST, PUT, PATCH, DELETE).
 // Requests with no active session (e.g. the login endpoint) are skipped.
-// When AllowInsecureDefaults is true the check is skipped entirely.
 func VerifyCSRF(cfg SessionMiddlewareConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if cfg.AllowInsecureDefaults {
-				return next(c)
-			}
-
 			method := c.Request().Method
 			if method == http.MethodGet || method == http.MethodHead ||
 				method == http.MethodOptions || method == http.MethodTrace {

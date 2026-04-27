@@ -5,7 +5,7 @@ import {
     type UseQueryOptions,
     type UseQueryReturnType,
 } from "@tanstack/vue-query";
-import type { ApiClient, ApiErrorParsers } from "./client";
+import type { ApiClient, ApiErrorParsers, ApiResult } from "./client";
 import { expectApiData } from "./client";
 import type { paths } from "./generated/schema";
 
@@ -43,7 +43,11 @@ type RequestOptions = {
 };
 
 export type SuspenseQueryClientHelpers = {
-    useSuspenseQuery<TMethod extends HttpMethod, TPath extends PathWithMethod<TMethod>, TError = Error>(
+    useSuspenseQuery<
+        TMethod extends HttpMethod,
+        TPath extends PathWithMethod<TMethod>,
+        TError = Error,
+    >(
         method: TMethod,
         path: TPath,
         init: QueryInit<RequestInitFor<TMethod, TPath>>,
@@ -157,7 +161,6 @@ function callClientMethod<TMethod extends HttpMethod, TPath extends PathWithMeth
     path: TPath,
     init: RequestInitFor<TMethod, TPath>,
 ) {
-    type ApiResult<T> = { data: T; error?: undefined } | { data?: undefined; error: unknown };
     const request = client.request as (
         method: TMethod,
         path: TPath,

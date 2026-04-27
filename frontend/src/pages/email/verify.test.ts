@@ -137,6 +137,9 @@ describe('EmailVerifyPage', () => {
     expect(wrapper.text()).toContain('まだユーザー登録は完了していません！')
     expect(wrapper.text()).toContain('Demo User')
     expect(wrapper.text()).toContain('連絡先メールアドレス')
+    expect(wrapper.text()).toContain(
+      '連絡用メールアドレスにお知らせを届けるには、連絡先メールアドレスの認証が必要です。'
+    )
     expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain('登録情報の変更')
   })
 
@@ -240,6 +243,77 @@ describe('EmailVerifyPage', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.fullPath).toBe('/email/verify/completed')
+  })
+
+  it('keeps the page open when only the optional contact email remains unverified', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User'
+      }
+    })
+
+    const data = ref({
+      userId: 'demo-user',
+      displayName: 'Demo User',
+      completed: true,
+      items: [
+        {
+          type: 'email',
+          label: '連絡先メールアドレス',
+          address: 'demo@example.com',
+          verified: false
+        },
+        {
+          type: 'univemail',
+          label: '大学メールアドレス',
+          address: '24a0000@example.ac.jp',
+          verified: true
+        }
+      ]
+    })
+    authApiMocks.useSuspenseAuthVerificationStatusQuery.mockReturnValue({
+      data,
+      suspense: vi.fn().mockResolvedValue(undefined),
+      refetch: vi.fn().mockResolvedValue(undefined)
+    })
+    authApiMocks.useRequestAuthVerificationMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: ref(false)
+    })
+    authApiMocks.extractFirstErrorMessage.mockImplementation(() => 'エラーが発生しました')
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
+        { path: '/workspace/settings', component: { template: '<div>settings</div>' } },
+        { path: '/email/verify', component: EmailVerifyPage },
+        { path: '/email/verify/completed', component: { template: '<div>completed</div>' } }
+      ]
+    })
+
+    await router.push('/email/verify')
+    await router.isReady()
+
+    const wrapper = mount(EmailVerifyPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/email/verify')
+    expect(wrapper.text()).toContain(
+      '連絡用メールアドレスにお知らせを届けるには、連絡先メールアドレスの認証が必要です。'
+    )
   })
 
   it('renders nested child routes via RouterView', async () => {

@@ -72,7 +72,11 @@ async function buildRegistrationVerify(): Promise<TemplateArtifacts> {
         { pretty: true }
       )
     ),
-    text: normalizeText(`このURLに覚えがない場合は、このメールを破棄してください。
+    text: normalizeText(`{{.AppName}} のユーザー登録を続けるには、以下のURLを開いてください。
+
+{{.VerifyURL}}
+
+このURLに覚えがない場合は、このメールを破棄してください。
 
 {{.AdminName}}
 {{.ContactEmail}}`)

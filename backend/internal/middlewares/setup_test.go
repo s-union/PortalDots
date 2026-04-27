@@ -304,7 +304,7 @@ func TestVerifyCSRF(t *testing.T) {
 		}
 	})
 
-	t.Run("allows matching token and insecure defaults", func(t *testing.T) {
+	t.Run("allows matching token", func(t *testing.T) {
 		t.Parallel()
 
 		testCases := []struct {
@@ -316,15 +316,6 @@ func TestVerifyCSRF(t *testing.T) {
 				name:   "matching token",
 				cfg:    baseConfig,
 				header: "token-1",
-			},
-			{
-				name: "allow insecure defaults",
-				cfg: SessionMiddlewareConfig{
-					SessionCookieName:     "session",
-					AllowInsecureDefaults: true,
-					Sessions:              baseConfig.Sessions,
-				},
-				header: "",
 			},
 		}
 
@@ -358,6 +349,36 @@ func TestVerifyCSRF(t *testing.T) {
 					t.Fatalf("expected 204, got %d", rec.Code)
 				}
 			})
+		}
+	})
+
+	t.Run("rejects missing token even when insecure defaults are enabled", func(t *testing.T) {
+		t.Parallel()
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/", nil)
+		req.AddCookie(&http.Cookie{Name: "session", Value: "session-1"})
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		called := false
+		handler := VerifyCSRF(SessionMiddlewareConfig{
+			SessionCookieName:     "session",
+			AllowInsecureDefaults: true,
+			Sessions:              baseConfig.Sessions,
+		})(func(c echo.Context) error {
+			called = true
+			return c.NoContent(http.StatusNoContent)
+		})
+
+		if err := handler(c); err != nil {
+			t.Fatalf("expected JSON response, got %v", err)
+		}
+		if called {
+			t.Fatal("expected next handler not to be called")
+		}
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("expected 403, got %d", rec.Code)
 		}
 	})
 }

@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/png"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -395,6 +396,7 @@ func FromEnv() Config {
 	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTALDOTS_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
 	defaultAuthUser := defaultDemoAuthUser()
 	allowInsecureDefaults := getenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "") == "true"
+	appURL := getenv("APP_URL", "http://127.0.0.1:8080")
 
 	return Config{
 		BindAddress:               getenv("PORTALDOTS_API_BIND", ":8081"),
@@ -403,11 +405,11 @@ func FromEnv() Config {
 		AllowInsecureDefaults:     allowInsecureDefaults,
 		SyncAuthUserOnStartup:     getenv("PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP", "") == "true",
 		SessionCookieName:         getenv("PORTALDOTS_SESSION_COOKIE", "portaldots_session"),
-		SessionCookieSecure:       getenv("PORTALDOTS_SESSION_COOKIE_SECURE", "") == "true",
+		SessionCookieSecure:       getenvBool("PORTALDOTS_SESSION_COOKIE_SECURE", strings.HasPrefix(appURL, "https://")),
 		SessionTTL:                time.Duration(getenvInt("PORTALDOTS_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
 		AppName:                   getenv("APP_NAME", "PortalDots"),
 		PortalDescription:         getenv("PORTAL_DESCRIPTION", ternaryString(allowInsecureDefaults, "PortalDots デモサイトです。", "学園祭参加団体向けポータル")),
-		AppURL:                    getenv("APP_URL", "http://127.0.0.1:8080"),
+		AppURL:                    appURL,
 		AppForceHTTPS:             getenv("APP_FORCE_HTTPS", "") == "true",
 		PortalAdminName:           getenv("PORTAL_ADMIN_NAME", ternaryString(allowInsecureDefaults, "PortalDots 実行委員会", "PortalDots 実行委員会")),
 		PortalContactEmail:        getenv("PORTAL_CONTACT_EMAIL", ternaryString(allowInsecureDefaults, "support@portaldots.com", "contact@example.com")),
@@ -729,6 +731,13 @@ func (c Config) ValidateForAPI() error {
 	if c.SessionTTL <= 0 {
 		issues = append(issues, "PORTALDOTS_SESSION_TTL_SECONDS must be greater than zero")
 	}
+	if strings.TrimSpace(c.SessionCookieName) == "" {
+		issues = append(issues, "PORTALDOTS_SESSION_COOKIE must not be empty")
+	}
+	appOrigin, appURLErr := appOrigin(c.AppURL)
+	if appURLErr != nil {
+		issues = append(issues, "APP_URL must be an absolute http or https URL")
+	}
 	if strings.TrimSpace(c.StaffVerifyCode) == "" {
 		issues = append(issues, "PORTALDOTS_STAFF_VERIFY_CODE must not be empty")
 	}
@@ -746,6 +755,12 @@ func (c Config) ValidateForAPI() error {
 			issues = append(issues, "PORTALDOTS_AUTH_PASSWORD must not be empty")
 		}
 	} else {
+		if appURLErr == nil && !strings.HasPrefix(appOrigin, "https://") {
+			issues = append(issues, "APP_URL must use https unless PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true")
+		}
+		if !c.SessionCookieSecure {
+			issues = append(issues, "PORTALDOTS_SESSION_COOKIE_SECURE must be true unless PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true")
+		}
 		if !c.staffVerifyCodeProvided || c.StaffVerifyCode == defaultStaffVerifyCode {
 			issues = append(issues, "PORTALDOTS_STAFF_VERIFY_CODE must be set to a non-default value unless PORTALDOTS_ALLOW_INSECURE_DEFAULTS=true")
 		}
@@ -776,11 +791,38 @@ func (c Config) ValidateForAPI() error {
 	return errors.New(strings.Join(issues, "; "))
 }
 
+func (c Config) AppOrigin() (string, error) {
+	return appOrigin(c.AppURL)
+}
+
+func appOrigin(value string) (string, error) {
+	parsed, err := url.Parse(strings.TrimSpace(value))
+	if err != nil {
+		return "", err
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", errors.New("unsupported scheme")
+	}
+	if parsed.Host == "" {
+		return "", errors.New("missing host")
+	}
+	return parsed.Scheme + "://" + parsed.Host, nil
+}
+
 func getenv(key, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
 	return fallback
+}
+
+func getenvBool(key string, fallback bool) bool {
+	value, ok := os.LookupEnv(key)
+	if !ok || value == "" {
+		return fallback
+	}
+
+	return value == "true"
 }
 
 func getenvWithPresence(key, fallback string) (string, bool) {

@@ -28,3 +28,31 @@ updates:
     time: '20:00'
   target-branch: "5.x"
   open-pull-requests-limit: 20
+- package-ecosystem: gomod
+  directory: "/backend"
+  schedule:
+    interval: weekly
+    time: '20:00'
+  target-branch: "5.x"
+  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/frontend"
+  schedule:
+    interval: weekly
+    time: '20:00'
+  target-branch: "5.x"
+  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/packages/api-client"
+  schedule:
+    interval: weekly
+    time: '20:00'
+  target-branch: "5.x"
+  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/packages/email-templates"
+  schedule:
+    interval: weekly
+    time: '20:00'
+  target-branch: "5.x"
+  open-pull-requests-limit: 10

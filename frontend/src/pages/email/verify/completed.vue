@@ -19,7 +19,7 @@ import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
       <div class="space-y-5 px-6 py-6 text-center text-sm leading-7 text-body">
         <p class="text-success">
           <i class="fas fa-check-circle" aria-hidden="true" />
-          <strong>必要なメール認証が完了しました。</strong>
+          <strong>必須のメール認証が完了しました。企画参加登録を進められます。</strong>
         </p>
         <p>
           <RouterLink

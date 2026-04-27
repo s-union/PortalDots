@@ -68,18 +68,7 @@ func buildAuthVerificationStatus(userValue useradmin.User, univemail string) aut
 		},
 	}
 
-	completed := true
-	for _, item := range items {
-		if item.Address == "" {
-			if item.Type == "univemail" {
-				completed = false
-			}
-			continue
-		}
-		if !item.Verified {
-			completed = false
-		}
-	}
+	completed := strings.TrimSpace(univemail) != "" && userValue.IsUnivemailVerified
 
 	return authVerificationStatusResponse{
 		UserID:      userValue.ID,

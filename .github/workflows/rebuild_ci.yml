@@ -25,9 +25,19 @@ on:
       - "pnpm-workspace.yaml"
       - ".github/workflows/rebuild_ci.yml"
 
+concurrency:
+  group: rebuild-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   backend:
+    name: Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     services:
       postgres:
         image: postgres:18
@@ -43,31 +53,12 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-
-      - name: Build backend
+    defaults:
+      run:
         working-directory: backend
-        run: go build ./...
 
-      - name: Vet backend
-        working-directory: backend
-        run: go vet ./...
-
-      - name: Test backend
-        working-directory: backend
-        env:
-          PORTALDOTS_DATABASE_URL: postgres://portaldots:portaldots@127.0.0.1:5432/portaldots_rebuild?sslmode=disable
-        run: go test ./...
-
-  frontend:
-    runs-on: ubuntu-latest
+    env:
+      PORTALDOTS_DATABASE_URL: postgres://portaldots:portaldots@127.0.0.1:5432/portaldots_rebuild?sslmode=disable
 
     steps:
       - uses: actions/checkout@v4
@@ -80,11 +71,77 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install frontend toolchain
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate email templates
+        working-directory: packages/email-templates
+        run: pnpm run generate
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -count=1 ./...
+
+      - name: SQLC smoke
+        run: go run ./cmd/sqlc-smoke
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate API client
+        working-directory: packages/api-client
+        run: pnpm run codegen:api
+
+      - name: Check API client
+        working-directory: packages/api-client
+        run: pnpm run ci:check
+
+      - name: Test API client
+        working-directory: packages/api-client
+        run: pnpm run test
+
+      - name: Check email templates
+        working-directory: packages/email-templates
+        run: pnpm run typecheck
 
       - name: Check frontend
         working-directory: frontend
@@ -99,8 +156,10 @@ jobs:
         run: pnpm run build
 
   frontend-e2e:
+    name: Frontend E2E
     runs-on: ubuntu-latest
     needs: frontend
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -113,8 +172,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -122,10 +182,6 @@ jobs:
       - name: Install Playwright browsers
         working-directory: frontend
         run: pnpm exec playwright install --with-deps chromium
-
-      - name: Build frontend
-        working-directory: frontend
-        run: pnpm run build
 
       - name: Run Playwright
         working-directory: frontend

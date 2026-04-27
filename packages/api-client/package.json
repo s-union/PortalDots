@@ -14,7 +14,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check",
-        "codegen:api": "openapi-typescript ../../backend/api/openapi.yaml --output src/generated/schema.d.ts"
+        "codegen:api": "openapi-typescript ../../backend/api/openapi.yaml --output src/generated/schema.d.ts && oxfmt src/generated/schema.d.ts"
     },
     "dependencies": {
         "openapi-fetch": "^0.17.0"

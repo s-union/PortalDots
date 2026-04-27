@@ -371,7 +371,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 			if err != nil {
 				return internalError(c)
 			}
-			updatedUser, err = h.users.UpdateVerified(updatedUser.ID, updatedUser.IsUnivemailVerified && (updatedUser.ContactEmail == "" || updatedUser.IsEmailVerified))
+			updatedUser, err = h.users.UpdateVerified(updatedUser.ID, updatedUser.IsUnivemailVerified)
 			if err != nil {
 				return internalError(c)
 			}

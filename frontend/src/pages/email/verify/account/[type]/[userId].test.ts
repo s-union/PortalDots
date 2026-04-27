@@ -59,7 +59,9 @@ describe('EmailVerifyAccountPage', () => {
       userId: 'user-123',
       token: 'token-abc'
     })
-    expect(wrapper.text()).toContain('メール認証が完了しました。残りのメールアドレスも認証してください。')
+    expect(wrapper.text()).toContain(
+      'メール認証が完了しました。大学メールアドレスを認証すると、企画参加登録を進められます。'
+    )
     expect(wrapper.get('a[href="/email/verify"]').text()).toContain('認証状況を確認する')
   })
 

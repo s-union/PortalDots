@@ -310,7 +310,7 @@ func TestUpdateProfileResetsChangedContactEmailVerificationAndSendsVerifyURL(t *
 		t.Fatalf("expected updated unverified contact email item, got %#v", status.Items)
 	}
 	if status.Completed {
-		t.Fatalf("expected verification to remain incomplete after contact email change, got %#v", status)
+		t.Fatalf("expected verification to remain incomplete without a university email, got %#v", status)
 	}
 	if !strings.Contains(logs.String(), "kind=participant_verify_url") || !strings.Contains(logs.String(), "recipient=changed-contact@example.com") {
 		t.Fatalf("expected participant verification url log after profile update, got logs=%s", logs.String())
@@ -1128,7 +1128,7 @@ func TestAuthVerificationFlow(t *testing.T) {
 		t.Fatalf("expected email to be verified, got %#v", status.Items)
 	}
 	if status.Completed {
-		t.Fatalf("expected verification to remain incomplete until all items verified, got %#v", status)
+		t.Fatalf("expected verification to remain incomplete until university email is verified, got %#v", status)
 	}
 
 	logs.Reset()
@@ -1408,8 +1408,8 @@ func TestCompleteRegistrationAutoSendsContactVerificationWhenNeeded(t *testing.T
 	if err := json.Unmarshal(recorder.Body.Bytes(), &status); err != nil {
 		t.Fatalf("unmarshal verification status response: %v", err)
 	}
-	if status.Completed {
-		t.Fatalf("expected verification to remain incomplete until contact email is confirmed, got %#v", status)
+	if !status.Completed {
+		t.Fatalf("expected university email verification to be sufficient for completion, got %#v", status)
 	}
 
 	emailItem, found := findVerificationItem(status.Items, "email")
@@ -6842,10 +6842,17 @@ func doJSONRequest(
 	for _, cookie := range cookies {
 		req.AddCookie(cookie)
 	}
+	hasCSRFHeader := false
 	for _, hdrs := range extraHeaders {
 		for k, v := range hdrs {
+			if strings.EqualFold(k, "X-CSRF-Token") {
+				hasCSRFHeader = true
+			}
 			req.Header.Set(k, v)
 		}
+	}
+	if !hasCSRFHeader && len(cookies) > 0 && requiresCSRFHeader(method) {
+		req.Header.Set("X-CSRF-Token", fetchCSRFToken(t, server, cookies))
 	}
 
 	recorder := httptest.NewRecorder()
@@ -6861,6 +6868,15 @@ func doJSONRequest(
 	}
 
 	return recorder
+}
+
+func requiresCSRFHeader(method string) bool {
+	switch method {
+	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+		return true
+	default:
+		return false
+	}
 }
 
 func doRawJSONRequest(
@@ -6888,10 +6904,17 @@ func doRawJSONRequest(
 	for _, cookie := range cookies {
 		req.AddCookie(cookie)
 	}
+	hasCSRFHeader := false
 	for _, hdrs := range extraHeaders {
 		for k, v := range hdrs {
+			if strings.EqualFold(k, "X-CSRF-Token") {
+				hasCSRFHeader = true
+			}
 			req.Header.Set(k, v)
 		}
+	}
+	if !hasCSRFHeader && len(cookies) > 0 && requiresCSRFHeader(method) {
+		req.Header.Set("X-CSRF-Token", fetchCSRFToken(t, server, cookies))
 	}
 
 	recorder := httptest.NewRecorder()
@@ -6965,6 +6988,9 @@ func doMultipartRequest(
 	req.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
 	for _, cookie := range cookies {
 		req.AddCookie(cookie)
+	}
+	if len(cookies) > 0 && requiresCSRFHeader(method) {
+		req.Header.Set("X-CSRF-Token", fetchCSRFToken(t, server, cookies))
 	}
 
 	recorder := httptest.NewRecorder()

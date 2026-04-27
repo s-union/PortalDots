@@ -246,8 +246,12 @@ func NewServerWithDependencies(
 ) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
+	allowedOrigin := cfg.AppURL
+	if origin, err := cfg.AppOrigin(); err == nil {
+		allowedOrigin = origin
+	}
 	middlewares.Setup(e, middlewares.SetupConfig{
-		AllowedOrigins: []string{cfg.AppURL},
+		AllowedOrigins: []string{allowedOrigin},
 	})
 
 	shared := sharedDeps{

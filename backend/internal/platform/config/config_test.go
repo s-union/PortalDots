@@ -33,7 +33,10 @@ func TestValidateForAPIAllowsSecureExplicitConfigurationWithoutDemoAuthSettings(
 	cfg := Config{
 		DatabaseURL:              "postgres://example",
 		MigrationsDir:            "db/migrations",
+		SessionCookieName:        "portaldots_session",
+		SessionCookieSecure:      true,
 		SessionTTL:               time.Hour,
+		AppURL:                   "https://portal.example.com",
 		RegistrationVerifyTTL:    time.Hour,
 		PortalUnivemailLocalPart: "student_id",
 		SMTPHost:                 "smtp.example.com",
@@ -60,7 +63,10 @@ func TestValidateForAPIRejectsDefaultAuthPassword(t *testing.T) {
 	cfg := Config{
 		DatabaseURL:             "postgres://example",
 		MigrationsDir:           "db/migrations",
+		SessionCookieName:       "portaldots_session",
 		SessionTTL:              time.Hour,
+		AppURL:                  "https://portal.example.com",
+		SessionCookieSecure:     true,
 		StaffVerifyCode:         "654321",
 		staffVerifyCodeProvided: true,
 		AuthUser: AuthUser{
@@ -84,7 +90,10 @@ func TestValidateForAPIRejectsUnprovidedAuthPassword(t *testing.T) {
 	cfg := Config{
 		DatabaseURL:             "postgres://example",
 		MigrationsDir:           "db/migrations",
+		SessionCookieName:       "portaldots_session",
 		SessionTTL:              time.Hour,
+		AppURL:                  "https://portal.example.com",
+		SessionCookieSecure:     true,
 		StaffVerifyCode:         "654321",
 		staffVerifyCodeProvided: true,
 		// authPasswordProvided is false (default) → not explicitly set
@@ -105,7 +114,9 @@ func TestValidateForAPIRequiresDemoAuthSettingsWhenInsecureDefaultsEnabled(t *te
 	cfg := Config{
 		DatabaseURL:           "postgres://example",
 		MigrationsDir:         "db/migrations",
+		SessionCookieName:     "portaldots_session",
 		SessionTTL:            time.Hour,
+		AppURL:                "http://127.0.0.1:8080",
 		AllowInsecureDefaults: true,
 		StaffVerifyCode:       "123456",
 	}
@@ -119,6 +130,56 @@ func TestValidateForAPIRequiresDemoAuthSettingsWhenInsecureDefaultsEnabled(t *te
 	}
 	if !strings.Contains(err.Error(), "PORTALDOTS_AUTH_PASSWORD") {
 		t.Fatalf("expected auth password error, got %v", err)
+	}
+}
+
+func TestValidateForAPIRejectsInsecureAppURLAndCookieInSecureMode(t *testing.T) {
+	t.Parallel()
+
+	cfg := Config{
+		DatabaseURL:              "postgres://example",
+		MigrationsDir:            "db/migrations",
+		SessionCookieName:        "portaldots_session",
+		SessionTTL:               time.Hour,
+		AppURL:                   "http://portal.example.com",
+		RegistrationVerifyTTL:    time.Hour,
+		PortalUnivemailLocalPart: "student_id",
+		SMTPHost:                 "smtp.example.com",
+		SMTPPort:                 587,
+		SMTPUsername:             "mailer",
+		SMTPPassword:             "super-secret-password",
+		SMTPFrom:                 "noreply@example.com",
+		StaffVerifyCode:          "654321",
+		staffVerifyCodeProvided:  true,
+		AuthUser: AuthUser{
+			Password: "strong-production-password",
+		},
+		authPasswordProvided: true,
+	}
+
+	err := cfg.ValidateForAPI()
+	if err == nil {
+		t.Fatal("expected insecure app url and cookie config to be rejected")
+	}
+	if !strings.Contains(err.Error(), "APP_URL must use https") {
+		t.Fatalf("expected APP_URL error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "PORTALDOTS_SESSION_COOKIE_SECURE") {
+		t.Fatalf("expected secure cookie error, got %v", err)
+	}
+}
+
+func TestAppOriginNormalizesPath(t *testing.T) {
+	t.Parallel()
+
+	cfg := Config{AppURL: "https://portal.example.com/app/path?ignored=1"}
+
+	origin, err := cfg.AppOrigin()
+	if err != nil {
+		t.Fatalf("expected app origin, got %v", err)
+	}
+	if origin != "https://portal.example.com" {
+		t.Fatalf("expected normalized origin, got %q", origin)
 	}
 }
 

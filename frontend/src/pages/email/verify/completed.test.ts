@@ -44,7 +44,7 @@ describe('EmailVerifyCompletedPage', () => {
     const wrapper = await mountAtCompleted()
 
     expect(wrapper.text()).toContain('メール認証完了')
-    expect(wrapper.text()).toContain('必要なメール認証が完了しました。')
+    expect(wrapper.text()).toContain('必須のメール認証が完了しました。企画参加登録を進められます。')
     expect(wrapper.get('a[href="/"]').text()).toContain('ホームにアクセス')
   })
 })

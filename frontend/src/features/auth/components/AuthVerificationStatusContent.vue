@@ -11,8 +11,11 @@ const router = useRouter()
 const route = useRoute()
 const statusQuery = useSuspenseAuthVerificationStatusQuery()
 await statusQuery.suspense()
+const allAddressesVerified = computed(() =>
+  (statusQuery.data.value?.items ?? []).every((item) => item.address.trim() === '' || item.verified)
+)
 
-if (statusQuery.data.value?.completed) {
+if (statusQuery.data.value?.completed && allAddressesVerified.value) {
   await router.replace('/email/verify/completed')
 }
 
@@ -55,7 +58,7 @@ async function handleRequest(type: 'email' | 'univemail') {
       <p v-if="statusQuery.data.value">
         <strong>{{ statusQuery.data.value.displayName }}</strong> としてログイン中です。
       </p>
-      <p>連絡先メールアドレスと大学メールアドレスの両方を認証すると、企画参加登録を進められます。</p>
+      <p>連絡用メールアドレスにお知らせを届けるには、連絡先メールアドレスの認証が必要です。</p>
       <p>
         <RouterLink class="font-semibold text-primary hover:underline" to="/workspace/settings"
           >登録情報の変更</RouterLink

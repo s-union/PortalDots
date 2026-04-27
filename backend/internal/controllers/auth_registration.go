@@ -386,7 +386,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 		PasswordHash:        string(passwordHash),
 		Roles:               []string{"participant"},
 		Permissions:         []string{},
-		IsVerified:          contactEmailMatchesUnivemail || request.ContactEmail == "",
+		IsVerified:          true,
 		IsEmailVerified:     contactEmailMatchesUnivemail,
 		IsUnivemailVerified: true,
 	})

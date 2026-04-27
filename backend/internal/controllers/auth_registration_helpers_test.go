@@ -42,7 +42,7 @@ func TestBuildAuthVerificationVerifyURLEncodesUserID(t *testing.T) {
 	}
 }
 
-func TestBuildAuthVerificationStatusRequiresContactEmailVerificationWhenPresent(t *testing.T) {
+func TestBuildAuthVerificationStatusAllowsCompletionWithUnverifiedContactEmail(t *testing.T) {
 	t.Parallel()
 
 	status := buildAuthVerificationStatus(useradmin.User{
@@ -53,8 +53,8 @@ func TestBuildAuthVerificationStatusRequiresContactEmailVerificationWhenPresent(
 		IsUnivemailVerified: true,
 	}, "user@example.ac.jp")
 
-	if status.Completed {
-		t.Fatalf("expected verification to remain incomplete, got %#v", status)
+	if !status.Completed {
+		t.Fatalf("expected verification to complete with verified university email, got %#v", status)
 	}
 }
 
