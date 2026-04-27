@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - 5.x_development
+
+jobs:
+  frontend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install ni
+        run: npm install -g @antfu/ni
+
+      - name: Install JS dependencies
+        run: mise run frontend-install
+
+      - name: Generate API client
+        run: mise run frontend-generate
+
+      - name: Check
+        run: mise run frontend-check
+
+  email-templates-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install ni
+        run: npm install -g @antfu/ni
+
+      - name: Install JS dependencies
+        run: mise run frontend-install
+
+      - name: Check
+        run: mise run email-templates-check
+
+  backend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install ni
+        run: npm install -g @antfu/ni
+
+      - name: Install JS dependencies
+        run: mise run frontend-install
+
+      - name: Generate email templates
+        run: mise run email-templates-generate
+
+      - name: Generate sqlc
+        run: mise run backend-sqlc-generate
+
+      - name: Check
+        run: mise run backend-check
+
+  backend-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: portaldots
+          POSTGRES_PASSWORD: portaldots
+          POSTGRES_DB: portaldots_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PORTALDOTS_DATABASE_URL: postgres://portaldots:portaldots@localhost:5432/portaldots_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install ni
+        run: npm install -g @antfu/ni
+
+      - name: Install JS dependencies
+        run: mise run frontend-install
+
+      - name: Generate
+        run: mise run generate
+
+      - name: Migrate
+        run: mise run backend-migrate
+
+      - name: Test
+        run: mise run backend-test

@@ -1,1 +1,0 @@
-close #issue_number
