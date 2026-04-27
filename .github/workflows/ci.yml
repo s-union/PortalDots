@@ -7,6 +7,9 @@ on:
     branches:
       - 5.x_development
 
+permissions:
+  contents: read
+
 jobs:
   frontend-check:
     runs-on: ubuntu-latest
