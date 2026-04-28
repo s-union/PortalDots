@@ -9,6 +9,9 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    session: {
+      bootstrap: mockSessionBootstrapStaff
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
@@ -26,6 +29,12 @@ export const Default: Story = {}
 
 export const LimitedPermissions: Story = {
   parameters: {
+    session: {
+      bootstrap: {
+        ...mockSessionBootstrapStaff,
+        permissions: ['circles.read', 'staff.read']
+      }
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () =>

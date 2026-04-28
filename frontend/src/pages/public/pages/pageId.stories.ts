@@ -9,6 +9,9 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    route: {
+      path: '/public/pages/page-1'
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () =>
