@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffFormEditPage from './edit.vue'
 
 function createQueryPlugin() {
@@ -22,25 +24,82 @@ function createQueryPlugin() {
 describe('StaffFormEditPage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.unstubAllGlobals()
   })
 
   it('renders and updates staff form settings', async () => {
+    let updatedName = '展示チェックフォーム'
+    let updatedMaxAnswers = 2
+    let updatedTags = ['展示']
+    let updatedConfirmationMessage = '回答ありがとうございました。'
+    let updatedRequestBody: Record<string, unknown> | null = null
+
+    server.use(
+      http.get('/v1/staff/tags', () =>
+        HttpResponse.json([
+          { id: 'tag-exhibit', name: '展示' },
+          { id: 'tag-required', name: '必須' }
+        ])
+      ),
+      http.get('/v1/staff/forms/form-circle-b-1', () =>
+        HttpResponse.json({
+          circle: { id: 'circle-b', name: 'デモ企画B' },
+          id: 'form-circle-b-1',
+          name: updatedName,
+          description: '展示レイアウトと機材使用申請を提出してください。',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: updatedMaxAnswers,
+          answerableTags: updatedTags,
+          confirmationMessage: updatedConfirmationMessage,
+          isPublic: true,
+          isOpen: true,
+          createdAt: '2026-03-01T12:00:00Z',
+          updatedAt: '2026-03-01T12:00:00Z',
+          isParticipationForm: false,
+          questions: [],
+          answer: {
+            id: 'answer-1',
+            body: '展示位置は正面入口側を希望します。',
+            updatedAt: '2026-03-05T10:00:00Z',
+            details: {},
+            uploads: []
+          }
+        })
+      ),
+      http.put('/v1/staff/forms/form-circle-b-1', async ({ request }) => {
+        updatedRequestBody = (await request.json()) as Record<string, unknown>
+        updatedName = '更新後フォーム'
+        updatedMaxAnswers = 3
+        updatedTags = ['展示', '必須']
+        updatedConfirmationMessage = '送信が完了しました。'
+        return HttpResponse.json({
+          circle: { id: 'circle-b', name: 'デモ企画B' },
+          id: 'form-circle-b-1',
+          name: updatedName,
+          description: '更新後の説明',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: updatedMaxAnswers,
+          answerableTags: updatedTags,
+          confirmationMessage: updatedConfirmationMessage,
+          isPublic: true,
+          isOpen: true,
+          createdAt: '2026-03-01T12:00:00Z',
+          updatedAt: '2026-03-01T12:00:00Z',
+          isParticipationForm: false
+        })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
 
     const router = createRouter({
@@ -48,130 +107,13 @@ describe('StaffFormEditPage', () => {
       routes: [
         { path: '/staff/forms', component: { template: '<div>forms</div>' } },
         { path: '/staff/forms/:formId/edit', component: StaffFormEditPage },
-        {
-          path: '/staff/forms/:formId/answers',
-          component: { template: '<div>answers</div>' }
-        },
-        {
-          path: '/staff/forms/:formId/editor',
-          component: { template: '<div>editor</div>' }
-        },
-        {
-          path: '/staff/forms/:formId/preview',
-          component: { template: '<div>preview</div>' }
-        }
+        { path: '/staff/forms/:formId/answers', component: { template: '<div>answers</div>' } },
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
+        { path: '/staff/forms/:formId/preview', component: { template: '<div>preview</div>' } }
       ]
     })
     await router.push('/staff/forms/form-circle-b-1/edit')
     await router.isReady()
-
-    let updatedName = '展示チェックフォーム'
-    let updatedMaxAnswers = 2
-    let updatedTags = ['展示']
-    let updatedConfirmationMessage = '回答ありがとうございました。'
-    let updatedRequestBody: Record<string, unknown> | null = null
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              { id: 'tag-exhibit', name: '展示' },
-              { id: 'tag-required', name: '必須' }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: 'form-circle-b-1',
-              name: updatedName,
-              description: '展示レイアウトと機材使用申請を提出してください。',
-              openAt: '2026-03-02T00:00:00Z',
-              closeAt: '2026-03-22T23:59:59Z',
-              maxAnswers: updatedMaxAnswers,
-              answerableTags: updatedTags,
-              confirmationMessage: updatedConfirmationMessage,
-              isPublic: true,
-              isOpen: true,
-              createdAt: '2026-03-01T12:00:00Z',
-              updatedAt: '2026-03-01T12:00:00Z',
-              isParticipationForm: false,
-              questions: [],
-              answer: {
-                id: 'answer-1',
-                body: '展示位置は正面入口側を希望します。',
-                updatedAt: '2026-03-05T10:00:00Z',
-                details: {},
-                uploads: []
-              }
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'PUT') {
-          updatedRequestBody = await parseRequestBody(input, init?.body)
-          updatedName = '更新後フォーム'
-          updatedMaxAnswers = 3
-          updatedTags = ['展示', '必須']
-          updatedConfirmationMessage = '送信が完了しました。'
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: 'form-circle-b-1',
-              name: updatedName,
-              description: '更新後の説明',
-              openAt: '2026-03-02T00:00:00Z',
-              closeAt: '2026-03-22T23:59:59Z',
-              maxAnswers: updatedMaxAnswers,
-              answerableTags: updatedTags,
-              confirmationMessage: updatedConfirmationMessage,
-              isPublic: true,
-              isOpen: true,
-              createdAt: '2026-03-01T12:00:00Z',
-              updatedAt: '2026-03-01T12:00:00Z',
-              isParticipationForm: false
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffFormEditPage, {
       global: {
@@ -212,21 +154,64 @@ describe('StaffFormEditPage', () => {
   })
 
   it('confirms before copying and deleting the current form', async () => {
+    const deleteRequests: string[] = []
+
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([{ id: 'tag-exhibit', name: '展示' }])),
+      http.get('/v1/staff/forms/form-circle-b-1', () =>
+        HttpResponse.json({
+          id: 'form-circle-b-1',
+          name: '展示チェックフォーム',
+          description: '展示レイアウトと機材使用申請を提出してください。',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: ['展示'],
+          confirmationMessage: '回答ありがとうございました。',
+          isPublic: true,
+          isOpen: true,
+          createdAt: '2026-03-01T12:00:00Z',
+          updatedAt: '2026-03-01T12:00:00Z',
+          isParticipationForm: false,
+          questions: [],
+          answer: null
+        })
+      ),
+      http.post('/v1/staff/forms/form-circle-b-1/copy', () =>
+        HttpResponse.json(
+          {
+            id: 'form-circle-b-copy',
+            name: '展示チェックフォームのコピー',
+            description: '展示レイアウトと機材使用申請を提出してください。',
+            openAt: '2026-03-02T00:00:00Z',
+            closeAt: '2026-03-22T23:59:59Z',
+            maxAnswers: 2,
+            answerableTags: ['展示'],
+            confirmationMessage: '回答ありがとうございました。',
+            isPublic: false,
+            isOpen: false,
+            createdAt: '2026-03-01T12:00:00Z',
+            updatedAt: '2026-03-01T12:00:00Z',
+            isParticipationForm: false
+          },
+          { status: 201 }
+        )
+      ),
+      http.delete('/v1/staff/forms/form-circle-b-1', ({ request }) => {
+        deleteRequests.push(request.url)
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
 
     const router = createRouter({
@@ -235,20 +220,13 @@ describe('StaffFormEditPage', () => {
         { path: '/staff/forms', component: { template: '<div>forms</div>' } },
         { path: '/staff/forms/:formId/edit', component: StaffFormEditPage },
         { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
-        {
-          path: '/staff/forms/:formId/answers',
-          component: { template: '<div>answers</div>' }
-        },
-        {
-          path: '/staff/forms/:formId/preview',
-          component: { template: '<div>preview</div>' }
-        }
+        { path: '/staff/forms/:formId/answers', component: { template: '<div>answers</div>' } },
+        { path: '/staff/forms/:formId/preview', component: { template: '<div>preview</div>' } }
       ]
     })
     await router.push('/staff/forms/form-circle-b-1/edit')
     await router.isReady()
 
-    const deleteRequests: string[] = []
     const confirmMock = vi
       .fn<(message?: string) => boolean>()
       .mockReturnValueOnce(false)
@@ -256,88 +234,6 @@ describe('StaffFormEditPage', () => {
       .mockReturnValueOnce(false)
       .mockReturnValueOnce(true)
     vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return new Response(JSON.stringify([{ id: 'tag-exhibit', name: '展示' }]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              id: 'form-circle-b-1',
-              name: '展示チェックフォーム',
-              description: '展示レイアウトと機材使用申請を提出してください。',
-              openAt: '2026-03-02T00:00:00Z',
-              closeAt: '2026-03-22T23:59:59Z',
-              maxAnswers: 2,
-              answerableTags: ['展示'],
-              confirmationMessage: '回答ありがとうございました。',
-              isPublic: true,
-              isOpen: true,
-              createdAt: '2026-03-01T12:00:00Z',
-              updatedAt: '2026-03-01T12:00:00Z',
-              isParticipationForm: false,
-              questions: [],
-              answer: null
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/forms/form-circle-b-1/copy') && method === 'POST') {
-          return new Response(
-            JSON.stringify({
-              id: 'form-circle-b-copy',
-              name: '展示チェックフォームのコピー',
-              description: '展示レイアウトと機材使用申請を提出してください。',
-              openAt: '2026-03-02T00:00:00Z',
-              closeAt: '2026-03-22T23:59:59Z',
-              maxAnswers: 2,
-              answerableTags: ['展示'],
-              confirmationMessage: '回答ありがとうございました。',
-              isPublic: false,
-              isOpen: false,
-              createdAt: '2026-03-01T12:00:00Z',
-              updatedAt: '2026-03-01T12:00:00Z',
-              isParticipationForm: false
-            }),
-            {
-              status: 201,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/forms/form-circle-b-1') && method === 'DELETE') {
-          deleteRequests.push(url)
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffFormEditPage, {
       global: {
@@ -390,21 +286,52 @@ describe('StaffFormEditPage', () => {
   })
 
   it('shows participation forms as question-editor only', async () => {
+    server.use(
+      http.get('/v1/staff/forms/form-participation-exhibit', () =>
+        HttpResponse.json({
+          id: 'form-participation-exhibit',
+          name: '企画参加登録',
+          description: '参加登録を提出してください。',
+          openAt: '2026-03-01T00:00:00Z',
+          closeAt: '2026-03-31T23:59:59Z',
+          maxAnswers: 1,
+          answerableTags: [],
+          confirmationMessage: 'ありがとうございました。',
+          isPublic: true,
+          isOpen: true,
+          createdAt: '2026-03-01T00:00:00Z',
+          updatedAt: '2026-03-01T00:00:00Z',
+          isParticipationForm: true,
+          questions: [
+            {
+              id: 'question-1',
+              name: '追加設問',
+              description: '補足事項を入力してください',
+              type: 'text',
+              isRequired: false,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: [],
+              priority: 1,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            }
+          ],
+          answer: null
+        })
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
 
     const router = createRouter({
@@ -413,79 +340,12 @@ describe('StaffFormEditPage', () => {
         { path: '/staff/forms', component: { template: '<div>forms</div>' } },
         { path: '/staff/forms/:formId/edit', component: StaffFormEditPage },
         { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
-        {
-          path: '/staff/forms/:formId/answers',
-          component: { template: '<div>answers</div>' }
-        },
-        {
-          path: '/staff/forms/:formId/preview',
-          component: { template: '<div>preview</div>' }
-        }
+        { path: '/staff/forms/:formId/answers', component: { template: '<div>answers</div>' } },
+        { path: '/staff/forms/:formId/preview', component: { template: '<div>preview</div>' } }
       ]
     })
     await router.push('/staff/forms/form-participation-exhibit/edit')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/forms/form-participation-exhibit') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              id: 'form-participation-exhibit',
-              name: '企画参加登録',
-              description: '参加登録を提出してください。',
-              openAt: '2026-03-01T00:00:00Z',
-              closeAt: '2026-03-31T23:59:59Z',
-              maxAnswers: 1,
-              answerableTags: [],
-              confirmationMessage: 'ありがとうございました。',
-              isPublic: true,
-              isOpen: true,
-              createdAt: '2026-03-01T00:00:00Z',
-              updatedAt: '2026-03-01T00:00:00Z',
-              isParticipationForm: true,
-              questions: [
-                {
-                  id: 'question-1',
-                  name: '追加設問',
-                  description: '補足事項を入力してください',
-                  type: 'text',
-                  isRequired: false,
-                  numberMin: null,
-                  numberMax: null,
-                  allowedTypes: '',
-                  options: [],
-                  priority: 1,
-                  createdAt: '2026-03-01T00:00:00Z',
-                  updatedAt: '2026-03-01T00:00:00Z'
-                }
-              ],
-              answer: null
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffFormEditPage, {
       global: {
@@ -506,29 +366,3 @@ describe('StaffFormEditPage', () => {
     expect(wrapper.text()).toContain('参加種別画面で編集')
   })
 })
-
-async function parseRequestBody(
-  input: RequestInfo | URL,
-  body: null | string | ArrayBuffer | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | undefined
-) {
-  if (typeof body !== 'string') {
-    if (typeof Request !== 'undefined' && input instanceof Request) {
-      body = await input.clone().text()
-    }
-  }
-
-  if (typeof body !== 'string') {
-    throw new Error('Request body was not a string')
-  }
-
-  const parsed: unknown = JSON.parse(body)
-  if (!isRecord(parsed)) {
-    throw new Error('Request body was not an object')
-  }
-
-  return parsed
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}

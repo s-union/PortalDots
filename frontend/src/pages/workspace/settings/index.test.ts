@@ -4,6 +4,8 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import UserSettingsPage from './index.vue'
 import UserSettingsAppearancePage from './appearance.vue'
 import UserSettingsPasswordPage from './password.vue'
@@ -25,22 +27,65 @@ function createQueryPlugin() {
 describe('UserSettingsPage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.unstubAllGlobals()
     window.localStorage.removeItem('ui_theme')
     document.cookie = 'ui_theme=; Path=/; Max-Age=0; SameSite=Lax'
     document.documentElement.removeAttribute('data-theme')
   })
 
   it('updates the profile fields', async () => {
+    server.use(
+      http.put('/v1/session/profile', () =>
+        HttpResponse.json({
+          id: 'demo-user',
+          displayName: 'Updated Demo User',
+          studentId: 'DEMO-CIRCLE',
+          univemail: 'demo-circle@portaldots.com',
+          lastName: 'Updated',
+          lastNameReading: 'あっぷでーと',
+          firstName: 'Demo User',
+          firstNameReading: 'でもゆーざー',
+          contactEmail: 'updated@example.com',
+          phoneNumber: '090-9999-9999'
+        })
+      ),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: { id: 'circle-a', name: 'デモ企画A' },
+          featureFlags: [],
+          roles: ['participant'],
+          user: {
+            id: 'demo-user',
+            displayName: 'Updated Demo User',
+            canDeleteAccount: false,
+            studentId: 'DEMO-CIRCLE',
+            univemail: 'demo-circle@portaldots.com',
+            lastName: 'Updated',
+            lastNameReading: 'あっぷでーと',
+            firstName: 'Demo User',
+            firstNameReading: 'でもゆーざー',
+            contactEmail: 'updated@example.com',
+            phoneNumber: '090-9999-9999'
+          }
+        })
+      ),
+      http.get('/v1/public/config', () =>
+        HttpResponse.json({
+          isDemo: true,
+          appName: 'PortalDots',
+          portalStudentIdName: '学生番号',
+          portalUnivemailName: '学生用メールアドレス',
+          portalUnivemailDomainPart: 'portaldots.com'
+        })
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-a',
-        name: 'デモ企画A'
-      },
+      currentCircle: { id: 'circle-a', name: 'デモ企画A' },
       featureFlags: [],
       roles: ['participant'],
       user: {
@@ -64,67 +109,6 @@ describe('UserSettingsPage', () => {
     await router.push('/workspace/settings')
     await router.isReady()
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        if (url.includes('/session/profile') && method === 'PUT') {
-          return jsonResponse({
-            id: 'demo-user',
-            displayName: 'Updated Demo User',
-            studentId: 'DEMO-CIRCLE',
-            univemail: 'demo-circle@portaldots.com',
-            lastName: 'Updated',
-            lastNameReading: 'あっぷでーと',
-            firstName: 'Demo User',
-            firstNameReading: 'でもゆーざー',
-            contactEmail: 'updated@example.com',
-            phoneNumber: '090-9999-9999'
-          })
-        }
-
-        if (url.includes('/session/bootstrap') && method === 'GET') {
-          return jsonResponse({
-            csrfToken: 'csrf-token',
-            currentCircle: {
-              id: 'circle-a',
-              name: 'デモ企画A'
-            },
-            featureFlags: [],
-            roles: ['participant'],
-            user: {
-              id: 'demo-user',
-              displayName: 'Updated Demo User',
-              canDeleteAccount: false,
-              studentId: 'DEMO-CIRCLE',
-              univemail: 'demo-circle@portaldots.com',
-              lastName: 'Updated',
-              lastNameReading: 'あっぷでーと',
-              firstName: 'Demo User',
-              firstNameReading: 'でもゆーざー',
-              contactEmail: 'updated@example.com',
-              phoneNumber: '090-9999-9999'
-            }
-          })
-        }
-
-        if (url.includes('/public/config') && method === 'GET') {
-          return jsonResponse({
-            isDemo: true,
-            appName: 'PortalDots',
-            portalStudentIdName: '学生番号',
-            portalUnivemailName: '学生用メールアドレス',
-            portalUnivemailDomainPart: 'portaldots.com'
-          })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
-
     const wrapper = mount(UserSettingsPage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -146,15 +130,14 @@ describe('UserSettingsPage', () => {
   })
 
   it('updates the password', async () => {
+    server.use(http.put('/v1/session/password', () => new HttpResponse(null, { status: 204 })))
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-a',
-        name: 'デモ企画A'
-      },
+      currentCircle: { id: 'circle-a', name: 'デモ企画A' },
       featureFlags: [],
       roles: ['participant'],
       user: {
@@ -177,21 +160,6 @@ describe('UserSettingsPage', () => {
     await router.push('/workspace/settings/password')
     await router.isReady()
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        if (url.includes('/session/password') && method === 'PUT') {
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
-
     const wrapper = mount(UserSettingsPasswordPage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -209,6 +177,18 @@ describe('UserSettingsPage', () => {
   })
 
   it('renders links to the split settings pages', async () => {
+    server.use(
+      http.get('/v1/public/config', () =>
+        HttpResponse.json({
+          isDemo: true,
+          appName: 'PortalDots',
+          portalStudentIdName: '学生番号',
+          portalUnivemailName: '学生用メールアドレス',
+          portalUnivemailDomainPart: 'portaldots.com'
+        })
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -237,27 +217,6 @@ describe('UserSettingsPage', () => {
     await router.push('/workspace/settings')
     await router.isReady()
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        if (url.includes('/public/config') && method === 'GET') {
-          return jsonResponse({
-            isDemo: true,
-            appName: 'PortalDots',
-            portalStudentIdName: '学生番号',
-            portalUnivemailName: '学生用メールアドレス',
-            portalUnivemailDomainPart: 'portaldots.com'
-          })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
-
     const wrapper = mount(UserSettingsPage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -277,10 +236,7 @@ describe('UserSettingsPage', () => {
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-a',
-        name: 'デモ企画A'
-      },
+      currentCircle: { id: 'circle-a', name: 'デモ企画A' },
       featureFlags: [],
       roles: ['participant'],
       user: {
@@ -302,34 +258,6 @@ describe('UserSettingsPage', () => {
     })
     await router.push('/workspace/settings/appearance')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        if (url.includes('/session/bootstrap') && method === 'GET') {
-          return jsonResponse({
-            csrfToken: 'csrf-token',
-            currentCircle: {
-              id: 'circle-a',
-              name: 'デモ企画A'
-            },
-            featureFlags: [],
-            roles: ['participant'],
-            user: {
-              id: 'demo-user',
-              displayName: 'Demo User',
-              canDeleteAccount: false
-            }
-          })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(UserSettingsAppearancePage, {
       global: {
@@ -365,8 +293,6 @@ describe('UserSettingsPage', () => {
     await router.push('/workspace/settings/appearance')
     await router.isReady()
 
-    vi.stubGlobal('fetch', vi.fn())
-
     const wrapper = mount(UserSettingsAppearancePage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -382,6 +308,14 @@ describe('UserSettingsPage', () => {
   })
 
   it('deletes the account and redirects to home when allowed', async () => {
+    let deleteWasCalled = false
+    server.use(
+      http.delete('/v1/session/account', () => {
+        deleteWasCalled = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -412,18 +346,6 @@ describe('UserSettingsPage', () => {
     await router.isReady()
 
     const confirmMock = vi.spyOn(window, 'confirm').mockImplementation(() => true)
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      await Promise.resolve()
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-      if (url.includes('/session/account') && method === 'DELETE') {
-        return new Response(null, { status: 204 })
-      }
-
-      throw new Error(`Unexpected request: ${method} ${url}`)
-    })
-    vi.stubGlobal('fetch', fetchMock)
 
     const wrapper = mount(UserSettingsDeletePage, {
       global: {
@@ -441,15 +363,8 @@ describe('UserSettingsPage', () => {
     await deleteButton.trigger('click')
     await flushPromises()
 
-    const deleteCall = fetchMock.mock.calls.find((call) => {
-      const [input, init] = call
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-      return url.includes('/session/account') && method === 'DELETE'
-    })
-
     expect(confirmMock).toHaveBeenCalledWith('本当にアカウントを削除しますか？')
-    expect(deleteCall).toBeDefined()
+    expect(deleteWasCalled).toBe(true)
     expect(sessionStore.isAuthenticated).toBe(false)
     expect(router.currentRoute.value.path).toBe('/')
   })
@@ -460,10 +375,7 @@ describe('UserSettingsPage', () => {
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-a',
-        name: 'デモ企画A'
-      },
+      currentCircle: { id: 'circle-a', name: 'デモ企画A' },
       featureFlags: [],
       roles: ['participant'],
       user: {
@@ -485,8 +397,6 @@ describe('UserSettingsPage', () => {
     })
     await router.push('/workspace/settings/delete')
     await router.isReady()
-
-    vi.stubGlobal('fetch', vi.fn())
 
     const wrapper = mount(UserSettingsDeletePage, {
       global: {
@@ -529,8 +439,6 @@ describe('UserSettingsPage', () => {
     await router.push('/workspace/settings/delete')
     await router.isReady()
 
-    vi.stubGlobal('fetch', vi.fn())
-
     const wrapper = mount(UserSettingsDeletePage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -543,6 +451,20 @@ describe('UserSettingsPage', () => {
   })
 
   it('shows the backend validation message when account deletion fails', async () => {
+    server.use(
+      http.delete('/v1/session/account', () =>
+        HttpResponse.json(
+          {
+            message: 'validation_error',
+            errors: {
+              user: ['企画に所属しているため、アカウント削除はできません']
+            }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -573,28 +495,6 @@ describe('UserSettingsPage', () => {
     await router.isReady()
 
     const confirmMock = vi.spyOn(window, 'confirm').mockImplementation(() => true)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        if (url.includes('/session/account') && method === 'DELETE') {
-          return jsonResponse(
-            {
-              message: 'validation_error',
-              errors: {
-                user: ['企画に所属しているため、アカウント削除はできません']
-              }
-            },
-            422
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(UserSettingsDeletePage, {
       global: {
@@ -618,10 +518,3 @@ describe('UserSettingsPage', () => {
     expect(router.currentRoute.value.path).toBe('/workspace/settings/delete')
   })
 })
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
-}

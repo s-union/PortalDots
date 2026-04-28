@@ -1,8 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import LoginPage from './login.vue'
 
 function createTestRouter() {
@@ -18,10 +20,6 @@ function createTestRouter() {
 }
 
 describe('LoginPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('renders login form fields and submit button', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
@@ -55,30 +53,25 @@ describe('LoginPage', () => {
   })
 
   it('shows the API error message when authentication fails', async () => {
+    server.use(
+      http.post('/v1/auth/login', () =>
+        HttpResponse.json(
+          {
+            message: 'authentication_failed',
+            errors: {
+              loginId: ['ログイン情報が正しくありません']
+            }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const router = createTestRouter()
     await router.push('/login')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        await Promise.resolve()
-        return new Response(
-          JSON.stringify({
-            message: 'authentication_failed',
-            errors: {
-              loginId: ['ログイン情報が正しくありません']
-            }
-          }),
-          {
-            status: 422,
-            headers: { 'Content-Type': 'application/json' }
-          }
-        )
-      })
-    )
 
     const wrapper = mount(LoginPage, {
       global: {

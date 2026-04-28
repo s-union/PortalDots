@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import CircleJoinPage from './[token].vue'
 
 function createQueryPlugin() {
@@ -20,10 +22,6 @@ function createQueryPlugin() {
 }
 
 describe('CircleJoinPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   function setupSession() {
     const pinia = createPinia()
     setActivePinia(pinia)
@@ -65,47 +63,30 @@ describe('CircleJoinPage', () => {
   }
 
   it('joins a circle and redirects to workspace detail', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/circles/join/invite-token') && method === 'POST') {
-          return new Response(
-            JSON.stringify({
-              id: 'circle-a',
-              name: 'テスト企画A',
-              nameYomi: 'てすときかくえー',
-              groupName: 'テスト大学',
-              groupNameYomi: 'てすとだいがく',
-              participationTypeId: 'pt-exhibit',
-              participationTypeName: '展示',
-              notes: '',
-              invitationToken: 'invite-token',
-              submittedAt: null
-            }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          )
-        }
-
-        if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              csrfToken: 'csrf-token',
-              currentCircle: { id: 'circle-a', name: 'テスト企画A' },
-              featureFlags: [],
-              roles: ['participant'],
-              user: { id: 'demo-user', displayName: 'Demo User' }
-            }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
+    server.use(
+      http.post('/v1/circles/join/:token', () =>
+        HttpResponse.json({
+          id: 'circle-a',
+          name: 'テスト企画A',
+          nameYomi: 'てすときかくえー',
+          groupName: 'テスト大学',
+          groupNameYomi: 'てすとだいがく',
+          participationTypeId: 'pt-exhibit',
+          participationTypeName: '展示',
+          notes: '',
+          invitationToken: 'invite-token',
+          submittedAt: null
+        })
+      ),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: { id: 'circle-a', name: 'テスト企画A' },
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
     )
 
     const { wrapper, router } = await mountAt()
@@ -116,15 +97,8 @@ describe('CircleJoinPage', () => {
   })
 
   it('shows a message when the invitation token is invalid', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ message: 'invalid_token' }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      )
+    server.use(
+      http.post('/v1/circles/join/:token', () => HttpResponse.json({ message: 'invalid_token' }, { status: 404 }))
     )
 
     const { wrapper } = await mountAt()
@@ -135,15 +109,8 @@ describe('CircleJoinPage', () => {
   })
 
   it('redirects already-member users to circle selector', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ message: 'already_member' }), {
-            status: 409,
-            headers: { 'Content-Type': 'application/json' }
-          })
-      )
+    server.use(
+      http.post('/v1/circles/join/:token', () => HttpResponse.json({ message: 'already_member' }, { status: 409 }))
     )
 
     const { wrapper, router } = await mountAt()

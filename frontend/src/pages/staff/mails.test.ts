@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffMailsPage from './mails.vue'
 
 function createQueryPlugin() {
@@ -20,11 +22,43 @@ function createQueryPlugin() {
 }
 
 describe('StaffMailsPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('lists queued mails and cancels all jobs', async () => {
+    let hasQueuedMail = true
+    server.use(
+      http.get('/v1/staff/mails', () =>
+        HttpResponse.json(
+          hasQueuedMail
+            ? [
+                {
+                  circle: { id: '', name: '共通' },
+                  id: 'mail-job-1',
+                  subject: '搬入のご案内',
+                  body: '9:00 に集合してください。',
+                  recipients: ['demo@example.com', 'sub@example.com'],
+                  status: 'queued',
+                  createdAt: '2026-03-12T00:00:00Z',
+                  deliveredAt: ''
+                },
+                {
+                  circle: { id: '', name: '共通' },
+                  id: 'mail-job-2',
+                  subject: '宛先不達のお知らせ',
+                  body: '宛先エラーのため配信できませんでした。',
+                  recipients: ['invalid@example.com'],
+                  status: 'undeliverable',
+                  createdAt: '2026-03-12T01:00:00Z',
+                  deliveredAt: '2026-03-12T01:05:00Z'
+                }
+              ]
+            : []
+        )
+      ),
+      http.delete('/v1/staff/mails', () => {
+        hasQueuedMail = false
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -39,7 +73,6 @@ describe('StaffMailsPage', () => {
       }
     })
 
-    let hasQueuedMail = true
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -50,76 +83,6 @@ describe('StaffMailsPage', () => {
     })
     await router.push('/staff/mails')
     await router.isReady()
-
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => true)
-    )
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/mails') && method === 'GET') {
-          return new Response(
-            JSON.stringify(
-              hasQueuedMail
-                ? [
-                    {
-                      circle: {
-                        id: '',
-                        name: '共通'
-                      },
-                      id: 'mail-job-1',
-                      subject: '搬入のご案内',
-                      body: '9:00 に集合してください。',
-                      recipients: ['demo@example.com', 'sub@example.com'],
-                      status: 'queued',
-                      createdAt: '2026-03-12T00:00:00Z',
-                      deliveredAt: ''
-                    },
-                    {
-                      circle: {
-                        id: '',
-                        name: '共通'
-                      },
-                      id: 'mail-job-2',
-                      subject: '宛先不達のお知らせ',
-                      body: '宛先エラーのため配信できませんでした。',
-                      recipients: ['invalid@example.com'],
-                      status: 'undeliverable',
-                      createdAt: '2026-03-12T01:00:00Z',
-                      deliveredAt: '2026-03-12T01:05:00Z'
-                    }
-                  ]
-                : []
-            ),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/mails') && method === 'DELETE') {
-          hasQueuedMail = false
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffMailsPage, {
       global: {
@@ -136,6 +99,11 @@ describe('StaffMailsPage', () => {
     const undeliverableBadge = wrapper.findAll('span').find((node) => node.text() === '配信不能')
     expect(undeliverableBadge?.classes()).toContain('text-danger')
     expect(wrapper.text()).toContain('キューを全件キャンセル')
+
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true)
+    )
 
     await wrapper.get('button[type="button"]').trigger('click')
     await flushPromises()

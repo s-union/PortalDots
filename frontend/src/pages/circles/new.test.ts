@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import CircleCreatePage from './new.vue'
 
 function createQueryPlugin() {
@@ -45,126 +47,92 @@ const registrationFormFixture = {
   submittedAt: null
 }
 
-function buildFetchMock(options: { createShouldSucceed?: boolean } = {}) {
+const twoParticipationTypes = [
+  {
+    id: 'pt-exhibit',
+    name: '展示',
+    description: '展示企画です',
+    usersCountMin: 1,
+    usersCountMax: 4,
+    tags: [],
+    form: {
+      id: 'form-pt-exhibit',
+      name: '参加登録',
+      description: '',
+      openAt: '2026-01-01T00:00:00Z',
+      closeAt: '2026-12-31T23:59:59Z',
+      isPublic: true,
+      isOpen: true,
+      maxAnswers: 1,
+      answerableTags: [],
+      confirmationMessage: ''
+    }
+  },
+  {
+    id: 'pt-food',
+    name: '模擬店',
+    description: '模擬店企画です',
+    usersCountMin: 2,
+    usersCountMax: 6,
+    tags: [],
+    form: {
+      id: 'form-pt-food',
+      name: '参加登録',
+      description: '',
+      openAt: '2026-01-01T00:00:00Z',
+      closeAt: '2026-12-31T23:59:59Z',
+      isPublic: true,
+      isOpen: true,
+      maxAnswers: 1,
+      answerableTags: [],
+      confirmationMessage: ''
+    }
+  }
+]
+
+function setupDefaultHandlers(options: { createShouldSucceed?: boolean } = {}) {
   const { createShouldSucceed = true } = options
-
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    await Promise.resolve()
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-    const pathname = new URL(url, 'http://localhost').pathname
-
-    if (pathname.endsWith('/participation-types') && method === 'GET') {
-      return new Response(
-        JSON.stringify([
-          {
-            id: 'pt-exhibit',
-            name: '展示',
-            description: '展示企画です',
-            usersCountMin: 1,
-            usersCountMax: 4,
-            tags: [],
-            form: {
-              id: 'form-pt-exhibit',
-              name: '参加登録',
-              description: '',
-              openAt: '2026-01-01T00:00:00Z',
-              closeAt: '2026-12-31T23:59:59Z',
-              isPublic: true,
-              isOpen: true,
-              maxAnswers: 1,
-              answerableTags: [],
-              confirmationMessage: ''
-            }
-          },
-          {
-            id: 'pt-food',
-            name: '模擬店',
-            description: '模擬店企画です',
-            usersCountMin: 2,
-            usersCountMax: 6,
-            tags: [],
-            form: {
-              id: 'form-pt-food',
-              name: '参加登録',
-              description: '',
-              openAt: '2026-01-01T00:00:00Z',
-              closeAt: '2026-12-31T23:59:59Z',
-              isPublic: true,
-              isOpen: true,
-              maxAnswers: 1,
-              answerableTags: [],
-              confirmationMessage: ''
-            }
-          }
-        ]),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (pathname.endsWith('/participation-types/pt-exhibit/registration-form') && method === 'GET') {
-      return new Response(JSON.stringify(registrationFormFixture), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
+  server.use(
+    http.get('/v1/participation-types', () => HttpResponse.json(twoParticipationTypes)),
+    http.get('/v1/participation-types/pt-exhibit/registration-form', () => HttpResponse.json(registrationFormFixture)),
+    http.get('/v1/participation-types/pt-food/registration-form', () =>
+      HttpResponse.json({
+        ...registrationFormFixture,
+        participationTypeId: 'pt-food',
+        participationTypeName: '模擬店',
+        formId: 'form-pt-food',
+        usersCountMin: 2,
+        usersCountMax: 6
       })
-    }
-
-    if (pathname.endsWith('/participation-types/pt-food/registration-form') && method === 'GET') {
-      return new Response(
-        JSON.stringify({
-          ...registrationFormFixture,
-          participationTypeId: 'pt-food',
-          participationTypeName: '模擬店',
-          formId: 'form-pt-food',
-          usersCountMin: 2,
-          usersCountMax: 6
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (pathname.endsWith('/circles') && method === 'POST') {
+    ),
+    http.post('/v1/circles', () => {
       if (!createShouldSucceed) {
-        return new Response(JSON.stringify({ message: 'Validation failed', errors: { name: ['必須'] } }), {
-          status: 422,
-          headers: { 'Content-Type': 'application/json' }
-        })
+        return HttpResponse.json({ message: 'Validation failed', errors: { name: ['必須'] } }, { status: 422 })
       }
-      return new Response(
-        JSON.stringify({
+      return HttpResponse.json(
+        {
           ...registrationFormFixture,
           id: 'new-circle',
           name: 'テスト企画',
           groupName: 'テスト大学',
           invitationToken: 'token-abc'
-        }),
-        { status: 201, headers: { 'Content-Type': 'application/json' } }
+        },
+        { status: 201 }
       )
-    }
-
-    if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
-      return new Response(
-        JSON.stringify({
-          csrfToken: 'csrf-token',
-          currentCircle: { id: 'new-circle', name: 'テスト企画' },
-          featureFlags: [],
-          roles: ['participant'],
-          user: { id: 'demo-user', displayName: 'Demo User' }
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    throw new Error(`Unexpected request: ${method} ${url}`)
-  })
+    }),
+    http.get('/v1/session/bootstrap', () =>
+      HttpResponse.json({
+        csrfToken: 'csrf-token',
+        currentCircle: { id: 'new-circle', name: 'テスト企画' },
+        featureFlags: [],
+        roles: ['participant'],
+        user: { id: 'demo-user', displayName: 'Demo User' }
+      })
+    )
+  )
 }
 
 describe('CircleCreatePage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   function setupSession(options: { canCreateCircleRegistration?: boolean } = {}) {
     const { canCreateCircleRegistration = true } = options
     const pinia = createPinia()
@@ -181,6 +149,48 @@ describe('CircleCreatePage', () => {
   }
 
   it('renders the create form with participation types', async () => {
+    let participationTypesCalled = false
+    server.use(
+      http.get('/v1/participation-types', () => {
+        participationTypesCalled = true
+        return HttpResponse.json(twoParticipationTypes)
+      }),
+      http.get('/v1/participation-types/pt-exhibit/registration-form', () =>
+        HttpResponse.json(registrationFormFixture)
+      ),
+      http.get('/v1/participation-types/pt-food/registration-form', () =>
+        HttpResponse.json({
+          ...registrationFormFixture,
+          participationTypeId: 'pt-food',
+          participationTypeName: '模擬店',
+          formId: 'form-pt-food',
+          usersCountMin: 2,
+          usersCountMax: 6
+        })
+      ),
+      http.post('/v1/circles', () =>
+        HttpResponse.json(
+          {
+            ...registrationFormFixture,
+            id: 'new-circle',
+            name: 'テスト企画',
+            groupName: 'テスト大学',
+            invitationToken: 'token-abc'
+          },
+          { status: 201 }
+        )
+      ),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: { id: 'new-circle', name: 'テスト企画' },
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -193,9 +203,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new')
     await router.isReady()
-
-    const fetchMock = buildFetchMock()
-    vi.stubGlobal('fetch', fetchMock)
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -214,15 +221,12 @@ describe('CircleCreatePage', () => {
     expect(wrapper.text()).toContain('メンバー')
     expect(wrapper.text()).toContain('必ずお読みください')
     expect(wrapper.text()).toContain('展示参加用の設問です')
-    expect(
-      fetchMock.mock.calls.some(([input]) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
-      })
-    ).toBe(true)
+    expect(participationTypesCalled).toBe(true)
   })
 
   it('preselects the participation type from the legacy query parameter', async () => {
+    setupDefaultHandlers()
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -230,8 +234,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new?participation_type=pt-food')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -244,6 +246,8 @@ describe('CircleCreatePage', () => {
   })
 
   it('navigates to confirm page after successful creation', async () => {
+    setupDefaultHandlers()
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -256,8 +260,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -277,6 +279,8 @@ describe('CircleCreatePage', () => {
   })
 
   it('shows error message when creation fails', async () => {
+    setupDefaultHandlers({ createShouldSucceed: false })
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -287,8 +291,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock({ createShouldSucceed: false }))
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -309,6 +311,14 @@ describe('CircleCreatePage', () => {
   })
 
   it('shows denied state for member-only users', async () => {
+    let participationTypesCalled = false
+    server.use(
+      http.get('/v1/participation-types', () => {
+        participationTypesCalled = true
+        return HttpResponse.json(twoParticipationTypes)
+      })
+    )
+
     const pinia = setupSession({ canCreateCircleRegistration: false })
     const router = createRouter({
       history: createMemoryHistory(),
@@ -317,9 +327,6 @@ describe('CircleCreatePage', () => {
     await router.push('/circles/new')
     await router.isReady()
 
-    const fetchMock = buildFetchMock()
-    vi.stubGlobal('fetch', fetchMock)
-
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
     })
@@ -327,15 +334,12 @@ describe('CircleCreatePage', () => {
 
     expect(wrapper.text()).toContain('このアカウントでは新しい企画を登録できません。')
     expect(wrapper.find('select[name="participationTypeId"]').exists()).toBe(false)
-    expect(
-      fetchMock.mock.calls.some(([input]) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
-      })
-    ).toBe(false)
+    expect(participationTypesCalled).toBe(false)
   })
 
   it('shows real-time validation error for nameYomi on input', async () => {
+    setupDefaultHandlers()
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -346,8 +350,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -370,6 +372,8 @@ describe('CircleCreatePage', () => {
   })
 
   it('shows client-side validation error for nameYomi with non-hiragana characters', async () => {
+    setupDefaultHandlers()
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -380,8 +384,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -404,6 +406,8 @@ describe('CircleCreatePage', () => {
   })
 
   it('prevents form submission when participation type is not selected', async () => {
+    setupDefaultHandlers()
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -414,8 +418,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -436,6 +438,8 @@ describe('CircleCreatePage', () => {
   })
 
   it('prevents form submission when required fields are empty', async () => {
+    setupDefaultHandlers()
+
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -446,8 +450,6 @@ describe('CircleCreatePage', () => {
     })
     await router.push('/circles/new')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleCreatePage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }

@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffDashboardPage from '../../index.vue'
 import StaffDocumentDetailPage from './edit.vue'
 import StaffDocumentsIndexPage from '../index.vue'
@@ -22,10 +24,26 @@ function createQueryPlugin() {
   ]
 }
 
+const documentFixture = {
+  circle: { id: 'circle-b', name: 'デモ企画B' },
+  id: 'document-circle-b-1',
+  name: '展示ガイド',
+  description: 'Bブロック向けの展示ガイドです。',
+  notes: '展示班の責任者に共有済みです。',
+  isImportant: true,
+  filename: 'b-exhibition-guide.txt',
+  extension: 'TXT',
+  mimeType: 'text/plain',
+  sizeBytes: 1024,
+  isPublic: true,
+  createdAt: '2026-03-03T09:00:00Z',
+  updatedAt: '2026-03-05T09:00:00Z',
+  downloadUrl: '/v1/staff/documents/document-circle-b-1'
+}
+
 describe('StaffDocumentDetailPage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.unstubAllGlobals()
   })
 
   function expectInputValue(wrapper: ReturnType<typeof mount>, selector: string, expected: string) {
@@ -45,24 +63,41 @@ describe('StaffDocumentDetailPage', () => {
   }
 
   it('updates and deletes a staff document', async () => {
+    let deleted = false
+
+    server.use(
+      http.get('/v1/staff/documents/document-circle-b-1/edit', () => HttpResponse.json(documentFixture)),
+      http.put('/v1/staff/documents/document-circle-b-1', () =>
+        HttpResponse.json({
+          ...documentFixture,
+          name: '展示ガイド改訂版',
+          description: '更新版です。',
+          notes: '旧版は破棄してください。',
+          isImportant: false,
+          isPublic: false,
+          updatedAt: '2026-03-06T09:00:00Z'
+        })
+      ),
+      http.delete('/v1/staff/documents/document-circle-b-1', () => {
+        deleted = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
 
-    let deleted = false
+    const confirmMock = vi.fn(() => true)
+    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
+
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -77,89 +112,6 @@ describe('StaffDocumentDetailPage', () => {
     })
     await router.push('/staff/documents/document-circle-b-1/edit')
     await router.isReady()
-
-    const confirmMock = vi.fn(() => true)
-    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/documents/document-circle-b-1/edit') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: 'document-circle-b-1',
-              name: '展示ガイド',
-              description: 'Bブロック向けの展示ガイドです。',
-              notes: '展示班の責任者に共有済みです。',
-              isImportant: true,
-              filename: 'b-exhibition-guide.txt',
-              extension: 'TXT',
-              mimeType: 'text/plain',
-              sizeBytes: 1024,
-              isPublic: true,
-              createdAt: '2026-03-03T09:00:00Z',
-              updatedAt: '2026-03-05T09:00:00Z',
-              downloadUrl: '/v1/staff/documents/document-circle-b-1'
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/documents/document-circle-b-1') && method === 'PUT') {
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: 'document-circle-b-1',
-              name: '展示ガイド改訂版',
-              description: '更新版です。',
-              notes: '旧版は破棄してください。',
-              isImportant: false,
-              filename: 'b-exhibition-guide.txt',
-              extension: 'TXT',
-              mimeType: 'text/plain',
-              sizeBytes: 1024,
-              isPublic: false,
-              createdAt: '2026-03-03T09:00:00Z',
-              updatedAt: '2026-03-06T09:00:00Z',
-              downloadUrl: '/v1/staff/documents/document-circle-b-1'
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/documents/document-circle-b-1') && method === 'DELETE') {
-          deleted = true
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffDocumentDetailPage, {
       global: {
@@ -192,22 +144,29 @@ describe('StaffDocumentDetailPage', () => {
   })
 
   it('does not delete a staff document when confirmation is cancelled', async () => {
+    let deleted = false
+
+    server.use(
+      http.get('/v1/staff/documents/document-circle-b-1/edit', () => HttpResponse.json(documentFixture)),
+      http.delete('/v1/staff/documents/document-circle-b-1', () => {
+        deleted = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
+
+    const confirmMock = vi.fn(() => false)
+    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -223,63 +182,6 @@ describe('StaffDocumentDetailPage', () => {
     })
     await router.push('/staff/documents/document-circle-b-1/edit')
     await router.isReady()
-
-    const confirmMock = vi.fn(() => false)
-    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
-    let deleted = false
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/documents/document-circle-b-1/edit') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: 'document-circle-b-1',
-              name: '展示ガイド',
-              description: 'Bブロック向けの展示ガイドです。',
-              notes: '展示班の責任者に共有済みです。',
-              isImportant: true,
-              filename: 'b-exhibition-guide.txt',
-              extension: 'TXT',
-              mimeType: 'text/plain',
-              sizeBytes: 1024,
-              isPublic: true,
-              createdAt: '2026-03-03T09:00:00Z',
-              updatedAt: '2026-03-05T09:00:00Z',
-              downloadUrl: '/v1/staff/documents/document-circle-b-1'
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/documents/document-circle-b-1') && method === 'DELETE') {
-          deleted = true
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffDocumentDetailPage, {
       global: {

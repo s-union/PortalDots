@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -30,23 +30,6 @@ async function mountAtPasswordReset() {
   await router.push('/password/reset')
   await router.isReady()
 
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => {
-      await Promise.resolve()
-      return new Response(
-        JSON.stringify({
-          isDemo: false,
-          appName: 'PortalDots',
-          portalStudentIdName: '学籍番号',
-          portalUnivemailName: '大学メールアドレス',
-          portalUnivemailDomainPart: 'example.ac.jp'
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    })
-  )
-
   return mount(PasswordResetPage, {
     global: {
       plugins: [router, createQueryPlugin()]
@@ -55,10 +38,6 @@ async function mountAtPasswordReset() {
 }
 
 describe('PasswordResetPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('shows reset heading and request form', async () => {
     const wrapper = await mountAtPasswordReset()
 

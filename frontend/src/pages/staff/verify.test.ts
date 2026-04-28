@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffDashboardPage from './index.vue'
 import StaffVerifyPage from './verify.vue'
 
@@ -21,11 +23,17 @@ function createQueryPlugin() {
 }
 
 describe('StaffVerifyPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('requests a verification code and confirms staff authorization', async () => {
+    let staffAuthorized = false
+    server.use(
+      http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: staffAuthorized })),
+      http.post('/v1/staff/verify/request', () => HttpResponse.json({ message: '認証コードを送信しました。' })),
+      http.post('/v1/staff/verify/confirm', () => {
+        staffAuthorized = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -34,13 +42,9 @@ describe('StaffVerifyPage', () => {
       currentCircle: null,
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
 
-    let staffAuthorized = false
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -53,68 +57,6 @@ describe('StaffVerifyPage', () => {
     })
     await router.push('/staff/verify')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              csrfToken: 'csrf-token',
-              currentCircle: null,
-              featureFlags: [],
-              roles: ['admin'],
-              user: {
-                id: 'staff-user',
-                displayName: 'Staff User'
-              }
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(
-            JSON.stringify({
-              allowed: true,
-              authorized: staffAuthorized
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/verify/request') && method === 'POST') {
-          return new Response(
-            JSON.stringify({
-              message: '認証コードを送信しました。'
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/verify/confirm') && method === 'POST') {
-          staffAuthorized = true
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffVerifyPage, {
       global: {

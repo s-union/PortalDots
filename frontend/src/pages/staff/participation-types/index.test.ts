@@ -4,6 +4,8 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffParticipationTypesIndexPage from '../circles/participation_types/index.vue'
 
 function createQueryPlugin() {
@@ -19,31 +21,114 @@ function createQueryPlugin() {
   ]
 }
 
+function buildParticipationType(overrides: Partial<ReturnType<typeof baseParticipationType>> = {}) {
+  return {
+    ...baseParticipationType(),
+    ...overrides,
+    form: {
+      ...baseParticipationType().form,
+      ...overrides.form
+    }
+  }
+}
+
+function baseParticipationType() {
+  return {
+    id: 'participation-type-food',
+    name: '模擬店',
+    description: '模擬店向けの参加種別です。',
+    usersCountMin: 1,
+    usersCountMax: 4,
+    tags: ['模擬店'],
+    form: {
+      id: 'form-participation-food',
+      name: '企画参加登録',
+      description: '参加登録を提出してください。',
+      openAt: '2026-03-01T00:00:00Z',
+      closeAt: '2026-03-31T23:59:59Z',
+      isPublic: true,
+      isOpen: true,
+      maxAnswers: 1,
+      answerableTags: [],
+      confirmationMessage: 'ありがとうございました。'
+    }
+  }
+}
+
 describe('StaffParticipationTypesIndexPage', () => {
   afterEach(() => {
-    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
   })
 
   it('lists participation types, links to detail, and creates a new type', async () => {
+    let created = false
+    let createdRequestBody = ''
+
+    server.use(
+      http.get('/v1/staff/tags', () =>
+        HttpResponse.json([
+          { id: 'tag-food', name: '模擬店' },
+          { id: 'tag-exhibit', name: '展示' },
+          { id: 'tag-stage', name: 'ステージ' },
+          { id: 'tag-sound', name: '音響' }
+        ])
+      ),
+      http.get('/v1/staff/participation-types', () =>
+        HttpResponse.json(
+          created
+            ? [
+                buildParticipationType({
+                  id: 'participation-type-stage',
+                  name: 'ステージ',
+                  description: 'ステージ企画向けの参加種別です。',
+                  usersCountMax: 8,
+                  tags: ['ステージ', '音響']
+                }),
+                buildParticipationType(),
+                buildParticipationType({
+                  id: 'participation-type-exhibit',
+                  name: '展示',
+                  description: '展示企画向けの参加種別です。',
+                  tags: ['展示']
+                })
+              ]
+            : [
+                buildParticipationType(),
+                buildParticipationType({
+                  id: 'participation-type-exhibit',
+                  name: '展示',
+                  description: '展示企画向けの参加種別です。',
+                  tags: ['展示']
+                })
+              ]
+        )
+      ),
+      http.post('/v1/staff/participation-types', async ({ request }) => {
+        createdRequestBody = await request.text()
+        created = true
+        return HttpResponse.json(
+          buildParticipationType({
+            id: 'participation-type-stage',
+            name: 'ステージ',
+            description: 'ステージ企画向けの参加種別です。',
+            usersCountMax: 8,
+            tags: ['ステージ', '音響']
+          }),
+          { status: 201 }
+        )
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
-
-    let created = false
-    let createdRequestBody = ''
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -58,83 +143,6 @@ describe('StaffParticipationTypesIndexPage', () => {
     })
     await router.push('/staff/circles/participation_types')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return jsonResponse({ allowed: true, authorized: true })
-        }
-
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return jsonResponse([
-            { id: 'tag-food', name: '模擬店' },
-            { id: 'tag-exhibit', name: '展示' },
-            { id: 'tag-stage', name: 'ステージ' },
-            { id: 'tag-sound', name: '音響' }
-          ])
-        }
-
-        if (pathname.endsWith('/staff/participation-types') && method === 'GET') {
-          return jsonResponse(
-            created
-              ? [
-                  buildParticipationType({
-                    id: 'participation-type-stage',
-                    name: 'ステージ',
-                    description: 'ステージ企画向けの参加種別です。',
-                    usersCountMax: 8,
-                    tags: ['ステージ', '音響']
-                  }),
-                  buildParticipationType(),
-                  buildParticipationType({
-                    id: 'participation-type-exhibit',
-                    name: '展示',
-                    description: '展示企画向けの参加種別です。',
-                    tags: ['展示']
-                  })
-                ]
-              : [
-                  buildParticipationType(),
-                  buildParticipationType({
-                    id: 'participation-type-exhibit',
-                    name: '展示',
-                    description: '展示企画向けの参加種別です。',
-                    tags: ['展示']
-                  })
-                ]
-          )
-        }
-
-        if (pathname.endsWith('/staff/participation-types') && method === 'POST') {
-          if (input instanceof Request) {
-            createdRequestBody = await input.clone().text()
-          } else if (typeof init?.body === 'string') {
-            createdRequestBody = init.body
-          }
-
-          created = true
-          return jsonResponse(
-            buildParticipationType({
-              id: 'participation-type-stage',
-              name: 'ステージ',
-              description: 'ステージ企画向けの参加種別です。',
-              usersCountMax: 8,
-              tags: ['ステージ', '音響']
-            }),
-            201
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffParticipationTypesIndexPage, {
       global: {
@@ -181,44 +189,3 @@ describe('StaffParticipationTypesIndexPage', () => {
     )
   })
 })
-
-function buildParticipationType(overrides: Partial<ReturnType<typeof baseParticipationType>> = {}) {
-  return {
-    ...baseParticipationType(),
-    ...overrides,
-    form: {
-      ...baseParticipationType().form,
-      ...overrides.form
-    }
-  }
-}
-
-function baseParticipationType() {
-  return {
-    id: 'participation-type-food',
-    name: '模擬店',
-    description: '模擬店向けの参加種別です。',
-    usersCountMin: 1,
-    usersCountMax: 4,
-    tags: ['模擬店'],
-    form: {
-      id: 'form-participation-food',
-      name: '企画参加登録',
-      description: '参加登録を提出してください。',
-      openAt: '2026-03-01T00:00:00Z',
-      closeAt: '2026-03-31T23:59:59Z',
-      isPublic: true,
-      isOpen: true,
-      maxAnswers: 1,
-      answerableTags: [],
-      confirmationMessage: 'ありがとうございました。'
-    }
-  }
-}
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
-}

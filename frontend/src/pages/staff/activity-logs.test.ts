@@ -31,7 +31,6 @@ function createQueryPlugin() {
 
 describe('StaffActivityLogsPage', () => {
   afterEach(() => {
-    vi.unstubAllGlobals()
     vi.clearAllMocks()
   })
 
@@ -41,16 +40,10 @@ describe('StaffActivityLogsPage', () => {
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: {
-        id: 'circle-b',
-        name: 'デモ企画B'
-      },
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
       featureFlags: [],
       roles: ['admin'],
-      user: {
-        id: 'staff-user',
-        displayName: 'Staff User'
-      }
+      user: { id: 'staff-user', displayName: 'Staff User' }
     })
 
     const router = createRouter({
@@ -62,26 +55,6 @@ describe('StaffActivityLogsPage', () => {
     })
     await router.push('/staff/activity-logs')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     staffActivityLogsApiMocks.useSuspenseStaffActivityLogsQuery.mockReturnValue({
       data: ref({

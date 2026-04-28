@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffFormCreatePage from './create.vue'
 
 function createQueryPlugin() {
@@ -22,10 +24,42 @@ function createQueryPlugin() {
 describe('StaffFormCreatePage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.unstubAllGlobals()
   })
 
   it('creates a staff form and navigates to editor', async () => {
+    let createdRequestBody: Record<string, unknown> | null = null
+
+    server.use(
+      http.get('/v1/staff/tags', () =>
+        HttpResponse.json([
+          { id: 'tag-exhibit', name: '展示' },
+          { id: 'tag-required', name: '必須' }
+        ])
+      ),
+      http.post('/v1/staff/forms', async ({ request }) => {
+        createdRequestBody = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json(
+          {
+            circle: { id: '', name: '' },
+            id: '0195ec00-00a1-7000-8000-000000000001',
+            name: '追加ヒアリング',
+            description: '当日の搬入担当者を確認します。',
+            openAt: '2026-03-15T00:00:00Z',
+            closeAt: '2026-03-30T09:45:00Z',
+            maxAnswers: 3,
+            answerableTags: ['展示', '必須'],
+            confirmationMessage: '回答ありがとうございました。',
+            isPublic: true,
+            isOpen: true,
+            createdAt: '2026-03-01T12:00:00Z',
+            updatedAt: '2026-03-01T12:00:00Z',
+            isParticipationForm: false
+          },
+          { status: 201 }
+        )
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -40,7 +74,6 @@ describe('StaffFormCreatePage', () => {
       }
     })
 
-    let createdRequestBody: Record<string, unknown> | null = null
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -51,68 +84,6 @@ describe('StaffFormCreatePage', () => {
     })
     await router.push('/staff/forms/create')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/forms') && method === 'POST') {
-          createdRequestBody = await parseRequestBody(input, init?.body)
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: '',
-                name: ''
-              },
-              id: '0195ec00-00a1-7000-8000-000000000001',
-              name: '追加ヒアリング',
-              description: '当日の搬入担当者を確認します。',
-              openAt: '2026-03-15T00:00:00Z',
-              closeAt: '2026-03-30T09:45:00Z',
-              maxAnswers: 3,
-              answerableTags: ['展示', '必須'],
-              confirmationMessage: '回答ありがとうございました。',
-              isPublic: true,
-              isOpen: true,
-              createdAt: '2026-03-01T12:00:00Z',
-              updatedAt: '2026-03-01T12:00:00Z',
-              isParticipationForm: false
-            }),
-            {
-              status: 201,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              { id: 'tag-exhibit', name: '展示' },
-              { id: 'tag-required', name: '必須' }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffFormCreatePage, {
       global: {
@@ -153,29 +124,3 @@ describe('StaffFormCreatePage', () => {
     expect(router.currentRoute.value.fullPath).toBe('/staff/forms/0195ec00-00a1-7000-8000-000000000001/editor')
   })
 })
-
-async function parseRequestBody(
-  input: RequestInfo | URL,
-  body: null | string | ArrayBuffer | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | undefined
-) {
-  if (typeof body !== 'string') {
-    if (typeof Request !== 'undefined' && input instanceof Request) {
-      body = await input.clone().text()
-    }
-  }
-
-  if (typeof body !== 'string') {
-    throw new Error('Request body was not a string')
-  }
-
-  const parsed: unknown = JSON.parse(body)
-  if (!isRecord(parsed)) {
-    throw new Error('Request body was not an object')
-  }
-
-  return parsed
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}

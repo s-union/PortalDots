@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -18,56 +18,6 @@ function createQueryPlugin() {
   ]
 }
 
-function buildFetchMock() {
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    await Promise.resolve()
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-    const pathname = new URL(url, 'http://localhost').pathname
-
-    if (pathname.endsWith('/public/config')) {
-      return new Response(
-        JSON.stringify({
-          isDemo: true,
-          appName: 'PortalDots',
-          portalStudentIdName: '学籍番号',
-          portalUnivemailName: '学生用メールアドレス',
-          portalUnivemailDomainPart: 'portaldots.com'
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (pathname.endsWith('/auth/register/start') && method === 'POST') {
-      return new Response(
-        JSON.stringify({
-          message: '大学メールアドレスに認証URLを送信しました。'
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (pathname.endsWith('/session/bootstrap')) {
-      return new Response(
-        JSON.stringify({
-          csrfToken: 'csrf-token',
-          currentCircle: null,
-          featureFlags: [],
-          roles: ['participant'],
-          permissions: [],
-          user: {
-            id: 'user-1',
-            displayName: 'PortalDots Demo User'
-          }
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    throw new Error(`Unexpected request: ${url}`)
-  })
-}
-
 async function mountAtRegister() {
   const pinia = createPinia()
   setActivePinia(pinia)
@@ -83,8 +33,6 @@ async function mountAtRegister() {
   await router.push('/register')
   await router.isReady()
 
-  vi.stubGlobal('fetch', buildFetchMock())
-
   const wrapper = mount(RegisterPage, {
     global: {
       plugins: [pinia, router, createQueryPlugin()]
@@ -96,10 +44,6 @@ async function mountAtRegister() {
 }
 
 describe('RegisterPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('starts registration and shows the success guidance', async () => {
     const { wrapper, router } = await mountAtRegister()
 
@@ -110,7 +54,7 @@ describe('RegisterPage', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('大学メールアドレスに認証URLを送信しました。')
+    expect(wrapper.text()).toContain('確認メールを送信しました。')
     expect(router.currentRoute.value.fullPath).toBe('/register')
   })
 })

@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffCirclesAllPage from './all.vue'
 
 function createQueryPlugin() {
@@ -20,11 +22,106 @@ function createQueryPlugin() {
 }
 
 describe('StaffCirclesAllPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('renders legacy-like toolbar/actions and opens filter drawer', async () => {
+    let deleteWasCalled = false
+
+    server.use(
+      http.get('/v1/staff/circles/all', () =>
+        HttpResponse.json([
+          {
+            id: '0195ec00-0021-7000-8000-000000000001',
+            name: '屋台企画A',
+            nameYomi: 'ヤタイキカクエー',
+            groupName: 'Aブロック',
+            groupNameYomi: 'エーブロック',
+            participationTypeId: '0195ec00-0001-7000-8000-000000000001',
+            participationTypeName: '模擬店',
+            tags: ['模擬店'],
+            notes: '',
+            submittedAt: '2026-03-05T12:00:00Z',
+            status: 'pending',
+            statusReason: '',
+            statusSetAt: null,
+            statusSetById: null,
+            places: ['第一会場']
+          },
+          {
+            id: '0195ec00-0022-7000-8000-000000000001',
+            name: '展示企画B',
+            nameYomi: 'テンジキカクビー',
+            groupName: 'Bブロック',
+            groupNameYomi: 'ビーブロック',
+            participationTypeId: '0195ec00-0002-7000-8000-000000000001',
+            participationTypeName: '展示',
+            tags: ['展示'],
+            notes: 'メモ',
+            submittedAt: '2026-03-06T12:00:00Z',
+            status: 'approved',
+            statusReason: '',
+            statusSetAt: null,
+            statusSetById: null,
+            places: ['第二会場']
+          }
+        ])
+      ),
+      http.get('/v1/staff/participation-types', () =>
+        HttpResponse.json([
+          {
+            id: '0195ec00-0001-7000-8000-000000000001',
+            name: '模擬店',
+            description: '',
+            usersCountMin: 1,
+            usersCountMax: 4,
+            tags: ['模擬店'],
+            form: {
+              id: '0195ec00-0011-7000-8000-000000000001',
+              name: '企画参加登録',
+              description: '',
+              openAt: '2026-03-01T00:00:00Z',
+              closeAt: '2026-03-31T23:59:59Z',
+              isPublic: true,
+              isOpen: true,
+              maxAnswers: 1,
+              isParticipationForm: true,
+              answerableTags: [],
+              confirmationMessage: ''
+            }
+          }
+        ])
+      ),
+      http.get('/v1/staff/places', () => HttpResponse.json([{ id: 'place-a', name: '第一会場', maxCircleCount: 100 }])),
+      http.post('/v1/staff/circles', () =>
+        HttpResponse.json(
+          {
+            id: 'circle-c',
+            name: '新規企画',
+            nameYomi: 'シンキキカク',
+            groupName: 'Cブロック',
+            groupNameYomi: 'シーブロック',
+            participationTypeId: '0195ec00-0001-7000-8000-000000000001',
+            participationTypeName: '模擬店',
+            tags: ['模擬店'],
+            notes: '',
+            submittedAt: null,
+            status: 'pending',
+            statusReason: '',
+            statusSetAt: null,
+            statusSetById: null,
+            places: []
+          },
+          { status: 201 }
+        )
+      ),
+      http.delete('/v1/staff/circles/0195ec00-0021-7000-8000-000000000001', () => {
+        deleteWasCalled = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.delete('/v1/staff/circles/0195ec00-0022-7000-8000-000000000001', () => {
+        deleteWasCalled = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -59,127 +156,6 @@ describe('StaffCirclesAllPage', () => {
     })
     await router.push('/staff/circles/all')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-        const parsed = new URL(url, 'http://localhost')
-        const pathname = parsed.pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return jsonResponse({ allowed: true, authorized: true })
-        }
-
-        if (pathname.endsWith('/staff/circles/all') && method === 'GET') {
-          return jsonResponse([
-            {
-              id: '0195ec00-0021-7000-8000-000000000001',
-              name: '屋台企画A',
-              nameYomi: 'ヤタイキカクエー',
-              groupName: 'Aブロック',
-              groupNameYomi: 'エーブロック',
-              participationTypeId: '0195ec00-0001-7000-8000-000000000001',
-              participationTypeName: '模擬店',
-              tags: ['模擬店'],
-              notes: '',
-              submittedAt: '2026-03-05T12:00:00Z',
-              status: 'pending',
-              statusReason: '',
-              statusSetAt: null,
-              statusSetById: null,
-              places: ['第一会場']
-            },
-            {
-              id: '0195ec00-0022-7000-8000-000000000001',
-              name: '展示企画B',
-              nameYomi: 'テンジキカクビー',
-              groupName: 'Bブロック',
-              groupNameYomi: 'ビーブロック',
-              participationTypeId: '0195ec00-0002-7000-8000-000000000001',
-              participationTypeName: '展示',
-              tags: ['展示'],
-              notes: 'メモ',
-              submittedAt: '2026-03-06T12:00:00Z',
-              status: 'approved',
-              statusReason: '',
-              statusSetAt: null,
-              statusSetById: null,
-              places: ['第二会場']
-            }
-          ])
-        }
-
-        if (pathname.endsWith('/staff/participation-types') && method === 'GET') {
-          return jsonResponse([
-            {
-              id: '0195ec00-0001-7000-8000-000000000001',
-              name: '模擬店',
-              description: '',
-              usersCountMin: 1,
-              usersCountMax: 4,
-              tags: ['模擬店'],
-              form: {
-                id: '0195ec00-0011-7000-8000-000000000001',
-                name: '企画参加登録',
-                description: '',
-                openAt: '2026-03-01T00:00:00Z',
-                closeAt: '2026-03-31T23:59:59Z',
-                isPublic: true,
-                isOpen: true,
-                maxAnswers: 1,
-                isParticipationForm: true,
-                answerableTags: [],
-                confirmationMessage: ''
-              }
-            }
-          ])
-        }
-
-        if (pathname.endsWith('/staff/places') && method === 'GET') {
-          return jsonResponse([{ id: 'place-a', name: '第一会場', maxCircleCount: 100 }])
-        }
-
-        if (pathname.endsWith('/staff/circles') && method === 'POST') {
-          return jsonResponse(
-            {
-              id: 'circle-c',
-              name: '新規企画',
-              nameYomi: 'シンキキカク',
-              groupName: 'Cブロック',
-              groupNameYomi: 'シーブロック',
-              participationTypeId: '0195ec00-0001-7000-8000-000000000001',
-              participationTypeName: '模擬店',
-              tags: ['模擬店'],
-              notes: '',
-              submittedAt: null,
-              status: 'pending',
-              statusReason: '',
-              statusSetAt: null,
-              statusSetById: null,
-              places: []
-            },
-            201
-          )
-        }
-
-        if (
-          (pathname.endsWith('/staff/circles/0195ec00-0021-7000-8000-000000000001') ||
-            pathname.endsWith('/staff/circles/0195ec00-0022-7000-8000-000000000001')) &&
-          method === 'DELETE'
-        ) {
-          return new Response(null, { status: 204 })
-        }
-
-        if (pathname.endsWith('/staff/circles/export') && method === 'GET') {
-          return new Response('', { status: 200 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffCirclesAllPage, {
       global: {
@@ -221,21 +197,6 @@ describe('StaffCirclesAllPage', () => {
     await deleteButton.trigger('click')
     await flushPromises()
 
-    const fetchMock = vi.mocked(globalThis.fetch)
-    const deleteCalls = fetchMock.mock.calls.filter((call) => {
-      const input = call[0]
-      const init = call[1]
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-      return method === 'DELETE' && url.includes('/staff/circles/0195ec00-002')
-    })
-    expect(deleteCalls.length).toBe(1)
+    expect(deleteWasCalled).toBe(true)
   })
 })
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
-}

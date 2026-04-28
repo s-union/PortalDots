@@ -5,6 +5,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
 import { buildDeleteStaffParticipationTypeConfirmMessage } from '@/features/staff/participation-types/api'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffParticipationTypeEditPage from './edit.vue'
 
 function createQueryPlugin() {
@@ -20,13 +22,72 @@ function createQueryPlugin() {
   ]
 }
 
+const participationTypeResponse = {
+  id: 'participation-type-food',
+  name: '模擬店',
+  description: '模擬店の参加種別です。',
+  usersCountMin: 1,
+  usersCountMax: 4,
+  tags: ['模擬店'],
+  form: {
+    id: 'form-participation-food',
+    name: '企画参加登録',
+    description: '参加登録を提出してください。',
+    openAt: '2026-03-01T00:00:00Z',
+    closeAt: '2026-03-31T23:59:59Z',
+    isPublic: true,
+    isOpen: true,
+    maxAnswers: 1,
+    isParticipationForm: true,
+    answerableTags: [],
+    confirmationMessage: 'ありがとうございました。'
+  }
+}
+
 describe('StaffParticipationTypeEditPage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.unstubAllGlobals()
   })
 
   it('shows tab strip and updates participation type basic settings', async () => {
+    let updatedRequestBody = ''
+
+    server.use(
+      http.get('/v1/staff/tags', () =>
+        HttpResponse.json([
+          { id: 'tag-food', name: '模擬店' },
+          { id: 'tag-outdoor', name: '屋外' }
+        ])
+      ),
+      http.get('/v1/staff/participation-types/participation-type-food', () =>
+        HttpResponse.json(participationTypeResponse)
+      ),
+      http.put('/v1/staff/participation-types/participation-type-food', async ({ request }) => {
+        updatedRequestBody = await request.text()
+        return HttpResponse.json({
+          id: 'participation-type-food',
+          name: '更新後模擬店',
+          description: '更新後説明',
+          usersCountMin: 1,
+          usersCountMax: 5,
+          tags: ['模擬店', '屋外'],
+          form: {
+            id: 'form-participation-food',
+            name: '企画参加登録',
+            description: '参加登録を提出してください。',
+            openAt: '2026-03-01T00:00:00Z',
+            closeAt: '2026-03-31T23:59:59Z',
+            isPublic: true,
+            isOpen: true,
+            maxAnswers: 1,
+            isParticipationForm: true,
+            answerableTags: [],
+            confirmationMessage: 'ありがとうございました。'
+          }
+        })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -55,64 +116,6 @@ describe('StaffParticipationTypeEditPage', () => {
     })
     await router.push('/staff/circles/participation_types/participation-type-food/edit')
     await router.isReady()
-
-    let updatedRequestBody = ''
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return jsonResponse({ allowed: true, authorized: true })
-        }
-
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return jsonResponse([
-            { id: 'tag-food', name: '模擬店' },
-            { id: 'tag-outdoor', name: '屋外' }
-          ])
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'GET') {
-          return jsonResponse(participationTypeResponse())
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'PUT') {
-          if (input instanceof Request) {
-            updatedRequestBody = await input.clone().text()
-          } else if (typeof init?.body === 'string') {
-            updatedRequestBody = init.body
-          }
-          return jsonResponse({
-            id: 'participation-type-food',
-            name: '更新後模擬店',
-            description: '更新後説明',
-            usersCountMin: 1,
-            usersCountMax: 5,
-            tags: ['模擬店', '屋外'],
-            form: {
-              id: 'form-participation-food',
-              name: '企画参加登録',
-              description: '参加登録を提出してください。',
-              openAt: '2026-03-01T00:00:00Z',
-              closeAt: '2026-03-31T23:59:59Z',
-              isPublic: true,
-              isOpen: true,
-              maxAnswers: 1,
-              isParticipationForm: true,
-              answerableTags: [],
-              confirmationMessage: 'ありがとうございました。'
-            }
-          })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffParticipationTypeEditPage, {
       global: {
@@ -143,6 +146,19 @@ describe('StaffParticipationTypeEditPage', () => {
   })
 
   it('deletes participation type after confirmation', async () => {
+    let deleted = false
+
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([{ id: 'tag-food', name: '模擬店' }])),
+      http.get('/v1/staff/participation-types/participation-type-food', () =>
+        HttpResponse.json(participationTypeResponse)
+      ),
+      http.delete('/v1/staff/participation-types/participation-type-food', () => {
+        deleted = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -175,37 +191,6 @@ describe('StaffParticipationTypeEditPage', () => {
     await router.push('/staff/circles/participation_types/participation-type-food/edit')
     await router.isReady()
 
-    let deleted = false
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return jsonResponse({ allowed: true, authorized: true })
-        }
-
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return jsonResponse([{ id: 'tag-food', name: '模擬店' }])
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'GET') {
-          return jsonResponse(participationTypeResponse())
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'DELETE') {
-          deleted = true
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
-
     const wrapper = mount(StaffParticipationTypeEditPage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -228,6 +213,19 @@ describe('StaffParticipationTypeEditPage', () => {
   })
 
   it('does not delete participation type when confirmation is cancelled', async () => {
+    let deleted = false
+
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([{ id: 'tag-food', name: '模擬店' }])),
+      http.get('/v1/staff/participation-types/participation-type-food', () =>
+        HttpResponse.json(participationTypeResponse)
+      ),
+      http.delete('/v1/staff/participation-types/participation-type-food', () => {
+        deleted = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -260,37 +258,6 @@ describe('StaffParticipationTypeEditPage', () => {
     await router.push('/staff/circles/participation_types/participation-type-food/edit')
     await router.isReady()
 
-    let deleted = false
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return jsonResponse({ allowed: true, authorized: true })
-        }
-
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return jsonResponse([{ id: 'tag-food', name: '模擬店' }])
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'GET') {
-          return jsonResponse(participationTypeResponse())
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'DELETE') {
-          deleted = true
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
-
     const wrapper = mount(StaffParticipationTypeEditPage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -312,34 +279,3 @@ describe('StaffParticipationTypeEditPage', () => {
     expect(router.currentRoute.value.path).toBe('/staff/circles/participation_types/participation-type-food/edit')
   })
 })
-
-function participationTypeResponse() {
-  return {
-    id: 'participation-type-food',
-    name: '模擬店',
-    description: '模擬店の参加種別です。',
-    usersCountMin: 1,
-    usersCountMax: 4,
-    tags: ['模擬店'],
-    form: {
-      id: 'form-participation-food',
-      name: '企画参加登録',
-      description: '参加登録を提出してください。',
-      openAt: '2026-03-01T00:00:00Z',
-      closeAt: '2026-03-31T23:59:59Z',
-      isPublic: true,
-      isOpen: true,
-      maxAnswers: 1,
-      isParticipationForm: true,
-      answerableTags: [],
-      confirmationMessage: 'ありがとうございました。'
-    }
-  }
-}
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
-}

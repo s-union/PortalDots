@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffContactCategoriesPage from './contact-categories.vue'
 
 function createQueryPlugin() {
@@ -22,10 +24,30 @@ function createQueryPlugin() {
 describe('StaffContactCategoriesPage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.unstubAllGlobals()
   })
 
   it('lists, creates, updates, and deletes contact categories', async () => {
+    const categories = [
+      { id: 'category-1', name: '総合', email: 'general@example.com' },
+      { id: 'category-2', name: '安全', email: 'safety@example.com' }
+    ]
+
+    server.use(
+      http.get('/v1/staff/contact-categories', () => HttpResponse.json(categories)),
+      http.post('/v1/staff/contact-categories', () => {
+        categories.push({ id: 'category-3', name: '新規', email: 'new@example.com' })
+        return HttpResponse.json(categories[2], { status: 201 })
+      }),
+      http.put('/v1/staff/contact-categories/category-1', () => {
+        categories[0] = { id: 'category-1', name: '更新総合', email: 'updated@example.com' }
+        return HttpResponse.json(categories[0])
+      }),
+      http.delete('/v1/staff/contact-categories/category-2', () => {
+        categories.splice(1, 1)
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -36,11 +58,6 @@ describe('StaffContactCategoriesPage', () => {
       roles: ['admin'],
       user: { id: 'staff-user', displayName: 'Staff User' }
     })
-
-    const categories = [
-      { id: 'category-1', name: '総合', email: 'general@example.com' },
-      { id: 'category-2', name: '安全', email: 'safety@example.com' }
-    ]
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -54,53 +71,6 @@ describe('StaffContactCategoriesPage', () => {
 
     const confirmMock = vi.fn(() => true)
     vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/contact-categories') && method === 'GET') {
-          return new Response(JSON.stringify(categories), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/contact-categories') && method === 'POST') {
-          categories.push({ id: 'category-3', name: '新規', email: 'new@example.com' })
-          return new Response(JSON.stringify(categories[2]), {
-            status: 201,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/contact-categories/category-1') && method === 'PUT') {
-          categories[0] = {
-            id: 'category-1',
-            name: '更新総合',
-            email: 'updated@example.com'
-          }
-          return new Response(JSON.stringify(categories[0]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/contact-categories/category-2') && method === 'DELETE') {
-          categories.splice(1, 1)
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffContactCategoriesPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -177,6 +147,15 @@ describe('StaffContactCategoriesPage', () => {
   })
 
   it('does not delete contact categories when confirmation is cancelled', async () => {
+    server.use(
+      http.get('/v1/staff/contact-categories', () =>
+        HttpResponse.json([
+          { id: 'category-1', name: '総合', email: 'general@example.com' },
+          { id: 'category-2', name: '安全', email: 'safety@example.com' }
+        ])
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -201,39 +180,11 @@ describe('StaffContactCategoriesPage', () => {
     const confirmMock = vi.fn(() => false)
     vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
 
-    const deleteRequests: string[] = []
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/contact-categories') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              { id: 'category-1', name: '総合', email: 'general@example.com' },
-              { id: 'category-2', name: '安全', email: 'safety@example.com' }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-        if (pathname.endsWith('/staff/contact-categories/category-2') && method === 'DELETE') {
-          deleteRequests.push(url)
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
+    let deleteWasCalled = false
+    server.use(
+      http.delete('/v1/staff/contact-categories/category-2', () => {
+        deleteWasCalled = true
+        return new HttpResponse(null, { status: 204 })
       })
     )
 
@@ -255,11 +206,19 @@ describe('StaffContactCategoriesPage', () => {
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledWith('安全(safety@example.com)を削除しますか？')
-    expect(deleteRequests).toHaveLength(0)
+    expect(deleteWasCalled).toBe(false)
     expect(wrapper.text()).toContain('安全')
   })
 
   it('loads contact categories without current circle', async () => {
+    let categoriesWasCalled = false
+    server.use(
+      http.get('/v1/staff/contact-categories', () => {
+        categoriesWasCalled = true
+        return HttpResponse.json([{ id: 'category-1', name: '総合', email: 'general@example.com' }])
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -281,43 +240,12 @@ describe('StaffContactCategoriesPage', () => {
     await router.push('/staff/contact-categories')
     await router.isReady()
 
-    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-      const pathname = new URL(url, 'http://localhost').pathname
-
-      if (pathname.endsWith('/staff/status') && method === 'GET') {
-        return Promise.resolve(
-          new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-      }
-      if (pathname.endsWith('/staff/contact-categories') && method === 'GET') {
-        return Promise.resolve(
-          new Response(JSON.stringify([{ id: 'category-1', name: '総合', email: 'general@example.com' }]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-      }
-
-      return Promise.reject(new Error(`Unexpected request: ${method} ${url}`))
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
     const wrapper = mount(StaffContactCategoriesPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
     })
     await flushPromises()
 
-    expect(
-      fetchMock.mock.calls.some(([input]) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        return new URL(url, 'http://localhost').pathname.endsWith('/staff/contact-categories')
-      })
-    ).toBe(true)
+    expect(categoriesWasCalled).toBe(true)
     expect(wrapper.text()).toContain('総合')
   })
 })

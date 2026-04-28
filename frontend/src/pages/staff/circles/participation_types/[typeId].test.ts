@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffParticipationTypeCirclesPage from './[typeId]/index.vue'
 
 function createQueryPlugin() {
@@ -20,11 +22,59 @@ function createQueryPlugin() {
 }
 
 describe('StaffParticipationTypeCirclesPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('renders tab strip, circles grid, and can navigate to the edit tab', async () => {
+    server.use(
+      http.get('/v1/staff/participation-types/participation-type-food', () =>
+        HttpResponse.json({
+          id: 'participation-type-food',
+          name: '模擬店',
+          description: '模擬店の参加種別です。',
+          usersCountMin: 1,
+          usersCountMax: 4,
+          tags: ['模擬店'],
+          form: {
+            id: 'form-participation-food',
+            name: '企画参加登録',
+            description: '参加登録を提出してください。',
+            openAt: '2026-03-01T00:00:00Z',
+            closeAt: '2026-03-31T23:59:59Z',
+            isPublic: true,
+            isOpen: true,
+            maxAnswers: 1,
+            isParticipationForm: true,
+            answerableTags: [],
+            confirmationMessage: 'ありがとうございました。'
+          }
+        })
+      ),
+      http.get('/v1/staff/participation-types/participation-type-food/circles', ({ request }) => {
+        const url = new URL(request.url)
+        const pageSize = Number.parseInt(url.searchParams.get('pageSize') ?? '25', 10)
+        return HttpResponse.json({
+          items: Array.from({ length: Math.min(pageSize, 2) }, (_, index) => ({
+            id: index === 0 ? 'circle-a' : 'circle-b',
+            name: index === 0 ? '屋台企画A' : '屋台企画B',
+            nameYomi: index === 0 ? 'ヤタイキカクエー' : 'ヤタイキカクビー',
+            groupName: index === 0 ? 'Aブロック' : 'Bブロック',
+            groupNameYomi: index === 0 ? 'エーブロック' : 'ビーブロック',
+            participationTypeId: 'participation-type-food',
+            participationTypeName: '模擬店',
+            tags: ['模擬店'],
+            notes: '',
+            submittedAt: '2026-03-05T12:00:00Z',
+            status: 'pending',
+            statusReason: '',
+            statusSetAt: null,
+            statusSetById: null,
+            places: ['第一会場']
+          })),
+          page: 1,
+          pageSize,
+          total: 2
+        })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -59,72 +109,6 @@ describe('StaffParticipationTypeCirclesPage', () => {
     })
     await router.push('/staff/circles/participation_types/participation-type-food')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return jsonResponse({ allowed: true, authorized: true })
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food') && method === 'GET') {
-          return jsonResponse({
-            id: 'participation-type-food',
-            name: '模擬店',
-            description: '模擬店の参加種別です。',
-            usersCountMin: 1,
-            usersCountMax: 4,
-            tags: ['模擬店'],
-            form: {
-              id: 'form-participation-food',
-              name: '企画参加登録',
-              description: '参加登録を提出してください。',
-              openAt: '2026-03-01T00:00:00Z',
-              closeAt: '2026-03-31T23:59:59Z',
-              isPublic: true,
-              isOpen: true,
-              maxAnswers: 1,
-              isParticipationForm: true,
-              answerableTags: [],
-              confirmationMessage: 'ありがとうございました。'
-            }
-          })
-        }
-
-        if (pathname.endsWith('/staff/participation-types/participation-type-food/circles') && method === 'GET') {
-          const pageSize = Number.parseInt(new URL(url, 'http://localhost').searchParams.get('pageSize') ?? '25', 10)
-          return jsonResponse({
-            items: Array.from({ length: Math.min(pageSize, 2) }, (_, index) => ({
-              id: index === 0 ? 'circle-a' : 'circle-b',
-              name: index === 0 ? '屋台企画A' : '屋台企画B',
-              nameYomi: index === 0 ? 'ヤタイキカクエー' : 'ヤタイキカクビー',
-              groupName: index === 0 ? 'Aブロック' : 'Bブロック',
-              groupNameYomi: index === 0 ? 'エーブロック' : 'ビーブロック',
-              participationTypeId: 'participation-type-food',
-              participationTypeName: '模擬店',
-              tags: ['模擬店'],
-              notes: '',
-              submittedAt: '2026-03-05T12:00:00Z',
-              status: 'pending',
-              statusReason: '',
-              statusSetAt: null,
-              statusSetById: null,
-              places: ['第一会場']
-            })),
-            page: 1,
-            pageSize,
-            total: 2
-          })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffParticipationTypeCirclesPage, {
       global: {
@@ -163,10 +147,3 @@ describe('StaffParticipationTypeCirclesPage', () => {
     expect(router.currentRoute.value.path).toBe('/staff/circles/participation_types/participation-type-food/edit')
   })
 })
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
-}

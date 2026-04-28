@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import EmailVerifyActionPage from './[userId].vue'
 import EmailVerifyCompletedPage from '../completed.vue'
 
@@ -19,44 +21,16 @@ async function mountAtVerifyAction() {
     ]
   })
 
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      await Promise.resolve()
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-      const pathname = new URL(url, 'http://localhost').pathname
-
-      if (pathname.endsWith('/auth/register/verify') && method === 'POST') {
-        return jsonResponse({
-          pendingRegistrationId: 'pending-123',
-          univemail: '24z9999@example.ac.jp',
-          studentId: '24z9999',
-          verified: true
-        })
-      }
-
-      if (pathname.endsWith('/auth/register/complete') && method === 'POST') {
-        return new Response(null, { status: 204 })
-      }
-
-      if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
-        return jsonResponse({
-          csrfToken: 'csrf-token',
-          currentCircle: null,
-          featureFlags: [],
-          roles: ['participant'],
-          permissions: [],
-          user: {
-            id: 'demo-user',
-            displayName: '認証 太郎',
-            canDeleteAccount: true
-          }
-        })
-      }
-
-      throw new Error(`Unexpected request: ${method} ${url}`)
-    })
+  server.use(
+    http.post('/v1/auth/register/verify', () =>
+      HttpResponse.json({
+        pendingRegistrationId: 'pending-123',
+        univemail: '24z9999@example.ac.jp',
+        studentId: '24z9999',
+        verified: true
+      })
+    ),
+    http.post('/v1/auth/register/complete', () => new HttpResponse(null, { status: 204 }))
   )
 
   await router.push('/email/verify/univemail/pending-123?token=token-abc')
@@ -186,6 +160,28 @@ describe('EmailVerifyActionPage', () => {
   })
 
   it('keeps the registration form visible when completeRegistration returns a validation error', async () => {
+    server.use(
+      http.post('/v1/auth/register/verify', () =>
+        HttpResponse.json({
+          pendingRegistrationId: 'pending-123',
+          univemail: '24z9999@example.ac.jp',
+          studentId: '24z9999',
+          verified: true
+        })
+      ),
+      http.post('/v1/auth/register/complete', () =>
+        HttpResponse.json(
+          {
+            message: 'validation_error',
+            errors: {
+              password: ['パスワードは8文字以上で入力してください']
+            }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const router = createRouter({
@@ -197,39 +193,6 @@ describe('EmailVerifyActionPage', () => {
         { path: '/email/verify/:type/:userId', component: EmailVerifyActionPage }
       ]
     })
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/auth/register/verify') && method === 'POST') {
-          return jsonResponse({
-            pendingRegistrationId: 'pending-123',
-            univemail: '24z9999@example.ac.jp',
-            studentId: '24z9999',
-            verified: true
-          })
-        }
-
-        if (pathname.endsWith('/auth/register/complete') && method === 'POST') {
-          return jsonResponse(
-            {
-              message: 'validation_error',
-              errors: {
-                password: ['パスワードは8文字以上で入力してください']
-              }
-            },
-            { status: 422 }
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     await router.push('/email/verify/univemail/pending-123?token=token-abc')
     await router.isReady()
@@ -267,13 +230,3 @@ describe('EmailVerifyActionPage', () => {
     expect(router.currentRoute.value.fullPath).toBe('/email/verify/univemail/pending-123?token=token-abc')
   })
 })
-
-function jsonResponse(body: unknown, init?: ResponseInit) {
-  const headers = new Headers(init?.headers)
-  headers.set('Content-Type', 'application/json')
-
-  return new Response(JSON.stringify(body), {
-    status: init?.status ?? 200,
-    headers
-  })
-}

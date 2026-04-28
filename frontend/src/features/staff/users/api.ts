@@ -356,7 +356,7 @@ export function useUpdateStaffUserMutation() {
   return useMutation({
     mutationFn: async (payload: UpdateStaffUserPayload) => updateStaffUser(payload, sessionStore.csrfToken),
     onSuccess: async (updatedUser) => {
-      await hydrateUserRelatedQueries(queryClient, sessionStore, updatedUser.id)
+      await hydrateUserRelatedQueries(queryClient, sessionStore, updatedUser)
     }
   })
 }
@@ -368,7 +368,7 @@ export function useUpdateStaffUserRolesMutation() {
   return useMutation({
     mutationFn: async (payload: UpdateStaffUserRolesPayload) => updateStaffUserRoles(payload, sessionStore.csrfToken),
     onSuccess: async (updatedUser) => {
-      await hydrateUserRelatedQueries(queryClient, sessionStore, updatedUser.id)
+      await hydrateUserRelatedQueries(queryClient, sessionStore, updatedUser)
     }
   })
 }
@@ -380,7 +380,7 @@ export function useVerifyStaffUserMutation(userId: MaybeRefOrGetter<string>) {
   return useMutation({
     mutationFn: async () => verifyStaffUser(toValue(userId), sessionStore.csrfToken),
     onSuccess: async (updatedUser) => {
-      await hydrateUserRelatedQueries(queryClient, sessionStore, updatedUser.id)
+      await hydrateUserRelatedQueries(queryClient, sessionStore, updatedUser)
     }
   })
 }
@@ -442,11 +442,13 @@ export function extractStaffUserValidationMessage(error: unknown) {
 async function hydrateUserRelatedQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   sessionStore: ReturnType<typeof useSessionStore>,
-  userId: string
+  updatedUser: StaffUser
 ) {
+  queryClient.setQueryData(['staff', 'users', 'detail', updatedUser.id], updatedUser)
+
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['staff', 'users'] }),
-    queryClient.invalidateQueries({ queryKey: ['staff', 'users', 'detail', userId] }),
+    queryClient.invalidateQueries({ queryKey: ['staff', 'users', 'detail', updatedUser.id] }),
     queryClient.invalidateQueries({ queryKey: ['session', 'bootstrap'] }),
     queryClient.invalidateQueries({ queryKey: ['staff', 'status'] })
   ])

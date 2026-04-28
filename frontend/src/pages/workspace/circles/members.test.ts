@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 const renderSvgMock = vi.hoisted(() => vi.fn())
 
 vi.mock('uqr', () => ({
@@ -56,58 +58,13 @@ const membersFixture = [
   { userId: 'member-user', displayName: 'メンバーさん', isLeader: false }
 ]
 
-function buildFetchMock(
-  options: {
-    detail?: Partial<typeof circleDetailFixture>
-    members?: object[]
-    removeShouldSucceed?: boolean
-  } = {}
-) {
-  const { detail = {}, members = membersFixture, removeShouldSucceed = true } = options
-  const detailResponse = {
-    ...circleDetailFixture,
-    ...detail
-  }
-
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    await Promise.resolve()
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-    const pathname = new URL(url, 'http://localhost').pathname
-
-    if (pathname.endsWith('/circles/current/detail') && method === 'GET') {
-      return new Response(JSON.stringify(detailResponse), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-
-    if (pathname.endsWith('/circles/current/members') && method === 'GET') {
-      return new Response(JSON.stringify(members), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-
-    if (url.includes('/circles/current/members/') && method === 'DELETE') {
-      if (!removeShouldSucceed) {
-        return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 })
-      }
-      return new Response(null, { status: 204 })
-    }
-
-    throw new Error(`Unexpected request: ${method} ${url}`)
-  })
-}
-
 describe('CircleMembersPage', () => {
   beforeEach(() => {
     renderSvgMock.mockReturnValue('<svg data-testid="invite-qr"></svg>')
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
   })
 
   function setupTest(userId = 'leader-user') {
@@ -141,11 +98,14 @@ describe('CircleMembersPage', () => {
   }
 
   it('renders member list', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.get('/v1/circles/current/members', () => HttpResponse.json(membersFixture))
+    )
+
     const { pinia, router } = setupTest()
     await router.push('/workspace/circles/members')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -162,11 +122,14 @@ describe('CircleMembersPage', () => {
   })
 
   it('shows empty state when no members', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.get('/v1/circles/current/members', () => HttpResponse.json([]))
+    )
+
     const { pinia, router } = setupTest()
     await router.push('/workspace/circles/members')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock({ members: [] }))
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -177,11 +140,14 @@ describe('CircleMembersPage', () => {
   })
 
   it('shows delete button for non-leader members when current user is leader', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.get('/v1/circles/current/members', () => HttpResponse.json(membersFixture))
+    )
+
     const { pinia, router } = setupTest('leader-user')
     await router.push('/workspace/circles/members')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -194,11 +160,14 @@ describe('CircleMembersPage', () => {
   })
 
   it('does not show direct add member section', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.get('/v1/circles/current/members', () => HttpResponse.json(membersFixture))
+    )
+
     const { pinia, router } = setupTest('leader-user')
     await router.push('/workspace/circles/members')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -210,18 +179,16 @@ describe('CircleMembersPage', () => {
   })
 
   it('keeps invite regeneration available after submission', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () =>
+        HttpResponse.json({ ...circleDetailFixture, submittedAt: '2026-03-20T00:00:00Z' })
+      ),
+      http.get('/v1/circles/current/members', () => HttpResponse.json(membersFixture))
+    )
+
     const { pinia, router } = setupTest('leader-user')
     await router.push('/workspace/circles/members')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      buildFetchMock({
-        detail: {
-          submittedAt: '2026-03-20T00:00:00Z'
-        }
-      })
-    )
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -233,15 +200,20 @@ describe('CircleMembersPage', () => {
   })
 
   it('removes a member after confirmation', async () => {
-    const { pinia, router } = setupTest('leader-user')
-    await router.push('/workspace/circles/members')
-    await router.isReady()
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.get('/v1/circles/current/members', () => HttpResponse.json(membersFixture)),
+      http.delete('/v1/circles/current/members/:userID', () => new HttpResponse(null, { status: 204 }))
+    )
 
     vi.stubGlobal(
       'confirm',
       vi.fn(() => true)
     )
-    vi.stubGlobal('fetch', buildFetchMock())
+
+    const { pinia, router } = setupTest('leader-user')
+    await router.push('/workspace/circles/members')
+    await router.isReady()
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -260,15 +232,22 @@ describe('CircleMembersPage', () => {
   })
 
   it('shows error when member removal fails', async () => {
-    const { pinia, router } = setupTest('leader-user')
-    await router.push('/workspace/circles/members')
-    await router.isReady()
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.get('/v1/circles/current/members', () => HttpResponse.json(membersFixture)),
+      http.delete('/v1/circles/current/members/:userID', () =>
+        HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+      )
+    )
 
     vi.stubGlobal(
       'confirm',
       vi.fn(() => true)
     )
-    vi.stubGlobal('fetch', buildFetchMock({ removeShouldSucceed: false }))
+
+    const { pinia, router } = setupTest('leader-user')
+    await router.push('/workspace/circles/members')
+    await router.isReady()
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -286,14 +265,18 @@ describe('CircleMembersPage', () => {
   })
 
   it('shows fallback message when QR rendering fails', async () => {
-    const { pinia, router } = setupTest('leader-user')
-    await router.push('/workspace/circles/members')
-    await router.isReady()
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.get('/v1/circles/current/members', () => HttpResponse.json(membersFixture))
+    )
 
     renderSvgMock.mockImplementation(() => {
       throw new Error('qr rendering error')
     })
-    vi.stubGlobal('fetch', buildFetchMock())
+
+    const { pinia, router } = setupTest('leader-user')
+    await router.push('/workspace/circles/members')
+    await router.isReady()
 
     const wrapper = mount(CircleMembersPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }

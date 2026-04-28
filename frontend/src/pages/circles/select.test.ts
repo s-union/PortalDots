@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import CircleSelectorPage from './select.vue'
 
 function createQueryPlugin() {
@@ -19,129 +21,85 @@ function createQueryPlugin() {
   ]
 }
 
-function buildFetchMock(options?: {
-  circles?: { id: string; name: string; groupName: string; participationTypeName: string }[]
-}) {
-  let selected = false
-  const circles = options?.circles ?? [
-    {
-      id: 'circle-a',
-      name: 'デモ企画A',
-      groupName: 'Aブロック',
-      participationTypeName: '模擬店'
-    },
-    {
-      id: 'circle-b',
-      name: 'デモ企画B',
-      groupName: 'Bブロック',
-      participationTypeName: '展示'
+const twoCircles = [
+  {
+    id: 'circle-a',
+    name: 'デモ企画A',
+    groupName: 'Aブロック',
+    participationTypeName: '模擬店'
+  },
+  {
+    id: 'circle-b',
+    name: 'デモ企画B',
+    groupName: 'Bブロック',
+    participationTypeName: '展示'
+  }
+]
+
+const twoParticipationTypes = [
+  {
+    id: 'pt-exhibit',
+    name: '展示',
+    description: '展示企画です',
+    usersCountMin: 1,
+    usersCountMax: 4,
+    tags: [],
+    form: {
+      id: 'form-pt-exhibit',
+      name: '参加登録',
+      description: '',
+      openAt: '2026-01-01T00:00:00Z',
+      closeAt: '2026-12-31T23:59:59Z',
+      isPublic: true,
+      isOpen: true,
+      maxAnswers: 1,
+      answerableTags: [],
+      confirmationMessage: ''
     }
-  ]
-
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    await Promise.resolve()
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-    const pathname = new URL(url, 'http://localhost').pathname
-
-    if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
-      return new Response(
-        JSON.stringify({
-          csrfToken: 'csrf-token',
-          currentCircle: selected
-            ? {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              }
-            : null,
-          featureFlags: [],
-          roles: ['participant'],
-          user: {
-            id: 'demo-user',
-            displayName: 'Demo User'
-          }
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
+  },
+  {
+    id: 'pt-food',
+    name: '模擬店',
+    description: '模擬店企画です',
+    usersCountMin: 2,
+    usersCountMax: 6,
+    tags: [],
+    form: {
+      id: 'form-pt-food',
+      name: '参加登録',
+      description: '',
+      openAt: '2026-01-01T00:00:00Z',
+      closeAt: '2026-10-31T23:59:59Z',
+      isPublic: true,
+      isOpen: true,
+      maxAnswers: 1,
+      answerableTags: [],
+      confirmationMessage: ''
     }
-
-    if (pathname.endsWith('/circles') && method === 'GET') {
-      return new Response(JSON.stringify(circles), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-
-    if (pathname.endsWith('/participation-types') && method === 'GET') {
-      return new Response(
-        JSON.stringify([
-          {
-            id: 'pt-exhibit',
-            name: '展示',
-            description: '展示企画です',
-            usersCountMin: 1,
-            usersCountMax: 4,
-            tags: [],
-            form: {
-              id: 'form-pt-exhibit',
-              name: '参加登録',
-              description: '',
-              openAt: '2026-01-01T00:00:00Z',
-              closeAt: '2026-12-31T23:59:59Z',
-              isPublic: true,
-              isOpen: true,
-              maxAnswers: 1,
-              answerableTags: [],
-              confirmationMessage: ''
-            }
-          },
-          {
-            id: 'pt-food',
-            name: '模擬店',
-            description: '模擬店企画です',
-            usersCountMin: 2,
-            usersCountMax: 6,
-            tags: [],
-            form: {
-              id: 'form-pt-food',
-              name: '参加登録',
-              description: '',
-              openAt: '2026-01-01T00:00:00Z',
-              closeAt: '2026-10-31T23:59:59Z',
-              isPublic: true,
-              isOpen: true,
-              maxAnswers: 1,
-              answerableTags: [],
-              confirmationMessage: ''
-            }
-          }
-        ]),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    if (pathname.endsWith('/circles/current') && method === 'PUT') {
-      selected = true
-      return new Response(null, { status: 204 })
-    }
-
-    throw new Error(`Unexpected request: ${method} ${url}`)
-  })
-}
+  }
+]
 
 describe('CircleSelectorPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('selects a circle and navigates to the home page', async () => {
+    let selected = false
+    server.use(
+      http.get('/v1/circles', () => HttpResponse.json(twoCircles)),
+      http.get('/v1/participation-types', () => HttpResponse.json(twoParticipationTypes)),
+      http.put('/v1/circles/current', () => {
+        selected = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: selected ? { id: 'circle-b', name: 'デモ企画B' } : null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -150,10 +108,7 @@ describe('CircleSelectorPage', () => {
       currentCircle: null,
       featureFlags: [],
       roles: ['participant'],
-      user: {
-        id: 'demo-user',
-        displayName: 'Demo User'
-      }
+      user: { id: 'demo-user', displayName: 'Demo User' }
     })
 
     const router = createRouter({
@@ -165,10 +120,6 @@ describe('CircleSelectorPage', () => {
     })
     await router.push('/circles/select')
     await router.isReady()
-
-    const fetchMock = buildFetchMock()
-
-    vi.stubGlobal('fetch', fetchMock)
 
     const wrapper = mount(CircleSelectorPage, {
       global: {
@@ -185,6 +136,25 @@ describe('CircleSelectorPage', () => {
   })
 
   it('returns to the requested page after selecting a circle', async () => {
+    let selected = false
+    server.use(
+      http.get('/v1/circles', () => HttpResponse.json(twoCircles)),
+      http.get('/v1/participation-types', () => HttpResponse.json(twoParticipationTypes)),
+      http.put('/v1/circles/current', () => {
+        selected = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: selected ? { id: 'circle-b', name: 'デモ企画B' } : null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -193,10 +163,7 @@ describe('CircleSelectorPage', () => {
       currentCircle: null,
       featureFlags: [],
       roles: ['participant'],
-      user: {
-        id: 'demo-user',
-        displayName: 'Demo User'
-      }
+      user: { id: 'demo-user', displayName: 'Demo User' }
     })
 
     const router = createRouter({
@@ -208,10 +175,6 @@ describe('CircleSelectorPage', () => {
     })
     await router.push('/circles/select?redirect=/workspace/forms/form-1%3Fanswer%3Danswer-1')
     await router.isReady()
-
-    const fetchMock = buildFetchMock()
-
-    vi.stubGlobal('fetch', fetchMock)
 
     const wrapper = mount(CircleSelectorPage, {
       global: {
@@ -229,6 +192,25 @@ describe('CircleSelectorPage', () => {
   })
 
   it('auto-selects the requested circle for legacy selector-set redirects', async () => {
+    let selected = false
+    server.use(
+      http.get('/v1/circles', () => HttpResponse.json(twoCircles)),
+      http.get('/v1/participation-types', () => HttpResponse.json(twoParticipationTypes)),
+      http.put('/v1/circles/current', () => {
+        selected = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: selected ? { id: 'circle-b', name: 'デモ企画B' } : null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -237,10 +219,7 @@ describe('CircleSelectorPage', () => {
       currentCircle: null,
       featureFlags: [],
       roles: ['participant'],
-      user: {
-        id: 'demo-user',
-        displayName: 'Demo User'
-      }
+      user: { id: 'demo-user', displayName: 'Demo User' }
     })
 
     const router = createRouter({
@@ -253,10 +232,6 @@ describe('CircleSelectorPage', () => {
     await router.push('/circles/select?redirect=/workspace/forms/form-1%3Fanswer%3Danswer-1&circle=circle-b')
     await router.isReady()
 
-    const fetchMock = buildFetchMock()
-
-    vi.stubGlobal('fetch', fetchMock)
-
     mount(CircleSelectorPage, {
       global: {
         plugins: [pinia, router, createQueryPlugin()]
@@ -268,6 +243,11 @@ describe('CircleSelectorPage', () => {
   })
 
   it('shows default context message when no redirect is provided', async () => {
+    server.use(
+      http.get('/v1/circles', () => HttpResponse.json(twoCircles)),
+      http.get('/v1/participation-types', () => HttpResponse.json(twoParticipationTypes))
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -276,10 +256,7 @@ describe('CircleSelectorPage', () => {
       currentCircle: null,
       featureFlags: [],
       roles: ['participant'],
-      user: {
-        id: 'demo-user',
-        displayName: 'Demo User'
-      }
+      user: { id: 'demo-user', displayName: 'Demo User' }
     })
 
     const router = createRouter({
@@ -288,8 +265,6 @@ describe('CircleSelectorPage', () => {
     })
     await router.push('/circles/select')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleSelectorPage, {
       global: {
@@ -302,6 +277,11 @@ describe('CircleSelectorPage', () => {
   })
 
   it('shows participation type cards linking to circle creation', async () => {
+    server.use(
+      http.get('/v1/circles', () => HttpResponse.json(twoCircles)),
+      http.get('/v1/participation-types', () => HttpResponse.json(twoParticipationTypes))
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -310,10 +290,7 @@ describe('CircleSelectorPage', () => {
       currentCircle: null,
       featureFlags: [],
       roles: ['participant'],
-      user: {
-        id: 'demo-user',
-        displayName: 'Demo User'
-      }
+      user: { id: 'demo-user', displayName: 'Demo User' }
     })
 
     const router = createRouter({
@@ -325,8 +302,6 @@ describe('CircleSelectorPage', () => {
     })
     await router.push('/circles/select')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleSelectorPage, {
       global: {
@@ -343,6 +318,15 @@ describe('CircleSelectorPage', () => {
   })
 
   it('hides circle creation panel for member-only users', async () => {
+    let participationTypesCalled = false
+    server.use(
+      http.get('/v1/circles', () => HttpResponse.json(twoCircles)),
+      http.get('/v1/participation-types', () => {
+        participationTypesCalled = true
+        return HttpResponse.json(twoParticipationTypes)
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -364,9 +348,6 @@ describe('CircleSelectorPage', () => {
     })
     await router.push('/circles/select')
     await router.isReady()
-
-    const fetchMock = buildFetchMock()
-    vi.stubGlobal('fetch', fetchMock)
 
     const wrapper = mount(CircleSelectorPage, {
       global: {
@@ -376,15 +357,12 @@ describe('CircleSelectorPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('別の企画を参加登録する')
-    expect(
-      fetchMock.mock.calls.some(([input]) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        return new URL(url, 'http://localhost').pathname === '/v1/participation-types'
-      })
-    ).toBe(false)
+    expect(participationTypesCalled).toBe(false)
   })
 
   it('shows an empty message when no circles are selectable', async () => {
+    server.use(http.get('/v1/circles', () => HttpResponse.json([])))
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -406,8 +384,6 @@ describe('CircleSelectorPage', () => {
     })
     await router.push('/circles/select')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock({ circles: [] }))
 
     const wrapper = mount(CircleSelectorPage, {
       global: {

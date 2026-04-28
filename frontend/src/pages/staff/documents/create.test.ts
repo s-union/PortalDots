@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffDocumentCreatePage from './create.vue'
 
 function createQueryPlugin() {
@@ -22,10 +24,44 @@ function createQueryPlugin() {
 describe('StaffDocumentCreatePage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    vi.unstubAllGlobals()
   })
 
   it('creates a staff document and resets form', async () => {
+    let postReceived = false
+    let receivedCircleId = ''
+    let receivedName = ''
+
+    server.use(
+      http.get('/v1/staff/circles/managed', () => HttpResponse.json([{ id: 'circle-b', name: 'デモ企画B' }])),
+      http.post('/v1/staff/documents', async ({ request }) => {
+        postReceived = true
+        const rawBody = await request.text()
+        const circleIdMatch = rawBody.match(/name="circleId"\r?\n\r?\n([^\r\n]+)/)
+        const nameMatch = rawBody.match(/name="name"\r?\n\r?\n([^\r\n]+)/)
+        receivedCircleId = circleIdMatch?.[1] ?? ''
+        receivedName = nameMatch?.[1] ?? ''
+        return HttpResponse.json(
+          {
+            circle: { id: 'circle-b', name: 'デモ企画B' },
+            id: '0195ec00-00a2-7000-8000-000000000001',
+            name: '設営チェックシート',
+            description: '当日の確認事項です。',
+            notes: '設営責任者に配布します。',
+            isImportant: true,
+            filename: 'checklist.pdf',
+            extension: 'PDF',
+            mimeType: 'application/pdf',
+            sizeBytes: 4096,
+            isPublic: true,
+            createdAt: '2026-03-06T09:00:00Z',
+            updatedAt: '2026-03-06T09:00:00Z',
+            downloadUrl: '/v1/staff/documents/0195ec00-00a2-7000-8000-000000000001'
+          },
+          { status: 201 }
+        )
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -40,9 +76,6 @@ describe('StaffDocumentCreatePage', () => {
       }
     })
 
-    let postReceived = false
-    let receivedCircleId = ''
-    let receivedName = ''
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -52,65 +85,6 @@ describe('StaffDocumentCreatePage', () => {
     })
     await router.push('/staff/documents/create')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        await Promise.resolve()
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/circles/managed') && method === 'GET') {
-          return new Response(
-            JSON.stringify([
-              {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        if (pathname.endsWith('/staff/documents') && method === 'POST') {
-          postReceived = true
-          const body = await parseFormDataBody(input, init?.body)
-          receivedCircleId = resolveTextEntry(body.get('circleId'))
-          receivedName = resolveTextEntry(body.get('name'))
-          return new Response(
-            JSON.stringify({
-              circle: {
-                id: 'circle-b',
-                name: 'デモ企画B'
-              },
-              id: '0195ec00-00a2-7000-8000-000000000001',
-              name: '設営チェックシート',
-              description: '当日の確認事項です。',
-              notes: '設営責任者に配布します。',
-              isImportant: true,
-              filename: 'checklist.pdf',
-              extension: 'PDF',
-              mimeType: 'application/pdf',
-              sizeBytes: 4096,
-              isPublic: true,
-              createdAt: '2026-03-06T09:00:00Z',
-              updatedAt: '2026-03-06T09:00:00Z',
-              downloadUrl: '/v1/staff/documents/0195ec00-00a2-7000-8000-000000000001'
-            }),
-            {
-              status: 201,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffDocumentCreatePage, {
       global: {
@@ -146,22 +120,3 @@ describe('StaffDocumentCreatePage', () => {
     expect(wrapper.get('input[name="name"]').element).toHaveProperty('value', '')
   })
 })
-
-async function parseFormDataBody(
-  input: RequestInfo | URL,
-  body: null | string | ArrayBuffer | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array> | undefined
-) {
-  if (!(body instanceof FormData) && typeof Request !== 'undefined' && input instanceof Request) {
-    body = await input.clone().formData()
-  }
-
-  if (!(body instanceof FormData)) {
-    throw new Error('Request body was not FormData')
-  }
-
-  return body
-}
-
-function resolveTextEntry(entry: FormDataEntryValue | null) {
-  return typeof entry === 'string' ? entry : ''
-}

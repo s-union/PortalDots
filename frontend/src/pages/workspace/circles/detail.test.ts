@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import CircleDetailPage from './detail.vue'
 
 function createQueryPlugin() {
@@ -45,71 +47,7 @@ const circleDetailFixture = {
   submittedAt: null
 }
 
-function buildFetchMock(
-  overrides: {
-    detail?: object
-    updateShouldSucceed?: boolean
-    deleteShouldSucceed?: boolean
-  } = {}
-) {
-  const { updateShouldSucceed = true, deleteShouldSucceed = true } = overrides
-  const detail = overrides.detail ?? circleDetailFixture
-
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    await Promise.resolve()
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-    const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-    const pathname = new URL(url, 'http://localhost').pathname
-
-    if (pathname.endsWith('/circles/current/detail') && method === 'GET') {
-      return new Response(JSON.stringify(detail), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-
-    if (pathname.endsWith('/circles/current/detail') && method === 'PUT') {
-      if (!updateShouldSucceed) {
-        return new Response(JSON.stringify({ message: 'Validation failed', errors: { name: ['保存失敗'] } }), {
-          status: 422,
-          headers: { 'Content-Type': 'application/json' }
-        })
-      }
-      return new Response(JSON.stringify({ ...detail, name: '更新後企画A' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-
-    if (pathname.endsWith('/circles/current') && method === 'DELETE') {
-      if (!deleteShouldSucceed) {
-        return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 })
-      }
-      return new Response(null, { status: 204 })
-    }
-
-    if (pathname.endsWith('/session/bootstrap') && method === 'GET') {
-      return new Response(
-        JSON.stringify({
-          csrfToken: 'csrf-token',
-          currentCircle: null,
-          featureFlags: [],
-          roles: ['participant'],
-          user: { id: 'demo-user', displayName: 'Demo User' }
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    throw new Error(`Unexpected request: ${method} ${url}`)
-  })
-}
-
 describe('CircleDetailPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   function setupTest() {
     const pinia = createPinia()
     setActivePinia(pinia)
@@ -137,11 +75,24 @@ describe('CircleDetailPage', () => {
   }
 
   it('renders circle detail data', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.put('/v1/circles/current/detail', () => HttpResponse.json({ ...circleDetailFixture, name: '更新後企画A' })),
+      http.delete('/v1/circles/current', () => new HttpResponse(null, { status: 204 })),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const { pinia, router } = setupTest()
     await router.push('/workspace/circles/detail')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleDetailPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -160,16 +111,26 @@ describe('CircleDetailPage', () => {
   })
 
   it('shows submitted status when submittedAt is set', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () =>
+        HttpResponse.json({ ...circleDetailFixture, submittedAt: '2026-03-10T00:00:00Z' })
+      ),
+      http.put('/v1/circles/current/detail', () => HttpResponse.json({ ...circleDetailFixture, name: '更新後企画A' })),
+      http.delete('/v1/circles/current', () => new HttpResponse(null, { status: 204 })),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const { pinia, router } = setupTest()
     await router.push('/workspace/circles/detail')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      buildFetchMock({
-        detail: { ...circleDetailFixture, submittedAt: '2026-03-10T00:00:00Z' }
-      })
-    )
 
     const wrapper = mount(CircleDetailPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -181,11 +142,24 @@ describe('CircleDetailPage', () => {
   })
 
   it('saves circle information successfully', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.put('/v1/circles/current/detail', () => HttpResponse.json({ ...circleDetailFixture, name: '更新後企画A' })),
+      http.delete('/v1/circles/current', () => new HttpResponse(null, { status: 204 })),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const { pinia, router } = setupTest()
     await router.push('/workspace/circles/detail')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock())
 
     const wrapper = mount(CircleDetailPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -203,11 +177,26 @@ describe('CircleDetailPage', () => {
   })
 
   it('shows error when save fails', async () => {
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.put('/v1/circles/current/detail', () =>
+        HttpResponse.json({ message: 'Validation failed', errors: { name: ['保存失敗'] } }, { status: 422 })
+      ),
+      http.delete('/v1/circles/current', () => new HttpResponse(null, { status: 204 })),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+
     const { pinia, router } = setupTest()
     await router.push('/workspace/circles/detail')
     await router.isReady()
-
-    vi.stubGlobal('fetch', buildFetchMock({ updateShouldSucceed: false }))
 
     const wrapper = mount(CircleDetailPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -225,15 +214,29 @@ describe('CircleDetailPage', () => {
   })
 
   it('deletes circle and navigates to home', async () => {
-    const { pinia, router } = setupTest()
-    await router.push('/workspace/circles/detail')
-    await router.isReady()
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.put('/v1/circles/current/detail', () => HttpResponse.json({ ...circleDetailFixture, name: '更新後企画A' })),
+      http.delete('/v1/circles/current', () => new HttpResponse(null, { status: 204 })),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
 
     vi.stubGlobal(
       'confirm',
       vi.fn(() => true)
     )
-    vi.stubGlobal('fetch', buildFetchMock())
+
+    const { pinia, router } = setupTest()
+    await router.push('/workspace/circles/detail')
+    await router.isReady()
 
     const wrapper = mount(CircleDetailPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
@@ -251,15 +254,29 @@ describe('CircleDetailPage', () => {
   })
 
   it('does not delete when user cancels confirmation', async () => {
-    const { pinia, router } = setupTest()
-    await router.push('/workspace/circles/detail')
-    await router.isReady()
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
+      http.put('/v1/circles/current/detail', () => HttpResponse.json({ ...circleDetailFixture, name: '更新後企画A' })),
+      http.delete('/v1/circles/current', () => new HttpResponse(null, { status: 204 })),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: null,
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
 
     vi.stubGlobal(
       'confirm',
       vi.fn(() => false)
     )
-    vi.stubGlobal('fetch', buildFetchMock())
+
+    const { pinia, router } = setupTest()
+    await router.push('/workspace/circles/detail')
+    await router.isReady()
 
     const wrapper = mount(CircleDetailPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }

@@ -1,14 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import PrivacyPolicyPage from './privacy_policy.vue'
 
 describe('PrivacyPolicyPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('renders the privacy policy content', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
@@ -20,22 +18,7 @@ describe('PrivacyPolicyPage', () => {
     await router.push('/privacy_policy')
     await router.isReady()
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        await Promise.resolve()
-        return new Response(
-          JSON.stringify({
-            isDemo: false,
-            appName: 'PortalDots',
-            portalStudentIdName: '学籍番号',
-            portalUnivemailName: '学生用メールアドレス',
-            portalUnivemailDomainPart: 'portaldots.com'
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        )
-      })
-    )
+    // Default mockPublicConfig has isDemo: false, which is what this test needs
 
     const wrapper = mount(PrivacyPolicyPage, {
       global: {
@@ -62,6 +45,18 @@ describe('PrivacyPolicyPage', () => {
   })
 
   it('shows not-found style content in demo mode', async () => {
+    server.use(
+      http.get('/v1/public/config', () =>
+        HttpResponse.json({
+          isDemo: true,
+          appName: 'PortalDots',
+          portalStudentIdName: '学籍番号',
+          portalUnivemailName: '学生用メールアドレス',
+          portalUnivemailDomainPart: 'portaldots.com'
+        })
+      )
+    )
+
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -71,23 +66,6 @@ describe('PrivacyPolicyPage', () => {
     })
     await router.push('/privacy_policy')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        await Promise.resolve()
-        return new Response(
-          JSON.stringify({
-            isDemo: true,
-            appName: 'PortalDots',
-            portalStudentIdName: '学籍番号',
-            portalUnivemailName: '学生用メールアドレス',
-            portalUnivemailDomainPart: 'portaldots.com'
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        )
-      })
-    )
 
     const wrapper = mount(PrivacyPolicyPage, {
       global: {

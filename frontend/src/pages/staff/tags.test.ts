@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
 import StaffTagsPage from './tags.vue'
 
 function createQueryPlugin() {
@@ -20,11 +22,42 @@ function createQueryPlugin() {
 }
 
 describe('StaffTagsPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('lists, creates, updates, and deletes tags', async () => {
+    const tags = [
+      { id: 'tag-2', name: '展示', createdAt: '2021-06-07T12:42:19+09:00', updatedAt: '2021-06-07T12:42:19+09:00' },
+      { id: 'tag-1', name: '飲食', createdAt: '2021-06-07T12:42:18+09:00', updatedAt: '2021-06-07T12:42:18+09:00' }
+    ]
+
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json(tags)),
+      http.post('/v1/staff/tags', () => {
+        tags.push({
+          id: 'tag-3',
+          name: '新規タグ',
+          createdAt: '2021-06-07T12:42:20+09:00',
+          updatedAt: '2021-06-07T12:42:20+09:00'
+        })
+        return HttpResponse.json(tags[2], { status: 201 })
+      }),
+      http.put('/v1/staff/tags/tag-1', () => {
+        const targetIndex = tags.findIndex((tag) => tag.id === 'tag-1')
+        tags[targetIndex] = {
+          id: 'tag-1',
+          name: '更新タグ',
+          createdAt: '2021-06-07T12:42:18+09:00',
+          updatedAt: '2021-06-07T12:42:21+09:00'
+        }
+        return HttpResponse.json(tags[targetIndex])
+      }),
+      http.delete('/v1/staff/tags/tag-1', () => {
+        tags.splice(
+          tags.findIndex((tag) => tag.id === 'tag-1'),
+          1
+        )
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -35,11 +68,6 @@ describe('StaffTagsPage', () => {
       roles: ['admin'],
       user: { id: 'staff-user', displayName: 'Staff User' }
     })
-
-    const tags = [
-      { id: 'tag-2', name: '展示', createdAt: '2021-06-07T12:42:19+09:00', updatedAt: '2021-06-07T12:42:19+09:00' },
-      { id: 'tag-1', name: '飲食', createdAt: '2021-06-07T12:42:18+09:00', updatedAt: '2021-06-07T12:42:18+09:00' }
-    ]
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -53,63 +81,6 @@ describe('StaffTagsPage', () => {
 
     const confirmMock = vi.fn(() => true)
     vi.stubGlobal('confirm', confirmMock)
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-
-        const pathname = new URL(url, 'http://localhost').pathname
-
-        if (pathname.endsWith('/staff/status') && method === 'GET') {
-          return new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/tags') && method === 'GET') {
-          return new Response(JSON.stringify(tags), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/tags') && method === 'POST') {
-          tags.push({
-            id: 'tag-3',
-            name: '新規タグ',
-            createdAt: '2021-06-07T12:42:20+09:00',
-            updatedAt: '2021-06-07T12:42:20+09:00'
-          })
-          return new Response(JSON.stringify(tags[2]), {
-            status: 201,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/tags/tag-1') && method === 'PUT') {
-          const targetIndex = tags.findIndex((tag) => tag.id === 'tag-1')
-          tags[targetIndex] = {
-            id: 'tag-1',
-            name: '更新タグ',
-            createdAt: '2021-06-07T12:42:18+09:00',
-            updatedAt: '2021-06-07T12:42:21+09:00'
-          }
-          return new Response(JSON.stringify(tags[targetIndex]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        }
-        if (pathname.endsWith('/staff/tags/tag-1') && method === 'DELETE') {
-          tags.splice(
-            tags.findIndex((tag) => tag.id === 'tag-1'),
-            1
-          )
-          return new Response(null, { status: 204 })
-        }
-
-        throw new Error(`Unexpected request: ${method} ${url}`)
-      })
-    )
 
     const wrapper = mount(StaffTagsPage, {
       attachTo: document.body,
@@ -166,6 +137,21 @@ describe('StaffTagsPage', () => {
   })
 
   it('loads tags without current circle', async () => {
+    let tagsWasCalled = false
+    server.use(
+      http.get('/v1/staff/tags', () => {
+        tagsWasCalled = true
+        return HttpResponse.json([
+          {
+            id: 'tag-1',
+            name: '飲食',
+            createdAt: '2021-06-07T12:42:19+09:00',
+            updatedAt: '2021-06-07T12:42:19+09:00'
+          }
+        ])
+      })
+    )
+
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -187,53 +173,12 @@ describe('StaffTagsPage', () => {
     await router.push('/staff/tags')
     await router.isReady()
 
-    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
-      const pathname = new URL(url, 'http://localhost').pathname
-
-      if (pathname.endsWith('/staff/status') && method === 'GET') {
-        return Promise.resolve(
-          new Response(JSON.stringify({ allowed: true, authorized: true }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        )
-      }
-      if (pathname.endsWith('/staff/tags') && method === 'GET') {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify([
-              {
-                id: 'tag-1',
-                name: '飲食',
-                createdAt: '2021-06-07T12:42:19+09:00',
-                updatedAt: '2021-06-07T12:42:19+09:00'
-              }
-            ]),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          )
-        )
-      }
-
-      return Promise.reject(new Error(`Unexpected request: ${method} ${url}`))
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
     const wrapper = mount(StaffTagsPage, {
       global: { plugins: [pinia, router, createQueryPlugin()] }
     })
     await flushPromises()
 
-    expect(
-      fetchMock.mock.calls.some(([input]) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-        return new URL(url, 'http://localhost').pathname.endsWith('/staff/tags')
-      })
-    ).toBe(true)
+    expect(tagsWasCalled).toBe(true)
     expect(wrapper.text()).toContain('飲食')
   })
 })

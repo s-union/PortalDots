@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -18,10 +18,6 @@ function createQueryPlugin() {
 }
 
 describe('SupportPage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('shows recommended browser guidance', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
@@ -32,23 +28,6 @@ describe('SupportPage', () => {
     })
     await router.push('/support')
     await router.isReady()
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        await Promise.resolve()
-        return new Response(
-          JSON.stringify({
-            isDemo: true,
-            appName: 'PortalDots',
-            portalStudentIdName: '学籍番号',
-            portalUnivemailName: '学生用メールアドレス',
-            portalUnivemailDomainPart: 'portaldots.com'
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        )
-      })
-    )
 
     const wrapper = mount(SupportPage, {
       global: {
