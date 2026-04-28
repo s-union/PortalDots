@@ -1,0 +1,65 @@
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { http, HttpResponse } from 'msw'
+import { within, userEvent } from '@storybook/test'
+import LoginPage from './login.vue'
+
+const meta = {
+  title: 'Pages/Login',
+  component: LoginPage,
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'fullscreen',
+    msw: {
+      handlers: [
+        http.get('/v1/session/bootstrap', () =>
+          HttpResponse.json({
+            csrfToken: 'mock-csrf-token',
+            featureFlags: [],
+            roles: [],
+            permissions: [],
+            currentCircle: null,
+            user: null
+          })
+        ),
+        http.post('/v1/auth/login', () => new HttpResponse(null, { status: 204 }))
+      ]
+    }
+  }
+} satisfies Meta<typeof LoginPage>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Default: Story = {}
+
+export const WithLoginError: Story = {
+  parameters: {
+    layout: 'fullscreen',
+    msw: {
+      handlers: [
+        http.get('/v1/session/bootstrap', () =>
+          HttpResponse.json({
+            csrfToken: 'mock-csrf-token',
+            featureFlags: [],
+            roles: [],
+            permissions: [],
+            currentCircle: null,
+            user: null
+          })
+        ),
+        http.post('/v1/auth/login', () =>
+          HttpResponse.json({ message: 'ログインIDまたはパスワードが正しくありません。' }, { status: 401 })
+        )
+      ]
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const loginIdInput = canvas.getByPlaceholderText('学籍番号または連絡先メールアドレス')
+    const passwordInput = canvas.getByPlaceholderText('パスワード')
+    await userEvent.type(loginIdInput, 'invalid@example.com')
+    await userEvent.type(passwordInput, 'wrongpassword')
+    const submitButton = canvas.getByRole('button', { name: 'ログイン' })
+    await userEvent.click(submitButton)
+  }
+}

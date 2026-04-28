@@ -34,7 +34,7 @@
     "es2022": true
   },
   "globals": {},
-  "ignorePatterns": ["dist/**"],
+  "ignorePatterns": ["dist/**", "storybook-static/**"],
   "overrides": [
     {
       "files": ["**/*.test.ts", "**/*.spec.ts"],
