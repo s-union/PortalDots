@@ -76,39 +76,39 @@ const { primaryLabel, showDanger, showSuccess } = defineProps<{
         caret-color primary / border-radius 0.45rem
       </p>
       <div class="grid gap-4" style="max-width: 400px">
-        <div>
-          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
-            >ラベル (font-weight: 600)</label
+        <label class="block">
+          <span class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
+            >ラベル (font-weight: 600)</span
           >
           <input placeholder="テキスト入力" type="text" />
-        </div>
-        <div>
-          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)">セレクト</label>
+        </label>
+        <label class="block">
+          <span class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)">セレクト</span>
           <select>
             <option>選択肢1</option>
             <option>選択肢2</option>
             <option>選択肢3</option>
           </select>
-        </div>
-        <div>
-          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
-            >テキストエリア</label
+        </label>
+        <label class="block">
+          <span class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
+            >テキストエリア</span
           >
           <textarea placeholder="複数行テキスト" rows="3"></textarea>
-        </div>
-        <div>
-          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
-            >エラー状態 (.is-invalid)</label
+        </label>
+        <label class="block">
+          <span class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
+            >エラー状態 (.is-invalid)</span
           >
           <input class="!border-danger !caret-danger" type="text" value="不正な値" />
           <p class="mt-[0.2rem] text-sm text-danger">この項目は必須です。</p>
-        </div>
-        <div>
-          <label class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
-            >無効状態 (disabled)</label
+        </label>
+        <label class="block">
+          <span class="mb-[0.2rem] block font-semibold" style="font-weight: var(--font-weight-bold)"
+            >無効状態 (disabled)</span
           >
           <input disabled type="text" value="変更不可" />
-        </div>
+        </label>
       </div>
     </section>
 

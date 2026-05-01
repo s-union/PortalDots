@@ -128,7 +128,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
 <template>
   <div class="space-y-6 p-6">
     <section class="space-y-3">
-      <h3 class="text-base font-semibold text-body">絞り込み条件</h3>
+      <h2 class="text-base font-semibold text-body">絞り込み条件</h2>
 
       <div
         v-if="queries.length === 0"
@@ -157,6 +157,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
               class="rounded border border-border bg-surface px-3 py-2 text-sm text-body"
               :value="query.operator"
               :disabled="loading"
+              :aria-label="resolveLabel(query.keyName) + 'の条件'"
               @change="(event) => handleOperatorChange(event, query)"
             >
               <option v-for="operator in operatorOptions(query.keyName)" :key="operator" :value="operator">
@@ -169,6 +170,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
                 class="rounded border border-border bg-surface px-3 py-2 text-sm text-body"
                 :value="normalizedBoolValue(query.value)"
                 :disabled="loading"
+                :aria-label="resolveLabel(query.keyName) + 'の値'"
                 @change="(event) => handleBoolValueChange(event, query)"
               >
                 <option value="true">はい</option>
@@ -181,6 +183,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
                 type="text"
                 :value="query.value"
                 :disabled="loading"
+                :aria-label="resolveLabel(query.keyName) + 'の値'"
                 @input="(event) => handleTextValueChange(event, query)"
               />
             </template>

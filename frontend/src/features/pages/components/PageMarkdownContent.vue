@@ -33,7 +33,7 @@ const renderedHtml = computed(() => {
     return ''
   }
 
-  return String(
+  const html = String(
     unified()
       .use(remarkParse)
       .use(remarkGfm)
@@ -42,6 +42,9 @@ const renderedHtml = computed(() => {
       .use(rehypeStringify)
       .processSync(source)
   )
+
+  // task list checkbox に aria-label を追加
+  return html.replace(/<input type="checkbox"([^>]*)>/g, '<input type="checkbox" aria-label="タスク"$1>')
 })
 </script>
 

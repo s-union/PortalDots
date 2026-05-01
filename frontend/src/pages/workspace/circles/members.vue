@@ -175,7 +175,13 @@ async function handleRemoveMember(userId: string, displayName: string) {
           <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>
           <template v-else>
             <div class="flex items-center gap-2">
-              <input :value="invitationUrl" type="text" readonly class="flex-1 font-mono text-xs" />
+              <input
+                :value="invitationUrl"
+                type="text"
+                readonly
+                aria-label="招待URL"
+                class="flex-1 font-mono text-xs"
+              />
               <button
                 :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
                 type="button"

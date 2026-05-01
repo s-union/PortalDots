@@ -117,7 +117,7 @@ async function handleDelete() {
       <SettingsSection title="場所設定">
         <SettingsRow>
           <div class="grid gap-4">
-            <div class="grid gap-2 text-sm text-body">
+            <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">場所名</span>
               <input
                 v-model="name"
@@ -128,9 +128,9 @@ async function handleDelete() {
                 @input="markTouched('name')"
               />
               <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
-            </div>
+            </label>
 
-            <div class="grid gap-2 text-sm text-body">
+            <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">タイプ</span>
               <select
                 v-model.number="type"
@@ -144,7 +144,7 @@ async function handleDelete() {
                 <option :value="3">特殊場所</option>
               </select>
               <p v-if="getFieldError('type')" class="text-xs text-danger">{{ getFieldError('type') }}</p>
-            </div>
+            </label>
 
             <label class="grid gap-2 text-sm text-body">
               <span class="font-medium">スタッフ用メモ</span>

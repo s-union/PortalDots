@@ -83,6 +83,7 @@ function eventTargetChecked(event: Event) {
     v-if="question.type === 'text'"
     :value="String(draftValue())"
     :disabled="disabled"
+    :aria-label="question.name"
     type="text"
     @input="setAnswerValue(draft, question, eventTargetValue($event))"
   />
@@ -90,6 +91,7 @@ function eventTargetChecked(event: Event) {
   <textarea
     v-else-if="question.type === 'textarea'"
     :value="String(draftValue())"
+    :aria-label="question.name"
     class="min-h-32"
     :disabled="disabled"
     @input="setAnswerValue(draft, question, eventTargetValue($event))"
@@ -99,6 +101,7 @@ function eventTargetChecked(event: Event) {
     v-else-if="question.type === 'number'"
     :value="String(draftValue())"
     :disabled="disabled"
+    :aria-label="question.name"
     type="number"
     :min="question.numberMin ?? undefined"
     :max="question.numberMax ?? undefined"
@@ -109,6 +112,7 @@ function eventTargetChecked(event: Event) {
     v-else-if="question.type === 'select'"
     :value="String(draftValue())"
     :disabled="disabled"
+    :aria-label="question.name"
     @change="setAnswerValue(draft, question, eventTargetValue($event))"
   >
     <option value="">選択してください</option>

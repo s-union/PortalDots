@@ -116,9 +116,9 @@ async function handleCreate() {
     </SurfaceCard>
 
     <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreate">
-      <h3 class="text-lg font-semibold text-body">参加種別を新規作成</h3>
+      <h2 class="text-lg font-semibold text-body">参加種別を新規作成</h2>
       <div class="mt-4 grid gap-4">
-        <div class="grid gap-2 text-sm text-body">
+        <label class="grid gap-2 text-sm text-body">
           <span>参加種別名</span>
           <input
             v-model="form.name"
@@ -129,13 +129,13 @@ async function handleCreate() {
             @input="markTouched('name')"
           />
           <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
-        </div>
+        </label>
         <label class="grid gap-2 text-sm text-body">
           <span>説明</span>
           <textarea v-model="form.description" class="min-h-24" name="description" />
         </label>
         <div class="grid gap-4 md:grid-cols-2">
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span>最低人数</span>
             <input
               v-model.number="form.usersCountMin"
@@ -149,8 +149,8 @@ async function handleCreate() {
             <p v-if="getFieldError('usersCountMin')" class="text-xs text-danger">
               {{ getFieldError('usersCountMin') }}
             </p>
-          </div>
-          <div class="grid gap-2 text-sm text-body">
+          </label>
+          <label class="grid gap-2 text-sm text-body">
             <span>最大人数</span>
             <input
               v-model.number="form.usersCountMax"
@@ -164,14 +164,14 @@ async function handleCreate() {
             <p v-if="getFieldError('usersCountMax')" class="text-xs text-danger">
               {{ getFieldError('usersCountMax') }}
             </p>
-          </div>
+          </label>
         </div>
         <label class="grid gap-2 text-sm text-body">
           <span>付与タグ</span>
           <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
         </label>
         <div class="grid gap-4 md:grid-cols-2">
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span>受付開始日時</span>
             <input
               :value="formatDateTimeLocalValue(form.openAt)"
@@ -182,8 +182,8 @@ async function handleCreate() {
               @blur="markTouched('openAt')"
             />
             <p v-if="getFieldError('openAt')" class="text-xs text-danger">{{ getFieldError('openAt') }}</p>
-          </div>
-          <div class="grid gap-2 text-sm text-body">
+          </label>
+          <label class="grid gap-2 text-sm text-body">
             <span>受付終了日時</span>
             <input
               :value="formatDateTimeLocalValue(form.closeAt)"
@@ -194,7 +194,7 @@ async function handleCreate() {
               @blur="markTouched('closeAt')"
             />
             <p v-if="getFieldError('closeAt')" class="text-xs text-danger">{{ getFieldError('closeAt') }}</p>
-          </div>
+          </label>
         </div>
         <label class="grid gap-2 text-sm text-body">
           <span>参加登録前に表示する内容</span>

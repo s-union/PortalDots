@@ -231,7 +231,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
       <table class="grid-table w-full min-w-full border-collapse border-spacing-0" :aria-label="tableLabel">
         <thead class="grid-table__thead border-b border-border">
           <tr class="grid-table__tr">
-            <th class="grid-table__th is-activities w-24" />
+            <th class="grid-table__th is-activities w-24"><span class="sr-only">操作</span></th>
             <th
               v-for="column in columns"
               :key="column.key"

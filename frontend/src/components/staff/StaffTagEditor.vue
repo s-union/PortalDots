@@ -104,7 +104,7 @@ async function handleDelete() {
     <form class="space-y-6" @submit.prevent="handleSave">
       <SettingsSection title="タグ設定">
         <SettingsRow>
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-medium">タグ名</span>
             <input
               v-model="name"
@@ -115,7 +115,7 @@ async function handleDelete() {
               @input="markTouched('name')"
             />
             <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
-          </div>
+          </label>
         </SettingsRow>
 
         <template #footer>
