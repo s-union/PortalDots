@@ -12,7 +12,7 @@ import PublicPagesContent from '@/features/public-home/components/PublicPagesCon
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <PublicPagesContent />
   </PageLayout>
 </template>

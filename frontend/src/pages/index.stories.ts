@@ -34,6 +34,9 @@ export const Unauthenticated: Story = {
 
 export const Authenticated: Story = {
   parameters: {
+    session: {
+      bootstrap: mockSessionBootstrap
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),
@@ -61,6 +64,9 @@ export const Authenticated: Story = {
 
 export const StaffUser: Story = {
   parameters: {
+    session: {
+      bootstrap: mockSessionBootstrapStaff
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),

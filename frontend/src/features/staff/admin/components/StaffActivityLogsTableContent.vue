@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatDateTime } from '@/lib/format/datetime'
-import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useSuspenseStaffActivityLogsQuery } from '@/features/staff/admin/activityLogs'
 
@@ -12,7 +11,17 @@ const { page, pageSize } = defineProps<{
 
 const emit = defineEmits<{
   'update:page': [nextPage: number]
+  'update:pageSize': [nextPageSize: number]
 }>()
+
+const columns: StaffDataGridColumn[] = [
+  { key: 'action', label: '種別', sortable: false },
+  { key: 'summary', label: '概要', sortable: false, cellClass: 'min-w-80 whitespace-normal text-body' },
+  { key: 'actorUserId', label: '実施者', sortable: false },
+  { key: 'target', label: '対象', sortable: false },
+  { key: 'circleId', label: 'circle', sortable: false },
+  { key: 'createdAt', label: '実施日時', sortable: false }
+]
 
 const query = useSuspenseStaffActivityLogsQuery(
   computed(() => ({
@@ -23,49 +32,52 @@ const query = useSuspenseStaffActivityLogsQuery(
 await query.suspense()
 const activityLogs = query.data
 
-function movePage(nextPage: number) {
-  emit('update:page', nextPage)
+const rows = computed<StaffDataGridRow[]>(() =>
+  (activityLogs.value?.items ?? []).map((entry) => ({
+    ...entry,
+    target: `${entry.targetType} / ${entry.targetId}`,
+    circleId: entry.circleId || 'global'
+  }))
+)
+
+const total = computed(() => activityLogs.value?.total ?? 0)
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
+
+function setFirstPage() {
+  emit('update:page', 1)
+}
+
+function setPrevPage() {
+  emit('update:page', Math.max(1, page - 1))
+}
+
+function setNextPage() {
+  emit('update:page', Math.min(totalPages.value, page + 1))
+}
+
+function setLastPage() {
+  emit('update:page', totalPages.value)
 }
 </script>
 
 <template>
-  <div v-if="(activityLogs?.items.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
-    まだ活動ログはありません。
-  </div>
-
-  <div v-else class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-border text-sm">
-      <thead class="bg-surface-light text-left text-muted-2">
-        <tr>
-          <th class="px-5 py-3 font-medium">種別</th>
-          <th class="px-5 py-3 font-medium">概要</th>
-          <th class="px-5 py-3 font-medium">実施者</th>
-          <th class="px-5 py-3 font-medium">対象</th>
-          <th class="px-5 py-3 font-medium">circle</th>
-          <th class="px-5 py-3 font-medium">実施日時</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-border">
-        <tr v-for="entry in activityLogs?.items" :key="entry.id" class="align-top">
-          <td class="px-5 py-4">
-            <StatusBadge tone="primary">{{ entry.action }}</StatusBadge>
-          </td>
-          <td class="px-5 py-4 text-body">{{ entry.summary }}</td>
-          <td class="px-5 py-4 text-muted">{{ entry.actorUserId }}</td>
-          <td class="px-5 py-4 text-muted">{{ entry.targetType }} / {{ entry.targetId }}</td>
-          <td class="px-5 py-4 text-muted">{{ entry.circleId || 'global' }}</td>
-          <td class="px-5 py-4 text-muted">{{ formatDateTime(entry.createdAt) }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <PaginationFooter
-    v-if="activityLogs && activityLogs.total > 0"
+  <StaffDataGrid
+    :rows="rows"
+    :columns="columns"
     :page="page"
-    :page-size="activityLogs.pageSize"
-    :total="activityLogs.total"
-    :bordered="false"
-    @update:page="movePage"
-  />
+    :page-size="pageSize"
+    :total="total"
+    empty-message="まだ活動ログはありません。"
+    table-label="アクティビティログ一覧"
+    @first="setFirstPage"
+    @prev="setPrevPage"
+    @next="setNextPage"
+    @last="setLastPage"
+    @reload="query.refetch()"
+    @update:page-size="emit('update:pageSize', $event)"
+  >
+    <template #cell-action="{ value }">
+      <StatusBadge tone="primary">{{ value }}</StatusBadge>
+    </template>
+  </StaffDataGrid>
 </template>

@@ -45,3 +45,42 @@ export const NoForms: Story = {
     }
   }
 }
+
+export const MixedStatus: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('/v1/session/bootstrap', () =>
+          HttpResponse.json({
+            ...mockSessionBootstrap,
+            currentCircle: { id: 'circle-1', name: 'テストサークル' }
+          })
+        ),
+        http.get('/v1/forms', () =>
+          HttpResponse.json([
+            {
+              ...mockForm,
+              id: 'form-open-limited',
+              name: '食品販売申請',
+              description: '食品を扱う企画のみ回答が必要な申請です。',
+              answerableTags: [{ id: 'tag-food', name: '食品販売' }]
+            },
+            {
+              ...mockForm,
+              id: 'form-answered',
+              name: '備品貸出申請',
+              hasAnswer: true
+            },
+            {
+              ...mockForm,
+              id: 'form-closed',
+              name: '締切済み申請',
+              isOpen: false,
+              closeAt: '2026-01-10T23:59:59Z'
+            }
+          ])
+        )
+      ]
+    }
+  }
+}

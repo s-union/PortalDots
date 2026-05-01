@@ -151,7 +151,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <SurfaceCard>
       <SurfaceCardBand borderless>
         <CircleRegistrationSteps :current-step="1" :requires-member-step="requiresMemberStep" />

@@ -14,7 +14,7 @@ import PublicDocumentsContent from '@/features/public-home/components/PublicDocu
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <AsyncBoundary>
       <template #fallback>
         <LoadingSkeleton variant="list" />

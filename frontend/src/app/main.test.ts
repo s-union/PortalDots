@@ -10,6 +10,7 @@ describe('main entrypoint', () => {
     const mount = vi.fn()
     const createApp = vi.fn(() => ({ use, mount }))
     const initTemporal = vi.fn().mockResolvedValue(undefined)
+    const initializeFontAwesome = vi.fn()
     const initializeUiTheme = vi.fn()
 
     vi.doMock('vue', () => ({
@@ -33,16 +34,23 @@ describe('main entrypoint', () => {
     vi.doMock('@/lib/temporal', () => ({
       initTemporal
     }))
+    vi.doMock('@/lib/icons/fontawesome', () => ({
+      initializeFontAwesome
+    }))
     vi.doMock('@/features/session/theme', () => ({
       initializeUiTheme
     }))
-    vi.doMock('@fortawesome/fontawesome-free/css/all.min.css', () => ({}))
     vi.doMock('@/styles/app.css', () => ({}))
 
     await import('./main')
 
     expect(initTemporal).toHaveBeenCalledTimes(1)
+    expect(initializeFontAwesome).toHaveBeenCalledTimes(1)
     expect(initializeUiTheme).toHaveBeenCalledTimes(1)
+    expect(initTemporal.mock.invocationCallOrder[0]).toBeLessThan(initializeFontAwesome.mock.invocationCallOrder[0])
+    expect(initializeFontAwesome.mock.invocationCallOrder[0]).toBeLessThan(
+      initializeUiTheme.mock.invocationCallOrder[0]
+    )
     expect(initTemporal.mock.invocationCallOrder[0]).toBeLessThan(initializeUiTheme.mock.invocationCallOrder[0])
     expect(createApp).toHaveBeenCalledTimes(1)
     expect(use).toHaveBeenCalledTimes(3)

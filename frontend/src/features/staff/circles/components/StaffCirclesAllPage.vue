@@ -15,7 +15,6 @@ import { useStaffCirclesAllPage } from '@/features/staff/circles/composables/use
 import { statusTone, statusLabel } from '@/features/staff/circles/helpers/circleFilters'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
-import StaffCircleCreateCard from './StaffCircleCreateCard.vue'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -23,12 +22,7 @@ const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 
 const {
   allCirclesQuery,
-  participationTypesQuery,
-  placesQuery,
-  createCircleMutation,
   deleteCircleMutation,
-  form,
-  errorMessage,
   exportUrl,
   searchQuery,
   isFilterOpen,
@@ -41,7 +35,6 @@ const {
   filterActive,
   sort,
   pagination,
-  handleCreateCircle,
   handleSort,
   handleReload,
   handleSearch,
@@ -53,8 +46,7 @@ const {
   handleUpdateFilter,
   handleFilterModeUpdate,
   handleApplyFilters,
-  handleClearFilters,
-  openCreateCircleCard
+  handleClearFilters
 } = useStaffCirclesAllPage({ enabled })
 
 const canEdit = computed(() => canEditCircles(sessionStore.roles, sessionStore.permissions))
@@ -96,6 +88,14 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
               <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
               CSVで出力
             </a>
+            <RouterLink
+              v-if="canEdit"
+              :class="buttonVariants({ variant: 'primary', size: 'xs', weight: 'semibold' })"
+              to="/staff/circles/create"
+            >
+              <i class="fas fa-plus fa-fw" aria-hidden="true" />
+              新規企画
+            </RouterLink>
           </div>
         </template>
 
@@ -124,16 +124,6 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
         >
           <template #toolbar>
             <ToolbarRow>
-              <button
-                v-if="canEdit"
-                :class="buttonVariants({ variant: 'primary', size: 'md', weight: 'semibold' })"
-                type="button"
-                @click="openCreateCircleCard"
-              >
-                <i class="fas fa-plus fa-fw" aria-hidden="true" />
-                新規企画
-              </button>
-
               <form class="flex items-center gap-2" @submit.prevent="handleSearch">
                 <input
                   v-model="searchQuery"
@@ -219,15 +209,6 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
           </template>
         </StaffDataGrid>
       </DataCard>
-
-      <StaffCircleCreateCard
-        v-model:form="form"
-        :participation-types="participationTypesQuery.data.value ?? []"
-        :places="placesQuery.data.value ?? []"
-        :error-message="errorMessage"
-        :is-pending="createCircleMutation.isPending.value"
-        @submit="handleCreateCircle"
-      />
     </PageLayout>
   </StaffSideWindowContainer>
 

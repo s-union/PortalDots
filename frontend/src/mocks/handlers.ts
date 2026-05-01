@@ -188,29 +188,24 @@ export const staffHandlers = [
     })
   ),
   http.get(`${BASE}/staff/forms`, () =>
-    HttpResponse.json({
-      items: [
-        {
-          circle: { id: '', name: '' },
-          ...mockForm,
-          createdAt: '2026-01-01T00:00:00Z',
-          updatedAt: '2026-01-01T00:00:00Z',
-          isParticipationForm: false
-        },
-        {
-          circle: { id: 'circle-1', name: 'テストサークル' },
-          ...mockForm,
-          id: 'form-2',
-          name: '個別フォーム',
-          isParticipationForm: false,
-          createdAt: '2026-01-01T00:00:00Z',
-          updatedAt: '2026-01-01T00:00:00Z'
-        }
-      ],
-      page: 1,
-      pageSize: 20,
-      total: 2
-    })
+    HttpResponse.json([
+      {
+        circle: { id: '', name: '' },
+        ...mockForm,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+        isParticipationForm: false
+      },
+      {
+        circle: { id: 'circle-1', name: 'テストサークル' },
+        ...mockForm,
+        id: 'form-2',
+        name: '個別フォーム',
+        isParticipationForm: false,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z'
+      }
+    ])
   ),
   http.get(`${BASE}/staff/forms/:formID`, () =>
     HttpResponse.json({
@@ -223,6 +218,18 @@ export const staffHandlers = [
       answer: null
     })
   ),
+  http.post(`${BASE}/staff/forms/:formID/copy`, () =>
+    HttpResponse.json({
+      circle: { id: '', name: '' },
+      ...mockForm,
+      id: 'form-copy',
+      name: `${mockForm.name} コピー`,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+      isParticipationForm: false
+    })
+  ),
+  http.delete(`${BASE}/staff/forms/:formID`, () => new HttpResponse(null, { status: 204 })),
   http.get(`${BASE}/staff/forms/:formID/preview`, () =>
     HttpResponse.json({
       id: 'form-1',

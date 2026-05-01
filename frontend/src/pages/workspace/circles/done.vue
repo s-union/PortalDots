@@ -18,7 +18,7 @@ const confirmationMessage = computed(() => detailQuery.data.value?.confirmationM
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <SurfaceCard>
       <div class="border-b border-border px-6 py-5">
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">参加登録を提出しました！</h1>

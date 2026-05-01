@@ -18,10 +18,15 @@ const meta = {
           })
         ),
         http.get('/v1/documents', () =>
-          HttpResponse.json([
-            mockDocument,
-            { ...mockDocument, id: 'doc-2', name: '重要資料.pdf', isImportant: true, isNew: false }
-          ])
+          HttpResponse.json({
+            items: [
+              mockDocument,
+              { ...mockDocument, id: 'doc-2', name: '重要資料.pdf', isImportant: true, isNew: false }
+            ],
+            page: 1,
+            pageSize: 10,
+            total: 2
+          })
         )
       ]
     }
@@ -43,7 +48,7 @@ export const Empty: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/documents', () => HttpResponse.json([]))
+        http.get('/v1/documents', () => HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0 }))
       ]
     }
   }

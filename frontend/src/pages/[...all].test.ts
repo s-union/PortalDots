@@ -4,8 +4,10 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import NotFoundPage from './[...all].vue'
 
 function expectNotFoundMessage(text: string) {
-  expect(text).toContain('ページが見つかりません')
-  expect(text).toContain('この URL は現在のアプリでは提供していません。')
+  expect(text).toContain('お探しのページは見つかりませんでした')
+  expect(text).toContain('URLをご確認ください')
+  expect(text).not.toContain('この URL は現在のアプリでは提供していません。')
+  expect(text).not.toContain('必要な操作はホーム、ワークスペース、またはスタッフ画面の最新導線から開いてください。')
 }
 
 async function mountAt(path: string) {
@@ -36,25 +38,25 @@ async function mountAt(path: string) {
 }
 
 describe('NotFoundPage', () => {
-  it('shows the non-migrated message for a legacy page detail URL', async () => {
+  it('shows the old 404 message for a legacy page detail URL', async () => {
     const wrapper = await mountAt('/pages/page-circle-a-1')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for a legacy document detail URL', async () => {
+  it('shows the old 404 message for a legacy document detail URL', async () => {
     const wrapper = await mountAt('/documents/document-circle-a-1')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for a legacy user settings URL', async () => {
+  it('shows the old 404 message for a legacy user settings URL', async () => {
     const wrapper = await mountAt('/user/password')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for a legacy selector URL', async () => {
+  it('shows the old 404 message for a legacy selector URL', async () => {
     const wrapper = await mountAt('/selector')
 
     expectNotFoundMessage(wrapper.text())
@@ -78,19 +80,19 @@ describe('NotFoundPage', () => {
     expect(wrapper.text()).not.toContain('circle-b')
   })
 
-  it('shows the non-migrated message for the legacy logout URL', async () => {
+  it('shows the old 404 message for the legacy logout URL', async () => {
     const wrapper = await mountAt('/logout')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy contacts URL', async () => {
+  it('shows the old 404 message for the legacy contacts URL', async () => {
     const wrapper = await mountAt('/contacts')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy circle create URL', async () => {
+  it('shows the old 404 message for the legacy circle create URL', async () => {
     const wrapper = await mountAt('/circles/create')
 
     expectNotFoundMessage(wrapper.text())
@@ -103,43 +105,43 @@ describe('NotFoundPage', () => {
     expect(wrapper.text()).not.toContain('pt-food')
   })
 
-  it('shows the non-migrated message for the legacy forms index URL', async () => {
+  it('shows the old 404 message for the legacy forms index URL', async () => {
     const wrapper = await mountAt('/forms')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy closed forms URL', async () => {
+  it('shows the old 404 message for the legacy closed forms URL', async () => {
     const wrapper = await mountAt('/forms/closed')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy all forms URL', async () => {
+  it('shows the old 404 message for the legacy all forms URL', async () => {
     const wrapper = await mountAt('/forms/all')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for legacy form answer create URLs', async () => {
+  it('shows the old 404 message for legacy form answer create URLs', async () => {
     const wrapper = await mountAt('/forms/form-circle-a-1/answers/create')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for legacy form answer edit URLs', async () => {
+  it('shows the old 404 message for legacy form answer edit URLs', async () => {
     const wrapper = await mountAt('/forms/form-circle-a-1/answers/answer-2/edit')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for legacy form upload URLs', async () => {
+  it('shows the old 404 message for legacy form upload URLs', async () => {
     const wrapper = await mountAt('/forms/form-circle-a-1/answers/answer-2/uploads/question-3')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for legacy circle detail URLs', async () => {
+  it('shows the old 404 message for legacy circle detail URLs', async () => {
     const wrapper = await mountAt('/circles/circle-a')
 
     expectNotFoundMessage(wrapper.text())
@@ -150,25 +152,25 @@ describe('NotFoundPage', () => {
     '/circles/circle-a/confirm',
     '/circles/circle-a/done',
     '/circles/circle-a/delete'
-  ])('shows the non-migrated message for legacy circle action routes: %s', async (path) => {
+  ])('shows the old 404 message for legacy circle action routes: %s', async (path) => {
     const wrapper = await mountAt(path)
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy circle auth URL', async () => {
+  it('shows the old 404 message for the legacy circle auth URL', async () => {
     const wrapper = await mountAt('/circles/circle-a/auth')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy circle members URL', async () => {
+  it('shows the old 404 message for the legacy circle members URL', async () => {
     const wrapper = await mountAt('/circles/circle-a/users')
 
     expectNotFoundMessage(wrapper.text())
   })
 
-  it('shows the non-migrated message for the legacy circle invite URL', async () => {
+  it('shows the old 404 message for the legacy circle invite URL', async () => {
     const wrapper = await mountAt('/circles/circle-a/users/invite/invite-token')
 
     expectNotFoundMessage(wrapper.text())

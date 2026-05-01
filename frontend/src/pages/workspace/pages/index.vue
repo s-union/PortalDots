@@ -59,7 +59,7 @@ async function handlePageChange(nextPage: number) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <div class="rounded border border-border bg-surface p-6 shadow-lv1">
       <h2 class="text-xl font-semibold text-body">お知らせ</h2>
 

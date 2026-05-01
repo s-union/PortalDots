@@ -14,6 +14,7 @@ import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from '@/fea
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import PanelBody from '@/components/ui/PanelBody.vue'
 import { formatDateTime } from '@/lib/format/datetime'
 
 const route = useRoute()
@@ -63,7 +64,7 @@ watch(
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <ListPanel
       legacy
       title="作業対象の企画を選択します。"
@@ -77,15 +78,15 @@ watch(
     >
       <LoadingMessage v-if="circlesQuery.isPending.value" />
 
-      <div v-else-if="(circlesQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm leading-7 text-muted">
+      <PanelBody v-else-if="(circlesQuery.data.value?.length ?? 0) === 0" class="text-sm leading-7 text-muted">
         該当する企画はありません。
-      </div>
+      </PanelBody>
 
       <div v-else class="divide-y divide-border">
         <button
           v-for="circle in circlesQuery.data.value"
           :key="circle.id"
-          class="w-full px-6 py-5 text-left transition hover:bg-form-control disabled:opacity-50"
+          class="w-full px-5 py-5 text-left transition hover:bg-form-control disabled:opacity-50 sm:px-7 sm:py-6"
           :class="sessionStore.currentCircle?.id === circle.id ? 'bg-primary-light' : ''"
           :disabled="isSelecting"
           type="button"
@@ -105,7 +106,7 @@ watch(
     >
       <LoadingMessage v-if="participationTypesQuery.isPending.value" message="参加種別を読み込み中..." />
 
-      <div v-else class="grid gap-4 px-6 py-6 md:grid-cols-2 xl:grid-cols-3">
+      <PanelBody v-else spacious class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         <RouterLink
           v-for="participationType in participationTypeCards"
           :key="participationType.id"
@@ -113,13 +114,13 @@ watch(
             path: '/circles/new',
             query: { participation_type: participationType.id }
           }"
-          class="rounded-lg border border-border bg-background px-5 py-5 transition hover:border-primary hover:bg-primary-light"
+          class="rounded-lg border border-border bg-background px-5 py-5 transition hover:border-primary hover:bg-primary-light sm:px-6 sm:py-6"
         >
           <p class="text-base font-semibold text-body">{{ participationType.name }}</p>
           <p class="mt-2 text-sm text-primary">{{ formatDateTime(participationType.form.closeAt) }} まで受付</p>
           <p class="mt-2 text-sm leading-6 text-muted">{{ participationType.description }}</p>
         </RouterLink>
-      </div>
+      </PanelBody>
     </ListPanel>
   </PageLayout>
 </template>

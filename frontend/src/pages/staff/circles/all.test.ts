@@ -150,6 +150,7 @@ describe('StaffCirclesAllPage', () => {
       routes: [
         { path: '/staff/circles', component: { template: '<div>circles</div>' } },
         { path: '/staff/circles/all', component: StaffCirclesAllPage },
+        { path: '/staff/circles/create', component: { template: '<div>circle create</div>' } },
         { path: '/staff/circles/:circleId', component: { template: '<div>circle detail</div>' } },
         { path: '/staff/circles/participation_types', component: { template: '<div>types</div>' } }
       ]
@@ -172,8 +173,11 @@ describe('StaffCirclesAllPage', () => {
     expect(wrapper.text()).toContain('絞り込み')
     expect(wrapper.text()).toContain('表示件数:')
     expect(wrapper.text()).toContain('第一会場')
+    expect(wrapper.text()).not.toContain('企画を新規作成')
     expect(wrapper.text()).not.toContain('企画ID')
     expect(wrapper.text().indexOf('屋台企画A')).toBeLessThan(wrapper.text().indexOf('展示企画B'))
+
+    expect(wrapper.get('a[href="/staff/circles/create"]').text()).toContain('新規企画')
 
     const emailLink = wrapper.get('a[title="メール送信"]')
     expect(emailLink.attributes('href')).toBe('/staff/circles/0195ec00-0021-7000-8000-000000000001/email')

@@ -11,6 +11,7 @@ import { computed, reactive, ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import PanelBody from '@/components/ui/PanelBody.vue'
 import {
   extractContactValidationMessage,
   useContactCategoriesQuery,
@@ -64,9 +65,9 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <ListPanel legacy title="お問い合わせ">
-      <form class="grid gap-5 px-6 py-6" @submit.prevent="handleSubmit">
+      <PanelBody tag="form" spacious class="grid gap-5" @submit.prevent="handleSubmit">
         <p class="text-sm leading-7 text-body">
           お問い合わせへの返信は
           <strong>{{ sessionStore.user?.contactEmail || '未設定のメールアドレス' }}</strong>
@@ -132,7 +133,7 @@ async function handleSubmit() {
             {{ submitContactMutation.isPending.value ? '送信中...' : '送信' }}
           </button>
         </div>
-      </form>
+      </PanelBody>
     </ListPanel>
   </PageLayout>
 </template>

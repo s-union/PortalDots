@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from 'msw'
-import { within, userEvent } from '@storybook/test'
+import { within, userEvent } from 'storybook/test'
 import LoginPage from './login.vue'
 
 const meta = {

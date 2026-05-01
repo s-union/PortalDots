@@ -4,12 +4,8 @@ import {
   buildStaffCirclesExportUrl,
   extractStaffCircleValidationMessage,
   useAllStaffCirclesQuery,
-  useCreateStaffCircleMutation,
-  useDeleteStaffCircleMutation,
-  useStaffCircleForm
+  useDeleteStaffCircleMutation
 } from '@/features/staff/circles/api'
-import { useStaffPlacesQuery } from '@/features/staff/masters/places'
-import { useStaffParticipationTypesQuery } from '@/features/staff/participation-types/api'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 import {
@@ -44,16 +40,11 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
 
   // Queries
   const allCirclesQuery = useAllStaffCirclesQuery(enabled)
-  const participationTypesQuery = useStaffParticipationTypesQuery(enabled)
-  const placesQuery = useStaffPlacesQuery(enabled)
 
   // Mutations
-  const createCircleMutation = useCreateStaffCircleMutation()
   const deletingCircleId = ref('')
   const deleteCircleMutation = useDeleteStaffCircleMutation(computed(() => deletingCircleId.value))
 
-  // Form state
-  const form = useStaffCircleForm()
   const errorMessage = ref('')
   const exportUrl = buildStaffCirclesExportUrl()
 
@@ -138,41 +129,6 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   )
 
   // Handlers
-  async function handleCreateCircle() {
-    errorMessage.value = ''
-
-    try {
-      await createCircleMutation.mutateAsync({
-        name: form.value.name,
-        nameYomi: form.value.nameYomi,
-        groupName: form.value.groupName,
-        groupNameYomi: form.value.groupNameYomi,
-        participationTypeId: form.value.participationTypeId,
-        notes: form.value.notes,
-        status: form.value.status,
-        statusReason: form.value.statusReason,
-        placeIds: form.value.placeIds
-      })
-      resetForm()
-    } catch (error) {
-      errorMessage.value = extractStaffCircleValidationMessage(error)
-    }
-  }
-
-  function resetForm() {
-    form.value = {
-      name: '',
-      nameYomi: '',
-      groupName: '',
-      groupNameYomi: '',
-      participationTypeId: '',
-      notes: '',
-      status: 'pending',
-      statusReason: '',
-      placeIds: []
-    }
-  }
-
   function handleSort(nextKey: string) {
     if (!isStaffCircleSortKey(nextKey)) {
       return
@@ -288,14 +244,6 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
     nextFilterId.value = maxId + 1
   }
 
-  function openCreateCircleCard() {
-    if (typeof document === 'undefined') {
-      return
-    }
-    const target = document.getElementById('create-circle-card')
-    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   function normalizeFilterOperator(operator: StaffFilterOperator): StaffFilterOperator {
     if (operator === '=' || operator === '!=' || operator === 'not like') {
       return operator
@@ -306,13 +254,8 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   return {
     // Queries
     allCirclesQuery,
-    participationTypesQuery,
-    placesQuery,
-    createCircleMutation,
     deleteCircleMutation,
 
-    // Form state
-    form,
     errorMessage,
     exportUrl,
 
@@ -336,7 +279,6 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
     pagination,
 
     // Handlers
-    handleCreateCircle,
     handleSort,
     handleReload,
     handleSearch,
@@ -348,7 +290,6 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
     handleUpdateFilter,
     handleFilterModeUpdate,
     handleApplyFilters,
-    handleClearFilters,
-    openCreateCircleCard
+    handleClearFilters
   }
 }

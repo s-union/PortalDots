@@ -62,7 +62,7 @@ async function movePage(nextPage: number) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <div
       v-if="documentsQuery.isPending.value"
       class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"

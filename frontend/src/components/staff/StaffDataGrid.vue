@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { calculateTotalPages } from '@/lib/pagination'
 import { formatDateTime } from '@/lib/format/datetime'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 export interface StaffDataGridColumn {
   key: string
@@ -144,7 +145,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           title="最初のページ"
           @click="emit('first')"
         >
-          <i class="fas fa-angle-double-left fa-fw" aria-hidden="true" />
+          <FaIcon name="angle-double-left" fixed-width />
         </button>
         <button
           class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
@@ -153,7 +154,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           title="前のページ"
           @click="emit('prev')"
         >
-          <i class="fas fa-chevron-left fa-fw" aria-hidden="true" />
+          <FaIcon name="chevron-left" fixed-width />
         </button>
         <button
           class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
@@ -162,7 +163,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           title="次のページ"
           @click="emit('next')"
         >
-          <i class="fas fa-chevron-right fa-fw" aria-hidden="true" />
+          <FaIcon name="chevron-right" fixed-width />
         </button>
         <button
           class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
@@ -171,7 +172,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           title="最後のページ"
           @click="emit('last')"
         >
-          <i class="fas fa-angle-double-right fa-fw" aria-hidden="true" />
+          <FaIcon name="angle-double-right" fixed-width />
         </button>
         <button
           class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
@@ -180,7 +181,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
           title="再読み込み"
           @click="emit('reload')"
         >
-          <i class="fas fa-sync fa-fw" aria-hidden="true" />
+          <FaIcon name="sync" fixed-width />
         </button>
       </div>
 
@@ -191,13 +192,9 @@ function rowKey(row: Record<string, unknown>, index: number) {
         title="絞り込み"
         @click="emit('filter')"
       >
-        <i class="fas fa-filter fa-fw" aria-hidden="true" />
+        <FaIcon name="filter" fixed-width />
         絞り込み
-        <i
-          v-if="filterActive"
-          class="fas fa-circle absolute right-1 top-1 scale-[0.5] text-primary"
-          aria-hidden="true"
-        />
+        <FaIcon v-if="filterActive" name="circle" class-name="absolute right-1 top-1 scale-[0.5] text-primary" />
       </button>
 
       <div class="grid-controls__group ml-2 inline-flex items-center border-l border-border pl-2">
@@ -226,7 +223,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
       </div>
 
       <div v-if="loading" class="grid-controls__loading ml-2 text-primary">
-        <i class="fas fa-spinner fa-pulse" aria-hidden="true" />
+        <FaIcon name="spinner" pulse />
       </div>
     </div>
 
@@ -250,10 +247,10 @@ function rowKey(row: Record<string, unknown>, index: number) {
               >
                 {{ column.label }}
                 <template v-if="column.sortable && sortKey === column.key">
-                  <i v-if="sortDirection === 'asc'" class="fas fa-fw fa-sort-up text-primary" aria-hidden="true" />
-                  <i v-else class="fas fa-fw fa-sort-down text-primary" aria-hidden="true" />
+                  <FaIcon v-if="sortDirection === 'asc'" name="sort-up" fixed-width class-name="text-primary" />
+                  <FaIcon v-else name="sort-down" fixed-width class-name="text-primary" />
                 </template>
-                <i v-else-if="column.sortable" class="fas fa-fw fa-sort text-muted" aria-hidden="true" />
+                <FaIcon v-else-if="column.sortable" name="sort" fixed-width class-name="text-muted" />
               </button>
             </th>
           </tr>

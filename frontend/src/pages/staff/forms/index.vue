@@ -15,6 +15,7 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { canEditForms, canReadFormAnswers } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
@@ -43,7 +44,9 @@ const exportHref = computed(() => buildStaffFormsExportUrl())
 const canReadAnswers = computed(() => canReadFormAnswers(sessionStore.roles, sessionStore.permissions))
 const canEdit = computed(() => canEditForms(sessionStore.roles, sessionStore.permissions))
 const detailActionTitle = computed(() => (canReadAnswers.value ? '回答一覧・設定' : '設定'))
-const detailActionIconClass = computed(() => (canReadAnswers.value ? 'far fa-eye fa-fw' : 'fas fa-cog fa-fw'))
+const detailActionIcon = computed(() =>
+  canReadAnswers.value ? ({ prefix: 'far', name: 'eye' } as const) : ({ prefix: 'fas', name: 'cog' } as const)
+)
 
 const sortKeys = [
   'formNumber',
@@ -253,7 +256,7 @@ function resolveDescription(form: StaffFormSummary) {
             to="/staff/forms/create"
             class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
           >
-            <i class="fas fa-plus fa-fw" aria-hidden="true" />
+            <FaIcon name="plus" fixed-width />
             新規フォーム
           </RouterLink>
           <a
@@ -261,7 +264,7 @@ function resolveDescription(form: StaffFormSummary) {
             download
             class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
           >
-            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+            <FaIcon name="file-csv" fixed-width />
             CSVで出力
           </a>
         </template>
@@ -274,7 +277,7 @@ function resolveDescription(form: StaffFormSummary) {
               class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
               :title="detailActionTitle"
             >
-              <i :class="detailActionIconClass" aria-hidden="true" />
+              <FaIcon :prefix="detailActionIcon.prefix" :name="detailActionIcon.name" fixed-width />
             </RouterLink>
             <button
               class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
@@ -283,7 +286,7 @@ function resolveDescription(form: StaffFormSummary) {
               :disabled="isBusy"
               @click="handleCopyForm(resolveRowId(row))"
             >
-              <i class="far fa-copy fa-fw" aria-hidden="true" />
+              <FaIcon prefix="far" name="copy" fixed-width />
             </button>
             <button
               class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light"
@@ -292,7 +295,7 @@ function resolveDescription(form: StaffFormSummary) {
               :disabled="isBusy"
               @click="handleDeleteForm(resolveRowId(row))"
             >
-              <i class="fas fa-trash fa-fw" aria-hidden="true" />
+              <FaIcon name="trash" fixed-width />
             </button>
           </div>
         </template>

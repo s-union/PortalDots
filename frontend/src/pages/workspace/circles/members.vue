@@ -150,7 +150,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <SurfaceCard tag="header">
       <SurfaceCardBand borderless>
         <div class="space-y-1">

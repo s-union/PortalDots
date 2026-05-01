@@ -65,7 +65,7 @@ function uploadNames(questionId: string) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <SurfaceCard tag="header">
       <SurfaceCardBand borderless>
         <div class="space-y-1">

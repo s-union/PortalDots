@@ -200,7 +200,7 @@ function downloadHref(questionId: string) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <SurfaceCard tag="header">
       <SurfaceCardBand borderless>
         <div class="flex flex-wrap items-start justify-between gap-3">

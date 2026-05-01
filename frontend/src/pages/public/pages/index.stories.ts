@@ -58,3 +58,48 @@ export const Empty: Story = {
     }
   }
 }
+
+export const LimitedAndLongText: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('/v1/session/bootstrap', () =>
+          HttpResponse.json({
+            csrfToken: 'mock-csrf-token',
+            featureFlags: [],
+            roles: [],
+            permissions: [],
+            currentCircle: null,
+            user: null
+          })
+        ),
+        http.get('/v1/public/pages', () =>
+          HttpResponse.json({
+            items: [
+              {
+                ...mockPage,
+                id: 'page-limited',
+                title: '参加団体向けの重要なお知らせ',
+                summary:
+                  '参加団体の責任者と副責任者に向けた、長めの説明文を含むお知らせです。折り返しやバッジ表示を確認できます。',
+                isLimited: true,
+                isNew: true
+              },
+              {
+                ...mockPage,
+                id: 'page-old',
+                title: '過去のお知らせ',
+                summary: '既読・通常公開のお知らせです。',
+                isLimited: false,
+                isNew: false
+              }
+            ],
+            page: 1,
+            pageSize: 10,
+            total: 2
+          })
+        )
+      ]
+    }
+  }
+}

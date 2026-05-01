@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import PanelBody from '@/components/ui/PanelBody.vue'
 import { useJoinCircleMutation } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -62,9 +63,9 @@ function extractApiMessage(error: unknown) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout spacious>
     <SurfaceCard>
-      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+      <PanelBody spacious class="space-y-4 text-sm leading-7 text-body">
         <h1 class="text-2xl font-semibold text-body">企画招待を受け入れる</h1>
         <p>招待リンクから、このアカウントを企画メンバーとして追加します。</p>
         <p v-if="isAuthenticated">
@@ -101,7 +102,7 @@ function extractApiMessage(error: unknown) {
             企画選択へ
           </RouterLink>
         </div>
-      </div>
+      </PanelBody>
     </SurfaceCard>
   </PageLayout>
 </template>
