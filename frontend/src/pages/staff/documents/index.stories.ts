@@ -4,7 +4,7 @@ import StaffDocumentsIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockDocument, mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Staff/Documents/Index',
+  title: 'スタッフモード/配布資料管理',
   component: StaffDocumentsIndexPage,
   tags: ['autodocs'],
   parameters: {

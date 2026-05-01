@@ -13,9 +13,9 @@ const { borderless } = defineProps<{
         <div v-if="$slots.eyebrow" class="text-sm text-primary">
           <slot name="eyebrow" />
         </div>
-        <h3 v-if="$slots.title" class="text-lg font-semibold text-body">
+        <h2 v-if="$slots.title" class="text-lg font-semibold text-body">
           <slot name="title" />
-        </h3>
+        </h2>
         <div v-if="$slots.description" class="mt-2 text-sm leading-7 text-muted">
           <slot name="description" />
         </div>

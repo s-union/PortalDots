@@ -227,7 +227,7 @@ function resolveDescription(form: StaffFormSummary) {
 </script>
 
 <template>
-  <PageLayout class="max-w-full">
+  <PageLayout fullWidth>
     <DataCard overflow-hidden>
       <AlertMessage v-if="errorMessage" class="mx-6 mt-4">{{ errorMessage }}</AlertMessage>
 

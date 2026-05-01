@@ -4,7 +4,7 @@ import PublicDocumentsIndexPage from './index.vue'
 import { mockDocument } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Public/Documents/Index',
+  title: '一般モード/公開配布資料一覧',
   component: PublicDocumentsIndexPage,
   tags: ['autodocs'],
   parameters: {

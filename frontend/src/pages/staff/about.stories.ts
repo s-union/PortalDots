@@ -4,7 +4,7 @@ import StaffAboutPage from './about.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Staff/About',
+  title: 'スタッフモード/スタッフモードについて',
   component: StaffAboutPage,
   tags: ['autodocs'],
   parameters: {

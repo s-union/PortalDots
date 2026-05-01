@@ -75,7 +75,7 @@ const emit = defineEmits<{
           <ModeSwitchLink v-if="modeSwitchTarget" :to="modeSwitchTarget.to" :label="modeSwitchTarget.label" />
         </div>
 
-        <nav class="flex-1 py-2">
+        <nav class="flex-1 py-2" aria-label="メニュー">
           <NavMenuLink
             v-for="link in links"
             :key="link.to"

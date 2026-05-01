@@ -4,7 +4,7 @@ import DetailPage from './detail.vue'
 import { mockSessionBootstrap, mockCircle } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Workspace/Circles/Detail',
+  title: '一般モード/企画詳細',
   component: DetailPage,
   tags: ['autodocs'],
   parameters: {

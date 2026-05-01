@@ -4,7 +4,7 @@ import SupportPage from './support.vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Support',
+  title: '共通/サポート',
   component: SupportPage,
   tags: ['autodocs'],
   parameters: {

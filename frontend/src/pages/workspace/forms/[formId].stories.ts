@@ -4,7 +4,7 @@ import FormDetailPage from './[formId].vue'
 import { mockSessionBootstrap, mockForm } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Workspace/Forms/Detail',
+  title: '一般モード/申請詳細',
   component: FormDetailPage,
   tags: ['autodocs'],
   parameters: {

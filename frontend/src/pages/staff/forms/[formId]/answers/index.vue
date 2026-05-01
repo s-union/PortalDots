@@ -138,7 +138,7 @@ async function handleDelete(answerId: string, groupName: string) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout fullWidth>
     <TabStrip :tabs="staffFormTabs" />
 
     <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">

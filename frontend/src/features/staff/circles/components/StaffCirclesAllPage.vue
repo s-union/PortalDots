@@ -71,7 +71,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
 
 <template>
   <StaffSideWindowContainer :is-open="isFilterOpen">
-    <PageLayout class="max-w-full">
+    <PageLayout fullWidth>
       <DataCard title="全企画一覧" description="全企画を横断して検索・絞り込みできます。" overflow-hidden>
         <template #actions>
           <div class="flex flex-wrap items-center gap-2">

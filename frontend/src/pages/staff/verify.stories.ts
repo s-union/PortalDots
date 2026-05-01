@@ -4,7 +4,7 @@ import StaffVerifyPage from './verify.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Staff/Verify',
+  title: 'スタッフモード/スタッフ認証',
   component: StaffVerifyPage,
   tags: ['autodocs'],
   parameters: {

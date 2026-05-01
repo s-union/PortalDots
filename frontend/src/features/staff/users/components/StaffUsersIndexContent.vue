@@ -60,7 +60,7 @@ const columns: StaffDataGridColumn[] = [
 
 <template>
   <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
-    <PageLayout class="max-w-full">
+    <PageLayout fullWidth>
       <DataCard overflow-hidden>
         <StaffDataGrid
           :rows="gridRows"

@@ -3,7 +3,7 @@ import WorkspaceIndexPage from './index.vue'
 
 // Workspace/index is just a redirect component
 const meta = {
-  title: 'Pages/Workspace/Index',
+  title: '一般モード/ホーム',
   component: WorkspaceIndexPage,
   tags: ['autodocs'],
   parameters: {

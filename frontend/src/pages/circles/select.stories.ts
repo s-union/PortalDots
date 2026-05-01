@@ -4,7 +4,7 @@ import SelectCirclePage from './select.vue'
 import { mockSessionBootstrap, mockParticipationType } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Circles/Select',
+  title: '企画登録/参加企画選択',
   component: SelectCirclePage,
   tags: ['autodocs'],
   parameters: {

@@ -4,7 +4,7 @@ import PagesIndexPage from './index.vue'
 import { mockSessionBootstrap, mockPage } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Workspace/Pages/Index',
+  title: '一般モード/お知らせ一覧',
   component: PagesIndexPage,
   tags: ['autodocs'],
   parameters: {

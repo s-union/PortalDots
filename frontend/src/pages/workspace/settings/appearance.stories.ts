@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from 'msw'
-import NotFoundPage from './[...all].vue'
+import AppearancePage from './appearance.vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/NotFound',
-  component: NotFoundPage,
+  title: '一般モード/アカウント設定/表示',
+  component: AppearancePage,
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
@@ -13,7 +13,7 @@ const meta = {
       handlers: [http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap))]
     }
   }
-} satisfies Meta<typeof NotFoundPage>
+} satisfies Meta<typeof AppearancePage>
 
 export default meta
 type Story = StoryObj<typeof meta>

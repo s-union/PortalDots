@@ -4,7 +4,7 @@ import StaffMarkdownGuidePage from './markdown-guide.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Staff/MarkdownGuide',
+  title: 'スタッフモード/Markdownガイド',
   component: StaffMarkdownGuidePage,
   tags: ['autodocs'],
   parameters: {

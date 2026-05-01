@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import CircleRegistrationSteps from './CircleRegistrationSteps.vue'
 
 const meta = {
-  title: 'Features/Circles/CircleRegistrationSteps',
+  title: 'UI/企画/企画登録ステップ',
   component: CircleRegistrationSteps,
   tags: ['autodocs'],
   argTypes: {

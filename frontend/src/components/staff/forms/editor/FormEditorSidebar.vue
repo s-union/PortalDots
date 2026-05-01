@@ -8,7 +8,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <aside class="flex h-full min-h-0 flex-col bg-surface-2">
+  <div class="flex h-full min-h-0 flex-col bg-surface-2">
     <div class="border-b border-border bg-surface px-4 py-4">
       <p class="text-sm font-medium text-body">設問を追加</p>
     </div>
@@ -28,5 +28,5 @@ const emit = defineEmits<{
         <span class="pointer-events-none absolute inset-x-4 bottom-0 border-b border-border" aria-hidden="true" />
       </button>
     </div>
-  </aside>
+  </div>
 </template>

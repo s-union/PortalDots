@@ -184,12 +184,12 @@ async function handleSubmit() {
             すでに団体責任者として他の企画参加登録を提出しているため、「企画を出店する団体の名称」ならびに「企画を出店する団体の名称(よみ)」は自動入力されており、変更できません。
           </AlertMessage>
 
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-semibold">企画責任者</span>
             <input :value="leaderDisplayName" name="leaderDisplayName" readonly type="text" />
-          </div>
+          </label>
 
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-semibold">参加種別 <span class="text-danger">*</span></span>
             <select
               v-model="form.participationTypeId"
@@ -206,7 +206,7 @@ async function handleSubmit() {
             <p v-if="getFieldError('participationTypeId')" class="text-xs text-danger">
               {{ getFieldError('participationTypeId') }}
             </p>
-          </div>
+          </label>
 
           <div
             v-if="selectedParticipationType"
@@ -216,7 +216,7 @@ async function handleSubmit() {
             <p class="mt-1 text-muted">{{ selectedParticipationType.description }}</p>
           </div>
 
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-semibold">企画名 <span class="text-danger">*</span></span>
             <input
               v-model="form.name"
@@ -230,9 +230,9 @@ async function handleSubmit() {
             <p v-if="getFieldError('name')" class="text-xs text-danger">
               {{ getFieldError('name') }}
             </p>
-          </div>
+          </label>
 
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-semibold">企画名（よみ） <span class="text-danger">*</span></span>
             <input
               v-model="form.nameYomi"
@@ -247,9 +247,9 @@ async function handleSubmit() {
             <p v-if="getFieldError('nameYomi')" class="text-xs text-danger">
               {{ getFieldError('nameYomi') }}
             </p>
-          </div>
+          </label>
 
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-semibold">企画を出店する団体の名称 <span class="text-danger">*</span></span>
             <input
               v-model="form.groupName"
@@ -264,9 +264,9 @@ async function handleSubmit() {
             <p v-if="getFieldError('groupName') && canChangeGroupName" class="text-xs text-danger">
               {{ getFieldError('groupName') }}
             </p>
-          </div>
+          </label>
 
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-semibold">企画を出店する団体の名称（よみ） <span class="text-danger">*</span></span>
             <input
               v-model="form.groupNameYomi"
@@ -282,7 +282,7 @@ async function handleSubmit() {
             <p v-if="getFieldError('groupNameYomi') && canChangeGroupName" class="text-xs text-danger">
               {{ getFieldError('groupNameYomi') }}
             </p>
-          </div>
+          </label>
 
           <p v-if="!canChangeGroupName" class="text-sm text-muted">
             既に登録済みの企画があるため、団体名は既存企画から引き継がれます。

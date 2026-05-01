@@ -4,7 +4,7 @@ import StaffActivityLogsPage from './activity-logs.vue'
 import { mockSessionBootstrapStaff, mockActivityLog } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Staff/ActivityLogs',
+  title: 'スタッフモード/アクティビティログ',
   component: StaffActivityLogsPage,
   tags: ['autodocs'],
   parameters: {

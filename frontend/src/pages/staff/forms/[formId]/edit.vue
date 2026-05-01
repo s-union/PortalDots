@@ -165,7 +165,7 @@ async function handleDeleteForm() {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout fullWidth>
     <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
@@ -173,15 +173,15 @@ async function handleDeleteForm() {
     <article v-else-if="formQuery.data.value" class="space-y-6">
       <TabStrip :tabs="staffFormTabs" />
 
-      <SurfaceCard tag="header">
+      <div class="space-y-1 px-1">
         <p class="text-sm text-primary">Form Detail</p>
         <h2 class="mt-3 text-3xl font-semibold text-body">設定</h2>
-        <div class="mt-3 text-sm text-muted">フォームID : {{ formQuery.data.value.id }}</div>
-        <div class="mt-1 text-sm text-muted">対象企画 : {{ formQuery.data.value.circle.name || '-' }}</div>
+        <p class="mt-3 text-sm text-muted">フォームID : {{ formQuery.data.value.id }}</p>
+        <p class="text-sm text-muted">対象企画 : {{ formQuery.data.value.circle.name || '-' }}</p>
         <p v-if="isParticipationForm" class="mt-3 text-sm text-muted">
           このフォームは参加登録フォームです。基本設定は参加種別画面で管理し、ここでは設問編集のみ行えます。
         </p>
-      </SurfaceCard>
+      </div>
 
       <SettingsSection title="フォーム設定">
         <SurfaceHeader>

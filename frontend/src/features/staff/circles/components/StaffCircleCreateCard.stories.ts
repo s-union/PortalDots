@@ -16,7 +16,7 @@ const defaultForm = (): MutateStaffCirclePayload => ({
 })
 
 const meta = {
-  title: 'Features/Staff/Circles/StaffCircleCreateCard',
+  title: 'UI/Staff/企画作成カード',
   component: StaffCircleCreateCard,
   tags: ['autodocs'],
   argTypes: {

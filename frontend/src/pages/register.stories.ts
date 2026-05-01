@@ -4,7 +4,7 @@ import RegisterPage from './register.vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Register',
+  title: '認証/新規登録',
   component: RegisterPage,
   tags: ['autodocs'],
   parameters: {

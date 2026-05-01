@@ -13,16 +13,16 @@
 }
 
 @theme {
-  /* Primary Color — default: HSL(214, 91%, 53%) */
-  --color-primary: hsla(214, 91%, 53%, 1);
-  --color-primary-hover: hsla(214, 91%, 53%, 0.8);
-  --color-primary-light: hsla(214, 91%, 53%, 0.1);
-  --color-primary-inverse-hover: hsla(214, 91%, 53%, 0.15);
+  /* Primary Color — default: HSL(214, 91%, 45%) */
+  --color-primary: hsla(214, 91%, 45%, 1);
+  --color-primary-hover: hsla(214, 91%, 45%, 0.8);
+  --color-primary-light: hsla(214, 91%, 45%, 0.1);
+  --color-primary-inverse-hover: hsla(214, 91%, 45%, 0.15);
 
   /* Danger */
-  --color-danger: rgb(219, 60, 62);
-  --color-danger-hover: rgba(219, 60, 62, 0.8);
-  --color-danger-light: rgba(219, 60, 62, 0.1);
+  --color-danger: rgb(200, 50, 52);
+  --color-danger-hover: rgba(200, 50, 52, 0.8);
+  --color-danger-light: rgba(200, 50, 52, 0.1);
 
   /* Success */
   --color-success: rgb(27, 162, 78);
@@ -30,10 +30,10 @@
   --color-success-light: rgba(27, 162, 78, 0.1);
 
   /* Muted */
-  --color-muted: rgb(108, 117, 125);
-  --color-muted-2: rgb(167, 182, 194);
-  --color-muted-3: rgb(195, 207, 216);
-  --color-muted-light: rgba(108, 117, 125, 0.1);
+  --color-muted: rgb(88, 97, 105);
+  --color-muted-2: rgb(108, 117, 125);
+  --color-muted-3: rgb(167, 182, 194);
+  --color-muted-light: rgba(88, 97, 105, 0.1);
 
   /* Text / backgrounds — renamed for Tailwind-generated utilities */
   --color-body: rgb(34, 41, 47);
@@ -41,7 +41,7 @@
   --color-surface: rgb(255, 255, 255);
   --color-surface-2: rgb(255, 255, 255);
   --color-surface-3: rgb(255, 255, 255);
-  --color-surface-light: rgb(239, 239, 239);
+  --color-surface-light: rgb(237, 239, 244);
   --color-form-control: rgb(250, 250, 252);
   --color-form-control-readonly: rgb(255, 255, 255);
   --color-form-control-focus: rgb(255, 255, 255);
@@ -61,14 +61,14 @@
   /* Misc */
   --color-pre-background: rgba(255, 255, 255, 0.25);
   --color-code-background: rgba(27, 162, 78, 0.1);
-  --color-grid-table-stripe: rgba(239, 239, 239, 0.4);
+  --color-grid-table-stripe: rgba(237, 239, 244, 0.4);
   --color-top-alert-border: rgba(255, 255, 255, 0.16);
   --color-emphasis-gray: rgb(34, 41, 47);
   --color-fg-emphasis-gray: rgb(255, 255, 255);
 
   /* Focus */
-  --color-focus-primary: hsla(214, 91%, 53%, 1);
-  --color-focus-danger: rgba(219, 60, 62, 0.25);
+  --color-focus-primary: hsla(214, 91%, 45%, 1);
+  --color-focus-danger: rgba(200, 50, 52, 0.25);
 
   /* Font */
   --font-sans:
@@ -191,9 +191,9 @@
   --color-success: rgb(75, 189, 119);
   --color-success-light: rgba(75, 189, 119, 0.2);
   --color-success-hover: rgba(75, 189, 119, 0.8);
-  --color-muted: rgb(150, 150, 150);
-  --color-muted-2: rgb(130, 130, 130);
-  --color-muted-light: rgba(150, 150, 150, 0.1);
+  --color-muted: rgb(142, 142, 142);
+  --color-muted-2: rgb(165, 165, 165);
+  --color-muted-light: rgba(142, 142, 142, 0.1);
   --color-border: rgba(255, 255, 255, 0.12);
   --color-border-form: rgb(62, 63, 66);
   --color-base: rgb(0, 0, 0);
@@ -228,9 +228,9 @@
     --color-success: rgb(75, 189, 119);
     --color-success-light: rgba(75, 189, 119, 0.2);
     --color-success-hover: rgba(75, 189, 119, 0.8);
-    --color-muted: rgb(150, 150, 150);
-    --color-muted-2: rgb(130, 130, 130);
-    --color-muted-light: rgba(150, 150, 150, 0.1);
+    --color-muted: rgb(142, 142, 142);
+    --color-muted-2: rgb(165, 165, 165);
+    --color-muted-light: rgba(142, 142, 142, 0.1);
     --color-border: rgba(255, 255, 255, 0.12);
     --color-border-form: rgb(62, 63, 66);
     --color-base: rgb(0, 0, 0);

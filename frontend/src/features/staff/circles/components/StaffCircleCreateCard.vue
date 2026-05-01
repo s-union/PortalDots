@@ -114,7 +114,7 @@ function handleSubmit() {
             <span class="font-medium">不受理理由</span>
             <MarkdownEditorField v-model="form.statusReason" min-height-class="min-h-16" name="statusReason" />
           </label>
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span class="font-medium">使用場所</span>
             <select
               v-model="form.placeIds"
@@ -127,7 +127,7 @@ function handleSubmit() {
               </option>
             </select>
             <p class="text-xs text-muted">Ctrl/Cmd を押しながらクリックで複数選択できます</p>
-          </div>
+          </label>
 
           <AlertMessage v-if="errorMessage" tone="danger">
             {{ errorMessage }}

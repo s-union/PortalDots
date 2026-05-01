@@ -165,7 +165,7 @@ function compareString(left: string, right: string) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout fullWidth>
     <StaffSideWindowContainer :is-open="isEditorOpen">
       <DataCard>
         <StaffDataGrid

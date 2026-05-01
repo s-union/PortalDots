@@ -4,7 +4,7 @@ import ContactPage from './contact.vue'
 import { mockSessionBootstrap, mockContactCategory } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Workspace/Contact',
+  title: '一般モード/お問い合わせ',
   component: ContactPage,
   tags: ['autodocs'],
   parameters: {

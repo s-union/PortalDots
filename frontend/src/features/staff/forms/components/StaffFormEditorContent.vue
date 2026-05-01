@@ -50,7 +50,7 @@ const {
 </script>
 
 <template>
-  <PageLayout class="max-w-full space-y-0 pb-6 max-[1000px]:px-0">
+  <PageLayout fullWidth class="space-y-0 pb-6 max-[1000px]:px-0">
     <LoadingState v-if="formQuery.isPending.value" class="mx-6 mt-6 max-[1000px]:mx-4" />
 
     <template v-else-if="formQuery.data.value">

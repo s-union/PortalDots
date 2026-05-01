@@ -3,12 +3,13 @@ import { cn } from '@/lib/ui/cn'
 
 const { class: className, size = 'default' } = defineProps<{
   class?: string
-  size?: 'default' | 'narrow'
+  size?: 'default' | 'narrow' | 'full'
 }>()
 
 const sizeClass = {
   default: 'max-w-[1024px]',
-  narrow: 'max-w-[880px]'
+  narrow: 'max-w-[880px]',
+  full: ''
 } as const
 </script>
 

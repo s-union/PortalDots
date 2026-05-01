@@ -31,7 +31,7 @@ function updatePageSize(nextPageSize: number) {
 </script>
 
 <template>
-  <PageLayout>
+  <PageLayout fullWidth>
     <SurfaceCard overflow-hidden>
       <SurfaceHeader>
         <template #title>アクティビティログ</template>

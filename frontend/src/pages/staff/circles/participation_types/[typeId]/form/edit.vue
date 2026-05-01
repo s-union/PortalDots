@@ -104,7 +104,7 @@ async function handleSave() {
 </script>
 
 <template>
-  <PageLayout class="max-w-full">
+  <PageLayout fullWidth>
     <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
 
     <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">

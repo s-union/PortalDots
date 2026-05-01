@@ -174,7 +174,7 @@ const visibleStaffCards = computed(() => staffCards.value.filter((card) => card.
 </script>
 
 <template>
-  <PageLayout class="max-w-full space-y-0">
+  <PageLayout fullWidth class="space-y-0">
     <HomeModeTabs :is-staff-page="true" />
 
     <section v-if="visibleStaffCards.length > 0" class="px-6 pb-6 pt-6 max-[1000px]:px-4">

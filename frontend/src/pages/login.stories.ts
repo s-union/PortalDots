@@ -4,7 +4,7 @@ import { within, userEvent } from 'storybook/test'
 import LoginPage from './login.vue'
 
 const meta = {
-  title: 'Pages/Login',
+  title: '認証/ログイン',
   component: LoginPage,
   tags: ['autodocs'],
   parameters: {

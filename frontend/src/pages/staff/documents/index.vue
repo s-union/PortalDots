@@ -220,7 +220,7 @@ function resolveText(value: unknown) {
 </script>
 
 <template>
-  <PageLayout class="max-w-full">
+  <PageLayout fullWidth>
     <DataCard overflow-hidden>
       <StaffDataGrid
         :rows="rows"

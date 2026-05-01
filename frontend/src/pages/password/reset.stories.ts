@@ -4,7 +4,7 @@ import ResetPage from './reset.vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Password/Reset',
+  title: '認証/パスワードリセット',
   component: ResetPage,
   tags: ['autodocs'],
   parameters: {

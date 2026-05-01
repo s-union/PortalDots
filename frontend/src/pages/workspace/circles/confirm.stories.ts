@@ -4,7 +4,7 @@ import ConfirmPage from './confirm.vue'
 import { mockSessionBootstrap, mockCircle } from '@/mocks/data'
 
 const meta = {
-  title: 'Pages/Workspace/Circles/Confirm',
+  title: '一般モード/企画作成確認',
   component: ConfirmPage,
   tags: ['autodocs'],
   parameters: {

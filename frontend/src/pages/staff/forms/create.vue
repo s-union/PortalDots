@@ -84,7 +84,7 @@ async function handleCreateForm() {
           <h1 class="text-2xl font-semibold text-body">フォームを新規作成</h1>
         </header>
 
-        <div class="grid gap-2 text-sm text-body">
+        <label class="grid gap-2 text-sm text-body">
           <span>
             フォーム名
             <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
@@ -98,9 +98,9 @@ async function handleCreateForm() {
             @input="markTouched('name')"
           />
           <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
-        </div>
+        </label>
 
-        <div class="grid gap-2 text-sm text-body">
+        <label class="grid gap-2 text-sm text-body">
           <span>
             企画毎に回答可能とする回答数
             <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
@@ -118,10 +118,10 @@ async function handleCreateForm() {
             @input="markTouched('maxAnswers')"
           />
           <p v-if="getFieldError('maxAnswers')" class="text-xs text-danger">{{ getFieldError('maxAnswers') }}</p>
-        </div>
+        </label>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span>
               受付開始日時
               <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
@@ -135,9 +135,9 @@ async function handleCreateForm() {
               @blur="markTouched('openAt')"
             />
             <p v-if="getFieldError('openAt')" class="text-xs text-danger">{{ getFieldError('openAt') }}</p>
-          </div>
+          </label>
 
-          <div class="grid gap-2 text-sm text-body">
+          <label class="grid gap-2 text-sm text-body">
             <span>
               受付終了日時
               <StatusBadge tone="danger" size="sm" class="ml-2">必須</StatusBadge>
@@ -151,19 +151,19 @@ async function handleCreateForm() {
               @blur="markTouched('closeAt')"
             />
             <p v-if="getFieldError('closeAt')" class="text-xs text-danger">{{ getFieldError('closeAt') }}</p>
-          </div>
+          </label>
         </div>
 
-        <div class="grid gap-2 text-sm text-body">
+        <label class="grid gap-2 text-sm text-body">
           <span>公開設定</span>
           <span class="text-xs text-muted">
             フォームの内容を公開した場合でも、上記の受付期間内ではない場合、ユーザーはフォームに回答したり、回答内容を編集したりできません。
           </span>
-          <label class="flex items-center gap-3 text-sm text-body">
+          <span class="flex items-center gap-3 text-sm text-body">
             <input v-model="form.isPublic" name="isPublic" type="checkbox" />
             公開する
-          </label>
-        </div>
+          </span>
+        </label>
 
         <label class="grid gap-2 text-sm text-body">
           <span>フォームへ回答可能なユーザー</span>

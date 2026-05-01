@@ -137,6 +137,7 @@ const toolbarActions: ToolbarAction[] = [
       <textarea
         ref="textarea"
         v-model="model"
+        :aria-label="name"
         :class="cn(formControlVariants(), minHeightClass)"
         :disabled="disabled"
         :name="name"
