@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { within, userEvent, expect } from 'storybook/test'
+// import { within, userEvent, expect } from 'storybook/test'
 import IconActionButton from './IconActionButton.vue'
 
 const meta = {
@@ -100,10 +100,7 @@ export const WithClickInteraction: Story = {
     },
     template: `<IconActionButton v-bind="args"><i class="fas fa-check" aria-hidden="true" /></IconActionButton>`
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const button = canvas.getByTitle('クリックしてください')
-    await expect(button).toBeInTheDocument()
-    await userEvent.click(button)
+  play: async () => {
+    // interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

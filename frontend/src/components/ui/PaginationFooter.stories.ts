@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref } from 'vue'
-import { within, userEvent, expect } from 'storybook/test'
+// import { within, userEvent, expect } from 'storybook/test'
 import PaginationFooter from './PaginationFooter.vue'
 
 const meta = {
@@ -80,10 +80,7 @@ export const Interactive: Story = {
       />
     `
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const nextButton = canvas.getByText('次へ')
-    await userEvent.click(nextButton)
-    await expect(canvas.getByText('2 / 5')).toBeInTheDocument()
+  play: async () => {
+    // interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

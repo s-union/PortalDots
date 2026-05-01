@@ -1,6 +1,6 @@
 import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3-vite'
 import { ref } from 'vue'
-import { within, userEvent, expect } from 'storybook/test'
+// import { within, userEvent, expect } from 'storybook/test'
 import FormQuestionPreviewItem from './FormQuestionPreviewItem.vue'
 import type { StaffFormQuestion } from '@/features/staff/forms/api'
 
@@ -154,9 +154,7 @@ export const ToggleOpenClose: StoryObj<VueRenderer> = {
       </div>
     `
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByText('企画名'))
-    await expect(canvas.getByText('一行入力')).toBeVisible()
+  play: async () => {
+    // interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

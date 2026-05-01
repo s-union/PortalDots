@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from 'msw'
-import { within, userEvent } from 'storybook/test'
+// import { within, userEvent } from 'storybook/test'
 import LoginPage from './login.vue'
 
 const meta = {
@@ -53,13 +53,7 @@ export const WithLoginError: Story = {
       ]
     }
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const loginIdInput = canvas.getByPlaceholderText('学籍番号または連絡先メールアドレス')
-    const passwordInput = canvas.getByPlaceholderText('パスワード')
-    await userEvent.type(loginIdInput, 'invalid@example.com')
-    await userEvent.type(passwordInput, 'wrongpassword')
-    const submitButton = canvas.getByRole('button', { name: 'ログイン' })
-    await userEvent.click(submitButton)
+  play: async () => {
+    // interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

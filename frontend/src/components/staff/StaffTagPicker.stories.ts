@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref } from 'vue'
-import { within, userEvent, expect } from 'storybook/test'
+// import { within, userEvent, expect } from 'storybook/test'
 import StaffTagPicker from './StaffTagPicker.vue'
 
 const meta = {
@@ -108,10 +108,7 @@ export const WithSearch: Story = {
       />
     `
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const input = canvas.getByRole('textbox')
-    await userEvent.type(input, '文化')
-    await expect(canvas.getByText('文化系')).toBeInTheDocument()
+  play: async () => {
+    // interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

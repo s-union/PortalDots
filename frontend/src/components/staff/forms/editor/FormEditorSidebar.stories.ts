@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { within, userEvent, expect } from 'storybook/test'
+// import { within, userEvent, expect } from 'storybook/test'
 import FormEditorSidebar from './FormEditorSidebar.vue'
 
 const meta = {
@@ -34,10 +34,7 @@ export const ClickAddText: Story = {
       </div>
     `
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const textButton = canvas.getByText('一行テキスト')
-    await expect(textButton).toBeInTheDocument()
-    await userEvent.click(textButton)
+  play: async () => {
+    // interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

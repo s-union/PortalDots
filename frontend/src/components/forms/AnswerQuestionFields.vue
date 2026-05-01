@@ -174,6 +174,7 @@ function eventTargetChecked(event: Event) {
       <input
         :disabled="disabled"
         :name="`answer-file-${question.id}`"
+        :aria-label="question.name + 'のアップロード'"
         type="file"
         @change="emit('fileChange', question.id, $event)"
       />
