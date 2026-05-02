@@ -186,11 +186,15 @@ type workspaceHandlers struct {
 }
 
 func NewServer(cfg config.Config) *echo.Echo {
+	authenticator, err := auth.NewStaticAuthenticator(cfg.AuthUser, cfg.Users)
+	if err != nil {
+		panic("failed to create static authenticator: " + err.Error())
+	}
 	return NewServerWithDependencies(
 		cfg,
 		activitylog.NewMemoryRepository(),
 		answer.NewMemoryRepository(),
-		auth.NewStaticAuthenticator(cfg.AuthUser, cfg.Users),
+		authenticator,
 		booth.NewMemoryRepository(cfg.Booths),
 		circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		contactcategory.NewMemoryRepository(cfg.ContactCategories),

@@ -8,7 +8,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
-func TestNewStaticAuthenticatorPanicsOnDuplicateIdentifiers(t *testing.T) {
+func TestNewStaticAuthenticatorReturnsErrorOnDuplicateIdentifiers(t *testing.T) {
 	t.Parallel()
 
 	cfg := config.AuthUser{
@@ -33,24 +33,24 @@ func TestNewStaticAuthenticatorPanicsOnDuplicateIdentifiers(t *testing.T) {
 		},
 	}
 
-	defer func() {
-		if recover() == nil {
-			t.Fatal("expected panic for duplicate identifiers")
-		}
-	}()
-
-	_ = NewStaticAuthenticator(cfg, users)
+	_, err := NewStaticAuthenticator(cfg, users)
+	if err == nil {
+		t.Fatal("expected error for duplicate identifiers")
+	}
 }
 
 func TestRegisterUserRejectsDuplicateLoginID(t *testing.T) {
 	t.Parallel()
 
-	authenticator := NewStaticAuthenticator(config.AuthUser{
+	authenticator, err := NewStaticAuthenticator(config.AuthUser{
 		ID:          "admin",
 		LoginIDs:    []string{"admin"},
 		DisplayName: "Admin",
 		Password:    "password",
 	}, nil)
+	if err != nil {
+		t.Fatalf("NewStaticAuthenticator: %v", err)
+	}
 
 	if err := authenticator.RegisterUser(RegisterParams{
 		ID:           "user-a",
@@ -63,7 +63,7 @@ func TestRegisterUserRejectsDuplicateLoginID(t *testing.T) {
 		t.Fatalf("register first user: %v", err)
 	}
 
-	err := authenticator.RegisterUser(RegisterParams{
+	err = authenticator.RegisterUser(RegisterParams{
 		ID:           "user-b",
 		DisplayName:  "User B",
 		LoginIDs:     []string{" S001 "},
@@ -79,12 +79,15 @@ func TestRegisterUserRejectsDuplicateLoginID(t *testing.T) {
 func TestRegisterUserRejectsDuplicateContactEmail(t *testing.T) {
 	t.Parallel()
 
-	authenticator := NewStaticAuthenticator(config.AuthUser{
+	authenticator, err := NewStaticAuthenticator(config.AuthUser{
 		ID:          "admin",
 		LoginIDs:    []string{"admin"},
 		DisplayName: "Admin",
 		Password:    "password",
 	}, nil)
+	if err != nil {
+		t.Fatalf("NewStaticAuthenticator: %v", err)
+	}
 
 	if err := authenticator.RegisterUser(RegisterParams{
 		ID:           "user-a",
@@ -97,7 +100,7 @@ func TestRegisterUserRejectsDuplicateContactEmail(t *testing.T) {
 		t.Fatalf("register first user: %v", err)
 	}
 
-	err := authenticator.RegisterUser(RegisterParams{
+	err = authenticator.RegisterUser(RegisterParams{
 		ID:           "user-b",
 		DisplayName:  "User B",
 		LoginIDs:     []string{"s002"},
@@ -113,12 +116,15 @@ func TestRegisterUserRejectsDuplicateContactEmail(t *testing.T) {
 func TestRegisterUserAllowsAuthenticateWithUniqueIdentifiers(t *testing.T) {
 	t.Parallel()
 
-	authenticator := NewStaticAuthenticator(config.AuthUser{
+	authenticator, err := NewStaticAuthenticator(config.AuthUser{
 		ID:          "admin",
 		LoginIDs:    []string{"admin"},
 		DisplayName: "Admin",
 		Password:    "password",
 	}, nil)
+	if err != nil {
+		t.Fatalf("NewStaticAuthenticator: %v", err)
+	}
 
 	if err := authenticator.RegisterUser(RegisterParams{
 		ID:           "user-a",

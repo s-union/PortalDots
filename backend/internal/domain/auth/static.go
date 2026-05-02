@@ -62,10 +62,10 @@ type StaticAuthenticator struct {
 	users map[string]staticCredential
 }
 
-func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAuthenticator {
+func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) (*StaticAuthenticator, error) {
 	defaultPasswordHash, err := bcrypt.GenerateFromPassword([]byte(cfg.Password), bcrypt.DefaultCost)
 	if err != nil {
-		panic("failed to hash default auth password: " + err.Error())
+		return nil, fmt.Errorf("failed to hash default auth password: %w", err)
 	}
 
 	built := map[string]staticCredential{
@@ -92,7 +92,7 @@ func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAut
 		}
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(configured.Password), bcrypt.DefaultCost)
 		if err != nil {
-			panic("failed to hash configured user password: " + err.Error())
+			return nil, fmt.Errorf("failed to hash configured user password: %w", err)
 		}
 		built[configured.ID] = staticCredential{
 			user: User{
@@ -107,9 +107,11 @@ func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) *StaticAut
 		}
 	}
 
-	validateUniqueStaticAuthIdentifiers(built)
+	if err := validateUniqueStaticAuthIdentifiers(built); err != nil {
+		return nil, err
+	}
 
-	return &StaticAuthenticator{users: built}
+	return &StaticAuthenticator{users: built}, nil
 }
 
 func (a *StaticAuthenticator) Authenticate(_ context.Context, loginID, password string) (*User, bool) {
@@ -219,16 +221,17 @@ func matchesStaticLoginID(candidate staticCredential, loginID string) bool {
 	return false
 }
 
-func validateUniqueStaticAuthIdentifiers(users map[string]staticCredential) {
+func validateUniqueStaticAuthIdentifiers(users map[string]staticCredential) error {
 	owners := make(map[string]string)
 	for userID, credential := range users {
 		for _, identifier := range staticAuthIdentifiers(credential) {
 			if ownerID, ok := owners[identifier]; ok && ownerID != userID {
-				panic("duplicate static auth identifier: " + identifier)
+				return fmt.Errorf("duplicate static auth identifier: %s", identifier)
 			}
 			owners[identifier] = userID
 		}
 	}
+	return nil
 }
 
 func findDuplicateStaticAuthIdentifier(
