@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/settings/portal',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'portalSettings.manage'
-  }
+  meta: staffPageMeta('portalSettings.manage')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'

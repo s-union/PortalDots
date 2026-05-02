@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/exports',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'exports.use'
-  }
+  meta: staffPageMeta('exports.use')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'

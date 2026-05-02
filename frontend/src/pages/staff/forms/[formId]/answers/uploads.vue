@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/forms/:formId/answers/uploads',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'formAnswers.export'
-  }
+  meta: staffPageMeta('formAnswers.export')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'

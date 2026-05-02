@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/places',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'places.read'
-  }
+  meta: staffPageMeta('places.read')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import { useMutation } from '@tanstack/vue-query'

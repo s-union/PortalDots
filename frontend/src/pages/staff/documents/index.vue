@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/documents',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'documents.read'
-  }
+  meta: staffPageMeta('documents.read')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'

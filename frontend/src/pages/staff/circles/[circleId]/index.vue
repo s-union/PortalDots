@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/circles/:circleId',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'circles.edit'
-  }
+  meta: staffPageMeta('circles.edit')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

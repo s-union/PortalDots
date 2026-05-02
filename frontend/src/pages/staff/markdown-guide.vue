@@ -1,12 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/markdown-guide',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true
-  }
+  meta: staffPageMeta()
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'

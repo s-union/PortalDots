@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/forms/:formId/answers',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'formAnswers.read'
-  }
+  meta: staffPageMeta('formAnswers.read')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/tags',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'tags.read'
-  }
+  meta: staffPageMeta('tags.read')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import { useMutation } from '@tanstack/vue-query'

@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/forms/:formId/preview',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'forms.read'
-  }
+  meta: staffPageMeta('forms.read')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'

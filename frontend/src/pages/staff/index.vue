@@ -1,12 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true
-  }
+  meta: staffPageMeta()
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed } from 'vue'
 import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'

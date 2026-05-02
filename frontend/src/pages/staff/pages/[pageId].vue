@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/pages/:pageId',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'pages.edit'
-  }
+  meta: staffPageMeta('pages.edit')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

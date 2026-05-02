@@ -1,14 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/about',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    noDrawer: true,
-    noBottomTabs: true
-  }
+  meta: staffPageMeta(undefined, { noDrawer: true, noBottomTabs: true })
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'

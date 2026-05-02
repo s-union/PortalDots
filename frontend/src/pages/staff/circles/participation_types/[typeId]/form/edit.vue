@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/circles/participation_types/:typeId/form/edit',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'circles.participationTypes'
-  }
+  meta: staffPageMeta('circles.participationTypes')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'

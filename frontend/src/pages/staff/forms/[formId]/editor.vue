@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/forms/:formId/editor',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'forms.edit'
-  }
+  meta: staffPageMeta('forms.edit')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/documents/create',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'documents.edit'
-  }
+  meta: staffPageMeta('documents.edit')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'

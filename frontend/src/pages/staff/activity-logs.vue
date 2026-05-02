@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/activity-logs',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'activityLogs.read'
-  }
+  meta: staffPageMeta('activityLogs.read')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { ref } from 'vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'

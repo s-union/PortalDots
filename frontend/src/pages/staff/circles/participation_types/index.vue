@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/circles/participation_types',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'circles.participationTypes'
-  }
+  meta: staffPageMeta('circles.participationTypes')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'

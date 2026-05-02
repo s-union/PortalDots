@@ -1,12 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/settings',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true
-  }
+  meta: staffPageMeta()
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'

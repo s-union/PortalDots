@@ -1,13 +1,10 @@
 <script setup lang="ts">
 definePage({
   path: '/staff/mails',
-  meta: {
-    requiresAuth: true,
-    requiresStaffRole: true,
-    requiresStaffAuthorized: true,
-    staffCapability: 'mailQueue.use'
-  }
+  meta: staffPageMeta('mailQueue.use')
 })
+
+import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import { formatDateTime } from '@/lib/format/datetime'
