@@ -49,7 +49,7 @@ func (h *staffUserHandlers) listStaffUsers(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	query := c.QueryParam("query")
+	query := escapeIlikePattern(c.QueryParam("query"))
 	users, err := h.users.ListByQuery(query)
 	if err != nil {
 		return internalError(c)

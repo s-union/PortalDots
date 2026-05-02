@@ -146,3 +146,10 @@ func mapStaffUser(userValue useradmin.User) staffUserSummaryResponse {
 		IsEmailVerified:  userValue.IsEmailVerified,
 	}
 }
+
+func escapeIlikePattern(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "%", "\\%")
+	s = strings.ReplaceAll(s, "_", "\\_")
+	return s
+}

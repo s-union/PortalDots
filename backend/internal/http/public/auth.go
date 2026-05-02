@@ -64,6 +64,8 @@ func (h *authHandlers) login(c echo.Context) error {
 	user.Roles = append([]string{}, managedUser.Roles...)
 	user.Permissions = append([]string{}, managedUser.Permissions...)
 
+	_ = h.sessions.DeleteByUserID(user.ID)
+
 	sessionID, _, err := h.sessions.Create(user)
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_session")
