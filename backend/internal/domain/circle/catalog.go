@@ -360,7 +360,7 @@ func (c *StaticCatalog) Submit(user *auth.User, circleID string) (Circle, error)
 		return Circle{}, ErrForbidden
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	for index := range c.circles {
 		if c.circles[index].ID != circleID {
 			continue
