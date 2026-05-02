@@ -21,11 +21,20 @@ func Setup(e *echo.Echo, cfg SetupConfig) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
-		XSSProtection:      "1; mode=block",
+		XSSProtection:      "",
 		ContentTypeNosniff: "nosniff",
 		XFrameOptions:      "DENY",
-		HSTSMaxAge:         31536000,
+		HSTSMaxAge:         0,
 	}))
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Response().Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			c.Response().Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+			c.Response().Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			c.Response().Header().Set("Permissions-Policy", "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()")
+			return next(c)
+		}
+	})
 	e.Use(TransformExternalIDs())
 	if len(cfg.AllowedOrigins) > 0 {
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{

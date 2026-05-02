@@ -152,10 +152,15 @@ func (s *sharedDeps) requireStaffMode(c echo.Context) (string, session.Session, 
 
 func generateStaffVerifyCode() (string, error) {
 	var raw [4]byte
-	if _, err := rand.Read(raw[:]); err != nil {
-		return "", err
+	for {
+		if _, err := rand.Read(raw[:]); err != nil {
+			return "", err
+		}
+		n := binary.BigEndian.Uint32(raw[:])
+		if n < 4294960000 {
+			return fmt.Sprintf("%06d", n%1000000), nil
+		}
 	}
-	return fmt.Sprintf("%06d", binary.BigEndian.Uint32(raw[:])%1000000), nil
 }
 
 func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
