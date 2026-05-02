@@ -15,7 +15,7 @@ const route = useRoute('/public/documents/[documentId]')
 
 onMounted(() => {
   const documentId = String(route.params.documentId ?? '').trim()
-  if (documentId === '') {
+  if (documentId === '' || documentId.startsWith(':')) {
     return
   }
 

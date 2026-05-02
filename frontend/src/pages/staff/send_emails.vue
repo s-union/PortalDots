@@ -5,4 +5,6 @@ definePage({
 })
 </script>
 
-<template></template>
+<template>
+  <p class="text-muted text-sm">リダイレクト中...</p>
+</template>
