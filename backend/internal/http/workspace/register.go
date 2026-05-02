@@ -23,7 +23,7 @@ type sharedDeps struct {
 	sessionCookieName     string
 	sessionCookieTTL      time.Duration
 	sessionCookieSecure   bool
-	allowInsecureDefaults bool
+	allowDangerously bool
 	sessions              session.Store
 }
 
@@ -62,7 +62,7 @@ type Dependencies struct {
 	SessionCookieName     string
 	SessionCookieTTL      time.Duration
 	SessionCookieSecure   bool
-	AllowInsecureDefaults bool
+	AllowDangerously bool
 	Sessions              session.Store
 	Answers               answer.Repository
 	Circles               circle.Catalog
@@ -82,7 +82,7 @@ func Register(v1 *echo.Group, deps Dependencies, middleware ...echo.MiddlewareFu
 			sessionCookieName:     deps.SessionCookieName,
 			sessionCookieTTL:      deps.SessionCookieTTL,
 			sessionCookieSecure:   deps.SessionCookieSecure,
-			allowInsecureDefaults: deps.AllowInsecureDefaults,
+			allowDangerously: deps.AllowDangerously,
 			sessions:              deps.Sessions,
 		},
 		answers:            deps.Answers,

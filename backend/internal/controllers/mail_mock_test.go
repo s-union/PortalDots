@@ -50,7 +50,7 @@ func TestLogQueuedMailSecureRedactsSensitiveContent(t *testing.T) {
 	}
 }
 
-func captureQueuedMailLog(t *testing.T, allowInsecureDefaults bool) (map[string]any, string) {
+func captureQueuedMailLog(t *testing.T, allowDangerously bool) (map[string]any, string) {
 	t.Helper()
 
 	var logs bytes.Buffer
@@ -68,7 +68,7 @@ func captureQueuedMailLog(t *testing.T, allowInsecureDefaults bool) (map[string]
 		"secret-subject",
 		"secret-body",
 		[]string{"first@example.com", "second@example.com"},
-		allowInsecureDefaults,
+		allowDangerously,
 	)
 
 	rawLog := strings.TrimSpace(logs.String())

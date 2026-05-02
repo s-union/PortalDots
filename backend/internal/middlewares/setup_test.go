@@ -363,9 +363,9 @@ func TestVerifyCSRF(t *testing.T) {
 
 		called := false
 		handler := VerifyCSRF(SessionMiddlewareConfig{
-			SessionCookieName:     "session",
-			AllowInsecureDefaults: true,
-			Sessions:              baseConfig.Sessions,
+			SessionCookieName: "session",
+			AllowDangerously:  true,
+			Sessions:          baseConfig.Sessions,
 		})(func(c echo.Context) error {
 			called = true
 			return c.NoContent(http.StatusNoContent)
@@ -546,8 +546,8 @@ func TestRequireStaffMode(t *testing.T) {
 				}},
 			},
 			{
-				SessionCookieName:     "session",
-				AllowInsecureDefaults: true,
+				SessionCookieName: "session",
+				AllowDangerously:  true,
 				Sessions: stubSessionAccess{sessions: map[string]session.Session{
 					"session-1": baseSession,
 				}},

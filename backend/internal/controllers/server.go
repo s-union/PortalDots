@@ -25,16 +25,17 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 )
 
 // sharedDeps holds session-related dependencies shared across all domain handler structs.
 type sharedDeps struct {
-	sessionCookieName     string
-	sessionCookieTTL      time.Duration
-	sessionCookieSecure   bool
-	staffVerifyCode       string
-	allowInsecureDefaults bool
-	sessions              session.Store
+	sessionCookieName   string
+	sessionCookieTTL    time.Duration
+	sessionCookieSecure bool
+	staffVerifyCode     string
+	allowDangerously    bool
+	sessions            session.Store
 }
 
 func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) {
@@ -69,10 +70,14 @@ type authHandlers struct {
 	pendingRegistrations      pendingregistration.Repository
 	passwordResetTokens       *passwordResetTokenStore
 	authVerificationTokens    *authVerificationTokenStore
+	emailProducer             *cloudflareemail.ProducerClient
 	portalUnivemailDomainPart string
 	registrationVerifyTTL     time.Duration
 	appURL                    string
 	appName                   string
+	from                      string
+	adminName                 string
+	contactEmail              string
 	users                     useradmin.Repository
 }
 
@@ -101,6 +106,12 @@ type staffCircleHandlers struct {
 	mails              mailqueue.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
+	emailProducer      *cloudflareemail.ProducerClient
+	from               string
+	adminName          string
+	contactEmail       string
+	appName            string
+	appURL             string
 }
 
 // staffFormHandlers handles staff form and form answer endpoints.
@@ -160,14 +171,20 @@ type staffPermissionHandlers struct {
 // staffAdminHandlers handles staff admin endpoints (mails, exports, activity logs).
 type staffAdminHandlers struct {
 	sharedDeps
-	activities activitylog.Repository
-	answers    answer.Repository
-	circles    circle.Catalog
-	documents  document.Repository
-	forms      form.Repository
-	mails      mailqueue.Repository
-	pages      page.Repository
-	portal     portalsetting.Repository
+	activities    activitylog.Repository
+	answers       answer.Repository
+	circles       circle.Catalog
+	documents     document.Repository
+	forms         form.Repository
+	mails         mailqueue.Repository
+	pages         page.Repository
+	portal        portalsetting.Repository
+	emailProducer *cloudflareemail.ProducerClient
+	from          string
+	adminName     string
+	contactEmail  string
+	appName       string
+	appURL        string
 }
 
 // workspaceHandlers handles participant-facing workspace endpoints.
@@ -259,12 +276,12 @@ func NewServerWithDependencies(
 	})
 
 	shared := sharedDeps{
-		sessionCookieName:     cfg.SessionCookieName,
-		sessionCookieTTL:      cfg.SessionTTL,
-		sessionCookieSecure:   cfg.SessionCookieSecure,
-		staffVerifyCode:       cfg.StaffVerifyCode,
-		allowInsecureDefaults: cfg.AllowInsecureDefaults,
-		sessions:              sessionStore,
+		sessionCookieName:   cfg.SessionCookieName,
+		sessionCookieTTL:    cfg.SessionTTL,
+		sessionCookieSecure: cfg.SessionCookieSecure,
+		staffVerifyCode:     cfg.StaffVerifyCode,
+		allowDangerously:    cfg.AllowDangerously,
+		sessions:            sessionStore,
 	}
 
 	var passwordChanger auth.PasswordChanger
@@ -280,6 +297,11 @@ func NewServerWithDependencies(
 		passwordResetter = pr
 	}
 
+	var emailProducer *cloudflareemail.ProducerClient
+	if cfg.EmailProducerURL != "" {
+		emailProducer = cloudflareemail.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
+	}
+
 	authH := &authHandlers{
 		sharedDeps:                shared,
 		activities:                activities,
@@ -293,24 +315,28 @@ func NewServerWithDependencies(
 		pendingRegistrations:      pendingRegistrations,
 		passwordResetTokens:       newPasswordResetTokenStore(),
 		authVerificationTokens:    newAuthVerificationTokenStore(),
+		emailProducer:             emailProducer,
 		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
 		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
 		appURL:                    cfg.AppURL,
 		appName:                   cfg.AppName,
+		from:                      cfg.EmailFrom,
+		adminName:                 cfg.PortalAdminName,
+		contactEmail:              cfg.PortalContactEmail,
 		users:                     users,
 	}
 
 	publicHomeH := &publicHomeHandlers{
-		sharedDeps:            shared,
-		circles:               circles,
-		documents:             documents,
-		forms:                 forms,
-		pages:                 pages,
-		participationTypes:    participationTypes,
-		portal:                portal,
-		allowInsecureDefaults: cfg.AllowInsecureDefaults,
-		authUser:              cfg.AuthUser,
-		users:                 cfg.Users,
+		sharedDeps:         shared,
+		circles:            circles,
+		documents:          documents,
+		forms:              forms,
+		pages:              pages,
+		participationTypes: participationTypes,
+		portal:             portal,
+		allowDangerously:   cfg.AllowDangerously,
+		authUser:           cfg.AuthUser,
+		users:              cfg.Users,
 	}
 
 	staffVerifyH := &staffVerifyHandlers{
@@ -335,6 +361,12 @@ func NewServerWithDependencies(
 		mails:              mails,
 		participationTypes: participationTypes,
 		users:              users,
+		emailProducer:      emailProducer,
+		from:               cfg.EmailFrom,
+		adminName:          cfg.PortalAdminName,
+		contactEmail:       cfg.PortalContactEmail,
+		appName:            cfg.AppName,
+		appURL:             cfg.AppURL,
 	}
 
 	staffFormH := &staffFormHandlers{
@@ -387,15 +419,21 @@ func NewServerWithDependencies(
 	}
 
 	staffAdminH := &staffAdminHandlers{
-		sharedDeps: shared,
-		activities: activities,
-		answers:    answers,
-		circles:    circles,
-		documents:  documents,
-		forms:      forms,
-		mails:      mails,
-		pages:      pages,
-		portal:     portal,
+		sharedDeps:    shared,
+		activities:    activities,
+		answers:       answers,
+		circles:       circles,
+		documents:     documents,
+		forms:         forms,
+		mails:         mails,
+		pages:         pages,
+		portal:        portal,
+		emailProducer: emailProducer,
+		from:          cfg.EmailFrom,
+		adminName:     cfg.PortalAdminName,
+		contactEmail:  cfg.PortalContactEmail,
+		appName:       cfg.AppName,
+		appURL:        cfg.AppURL,
 	}
 
 	workspaceH := &workspaceHandlers{
@@ -418,9 +456,9 @@ func NewServerWithDependencies(
 
 	v1 := e.Group("/v1")
 	sessionMiddlewareConfig := middlewares.SessionMiddlewareConfig{
-		SessionCookieName:     cfg.SessionCookieName,
-		AllowInsecureDefaults: cfg.AllowInsecureDefaults,
-		Sessions:              sessionStore,
+		SessionCookieName: cfg.SessionCookieName,
+		AllowDangerously:  cfg.AllowDangerously,
+		Sessions:          sessionStore,
 	}
 	v1.Use(middlewares.VerifyCSRF(sessionMiddlewareConfig))
 

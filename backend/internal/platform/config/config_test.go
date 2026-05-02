@@ -39,11 +39,8 @@ func TestValidateForAPIAllowsSecureExplicitConfigurationWithoutDemoAuthSettings(
 		AppURL:                   "https://portal.example.com",
 		RegistrationVerifyTTL:    time.Hour,
 		PortalUnivemailLocalPart: "student_id",
-		SMTPHost:                 "smtp.example.com",
-		SMTPPort:                 587,
-		SMTPUsername:             "mailer",
-		SMTPPassword:             "super-secret-password",
-		SMTPFrom:                 "noreply@example.com",
+		EmailProducerURL:         "https://email-producer.example.com",
+		EmailProducerToken:       "super-secret-token",
 		StaffVerifyCode:          "654321",
 		staffVerifyCodeProvided:  true,
 		AuthUser: AuthUser{
@@ -112,13 +109,13 @@ func TestValidateForAPIRequiresDemoAuthSettingsWhenInsecureDefaultsEnabled(t *te
 	t.Parallel()
 
 	cfg := Config{
-		DatabaseURL:           "postgres://example",
-		MigrationsDir:         "db/migrations",
-		SessionCookieName:     "portaldots_session",
-		SessionTTL:            time.Hour,
-		AppURL:                "http://127.0.0.1:8080",
-		AllowInsecureDefaults: true,
-		StaffVerifyCode:       "123456",
+		DatabaseURL:       "postgres://example",
+		MigrationsDir:     "db/migrations",
+		SessionCookieName: "portaldots_session",
+		SessionTTL:        time.Hour,
+		AppURL:            "http://127.0.0.1:8080",
+		AllowDangerously:  true,
+		StaffVerifyCode:   "123456",
 	}
 
 	err := cfg.ValidateForAPI()
@@ -144,11 +141,8 @@ func TestValidateForAPIRejectsInsecureAppURLAndCookieInSecureMode(t *testing.T) 
 		AppURL:                   "http://portal.example.com",
 		RegistrationVerifyTTL:    time.Hour,
 		PortalUnivemailLocalPart: "student_id",
-		SMTPHost:                 "smtp.example.com",
-		SMTPPort:                 587,
-		SMTPUsername:             "mailer",
-		SMTPPassword:             "super-secret-password",
-		SMTPFrom:                 "noreply@example.com",
+		EmailProducerURL:         "https://email-producer.example.com",
+		EmailProducerToken:       "super-secret-token",
 		StaffVerifyCode:          "654321",
 		staffVerifyCodeProvided:  true,
 		AuthUser: AuthUser{

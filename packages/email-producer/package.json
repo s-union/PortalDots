@@ -1,0 +1,26 @@
+{
+  "name": "@portaldots/email-producer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsgo --noEmit",
+    "lint": "oxlint --type-aware .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "hono": "^4.12.14",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260424.1",
+    "@typescript/native-preview": "7.0.0-dev.20260314.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5",
+    "wrangler": "^4.0.0"
+  }
+}

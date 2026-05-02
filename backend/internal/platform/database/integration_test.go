@@ -245,7 +245,7 @@ func TestUserQueriesReturnActualUpdatedAt(t *testing.T) {
 func integrationConfig(t *testing.T, syncAuthUserOnStartup bool) config.Config {
 	t.Helper()
 
-	t.Setenv("PORTALDOTS_ALLOW_INSECURE_DEFAULTS", "true")
+	t.Setenv("PORTALDOTS_ALLOW_DANGEROUSLY", "true")
 	if syncAuthUserOnStartup {
 		t.Setenv("PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP", "true")
 	} else {

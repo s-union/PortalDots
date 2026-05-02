@@ -59,6 +59,9 @@ func run(rootDir string) error {
 	commands := []*managedCommand{
 		newManagedCommand("backend", rootDir, "mise", "run", "backend-dev"),
 		newManagedCommand("frontend", rootDir, "mise", "run", "frontend-dev"),
+		newManagedCommand("email-producer", rootDir, "mise", "run", "email-producer-dev"),
+		newManagedCommand("email-consumer-high", rootDir, "mise", "run", "email-consumer-dev-high"),
+		newManagedCommand("email-consumer-normal", rootDir, "mise", "run", "email-consumer-dev-normal"),
 	}
 
 	started, err := startCommands(commands)

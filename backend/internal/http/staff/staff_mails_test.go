@@ -32,7 +32,7 @@ func TestListStaffMailsAllowsMissingCircle(t *testing.T) {
 			sessionCookieTTL:      time.Hour,
 			sessionCookieSecure:   false,
 			staffVerifyCode:       cfg.StaffVerifyCode,
-			allowInsecureDefaults: true,
+			allowDangerously: true,
 			sessions:              session.NewMemoryStore(time.Hour),
 		},
 		circles: circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),

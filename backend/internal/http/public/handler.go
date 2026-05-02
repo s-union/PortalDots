@@ -39,7 +39,7 @@ func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
 	}
 
 	allowed := hasStaffAccess(currentSession.User.Roles, currentSession.User.Permissions)
-	authorized := allowed && (h.allowInsecureDefaults || currentSession.StaffAuthorized)
+	authorized := allowed && (h.allowDangerously || currentSession.StaffAuthorized)
 
 	return c.JSON(http.StatusOK, staffStatusResponse{
 		Allowed:    allowed,
@@ -54,7 +54,7 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 	}
 
 	verifyCode := h.staffVerifyCode
-	if h.allowInsecureDefaults {
+	if h.allowDangerously {
 		generatedCode, err := generateStaffVerifyCode()
 		if err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
@@ -69,7 +69,7 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 	})
 
 	response := staffVerifyRequestResponse{DeliveryMode: "email"}
-	if h.allowInsecureDefaults {
+	if h.allowDangerously {
 		response.DeliveryMode = "mock"
 		response.Message = "モック中: メールは送信していません。画面に表示された認証コードを入力してください。"
 		response.VerifyCode = verifyCode
@@ -133,7 +133,7 @@ func (s *sharedDeps) requireStaffMode(c echo.Context) (string, session.Session, 
 	if !ok {
 		return "", session.Session{}, status, false
 	}
-	if s.allowInsecureDefaults {
+	if s.allowDangerously {
 		return sessionID, currentSession, http.StatusOK, true
 	}
 	if !currentSession.StaffAuthorized {

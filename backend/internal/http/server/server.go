@@ -29,16 +29,18 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/mailrender"
 )
 
 // sharedDeps holds session-related dependencies shared across all domain handler structs.
 type sharedDeps struct {
-	sessionCookieName     string
-	sessionCookieTTL      time.Duration
-	sessionCookieSecure   bool
-	staffVerifyCode       string
-	allowInsecureDefaults bool
-	sessions              session.Store
+	sessionCookieName   string
+	sessionCookieTTL    time.Duration
+	sessionCookieSecure bool
+	staffVerifyCode     string
+	allowDangerously    bool
+	sessions            session.Store
 }
 
 func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) {
@@ -248,12 +250,12 @@ func NewServerWithDependencies(
 	})
 
 	shared := sharedDeps{
-		sessionCookieName:     cfg.SessionCookieName,
-		sessionCookieTTL:      cfg.SessionTTL,
-		sessionCookieSecure:   cfg.SessionCookieSecure,
-		staffVerifyCode:       cfg.StaffVerifyCode,
-		allowInsecureDefaults: cfg.AllowInsecureDefaults,
-		sessions:              sessionStore,
+		sessionCookieName:   cfg.SessionCookieName,
+		sessionCookieTTL:    cfg.SessionTTL,
+		sessionCookieSecure: cfg.SessionCookieSecure,
+		staffVerifyCode:     cfg.StaffVerifyCode,
+		allowDangerously:    cfg.AllowDangerously,
+		sessions:            sessionStore,
 	}
 
 	var passwordChanger auth.PasswordChanger
@@ -266,13 +268,25 @@ func NewServerWithDependencies(
 	}
 
 	var registrationMailSender registrationmail.Sender = registrationmail.NewMockSender()
-	if !cfg.AllowInsecureDefaults && strings.TrimSpace(cfg.SMTPHost) != "" {
+	if cfg.EmailProducerURL != "" {
+		producer := cloudflareemail.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
+		registrationMailSender = registrationmail.NewCloudflareSender(
+			producer,
+			mailrender.Branding{AppName: cfg.AppName},
+			cfg.SMTPFrom,
+			cfg.AppName,
+			cfg.AppURL,
+			cfg.PortalContactEmail,
+			cfg.PortalAdminName,
+		)
+	} else if strings.TrimSpace(cfg.SMTPHost) != "" {
 		registrationMailSender = registrationmail.NewSMTPSender(
 			cfg.SMTPHost,
 			cfg.SMTPPort,
 			cfg.SMTPUsername,
 			cfg.SMTPPassword,
 			cfg.SMTPFrom,
+			mailrender.Branding{AppName: cfg.AppName},
 		)
 	}
 
@@ -296,15 +310,15 @@ func NewServerWithDependencies(
 	}
 
 	publicHomeH := &publicHomeHandlers{
-		circles:               circles,
-		documents:             documents,
-		forms:                 forms,
-		pages:                 pages,
-		participationTypes:    participationTypes,
-		portal:                portal,
-		allowInsecureDefaults: cfg.AllowInsecureDefaults,
-		authUser:              cfg.AuthUser,
-		users:                 cfg.Users,
+		circles:            circles,
+		documents:          documents,
+		forms:              forms,
+		pages:              pages,
+		participationTypes: participationTypes,
+		portal:             portal,
+		allowDangerously:   cfg.AllowDangerously,
+		authUser:           cfg.AuthUser,
+		users:              cfg.Users,
 	}
 
 	staffVerifyH := &staffVerifyHandlers{
@@ -406,9 +420,9 @@ func NewServerWithDependencies(
 
 	v1 := e.Group("/v1")
 	sessionMiddlewareConfig := middlewares.SessionMiddlewareConfig{
-		SessionCookieName:     cfg.SessionCookieName,
-		AllowInsecureDefaults: cfg.AllowInsecureDefaults,
-		Sessions:              sessionStore,
+		SessionCookieName: cfg.SessionCookieName,
+		AllowDangerously:  cfg.AllowDangerously,
+		Sessions:          sessionStore,
 	}
 	v1.Use(middlewares.VerifyCSRF(sessionMiddlewareConfig))
 

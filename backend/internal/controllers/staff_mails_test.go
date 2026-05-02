@@ -26,12 +26,12 @@ func TestListStaffMailsAllowsMissingCircle(t *testing.T) {
 
 	handler := &staffAdminHandlers{
 		sharedDeps: sharedDeps{
-			sessionCookieName:     "test_session",
-			sessionCookieTTL:      time.Hour,
-			sessionCookieSecure:   false,
-			staffVerifyCode:       cfg.StaffVerifyCode,
-			allowInsecureDefaults: true,
-			sessions:              session.NewMemoryStore(time.Hour),
+			sessionCookieName:   "test_session",
+			sessionCookieTTL:    time.Hour,
+			sessionCookieSecure: false,
+			staffVerifyCode:     cfg.StaffVerifyCode,
+			allowDangerously:    true,
+			sessions:            session.NewMemoryStore(time.Hour),
 		},
 		circles: circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		mails:   mails,

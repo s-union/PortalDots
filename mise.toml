@@ -32,20 +32,20 @@ description = "Run openapi-typescript"
 dir = "packages/api-client"
 run = "nr codegen:api"
 
-[tasks.email-templates-dev]
-description = "Start the React Email preview server"
-dir = "packages/email-templates"
+[tasks.email-producer-dev]
+description = "Start the email producer Worker dev server"
+dir = "packages/email-producer"
 run = "nr dev"
 
-[tasks.email-templates-generate]
-description = "Generate Go email templates from React Email sources"
-dir = "packages/email-templates"
-run = "nr generate"
+[tasks.email-consumer-dev-high]
+description = "Start the email consumer Worker (high priority) dev server"
+dir = "packages/email-consumer"
+run = "nr dev:high"
 
-[tasks.email-templates-check]
-description = "Run static checks for the React Email workspace"
-dir = "packages/email-templates"
-run = "nr typecheck:tsc"
+[tasks.email-consumer-dev-normal]
+description = "Start the email consumer Worker (normal priority) dev server"
+dir = "packages/email-consumer"
+run = "nr dev:normal"
 
 [tasks.backend-dev]
 description = "Start the new Go API"
@@ -105,11 +105,31 @@ dir = "backend"
 run = "go run ./cmd/sqlc-smoke"
 
 [tasks.generate]
-description = "Run code generation for frontend, email templates, and backend"
-depends = ["frontend-generate", "email-templates-generate", "backend-sqlc-generate"]
+description = "Run code generation for frontend and backend"
+depends = ["frontend-generate", "backend-sqlc-generate"]
+
+[tasks."email-producer-check"]
+description = "Run static checks for the email producer Worker"
+dir = "packages/email-producer"
+run = "nr ci:check"
+
+[tasks."email-producer-test"]
+description = "Run tests for the email producer Worker"
+dir = "packages/email-producer"
+run = "nr test"
+
+[tasks."email-consumer-check"]
+description = "Run static checks for the email consumer Worker"
+dir = "packages/email-consumer"
+run = "nr ci:check"
+
+[tasks."email-consumer-test"]
+description = "Run tests for the email consumer Worker"
+dir = "packages/email-consumer"
+run = "nr test"
 
 [tasks.check]
-depends = ["generate", "frontend-check", "email-templates-check", "backend-check"]
+depends = ["generate", "frontend-check", "email-producer-check", "email-consumer-check", "backend-check"]
 
 [tasks.prepare]
 description = "Install dependencies and regenerate assets needed before startup"

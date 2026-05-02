@@ -41,7 +41,7 @@ func Seed(ctx context.Context, pool *pgxpool.Pool, cfg config.Config) error {
 	if err := seedCircles(ctx, q, cfg.Circles); err != nil {
 		return err
 	}
-	if cfg.AllowInsecureDefaults {
+	if cfg.AllowDangerously {
 		if err := seedUsers(ctx, q, cfg.AuthUser, cfg.Users); err != nil {
 			return err
 		}

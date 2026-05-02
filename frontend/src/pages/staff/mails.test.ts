@@ -38,16 +38,6 @@ describe('StaffMailsPage', () => {
                   status: 'queued',
                   createdAt: '2026-03-12T00:00:00Z',
                   deliveredAt: ''
-                },
-                {
-                  circle: { id: '', name: '共通' },
-                  id: 'mail-job-2',
-                  subject: '宛先不達のお知らせ',
-                  body: '宛先エラーのため配信できませんでした。',
-                  recipients: ['invalid@example.com'],
-                  status: 'undeliverable',
-                  createdAt: '2026-03-12T01:00:00Z',
-                  deliveredAt: '2026-03-12T01:05:00Z'
                 }
               ]
             : []
@@ -92,12 +82,8 @@ describe('StaffMailsPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('搬入のご案内')
-    expect(wrapper.text()).toContain('宛先不達のお知らせ')
     expect(wrapper.text()).toContain('demo@example.com, sub@example.com')
-    expect(wrapper.text()).toContain('待機中')
-    expect(wrapper.text()).toContain('配信不能')
-    const undeliverableBadge = wrapper.findAll('span').find((node) => node.text() === '配信不能')
-    expect(undeliverableBadge?.classes()).toContain('text-danger')
+    expect(wrapper.text()).toContain('送信依頼済み')
     expect(wrapper.text()).toContain('キューを全件キャンセル')
 
     vi.stubGlobal(

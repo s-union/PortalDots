@@ -3,7 +3,6 @@ package mailqueue
 import (
 	"context"
 	"fmt"
-	"time"
 
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
@@ -60,44 +59,6 @@ func (r *SQLCRepository) ListByCircle(circleID string) []Job {
 	return jobs
 }
 
-func (r *SQLCRepository) ListQueued(limit int) []Job {
-	rows, err := r.queries.ListQueuedMailJobs(context.Background(), int32(limit))
-	if err != nil {
-		return nil
-	}
-
-	jobs := make([]Job, 0, len(rows))
-	for _, row := range rows {
-		jobs = append(jobs, mapJob(row))
-	}
-
-	return jobs
-}
-
-func (r *SQLCRepository) MarkSent(id string, deliveredAt time.Time) bool {
-	_, err := r.queries.MarkMailJobSent(context.Background(), dbgen.MarkMailJobSentParams{
-		ID:          id,
-		DeliveredAt: pgutil.Timestamptz(deliveredAt.UTC()),
-	})
-
-	return err == nil
-}
-
-func (r *SQLCRepository) MarkUndeliverable(id string) bool {
-	_, err := r.queries.MarkMailJobUndeliverable(context.Background(), id)
-
-	return err == nil
-}
-
-func (r *SQLCRepository) MarkRecipientDelivered(id, recipient string) bool {
-	_, err := r.queries.MarkMailJobRecipientDelivered(context.Background(), dbgen.MarkMailJobRecipientDeliveredParams{
-		ID:          id,
-		ArrayAppend: recipient,
-	})
-
-	return err == nil
-}
-
 func (r *SQLCRepository) DeleteByCircle(circleID string) error {
 	return r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.OptionalString(circleID))
 }
@@ -113,7 +74,6 @@ func mapJob(row dbgen.MailJob) Job {
 		Subject:         row.Subject,
 		Body:            row.Body,
 		Recipients:      row.Recipients,
-		DeliveredTo:     row.DeliveredTo,
 		Status:          row.Status,
 		CreatedByUserID: row.CreatedByUserID,
 		CreatedAt:       pgutil.FormatTimestamptz(row.CreatedAt),

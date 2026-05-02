@@ -29,7 +29,7 @@ type sharedDeps struct {
 	sessionCookieTTL      time.Duration
 	sessionCookieSecure   bool
 	staffVerifyCode       string
-	allowInsecureDefaults bool
+	allowDangerously bool
 	sessions              session.Store
 }
 
@@ -77,7 +77,7 @@ type publicHomeHandlers struct {
 	pages                 backendpage.Repository
 	participationTypes    participationtype.Repository
 	portal                portalsetting.Repository
-	allowInsecureDefaults bool
+	allowDangerously bool
 	authUser              config.AuthUser
 	users                 []config.User
 }
@@ -87,35 +87,35 @@ type staffVerifyHandlers struct {
 }
 
 type Dependencies struct {
-	SessionCookieName           string
-	SessionCookieTTL            time.Duration
-	SessionCookieSecure         bool
-	StaffVerifyCode             string
-	AllowInsecureDefaults       bool
-	RegistrationVerifyTTL       time.Duration
-	AppName                     string
-	AppURL                      string
-	PortalUnivemailDomainPart   string
-	SMTPHost                    string
-	SMTPPort                    int
-	SMTPUsername                string
-	SMTPPassword                string
-	SMTPFrom                    string
-	AuthUser                    config.AuthUser
-	Users                       []config.User
-	Activities                  activitylog.Repository
-	Authenticator               auth.Authenticator
-	Circles                     circle.Catalog
-	ContactCategories           contactcategory.Repository
-	Documents                   backenddocument.Repository
-	Forms                       backendform.Repository
-	Mails                       mailqueue.Repository
-	Pages                       backendpage.Repository
-	PendingRegistrations        pendingregistration.Repository
-	ParticipationTypes          participationtype.Repository
-	Portal                      portalsetting.Repository
-	Sessions                    session.Store
-	UserRepository              useradmin.Repository
+	SessionCookieName         string
+	SessionCookieTTL          time.Duration
+	SessionCookieSecure       bool
+	StaffVerifyCode           string
+	AllowDangerously     bool
+	RegistrationVerifyTTL     time.Duration
+	AppName                   string
+	AppURL                    string
+	PortalUnivemailDomainPart string
+	SMTPHost                  string
+	SMTPPort                  int
+	SMTPUsername              string
+	SMTPPassword              string
+	SMTPFrom                  string
+	AuthUser                  config.AuthUser
+	Users                     []config.User
+	Activities                activitylog.Repository
+	Authenticator             auth.Authenticator
+	Circles                   circle.Catalog
+	ContactCategories         contactcategory.Repository
+	Documents                 backenddocument.Repository
+	Forms                     backendform.Repository
+	Mails                     mailqueue.Repository
+	Pages                     backendpage.Repository
+	PendingRegistrations      pendingregistration.Repository
+	ParticipationTypes        participationtype.Repository
+	Portal                    portalsetting.Repository
+	Sessions                  session.Store
+	UserRepository            useradmin.Repository
 }
 
 func Register(v1 *echo.Group, deps Dependencies) {
@@ -124,7 +124,7 @@ func Register(v1 *echo.Group, deps Dependencies) {
 		sessionCookieTTL:      deps.SessionCookieTTL,
 		sessionCookieSecure:   deps.SessionCookieSecure,
 		staffVerifyCode:       deps.StaffVerifyCode,
-		allowInsecureDefaults: deps.AllowInsecureDefaults,
+		allowDangerously: deps.AllowDangerously,
 		sessions:              deps.Sessions,
 	}
 
@@ -138,7 +138,7 @@ func Register(v1 *echo.Group, deps Dependencies) {
 	}
 
 	var registrationMailSender registrationmail.Sender = registrationmail.NewMockSender()
-	if !deps.AllowInsecureDefaults && deps.SMTPHost != "" {
+	if deps.SMTPHost != "" {
 		registrationMailSender = registrationmail.NewSMTPSender(
 			deps.SMTPHost,
 			deps.SMTPPort,
@@ -174,7 +174,7 @@ func Register(v1 *echo.Group, deps Dependencies) {
 		pages:                 deps.Pages,
 		participationTypes:    deps.ParticipationTypes,
 		portal:                deps.Portal,
-		allowInsecureDefaults: deps.AllowInsecureDefaults,
+		allowDangerously: deps.AllowDangerously,
 		authUser:              deps.AuthUser,
 		users:                 deps.Users,
 	}

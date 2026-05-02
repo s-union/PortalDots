@@ -25,7 +25,7 @@ func TestShouldReseedOnStartup(t *testing.T) {
 			name:      "reseeds in demo mode when sync is enabled",
 			userCount: 1,
 			cfg: config.Config{
-				AllowInsecureDefaults: true,
+				AllowDangerously:      true,
 				SyncAuthUserOnStartup: true,
 			},
 			want: true,
@@ -34,7 +34,7 @@ func TestShouldReseedOnStartup(t *testing.T) {
 			name:      "does not reseed in demo mode when sync is disabled",
 			userCount: 1,
 			cfg: config.Config{
-				AllowInsecureDefaults: true,
+				AllowDangerously:      true,
 				SyncAuthUserOnStartup: false,
 			},
 			want: false,
@@ -43,7 +43,7 @@ func TestShouldReseedOnStartup(t *testing.T) {
 			name:      "does not reseed outside demo mode",
 			userCount: 1,
 			cfg: config.Config{
-				AllowInsecureDefaults: false,
+				AllowDangerously:      false,
 				SyncAuthUserOnStartup: true,
 			},
 			want: false,

@@ -219,15 +219,19 @@ func canAccessCapability(user *domainauth.User, capability string) bool {
 	return userHasAnyRole(user, check.roles...) || userHasAnyPermission(user, check.permissions...)
 }
 
-func CanReadUsers(user *domainauth.User) bool       { return canAccessCapability(user, "users.read") }
-func CanEditUsers(user *domainauth.User) bool       { return canAccessCapability(user, "users.edit") }
-func CanExportUsers(user *domainauth.User) bool     { return canAccessCapability(user, "users.export") }
-func CanReadPermissions(user *domainauth.User) bool { return canAccessCapability(user, "permissions.read") }
-func CanEditPermissions(user *domainauth.User) bool { return canAccessCapability(user, "permissions.edit") }
-func CanReadCircles(user *domainauth.User) bool     { return canAccessCapability(user, "circles.read") }
-func CanEditCircles(user *domainauth.User) bool     { return canAccessCapability(user, "circles.edit") }
-func CanDeleteCircles(user *domainauth.User) bool   { return canAccessCapability(user, "circles.delete") }
-func CanExportCircles(user *domainauth.User) bool   { return canAccessCapability(user, "circles.export") }
+func CanReadUsers(user *domainauth.User) bool   { return canAccessCapability(user, "users.read") }
+func CanEditUsers(user *domainauth.User) bool   { return canAccessCapability(user, "users.edit") }
+func CanExportUsers(user *domainauth.User) bool { return canAccessCapability(user, "users.export") }
+func CanReadPermissions(user *domainauth.User) bool {
+	return canAccessCapability(user, "permissions.read")
+}
+func CanEditPermissions(user *domainauth.User) bool {
+	return canAccessCapability(user, "permissions.edit")
+}
+func CanReadCircles(user *domainauth.User) bool   { return canAccessCapability(user, "circles.read") }
+func CanEditCircles(user *domainauth.User) bool   { return canAccessCapability(user, "circles.edit") }
+func CanDeleteCircles(user *domainauth.User) bool { return canAccessCapability(user, "circles.delete") }
+func CanExportCircles(user *domainauth.User) bool { return canAccessCapability(user, "circles.export") }
 func CanSendCircleEmails(user *domainauth.User) bool {
 	return canAccessCapability(user, "circles.sendEmails")
 }
@@ -240,22 +244,34 @@ func CanReadParticipationTypes(user *domainauth.User) bool {
 func CanManageParticipationTypes(user *domainauth.User) bool {
 	return canAccessCapability(user, "circles.participationTypes")
 }
-func CanReadPages(user *domainauth.User) bool       { return canAccessCapability(user, "pages.read") }
-func CanEditPages(user *domainauth.User) bool       { return canAccessCapability(user, "pages.edit") }
-func CanDeletePages(user *domainauth.User) bool     { return canAccessCapability(user, "pages.delete") }
-func CanExportPages(user *domainauth.User) bool     { return canAccessCapability(user, "pages.export") }
-func CanSendPageEmails(user *domainauth.User) bool  { return canAccessCapability(user, "pages.sendEmails") }
-func CanReadDocuments(user *domainauth.User) bool   { return canAccessCapability(user, "documents.read") }
-func CanEditDocuments(user *domainauth.User) bool   { return canAccessCapability(user, "documents.edit") }
-func CanDeleteDocuments(user *domainauth.User) bool { return canAccessCapability(user, "documents.delete") }
-func CanExportDocuments(user *domainauth.User) bool { return canAccessCapability(user, "documents.export") }
-func CanReadForms(user *domainauth.User) bool       { return canAccessCapability(user, "forms.read") }
-func CanEditForms(user *domainauth.User) bool       { return canAccessCapability(user, "forms.edit") }
-func CanDeleteForms(user *domainauth.User) bool     { return canAccessCapability(user, "forms.delete") }
-func CanExportForms(user *domainauth.User) bool     { return canAccessCapability(user, "forms.export") }
-func CanDuplicateForms(user *domainauth.User) bool  { return canAccessCapability(user, "forms.duplicate") }
-func CanReadFormAnswers(user *domainauth.User) bool { return canAccessCapability(user, "formAnswers.read") }
-func CanEditFormAnswers(user *domainauth.User) bool { return canAccessCapability(user, "formAnswers.edit") }
+func CanReadPages(user *domainauth.User) bool   { return canAccessCapability(user, "pages.read") }
+func CanEditPages(user *domainauth.User) bool   { return canAccessCapability(user, "pages.edit") }
+func CanDeletePages(user *domainauth.User) bool { return canAccessCapability(user, "pages.delete") }
+func CanExportPages(user *domainauth.User) bool { return canAccessCapability(user, "pages.export") }
+func CanSendPageEmails(user *domainauth.User) bool {
+	return canAccessCapability(user, "pages.sendEmails")
+}
+func CanReadDocuments(user *domainauth.User) bool { return canAccessCapability(user, "documents.read") }
+func CanEditDocuments(user *domainauth.User) bool { return canAccessCapability(user, "documents.edit") }
+func CanDeleteDocuments(user *domainauth.User) bool {
+	return canAccessCapability(user, "documents.delete")
+}
+func CanExportDocuments(user *domainauth.User) bool {
+	return canAccessCapability(user, "documents.export")
+}
+func CanReadForms(user *domainauth.User) bool   { return canAccessCapability(user, "forms.read") }
+func CanEditForms(user *domainauth.User) bool   { return canAccessCapability(user, "forms.edit") }
+func CanDeleteForms(user *domainauth.User) bool { return canAccessCapability(user, "forms.delete") }
+func CanExportForms(user *domainauth.User) bool { return canAccessCapability(user, "forms.export") }
+func CanDuplicateForms(user *domainauth.User) bool {
+	return canAccessCapability(user, "forms.duplicate")
+}
+func CanReadFormAnswers(user *domainauth.User) bool {
+	return canAccessCapability(user, "formAnswers.read")
+}
+func CanEditFormAnswers(user *domainauth.User) bool {
+	return canAccessCapability(user, "formAnswers.edit")
+}
 func CanDeleteFormAnswers(user *domainauth.User) bool {
 	return canAccessCapability(user, "formAnswers.delete")
 }
@@ -277,9 +293,11 @@ func CanEditContactCategories(user *domainauth.User) bool {
 func CanDeleteContactCategories(user *domainauth.User) bool {
 	return canAccessCapability(user, "contactCategories.delete")
 }
-func CanUseMailQueue(user *domainauth.User) bool     { return canAccessCapability(user, "mailQueue.use") }
-func CanUseStaffExports(user *domainauth.User) bool  { return canAccessCapability(user, "exports.use") }
-func CanViewActivityLogs(user *domainauth.User) bool { return canAccessCapability(user, "activityLogs.read") }
+func CanUseMailQueue(user *domainauth.User) bool    { return canAccessCapability(user, "mailQueue.use") }
+func CanUseStaffExports(user *domainauth.User) bool { return canAccessCapability(user, "exports.use") }
+func CanViewActivityLogs(user *domainauth.User) bool {
+	return canAccessCapability(user, "activityLogs.read")
+}
 func CanListManagedCircles(user *domainauth.User) bool {
 	return CanReadCircles(user) ||
 		CanReadPages(user) ||
@@ -320,7 +338,7 @@ func (g Guard) RequireStaffMode(c echo.Context) (string, session.Session, int, b
 	if !ok {
 		return "", session.Session{}, status, false
 	}
-	if g.AllowInsecureDefaults {
+	if g.AllowDangerously {
 		return sessionID, currentSession, http.StatusOK, true
 	}
 	if !currentSession.StaffAuthorized {

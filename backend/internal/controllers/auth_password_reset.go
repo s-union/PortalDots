@@ -58,7 +58,7 @@ func (h *authHandlers) startPasswordReset(c echo.Context) error {
 		}
 		h.passwordResetTokens.Put(targetUser.ID, token, time.Now().UTC().Add(passwordResetTokenTTL))
 		resetURL := buildPasswordResetURL(h.appURL, targetUser.ID, token)
-		if h.allowInsecureDefaults {
+		if h.allowDangerously {
 			logMockPasswordResetURL(recipients[0], resetURL)
 		} else {
 			if err := h.enqueuePasswordResetStartMail(

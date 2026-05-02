@@ -90,9 +90,9 @@ type SessionAccess interface {
 
 // SessionMiddlewareConfig configures session-aware middlewares.
 type SessionMiddlewareConfig struct {
-	SessionCookieName     string
-	AllowInsecureDefaults bool
-	Sessions              SessionAccess
+	SessionCookieName string
+	AllowDangerously  bool
+	Sessions          SessionAccess
 }
 
 // RequireWorkspaceUser ensures a valid authenticated session exists.
@@ -127,7 +127,7 @@ func RequireStaffMode(cfg SessionMiddlewareConfig, hasStaffAccess func([]string,
 					"message": "staff_forbidden",
 				})
 			}
-			if !cfg.AllowInsecureDefaults && !currentSession.StaffAuthorized {
+			if !cfg.AllowDangerously && !currentSession.StaffAuthorized {
 				return c.JSON(http.StatusForbidden, map[string]string{
 					"message": "staff_forbidden",
 				})

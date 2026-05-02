@@ -51,7 +51,7 @@ func logQueuedMail(
 	subject,
 	body string,
 	recipients []string,
-	allowInsecureDefaults bool,
+	allowDangerously bool,
 ) {
 	attrs := []any{
 		"kind", "queued_mail",
@@ -60,7 +60,7 @@ func logQueuedMail(
 		"circleID", circleID,
 		"createdByUserID", createdByUserID,
 	}
-	if allowInsecureDefaults {
+	if allowDangerously {
 		attrs = append(attrs,
 			"subject", subject,
 			"body", body,

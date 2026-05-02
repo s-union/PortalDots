@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 )
 
 func (h *authHandlers) enqueueRegistrationVerifyMail(ctx context.Context, recipientEmail, verifyURL string) error {
@@ -25,11 +27,32 @@ func (h *authHandlers) enqueueRegistrationVerifyMail(ctx context.Context, recipi
 		verifyURL,
 	))
 
+	if h.emailProducer != nil {
+		jobID := fmt.Sprintf("reg-%d", time.Now().UnixNano())
+		return h.emailProducer.Enqueue(ctx, cloudflareemail.EmailJob{
+			JobId:    jobID,
+			Template: "registration-verify",
+			Priority: cloudflareemail.PriorityHigh,
+			From:     h.from,
+			To:       recipients,
+			Subject:  subject,
+			Variables: map[string]string{
+				"appName":      h.appName,
+				"appURL":       h.appURL,
+				"subject":      subject,
+				"verifyURL":    verifyURL,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+				"preview":      subject,
+			},
+		})
+	}
+
 	job, err := h.mails.Enqueue(ctx, "", "", subject, body, recipients)
 	if err != nil {
 		return err
 	}
-	logQueuedMail("registration_verify", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
+	logQueuedMail("registration_verify", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 
 	return nil
 }
@@ -63,11 +86,32 @@ func (h *authHandlers) enqueueParticipantVerifyLinkMail(
 		int(participantVerifyTTL/time.Minute),
 	))
 
+	if h.emailProducer != nil {
+		jobID := fmt.Sprintf("verify-%d", time.Now().UnixNano())
+		return h.emailProducer.Enqueue(ctx, cloudflareemail.EmailJob{
+			JobId:    jobID,
+			Template: "markdown-notice",
+			Priority: cloudflareemail.PriorityHigh,
+			From:     h.from,
+			To:       recipients,
+			Subject:  subject,
+			Variables: map[string]string{
+				"appName":      h.appName,
+				"appURL":       h.appURL,
+				"subject":      subject,
+				"body":         body,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+				"preview":      subject,
+			},
+		})
+	}
+
 	job, err := h.mails.Enqueue(ctx, "", createdByUserID, subject, body, recipients)
 	if err != nil {
 		return err
 	}
-	logQueuedMail("participant_verify_url", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
+	logQueuedMail("participant_verify_url", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 
 	return nil
 }
@@ -87,11 +131,32 @@ func (h *authHandlers) enqueuePasswordChangedMail(ctx context.Context, userID st
 		h.appName,
 	))
 
+	if h.emailProducer != nil {
+		jobID := fmt.Sprintf("pwd-chg-%d", time.Now().UnixNano())
+		return h.emailProducer.Enqueue(ctx, cloudflareemail.EmailJob{
+			JobId:    jobID,
+			Template: "markdown-notice",
+			Priority: cloudflareemail.PriorityNormal,
+			From:     h.from,
+			To:       recipients,
+			Subject:  subject,
+			Variables: map[string]string{
+				"appName":      h.appName,
+				"appURL":       h.appURL,
+				"subject":      subject,
+				"body":         body,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+				"preview":      subject,
+			},
+		})
+	}
+
 	job, err := h.mails.Enqueue(ctx, "", userID, subject, body, recipients)
 	if err != nil {
 		return err
 	}
-	logQueuedMail("password_changed", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
+	logQueuedMail("password_changed", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 
 	return nil
 }
@@ -123,11 +188,32 @@ func (h *authHandlers) enqueuePasswordResetStartMail(
 		resetURL,
 	))
 
+	if h.emailProducer != nil {
+		jobID := fmt.Sprintf("pwd-rst-%d", time.Now().UnixNano())
+		return h.emailProducer.Enqueue(ctx, cloudflareemail.EmailJob{
+			JobId:    jobID,
+			Template: "markdown-notice",
+			Priority: cloudflareemail.PriorityHigh,
+			From:     h.from,
+			To:       recipients,
+			Subject:  subject,
+			Variables: map[string]string{
+				"appName":      h.appName,
+				"appURL":       h.appURL,
+				"subject":      subject,
+				"body":         body,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+				"preview":      subject,
+			},
+		})
+	}
+
 	job, err := h.mails.Enqueue(ctx, "", userID, subject, body, recipients)
 	if err != nil {
 		return err
 	}
-	logQueuedMail("password_reset_start", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
+	logQueuedMail("password_reset_start", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 
 	return nil
 }

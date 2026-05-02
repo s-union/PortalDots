@@ -38,24 +38,12 @@ async function handleDeleteAll() {
   }
 }
 
-function mailStatusTone(status: 'queued' | 'sent' | 'undeliverable') {
-  if (status === 'sent') {
-    return 'success'
-  }
-  if (status === 'undeliverable') {
-    return 'danger'
-  }
+function mailStatusTone(_status: 'queued'): 'primary' {
   return 'primary'
 }
 
-function mailStatusLabel(status: 'queued' | 'sent' | 'undeliverable') {
-  if (status === 'sent') {
-    return '送信済み'
-  }
-  if (status === 'undeliverable') {
-    return '配信不能'
-  }
-  return '待機中'
+function mailStatusLabel(_status: 'queued'): '送信依頼済み' {
+  return '送信依頼済み'
 }
 </script>
 

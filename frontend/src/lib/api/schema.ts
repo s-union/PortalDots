@@ -282,7 +282,7 @@ export const staffMailSchema = z.object({
   subject: z.string(),
   body: z.string(),
   recipients: stringArraySchema,
-  status: z.enum(['queued', 'sent', 'undeliverable']),
+  status: z.literal('queued'),
   createdAt: z.string(),
   deliveredAt: z.string()
 })

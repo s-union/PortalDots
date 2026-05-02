@@ -16,7 +16,7 @@ type SessionDeps struct {
 	SessionCookieTTL      time.Duration
 	SessionCookieSecure   bool
 	StaffVerifyCode       string
-	AllowInsecureDefaults bool
+	AllowDangerously bool
 	Sessions              session.Store
 }
 
@@ -26,7 +26,7 @@ func NewSessionDeps(cfg config.Config, store session.Store) SessionDeps {
 		SessionCookieTTL:      cfg.SessionTTL,
 		SessionCookieSecure:   cfg.SessionCookieSecure,
 		StaffVerifyCode:       cfg.StaffVerifyCode,
-		AllowInsecureDefaults: cfg.AllowInsecureDefaults,
+		AllowDangerously: cfg.AllowDangerously,
 		Sessions:              store,
 	}
 }

@@ -18,15 +18,15 @@ import (
 
 type publicHomeHandlers struct {
 	sharedDeps
-	circles               circle.Catalog
-	documents             backenddocument.Repository
-	forms                 backendform.Repository
-	pages                 page.Repository
-	participationTypes    participationtype.Repository
-	portal                portalsetting.Repository
-	allowInsecureDefaults bool
-	authUser              config.AuthUser
-	users                 []config.User
+	circles            circle.Catalog
+	documents          backenddocument.Repository
+	forms              backendform.Repository
+	pages              page.Repository
+	participationTypes participationtype.Repository
+	portal             portalsetting.Repository
+	allowDangerously   bool
+	authUser           config.AuthUser
+	users              []config.User
 }
 
 type publicHomeResponse struct {
@@ -125,7 +125,7 @@ func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
 		return internalError(c)
 	}
 	return c.JSON(http.StatusOK, publicConfigResponse{
-		IsDemo:                    h.allowInsecureDefaults,
+		IsDemo:                    h.allowDangerously,
 		AppName:                   settings.AppName,
 		PortalStudentIDName:       settings.PortalStudentIDName,
 		PortalUnivemailName:       settings.PortalUnivemailName,
@@ -370,7 +370,7 @@ func publicInlineContentDisposition(document backenddocument.Document) string {
 }
 
 func (h *publicHomeHandlers) buildPublicHomeLoginMethods() []publicHomeLoginMethodResponse {
-	if !h.allowInsecureDefaults {
+	if !h.allowDangerously {
 		return []publicHomeLoginMethodResponse{}
 	}
 

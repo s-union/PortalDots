@@ -37,7 +37,7 @@ func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
 	}
 
 	allowed := hasStaffAccess(currentSession.User.Roles, currentSession.User.Permissions)
-	authorized := allowed && (h.allowInsecureDefaults || currentSession.StaffAuthorized)
+	authorized := allowed && (h.allowDangerously || currentSession.StaffAuthorized)
 
 	return c.JSON(http.StatusOK, staffStatusResponse{
 		Allowed:    allowed,
@@ -52,7 +52,7 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 	}
 
 	verifyCode := h.staffVerifyCode
-	if h.allowInsecureDefaults || strings.TrimSpace(verifyCode) == "" {
+	if h.allowDangerously || strings.TrimSpace(verifyCode) == "" {
 		generatedCode, err := generateStaffVerifyCode()
 		if err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
@@ -66,7 +66,7 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		next.StaffVerifyExpires = time.Now().UTC().Add(staffVerifyTTL)
 	})
 
-	if h.allowInsecureDefaults {
+	if h.allowDangerously {
 		logMockVerificationCode("staff_verify_code", currentSession.User.DisplayName, verifyCode)
 		return c.JSON(http.StatusOK, staffVerifyRequestResponse{
 			Message:    "認証コードを送信しました。",
@@ -140,7 +140,7 @@ func (s *sharedDeps) requireStaffMode(c echo.Context) (string, session.Session, 
 	if !ok {
 		return "", session.Session{}, status, false
 	}
-	if s.allowInsecureDefaults {
+	if s.allowDangerously {
 		return sessionID, currentSession, http.StatusOK, true
 	}
 	if !currentSession.StaffAuthorized {
@@ -194,7 +194,7 @@ func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
 	if err != nil {
 		return err
 	}
-	logQueuedMail("staff_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
+	logQueuedMail("staff_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 
 	return nil
 }

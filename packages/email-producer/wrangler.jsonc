@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "email-producer",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-02",
+  "queues": {
+    "producers": [
+      {
+        "queue": "email-high",
+        "binding": "HIGH_QUEUE"
+      },
+      {
+        "queue": "email-normal",
+        "binding": "NORMAL_QUEUE"
+      }
+    ]
+  }
+}

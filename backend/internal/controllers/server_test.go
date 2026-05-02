@@ -6434,7 +6434,7 @@ func testConfig() config.Config {
 		SessionCookieName:         "test_session",
 		SessionTTL:                12 * time.Hour,
 		StaffVerifyCode:           "123456",
-		AllowInsecureDefaults:     true,
+		AllowDangerously:          true,
 		AppName:                   "PortalDots",
 		PortalDescription:         "学園祭参加団体向けポータル",
 		AppURL:                    "https://portal.example.com",
@@ -6748,7 +6748,7 @@ func testStaffConfig() config.Config {
 
 func testStrictStaffConfig() config.Config {
 	cfg := testStaffConfig()
-	cfg.AllowInsecureDefaults = false
+	cfg.AllowDangerously = false
 	cfg.StaffVerifyCode = strictStaffVerifyCode
 	return cfg
 }

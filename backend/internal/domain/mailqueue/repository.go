@@ -15,27 +15,18 @@ type Job struct {
 	Subject         string
 	Body            string
 	Recipients      []string
-	DeliveredTo     []string
 	Status          string
 	CreatedByUserID string
 	CreatedAt       string
 	DeliveredAt     string
 }
 
-const (
-	JobStatusQueued        = "queued"
-	JobStatusSent          = "sent"
-	JobStatusUndeliverable = "undeliverable"
-)
+const JobStatusQueued = "queued"
 
 type Repository interface {
 	Enqueue(ctx context.Context, circleID, createdByUserID, subject, body string, recipients []string) (Job, error)
 	ListAll() []Job
 	ListByCircle(circleID string) []Job
-	ListQueued(limit int) []Job
-	MarkSent(id string, deliveredAt time.Time) bool
-	MarkUndeliverable(id string) bool
-	MarkRecipientDelivered(id, recipient string) bool
 	DeleteAll() error
 	DeleteByCircle(circleID string) error
 }
@@ -63,7 +54,6 @@ func (r *MemoryRepository) Enqueue(_ context.Context, circleID, createdByUserID,
 		Subject:         subject,
 		Body:            body,
 		Recipients:      slices.Clone(recipients),
-		DeliveredTo:     []string{},
 		Status:          JobStatusQueued,
 		CreatedByUserID: createdByUserID,
 		CreatedAt:       time.Now().UTC().Format(time.RFC3339),
@@ -102,84 +92,6 @@ func (r *MemoryRepository) ListAll() []Job {
 	return jobs
 }
 
-func (r *MemoryRepository) ListQueued(limit int) []Job {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	capHint := limit
-	if capHint <= 0 {
-		capHint = len(r.jobs)
-	}
-	jobs := make([]Job, 0, capHint)
-	for index := 0; index < len(r.jobs); index++ {
-		job := r.jobs[index]
-		if job.Status != JobStatusQueued {
-			continue
-		}
-		jobs = append(jobs, cloneJob(job))
-		if limit > 0 && len(jobs) >= limit {
-			break
-		}
-	}
-
-	return jobs
-}
-
-func (r *MemoryRepository) MarkSent(id string, deliveredAt time.Time) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	for index := range r.jobs {
-		if r.jobs[index].ID != id {
-			continue
-		}
-		if r.jobs[index].Status != JobStatusQueued {
-			return false
-		}
-		r.jobs[index].Status = JobStatusSent
-		r.jobs[index].DeliveredAt = deliveredAt.UTC().Format(time.RFC3339)
-		return true
-	}
-
-	return false
-}
-
-func (r *MemoryRepository) MarkUndeliverable(id string) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	for index := range r.jobs {
-		if r.jobs[index].ID != id {
-			continue
-		}
-		if r.jobs[index].Status != JobStatusQueued {
-			return false
-		}
-		r.jobs[index].Status = JobStatusUndeliverable
-		return true
-	}
-
-	return false
-}
-
-func (r *MemoryRepository) MarkRecipientDelivered(id, recipient string) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	for index := range r.jobs {
-		if r.jobs[index].ID != id {
-			continue
-		}
-		if r.jobs[index].Status != JobStatusQueued {
-			return false
-		}
-		r.jobs[index].DeliveredTo = append(r.jobs[index].DeliveredTo, recipient)
-		return true
-	}
-
-	return false
-}
-
 func (r *MemoryRepository) DeleteByCircle(circleID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -205,6 +117,5 @@ func (r *MemoryRepository) DeleteAll() error {
 
 func cloneJob(job Job) Job {
 	job.Recipients = slices.Clone(job.Recipients)
-	job.DeliveredTo = slices.Clone(job.DeliveredTo)
 	return job
 }

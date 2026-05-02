@@ -251,7 +251,7 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 	}
 
 	verifyURL := buildRegistrationVerifyURL(h.appURL, pendingValue.ID, token)
-	if h.allowInsecureDefaults {
+	if h.allowDangerously {
 		logMockRegistrationVerifyURL(univemail, verifyURL)
 	} else {
 		if err := h.enqueueRegistrationVerifyMail(c.Request().Context(), univemail, verifyURL); err != nil {
@@ -594,7 +594,7 @@ func (h *authHandlers) sendParticipantVerificationLink(
 	}
 	h.authVerificationTokens.Put(userID, verificationType, token, time.Now().UTC().Add(participantVerifyTTL))
 	verifyURL := buildAuthVerificationVerifyURL(h.appURL, verificationType, userID, token)
-	if h.allowInsecureDefaults {
+	if h.allowDangerously {
 		logMockVerificationURL("participant_verify_url", recipientEmail, verifyURL)
 		return nil
 	}

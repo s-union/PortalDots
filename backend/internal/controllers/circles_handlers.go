@@ -464,7 +464,7 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 		submitted.ID,
 		currentSession.User.ID,
 		"circle_submission",
-		h.allowInsecureDefaults,
+		h.allowDangerously,
 		subject,
 		body,
 	); err != nil {

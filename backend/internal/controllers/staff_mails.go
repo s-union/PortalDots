@@ -1,12 +1,15 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 )
 
 type staffMailResponse struct {
@@ -113,11 +116,50 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		})
 	}
 
+	if h.emailProducer != nil {
+		jobID := fmt.Sprintf("staff-%d", time.Now().UnixNano())
+		if err := h.emailProducer.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+			JobId:    jobID,
+			Template: "markdown-notice",
+			Priority: cloudflareemail.PriorityNormal,
+			From:     h.from,
+			To:       recipients,
+			Subject:  request.Subject,
+			Variables: map[string]string{
+				"appName":      h.appName,
+				"appURL":       h.appURL,
+				"subject":      request.Subject,
+				"body":         request.Body,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+				"preview":      request.Subject,
+			},
+		}); err != nil {
+			return internalError(c)
+		}
+		job, err := h.mails.Enqueue(c.Request().Context(), request.CircleID, currentSession.User.ID, request.Subject, request.Body, recipients)
+		if err != nil {
+			return internalError(c)
+		}
+		logQueuedMail("staff_mail_queue", job.ID, job.CircleID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+		recordActivity(
+			c.Request().Context(),
+			h.activities,
+			currentSession.User.ID,
+			"staff.mail.queued",
+			"mail_job",
+			job.ID,
+			job.CircleID,
+			buildActivitySummary("staff がメールをキューに追加しました", job.Subject),
+		)
+		return c.JSON(http.StatusCreated, mapStaffMail(job, mapStaffManagedCircle(currentCircle)))
+	}
+
 	job, err := h.mails.Enqueue(c.Request().Context(), request.CircleID, currentSession.User.ID, request.Subject, request.Body, recipients)
 	if err != nil {
 		return internalError(c)
 	}
-	logQueuedMail("staff_mail_queue", job.ID, job.CircleID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowInsecureDefaults)
+	logQueuedMail("staff_mail_queue", job.ID, job.CircleID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
