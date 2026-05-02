@@ -44,14 +44,14 @@ const extraProps = computed(() => {
     return { to }
   }
   if (href) {
-    const props: Record<string, string | undefined> = { href }
+    const elementProps: Record<string, string | undefined> = { href }
     if (target) {
-      props.target = target
+      elementProps.target = target
     }
     if (rel) {
-      props.rel = rel
+      elementProps.rel = rel
     }
-    return props
+    return elementProps
   }
   return { type }
 })

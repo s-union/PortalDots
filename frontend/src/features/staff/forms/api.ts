@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { nowPlusOneHourISO, plusDaysEndOfDayISO } from '@/lib/format/datetime'
+import { parseTagString, formatTags } from '@/lib/tags'
 import { useSessionStore } from '@/features/session/store'
 
 export type StaffFormSummary = z.infer<typeof staffFormSummarySchema>
@@ -535,18 +536,11 @@ export function createDefaultStaffFormPayload(): CreateStaffFormPayload {
 }
 
 export function parseStaffFormTags(value: string) {
-  return [
-    ...new Set(
-      value
-        .split(/[\n,]+/)
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0)
-    )
-  ]
+  return parseTagString(value)
 }
 
 export function formatStaffFormTags(tags: string[]) {
-  return tags.join('\n')
+  return formatTags(tags)
 }
 
 export function buildCopyStaffFormConfirmMessage(formName: string) {

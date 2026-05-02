@@ -5,6 +5,7 @@ import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, staffCircleSchema, staffParticipationTypeSchema } from '@/lib/api/schema'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { parseTagString, formatTags } from '@/lib/tags'
 import { useSessionStore } from '@/features/session/store'
 
 export type StaffParticipationType = z.infer<typeof staffParticipationTypeSchema>
@@ -325,14 +326,11 @@ export function useStaffParticipationTypeForm() {
 }
 
 export function parseParticipationTypeTags(value: string) {
-  return value
-    .split(/\r?\n|,/)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0)
+  return parseTagString(value)
 }
 
 export function formatParticipationTypeTags(tags: string[]) {
-  return tags.join('\n')
+  return formatTags(tags)
 }
 
 export function extractStaffParticipationTypeValidationMessage(error: unknown) {
