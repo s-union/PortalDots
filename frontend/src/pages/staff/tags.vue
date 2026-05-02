@@ -23,6 +23,7 @@ import { formatDateTimeTable } from '@/lib/format/datetime'
 import { buildApiUrl } from '@/lib/api/client'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { useOrderedItems } from '@/lib/useStaffDataTable'
 import { canDeleteTags } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildDeleteStaffTagConfirmMessage, deleteStaffTag, useStaffTagsQuery } from '@/features/staff/masters/tags'
@@ -58,17 +59,7 @@ const columns: StaffDataGridColumn[] = [
   { key: 'updatedAt', label: '更新日時', sortable: true }
 ]
 
-const orderedTags = computed(() =>
-  [...(tagsQuery.data.value ?? [])].sort((left, right) => compareString(left.createdAt, right.createdAt))
-)
-
-const tagOrderMap = computed(() => {
-  const order = new Map<string, number>()
-  orderedTags.value.forEach((tag, index) => {
-    order.set(tag.id, index + 1)
-  })
-  return order
-})
+const { orderedItems: orderedTags, orderMap: tagOrderMap } = useOrderedItems(computed(() => tagsQuery.data.value ?? []))
 
 const sortedTags = computed(() => {
   const tags = orderedTags.value

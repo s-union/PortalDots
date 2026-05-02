@@ -22,6 +22,7 @@ import { resolveRowId } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { useOrderedItems } from '@/lib/useStaffDataTable'
 import { canDeletePlaces } from '@/features/staff/access/capabilities'
 import {
   buildDeleteStaffPlaceConfirmMessage,
@@ -65,17 +66,9 @@ const columns: StaffDataGridColumn[] = [
   { key: 'updatedAt', label: '更新日時', sortable: true }
 ]
 
-const orderedPlaces = computed(() =>
-  [...(placesQuery.data.value ?? [])].sort((left, right) => compareString(left.createdAt, right.createdAt))
+const { orderedItems: orderedPlaces, orderMap: placeOrderMap } = useOrderedItems(
+  computed(() => placesQuery.data.value ?? [])
 )
-
-const placeOrderMap = computed(() => {
-  const order = new Map<string, number>()
-  orderedPlaces.value.forEach((place, index) => {
-    order.set(place.id, index + 1)
-  })
-  return order
-})
 
 const sortedPlaces = computed(() => {
   const places = orderedPlaces.value
