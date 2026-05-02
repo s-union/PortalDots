@@ -21,8 +21,8 @@ type Session struct {
 type Store interface {
 	Create(user *auth.User) (string, Session, error)
 	Get(id string) (Session, bool)
-	Delete(id string)
-	DeleteByUserID(userID string)
+	Delete(id string) error
+	DeleteByUserID(userID string) error
 	Update(id string, update func(*Session)) bool
 }
 
@@ -109,13 +109,14 @@ func (s *MemoryStore) Get(id string) (Session, bool) {
 	return cloned, true
 }
 
-func (s *MemoryStore) Delete(id string) {
+func (s *MemoryStore) Delete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.sessions, id)
+	return nil
 }
 
-func (s *MemoryStore) DeleteByUserID(userID string) {
+func (s *MemoryStore) DeleteByUserID(userID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -125,6 +126,7 @@ func (s *MemoryStore) DeleteByUserID(userID string) {
 		}
 		delete(s.sessions, id)
 	}
+	return nil
 }
 
 func (s *MemoryStore) Update(id string, update func(*Session)) bool {

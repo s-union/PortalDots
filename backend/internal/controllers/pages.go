@@ -71,7 +71,7 @@ func (h *workspaceHandlers) getPage(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
-	h.pages.MarkRead(pageValue.ID, currentSession.User.ID)
+	_ = h.pages.MarkRead(pageValue.ID, currentSession.User.ID)
 
 	return c.JSON(http.StatusOK, pageDetailResponse{
 		ID:        pageValue.ID,

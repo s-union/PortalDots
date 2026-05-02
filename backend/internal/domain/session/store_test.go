@@ -82,12 +82,12 @@ func TestMemoryStoreDeleteAndDeleteByUserID(t *testing.T) {
 		t.Fatalf("expected third session to be created, got %v", err)
 	}
 
-	store.Delete(session1)
+	_ = store.Delete(session1)
 	if _, ok := store.Get(session1); ok {
 		t.Fatal("expected deleted session to be removed")
 	}
 
-	store.DeleteByUserID("user-1")
+	_ = store.DeleteByUserID("user-1")
 	if _, ok := store.Get(session2); ok {
 		t.Fatal("expected user-1 session to be removed")
 	}

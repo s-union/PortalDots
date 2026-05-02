@@ -58,7 +58,7 @@ func (h *staffAdminHandlers) deleteStaffMails(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	h.mails.DeleteAll()
+	_ = h.mails.DeleteAll()
 	recordActivity(
 		c.Request().Context(),
 		h.activities,

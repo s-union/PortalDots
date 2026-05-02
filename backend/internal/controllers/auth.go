@@ -87,7 +87,7 @@ func (h *authHandlers) login(c echo.Context) error {
 func (h *authHandlers) logout(c echo.Context) error {
 	cookie, err := c.Cookie(h.sessionCookieName)
 	if err == nil && cookie.Value != "" {
-		h.sessions.Delete(cookie.Value)
+		_ = h.sessions.Delete(cookie.Value)
 	}
 
 	c.SetCookie(&http.Cookie{

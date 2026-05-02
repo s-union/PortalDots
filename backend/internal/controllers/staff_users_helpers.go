@@ -128,7 +128,7 @@ func updateOrInvalidateStaffUserSession(sessionID string, currentSession session
 		return
 	}
 
-	store.DeleteByUserID(updatedUser.ID)
+	_ = store.DeleteByUserID(updatedUser.ID)
 }
 
 func mapStaffUser(userValue useradmin.User) staffUserSummaryResponse {

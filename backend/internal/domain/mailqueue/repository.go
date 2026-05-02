@@ -36,8 +36,8 @@ type Repository interface {
 	MarkSent(id string, deliveredAt time.Time) bool
 	MarkUndeliverable(id string) bool
 	MarkRecipientDelivered(id, recipient string) bool
-	DeleteAll()
-	DeleteByCircle(circleID string)
+	DeleteAll() error
+	DeleteByCircle(circleID string) error
 }
 
 type MemoryRepository struct {
@@ -180,7 +180,7 @@ func (r *MemoryRepository) MarkRecipientDelivered(id, recipient string) bool {
 	return false
 }
 
-func (r *MemoryRepository) DeleteByCircle(circleID string) {
+func (r *MemoryRepository) DeleteByCircle(circleID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -192,13 +192,15 @@ func (r *MemoryRepository) DeleteByCircle(circleID string) {
 		filtered = append(filtered, job)
 	}
 	r.jobs = filtered
+	return nil
 }
 
-func (r *MemoryRepository) DeleteAll() {
+func (r *MemoryRepository) DeleteAll() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.jobs = []Job{}
+	return nil
 }
 
 func cloneJob(job Job) Job {

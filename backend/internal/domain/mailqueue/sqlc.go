@@ -98,12 +98,12 @@ func (r *SQLCRepository) MarkRecipientDelivered(id, recipient string) bool {
 	return err == nil
 }
 
-func (r *SQLCRepository) DeleteByCircle(circleID string) {
-	_ = r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.OptionalString(circleID))
+func (r *SQLCRepository) DeleteByCircle(circleID string) error {
+	return r.queries.DeleteMailJobsByCircle(context.Background(), pgutil.OptionalString(circleID))
 }
 
-func (r *SQLCRepository) DeleteAll() {
-	_ = r.queries.DeleteMailJobs(context.Background())
+func (r *SQLCRepository) DeleteAll() error {
+	return r.queries.DeleteMailJobs(context.Background())
 }
 
 func mapJob(row dbgen.MailJob) Job {

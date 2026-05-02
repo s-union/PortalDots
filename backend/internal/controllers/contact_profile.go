@@ -548,7 +548,7 @@ func (h *authHandlers) deleteAccount(c echo.Context) error {
 		return internalError(c)
 	}
 
-	h.sessions.DeleteByUserID(currentUser.ID)
+	_ = h.sessions.DeleteByUserID(currentUser.ID)
 	c.SetCookie(&http.Cookie{
 		Name:     h.sessionCookieName,
 		Value:    "",

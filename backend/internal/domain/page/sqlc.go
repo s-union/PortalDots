@@ -182,11 +182,12 @@ func (r *SQLCRepository) ListReadPageIDs(userID string, pageIDs []string) []stri
 	return rows
 }
 
-func (r *SQLCRepository) MarkRead(pageID, userID string) {
+func (r *SQLCRepository) MarkRead(pageID, userID string) error {
 	_ = r.queries.UpsertPageRead(context.Background(), dbgen.UpsertPageReadParams{
 		PageID: pageID,
 		UserID: userID,
 	})
+	return nil
 }
 
 func mapGuestPage(row dbgen.ListGuestPagesRow) Page {

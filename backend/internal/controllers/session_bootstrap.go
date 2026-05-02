@@ -54,7 +54,7 @@ func (h *authHandlers) sessionBootstrap(c echo.Context) error {
 
 	managedUser, err := h.users.Find(currentSession.User.ID)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		h.sessions.Delete(sessionID)
+		_ = h.sessions.Delete(sessionID)
 		return c.JSON(http.StatusOK, sessionBootstrapResponse{
 			CSRFToken:     "",
 			CurrentCircle: nil,

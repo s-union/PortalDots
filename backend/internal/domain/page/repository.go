@@ -35,7 +35,7 @@ type Repository interface {
 	SetPinned(pageID string, isPinned bool) (Page, bool)
 	Delete(pageID string) bool
 	ListReadPageIDs(userID string, pageIDs []string) []string
-	MarkRead(pageID, userID string)
+	MarkRead(pageID, userID string) error
 }
 
 type StaticRepository struct {
@@ -228,7 +228,7 @@ func (r *StaticRepository) ListReadPageIDs(userID string, pageIDs []string) []st
 	return readPageIDs
 }
 
-func (r *StaticRepository) MarkRead(pageID, userID string) {
+func (r *StaticRepository) MarkRead(pageID, userID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -240,8 +240,9 @@ func (r *StaticRepository) MarkRead(pageID, userID string) {
 			r.reads[pageID] = map[string]struct{}{}
 		}
 		r.reads[pageID][userID] = struct{}{}
-		return
+		return nil
 	}
+	return nil
 }
 
 func (r *StaticRepository) listPages(query string, circleTags []string, guestOnly bool) []Page {

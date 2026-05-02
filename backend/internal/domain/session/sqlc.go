@@ -101,12 +101,12 @@ func (s *SQLCStore) Get(id string) (Session, bool) {
 	}, true
 }
 
-func (s *SQLCStore) Delete(id string) {
-	_ = s.queries.DeleteSession(context.Background(), id)
+func (s *SQLCStore) Delete(id string) error {
+	return s.queries.DeleteSession(context.Background(), id)
 }
 
-func (s *SQLCStore) DeleteByUserID(userID string) {
-	_ = s.queries.DeleteSessionsByUserID(context.Background(), userID)
+func (s *SQLCStore) DeleteByUserID(userID string) error {
+	return s.queries.DeleteSessionsByUserID(context.Background(), userID)
 }
 
 func (s *SQLCStore) Update(id string, update func(*Session)) bool {
