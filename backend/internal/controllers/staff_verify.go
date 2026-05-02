@@ -12,6 +12,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 const staffVerifyTTL = 5 * time.Minute
@@ -177,6 +179,29 @@ func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
 	}
 
 	subject := fmt.Sprintf("スタッフ認証 (認証コード : %s)", verifyCode)
+
+	if h.emailProducer != nil && h.from != "" {
+		emailJob := cloudflareemail.EmailJob{
+			JobId:    "staff-auth-" + uuidv7.MustString(),
+			Template: "staff-auth-notice",
+			Priority: cloudflareemail.PriorityHigh,
+			From:     h.from,
+			To:       normalizedRecipients,
+			Subject:  subject,
+			Variables: map[string]string{
+				"subject":      subject,
+				"preview":      subject,
+				"authCode":     verifyCode,
+				"appName":      h.appName,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+			},
+		}
+		if err := h.emailProducer.Enqueue(ctx, emailJob); err == nil {
+			return nil
+		}
+	}
+
 	body := strings.TrimSpace(fmt.Sprintf(
 		`スタッフ認証
 

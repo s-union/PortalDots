@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
@@ -23,6 +25,29 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 	body := answerValue.Body
 	if formValue.ConfirmationMessage != "" {
 		body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
+	}
+
+	if h.emailProducer != nil && h.from != "" {
+		emailJob := cloudflareemail.EmailJob{
+			JobId:    "form-answer-" + uuidv7.MustString(),
+			Template: "markdown-notice",
+			Priority: cloudflareemail.PriorityNormal,
+			From:     h.from,
+			To:       recipients,
+			Subject:  subject,
+			Variables: map[string]string{
+				"subject":      subject,
+				"body":         body,
+				"appName":      h.appName,
+				"appURL":       h.appURL,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+				"preview":      subject,
+			},
+		}
+		if err := h.emailProducer.Enqueue(ctx, emailJob); err == nil {
+			return
+		}
 	}
 
 	job, err := h.mails.Enqueue(ctx, answerValue.CircleID, createdByUserID, subject, body, recipients)

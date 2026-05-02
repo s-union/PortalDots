@@ -458,6 +458,7 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 	body := buildCircleSubmittedMailBody(submitted, members, formValue.ConfirmationMessage, answerSummary)
 	if _, _, err := enqueueCircleNotificationMail(
 		c.Request().Context(),
+		h.emailProducer,
 		h.mails,
 		h.users,
 		members,
@@ -467,6 +468,11 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 		h.allowDangerously,
 		subject,
 		body,
+		h.from,
+		h.appName,
+		h.appURL,
+		h.adminName,
+		h.contactEmail,
 	); err != nil {
 		return internalError(c)
 	}

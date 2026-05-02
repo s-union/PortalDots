@@ -8,10 +8,13 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 func enqueueCircleNotificationMail(
 	ctx context.Context,
+	emailProducer *cloudflareemail.ProducerClient,
 	mails mailqueue.Repository,
 	users useradmin.Repository,
 	members []circle.CircleMember,
@@ -21,12 +24,47 @@ func enqueueCircleNotificationMail(
 	allowDangerously bool,
 	subject string,
 	body string,
+	from string,
+	appName string,
+	appURL string,
+	adminName string,
+	contactEmail string,
 ) (mailqueue.Job, bool, error) {
 	memberUsers := listCircleMemberUsers(users, members)
 	recipients := collectUsersEmailRecipients(memberUsers)
 	if len(recipients) == 0 {
 		return mailqueue.Job{}, false, nil
 	}
+
+	if emailProducer != nil && from != "" {
+		priority := cloudflareemail.PriorityHigh
+		if source == "circle_status" {
+			priority = cloudflareemail.PriorityNormal
+		}
+		emailJob := cloudflareemail.EmailJob{
+			JobId:    source + "-" + uuidv7.MustString(),
+			Template: "markdown-notice",
+			Priority: priority,
+			From:     from,
+			To:       recipients,
+			Subject:  subject,
+			Variables: map[string]string{
+				"subject":      subject,
+				"body":         body,
+				"appName":      appName,
+				"appURL":       appURL,
+				"adminName":    adminName,
+				"contactEmail": contactEmail,
+				"preview":      subject,
+			},
+		}
+		if err := emailProducer.Enqueue(ctx, emailJob); err != nil {
+			// Fall through to local queue on failure
+		} else {
+			return mailqueue.Job{}, true, nil
+		}
+	}
+
 	job, err := mails.Enqueue(ctx, circleID, createdByUserID, subject, body, recipients)
 	if err != nil {
 		return mailqueue.Job{}, false, err

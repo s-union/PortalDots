@@ -86,9 +86,13 @@ type authHandlers struct {
 // staffVerifyHandlers handles staff verification endpoints.
 type staffVerifyHandlers struct {
 	sharedDeps
-	mails   mailqueue.Repository
-	users   useradmin.Repository
-	appName string
+	mails         mailqueue.Repository
+	users         useradmin.Repository
+	appName       string
+	emailProducer *cloudflareemail.ProducerClient
+	from          string
+	adminName     string
+	contactEmail  string
 }
 
 // staffUserHandlers handles staff user management endpoints.
@@ -202,6 +206,12 @@ type workspaceHandlers struct {
 	pages              page.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
+	emailProducer      *cloudflareemail.ProducerClient
+	from               string
+	appName            string
+	appURL             string
+	adminName          string
+	contactEmail       string
 }
 
 func NewServer(cfg config.Config) *echo.Echo {
@@ -347,10 +357,14 @@ func NewServerWithDependencies(
 	}
 
 	staffVerifyH := &staffVerifyHandlers{
-		sharedDeps: shared,
-		mails:      mails,
-		users:      users,
-		appName:    cfg.AppName,
+		sharedDeps:    shared,
+		mails:         mails,
+		users:         users,
+		appName:       cfg.AppName,
+		emailProducer: emailProducer,
+		from:          cfg.EmailFrom,
+		adminName:     cfg.PortalAdminName,
+		contactEmail:  cfg.PortalContactEmail,
 	}
 
 	staffUsersH := &staffUserHandlers{
@@ -455,6 +469,12 @@ func NewServerWithDependencies(
 		pages:              pages,
 		participationTypes: participationTypes,
 		users:              users,
+		emailProducer:      emailProducer,
+		from:               cfg.EmailFrom,
+		appName:            cfg.AppName,
+		appURL:             cfg.AppURL,
+		adminName:          cfg.PortalAdminName,
+		contactEmail:       cfg.PortalContactEmail,
 	}
 
 	e.GET("/healthz", func(c echo.Context) error {

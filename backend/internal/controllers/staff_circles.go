@@ -328,6 +328,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		if subject != "" {
 			job, queued, err := enqueueCircleNotificationMail(
 				c.Request().Context(),
+				h.emailProducer,
 				h.mails,
 				h.users,
 				members,
@@ -337,6 +338,11 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 				h.allowDangerously,
 				subject,
 				body,
+				h.from,
+				h.appName,
+				h.appURL,
+				h.adminName,
+				h.contactEmail,
 			)
 			if err != nil {
 				return internalError(c)

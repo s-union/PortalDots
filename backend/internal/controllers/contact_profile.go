@@ -11,8 +11,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
+	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type participantContactCategoryResponse struct {
@@ -173,38 +176,108 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		return internalError(c)
 	}
 	if len(confirmationRecipients) > 0 {
+		confirmationSubject := "お問い合わせを承りました"
 		confirmationBody := fmt.Sprintf(
 			"お問い合わせを受け付けました。\n\nカテゴリ: %s\n件名: %s\n\n%s",
 			category.Name,
 			request.Subject,
 			request.Body,
 		)
-		confirmationJob, err := h.mails.Enqueue(
+		if h.emailProducer != nil && h.from != "" {
+			emailJob := cloudflareemail.EmailJob{
+				JobId:    "contact-confirm-" + uuidv7.MustString(),
+				Template: "markdown-notice",
+				Priority: cloudflareemail.PriorityNormal,
+				From:     h.from,
+				To:       confirmationRecipients,
+				Subject:  confirmationSubject,
+				Variables: map[string]string{
+					"subject":      confirmationSubject,
+					"body":         confirmationBody,
+					"appName":      h.appName,
+					"appURL":       h.appURL,
+					"adminName":    h.adminName,
+					"contactEmail": h.contactEmail,
+					"preview":      confirmationSubject,
+				},
+			}
+			if err := h.emailProducer.Enqueue(c.Request().Context(), emailJob); err != nil {
+				confirmationJob, err := h.mails.Enqueue(
+					c.Request().Context(),
+					"",
+					currentSession.User.ID,
+					confirmationSubject,
+					confirmationBody,
+					confirmationRecipients,
+				)
+				if err != nil {
+					return internalError(c)
+				}
+				logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients, h.allowDangerously)
+			}
+		} else {
+			confirmationJob, err := h.mails.Enqueue(
+				c.Request().Context(),
+				"",
+				currentSession.User.ID,
+				confirmationSubject,
+				confirmationBody,
+				confirmationRecipients,
+			)
+			if err != nil {
+				return internalError(c)
+			}
+			logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients, h.allowDangerously)
+		}
+	}
+
+	var job mailqueue.Job
+	if h.emailProducer != nil && h.from != "" {
+		emailJob := cloudflareemail.EmailJob{
+			JobId:    "contact-" + uuidv7.MustString(),
+			Template: "markdown-notice",
+			Priority: cloudflareemail.PriorityNormal,
+			From:     h.from,
+			To:       []string{category.Email},
+			Subject:  request.Subject,
+			Variables: map[string]string{
+				"subject":      request.Subject,
+				"body":         staffBody,
+				"appName":      h.appName,
+				"appURL":       h.appURL,
+				"adminName":    h.adminName,
+				"contactEmail": h.contactEmail,
+				"preview":      request.Subject,
+			},
+		}
+		if err := h.emailProducer.Enqueue(c.Request().Context(), emailJob); err != nil {
+			job, err = h.mails.Enqueue(
+				c.Request().Context(),
+				selectedCircle.ID,
+				currentSession.User.ID,
+				request.Subject,
+				staffBody,
+				[]string{category.Email},
+			)
+			if err != nil {
+				return internalError(c)
+			}
+			logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+		}
+	} else {
+		job, err = h.mails.Enqueue(
 			c.Request().Context(),
-			"",
+			selectedCircle.ID,
 			currentSession.User.ID,
-			"お問い合わせを承りました",
-			confirmationBody,
-			confirmationRecipients,
+			request.Subject,
+			staffBody,
+			[]string{category.Email},
 		)
 		if err != nil {
 			return internalError(c)
 		}
-		logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients, h.allowDangerously)
+		logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 	}
-
-	job, err := h.mails.Enqueue(
-		c.Request().Context(),
-		selectedCircle.ID,
-		currentSession.User.ID,
-		request.Subject,
-		staffBody,
-		[]string{category.Email},
-	)
-	if err != nil {
-		return internalError(c)
-	}
-	logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
