@@ -186,3 +186,21 @@ func generateVerificationCode() (string, error) {
 	}
 	return fmt.Sprintf("%06d", binary.BigEndian.Uint32(raw[:])%1000000), nil
 }
+
+func passwordHasLetterAndDigit(s string) bool {
+	hasLetter := false
+	hasDigit := false
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		switch {
+		case (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z'):
+			hasLetter = true
+		case b >= '0' && b <= '9':
+			hasDigit = true
+		}
+		if hasLetter && hasDigit {
+			return true
+		}
+	}
+	return false
+}

@@ -180,9 +180,7 @@ func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c echo.Co
 	}
 
 	filename := fmt.Sprintf("staff-participation-type-%s-circles.csv", externalid.MustEncodeUUIDString(participationType.ID))
-	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
-	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
+	return csvResponse(c, filename, csvBytes)
 }
 
 func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error {

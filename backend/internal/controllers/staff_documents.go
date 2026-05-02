@@ -265,9 +265,7 @@ func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c echo.Context) error 
 	}
 
 	filename := "staff-documents.csv"
-	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
-	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
+	return csvResponse(c, filename, csvBytes)
 }
 
 func mapStaffDocumentSummary(document backenddocument.Document, circleValue staffManagedCircleResponse) staffDocumentSummaryResponse {

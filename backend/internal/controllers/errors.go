@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -46,4 +47,11 @@ func statusMessage(status int) string {
 // statusError writes a JSON error response using the default message for the given HTTP status code.
 func statusError(c echo.Context, status int) error {
 	return errorJSON(c, status, statusMessage(status))
+}
+
+// csvResponse writes CSV bytes as a download response with UTF-8 content type.
+func csvResponse(c echo.Context, filename string, data []byte) error {
+	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
+	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
+	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", data)
 }

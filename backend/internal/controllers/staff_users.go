@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -50,7 +49,7 @@ func (h *staffUserHandlers) listStaffUsers(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	query := c.QueryParam("query")
+	query := escapeIlikePattern(c.QueryParam("query"))
 	users, err := h.users.ListByQuery(query)
 	if err != nil {
 		return internalError(c)
@@ -346,7 +345,12 @@ func (h *staffUserHandlers) downloadStaffUsersCSV(c echo.Context) error {
 	}
 
 	filename := "staff-users.csv"
-	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
-	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
+	return csvResponse(c, filename, csvBytes)
+}
+
+func escapeIlikePattern(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "%", "\\%")
+	s = strings.ReplaceAll(s, "_", "\\_")
+	return s
 }

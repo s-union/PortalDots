@@ -72,9 +72,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 	}
 
 	filename := fmt.Sprintf("%s-answers.csv", externalid.MustEncodeUUIDString(formValue.ID))
-	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
-	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
+	return csvResponse(c, filename, csvBytes)
 }
 
 func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) error {

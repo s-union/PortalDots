@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -259,9 +258,7 @@ func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
 	}
 
 	filename := "staff-pages.csv"
-	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
-	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
+	return csvResponse(c, filename, csvBytes)
 }
 
 func bindStaffPageRequest(c echo.Context) (mutateStaffPageRequest, map[string][]string, bool) {

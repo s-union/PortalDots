@@ -172,9 +172,7 @@ func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
 	}
 
 	filename := "staff-circles.csv"
-	c.Response().Header().Set(echo.HeaderContentType, "text/csv; charset=utf-8")
-	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
-	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", csvBytes)
+	return csvResponse(c, filename, csvBytes)
 }
 
 func (h *staffCircleHandlers) getStaffCircle(c echo.Context) error {

@@ -23,7 +23,8 @@ export const statusBadgeVariants = cva('inline-flex items-center rounded-full te
       muted: '',
       danger: '',
       success: '',
-      warning: ''
+      warning: '',
+      accent: ''
     },
     appearance: {
       filled: '',
@@ -44,7 +45,8 @@ export const statusBadgeVariants = cva('inline-flex items-center rounded-full te
     { tone: 'success', appearance: 'filled', class: 'bg-success-light text-success' },
     { tone: 'success', appearance: 'outlined', class: 'border-success text-success' },
     { tone: 'warning', appearance: 'filled', class: 'bg-warning-light text-warning' },
-    { tone: 'warning', appearance: 'outlined', class: 'border-warning text-warning' }
+    { tone: 'warning', appearance: 'outlined', class: 'border-warning text-warning' },
+    { tone: 'accent', appearance: 'filled', class: 'bg-primary text-white rounded' }
   ],
   defaultVariants: {
     tone: 'muted',
@@ -216,5 +218,16 @@ export const tabStripBadgeVariants = cva(
 )
 
 export const formControlVariants = cva(
-  'rounded border border-border-form bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary'
+  'rounded border bg-form-control px-4 py-3 text-sm text-body outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/30',
+  {
+    variants: {
+      hasError: {
+        true: 'border-danger',
+        false: 'border-border'
+      }
+    },
+    defaultVariants: {
+      hasError: false
+    }
+  }
 )

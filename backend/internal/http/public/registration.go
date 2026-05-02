@@ -132,6 +132,8 @@ func (h *authHandlers) register(c echo.Context) error {
 	}
 	if len(request.Password) < 8 {
 		validationErrors["password"] = []string{"パスワードは8文字以上で入力してください"}
+	} else if !passwordHasLetterAndDigit(request.Password) {
+		validationErrors["password"] = []string{"パスワードには英字と数字の両方を含めてください"}
 	}
 	if request.Password != request.PasswordConfirmation {
 		validationErrors["passwordConfirmation"] = []string{"確認用パスワードが一致しません"}
@@ -335,6 +337,8 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	}
 	if len(request.Password) < 8 {
 		validationErrors["password"] = []string{"パスワードは8文字以上で入力してください"}
+	} else if !passwordHasLetterAndDigit(request.Password) {
+		validationErrors["password"] = []string{"パスワードには英字と数字の両方を含めてください"}
 	}
 	if request.Password != request.PasswordConfirmation {
 		validationErrors["passwordConfirmation"] = []string{"確認用パスワードが一致しません"}

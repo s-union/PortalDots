@@ -37,7 +37,7 @@ import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 import { compareBoolean, compareString } from '@/lib/compareString'
 import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
-import TagBadge from '@/components/ui/TagBadge.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import YesNo from '@/components/ui/YesNo.vue'
 
 const router = useRouter()
@@ -297,9 +297,9 @@ function navigateToDetail(formId: string) {
         <template #cell-answerableTags="{ value }">
           <div class="flex flex-wrap gap-1">
             <template v-for="tag in resolveTags(value)" :key="tag">
-              <TagBadge>
+              <StatusBadge tone="accent">
                 {{ tag }}
-              </TagBadge>
+              </StatusBadge>
             </template>
             <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
           </div>

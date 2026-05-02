@@ -33,7 +33,7 @@ import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
 import { compareBoolean, compareString } from '@/lib/compareString'
 import { resolveRowId, resolveTags, resolveText } from '@/lib/dataGridHelpers'
 import FaIcon from '@/components/ui/FaIcon.vue'
-import TagBadge from '@/components/ui/TagBadge.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import YesNo from '@/components/ui/YesNo.vue'
 
 const router = useRouter()
@@ -236,9 +236,9 @@ function navigateToEdit(pageId: string) {
         <template #cell-viewableTags="{ value }">
           <div class="flex flex-wrap gap-1">
             <template v-for="tag in resolveTags(value)" :key="tag">
-              <TagBadge>
+              <StatusBadge tone="accent">
                 {{ tag }}
-              </TagBadge>
+              </StatusBadge>
             </template>
             <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
           </div>
@@ -247,9 +247,9 @@ function navigateToEdit(pageId: string) {
         <template #cell-documents="{ value }">
           <div class="flex flex-wrap gap-1">
             <template v-for="document in resolveDocuments(value)" :key="document.id">
-              <TagBadge>
+              <StatusBadge tone="accent">
                 {{ document.name }}
-              </TagBadge>
+              </StatusBadge>
             </template>
             <span v-if="resolveDocuments(value).length === 0" class="text-muted">-</span>
           </div>
