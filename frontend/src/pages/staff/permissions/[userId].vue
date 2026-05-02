@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/permissions/:userId',
   meta: staffPageMeta('permissions.read')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'

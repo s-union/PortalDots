@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/activity-logs',
   meta: staffPageMeta('activityLogs.read')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { ref } from 'vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'

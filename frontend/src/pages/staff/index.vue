@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff',
   meta: staffPageMeta()
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed } from 'vue'
 import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'

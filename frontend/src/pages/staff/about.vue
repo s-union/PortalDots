@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/about',
   meta: staffPageMeta(undefined, { noDrawer: true, noBottomTabs: true })
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'

@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/settings/portal',
   meta: staffPageMeta('portalSettings.manage')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'

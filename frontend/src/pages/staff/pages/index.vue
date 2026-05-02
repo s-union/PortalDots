@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/pages',
   meta: staffPageMeta('pages.read')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'

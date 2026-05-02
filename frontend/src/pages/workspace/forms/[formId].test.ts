@@ -440,7 +440,7 @@ describe('FormDetailPage', () => {
     expect((createButton.element as HTMLButtonElement).disabled).toBe(true)
     const secondTextInput = wrapper
       .findAll('input[type="text"]')
-      .filter((input) => !input.element.hasAttribute('readonly'))[0]
+      .find((input) => !input.element.hasAttribute('readonly'))
     expect(secondTextInput).toBeDefined()
     if (!secondTextInput) {
       throw new Error('2番目のテキスト入力が見つかりません')

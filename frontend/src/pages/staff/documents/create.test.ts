@@ -36,8 +36,8 @@ describe('StaffDocumentCreatePage', () => {
       http.post('/v1/staff/documents', async ({ request }) => {
         postReceived = true
         const rawBody = await request.text()
-        const circleIdMatch = rawBody.match(/name="circleId"\r?\n\r?\n([^\r\n]+)/)
-        const nameMatch = rawBody.match(/name="name"\r?\n\r?\n([^\r\n]+)/)
+        const circleIdMatch = /name="circleId"\r?\n\r?\n([^\r\n]+)/.exec(rawBody)
+        const nameMatch = /name="name"\r?\n\r?\n([^\r\n]+)/.exec(rawBody)
         receivedCircleId = circleIdMatch?.[1] ?? ''
         receivedName = nameMatch?.[1] ?? ''
         return HttpResponse.json(

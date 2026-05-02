@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/circles/all',
   meta: staffPageMeta('circles.read')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import StaffCirclesAllPage from '@/features/staff/circles/components/StaffCirclesAllPage.vue'
 </script>

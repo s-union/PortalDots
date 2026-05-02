@@ -1,15 +1,27 @@
 export function inputValue(event: Event): string {
-  return (event.target as HTMLInputElement).value
+  if (event.target instanceof HTMLInputElement) {
+    return event.target.value
+  }
+  return ''
 }
 
 export function textareaValue(event: Event): string {
-  return (event.target as HTMLTextAreaElement).value
+  if (event.target instanceof HTMLTextAreaElement) {
+    return event.target.value
+  }
+  return ''
 }
 
 export function selectValue(event: Event): string {
-  return (event.target as HTMLSelectElement).value
+  if (event.target instanceof HTMLSelectElement) {
+    return event.target.value
+  }
+  return ''
 }
 
 export function inputChecked(event: Event): boolean {
-  return (event.target as HTMLInputElement).checked
+  if (event.target instanceof HTMLInputElement) {
+    return event.target.checked
+  }
+  return false
 }

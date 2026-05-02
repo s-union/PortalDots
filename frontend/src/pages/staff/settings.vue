@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/settings',
   meta: staffPageMeta()
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'

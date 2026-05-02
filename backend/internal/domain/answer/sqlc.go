@@ -3,6 +3,7 @@ package answer
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
@@ -29,7 +30,7 @@ func (r *SQLCRepository) Get(formID, circleID string) (Answer, bool) {
 		return Answer{}, false
 	}
 
-	return r.loadAnswer(row)
+	return r.loadAnswer(row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
 }
 
 func (r *SQLCRepository) Find(answerID string) (Answer, bool) {
@@ -38,7 +39,7 @@ func (r *SQLCRepository) Find(answerID string) (Answer, bool) {
 		return Answer{}, false
 	}
 
-	return r.loadAnswer(row)
+	return r.loadAnswer(row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
 }
 
 func (r *SQLCRepository) ListByCircle(circleID string) []Answer {
@@ -47,7 +48,11 @@ func (r *SQLCRepository) ListByCircle(circleID string) []Answer {
 		return nil
 	}
 
-	return r.loadAnswerRows(rows)
+	answerRows := make([]dbgen.Answer, len(rows))
+	for i, row := range rows {
+		answerRows[i] = dbgen.Answer{ID: row.ID, FormID: row.FormID, CircleID: row.CircleID, Body: row.Body, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
+	}
+	return r.loadAnswerRows(answerRows)
 }
 
 func (r *SQLCRepository) ListByForm(formID string) []Answer {
@@ -56,7 +61,11 @@ func (r *SQLCRepository) ListByForm(formID string) []Answer {
 		return nil
 	}
 
-	return r.loadAnswerRows(rows)
+	answerRows := make([]dbgen.Answer, len(rows))
+	for i, row := range rows {
+		answerRows[i] = dbgen.Answer{ID: row.ID, FormID: row.FormID, CircleID: row.CircleID, Body: row.Body, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
+	}
+	return r.loadAnswerRows(answerRows)
 }
 
 func (r *SQLCRepository) ListByFormAndCircle(formID, circleID string) []Answer {
@@ -68,7 +77,11 @@ func (r *SQLCRepository) ListByFormAndCircle(formID, circleID string) []Answer {
 		return nil
 	}
 
-	return r.loadAnswerRows(rows)
+	answerRows := make([]dbgen.Answer, len(rows))
+	for i, row := range rows {
+		answerRows[i] = dbgen.Answer{ID: row.ID, FormID: row.FormID, CircleID: row.CircleID, Body: row.Body, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
+	}
+	return r.loadAnswerRows(answerRows)
 }
 
 func (r *SQLCRepository) Upsert(formID, circleID, body string, details map[string][]string) Answer {
@@ -289,19 +302,19 @@ func (r *SQLCRepository) AddUploadToAnswer(answerID, questionID, filename, mimeT
 	}, true
 }
 
-func (r *SQLCRepository) loadAnswer(row dbgen.Answer) (Answer, bool) {
-	details, err := r.listDetails(row.ID)
+func (r *SQLCRepository) loadAnswer(id, formID, circleID, body string, createdAt, updatedAt pgtype.Timestamptz) (Answer, bool) {
+	details, err := r.listDetails(id)
 	if err != nil {
 		return Answer{}, false
 	}
 
 	return Answer{
-		ID:        row.ID,
-		FormID:    row.FormID,
-		CircleID:  row.CircleID,
-		Body:      row.Body,
-		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
-		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
+		ID:        id,
+		FormID:    formID,
+		CircleID:  circleID,
+		Body:      body,
+		CreatedAt: pgutil.FormatTimestamptz(createdAt),
+		UpdatedAt: pgutil.FormatTimestamptz(updatedAt),
 		Details:   details,
 	}, true
 }
@@ -353,7 +366,7 @@ func persistAnswerDetails(
 func (r *SQLCRepository) loadAnswerRows(rows []dbgen.Answer) []Answer {
 	answers := make([]Answer, 0, len(rows))
 	for _, row := range rows {
-		a, ok := r.loadAnswer(row)
+		a, ok := r.loadAnswer(row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
 		if ok {
 			answers = append(answers, a)
 		}
@@ -362,7 +375,7 @@ func (r *SQLCRepository) loadAnswerRows(rows []dbgen.Answer) []Answer {
 	return answers
 }
 
-func mapUploadFileByIDRow(row dbgen.GetAnswerUploadFileByIDRow) Upload {
+func mapUploadFileByIDRow(row dbgen.AnswerUpload) Upload {
 	return Upload{
 		ID:         row.ID,
 		AnswerID:   row.AnswerID,
@@ -377,7 +390,7 @@ func mapUploadFileByIDRow(row dbgen.GetAnswerUploadFileByIDRow) Upload {
 	}
 }
 
-func mapUploadFileByQuestionRow(row dbgen.GetAnswerUploadFileByAnswerAndQuestionRow) Upload {
+func mapUploadFileByQuestionRow(row dbgen.AnswerUpload) Upload {
 	return Upload{
 		ID:         row.ID,
 		AnswerID:   row.AnswerID,

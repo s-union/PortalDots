@@ -63,9 +63,9 @@ export function isStaffCircleFilterKey(value: string) {
 
 export function resolveCircleSortValue(circle: StaffCircleRow, key: StaffCircleSortKey) {
   if (key === 'submittedAt') {
-    return String(circle.submittedAt ?? '')
+    return circle.submittedAt ?? ''
   }
-  return String(circle[key]).toLowerCase()
+  return circle[key].toLowerCase()
 }
 
 export function matchesSearch(circle: StaffCircleRow, normalizedSearch: string) {

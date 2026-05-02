@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/forms/create',
   meta: staffPageMeta('forms.edit')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'

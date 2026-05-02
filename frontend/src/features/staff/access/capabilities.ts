@@ -502,5 +502,7 @@ export function canAccessStaffCapability(capability: StaffCapability, roles: str
       return canViewActivityLogs(roles, permissions)
     case 'portalSettings.manage':
       return canManagePortalSettings(roles, permissions)
+    default:
+      return false
   }
 }

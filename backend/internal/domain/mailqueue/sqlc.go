@@ -28,7 +28,18 @@ func (r *SQLCRepository) Enqueue(ctx context.Context, circleID, createdByUserID,
 		return Job{}, fmt.Errorf("create mail job: %w", err)
 	}
 
-	return mapJob(row), nil
+	return mapJob(dbgen.MailJob{
+		ID:              row.ID,
+		CircleID:        row.CircleID,
+		Subject:         row.Subject,
+		Body:            row.Body,
+		Recipients:      row.Recipients,
+		Status:          row.Status,
+		CreatedByUserID: row.CreatedByUserID,
+		DeliveredTo:     row.DeliveredTo,
+		CreatedAt:       row.CreatedAt,
+		DeliveredAt:     row.DeliveredAt,
+	}), nil
 }
 
 func (r *SQLCRepository) ListAll() []Job {
@@ -39,7 +50,18 @@ func (r *SQLCRepository) ListAll() []Job {
 
 	jobs := make([]Job, 0, len(rows))
 	for _, row := range rows {
-		jobs = append(jobs, mapJob(row))
+		jobs = append(jobs, mapJob(dbgen.MailJob{
+			ID:              row.ID,
+			CircleID:        row.CircleID,
+			Subject:         row.Subject,
+			Body:            row.Body,
+			Recipients:      row.Recipients,
+			Status:          row.Status,
+			CreatedByUserID: row.CreatedByUserID,
+			DeliveredTo:     row.DeliveredTo,
+			CreatedAt:       row.CreatedAt,
+			DeliveredAt:     row.DeliveredAt,
+		}))
 	}
 
 	return jobs
@@ -53,7 +75,18 @@ func (r *SQLCRepository) ListByCircle(circleID string) []Job {
 
 	jobs := make([]Job, 0, len(rows))
 	for _, row := range rows {
-		jobs = append(jobs, mapJob(row))
+		jobs = append(jobs, mapJob(dbgen.MailJob{
+			ID:              row.ID,
+			CircleID:        row.CircleID,
+			Subject:         row.Subject,
+			Body:            row.Body,
+			Recipients:      row.Recipients,
+			Status:          row.Status,
+			CreatedByUserID: row.CreatedByUserID,
+			DeliveredTo:     row.DeliveredTo,
+			CreatedAt:       row.CreatedAt,
+			DeliveredAt:     row.DeliveredAt,
+		}))
 	}
 
 	return jobs

@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/mails',
   meta: staffPageMeta('mailQueue.use')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import { formatDateTime } from '@/lib/format/datetime'

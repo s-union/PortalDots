@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/contact-categories',
   meta: staffPageMeta('contactCategories.read')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'

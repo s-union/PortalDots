@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/forms/:formId/answers/uploads',
   meta: staffPageMeta('formAnswers.export')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'

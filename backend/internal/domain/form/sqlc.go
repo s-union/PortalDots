@@ -217,7 +217,7 @@ func (r *SQLCRepository) Delete(circleID, formID string) bool {
 	return rows > 0
 }
 
-func mapStaffListRowToForm(row dbgen.ListStaffFormsByCircleRow) Form {
+func mapStaffListRowToForm(row dbgen.Form) Form {
 	return buildForm(
 		row.ID,
 		row.CircleID,
@@ -234,7 +234,7 @@ func mapStaffListRowToForm(row dbgen.ListStaffFormsByCircleRow) Form {
 	)
 }
 
-func mapStaffDetailRowToForm(row dbgen.GetStaffFormByIDRow) Form {
+func mapStaffDetailRowToForm(row dbgen.Form) Form {
 	return buildForm(
 		row.ID,
 		row.CircleID,
@@ -251,7 +251,7 @@ func mapStaffDetailRowToForm(row dbgen.GetStaffFormByIDRow) Form {
 	)
 }
 
-func mapAnyStaffDetailRowToForm(row dbgen.GetAnyStaffFormByIDRow) Form {
+func mapAnyStaffDetailRowToForm(row dbgen.Form) Form {
 	return buildForm(
 		row.ID,
 		row.CircleID,
@@ -268,7 +268,7 @@ func mapAnyStaffDetailRowToForm(row dbgen.GetAnyStaffFormByIDRow) Form {
 	)
 }
 
-func mapCreateRowToForm(row dbgen.CreateFormRow) Form {
+func mapCreateRowToForm(row dbgen.Form) Form {
 	return buildForm(
 		row.ID,
 		row.CircleID,
@@ -285,7 +285,7 @@ func mapCreateRowToForm(row dbgen.CreateFormRow) Form {
 	)
 }
 
-func mapUpdateRowToForm(row dbgen.UpdateFormRow) Form {
+func mapUpdateRowToForm(row dbgen.Form) Form {
 	return buildForm(
 		row.ID,
 		row.CircleID,
@@ -302,7 +302,7 @@ func mapUpdateRowToForm(row dbgen.UpdateFormRow) Form {
 	)
 }
 
-func mapUpdateAnyRowToForm(row dbgen.UpdateAnyFormByIDRow) Form {
+func mapUpdateAnyRowToForm(row dbgen.Form) Form {
 	return buildForm(
 		row.ID,
 		row.CircleID,

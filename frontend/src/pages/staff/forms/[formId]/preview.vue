@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/forms/:formId/preview',
   meta: staffPageMeta('forms.read')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'

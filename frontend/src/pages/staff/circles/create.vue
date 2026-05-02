@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/circles/create',
   meta: staffPageMeta('circles.edit')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'

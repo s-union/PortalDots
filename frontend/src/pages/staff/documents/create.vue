@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/documents/create',
   meta: staffPageMeta('documents.edit')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'

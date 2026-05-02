@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
 definePage({
   path: '/staff/circles/participation_types',
   meta: staffPageMeta('circles.participationTypes')
 })
-
-import { staffPageMeta } from '@/lib/pageMeta'
 
 import { computed, ref } from 'vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
