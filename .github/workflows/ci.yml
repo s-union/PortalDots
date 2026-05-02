@@ -37,7 +37,7 @@ jobs:
       - name: Check
         run: mise run frontend-check
 
-  email-templates-check:
+  email-producer-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,9 +55,9 @@ jobs:
         run: mise run frontend-install
 
       - name: Check
-        run: mise run email-templates-check
+        run: mise run email-producer-check
 
-  backend-check:
+  email-consumer-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,8 +74,15 @@ jobs:
       - name: Install JS dependencies
         run: mise run frontend-install
 
-      - name: Generate email templates
-        run: mise run email-templates-generate
+      - name: Check
+        run: mise run email-consumer-check
+
+  backend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
 
       - name: Generate sqlc
         run: mise run backend-sqlc-generate
