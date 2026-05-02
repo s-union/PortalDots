@@ -77,7 +77,10 @@ func (r *SQLCRepository) Upsert(formID, circleID, body string, details map[strin
 		return r.Create(formID, circleID, body, details)
 	}
 
-	updated, _ := r.Update(currentAnswer.ID, body, details)
+	updated, ok := r.Update(currentAnswer.ID, body, details)
+	if !ok {
+		return currentAnswer
+	}
 	return updated
 }
 

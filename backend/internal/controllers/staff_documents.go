@@ -32,22 +32,7 @@ type staffDocumentSummaryResponse struct {
 	DownloadURL string                     `json:"downloadUrl"`
 }
 
-type staffDocumentDetailResponse struct {
-	Circle      staffManagedCircleResponse `json:"circle"`
-	ID          string                     `json:"id"`
-	Name        string                     `json:"name"`
-	Description string                     `json:"description"`
-	Notes       string                     `json:"notes"`
-	IsImportant bool                       `json:"isImportant"`
-	Filename    string                     `json:"filename"`
-	Extension   string                     `json:"extension"`
-	MimeType    string                     `json:"mimeType"`
-	SizeBytes   int64                      `json:"sizeBytes"`
-	IsPublic    bool                       `json:"isPublic"`
-	CreatedAt   string                     `json:"createdAt"`
-	UpdatedAt   string                     `json:"updatedAt"`
-	DownloadURL string                     `json:"downloadUrl"`
-}
+type staffDocumentDetailResponse = staffDocumentSummaryResponse
 
 type mutateStaffDocumentRequest struct {
 	CircleID    string

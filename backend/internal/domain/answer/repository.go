@@ -149,7 +149,10 @@ func (r *MemoryRepository) Upsert(formID, circleID, body string, details map[str
 		return r.createLocked(formID, circleID, body, details)
 	}
 
-	answer, _ := r.updateLocked(answerID, body, details)
+	answer, ok := r.updateLocked(answerID, body, details)
+	if !ok {
+		return cloneAnswer(r.answers[answerID])
+	}
 	return answer
 }
 

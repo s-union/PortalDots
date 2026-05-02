@@ -25,19 +25,7 @@ type staffPageSummaryResponse struct {
 	Documents    []pageDocumentResponse `json:"documents"`
 }
 
-type staffPageDetailResponse struct {
-	ID           string                 `json:"id"`
-	Title        string                 `json:"title"`
-	Body         string                 `json:"body"`
-	Notes        string                 `json:"notes"`
-	CreatedAt    string                 `json:"createdAt"`
-	UpdatedAt    string                 `json:"updatedAt"`
-	IsPinned     bool                   `json:"isPinned"`
-	IsPublic     bool                   `json:"isPublic"`
-	ViewableTags []string               `json:"viewableTags"`
-	DocumentIDs  []string               `json:"documentIds"`
-	Documents    []pageDocumentResponse `json:"documents"`
-}
+type staffPageDetailResponse = staffPageSummaryResponse
 
 type mutateStaffPageRequest struct {
 	Title        string   `json:"title"`
