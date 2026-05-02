@@ -216,12 +216,7 @@ func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
 
 	response := make([]staffPlaceResponse, 0, len(items))
 	for _, item := range items {
-		response = append(response, staffPlaceResponse{
-			ID:    item.ID,
-			Name:  item.Name,
-			Type:  item.Type,
-			Notes: item.Notes,
-		})
+		response = append(response, mapStaffPlace(item))
 	}
 	return c.JSON(http.StatusOK, response)
 }

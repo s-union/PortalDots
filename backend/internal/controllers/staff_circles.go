@@ -581,6 +581,12 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 	if request.Body == "" {
 		validationErrors["body"] = []string{"本文を入力してください"}
 	}
+	if len(request.Subject) > 200 {
+		validationErrors["subject"] = []string{"件名は200文字以内で入力してください"}
+	}
+	if len(request.Body) > 20000 {
+		validationErrors["body"] = []string{"本文は20000文字以内で入力してください"}
+	}
 	if len(validationErrors) > 0 {
 		return validationError(c, validationErrors)
 	}

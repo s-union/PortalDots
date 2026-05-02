@@ -102,6 +102,12 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 	if request.Body == "" {
 		errors["body"] = []string{"本文を入力してください"}
 	}
+	if len(request.Subject) > 200 {
+		errors["subject"] = []string{"件名は200文字以内で入力してください"}
+	}
+	if len(request.Body) > 20000 {
+		errors["body"] = []string{"本文は20000文字以内で入力してください"}
+	}
 	if len(recipients) == 0 {
 		errors["recipients"] = []string{"宛先メールアドレスを 1 件以上入力してください"}
 	}
