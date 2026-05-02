@@ -10,6 +10,7 @@ import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent
 import { useSessionStore } from '@/features/session/store'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { buttonVariants } from '@/lib/ui/variants'
+import { textareaValue } from '@/lib/dom'
 import { computed } from 'vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 import FormError from '@/components/ui/FormError.vue'
@@ -196,7 +197,7 @@ const remainingAnswerCount = computed(() => {
                       name="answer-body"
                       :disabled="!isFormWritable"
                       placeholder="回答内容を入力してください"
-                      @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
+                      @input="updateDraftValue(draft, 'legacy-body', textareaValue($event))"
                     />
                   </FormField>
                 </div>

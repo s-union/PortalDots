@@ -15,13 +15,12 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const route = useRoute()
-const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>)
 const verifyType = computed(() => {
-  const value = routeParams.value.type
+  const value = (route.params as Record<string, string | undefined>).type
   return value === 'email' || value === 'univemail' ? value : ''
 })
 const userId = computed(() => {
-  const value = routeParams.value.userId
+  const value = (route.params as Record<string, string | undefined>).userId
   return typeof value === 'string' ? value : ''
 })
 const token = computed(() => {

@@ -35,6 +35,7 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import FormField from '@/components/ui/FormField.vue'
+import { textareaValue } from '@/lib/dom'
 
 const route = useRoute('/staff/forms/[formId]/answers/[answerId]/edit')
 const router = useRouter()
@@ -182,7 +183,7 @@ function handleFileChange(questionId: string, event: Event) {
                   :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
                   class="min-h-40"
                   name="answer-body"
-                  @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
+                  @input="updateDraftValue(draft, 'legacy-body', textareaValue($event))"
                 />
               </FormField>
             </div>

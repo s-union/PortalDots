@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import type { StaffFormQuestion } from '@/features/staff/forms/api'
 import { getQuestionTypeMeta } from '@/features/staff/forms/editor/useQuestionTypeMeta'
+import { inputValue, textareaValue } from '@/lib/dom'
 
 const {
   question: _question,
@@ -303,7 +304,7 @@ const inputClass =
             :class="inputClass"
             :value="edit.name"
             type="text"
-            @input="update('name', ($event.target as HTMLInputElement).value)"
+            @input="update('name', inputValue($event))"
             @blur="emit('save')"
           />
         </div>
@@ -313,7 +314,7 @@ const inputClass =
           <textarea
             :class="inputClass + ' min-h-24'"
             :value="edit.description"
-            @input="update('description', ($event.target as HTMLTextAreaElement).value)"
+            @input="update('description', textareaValue($event))"
             @blur="emit('save')"
           />
         </div>
@@ -325,7 +326,7 @@ const inputClass =
               :class="inputClass + ' min-h-24'"
               :value="optionsDraft"
               placeholder="1行に1つ選択肢を入力"
-              @input="updateOptions(($event.target as HTMLTextAreaElement).value)"
+              @input="updateOptions(textareaValue($event))"
               @blur="handleOptionsBlur"
             />
             <p class="mt-1 text-xs text-muted">改行区切りで選択肢を入力。</p>
@@ -366,7 +367,7 @@ const inputClass =
               :value="edit.allowedTypes"
               placeholder="例: png|jpg|jpeg|gif"
               type="text"
-              @input="update('allowedTypes', ($event.target as HTMLInputElement).value)"
+              @input="update('allowedTypes', inputValue($event))"
               @blur="emit('save')"
             />
             <p class="mt-1 text-xs text-muted">画像アップロードを許可したい場合: <code>png|jpg|jpeg|gif</code></p>

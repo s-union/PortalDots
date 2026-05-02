@@ -18,6 +18,7 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import { inputChecked, inputValue, selectValue, textareaValue } from '@/lib/dom'
 
 const route = useRoute('/staff/forms/[formId]/preview')
 const sessionStore = useSessionStore()
@@ -174,14 +175,14 @@ function handlePreviewSubmit() {
                   type="text"
                   :value="questionValue(question.id)"
                   placeholder="一行入力"
-                  @input="updateQuestionValue(question.id, ($event.target as HTMLInputElement).value)"
+                  @input="updateQuestionValue(question.id, inputValue($event))"
                 />
                 <textarea
                   v-else-if="question.type === 'textarea'"
                   class="min-h-32 rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
                   :value="questionValue(question.id)"
                   placeholder="複数行入力"
-                  @input="updateQuestionValue(question.id, ($event.target as HTMLTextAreaElement).value)"
+                  @input="updateQuestionValue(question.id, textareaValue($event))"
                 />
                 <input
                   v-else-if="question.type === 'number'"
@@ -189,13 +190,13 @@ function handlePreviewSubmit() {
                   type="number"
                   :value="questionValue(question.id)"
                   placeholder="整数入力"
-                  @input="updateQuestionValue(question.id, ($event.target as HTMLInputElement).value)"
+                  @input="updateQuestionValue(question.id, inputValue($event))"
                 />
                 <select
                   v-else-if="question.type === 'select'"
                   class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
                   :value="questionValue(question.id)"
-                  @change="updateQuestionValue(question.id, ($event.target as HTMLSelectElement).value)"
+                  @change="updateQuestionValue(question.id, selectValue($event))"
                 >
                   <option value="">選択してください</option>
                   <option v-for="option in question.options" :key="option">{{ option }}</option>
@@ -225,7 +226,7 @@ function handlePreviewSubmit() {
                     <input
                       :checked="checkboxValue(question.id).includes(option)"
                       type="checkbox"
-                      @change="handleCheckboxChange(question.id, option, ($event.target as HTMLInputElement).checked)"
+                      @change="handleCheckboxChange(question.id, option, inputChecked($event))"
                     />
                     <span>{{ option }}</span>
                   </label>

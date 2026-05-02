@@ -20,9 +20,8 @@ import {
 } from '@/features/auth/api'
 
 const route = useRoute()
-const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>)
 const userId = computed(() => {
-  const value = routeParams.value.userId
+  const value = (route.params as Record<string, string | undefined>).userId
   return typeof value === 'string' ? value : ''
 })
 const token = computed(() => {

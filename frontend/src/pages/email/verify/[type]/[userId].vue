@@ -26,13 +26,12 @@ import FormField from '@/components/ui/FormField.vue'
 
 const router = useRouter()
 const route = useRoute()
-const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>)
 const verifyType = computed(() => {
-  const value = routeParams.value.type
+  const value = (route.params as Record<string, string | undefined>).type
   return typeof value === 'string' ? value : 'unknown'
 })
 const pendingRegistrationId = computed(() => {
-  const value = routeParams.value.userId
+  const value = (route.params as Record<string, string | undefined>).userId
   return typeof value === 'string' ? value : 'unknown'
 })
 const token = computed(() => {

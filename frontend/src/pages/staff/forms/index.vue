@@ -25,8 +25,7 @@ import {
   extractStaffFormValidationMessage,
   useCopyStaffFormMutation,
   useDeleteStaffFormMutation,
-  useStaffFormsQuery,
-  type StaffFormSummary
+  useStaffFormsQuery
 } from '@/features/staff/forms/api'
 import { useSessionStore } from '@/features/session/store'
 import { formatDateTimeTable } from '@/lib/format/datetime'
@@ -194,11 +193,12 @@ function resolveDetailPath(formId: string) {
   return null
 }
 
-function resolveDescription(form: StaffFormSummary) {
-  if (form.description.trim().length === 0) {
+function resolveDescription(row: StaffDataGridRow) {
+  const description = typeof row.description === 'string' ? row.description : ''
+  if (description.trim().length === 0) {
     return '-'
   }
-  return form.description
+  return description
 }
 
 function navigateToDetail(formId: string) {
@@ -303,7 +303,7 @@ function navigateToDetail(formId: string) {
         </template>
 
         <template #cell-description="{ row }">
-          <span class="whitespace-pre-wrap">{{ resolveDescription(row as StaffFormSummary) }}</span>
+          <span class="whitespace-pre-wrap">{{ resolveDescription(row) }}</span>
         </template>
 
         <template #cell-openAt="{ value }">
