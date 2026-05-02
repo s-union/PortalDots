@@ -23,6 +23,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/mailworker"
 	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
@@ -634,6 +635,20 @@ func NewServerWithDependencies(
 		ListPages:                            workspaceH.listPages,
 		GetPage:                              workspaceH.getPage,
 	}, middlewares.RequireWorkspaceUser(sessionMiddlewareConfig))
+
+	if emailProducer != nil && cfg.EmailFrom != "" {
+		worker := mailworker.New(
+			mails,
+			emailProducer,
+			cfg.EmailFrom,
+			cfg.AppName,
+			cfg.AppURL,
+			cfg.PortalAdminName,
+			cfg.PortalContactEmail,
+			30*time.Second,
+		)
+		worker.Start()
+	}
 
 	return e
 }

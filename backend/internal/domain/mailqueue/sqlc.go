@@ -100,6 +100,10 @@ func (r *SQLCRepository) DeleteAll() error {
 	return r.queries.DeleteMailJobs(context.Background())
 }
 
+func (r *SQLCRepository) DeleteJob(ctx context.Context, id string) error {
+	return r.queries.DeleteMailJob(ctx, id)
+}
+
 func mapJob(row dbgen.MailJob) Job {
 	job := Job{
 		ID:              row.ID,

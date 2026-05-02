@@ -29,6 +29,7 @@ type Repository interface {
 	ListByCircle(circleID string) []Job
 	DeleteAll() error
 	DeleteByCircle(circleID string) error
+	DeleteJob(ctx context.Context, id string) error
 }
 
 type MemoryRepository struct {
@@ -112,6 +113,21 @@ func (r *MemoryRepository) DeleteAll() error {
 	defer r.mu.Unlock()
 
 	r.jobs = []Job{}
+	return nil
+}
+
+func (r *MemoryRepository) DeleteJob(_ context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	filtered := make([]Job, 0, len(r.jobs))
+	for _, job := range r.jobs {
+		if job.ID == id {
+			continue
+		}
+		filtered = append(filtered, job)
+	}
+	r.jobs = filtered
 	return nil
 }
 

@@ -20,3 +20,7 @@ DELETE FROM mail_jobs;
 -- name: DeleteMailJobsByCircle :exec
 DELETE FROM mail_jobs
 WHERE circle_id = $1;
+
+-- name: DeleteMailJob :exec
+DELETE FROM mail_jobs
+WHERE id = $1;
