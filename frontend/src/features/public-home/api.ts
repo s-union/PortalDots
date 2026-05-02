@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { z } from 'zod'
-import { buildApiUrl, createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
+import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import {
   pageDetailSchema,
   paginatedResultSchema,
@@ -45,22 +45,24 @@ export async function fetchPublicHome() {
 }
 
 export async function fetchPublicPages(page = 1, pageSize = 10, query = '') {
-  const url = new URL(buildApiUrl('/public/pages'))
-  url.searchParams.set('page', String(page))
-  url.searchParams.set('pageSize', String(pageSize))
-  if (query.trim() !== '') {
-    url.searchParams.set('query', query.trim())
-  }
-
-  const response = await fetch(url.toString(), {
-    credentials: 'include',
-    headers: createJsonHeaders()
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch public pages')
-  }
-
-  return parseWithSchema(paginatedPublicPagesSchema(), await response.json(), 'public pages')
+  return $api.queryData(
+    'get',
+    '/public/pages',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        query: {
+          page,
+          pageSize,
+          ...(query.trim() !== '' ? { query: query.trim() } : {})
+        }
+      }
+    },
+    (value) => parseWithSchema(paginatedPublicPagesSchema(), value, 'public pages'),
+    {
+      errorMessage: 'Failed to fetch public pages'
+    }
+  )
 }
 
 export async function fetchPublicPage(pageId: string) {

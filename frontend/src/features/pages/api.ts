@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, $api } from '@/lib/api/client'
 import { pageDetailSchema, pageSummarySchema, paginatedResultSchema, parseWithSchema } from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'
 
@@ -49,22 +49,24 @@ export interface PageDocument {
 }
 
 export async function fetchPages(query = '', pagination: PagesPagination = { page: 1, pageSize: 10 }) {
-  const url = new URL(buildApiUrl('/pages'))
-  url.searchParams.set('page', String(pagination.page))
-  url.searchParams.set('pageSize', String(pagination.pageSize))
-  if (query.trim() !== '') {
-    url.searchParams.set('query', query.trim())
-  }
-
-  const response = await fetch(url.toString(), {
-    credentials: 'include',
-    headers: createJsonHeaders()
-  })
-  if (!response.ok) {
-    throw new Error('Failed to fetch pages')
-  }
-
-  return parsePages(await response.json())
+  return $api.queryData(
+    'get',
+    '/pages',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        query: {
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          ...(query.trim() !== '' ? { query: query.trim() } : {})
+        }
+      }
+    },
+    parsePages,
+    {
+      errorMessage: 'Failed to fetch pages'
+    }
+  )
 }
 
 export async function fetchPage(pageId: string) {

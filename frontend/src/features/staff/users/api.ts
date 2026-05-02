@@ -151,45 +151,30 @@ function buildStaffUsersQueryParams(pagination: StaffUsersPagination) {
   }
 }
 
-function buildStaffUsersRequestUrl(pagination: StaffUsersPagination) {
-  const params = new URLSearchParams()
-  const query = buildStaffUsersQueryParams(pagination)
-
-  params.set('page', String(query.page))
-  params.set('pageSize', String(query.pageSize))
-
-  if (query.query) {
-    params.set('query', query.query)
-  }
-  if (query.sortKey) {
-    params.set('sortKey', query.sortKey)
-  }
-  if (query.sortDirection) {
-    params.set('sortDirection', query.sortDirection)
-  }
-  if (query.queries) {
-    params.set('queries', query.queries)
-  }
-  if (query.mode) {
-    params.set('mode', query.mode)
-  }
-
-  return buildApiUrl(`/staff/users?${params.toString()}`)
-}
-
 export async function fetchStaffUsers(pagination: StaffUsersPagination) {
-  const response = await fetch(buildStaffUsersRequestUrl(pagination), {
-    method: 'GET',
-    headers: createJsonHeaders(),
-    credentials: 'include'
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch staff users')
-  }
-
-  const data = await response.json()
-  return parsePaginatedResult(data, parseStaffUser, 'staff users')
+  const query = buildStaffUsersQueryParams(pagination)
+  return $api.queryData(
+    'get',
+    '/staff/users',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        query: {
+          page: query.page,
+          pageSize: query.pageSize,
+          ...(query.query ? { query: query.query } : {}),
+          ...(query.sortKey ? { sortKey: query.sortKey } : {}),
+          ...(query.sortDirection ? { sortDirection: query.sortDirection } : {}),
+          ...(query.queries ? { queries: query.queries } : {}),
+          ...(query.mode ? { mode: query.mode } : {})
+        }
+      }
+    },
+    (value) => parsePaginatedResult(value, parseStaffUser, 'staff users'),
+    {
+      errorMessage: 'Failed to fetch staff users'
+    }
+  )
 }
 
 export async function fetchStaffUser(userId: string) {
