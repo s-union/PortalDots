@@ -10,7 +10,8 @@ definePage({
 })
 
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
@@ -35,9 +36,13 @@ import {
   useStaffParticipationTypeDetailQuery
 } from '@/features/staff/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
-import { buildStaffParticipationTypeTabs } from '@/features/ui/tabStrip'
+import { buildStaffParticipationTypeTabs } from '@/lib/ui/tabStrip'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const route = useRoute('/staff/circles/participation_types/[typeId]/')
+const router = useRouter()
 const typeId = computed(() => String(route.params.typeId ?? ''))
 const { enabled } = useAuthorizedStaffContext({ capability: 'circles.participationTypes' })
 const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled)
@@ -302,6 +307,14 @@ function statusTone(status: string) {
   return 'muted' as const
 }
 
+function navigateToCircleEdit(circleId: string) {
+  router.push(`/staff/circles/${encodeURIComponent(circleId)}`)
+}
+
+function navigateToCircleEmail(circleId: string) {
+  router.push(`/staff/circles/${encodeURIComponent(circleId)}/email`)
+}
+
 function statusLabel(status: string) {
   if (status === 'approved') {
     return '受理'
@@ -416,9 +429,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
     <PageLayout fullWidth>
       <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
 
-      <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-        読み込み中...
-      </div>
+      <LoadingState v-if="detailQuery.isPending.value" />
 
       <template v-else-if="detailQuery.data.value">
         <DataCard
@@ -432,7 +443,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
                 :href="circlesExportUrl"
                 class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-xs text-body transition hover:bg-surface-light"
               >
-                <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+                <FaIcon name="file-csv" fixed-width />
                 CSVで出力
               </a>
               <RouterLink
@@ -440,7 +451,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
                 :to="uploadsUrl"
                 class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-xs text-body transition hover:bg-surface-light"
               >
-                <i class="far fa-file-archive fa-fw" aria-hidden="true" />
+                <FaIcon prefix="far" name="file-archive" fixed-width />
                 ファイルを一括ダウンロード
               </RouterLink>
             </div>
@@ -482,7 +493,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
                     type="submit"
                     class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
                   >
-                    <i class="fas fa-search fa-fw" aria-hidden="true" />
+                    <FaIcon name="search" fixed-width />
                     絞り込み
                   </button>
                 </form>
@@ -495,32 +506,31 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
 
             <template #actions="{ row }">
               <div class="flex items-center gap-2">
-                <RouterLink
+                <IconActionButton
                   v-if="canEdit"
-                  :to="`/staff/circles/${encodeURIComponent(String(row.id))}`"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
+                  variant="surface"
                   title="編集"
+                  @click="navigateToCircleEdit(String(row.id))"
                 >
-                  <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-                </RouterLink>
-                <RouterLink
+                  <FaIcon name="pencil-alt" fixed-width />
+                </IconActionButton>
+                <IconActionButton
                   v-if="canSendEmail"
-                  :to="`/staff/circles/${encodeURIComponent(String(row.id))}/email`"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface text-body transition hover:bg-surface-light"
+                  variant="surface"
                   title="メール送信"
+                  @click="navigateToCircleEmail(String(row.id))"
                 >
-                  <i class="far fa-envelope fa-fw" aria-hidden="true" />
-                </RouterLink>
-                <button
+                  <FaIcon prefix="far" name="envelope" fixed-width />
+                </IconActionButton>
+                <IconActionButton
                   v-if="canDelete"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded border border-danger text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
-                  type="button"
+                  variant="danger"
                   title="削除"
                   :disabled="deleteCircleMutation.isPending.value"
                   @click="handleDeleteCircle(String(row.id), String(row.name))"
                 >
-                  <i class="fas fa-trash fa-fw" aria-hidden="true" />
-                </button>
+                  <FaIcon name="trash" fixed-width />
+                </IconActionButton>
               </div>
             </template>
 
@@ -555,9 +565,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
         </AlertMessage>
       </template>
 
-      <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-        参加種別を取得できませんでした。
-      </div>
+      <ErrorState message="参加種別を取得できませんでした。" />
     </PageLayout>
   </StaffSideWindowContainer>
 

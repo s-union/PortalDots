@@ -9,6 +9,7 @@ import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useSuspensePublicPageDetailQuery } from '@/features/public-home/api'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 
 const { pageId } = defineProps<{
   pageId: MaybeRefOrGetter<string>
@@ -67,7 +68,5 @@ const page = pageQuery.data
     </ListPanel>
   </article>
 
-  <div v-else class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-    お知らせを取得できませんでした。
-  </div>
+  <ErrorState message="お知らせを取得できませんでした。" />
 </template>

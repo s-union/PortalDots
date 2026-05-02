@@ -10,6 +10,9 @@ definePage({
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import {
   extractFirstErrorMessage,
   useCompletePasswordResetMutation,
@@ -108,18 +111,13 @@ onMounted(() => {
 
 <template>
   <NarrowPageLayout class="space-y-6 py-8">
-    <section class="mx-auto w-full max-w-[800px] rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
+    <SurfaceCard tag="section" class="mx-auto w-full max-w-[800px]">
+      <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">パスワードの再設定</h1>
-      </div>
+      </SurfaceCardBand>
       <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
         <p v-if="verifyMutation.isPending.value" class="text-muted">再設定URLを確認しています...</p>
-        <p
-          v-else-if="verificationErrorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-danger"
-        >
-          {{ verificationErrorMessage }}
-        </p>
+        <ErrorState v-if="verificationErrorMessage" :message="verificationErrorMessage" />
         <template v-else-if="completed">
           <p class="rounded border border-success bg-success-light px-4 py-3 text-success">
             パスワードを再設定しました。新しいパスワードでログインしてください。
@@ -134,9 +132,7 @@ onMounted(() => {
           </div>
         </template>
         <form id="password-reset-complete-form" v-else class="space-y-5" @submit.prevent="handleSubmit">
-          <p v-if="submitErrorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
-            {{ submitErrorMessage }}
-          </p>
+          <ErrorState v-if="submitErrorMessage" :message="submitErrorMessage" />
           <div class="grid gap-2">
             <label class="font-semibold text-body" for="reset-password">新しいパスワード</label>
             <p class="text-xs text-muted">8文字以上で入力してください</p>
@@ -164,7 +160,7 @@ onMounted(() => {
           </div>
         </form>
       </div>
-    </section>
+    </SurfaceCard>
     <div v-if="!verificationErrorMessage && !verifyMutation.isPending.value && !completed" class="pt-2 text-center">
       <button
         class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline disabled:opacity-60"

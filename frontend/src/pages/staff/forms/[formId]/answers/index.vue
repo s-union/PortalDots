@@ -10,7 +10,8 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
@@ -24,13 +25,18 @@ import {
   useDeleteStaffFormAnswerMutation,
   useStaffFormAnswersIndexQuery
 } from '@/features/staff/forms/answers'
-import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/')
 const sessionStore = useSessionStore()
+const router = useRouter()
 const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
@@ -129,6 +135,10 @@ function handleSort(key: string) {
   pagination.resetPage()
 }
 
+function navigateToEdit(answerId: string) {
+  router.push(`/staff/forms/${formId.value}/answers/${answerId}/edit`)
+}
+
 async function handleDelete(answerId: string, groupName: string) {
   if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffFormAnswerConfirmMessage(groupName))) {
     return
@@ -141,9 +151,7 @@ async function handleDelete(answerId: string, groupName: string) {
   <PageLayout fullWidth>
     <TabStrip :tabs="staffFormTabs" />
 
-    <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="answersQuery.isPending.value" />
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
       <SurfaceCard tag="header">
@@ -155,12 +163,9 @@ async function handleDelete(answerId: string, groupName: string) {
           </template>
           <template #actions>
             <div class="flex flex-wrap gap-3">
-              <RouterLink
-                :to="`/staff/forms/${formId}/answers/create`"
-                class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-              >
+              <BaseButton :to="`/staff/forms/${formId}/answers/create`" variant="primary" size="md" weight="semibold">
                 新規回答
-              </RouterLink>
+              </BaseButton>
               <a
                 :href="exportUrl"
                 class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
@@ -225,22 +230,17 @@ async function handleDelete(answerId: string, groupName: string) {
         >
           <template #actions="{ row }">
             <div class="flex items-center gap-1">
-              <RouterLink
-                :to="`/staff/forms/${formId}/answers/${row.id}/edit`"
-                class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
-                title="編集"
-              >
-                <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-              </RouterLink>
-              <button
-                class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-50"
-                type="button"
+              <IconActionButton title="編集" @click="navigateToEdit(String(row.id))">
+                <FaIcon name="pencil-alt" fixed-width />
+              </IconActionButton>
+              <IconActionButton
+                variant="danger"
                 title="削除"
                 :disabled="deleteAnswerMutation.isPending.value"
                 @click="handleDelete(String(row.id), String(row._groupName))"
               >
-                <i class="fas fa-trash fa-fw" aria-hidden="true" />
-              </button>
+                <FaIcon name="trash" fixed-width />
+              </IconActionButton>
             </div>
           </template>
 
@@ -254,8 +254,6 @@ async function handleDelete(answerId: string, groupName: string) {
       </SurfaceCard>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-      回答一覧を取得できませんでした。
-    </div>
+    <ErrorState message="回答一覧を取得できませんでした。" />
   </PageLayout>
 </template>

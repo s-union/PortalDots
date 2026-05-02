@@ -12,6 +12,7 @@ definePage({
 import { computed, ref } from 'vue'
 import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -83,14 +84,16 @@ function mailStatusLabel(status: 'queued' | 'sent' | 'undeliverable') {
           <p>間違えて配信予約したメールは、ここからすべてキャンセルできます。</p>
           <p>配信処理の途中だった場合、一部にはすでに送信されていることがあります。</p>
           <div>
-            <button
-              class="rounded border border-danger bg-danger-light px-5 py-3 font-bold text-danger transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+            <BaseButton
+              variant="dangerOutline"
+              size="lg"
+              weight="bold"
               :disabled="deleteMailsMutation.isPending.value"
               type="button"
               @click="handleDeleteAll"
             >
               {{ deleteMailsMutation.isPending.value ? 'キャンセル中...' : 'キューを全件キャンセル' }}
-            </button>
+            </BaseButton>
           </div>
           <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
         </div>

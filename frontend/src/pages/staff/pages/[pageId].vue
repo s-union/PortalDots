@@ -14,6 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
@@ -30,6 +31,8 @@ import {
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { useFormValidation, staffPageFormSchema } from '@/lib/form-validation'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const route = useRoute('/staff/pages/[pageId]')
 const router = useRouter()
@@ -138,13 +141,11 @@ async function handleDeletePage() {
 
 <template>
   <PageLayout>
-    <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="pageQuery.isPending.value" />
 
     <form v-else-if="pageQuery.data.value" class="space-y-6" @submit.prevent="handleSavePage">
       <SurfaceCard>
-        <div class="border-b border-border px-6 py-5">
+        <SurfaceCardBand>
           <h1 class="text-2xl font-semibold text-body">お知らせを編集</h1>
           <div class="mt-3 flex flex-wrap gap-2">
             <StatusBadge :tone="pageQuery.data.value.isPublic ? 'success' : 'muted'" appearance="outlined">
@@ -157,7 +158,7 @@ async function handleDeletePage() {
           <p class="mt-3 text-sm text-muted">お知らせID: {{ pageQuery.data.value.id }}</p>
           <p class="mt-1 text-sm text-muted">作成日時: {{ formatDateTimeUpdated(pageQuery.data.value.createdAt) }}</p>
           <p class="mt-1 text-sm text-muted">更新日時: {{ formatDateTimeUpdated(pageQuery.data.value.updatedAt) }}</p>
-        </div>
+        </SurfaceCardBand>
         <div class="px-6 py-6">
           <StaffPageEditorForm
             v-model="form"
@@ -176,14 +177,16 @@ async function handleDeletePage() {
 
       <SurfaceCard>
         <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-5">
-          <button
-            class="rounded border border-danger bg-danger-light px-6 py-3 font-bold text-danger transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+          <BaseButton
+            variant="dangerOutline"
+            size="wide"
+            weight="bold"
             :disabled="deletePageMutation.isPending.value"
             type="button"
             @click="handleDeletePage"
           >
             {{ deletePageMutation.isPending.value ? '削除中...' : '削除' }}
-          </button>
+          </BaseButton>
 
           <button
             class="rounded border border-border bg-surface px-6 py-3 font-bold text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"

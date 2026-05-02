@@ -12,6 +12,8 @@ definePage({
 
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 </script>
 
 <template>
@@ -38,15 +40,17 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
           <p class="text-sm leading-7 text-muted">
             PortalDots(ポータルドット)は、学園祭実行委員会と参加企画担当者との間のコミュニケーションを支援するウェブシステムです。お知らせメールの一斉送信や各種申請の受付をオンラインで簡単に行うことができます。
           </p>
-          <a
-            class="inline-flex items-center rounded bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-hover"
+          <BaseButton
             href="https://www.portaldots.com"
-            rel="noopener noreferrer"
-            target="_blank"
+            variant="primary"
+            size="lg"
+            weight="bold"
+            class="inline-flex items-center"
           >
+            <FaIcon name="external-link-alt" fixed-width />
             <span>PortalDots 公式ウェブサイト</span>
             <span class="ml-2" aria-hidden="true">↗</span>
-          </a>
+          </BaseButton>
         </div>
       </div>
     </SurfaceCard>

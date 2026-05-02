@@ -12,6 +12,9 @@ definePage({
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import FormField from '@/components/ui/FormField.vue'
+import FormInput from '@/components/ui/FormInput.vue'
+import InfoBox from '@/components/ui/InfoBox.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -27,7 +30,10 @@ import {
   useStaffCircleMailForm,
   useStaffCircleMailFormQuery
 } from '@/features/staff/circles/api'
-import { buildStaffCircleTabs } from '@/features/ui/tabStrip'
+import { buildStaffCircleTabs } from '@/lib/ui/tabStrip'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 const route = useRoute('/staff/circles/[circleId]/email')
 const circleId = computed(() => String(route.params.circleId ?? ''))
@@ -74,9 +80,7 @@ async function handleSendMail() {
   <PageLayout>
     <TabStrip :tabs="circleTabs" />
 
-    <div v-if="mailFormQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="mailFormQuery.isPending.value" />
 
     <div v-else-if="mailFormQuery.data.value" class="space-y-6">
       <SurfaceCard tag="header">
@@ -92,37 +96,31 @@ async function handleSendMail() {
           <div class="grid gap-4">
             <p class="text-sm text-muted">送信対象: {{ mailRecipientCount }} 名</p>
 
-            <p
-              v-if="mailRecipientCount === 0"
-              class="rounded border border-border bg-surface-light px-4 py-3 text-sm text-muted"
-            >
+            <InfoBox v-if="mailRecipientCount === 0" as="p" class="text-muted">
               宛先となる企画所属者がいないため、メールは送信できません。
-            </p>
+            </InfoBox>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">宛先</span>
+            <FormField label="宛先" label-class="font-medium">
               <select v-model="mailForm.recipient" name="recipient">
                 <option value="all">所属者全員</option>
                 <option value="leader">責任者のみ</option>
               </select>
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">件名</span>
-              <input v-model="mailForm.subject" name="subject" type="text" />
-            </label>
+            <FormField label="件名" label-class="font-medium">
+              <FormInput v-model="mailForm.subject" name="subject" type="text" />
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">本文</span>
+            <FormField label="本文" label-class="font-medium">
               <MarkdownEditorField
                 v-model="mailForm.body"
                 min-height-class="min-h-40"
                 name="body"
                 placeholder="本文を入力"
               />
-            </label>
+            </FormField>
 
-            <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm leading-7 text-muted">
+            <InfoBox class="text-muted leading-7">
               <p>登録内容はキューに保存され、配信処理の対象になります。</p>
               <p>本文は Markdown 記法をそのまま記入できます。</p>
               <p class="mt-2">現在はスタッフ用控えを送らず、本体送信のみを先行実装しています。</p>
@@ -132,18 +130,20 @@ async function handleSendMail() {
                   mailFormQuery.data.value.recipients.map((recipient) => recipient.displayName).join(' / ') || 'なし'
                 }}
               </p>
-            </div>
+            </InfoBox>
           </div>
         </SettingsRow>
         <template #footer>
-          <button
-            class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+          <BaseButton
+            variant="primary"
+            size="wide"
+            weight="bold"
             :disabled="!canSendMail"
             type="button"
             @click="handleSendMail"
           >
             {{ sendCircleMailMutation.isPending.value ? '登録中...' : 'メールをキューに追加' }}
-          </button>
+          </BaseButton>
         </template>
       </SettingsSection>
 
@@ -151,8 +151,6 @@ async function handleSendMail() {
       <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
     </div>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-      企画向けメール送信情報を取得できませんでした。
-    </div>
+    <ErrorState v-else message="企画向けメール送信情報を取得できませんでした。" />
   </PageLayout>
 </template>

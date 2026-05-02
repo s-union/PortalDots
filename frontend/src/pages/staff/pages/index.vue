@@ -10,6 +10,10 @@ definePage({
 })
 
 import { computed, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import CsvExportLink from '@/components/ui/CsvExportLink.vue'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
@@ -26,7 +30,13 @@ import {
 import { useSessionStore } from '@/features/session/store'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { compareBoolean, compareString } from '@/lib/compareString'
+import { resolveRowId, resolveTags, resolveText } from '@/lib/dataGridHelpers'
+import FaIcon from '@/components/ui/FaIcon.vue'
+import TagBadge from '@/components/ui/TagBadge.vue'
+import YesNo from '@/components/ui/YesNo.vue'
 
+const router = useRouter()
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
@@ -117,23 +127,6 @@ watch(
   { immediate: true }
 )
 
-function compareString(left: string, right: string) {
-  if (left < right) {
-    return -1
-  }
-  if (left > right) {
-    return 1
-  }
-  return 0
-}
-
-function compareBoolean(left: boolean, right: boolean) {
-  if (left === right) {
-    return 0
-  }
-  return left ? 1 : -1
-}
-
 function handleSort(nextSortKey: string) {
   if (!isStaffPageSortKey(nextSortKey)) {
     return
@@ -141,26 +134,6 @@ function handleSort(nextSortKey: string) {
 
   sort.toggleSort(nextSortKey)
   pagination.resetPage()
-}
-
-function resolveRowId(row: StaffDataGridRow) {
-  return String(row.id ?? '')
-}
-
-function resolveText(value: unknown) {
-  if (typeof value !== 'string') {
-    return '-'
-  }
-
-  const normalized = value.replace(/\s+/g, ' ').trim()
-  return normalized.length > 0 ? normalized : '-'
-}
-
-function resolveTags(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value.filter((item): item is string => typeof item === 'string')
 }
 
 function resolveDocuments(value: unknown) {
@@ -185,6 +158,10 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
     return
   }
   await deletePageMutation.mutateAsync(pageId)
+}
+
+function navigateToEdit(pageId: string) {
+  router.push(`/staff/pages/${encodeURIComponent(pageId)}`)
 }
 </script>
 
@@ -212,57 +189,41 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
         @update:page-size="pagination.setPageSize"
       >
         <template #toolbar>
-          <RouterLink
-            to="/staff/pages/create"
-            class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-          >
-            <i class="fas fa-plus fa-fw" aria-hidden="true" />
+          <BaseButton to="/staff/pages/create" variant="primary" size="md" weight="semibold">
+            <FaIcon name="plus" fixed-width />
             新規お知らせ
-          </RouterLink>
+          </BaseButton>
           <RouterLink
             v-if="mailQueueAvailable"
             to="/staff/mails"
             class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
           >
-            <i class="far fa-envelope fa-fw" aria-hidden="true" />
+            <FaIcon prefix="far" name="envelope" fixed-width />
             メール配信設定
           </RouterLink>
-          <a
-            :href="exportHref"
-            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
-          >
-            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-            CSVで出力
-          </a>
+          <CsvExportLink :href="exportHref">CSVで出力</CsvExportLink>
         </template>
 
         <template #actions="{ row }">
           <div class="flex items-center gap-1">
-            <RouterLink
-              :to="`/staff/pages/${encodeURIComponent(resolveRowId(row))}`"
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
-              title="編集"
-            >
-              <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-            </RouterLink>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-              type="button"
+            <IconActionButton title="編集" @click="navigateToEdit(resolveRowId(row))">
+              <FaIcon name="pencil-alt" fixed-width />
+            </IconActionButton>
+            <IconActionButton
               :title="row.isPinned ? '固定表示を解除する' : '固定表示する'"
               :disabled="patchPinMutation.isPending.value"
               @click="handleTogglePin(resolveRowId(row), row.isPinned === true)"
             >
-              <i class="fas fa-thumbtack fa-fw" aria-hidden="true" />
-            </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
-              type="button"
+              <FaIcon name="thumbtack" fixed-width />
+            </IconActionButton>
+            <IconActionButton
+              variant="danger"
               title="削除"
               :disabled="deletePageMutation.isPending.value"
               @click="handleDeletePage(resolveRowId(row), typeof row.title === 'string' ? row.title : '')"
             >
-              <i class="fas fa-trash fa-fw" aria-hidden="true" />
-            </button>
+              <FaIcon name="trash" fixed-width />
+            </IconActionButton>
           </div>
         </template>
 
@@ -275,9 +236,9 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
         <template #cell-viewableTags="{ value }">
           <div class="flex flex-wrap gap-1">
             <template v-for="tag in resolveTags(value)" :key="tag">
-              <span class="inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-white">
+              <TagBadge>
                 {{ tag }}
-              </span>
+              </TagBadge>
             </template>
             <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
           </div>
@@ -286,9 +247,9 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
         <template #cell-documents="{ value }">
           <div class="flex flex-wrap gap-1">
             <template v-for="document in resolveDocuments(value)" :key="document.id">
-              <span class="inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-white">
+              <TagBadge>
                 {{ document.name }}
-              </span>
+              </TagBadge>
             </template>
             <span v-if="resolveDocuments(value).length === 0" class="text-muted">-</span>
           </div>
@@ -299,13 +260,11 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
         </template>
 
         <template #cell-isPinned="{ value }">
-          <strong v-if="value === true">はい</strong>
-          <span v-else>-</span>
+          <YesNo :value="value === true" />
         </template>
 
         <template #cell-isPublic="{ value }">
-          <strong v-if="value === true">はい</strong>
-          <span v-else>-</span>
+          <YesNo :value="value === true" />
         </template>
 
         <template #cell-createdAt="{ value }">

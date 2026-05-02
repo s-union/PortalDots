@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const {
   isOpen = false,
@@ -95,7 +96,7 @@ onBeforeUnmount(() => {
             target="_blank"
             title="新しいタブで開く"
           >
-            <i class="fas fa-external-link-alt" aria-hidden="true" />
+            <FaIcon name="external-link-alt" />
           </a>
           <button
             class="inline-flex h-10 w-10 items-center justify-center rounded-[0.45rem] text-muted transition hover:bg-primary-light hover:text-primary"
@@ -103,7 +104,7 @@ onBeforeUnmount(() => {
             type="button"
             @click="handleClose"
           >
-            <i class="fas fa-times" aria-hidden="true" />
+            <FaIcon name="times" />
           </button>
         </header>
         <div class="relative flex-1 overflow-auto overflow-x-hidden p-0">

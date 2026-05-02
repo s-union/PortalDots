@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import {
   extractFirstErrorMessage,
   useRequestAuthVerificationMutation,
@@ -50,10 +53,10 @@ async function handleRequest(type: 'email' | 'univemail') {
 </script>
 
 <template>
-  <section class="rounded border border-border bg-surface shadow-lv1">
-    <div class="border-b border-border px-6 py-5">
+  <SurfaceCard tag="section">
+    <SurfaceCardBand>
       <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">まだユーザー登録は完了していません！</h1>
-    </div>
+    </SurfaceCardBand>
     <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
       <p v-if="statusQuery.data.value">
         <strong>{{ statusQuery.data.value.displayName }}</strong> としてログイン中です。
@@ -67,18 +70,12 @@ async function handleRequest(type: 'email' | 'univemail') {
       <p v-if="autoSentMessage" class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-body">
         {{ autoSentMessage }}
       </p>
-      <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
-        {{ errorMessage }}
-      </p>
+      <ErrorState v-if="errorMessage" :message="errorMessage" />
     </div>
-  </section>
+  </SurfaceCard>
 
-  <section
-    v-for="item in statusQuery.data.value?.items ?? []"
-    :key="item.type"
-    class="rounded border border-border bg-surface shadow-lv1"
-  >
-    <div class="border-b border-border px-6 py-5">
+  <SurfaceCard tag="section" v-for="item in statusQuery.data.value?.items ?? []" :key="item.type">
+    <SurfaceCardBand>
       <div class="flex items-center justify-between gap-3">
         <div>
           <h2 class="text-lg font-semibold text-body">{{ item.label }}</h2>
@@ -91,7 +88,7 @@ async function handleRequest(type: 'email' | 'univemail') {
           {{ item.verified ? '認証済み' : '未認証' }}
         </span>
       </div>
-    </div>
+    </SurfaceCardBand>
 
     <div class="space-y-4 px-6 py-6">
       <button
@@ -110,5 +107,5 @@ async function handleRequest(type: 'email' | 'univemail') {
         <p>{{ requestResult.message }}</p>
       </div>
     </div>
-  </section>
+  </SurfaceCard>
 </template>

@@ -12,6 +12,9 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 import { useCurrentCircleDetailQuery } from '@/features/circles/api'
+import LoadingMessage from '@/components/ui/LoadingMessage.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const detailQuery = useCurrentCircleDetailQuery()
 const confirmationMessage = computed(() => detailQuery.data.value?.confirmationMessage.trim() ?? '')
@@ -20,15 +23,15 @@ const confirmationMessage = computed(() => detailQuery.data.value?.confirmationM
 <template>
   <PageLayout spacious>
     <SurfaceCard>
-      <div class="border-b border-border px-6 py-5">
+      <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">参加登録を提出しました！</h1>
         <p v-if="detailQuery.data.value?.id" class="mt-2 text-sm text-muted">企画ID: {{ detailQuery.data.value.id }}</p>
-      </div>
+      </SurfaceCardBand>
       <div class="space-y-5 px-6 py-6 text-sm leading-7 text-body">
         <div class="text-center text-success">
-          <i class="fas fa-check-circle text-3xl" aria-hidden="true" />
+          <FaIcon name="check-circle" class-name="text-3xl" />
         </div>
-        <p v-if="detailQuery.isPending.value" class="text-muted">読み込み中...</p>
+        <LoadingMessage v-if="detailQuery.isPending.value" />
         <div
           v-else-if="confirmationMessage"
           class="rounded border border-success/20 bg-success-light px-4 py-3 text-sm leading-7"

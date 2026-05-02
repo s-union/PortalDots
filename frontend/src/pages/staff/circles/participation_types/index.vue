@@ -28,6 +28,10 @@ import {
 } from '@/features/staff/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
 import { useFormValidation, staffParticipationTypeFormSchema } from '@/lib/form-validation'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -118,8 +122,7 @@ async function handleCreate() {
     <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreate">
       <h2 class="text-lg font-semibold text-body">参加種別を新規作成</h2>
       <div class="mt-4 grid gap-4">
-        <label class="grid gap-2 text-sm text-body">
-          <span>参加種別名</span>
+        <FormField label="参加種別名" :error="getFieldError('name')">
           <input
             v-model="form.name"
             name="name"
@@ -128,15 +131,12 @@ async function handleCreate() {
             @blur="markTouched('name')"
             @input="markTouched('name')"
           />
-          <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
-        </label>
-        <label class="grid gap-2 text-sm text-body">
-          <span>説明</span>
+        </FormField>
+        <FormField label="説明">
           <textarea v-model="form.description" class="min-h-24" name="description" />
-        </label>
+        </FormField>
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span>最低人数</span>
+          <FormField label="最低人数" :error="getFieldError('usersCountMin')">
             <input
               v-model.number="form.usersCountMin"
               min="1"
@@ -146,12 +146,8 @@ async function handleCreate() {
               @blur="markTouched('usersCountMin')"
               @input="markTouched('usersCountMin')"
             />
-            <p v-if="getFieldError('usersCountMin')" class="text-xs text-danger">
-              {{ getFieldError('usersCountMin') }}
-            </p>
-          </label>
-          <label class="grid gap-2 text-sm text-body">
-            <span>最大人数</span>
+          </FormField>
+          <FormField label="最大人数" :error="getFieldError('usersCountMax')">
             <input
               v-model.number="form.usersCountMax"
               min="1"
@@ -161,18 +157,13 @@ async function handleCreate() {
               @blur="markTouched('usersCountMax')"
               @input="markTouched('usersCountMax')"
             />
-            <p v-if="getFieldError('usersCountMax')" class="text-xs text-danger">
-              {{ getFieldError('usersCountMax') }}
-            </p>
-          </label>
+          </FormField>
         </div>
-        <label class="grid gap-2 text-sm text-body">
-          <span>付与タグ</span>
+        <FormField label="付与タグ">
           <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
-        </label>
+        </FormField>
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span>受付開始日時</span>
+          <FormField label="受付開始日時" :error="getFieldError('openAt')">
             <input
               :value="formatDateTimeLocalValue(form.openAt)"
               name="openAt"
@@ -181,10 +172,8 @@ async function handleCreate() {
               @input="handleOpenAtInput"
               @blur="markTouched('openAt')"
             />
-            <p v-if="getFieldError('openAt')" class="text-xs text-danger">{{ getFieldError('openAt') }}</p>
-          </label>
-          <label class="grid gap-2 text-sm text-body">
-            <span>受付終了日時</span>
+          </FormField>
+          <FormField label="受付終了日時" :error="getFieldError('closeAt')">
             <input
               :value="formatDateTimeLocalValue(form.closeAt)"
               name="closeAt"
@@ -193,35 +182,31 @@ async function handleCreate() {
               @input="handleCloseAtInput"
               @blur="markTouched('closeAt')"
             />
-            <p v-if="getFieldError('closeAt')" class="text-xs text-danger">{{ getFieldError('closeAt') }}</p>
-          </label>
+          </FormField>
         </div>
-        <label class="grid gap-2 text-sm text-body">
-          <span>参加登録前に表示する内容</span>
+        <FormField label="参加登録前に表示する内容">
           <MarkdownEditorField v-model="form.formDescription" min-height-class="min-h-24" name="formDescription" />
-        </label>
-        <label class="grid gap-2 text-sm text-body">
-          <span>提出後メッセージ</span>
+        </FormField>
+        <FormField label="提出後メッセージ">
           <MarkdownEditorField
             v-model="form.formConfirmationMessage"
             min-height-class="min-h-24"
             name="formConfirmationMessage"
           />
-        </label>
-        <label class="flex items-center gap-3 text-sm text-body">
-          <input v-model="form.isPublic" name="isPublic" type="checkbox" />
-          参加登録画面を公開する
-        </label>
+        </FormField>
+        <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" />
         <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
       </div>
       <div class="mt-5">
-        <button
-          class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:opacity-60"
-          :disabled="createMutation.isPending.value"
+        <BaseButton
+          variant="primary"
+          size="wide"
+          weight="bold"
           type="submit"
+          :disabled="createMutation.isPending.value"
         >
           {{ createMutation.isPending.value ? '作成中...' : '保存' }}
-        </button>
+        </BaseButton>
       </div>
     </form>
   </PageLayout>

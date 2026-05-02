@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TabStripItem } from '@/features/ui/tabStrip'
+import type { TabStripItem } from '@/lib/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 

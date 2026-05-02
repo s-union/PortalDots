@@ -17,6 +17,12 @@ import {
   useVerifyRegistrationMutation
 } from '@/features/auth/api'
 import { useFormValidation, userRegistrationFormSchema } from '@/lib/form-validation'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import FormError from '@/components/ui/FormError.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -110,41 +116,31 @@ onMounted(() => {
 
 <template>
   <NarrowPageLayout class="space-y-6 py-8">
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
+    <SurfaceCard tag="section">
+      <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー登録を続ける</h1>
-      </div>
+      </SurfaceCardBand>
       <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
         <p v-if="verifyMutation.isPending.value" class="text-muted">認証URLを確認しています...</p>
-        <p
-          v-else-if="verificationErrorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-danger"
-        >
-          {{ verificationErrorMessage }}
-        </p>
+        <ErrorState v-if="verificationErrorMessage" :message="verificationErrorMessage" />
         <template v-else-if="verification">
           <p>
             大学メールアドレス <strong>{{ verification.univemail }}</strong> の確認が完了しました。
           </p>
-          <p v-if="submitErrorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
-            {{ submitErrorMessage }}
-          </p>
+          <ErrorState v-if="submitErrorMessage" :message="submitErrorMessage" />
           <form class="space-y-5" @submit.prevent="handleSubmit">
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2">
-                <span class="font-semibold">学籍番号</span>
+              <FormField label="学籍番号" label-class="font-semibold">
                 <input :value="verification.studentId" disabled name="studentId" type="text" />
-              </label>
-              <label class="grid gap-2">
-                <span class="font-semibold">大学メールアドレス</span>
+              </FormField>
+              <FormField label="大学メールアドレス" label-class="font-semibold">
                 <input :value="verification.univemail" disabled name="univemail" type="email" />
-              </label>
+              </FormField>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
               <div class="grid gap-2">
-                <label class="grid gap-2">
-                  <span class="font-semibold">名前</span>
+                <FormField label="名前" label-class="font-semibold">
                   <input
                     v-model="form.name"
                     autocomplete="name"
@@ -156,14 +152,11 @@ onMounted(() => {
                     @blur="markTouched('name')"
                     @input="markTouched('name')"
                   />
-                </label>
-                <p v-if="getFieldError('name')" class="text-xs text-danger">
-                  {{ getFieldError('name') }}
-                </p>
+                </FormField>
+                <FormError v-if="getFieldError('name')" :message="getFieldError('name')" />
               </div>
               <div class="grid gap-2">
-                <label class="grid gap-2">
-                  <span class="font-semibold">名前(よみ)</span>
+                <FormField label="名前(よみ)" label-class="font-semibold">
                   <input
                     v-model="form.nameYomi"
                     name="nameYomi"
@@ -174,17 +167,14 @@ onMounted(() => {
                     @blur="markTouched('nameYomi')"
                     @input="markTouched('nameYomi')"
                   />
-                </label>
-                <p v-if="getFieldError('nameYomi')" class="text-xs text-danger">
-                  {{ getFieldError('nameYomi') }}
-                </p>
+                </FormField>
+                <FormError v-if="getFieldError('nameYomi')" :message="getFieldError('nameYomi')" />
               </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
               <div class="grid gap-2">
-                <label class="grid gap-2">
-                  <span class="font-semibold">連絡先メールアドレス</span>
+                <FormField label="連絡先メールアドレス" label-class="font-semibold">
                   <input
                     v-model="form.contactEmail"
                     autocomplete="email"
@@ -194,14 +184,11 @@ onMounted(() => {
                     @blur="markTouched('contactEmail')"
                     @input="markTouched('contactEmail')"
                   />
-                </label>
-                <p v-if="getFieldError('contactEmail')" class="text-xs text-danger">
-                  {{ getFieldError('contactEmail') }}
-                </p>
+                </FormField>
+                <FormError v-if="getFieldError('contactEmail')" :message="getFieldError('contactEmail')" />
               </div>
               <div class="grid gap-2">
-                <label class="grid gap-2">
-                  <span class="font-semibold">連絡先電話番号</span>
+                <FormField label="連絡先電話番号" label-class="font-semibold">
                   <input
                     v-model="form.phoneNumber"
                     autocomplete="tel"
@@ -212,17 +199,14 @@ onMounted(() => {
                     @blur="markTouched('phoneNumber')"
                     @input="markTouched('phoneNumber')"
                   />
-                </label>
-                <p v-if="getFieldError('phoneNumber')" class="text-xs text-danger">
-                  {{ getFieldError('phoneNumber') }}
-                </p>
+                </FormField>
+                <FormError v-if="getFieldError('phoneNumber')" :message="getFieldError('phoneNumber')" />
               </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
               <div class="grid gap-2">
-                <label class="grid gap-2">
-                  <span class="font-semibold">パスワード</span>
+                <FormField label="パスワード" label-class="font-semibold">
                   <input
                     v-model="form.password"
                     autocomplete="new-password"
@@ -234,14 +218,11 @@ onMounted(() => {
                     @blur="markTouched('password')"
                     @input="markTouched('password')"
                   />
-                </label>
-                <p v-if="getFieldError('password')" class="text-xs text-danger">
-                  {{ getFieldError('password') }}
-                </p>
+                </FormField>
+                <FormError v-if="getFieldError('password')" :message="getFieldError('password')" />
               </div>
               <div class="grid gap-2">
-                <label class="grid gap-2">
-                  <span class="font-semibold">パスワード(確認)</span>
+                <FormField label="パスワード(確認)" label-class="font-semibold">
                   <input
                     v-model="form.passwordConfirmation"
                     autocomplete="new-password"
@@ -252,14 +233,15 @@ onMounted(() => {
                     @blur="markTouched('passwordConfirmation')"
                     @input="markTouched('passwordConfirmation')"
                   />
-                </label>
-                <p v-if="getFieldError('passwordConfirmation')" class="text-xs text-danger">
-                  {{ getFieldError('passwordConfirmation') }}
-                </p>
+                </FormField>
+                <FormError
+                  v-if="getFieldError('passwordConfirmation')"
+                  :message="getFieldError('passwordConfirmation')"
+                />
               </div>
             </div>
 
-            <div class="flex justify-end">
+            <ActionsFooter align="end">
               <button
                 class="rounded border border-primary bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
                 :disabled="completeMutation.isPending.value"
@@ -267,10 +249,10 @@ onMounted(() => {
               >
                 {{ completeMutation.isPending.value ? '登録中...' : '本登録を完了する' }}
               </button>
-            </div>
+            </ActionsFooter>
           </form>
         </template>
       </div>
-    </section>
+    </SurfaceCard>
   </NarrowPageLayout>
 </template>

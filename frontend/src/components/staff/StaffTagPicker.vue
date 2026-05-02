@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const {
   modelValue,
@@ -135,7 +136,7 @@ function handleKeydown(event: KeyboardEvent) {
           :title="`${tag} を外す`"
           @click="removeTag(tag)"
         >
-          <i class="fas fa-times text-[10px]" aria-hidden="true" />
+          <FaIcon name="times" class-name="text-[10px]" />
         </button>
       </span>
     </div>

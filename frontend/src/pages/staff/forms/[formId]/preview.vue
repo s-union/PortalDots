@@ -17,6 +17,10 @@ import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffFormPreviewQuery, type StaffFormQuestion } from '@/features/staff/forms/api'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 
 const route = useRoute('/staff/forms/[formId]/preview')
 const sessionStore = useSessionStore()
@@ -102,7 +106,7 @@ function handlePreviewSubmit() {
 <template>
   <PageLayout fullWidth class="space-y-0 pb-6 max-[1000px]:px-0">
     <div v-if="previewQuery.isPending.value" class="mt-6 px-6 max-[1000px]:px-4">
-      <div class="rounded border border-border bg-surface px-6 py-5 text-muted shadow-lv1">読み込み中...</div>
+      <LoadingState />
     </div>
 
     <template v-else-if="previewQuery.data.value">
@@ -146,7 +150,7 @@ function handlePreviewSubmit() {
           </div>
         </header>
 
-        <div class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
+        <SurfaceCard overflow-hidden>
           <template v-for="question in previewQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5 last:border-b-0">
               <h2 class="text-lg font-semibold text-body">{{ question.name }}</h2>
@@ -248,7 +252,7 @@ function handlePreviewSubmit() {
               </div>
             </div>
           </template>
-        </div>
+        </SurfaceCard>
 
         <div class="space-y-3">
           <div
@@ -258,22 +262,15 @@ function handlePreviewSubmit() {
             プレビューのため送信は行われません。
           </div>
 
-          <div class="flex justify-center">
-            <button
-              class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover"
-              type="submit"
-            >
-              送信
-            </button>
-          </div>
+          <ActionsFooter align="center">
+            <BaseButton variant="primary" size="wide" weight="bold" type="submit"> 送信 </BaseButton>
+          </ActionsFooter>
         </div>
       </form>
     </template>
 
     <div v-else class="mt-6 px-6 max-[1000px]:px-4">
-      <div class="rounded border border-danger bg-danger-light px-6 py-5 text-danger">
-        プレビューを取得できませんでした。
-      </div>
+      <ErrorState message="プレビューを取得できませんでした。" />
     </div>
   </PageLayout>
 </template>

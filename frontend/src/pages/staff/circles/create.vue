@@ -21,6 +21,7 @@ import {
 } from '@/features/staff/circles/api'
 import { useStaffPlacesQuery } from '@/features/staff/masters/places'
 import { useStaffParticipationTypesQuery } from '@/features/staff/participation-types/api'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const router = useRouter()
 const createCircleMutation = useCreateStaffCircleMutation()
@@ -55,7 +56,7 @@ async function handleCreateCircle() {
   <PageLayout spacious>
     <div>
       <RouterLink :class="buttonVariants({ variant: 'secondary', size: 'sm' })" to="/staff/circles/all">
-        <i class="fas fa-chevron-left fa-fw" aria-hidden="true" />
+        <FaIcon name="chevron-left" fixed-width />
         全企画一覧へ戻る
       </RouterLink>
     </div>

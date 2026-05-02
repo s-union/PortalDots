@@ -10,6 +10,7 @@ definePage({
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import { buttonVariants, formControlVariants } from '@/lib/ui/variants'
 import {
@@ -19,6 +20,7 @@ import {
   useStaffStatusQuery
 } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
+import FormField from '@/components/ui/FormField.vue'
 
 const router = useRouter()
 const sessionStore = useSessionStore()
@@ -64,10 +66,9 @@ async function handleConfirm() {
       description="あなたの連絡先メールアドレス宛に認証メールを送信できます。認証メールに記載されている認証コードを入力してください。"
     >
       <form class="px-6 py-6" @submit.prevent="handleConfirm">
-        <label class="grid gap-2 text-sm text-body">
-          <span class="font-medium">認証コード</span>
+        <FormField label="認証コード" label-class="font-medium">
           <input v-model="form.verifyCode" :class="formControlVariants()" name="verifyCode" type="text" />
-        </label>
+        </FormField>
 
         <p
           v-if="infoMessage"
@@ -76,9 +77,7 @@ async function handleConfirm() {
           {{ infoMessage }}
         </p>
 
-        <p v-if="errorMessage" class="mt-4 rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-          {{ errorMessage }}
-        </p>
+        <ErrorState v-if="errorMessage" :message="errorMessage" compact class="mt-4" />
 
         <div class="flex flex-wrap items-center justify-center gap-3 pt-6">
           <button

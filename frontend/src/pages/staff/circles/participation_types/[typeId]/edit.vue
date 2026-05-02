@@ -16,12 +16,11 @@ import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
-import { cn } from '@/lib/ui/cn'
-import { buttonVariants } from '@/lib/ui/variants'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   buildDeleteStaffParticipationTypeConfirmMessage,
@@ -30,8 +29,13 @@ import {
   useStaffParticipationTypeDetailQuery,
   useUpdateStaffParticipationTypeMutation
 } from '@/features/staff/participation-types/api'
-import { buildStaffParticipationTypeTabs } from '@/features/ui/tabStrip'
+import { buildStaffParticipationTypeTabs } from '@/lib/ui/tabStrip'
 import { useFormValidation, staffParticipationTypeEditFormSchema } from '@/lib/form-validation'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import FormError from '@/components/ui/FormError.vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const route = useRoute('/staff/circles/participation_types/[typeId]/edit')
 const router = useRouter()
@@ -128,22 +132,21 @@ async function handleDelete() {
   <PageLayout fullWidth>
     <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
 
-    <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="detailQuery.isPending.value" />
 
     <form v-else-if="detailQuery.data.value" class="space-y-6" @submit.prevent="handleSave">
       <SurfaceCard tag="header">
         <h2 class="text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
         <div class="mt-4 flex flex-wrap gap-3">
-          <button
-            class="rounded border border-danger px-4 py-2 text-sm text-danger transition hover:bg-danger-light disabled:opacity-60"
+          <BaseButton
+            variant="dangerOutline"
+            size="md"
             :disabled="deleteMutation.isPending.value"
             type="button"
             @click="handleDelete"
           >
             {{ deleteMutation.isPending.value ? '削除中...' : '参加種別を削除' }}
-          </button>
+          </BaseButton>
         </div>
       </SurfaceCard>
 
@@ -173,7 +176,7 @@ async function handleDelete() {
                 @blur="markTouched('name')"
                 @input="markTouched('name')"
               />
-              <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
+              <FormError v-if="getFieldError('name')" :message="getFieldError('name')" />
             </div>
           </div>
         </SettingsRow>
@@ -184,10 +187,9 @@ async function handleDelete() {
               <p class="text-sm font-semibold text-body">説明</p>
               <p class="text-xs text-muted-2">参加登録画面の案内として一般ユーザーに表示します。</p>
             </div>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="sr-only">説明</span>
+            <FormField label="説明">
               <textarea v-model="form.description" class="min-h-24" name="description" />
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
 
@@ -211,9 +213,7 @@ async function handleDelete() {
                   @blur="markTouched('usersCountMin')"
                   @input="markTouched('usersCountMin')"
                 />
-                <p v-if="getFieldError('usersCountMin')" class="text-xs text-danger">
-                  {{ getFieldError('usersCountMin') }}
-                </p>
+                <FormError v-if="getFieldError('usersCountMin')" :message="getFieldError('usersCountMin')" />
               </div>
               <div class="grid gap-2 text-sm text-body">
                 <span>最大人数</span>
@@ -226,9 +226,7 @@ async function handleDelete() {
                   @blur="markTouched('usersCountMax')"
                   @input="markTouched('usersCountMax')"
                 />
-                <p v-if="getFieldError('usersCountMax')" class="text-xs text-danger">
-                  {{ getFieldError('usersCountMax') }}
-                </p>
+                <FormError v-if="getFieldError('usersCountMax')" :message="getFieldError('usersCountMax')" />
               </div>
             </div>
           </div>
@@ -243,10 +241,9 @@ async function handleDelete() {
               </p>
             </div>
             <div class="grid gap-3">
-              <label class="grid gap-2 text-sm text-body">
-                <span class="sr-only">付与タグ</span>
+              <FormField label="付与タグ">
                 <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
-              </label>
+              </FormField>
               <p class="text-xs text-muted-2">候補から追加しつつ、必要なら未登録タグもそのまま追加できます。</p>
             </div>
           </div>
@@ -260,22 +257,22 @@ async function handleDelete() {
             <AlertMessage v-if="errorMessage" tone="danger">
               {{ errorMessage }}
             </AlertMessage>
-            <div class="flex justify-end">
-              <button
-                :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
-                :disabled="updateMutation.isPending.value"
+            <ActionsFooter align="end">
+              <BaseButton
+                variant="primary"
+                size="wide"
+                weight="bold"
                 type="submit"
+                :disabled="updateMutation.isPending.value"
               >
                 {{ updateMutation.isPending.value ? '保存中...' : '保存' }}
-              </button>
-            </div>
+              </BaseButton>
+            </ActionsFooter>
           </div>
         </template>
       </SettingsSection>
     </form>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-      参加種別を取得できませんでした。
-    </div>
+    <ErrorState message="参加種別を取得できませんでした。" />
   </PageLayout>
 </template>

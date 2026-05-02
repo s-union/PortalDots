@@ -6,6 +6,7 @@ import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { getRoleDisplayName, manageableRoles, roleDescriptions } from '@/features/staff/users/api'
 import { useStaffUserEditor } from '@/features/staff/users/composables/useStaffUserEditor'
+import FormField from '@/components/ui/FormField.vue'
 
 const { userId } = defineProps<{
   userId: string
@@ -70,39 +71,31 @@ const dangerButtonClass = buttonVariants({ variant: 'dangerOutline', size: 'lg',
         <SettingsRow>
           <div class="grid gap-4">
             <div class="grid gap-4 min-[861px]:grid-cols-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">姓</span>
+              <FormField label="姓" label-class="font-medium">
                 <input v-model="lastName" name="lastName" type="text" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">名</span>
+              </FormField>
+              <FormField label="名" label-class="font-medium">
                 <input v-model="firstName" name="firstName" type="text" />
-              </label>
+              </FormField>
             </div>
             <div class="grid gap-4 min-[861px]:grid-cols-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">姓よみ</span>
+              <FormField label="姓よみ" label-class="font-medium">
                 <input v-model="lastNameReading" name="lastNameReading" type="text" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">名よみ</span>
+              </FormField>
+              <FormField label="名よみ" label-class="font-medium">
                 <input v-model="firstNameReading" name="firstNameReading" type="text" />
-              </label>
+              </FormField>
             </div>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">表示名</span>
+            <FormField label="表示名" label-class="font-medium">
               <input v-model="displayName" name="displayName" type="text" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">連絡先メールアドレス</span>
+            </FormField>
+            <FormField label="連絡先メールアドレス" label-class="font-medium">
               <input v-model="contactEmail" name="contactEmail" type="email" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">電話番号</span>
+            </FormField>
+            <FormField label="電話番号" label-class="font-medium">
               <input v-model="phoneNumber" name="phoneNumber" type="tel" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">ログイン ID</span>
+            </FormField>
+            <FormField label="ログイン ID" label-class="font-medium">
               <textarea
                 v-model="loginIdsText"
                 class="min-h-28"
@@ -112,7 +105,7 @@ const dangerButtonClass = buttonVariants({ variant: 'dangerOutline', size: 'lg',
               <span class="text-xs text-muted">
                 メールアドレスと学籍番号など、利用するログイン ID を複数登録できます。
               </span>
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
         <template #footer>

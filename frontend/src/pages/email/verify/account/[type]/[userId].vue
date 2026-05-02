@@ -10,6 +10,9 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 import { extractFirstErrorMessage, useVerifyAuthVerificationLinkMutation } from '@/features/auth/api'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const route = useRoute()
 const routeParams = computed(() => route.params as Record<string, string | string[] | undefined>)
@@ -58,18 +61,13 @@ onMounted(() => {
 
 <template>
   <NarrowPageLayout class="space-y-6 py-8">
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
+    <SurfaceCard tag="section">
+      <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">メール認証</h1>
-      </div>
+      </SurfaceCardBand>
       <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
         <p v-if="verifyMutation.isPending.value" class="text-muted">認証URLを確認しています...</p>
-        <p
-          v-else-if="verificationErrorMessage"
-          class="rounded border border-danger bg-danger-light px-4 py-3 text-danger"
-        >
-          {{ verificationErrorMessage }}
-        </p>
+        <ErrorState v-if="verificationErrorMessage" :message="verificationErrorMessage" />
         <template v-else-if="verificationCompleted !== null">
           <p class="rounded border border-success bg-success-light px-4 py-3 text-success">
             {{
@@ -88,6 +86,6 @@ onMounted(() => {
           </div>
         </template>
       </div>
-    </section>
+    </SurfaceCard>
   </NarrowPageLayout>
 </template>

@@ -5,6 +5,11 @@ import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import { cn } from '@/lib/ui/cn'
 import { formControlVariants } from '@/lib/ui/variants'
 import type { MutateStaffPagePayload, StaffPageDocument } from '@/features/staff/pages/api'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
+import InfoBox from '@/components/ui/InfoBox.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
 
 const form = defineModel<MutateStaffPagePayload>({ required: true })
 
@@ -47,8 +52,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 
 <template>
   <div class="grid gap-4">
-    <div class="grid gap-2 text-sm text-body">
-      <span class="font-medium">タイトル</span>
+    <FormField as="div" label="タイトル" label-class="font-medium" :error="fieldErrors?.title">
       <input
         v-model="form.title"
         :class="[formControlVariants(), { 'border-danger': fieldErrors?.title }]"
@@ -57,22 +61,20 @@ function handleDocumentChange(documentId: string, event: Event) {
         @blur="onBlurField?.('title')"
         @input="onBlurField?.('title')"
       />
-      <p v-if="fieldErrors?.title" class="text-xs text-danger">{{ fieldErrors.title }}</p>
-    </div>
+    </FormField>
 
     <div class="grid gap-2 text-sm text-body">
       <span class="font-medium">本文</span>
       <MarkdownEditorField v-model="form.body" min-height-class="min-h-56" name="body" />
-      <p v-if="fieldErrors?.body" class="text-xs text-danger">{{ fieldErrors.body }}</p>
+      <FormError v-if="fieldErrors?.body" :message="fieldErrors.body" />
       <p class="text-xs text-muted">
         Markdown で入力できます。表、取り消し線、タスクリスト、脚注は GFM として表示されます。
       </p>
     </div>
 
-    <label class="grid gap-2 text-sm text-body">
-      <span class="font-medium">スタッフ用メモ</span>
+    <FormField label="スタッフ用メモ" label-class="font-medium">
       <textarea v-model="form.notes" :class="cn(formControlVariants(), 'min-h-28')" name="notes" />
-    </label>
+    </FormField>
 
     <label class="grid gap-2 text-sm text-body">
       <span class="font-medium">閲覧可能なタグ</span>
@@ -82,15 +84,10 @@ function handleDocumentChange(documentId: string, event: Event) {
 
     <fieldset class="grid gap-2 text-sm text-body">
       <legend class="font-medium">関連する配布資料</legend>
-      <div v-if="documentsLoading" class="rounded border border-border bg-surface-light px-4 py-3 text-muted">
-        配布資料を読み込み中...
-      </div>
-      <div
-        v-else-if="availableDocuments.length === 0"
-        class="rounded border border-border bg-surface-light px-4 py-3 text-muted"
-      >
+      <InfoBox v-if="documentsLoading" class="text-muted"> 配布資料を読み込み中... </InfoBox>
+      <InfoBox v-else-if="availableDocuments.length === 0" class="text-muted">
         選択できる配布資料はありません。
-      </div>
+      </InfoBox>
       <div v-else class="grid gap-2 rounded border border-border bg-surface-light p-4">
         <label v-for="document in availableDocuments" :key="document.id" class="flex items-start gap-3">
           <input
@@ -106,32 +103,19 @@ function handleDocumentChange(documentId: string, event: Event) {
       </div>
     </fieldset>
 
-    <label class="flex items-center gap-3 text-sm text-body">
-      <input v-model="form.isPinned" name="isPinned" type="checkbox" />
-      固定表示する
-    </label>
+    <CheckboxField v-model="form.isPinned" label="固定表示する" />
 
-    <label class="flex items-center gap-3 text-sm text-body">
-      <input v-model="form.isPublic" name="isPublic" type="checkbox" />
-      公開する
-    </label>
+    <CheckboxField v-model="form.isPublic" label="公開する" />
 
-    <label class="flex items-center gap-3 text-sm text-body">
-      <input v-model="form.sendEmails" name="sendEmails" type="checkbox" />
-      保存後にメール配信を予約する
-    </label>
+    <CheckboxField v-model="form.sendEmails" label="保存後にメール配信を予約する" />
 
     <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
     <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
 
     <div class="flex justify-end">
-      <button
-        class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-        :disabled="submitting"
-        type="submit"
-      >
+      <BaseButton variant="primary" size="wide" weight="bold" :disabled="submitting" type="submit">
         {{ submitting ? '保存中...' : submitLabel }}
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

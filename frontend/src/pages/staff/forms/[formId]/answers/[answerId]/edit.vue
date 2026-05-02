@@ -32,8 +32,12 @@ import {
   useUpdateStaffFormAnswerMutation,
   useUploadStaffFormAnswerFileMutation
 } from '@/features/staff/forms/answers'
-import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/[answerId]/edit')
 const router = useRouter()
@@ -138,9 +142,7 @@ function handleFileChange(questionId: string, event: Event) {
   <PageLayout>
     <TabStrip :tabs="staffFormTabs" />
 
-    <div v-if="answerQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="answerQuery.isPending.value" />
 
     <article v-else-if="answerQuery.data.value" class="space-y-6">
       <SurfaceCard>
@@ -178,15 +180,14 @@ function handleFileChange(questionId: string, event: Event) {
         <div class="grid gap-0">
           <template v-if="answerQuery.data.value.form.questions.length === 0">
             <div class="border-b border-border px-6 py-5">
-              <label class="grid gap-2 text-sm text-body">
-                <span>回答</span>
+              <FormField label="回答">
                 <textarea
                   :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
                   class="min-h-40"
                   name="answer-body"
                   @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
                 />
-              </label>
+              </FormField>
             </div>
           </template>
 
@@ -232,22 +233,26 @@ function handleFileChange(questionId: string, event: Event) {
         <div class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-5">
           <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
           <div class="ml-auto flex flex-wrap gap-3">
-            <button
-              class="rounded border border-danger px-4 py-3 text-sm font-semibold text-danger transition hover:bg-danger-light"
+            <BaseButton
+              variant="dangerOutline"
+              size="lg"
+              weight="semibold"
               :disabled="deleteAnswerMutation.isPending.value"
               type="button"
               @click="handleDeleteAnswer"
             >
               削除
-            </button>
-            <button
-              class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            </BaseButton>
+            <BaseButton
+              variant="primary"
+              size="lg"
+              weight="bold"
               :disabled="updateAnswerMutation.isPending.value"
               type="button"
               @click="handleSaveAnswer"
             >
               {{ updateAnswerMutation.isPending.value ? '保存中...' : '変更を保存' }}
-            </button>
+            </BaseButton>
           </div>
         </div>
       </SurfaceCard>
@@ -274,6 +279,6 @@ function handleFileChange(questionId: string, event: Event) {
       </SurfaceCard>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">回答を取得できませんでした。</div>
+    <ErrorState message="回答を取得できませんでした。" />
   </PageLayout>
 </template>

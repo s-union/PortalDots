@@ -4,6 +4,7 @@ import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import { buttonVariants } from '@/lib/ui/variants'
+import FormField from '@/components/ui/FormField.vue'
 import {
   buildDeleteStaffContactCategoryConfirmMessage,
   extractStaffContactCategoryValidationMessage,
@@ -102,15 +103,13 @@ async function handleDelete() {
       <SettingsSection title="お問い合わせ受付設定">
         <SettingsRow>
           <div class="grid gap-4">
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">カテゴリ名</span>
+            <FormField label="カテゴリ名" label-class="font-medium">
               <input v-model="name" name="name" type="text" />
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">送信先メールアドレス</span>
+            <FormField label="送信先メールアドレス" label-class="font-medium">
               <input v-model="email" name="email" type="email" />
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
 

@@ -20,6 +20,11 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormField from '@/components/ui/FormField.vue'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
 import {
   buildDeleteStaffDocumentConfirmMessage,
   buildStaffDocumentDownloadUrl,
@@ -113,9 +118,7 @@ async function handleDeleteDocument() {
 
 <template>
   <PageLayout>
-    <div v-if="documentQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="documentQuery.isPending.value" />
 
     <form v-else-if="documentQuery.data.value" class="space-y-6" @submit.prevent="handleSaveDocument">
       <div class="space-y-1 px-1">
@@ -132,23 +135,19 @@ async function handleDeleteDocument() {
       <SettingsSection title="配布資料">
         <SettingsRow>
           <div class="grid gap-4">
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">配布資料名</span>
+            <FormField label="配布資料名" label-class="font-medium">
               <input v-model="form.name" name="name" type="text" />
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">説明</span>
+            <FormField label="説明" label-class="font-medium">
               <textarea v-model="form.description" class="min-h-24" name="description" />
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">スタッフ用メモ</span>
+            <FormField label="スタッフ用メモ" label-class="font-medium">
               <textarea v-model="form.notes" class="min-h-24" name="notes" />
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">ファイル差し替え</span>
+            <FormField label="ファイル差し替え" label-class="font-medium">
               <input name="file" type="file" @change="handleFileChange" />
               <span class="text-xs text-muted">
                 現在のファイル:
@@ -162,17 +161,11 @@ async function handleDeleteDocument() {
                 </a>
                 / {{ documentQuery.data.value.mimeType }}
               </span>
-            </label>
+            </FormField>
 
-            <label class="flex items-center gap-3 text-sm text-body">
-              <input v-model="form.isImportant" name="isImportant" type="checkbox" />
-              重要資料として扱う
-            </label>
+            <CheckboxField v-model="form.isImportant" label="重要資料として扱う" />
 
-            <label class="flex items-center gap-3 text-sm text-body">
-              <input v-model="form.isPublic" name="isPublic" type="checkbox" />
-              公開する
-            </label>
+            <CheckboxField v-model="form.isPublic" label="公開する" />
           </div>
         </SettingsRow>
       </SettingsSection>
@@ -181,26 +174,28 @@ async function handleDeleteDocument() {
       <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
 
       <div class="flex flex-wrap justify-end gap-3">
-        <button
-          class="rounded border border-danger px-5 py-3 font-semibold text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
+        <BaseButton
+          variant="dangerOutline"
+          size="lg"
+          weight="semibold"
           :disabled="deleteDocumentMutation.isPending.value"
           type="button"
           @click="handleDeleteDocument"
         >
           削除
-        </button>
-        <button
-          class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+        </BaseButton>
+        <BaseButton
+          variant="primary"
+          size="wide"
+          weight="bold"
           :disabled="updateDocumentMutation.isPending.value"
           type="submit"
         >
           {{ updateDocumentMutation.isPending.value ? '保存中...' : '更新する' }}
-        </button>
+        </BaseButton>
       </div>
     </form>
 
-    <div v-else class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-      配布資料を取得できませんでした。
-    </div>
+    <ErrorState message="配布資料を取得できませんでした。" />
   </PageLayout>
 </template>

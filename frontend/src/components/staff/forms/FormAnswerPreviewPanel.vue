@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { type StaffFormDetail } from '@/features/staff/forms/api'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import UploadFileRow from './UploadFileRow.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 
 const { formId, form, isParticipationForm } = defineProps<{
   formId: string
@@ -22,7 +23,7 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
 </script>
 
 <template>
-  <section id="answer-panel" class="rounded border border-border bg-surface shadow-lv1 scroll-mt-24">
+  <SurfaceCard id="answer-panel" tag="section" class="scroll-mt-24">
     <SurfaceCardBand class="py-4">
       <div class="flex items-center justify-between gap-4">
         <h3 class="text-lg font-medium text-body">現在企画の回答</h3>
@@ -101,5 +102,5 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
         </li>
       </ul>
     </div>
-  </section>
+  </SurfaceCard>
 </template>

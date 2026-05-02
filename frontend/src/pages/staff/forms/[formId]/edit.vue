@@ -32,9 +32,16 @@ import {
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
-import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useFormValidation, staffFormSchema } from '@/lib/form-validation'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormError from '@/components/ui/FormError.vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormField from '@/components/ui/FormField.vue'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
 
 const route = useRoute('/staff/forms/[formId]/edit')
 const router = useRouter()
@@ -166,9 +173,7 @@ async function handleDeleteForm() {
 
 <template>
   <PageLayout fullWidth>
-    <div v-if="formQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="formQuery.isPending.value" />
 
     <article v-else-if="formQuery.data.value" class="space-y-6">
       <TabStrip :tabs="staffFormTabs" />
@@ -223,14 +228,15 @@ async function handleDeleteForm() {
                 >
                   複製
                 </button>
-                <button
+                <BaseButton
                   v-if="!isParticipationForm"
-                  class="rounded border border-danger px-3 py-2 text-xs text-danger transition hover:bg-danger-light"
+                  variant="dangerOutline"
+                  size="xs"
                   type="button"
                   @click="handleDeleteForm"
                 >
                   削除
-                </button>
+                </BaseButton>
               </div>
             </div>
           </template>
@@ -254,9 +260,7 @@ async function handleDeleteForm() {
                 @blur="markTouched('name')"
                 @input="markTouched('name')"
               />
-              <p v-if="getFieldError('name') && !isParticipationForm" class="text-xs text-danger">
-                {{ getFieldError('name') }}
-              </p>
+              <FormError v-if="getFieldError('name') && !isParticipationForm" :message="getFieldError('name')" />
             </div>
           </div>
         </SettingsRow>
@@ -267,15 +271,14 @@ async function handleDeleteForm() {
               <p class="text-sm font-semibold text-body">フォームの説明</p>
               <p class="text-xs text-muted-2">フォームの説明を入力します。</p>
             </div>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="sr-only">説明</span>
+            <FormField label="説明">
               <MarkdownEditorField
                 v-model="editForm.description"
                 :disabled="isParticipationForm"
                 min-height-class="min-h-32"
                 name="description"
               />
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
 
@@ -296,9 +299,7 @@ async function handleDeleteForm() {
                   :class="{ 'border-danger': getFieldError('openAt') && !isParticipationForm }"
                   @blur="markTouched('openAt')"
                 />
-                <p v-if="getFieldError('openAt') && !isParticipationForm" class="text-xs text-danger">
-                  {{ getFieldError('openAt') }}
-                </p>
+                <FormError v-if="getFieldError('openAt') && !isParticipationForm" :message="getFieldError('openAt')" />
               </div>
 
               <div class="grid gap-2 text-sm text-body">
@@ -311,9 +312,10 @@ async function handleDeleteForm() {
                   :class="{ 'border-danger': getFieldError('closeAt') && !isParticipationForm }"
                   @blur="markTouched('closeAt')"
                 />
-                <p v-if="getFieldError('closeAt') && !isParticipationForm" class="text-xs text-danger">
-                  {{ getFieldError('closeAt') }}
-                </p>
+                <FormError
+                  v-if="getFieldError('closeAt') && !isParticipationForm"
+                  :message="getFieldError('closeAt')"
+                />
               </div>
             </div>
           </div>
@@ -326,10 +328,7 @@ async function handleDeleteForm() {
               <p class="text-xs text-muted-2">受付期間外では、公開中でもユーザーは回答や編集を行えません。</p>
             </div>
             <div class="flex flex-wrap gap-4">
-              <label class="flex items-center gap-3 text-sm text-body">
-                <input v-model="editForm.isPublic" :disabled="isParticipationForm" name="isPublic" type="checkbox" />
-                公開する
-              </label>
+              <CheckboxField v-model="editForm.isPublic" label="公開する" :disabled="isParticipationForm" />
             </div>
           </div>
         </SettingsRow>
@@ -354,19 +353,19 @@ async function handleDeleteForm() {
                   @blur="markTouched('maxAnswers')"
                   @input="markTouched('maxAnswers')"
                 />
-                <p v-if="getFieldError('maxAnswers') && !isParticipationForm" class="text-xs text-danger">
-                  {{ getFieldError('maxAnswers') }}
-                </p>
+                <FormError
+                  v-if="getFieldError('maxAnswers') && !isParticipationForm"
+                  :message="getFieldError('maxAnswers')"
+                />
               </div>
-              <label class="grid gap-2 text-sm text-body">
-                <span>回答可能タグ</span>
+              <FormField label="回答可能タグ">
                 <StaffTagPicker
                   v-model="editForm.answerableTags"
                   :available-tags="availableTags"
                   :disabled="isParticipationForm"
                   name="answerableTags"
                 />
-              </label>
+              </FormField>
             </div>
           </div>
         </SettingsRow>
@@ -377,15 +376,14 @@ async function handleDeleteForm() {
               <p class="text-sm font-semibold text-body">回答完了メッセージ</p>
               <p class="text-xs text-muted-2">提出後に表示する補足文言です。未設定なら既定メッセージを使います。</p>
             </div>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="sr-only">回答完了メッセージ</span>
+            <FormField label="回答完了メッセージ">
               <MarkdownEditorField
                 v-model="editForm.confirmationMessage"
                 :disabled="isParticipationForm"
                 min-height-class="min-h-24"
                 name="confirmationMessage"
               />
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
 
@@ -398,9 +396,11 @@ async function handleDeleteForm() {
               参加登録フォームの公開設定・受付期間・人数条件は参加種別画面から変更してください。
             </p>
             <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
-            <div class="flex justify-end">
-              <button
-                class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            <ActionsFooter align="end">
+              <BaseButton
+                variant="primary"
+                size="lg"
+                weight="bold"
                 :disabled="isParticipationForm || updateFormMutation.isPending.value"
                 type="button"
                 @click="handleSaveForm"
@@ -412,15 +412,13 @@ async function handleDeleteForm() {
                       ? '保存中...'
                       : '変更を保存'
                 }}
-              </button>
-            </div>
+              </BaseButton>
+            </ActionsFooter>
           </div>
         </template>
       </SettingsSection>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-      フォームを取得できませんでした。
-    </div>
+    <ErrorState message="フォームを取得できませんでした。" />
   </PageLayout>
 </template>

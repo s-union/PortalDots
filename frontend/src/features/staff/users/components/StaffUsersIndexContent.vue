@@ -8,6 +8,7 @@ import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContaine
 import IconActionButton from '@/components/ui/IconActionButton.vue'
 import { useStaffUsersIndexPage } from '@/features/staff/users/composables/useStaffUsersIndexPage'
 import StaffUserEditor from './StaffUserEditor.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const {
   closeEditor,
@@ -89,14 +90,14 @@ const columns: StaffDataGridColumn[] = [
               :href="exportUrl"
               class="inline-flex items-center gap-2 px-3 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
             >
-              <i class="fas fa-file-csv fa-fw text-[0.95rem]" aria-hidden="true" />
+              <FaIcon name="file-csv" fixed-width class-name="text-[0.95rem]" />
               CSVで出力
             </a>
           </template>
 
           <template #actions="{ row }">
             <IconActionButton title="編集" variant="ghost" @click="openEditor(String(row.id))">
-              <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+              <FaIcon name="pencil-alt" fixed-width />
             </IconActionButton>
           </template>
 

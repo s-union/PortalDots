@@ -16,6 +16,11 @@ import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormField from '@/components/ui/FormField.vue'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
 import {
   extractStaffPortalSettingsValidationMessage,
   useStaffPortalSettingsQuery,
@@ -77,9 +82,7 @@ async function handleSave() {
 
 <template>
   <PageLayout>
-    <div v-if="settingsQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="settingsQuery.isPending.value" />
 
     <form v-else class="space-y-6" @submit.prevent="handleSave">
       <p class="text-sm font-semibold text-body">Portal 設定</p>
@@ -106,10 +109,7 @@ async function handleSave() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <p class="text-sm font-semibold text-body">HTTPS 強制</p>
-            <label class="flex items-center gap-3 text-sm text-body">
-              <input v-model="form.appForceHttps" name="appForceHttps" type="checkbox" />
-              https 接続を強制する
-            </label>
+            <CheckboxField v-model="form.appForceHttps" label="https 接続を強制する" />
           </div>
         </SettingsRow>
       </SettingsSection>
@@ -117,34 +117,28 @@ async function handleSave() {
       <SettingsSection title="連絡先と学校情報">
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-2">
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">実行委員会名</span>
+            <FormField label="実行委員会名" label-class="font-medium">
               <input v-model="form.portalAdminName" name="portalAdminName" type="text" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">連絡先メールアドレス</span>
+            </FormField>
+            <FormField label="連絡先メールアドレス" label-class="font-medium">
               <input v-model="form.portalContactEmail" name="portalContactEmail" type="email" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">学籍番号の呼び方</span>
+            </FormField>
+            <FormField label="学籍番号の呼び方" label-class="font-medium">
               <input v-model="form.portalStudentIdName" name="portalStudentIdName" type="text" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">学校メールの呼び方</span>
+            </FormField>
+            <FormField label="学校メールの呼び方" label-class="font-medium">
               <input v-model="form.portalUnivemailName" name="portalUnivemailName" type="text" />
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">学校メールのローカルパート種別</span>
+            </FormField>
+            <FormField label="学校メールのローカルパート種別" label-class="font-medium">
               <select v-model="form.portalUnivemailLocalPart" name="portalUnivemailLocalPart">
                 <option v-for="option in localPartOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </option>
               </select>
-            </label>
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">学校メールのドメイン</span>
+            </FormField>
+            <FormField label="学校メールのドメイン" label-class="font-medium">
               <input v-model="form.portalUnivemailDomainPart" name="portalUnivemailDomainPart" type="text" />
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
       </SettingsSection>
@@ -153,18 +147,15 @@ async function handleSave() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_12rem] md:items-start">
             <div class="grid gap-4 md:grid-cols-3">
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">H</span>
+              <FormField label="H" label-class="font-medium">
                 <input v-model.number="form.portalPrimaryColorH" name="portalPrimaryColorH" type="number" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">S</span>
+              </FormField>
+              <FormField label="S" label-class="font-medium">
                 <input v-model.number="form.portalPrimaryColorS" name="portalPrimaryColorS" type="number" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">L</span>
+              </FormField>
+              <FormField label="L" label-class="font-medium">
                 <input v-model.number="form.portalPrimaryColorL" name="portalPrimaryColorL" type="number" />
-              </label>
+              </FormField>
             </div>
             <div class="rounded border border-border bg-surface-light p-4">
               <p class="text-xs text-muted">プレビュー</p>
@@ -176,15 +167,17 @@ async function handleSave() {
           <div class="space-y-4">
             <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
             <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
-            <div class="flex justify-end">
-              <button
-                class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:opacity-60"
-                :disabled="updateMutation.isPending.value"
+            <ActionsFooter align="end">
+              <BaseButton
+                variant="primary"
+                size="wide"
+                weight="bold"
                 type="submit"
+                :disabled="updateMutation.isPending.value"
               >
                 {{ updateMutation.isPending.value ? '保存中...' : '変更を保存' }}
-              </button>
-            </div>
+              </BaseButton>
+            </ActionsFooter>
           </div>
         </template>
       </SettingsSection>

@@ -13,6 +13,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { buildApiUrl } from '@/lib/api/client'
+import BaseButton from '@/components/ui/BaseButton.vue'
 const summaryHref = buildApiUrl('/staff/exports/summary.csv')
 const bundleHref = buildApiUrl('/staff/exports/bundle.zip')
 </script>
@@ -32,12 +33,7 @@ const bundleHref = buildApiUrl('/staff/exports/bundle.zip')
               <h3 class="text-base font-medium text-body">Summary CSV</h3>
               <p class="mt-2 text-sm leading-7 text-muted">全企画のリソース一覧を 1 ファイルの CSV で取得します。</p>
             </div>
-            <a
-              class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
-              :href="summaryHref"
-            >
-              CSV をダウンロード
-            </a>
+            <BaseButton variant="primary" size="lg" weight="bold" :href="summaryHref"> CSV をダウンロード </BaseButton>
           </div>
         </article>
 
@@ -49,12 +45,7 @@ const bundleHref = buildApiUrl('/staff/exports/bundle.zip')
                 pages / documents / forms / answers を個別 CSV に分けた ZIP を取得します。
               </p>
             </div>
-            <a
-              class="inline-flex rounded border border-border bg-surface px-4 py-2 text-sm text-body transition hover:bg-surface-light"
-              :href="bundleHref"
-            >
-              ZIP をダウンロード
-            </a>
+            <BaseButton :href="bundleHref" variant="secondary" size="md"> ZIP をダウンロード </BaseButton>
           </div>
         </article>
       </div>

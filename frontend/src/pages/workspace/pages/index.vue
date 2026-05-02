@@ -16,6 +16,8 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { usePagesQuery } from '@/features/pages/api'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { calculateTotalPages } from '@/lib/pagination'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,12 +73,7 @@ async function handlePageChange(nextPage: number) {
           placeholder="お知らせを検索..."
           type="search"
         />
-        <button
-          class="rounded bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-hover"
-          type="submit"
-        >
-          検索
-        </button>
+        <BaseButton variant="primary" size="lg" weight="bold" type="submit"> 検索 </BaseButton>
       </form>
 
       <div v-if="String(route.query.query ?? '') !== ''" class="mt-3">
@@ -86,9 +83,7 @@ async function handlePageChange(nextPage: number) {
       </div>
     </div>
 
-    <div v-if="pagesQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="pagesQuery.isPending.value" />
 
     <div
       v-else-if="pageList.items.length === 0"

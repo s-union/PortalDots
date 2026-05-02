@@ -11,6 +11,10 @@ import { useSessionStore } from '@/features/session/store'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { buttonVariants } from '@/lib/ui/variants'
 import { computed } from 'vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormError from '@/components/ui/FormError.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const { formId: currentFormId, selectedAnswerId: currentSelectedAnswerId } = defineProps<{
   formId: string
@@ -116,10 +120,9 @@ const remainingAnswerCount = computed(() => {
           </AlertMessage>
 
           <div class="rounded border border-border bg-surface px-6 py-5 shadow-lv1">
-            <label class="grid gap-2 text-sm text-body">
-              <span>申請企画名</span>
+            <FormField label="申請企画名">
               <input :value="currentCircleLabel" readonly type="text" />
-            </label>
+            </FormField>
           </div>
 
           <section v-if="answers.length > 0" class="rounded border border-border bg-surface px-6 py-5 shadow-lv1">
@@ -176,7 +179,7 @@ const remainingAnswerCount = computed(() => {
             </div>
           </section>
 
-          <div class="overflow-hidden rounded border border-border bg-surface shadow-lv1">
+          <SurfaceCard overflow-hidden>
             <div v-if="selectedAnswer" class="border-b border-border px-6 py-5 text-sm text-body">
               <p class="font-semibold">
                 {{ form.isOpen ? '回答を編集' : '回答を閲覧' }} — 回答ID : {{ selectedAnswer.id }}
@@ -186,8 +189,7 @@ const remainingAnswerCount = computed(() => {
             <div class="grid gap-0">
               <template v-if="form.questions.length === 0">
                 <div class="border-b border-border px-6 py-5 last:border-b-0">
-                  <label class="grid gap-2 text-sm text-body">
-                    <span>回答</span>
+                  <FormField label="回答">
                     <textarea
                       :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
                       class="min-h-40"
@@ -196,7 +198,7 @@ const remainingAnswerCount = computed(() => {
                       placeholder="回答内容を入力してください"
                       @input="updateDraftValue(draft, 'legacy-body', ($event.target as HTMLTextAreaElement).value)"
                     />
-                  </label>
+                  </FormField>
                 </div>
               </template>
 
@@ -235,20 +237,18 @@ const remainingAnswerCount = computed(() => {
                         @file-change="handleFileChange"
                       />
                     </div>
-                    <p v-if="getAnswerFieldError(question.id)" class="text-xs text-danger">
-                      {{ getAnswerFieldError(question.id) }}
-                    </p>
+                    <FormError v-if="getAnswerFieldError(question.id)" :message="getAnswerFieldError(question.id)" />
                   </div>
                 </div>
               </template>
             </div>
-          </div>
+          </SurfaceCard>
 
           <AlertMessage v-if="errorMessage" tone="danger">
             {{ errorMessage }}
           </AlertMessage>
 
-          <div class="flex justify-center">
+          <ActionsFooter align="center">
             <button
               :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })"
               :disabled="!isFormWritable || isSavingAnswer"
@@ -256,7 +256,7 @@ const remainingAnswerCount = computed(() => {
             >
               {{ isSavingAnswer ? '送信中...' : '送信' }}
             </button>
-          </div>
+          </ActionsFooter>
         </form>
       </template>
 

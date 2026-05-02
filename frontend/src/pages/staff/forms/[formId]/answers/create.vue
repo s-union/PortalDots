@@ -12,6 +12,8 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime } from '@/lib/format/datetime'
+import FormField from '@/components/ui/FormField.vue'
+import InfoBox from '@/components/ui/InfoBox.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
@@ -24,7 +26,7 @@ import {
   useCreateStaffFormAnswerMutation,
   useStaffFormAnswersIndexQuery
 } from '@/features/staff/forms/answers'
-import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/create')
@@ -108,12 +110,11 @@ async function handleCreateAnswer() {
 
       <section class="rounded border border-border bg-surface p-6 shadow-lv1">
         <div class="grid gap-4">
-          <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+          <InfoBox class="text-muted">
             {{ notificationMessage }}
-          </div>
+          </InfoBox>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span>回答を作成する企画</span>
+          <FormField label="回答を作成する企画">
             <select
               v-model="selectedCircleId"
               class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
@@ -123,12 +124,12 @@ async function handleCreateAnswer() {
                 {{ circle.name }} / {{ circle.groupName }} / {{ circle.participationTypeName }}
               </option>
             </select>
-          </label>
+          </FormField>
 
-          <div v-if="selectedCircle" class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+          <InfoBox v-if="selectedCircle" class="text-muted">
             <p class="font-semibold text-body">{{ selectedCircle.name }}</p>
             <p class="mt-1">{{ selectedCircle.groupName }} / {{ selectedCircle.participationTypeName }}</p>
-          </div>
+          </InfoBox>
 
           <div class="flex flex-wrap gap-3">
             <button

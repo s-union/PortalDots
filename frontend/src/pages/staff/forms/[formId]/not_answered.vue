@@ -17,8 +17,10 @@ import TabStrip from '@/components/ui/TabStrip.vue'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffFormAnswersIndexQuery } from '@/features/staff/forms/answers'
-import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 
 const route = useRoute('/staff/forms/[formId]/not_answered')
 const sessionStore = useSessionStore()
@@ -35,9 +37,7 @@ const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTa
   <PageLayout>
     <TabStrip v-if="formId.length > 0" :tabs="staffFormTabs" />
 
-    <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="answersQuery.isPending.value" />
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
       <div class="space-y-1 px-1">
@@ -66,8 +66,6 @@ const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTa
       </ListPanel>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-      未回答企画一覧を取得できませんでした。
-    </div>
+    <ErrorState message="未回答企画一覧を取得できませんでした。" />
   </PageLayout>
 </template>

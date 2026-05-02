@@ -6,6 +6,8 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import PanelBody from '@/components/ui/PanelBody.vue'
 import { useJoinCircleMutation } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -74,27 +76,21 @@ function extractApiMessage(error: unknown) {
         </p>
         <p v-else>招待を受け入れるには先にログインが必要です。ログイン後にこの URL をもう一度開いてください。</p>
 
-        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-          {{ errorMessage }}
-        </p>
+        <ErrorState v-if="errorMessage" :message="errorMessage" />
 
         <div class="flex flex-wrap gap-3">
-          <button
+          <BaseButton
+            variant="primary"
+            size="lg"
+            weight="bold"
             v-if="isAuthenticated"
-            class="rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="joinMutation.isPending.value"
             type="button"
             @click="handleAcceptInvite"
           >
             {{ joinMutation.isPending.value ? '受け入れ中...' : '招待を受け入れる' }}
-          </button>
-          <RouterLink
-            v-else
-            to="/login"
-            class="inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover"
-          >
-            ログインして続ける
-          </RouterLink>
+          </BaseButton>
+          <BaseButton v-else to="/login" variant="primary" size="lg" weight="bold"> ログインして続ける </BaseButton>
           <RouterLink
             to="/circles/select"
             class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"

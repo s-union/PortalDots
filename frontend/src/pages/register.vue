@@ -13,6 +13,10 @@ import AuthPageLayout from '@/components/layouts/AuthPageLayout.vue'
 import { extractFirstErrorMessage, useStartRegistrationMutation } from '@/features/auth/api'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { registrationStartFormSchema, useFormValidation } from '@/lib/form-validation'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import FormError from '@/components/ui/FormError.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const registerMutation = useStartRegistrationMutation()
 const publicConfigQuery = usePublicConfigQuery()
@@ -54,10 +58,10 @@ async function handleSubmit() {
 
 <template>
   <AuthPageLayout width="md">
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
+    <SurfaceCard tag="section">
+      <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー登録</h1>
-      </div>
+      </SurfaceCardBand>
 
       <form class="space-y-5 px-6 py-6 text-sm leading-7 text-body" @submit.prevent="handleSubmit">
         <p>{{ appName }} に登録する大学メールアドレスを入力してください。</p>
@@ -66,9 +70,7 @@ async function handleSubmit() {
         <p v-if="successMessage" class="rounded border border-success bg-success-light px-4 py-3 text-success">
           {{ successMessage }}
         </p>
-        <p v-if="errorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-danger">
-          {{ errorMessage }}
-        </p>
+        <ErrorState v-if="errorMessage" :message="errorMessage" />
 
         <div class="grid gap-2">
           <label class="grid gap-2">
@@ -90,9 +92,7 @@ async function handleSubmit() {
           <p class="text-xs text-muted">
             {{ studentIdLabel }} は入力したメールアドレスの @ より前の部分として扱われます。
           </p>
-          <p v-if="getFieldError('univemailLocalPart')" class="text-xs text-danger">
-            {{ getFieldError('univemailLocalPart') }}
-          </p>
+          <FormError v-if="getFieldError('univemailLocalPart')" :message="getFieldError('univemailLocalPart')" />
         </div>
 
         <div class="pt-2 text-center">
@@ -105,6 +105,6 @@ async function handleSubmit() {
           </button>
         </div>
       </form>
-    </section>
+    </SurfaceCard>
   </AuthPageLayout>
 </template>

@@ -24,6 +24,7 @@ import {
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { useFormValidation, staffPageFormSchema } from '@/lib/form-validation'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const router = useRouter()
 const sessionStore = useSessionStore()
@@ -72,9 +73,9 @@ async function handleCreatePage() {
   <PageLayout>
     <form class="space-y-6" @submit.prevent="handleCreatePage">
       <SurfaceCard>
-        <div class="border-b border-border px-6 py-5">
+        <SurfaceCardBand>
           <h1 class="text-2xl font-semibold text-body">お知らせを新規作成</h1>
-        </div>
+        </SurfaceCardBand>
         <div class="px-6 py-6">
           <StaffPageEditorForm
             v-model="form"

@@ -13,7 +13,7 @@ import TabStrip from '@/components/ui/TabStrip.vue'
 import AsyncBoundary from '@/components/async/AsyncBoundary.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 import WorkspaceFormsListContent from '@/features/forms/components/WorkspaceFormsListContent.vue'
-import type { TabStripItem } from '@/features/ui/tabStrip'
+import type { TabStripItem } from '@/lib/ui/tabStrip'
 
 type FormStatusTab = 'open' | 'closed' | 'all'
 

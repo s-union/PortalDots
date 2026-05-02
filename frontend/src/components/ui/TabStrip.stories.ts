@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import TabStrip from './TabStrip.vue'
-import type { TabStripItem } from '@/features/ui/tabStrip'
+import type { TabStripItem } from '@/lib/ui/tabStrip'
 
 const meta = {
   title: 'UI/TabStrip',

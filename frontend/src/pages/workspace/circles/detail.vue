@@ -27,6 +27,8 @@ import {
 import { extractValidationMessage } from '@/lib/api/validation'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const router = useRouter()
 const detailQuery = useCurrentCircleDetailQuery()
@@ -240,13 +242,11 @@ function downloadHref(questionId: string) {
       <SettingsSection title="企画情報">
         <SettingsRow>
           <div class="grid gap-4">
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">企画責任者</span>
+            <FormField label="企画責任者" label-class="font-semibold">
               <input :value="detailQuery.data.value.leaderDisplayName" disabled name="leaderDisplayName" type="text" />
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">企画名 <span class="text-danger">*</span></span>
+            <FormField label="企画名" label-class="font-semibold" :error="getFieldError('name') && canEdit" required>
               <input
                 v-model="form.name"
                 :disabled="!canEdit"
@@ -256,13 +256,14 @@ function downloadHref(questionId: string) {
                 @blur="markTouched('name')"
                 @input="markTouched('name')"
               />
-              <p v-if="getFieldError('name') && canEdit" class="text-xs text-danger">
-                {{ getFieldError('name') }}
-              </p>
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">企画名（よみ） <span class="text-danger">*</span></span>
+            <FormField
+              label="企画名（よみ）"
+              label-class="font-semibold"
+              :error="getFieldError('nameYomi') && canEdit"
+              required
+            >
               <input
                 v-model="form.nameYomi"
                 :disabled="!canEdit"
@@ -274,13 +275,14 @@ function downloadHref(questionId: string) {
                 @blur="markTouched('nameYomi')"
                 @input="markTouched('nameYomi')"
               />
-              <p v-if="getFieldError('nameYomi') && canEdit" class="text-xs text-danger">
-                {{ getFieldError('nameYomi') }}
-              </p>
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">企画を出店する団体の名称 <span class="text-danger">*</span></span>
+            <FormField
+              label="企画を出店する団体の名称"
+              label-class="font-semibold"
+              :error="getFieldError('groupName') && canEdit && detailQuery.data.value.canChangeGroupName"
+              required
+            >
               <input
                 v-model="form.groupName"
                 :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
@@ -293,16 +295,14 @@ function downloadHref(questionId: string) {
                 @blur="markTouched('groupName')"
                 @input="markTouched('groupName')"
               />
-              <p
-                v-if="getFieldError('groupName') && canEdit && detailQuery.data.value.canChangeGroupName"
-                class="text-xs text-danger"
-              >
-                {{ getFieldError('groupName') }}
-              </p>
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">企画を出店する団体の名称（よみ） <span class="text-danger">*</span></span>
+            <FormField
+              label="企画を出店する団体の名称（よみ）"
+              label-class="font-semibold"
+              :error="getFieldError('groupNameYomi') && canEdit && detailQuery.data.value.canChangeGroupName"
+              required
+            >
               <input
                 v-model="form.groupNameYomi"
                 :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
@@ -317,22 +317,15 @@ function downloadHref(questionId: string) {
                 @blur="markTouched('groupNameYomi')"
                 @input="markTouched('groupNameYomi')"
               />
-              <p
-                v-if="getFieldError('groupNameYomi') && canEdit && detailQuery.data.value.canChangeGroupName"
-                class="text-xs text-danger"
-              >
-                {{ getFieldError('groupNameYomi') }}
-              </p>
-            </label>
+            </FormField>
 
             <p v-if="!detailQuery.data.value.canChangeGroupName" class="text-sm text-muted">
               団体名は既存企画から引き継がれているため、この画面では変更できません。
             </p>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-semibold">備考</span>
+            <FormField label="備考" label-class="font-semibold">
               <textarea v-model="form.notes" :disabled="!canEdit" name="notes" rows="3" />
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
       </SettingsSection>

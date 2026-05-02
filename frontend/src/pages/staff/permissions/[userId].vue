@@ -12,6 +12,7 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import InfoBox from '@/components/ui/InfoBox.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -24,6 +25,9 @@ import {
   useUpdateStaffPermissionsMutation
 } from '@/features/staff/permissions/api'
 import { useSessionStore } from '@/features/session/store'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 const route = useRoute('/staff/permissions/[userId]')
 const sessionStore = useSessionStore()
@@ -93,9 +97,7 @@ function handlePermissionChange(event: Event, permissionName: string) {
 
 <template>
   <PageLayout>
-    <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="detailQuery.isPending.value" />
 
     <article v-else-if="detailQuery.data.value" class="space-y-6">
       <div class="space-y-1 px-1">
@@ -119,9 +121,9 @@ function handlePermissionChange(event: Event, permissionName: string) {
           </div>
         </SettingsRow>
         <SettingsRow v-if="!detailQuery.data.value.user.isEditable">
-          <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+          <InfoBox class="text-muted">
             自分自身、または admin ロールを持つユーザーに対しては permission を変更できません。
-          </div>
+          </InfoBox>
         </SettingsRow>
       </SettingsSection>
 
@@ -156,20 +158,20 @@ function handlePermissionChange(event: Event, permissionName: string) {
             <AlertMessage v-if="errorMessage" class="mt-4">{{ errorMessage }}</AlertMessage>
           </SettingsRow>
           <template #footer>
-            <button
-              class="rounded bg-primary px-8 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            <BaseButton
+              variant="primary"
+              size="wide"
+              weight="bold"
               :disabled="updatePermissionsMutation.isPending.value || !detailQuery.data.value.user.isEditable"
               type="submit"
             >
               {{ updatePermissionsMutation.isPending.value ? '更新中...' : '保存' }}
-            </button>
+            </BaseButton>
           </template>
         </SettingsSection>
       </form>
     </article>
 
-    <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
-      権限詳細を取得できませんでした。
-    </div>
+    <ErrorState v-else message="権限詳細を取得できませんでした。" />
   </PageLayout>
 </template>

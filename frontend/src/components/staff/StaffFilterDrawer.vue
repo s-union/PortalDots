@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { buttonVariants } from '@/lib/ui/variants'
+import FormField from '@/components/ui/FormField.vue'
 
 export type StaffFilterFieldType = 'string' | 'bool'
 export type StaffFilterOperator = '=' | '!=' | 'like' | 'not like'
@@ -148,7 +150,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
               :disabled="loading"
               @click="emit('remove', query.id)"
             >
-              <i class="fas fa-times" aria-hidden="true" />
+              <FaIcon name="times" />
             </IconActionButton>
           </div>
 
@@ -193,8 +195,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
     </section>
 
     <section class="space-y-3">
-      <label class="grid gap-2 text-sm text-body">
-        <span class="font-medium">条件を追加</span>
+      <FormField label="条件を追加" label-class="font-medium">
         <select
           class="rounded border border-border bg-surface px-3 py-2 text-sm text-body"
           :disabled="loading"
@@ -205,7 +206,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
             {{ field.label }}
           </option>
         </select>
-      </label>
+      </FormField>
     </section>
 
     <section class="space-y-3">

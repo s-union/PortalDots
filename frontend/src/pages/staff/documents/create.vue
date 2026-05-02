@@ -15,6 +15,10 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormField from '@/components/ui/FormField.vue'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
 import {
   extractStaffDocumentValidationMessage,
   useCreateStaffDocumentMutation,
@@ -75,45 +79,34 @@ async function handleCreateDocument() {
       </SurfaceHeader>
 
       <form class="grid gap-4 px-6 py-6" @submit.prevent="handleCreateDocument">
-        <label class="grid gap-2 text-sm text-body">
-          <span>対象企画</span>
+        <FormField label="対象企画">
           <select v-model="form.circleId" name="circleId">
             <option value="">企画を選択してください</option>
             <option v-for="circle in circlesQuery.data.value ?? []" :key="circle.id" :value="circle.id">
               {{ circle.name }}
             </option>
           </select>
-        </label>
+        </FormField>
 
-        <label class="grid gap-2 text-sm text-body">
-          <span>配布資料名</span>
+        <FormField label="配布資料名">
           <input v-model="form.name" name="name" type="text" />
-        </label>
+        </FormField>
 
-        <label class="grid gap-2 text-sm text-body">
-          <span>説明</span>
+        <FormField label="説明">
           <textarea v-model="form.description" class="min-h-32" name="description" />
-        </label>
+        </FormField>
 
-        <label class="grid gap-2 text-sm text-body">
-          <span>スタッフ用メモ</span>
+        <FormField label="スタッフ用メモ">
           <textarea v-model="form.notes" class="min-h-24" name="notes" />
-        </label>
+        </FormField>
 
-        <label class="grid gap-2 text-sm text-body">
-          <span>ファイル</span>
+        <FormField label="ファイル">
           <input name="file" type="file" @change="handleFileChange" />
-        </label>
+        </FormField>
 
-        <label class="flex items-center gap-3 text-sm text-body">
-          <input v-model="form.isImportant" name="isImportant" type="checkbox" />
-          重要資料として扱う
-        </label>
+        <CheckboxField v-model="form.isImportant" label="重要資料として扱う" />
 
-        <label class="flex items-center gap-3 text-sm text-body">
-          <input v-model="form.isPublic" name="isPublic" type="checkbox" />
-          公開する
-        </label>
+        <CheckboxField v-model="form.isPublic" label="公開する" />
 
         <AlertMessage tone="info">
           現在の upload は DB 保存です。外部ストレージ連携はまだ実装していません。
@@ -122,15 +115,17 @@ async function handleCreateDocument() {
         <AlertMessage v-if="successMessage" tone="info">{{ successMessage }}</AlertMessage>
         <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
 
-        <div class="flex justify-end">
-          <button
-            class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+        <ActionsFooter align="end">
+          <BaseButton
+            variant="primary"
+            size="wide"
+            weight="bold"
             :disabled="createDocumentMutation.isPending.value"
             type="submit"
           >
             {{ createDocumentMutation.isPending.value ? 'アップロード中...' : '保存' }}
-          </button>
-        </div>
+          </BaseButton>
+        </ActionsFooter>
       </form>
     </SurfaceCard>
   </PageLayout>

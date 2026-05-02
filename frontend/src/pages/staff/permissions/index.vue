@@ -10,7 +10,8 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
@@ -18,7 +19,11 @@ import { canEditPermissions, canManagePermissions } from '@/features/staff/acces
 import { useStaffPermissionsQuery } from '@/features/staff/permissions/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
+import { resolveRowId } from '@/lib/dataGridHelpers'
+import FaIcon from '@/components/ui/FaIcon.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
+const router = useRouter()
 const sessionStore = useSessionStore()
 const canReadPermissions = computed(() => canManagePermissions(sessionStore.roles, sessionStore.permissions))
 const canUpdatePermissions = computed(() => canEditPermissions(sessionStore.roles, sessionStore.permissions))
@@ -63,10 +68,6 @@ const total = computed(() => permissionsQuery.data.value?.total ?? 0)
 const resolvedPageSize = computed(() => permissionsQuery.data.value?.pageSize ?? pageSize.value)
 const isBusy = computed(() => permissionsQuery.isPending.value || permissionsQuery.isFetching.value)
 
-function resolveRowId(row: StaffDataGridRow) {
-  return typeof row.id === 'string' ? row.id : ''
-}
-
 function resolvePermissionSummary(row: StaffDataGridRow) {
   if (!Array.isArray(row.permissions)) {
     return []
@@ -101,14 +102,18 @@ function handlePageSize(nextPageSize: number) {
   pageSize.value = nextPageSize
   page.value = 1
 }
+
+function navigateToEdit(userId: string) {
+  router.push(`/staff/permissions/${encodeURIComponent(userId)}`)
+}
 </script>
 
 <template>
   <PageLayout>
     <DataCard>
-      <div class="border-b border-border px-6 py-5">
+      <SurfaceCardBand>
         <h2 class="text-lg font-semibold text-body">スタッフの権限設定</h2>
-      </div>
+      </SurfaceCardBand>
 
       <div v-if="!canReadPermissions" class="px-6 py-6 text-sm text-muted">
         この画面の閲覧には `staff.permissions.read` 系または `admin` が必要です。
@@ -133,16 +138,15 @@ function handlePageSize(nextPageSize: number) {
         @update:page-size="handlePageSize"
       >
         <template #actions="{ row }">
-          <RouterLink
+          <IconActionButton
             v-if="row.isEditable || canUpdatePermissions"
-            :to="`/staff/permissions/${encodeURIComponent(resolveRowId(row))}`"
-            class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
             title="編集"
+            @click="navigateToEdit(resolveRowId(row))"
           >
-            <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-          </RouterLink>
+            <FaIcon name="pencil-alt" fixed-width />
+          </IconActionButton>
           <span v-else class="inline-flex h-8 w-8 items-center justify-center text-muted" title="閲覧のみ">
-            <i class="fas fa-lock fa-fw" aria-hidden="true" />
+            <FaIcon name="lock" fixed-width />
           </span>
         </template>
 

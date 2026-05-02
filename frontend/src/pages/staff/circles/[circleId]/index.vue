@@ -12,6 +12,9 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import FormField from '@/components/ui/FormField.vue'
+import FormInput from '@/components/ui/FormInput.vue'
+import InfoBox from '@/components/ui/InfoBox.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -32,7 +35,7 @@ import {
 } from '@/features/staff/circles/api'
 import { useStaffParticipationTypesQuery } from '@/features/staff/participation-types/api'
 import { useStaffPlacesQuery } from '@/features/staff/masters/places'
-import { buildStaffCircleTabs } from '@/features/ui/tabStrip'
+import { buildStaffCircleTabs } from '@/lib/ui/tabStrip'
 
 const route = useRoute('/staff/circles/[circleId]/')
 const router = useRouter()
@@ -183,30 +186,25 @@ async function handleDeleteMember(userId: string, displayName: string) {
         <SettingsSection title="企画基本情報">
           <SettingsRow>
             <div class="grid gap-4">
-              <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+              <InfoBox class="text-muted">
                 参加種別の詳細設定や参加登録フォーム編集は参加種別管理画面から行います。
                 <RouterLink :to="participationTypeEditorRoute" class="ml-2 text-primary underline">
                   参加種別を開く
                 </RouterLink>
-              </div>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画名</span>
-                <input v-model="form.name" name="name" type="text" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画名(よみ) <span class="text-danger">*</span></span>
-                <input v-model="form.nameYomi" name="nameYomi" required type="text" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画を出店する団体の名称</span>
-                <input v-model="form.groupName" name="groupName" type="text" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">企画を出店する団体の名称(よみ) <span class="text-danger">*</span></span>
-                <input v-model="form.groupNameYomi" name="groupNameYomi" required type="text" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">参加種別</span>
+              </InfoBox>
+              <FormField label="企画名" label-class="font-medium">
+                <FormInput v-model="form.name" name="name" type="text" />
+              </FormField>
+              <FormField label="企画名(よみ)" required label-class="font-medium">
+                <FormInput v-model="form.nameYomi" name="nameYomi" required type="text" />
+              </FormField>
+              <FormField label="企画を出店する団体の名称" label-class="font-medium">
+                <FormInput v-model="form.groupName" name="groupName" type="text" />
+              </FormField>
+              <FormField label="企画を出店する団体の名称(よみ)" required label-class="font-medium">
+                <FormInput v-model="form.groupNameYomi" name="groupNameYomi" required type="text" />
+              </FormField>
+              <FormField label="参加種別" helper="既存企画の参加種別は変更できません。" label-class="font-medium">
                 <select v-model="form.participationTypeId" disabled name="participationTypeId">
                   <option value="">参加種別を選択してください</option>
                   <option
@@ -217,13 +215,14 @@ async function handleDeleteMember(userId: string, displayName: string) {
                     {{ participationType.name }}
                   </option>
                 </select>
-                <span class="text-xs text-muted-2"> 既存企画の参加種別は変更できません。 </span>
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span class="font-medium">スタッフ用メモ</span>
-                <span class="text-xs text-muted">ここに入力された内容はスタッフのみ閲覧できます。</span>
+              </FormField>
+              <FormField
+                label="スタッフ用メモ"
+                helper="ここに入力された内容はスタッフのみ閲覧できます。"
+                label-class="font-medium"
+              >
                 <textarea v-model="form.notes" class="min-h-24" name="notes" />
-              </label>
+              </FormField>
               <div class="grid gap-2 text-sm text-body">
                 <span class="font-medium">登録受理状況</span>
                 <div class="flex gap-4">
@@ -241,10 +240,9 @@ async function handleDeleteMember(userId: string, displayName: string) {
                   </label>
                 </div>
               </div>
-              <label v-if="form.status === 'rejected'" class="grid gap-2 text-sm text-body">
-                <span class="font-medium">不受理理由</span>
+              <FormField v-if="form.status === 'rejected'" label="不受理理由" label-class="font-medium">
                 <MarkdownEditorField v-model="form.statusReason" min-height-class="min-h-16" name="statusReason" />
-              </label>
+              </FormField>
               <div class="grid gap-2 text-sm text-body">
                 <span class="font-medium">使用場所</span>
                 <select v-model="form.placeIds" name="placeIds" multiple>
@@ -283,19 +281,11 @@ async function handleDeleteMember(userId: string, displayName: string) {
           <div class="grid gap-5">
             <p class="text-sm text-muted">責任者を含む所属者は {{ memberCount }} 名です。</p>
 
-            <div
-              v-if="membersQuery.isPending.value"
-              class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted"
-            >
-              所属者を読み込み中...
-            </div>
+            <InfoBox v-if="membersQuery.isPending.value" class="text-muted"> 所属者を読み込み中... </InfoBox>
 
-            <div
-              v-else-if="(membersQuery.data.value?.length ?? 0) === 0"
-              class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted"
-            >
+            <InfoBox v-else-if="(membersQuery.data.value?.length ?? 0) === 0" class="text-muted">
               所属者はいません。
-            </div>
+            </InfoBox>
 
             <div v-else class="divide-y divide-border rounded border border-border">
               <div

@@ -18,6 +18,7 @@ import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePageDetailQuery } from '@/features/pages/api'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
 
 const route = useRoute('/workspace/pages/[pageId]')
 const pageId = computed(() => String(route.params.pageId ?? ''))
@@ -26,9 +27,7 @@ const pageQuery = usePageDetailQuery(pageId)
 
 <template>
   <PageLayout>
-    <div v-if="pageQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
-      読み込み中...
-    </div>
+    <LoadingState v-if="pageQuery.isPending.value" />
 
     <article v-else-if="pageQuery.data.value" class="space-y-6">
       <RouterLink

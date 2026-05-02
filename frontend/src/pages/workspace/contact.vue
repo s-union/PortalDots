@@ -21,6 +21,9 @@ import { useSessionStore } from '@/features/session/store'
 import { useFormValidation, contactFormSchema } from '@/lib/form-validation'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const sessionStore = useSessionStore()
 const categoriesQuery = useContactCategoriesQuery()
@@ -77,15 +80,13 @@ async function handleSubmit() {
         </p>
 
         <div class="grid gap-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span>企画名</span>
+          <FormField label="企画名">
             <input :value="selectedCircleLabel" readonly type="text" />
-          </label>
+          </FormField>
         </div>
 
         <div class="grid gap-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span>お問い合わせ項目</span>
+          <FormField label="お問い合わせ項目">
             <select
               v-model="form.categoryId"
               aria-label="お問い合わせ項目"
@@ -98,13 +99,12 @@ async function handleSubmit() {
                 {{ category.name }}
               </option>
             </select>
-          </label>
-          <p v-if="getFieldError('categoryId')" class="text-xs text-danger">{{ getFieldError('categoryId') }}</p>
+          </FormField>
+          <FormError v-if="getFieldError('categoryId')" :message="getFieldError('categoryId')" />
         </div>
 
         <div class="grid gap-2">
-          <label class="grid gap-2 text-sm text-body">
-            <span>お問い合わせ内容</span>
+          <FormField label="お問い合わせ内容">
             <textarea
               v-model="form.body"
               class="min-h-40"
@@ -113,8 +113,8 @@ async function handleSubmit() {
               @blur="markTouched('body')"
               @input="markTouched('body')"
             />
-          </label>
-          <p v-if="getFieldError('body')" class="text-xs text-danger">{{ getFieldError('body') }}</p>
+          </FormField>
+          <FormError v-if="getFieldError('body')" :message="getFieldError('body')" />
         </div>
 
         <AlertMessage v-if="successMessage" tone="success">
@@ -124,7 +124,7 @@ async function handleSubmit() {
           {{ submitErrorMessage }}
         </AlertMessage>
 
-        <div class="flex justify-end">
+        <ActionsFooter align="end">
           <button
             :class="cn(buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }))"
             :disabled="submitContactMutation.isPending.value || categoriesQuery.isPending.value"
@@ -132,7 +132,7 @@ async function handleSubmit() {
           >
             {{ submitContactMutation.isPending.value ? '送信中...' : '送信' }}
           </button>
-        </div>
+        </ActionsFooter>
       </PanelBody>
     </ListPanel>
   </PageLayout>

@@ -13,6 +13,8 @@ import {
   useUpdateStaffTagMutation
 } from '@/features/staff/masters/tags'
 import { useFormValidation, staffTagFormSchema } from '@/lib/form-validation'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const { tag } = defineProps<{
   tag: StaffTag | null
@@ -104,8 +106,7 @@ async function handleDelete() {
     <form class="space-y-6" @submit.prevent="handleSave">
       <SettingsSection title="タグ設定">
         <SettingsRow>
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-medium">タグ名</span>
+          <FormField label="タグ名" label-class="font-medium" :error="getFieldError('name')">
             <input
               v-model="name"
               name="name"
@@ -114,8 +115,7 @@ async function handleDelete() {
               @blur="markTouched('name')"
               @input="markTouched('name')"
             />
-            <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
-          </label>
+          </FormField>
         </SettingsRow>
 
         <template #footer>

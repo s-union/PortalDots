@@ -12,6 +12,10 @@ definePage({
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormField from '@/components/ui/FormField.vue'
+import FormInput from '@/components/ui/FormInput.vue'
+import InfoBox from '@/components/ui/InfoBox.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -19,8 +23,6 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import { cn } from '@/lib/ui/cn'
-import { buttonVariants } from '@/lib/ui/variants'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
@@ -28,7 +30,8 @@ import {
   useStaffParticipationTypeDetailQuery,
   useUpdateStaffParticipationTypeMutation
 } from '@/features/staff/participation-types/api'
-import { buildStaffParticipationTypeTabs } from '@/features/ui/tabStrip'
+import { buildStaffParticipationTypeTabs } from '@/lib/ui/tabStrip'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
 
 const route = useRoute('/staff/circles/participation_types/[typeId]/form/edit')
 const typeId = computed(() => String(route.params.typeId ?? ''))
@@ -138,13 +141,10 @@ async function handleSave() {
               <p class="text-xs text-muted-2">この設定がオンで、かつ受付期間内のときに参加登録画面を表示します。</p>
             </div>
             <div class="grid gap-4">
-              <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+              <InfoBox class="text-muted">
                 詳細な設問追加や並び替えは専用エディターで行います。ここでは公開状態と文面を先に整えます。
-              </div>
-              <label class="flex items-center gap-3 text-sm text-body">
-                <input v-model="form.isPublic" name="isPublic" type="checkbox" />
-                参加登録画面を公開する
-              </label>
+              </InfoBox>
+              <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" />
             </div>
           </div>
         </SettingsRow>
@@ -156,14 +156,12 @@ async function handleSave() {
               <p class="text-xs text-muted-2">参加登録画面の表示期間を日時で管理します。</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span>受付開始日時</span>
-                <input v-model="form.openAt" name="openAt" type="datetime-local" />
-              </label>
-              <label class="grid gap-2 text-sm text-body">
-                <span>受付終了日時</span>
-                <input v-model="form.closeAt" name="closeAt" type="datetime-local" />
-              </label>
+              <FormField label="受付開始日時">
+                <FormInput v-model="form.openAt" name="openAt" type="datetime-local" />
+              </FormField>
+              <FormField label="受付終了日時">
+                <FormInput v-model="form.closeAt" name="closeAt" type="datetime-local" />
+              </FormField>
             </div>
           </div>
         </SettingsRow>
@@ -177,14 +175,13 @@ async function handleSave() {
               </p>
             </div>
             <div class="grid gap-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span class="sr-only">参加登録前に表示する内容</span>
+              <FormField label="参加登録前に表示する内容" label-class="sr-only">
                 <MarkdownEditorField
                   v-model="form.formDescription"
                   min-height-class="min-h-32"
                   name="formDescription"
                 />
-              </label>
+              </FormField>
               <p class="text-xs text-muted-2">Markdown 記法をそのまま利用できます。</p>
             </div>
           </div>
@@ -197,14 +194,13 @@ async function handleSave() {
               <p class="text-xs text-muted-2">提出完了後の画面と、自動送信メールに表示するメッセージです。</p>
             </div>
             <div class="grid gap-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span class="sr-only">提出後メッセージ</span>
+              <FormField label="提出後メッセージ" label-class="sr-only">
                 <MarkdownEditorField
                   v-model="form.formConfirmationMessage"
                   min-height-class="min-h-32"
                   name="formConfirmationMessage"
                 />
-              </label>
+              </FormField>
               <p class="text-xs text-muted-2">こちらも Markdown 記法を利用できます。</p>
             </div>
           </div>
@@ -212,7 +208,7 @@ async function handleSave() {
 
         <template #footer>
           <div class="space-y-4">
-            <div class="rounded border border-border bg-surface-light px-4 py-4 text-sm text-muted">
+            <InfoBox class="text-muted">
               <p>企画参加登録機能について</p>
               <ul class="mt-2 list-disc space-y-2 pl-5">
                 <li>企画名や団体名に加えて独自の入力欄を追加できます。</li>
@@ -220,7 +216,7 @@ async function handleSave() {
                 <li>副責任者数の要件を参加種別ごとに切り替えられます。</li>
                 <li>提出された参加登録はスタッフ確認フローの起点になります。</li>
               </ul>
-            </div>
+            </InfoBox>
             <AlertMessage v-if="successMessage" tone="success">
               {{ successMessage }}
             </AlertMessage>
@@ -228,13 +224,15 @@ async function handleSave() {
               {{ errorMessage }}
             </AlertMessage>
             <div class="flex justify-end">
-              <button
-                :class="cn(buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' }))"
+              <BaseButton
+                variant="primary"
+                size="wide"
+                weight="bold"
                 :disabled="updateMutation.isPending.value"
                 type="submit"
               >
                 {{ updateMutation.isPending.value ? '保存中...' : '保存' }}
-              </button>
+              </BaseButton>
             </div>
           </div>
         </template>

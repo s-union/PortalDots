@@ -25,6 +25,7 @@ import {
 } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
 import { buttonVariants } from '@/lib/ui/variants'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 
 const sessionStore = useSessionStore()
 const detailQuery = useCurrentCircleDetailQuery()
@@ -199,7 +200,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
       </SettingsRow>
 
       <template v-if="isCurrentUserLeader" #footer>
-        <div class="flex justify-end">
+        <ActionsFooter align="end">
           <button
             :class="buttonVariants({ variant: 'secondary', size: 'md' })"
             :disabled="regenerateMutation.isPending.value"
@@ -208,7 +209,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
           >
             {{ regenerateMutation.isPending.value ? '再生成中...' : '招待URLを再生成' }}
           </button>
-        </div>
+        </ActionsFooter>
       </template>
     </SettingsSection>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import TabStrip from '@/components/ui/TabStrip.vue'
-import { buildHomeModeTabs } from '@/features/ui/tabStrip'
+import { buildHomeModeTabs } from '@/lib/ui/tabStrip'
 
 const { isStaffPage } = defineProps<{
   isStaffPage: boolean

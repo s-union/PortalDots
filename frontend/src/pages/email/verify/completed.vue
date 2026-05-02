@@ -8,17 +8,20 @@ definePage({
 })
 
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
+import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 </script>
 
 <template>
   <NarrowPageLayout class="py-8">
-    <section class="rounded border border-border bg-surface shadow-lv1">
-      <div class="border-b border-border px-6 py-5">
+    <SurfaceCard tag="section">
+      <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">メール認証完了</h1>
-      </div>
+      </SurfaceCardBand>
       <div class="space-y-5 px-6 py-6 text-center text-sm leading-7 text-body">
         <p class="text-success">
-          <i class="fas fa-check-circle" aria-hidden="true" />
+          <FaIcon name="check-circle" />
           <strong>必須のメール認証が完了しました。企画参加登録を進められます。</strong>
         </p>
         <p>
@@ -30,6 +33,6 @@ import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
           </RouterLink>
         </p>
       </div>
-    </section>
+    </SurfaceCard>
   </NarrowPageLayout>
 </template>

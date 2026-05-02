@@ -13,6 +13,8 @@ import {
   useUpdateStaffPlaceMutation
 } from '@/features/staff/masters/places'
 import { useFormValidation, staffPlaceFormSchema } from '@/lib/form-validation'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const { place } = defineProps<{
   place: StaffPlace | null
@@ -117,8 +119,7 @@ async function handleDelete() {
       <SettingsSection title="場所設定">
         <SettingsRow>
           <div class="grid gap-4">
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">場所名</span>
+            <FormField label="場所名" label-class="font-medium" :error="getFieldError('name')">
               <input
                 v-model="name"
                 name="name"
@@ -127,11 +128,9 @@ async function handleDelete() {
                 @blur="markTouched('name')"
                 @input="markTouched('name')"
               />
-              <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">タイプ</span>
+            <FormField label="タイプ" label-class="font-medium" :error="getFieldError('type')">
               <select
                 v-model.number="type"
                 name="type"
@@ -143,13 +142,11 @@ async function handleDelete() {
                 <option :value="2">屋外</option>
                 <option :value="3">特殊場所</option>
               </select>
-              <p v-if="getFieldError('type')" class="text-xs text-danger">{{ getFieldError('type') }}</p>
-            </label>
+            </FormField>
 
-            <label class="grid gap-2 text-sm text-body">
-              <span class="font-medium">スタッフ用メモ</span>
+            <FormField label="スタッフ用メモ" label-class="font-medium">
               <textarea v-model="notes" class="min-h-24" name="notes" />
-            </label>
+            </FormField>
           </div>
         </SettingsRow>
 

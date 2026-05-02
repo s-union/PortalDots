@@ -10,7 +10,10 @@ definePage({
 })
 
 import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import CsvExportLink from '@/components/ui/CsvExportLink.vue'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
@@ -32,6 +35,10 @@ import { useSessionStore } from '@/features/session/store'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { compareBoolean, compareString } from '@/lib/compareString'
+import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
+import TagBadge from '@/components/ui/TagBadge.vue'
+import YesNo from '@/components/ui/YesNo.vue'
 
 const router = useRouter()
 const sessionStore = useSessionStore()
@@ -132,23 +139,6 @@ watch(
   { immediate: true }
 )
 
-function compareString(left: string, right: string) {
-  if (left < right) {
-    return -1
-  }
-  if (left > right) {
-    return 1
-  }
-  return 0
-}
-
-function compareBoolean(left: boolean, right: boolean) {
-  if (left === right) {
-    return 0
-  }
-  return left ? 1 : -1
-}
-
 function handleSort(nextSortKey: string) {
   if (!isStaffFormSortKey(nextSortKey)) {
     return
@@ -194,17 +184,6 @@ async function handleDeleteForm(formId: string) {
   }
 }
 
-function resolveTags(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value.filter((item): item is string => typeof item === 'string')
-}
-
-function resolveRowId(row: StaffDataGridRow) {
-  return String(row.id ?? '')
-}
-
 function resolveDetailPath(formId: string) {
   const encodedFormId = encodeURIComponent(formId)
 
@@ -223,6 +202,13 @@ function resolveDescription(form: StaffFormSummary) {
     return '-'
   }
   return form.description
+}
+
+function navigateToDetail(formId: string) {
+  const path = resolveDetailPath(formId)
+  if (path) {
+    router.push(path)
+  }
 }
 </script>
 
@@ -252,51 +238,33 @@ function resolveDescription(form: StaffFormSummary) {
         @update:page-size="pagination.setPageSize"
       >
         <template #toolbar>
-          <RouterLink
-            to="/staff/forms/create"
-            class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-          >
+          <BaseButton to="/staff/forms/create" variant="primary" size="md" weight="semibold">
             <FaIcon name="plus" fixed-width />
             新規フォーム
-          </RouterLink>
-          <a
-            :href="exportHref"
-            download
-            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
-          >
-            <FaIcon name="file-csv" fixed-width />
-            CSVで出力
-          </a>
+          </BaseButton>
+          <CsvExportLink :href="exportHref" download>CSVで出力</CsvExportLink>
         </template>
 
         <template #actions="{ row }">
           <div class="flex items-center gap-1">
-            <RouterLink
+            <IconActionButton
               v-if="resolveDetailPath(resolveRowId(row))"
-              :to="resolveDetailPath(resolveRowId(row))!"
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
               :title="detailActionTitle"
+              @click="navigateToDetail(resolveRowId(row))"
             >
               <FaIcon :prefix="detailActionIcon.prefix" :name="detailActionIcon.name" fixed-width />
-            </RouterLink>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
-              type="button"
-              title="複製"
-              :disabled="isBusy"
-              @click="handleCopyForm(resolveRowId(row))"
-            >
+            </IconActionButton>
+            <IconActionButton title="複製" :disabled="isBusy" @click="handleCopyForm(resolveRowId(row))">
               <FaIcon prefix="far" name="copy" fixed-width />
-            </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light"
-              type="button"
+            </IconActionButton>
+            <IconActionButton
+              variant="danger"
               title="削除"
               :disabled="isBusy"
               @click="handleDeleteForm(resolveRowId(row))"
             >
               <FaIcon name="trash" fixed-width />
-            </button>
+            </IconActionButton>
           </div>
         </template>
 
@@ -323,16 +291,15 @@ function resolveDescription(form: StaffFormSummary) {
         </template>
 
         <template #cell-isPublic="{ value }">
-          <strong v-if="value === true">はい</strong>
-          <span v-else>-</span>
+          <YesNo :value="value === true" />
         </template>
 
         <template #cell-answerableTags="{ value }">
           <div class="flex flex-wrap gap-1">
             <template v-for="tag in resolveTags(value)" :key="tag">
-              <span class="inline-flex items-center rounded bg-primary px-2 py-1 text-xs font-semibold text-white">
+              <TagBadge>
                 {{ tag }}
-              </span>
+              </TagBadge>
             </template>
             <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
           </div>

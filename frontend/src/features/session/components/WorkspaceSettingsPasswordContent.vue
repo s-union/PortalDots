@@ -6,6 +6,8 @@ import SettingsSection from '@/components/ui/SettingsSection.vue'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useUserSettingsPasswordTab } from '@/features/session/composables/useUserSettingsPasswordTab'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const {
   errorMessage,
@@ -34,8 +36,7 @@ const {
           </div>
           <div class="grid gap-4">
             <div class="grid gap-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span>現在のパスワード</span>
+              <FormField label="現在のパスワード">
                 <input
                   v-model="passwordForm.currentPassword"
                   name="currentPassword"
@@ -44,14 +45,11 @@ const {
                   @blur="markTouched('currentPassword')"
                   @input="markTouched('currentPassword')"
                 />
-              </label>
-              <p v-if="getFieldError('currentPassword')" class="text-xs text-danger">
-                {{ getFieldError('currentPassword') }}
-              </p>
+              </FormField>
+              <FormError v-if="getFieldError('currentPassword')" :message="getFieldError('currentPassword')" />
             </div>
             <div class="grid gap-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span>新しいパスワード</span>
+              <FormField label="新しいパスワード">
                 <input
                   v-model="passwordForm.newPassword"
                   name="newPassword"
@@ -61,14 +59,11 @@ const {
                   @blur="markTouched('newPassword')"
                   @input="markTouched('newPassword')"
                 />
-              </label>
-              <p v-if="getFieldError('newPassword')" class="text-xs text-danger">
-                {{ getFieldError('newPassword') }}
-              </p>
+              </FormField>
+              <FormError v-if="getFieldError('newPassword')" :message="getFieldError('newPassword')" />
             </div>
             <div class="grid gap-2">
-              <label class="grid gap-2 text-sm text-body">
-                <span>新しいパスワード(確認)</span>
+              <FormField label="新しいパスワード(確認)">
                 <input
                   v-model="passwordForm.confirmPassword"
                   name="confirmPassword"
@@ -77,10 +72,8 @@ const {
                   @blur="markTouched('confirmPassword')"
                   @input="markTouched('confirmPassword')"
                 />
-              </label>
-              <p v-if="getFieldError('confirmPassword')" class="text-xs text-danger">
-                {{ getFieldError('confirmPassword') }}
-              </p>
+              </FormField>
+              <FormError v-if="getFieldError('confirmPassword')" :message="getFieldError('confirmPassword')" />
             </div>
           </div>
         </div>

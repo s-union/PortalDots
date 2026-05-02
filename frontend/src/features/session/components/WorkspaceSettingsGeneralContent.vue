@@ -7,6 +7,7 @@ import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useUserSettingsGeneralTab } from '@/features/session/composables/useUserSettingsGeneralTab'
+import FormError from '@/components/ui/FormError.vue'
 
 const publicConfigQuery = usePublicConfigQuery()
 const {
@@ -67,7 +68,7 @@ const {
               @blur="markTouched('name')"
               @input="markTouched('name')"
             />
-            <p v-if="getFieldError('name')" class="text-xs text-danger">{{ getFieldError('name') }}</p>
+            <FormError v-if="getFieldError('name')" :message="getFieldError('name')" />
           </div>
         </div>
       </SettingsRow>
@@ -85,7 +86,7 @@ const {
               @blur="markTouched('nameYomi')"
               @input="markTouched('nameYomi')"
             />
-            <p v-if="getFieldError('nameYomi')" class="text-xs text-danger">{{ getFieldError('nameYomi') }}</p>
+            <FormError v-if="getFieldError('nameYomi')" :message="getFieldError('nameYomi')" />
           </div>
         </div>
       </SettingsRow>
@@ -102,9 +103,7 @@ const {
               @blur="markTouched('contactEmail')"
               @input="markTouched('contactEmail')"
             />
-            <p v-if="getFieldError('contactEmail')" class="text-xs text-danger">
-              {{ getFieldError('contactEmail') }}
-            </p>
+            <FormError v-if="getFieldError('contactEmail')" :message="getFieldError('contactEmail')" />
           </div>
         </div>
       </SettingsRow>
@@ -121,9 +120,7 @@ const {
               @blur="markTouched('phoneNumber')"
               @input="markTouched('phoneNumber')"
             />
-            <p v-if="getFieldError('phoneNumber')" class="text-xs text-danger">
-              {{ getFieldError('phoneNumber') }}
-            </p>
+            <FormError v-if="getFieldError('phoneNumber')" :message="getFieldError('phoneNumber')" />
           </div>
         </div>
       </SettingsRow>
@@ -145,9 +142,7 @@ const {
               @blur="markTouched('currentPassword')"
               @input="markTouched('currentPassword')"
             />
-            <p v-if="getFieldError('currentPassword')" class="text-xs text-danger">
-              {{ getFieldError('currentPassword') }}
-            </p>
+            <FormError v-if="getFieldError('currentPassword')" :message="getFieldError('currentPassword')" />
           </div>
         </div>
       </SettingsRow>

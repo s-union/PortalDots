@@ -10,11 +10,16 @@ definePage({
 })
 
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMutation } from '@tanstack/vue-query'
-import { RouterLink } from 'vue-router'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import CsvExportLink from '@/components/ui/CsvExportLink.vue'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import { compareBoolean, compareString } from '@/lib/compareString'
+import { resolveRowId, resolveText } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { canDeleteDocuments } from '@/features/staff/access/capabilities'
 import { usePublicConfigQuery } from '@/features/public-home/api'
@@ -30,7 +35,10 @@ import {
 import { useSessionStore } from '@/features/session/store'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import FaIcon from '@/components/ui/FaIcon.vue'
+import YesNo from '@/components/ui/YesNo.vue'
 
+const router = useRouter()
 const sessionStore = useSessionStore()
 const publicConfigQuery = usePublicConfigQuery()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -147,23 +155,6 @@ watch(
   { immediate: true }
 )
 
-function compareString(left: string, right: string) {
-  if (left < right) {
-    return -1
-  }
-  if (left > right) {
-    return 1
-  }
-  return 0
-}
-
-function compareBoolean(left: boolean, right: boolean) {
-  if (left === right) {
-    return 0
-  }
-  return left ? 1 : -1
-}
-
 function resolveSortValue(document: StaffDocumentSummary, sortKey: StaffDocumentSortKey) {
   switch (sortKey) {
     case 'documentNumber':
@@ -194,10 +185,6 @@ function handleSort(nextSortKey: string) {
   pagination.resetPage()
 }
 
-function resolveRowId(row: StaffDataGridRow) {
-  return String(row.id ?? '')
-}
-
 async function handleDeleteDocument(row: StaffDataGridRow) {
   const documentId = resolveRowId(row)
   const documentName = typeof row.name === 'string' ? row.name : 'この配布資料'
@@ -210,12 +197,8 @@ async function handleDeleteDocument(row: StaffDataGridRow) {
   await deleteDocumentMutation.mutateAsync()
 }
 
-function resolveText(value: unknown) {
-  if (typeof value !== 'string') {
-    return '-'
-  }
-  const normalized = value.trim()
-  return normalized.length > 0 ? normalized : '-'
+function navigateToEdit(row: StaffDataGridRow) {
+  router.push(`/staff/documents/${encodeURIComponent(resolveRowId(row))}/edit`)
 }
 </script>
 
@@ -243,41 +226,27 @@ function resolveText(value: unknown) {
         @update:page-size="pagination.setPageSize"
       >
         <template #toolbar>
-          <RouterLink
-            to="/staff/documents/create"
-            class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-          >
-            <i class="fas fa-plus fa-fw" aria-hidden="true" />
+          <BaseButton to="/staff/documents/create" variant="primary" size="md" weight="semibold">
+            <FaIcon name="plus" fixed-width />
             新規配布資料
-          </RouterLink>
-          <a
-            :href="exportHref"
-            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
-          >
-            <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-            CSVで出力
-          </a>
+          </BaseButton>
+          <CsvExportLink :href="exportHref">CSVで出力</CsvExportLink>
         </template>
 
         <template #actions="{ row }">
           <div class="flex items-center gap-1">
-            <RouterLink
-              :to="`/staff/documents/${encodeURIComponent(resolveRowId(row))}/edit`"
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
-              title="編集"
-            >
-              <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-            </RouterLink>
-            <button
+            <IconActionButton title="編集" @click="navigateToEdit(row)">
+              <FaIcon name="pencil-alt" fixed-width />
+            </IconActionButton>
+            <IconActionButton
               v-if="canDelete"
-              class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
-              type="button"
+              variant="danger"
               title="削除"
               :disabled="deleteDocumentMutation.isPending.value"
               @click="handleDeleteDocument(row)"
             >
-              <i class="fas fa-trash fa-fw" aria-hidden="true" />
-            </button>
+              <FaIcon name="trash" fixed-width />
+            </IconActionButton>
           </div>
         </template>
 
@@ -307,13 +276,11 @@ function resolveText(value: unknown) {
         </template>
 
         <template #cell-isPublic="{ value }">
-          <strong v-if="value === true">はい</strong>
-          <span v-else>-</span>
+          <YesNo :value="value === true" />
         </template>
 
         <template #cell-isImportant="{ value }">
-          <strong v-if="value === true">はい</strong>
-          <span v-else>-</span>
+          <YesNo :value="value === true" />
         </template>
 
         <template #cell-createdAt="{ value }">

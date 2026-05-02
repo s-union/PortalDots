@@ -15,6 +15,7 @@ import { useStaffCirclesAllPage } from '@/features/staff/circles/composables/use
 import { statusTone, statusLabel } from '@/features/staff/circles/helpers/circleFilters'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -85,7 +86,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
               参加種別管理
             </RouterLink>
             <a :href="exportUrl" :class="buttonVariants({ variant: 'secondary', size: 'xs' })">
-              <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
+              <FaIcon name="file-csv" fixed-width />
               CSVで出力
             </a>
             <RouterLink
@@ -93,7 +94,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
               :class="buttonVariants({ variant: 'primary', size: 'xs', weight: 'semibold' })"
               to="/staff/circles/create"
             >
-              <i class="fas fa-plus fa-fw" aria-hidden="true" />
+              <FaIcon name="plus" fixed-width />
               新規企画
             </RouterLink>
           </div>
@@ -132,7 +133,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
                   class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
-                  <i class="fas fa-search fa-fw" aria-hidden="true" />
+                  <FaIcon name="search" fixed-width />
                   絞り込み
                 </button>
               </form>
@@ -152,7 +153,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
                 :class="buttonVariants({ variant: 'secondary', size: 'sm' })"
                 title="編集"
               >
-                <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+                <FaIcon name="pencil-alt" fixed-width />
               </RouterLink>
               <RouterLink
                 v-if="canSendEmail"
@@ -160,7 +161,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
                 :class="buttonVariants({ variant: 'secondary', size: 'sm' })"
                 title="メール送信"
               >
-                <i class="far fa-envelope fa-fw" aria-hidden="true" />
+                <FaIcon prefix="far" name="envelope" fixed-width />
               </RouterLink>
               <IconActionButton
                 v-if="canDelete"
@@ -170,7 +171,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
                 :disabled="deleteCircleMutation.isPending.value"
                 @click="handleDeleteCircle(String(row.id), String(row.name))"
               >
-                <i class="fas fa-trash fa-fw" aria-hidden="true" />
+                <FaIcon name="trash" fixed-width />
               </IconActionButton>
             </div>
           </template>

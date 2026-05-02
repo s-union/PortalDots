@@ -12,6 +12,7 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
@@ -63,12 +64,7 @@ async function movePage(nextPage: number) {
 
 <template>
   <PageLayout spacious>
-    <div
-      v-if="documentsQuery.isPending.value"
-      class="rounded border border-border bg-surface p-6 text-muted shadow-lv1"
-    >
-      読み込み中...
-    </div>
+    <LoadingState v-if="documentsQuery.isPending.value" />
 
     <div
       v-else-if="(documentsQuery.data.value?.items.length ?? 0) === 0"

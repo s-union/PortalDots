@@ -21,6 +21,10 @@ import { useFormAnswerEditorDraft } from '@/features/forms/answers'
 import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage } from '@/lib/api/validation'
 import { useFormValidation, circleRegistrationFormSchema, buildFormAnswerSchema } from '@/lib/form-validation'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormError from '@/components/ui/FormError.vue'
+import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FormField from '@/components/ui/FormField.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -184,13 +188,16 @@ async function handleSubmit() {
             すでに団体責任者として他の企画参加登録を提出しているため、「企画を出店する団体の名称」ならびに「企画を出店する団体の名称(よみ)」は自動入力されており、変更できません。
           </AlertMessage>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">企画責任者</span>
+          <FormField label="企画責任者" label-class="font-semibold">
             <input :value="leaderDisplayName" name="leaderDisplayName" readonly type="text" />
-          </label>
+          </FormField>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">参加種別 <span class="text-danger">*</span></span>
+          <FormField
+            label="参加種別"
+            label-class="font-semibold"
+            :error="getFieldError('participationTypeId')"
+            required
+          >
             <select
               v-model="form.participationTypeId"
               name="participationTypeId"
@@ -203,10 +210,7 @@ async function handleSubmit() {
                 {{ pt.name }} ({{ pt.usersCountMin }}〜{{ pt.usersCountMax }}人)
               </option>
             </select>
-            <p v-if="getFieldError('participationTypeId')" class="text-xs text-danger">
-              {{ getFieldError('participationTypeId') }}
-            </p>
-          </label>
+          </FormField>
 
           <div
             v-if="selectedParticipationType"
@@ -216,8 +220,7 @@ async function handleSubmit() {
             <p class="mt-1 text-muted">{{ selectedParticipationType.description }}</p>
           </div>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">企画名 <span class="text-danger">*</span></span>
+          <FormField label="企画名" label-class="font-semibold" :error="getFieldError('name')" required>
             <input
               v-model="form.name"
               name="name"
@@ -227,13 +230,9 @@ async function handleSubmit() {
               @blur="markTouched('name')"
               @input="markTouched('name')"
             />
-            <p v-if="getFieldError('name')" class="text-xs text-danger">
-              {{ getFieldError('name') }}
-            </p>
-          </label>
+          </FormField>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">企画名（よみ） <span class="text-danger">*</span></span>
+          <FormField label="企画名（よみ）" label-class="font-semibold" :error="getFieldError('nameYomi')" required>
             <input
               v-model="form.nameYomi"
               name="nameYomi"
@@ -244,13 +243,14 @@ async function handleSubmit() {
               @blur="markTouched('nameYomi')"
               @input="markTouched('nameYomi')"
             />
-            <p v-if="getFieldError('nameYomi')" class="text-xs text-danger">
-              {{ getFieldError('nameYomi') }}
-            </p>
-          </label>
+          </FormField>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">企画を出店する団体の名称 <span class="text-danger">*</span></span>
+          <FormField
+            label="企画を出店する団体の名称"
+            label-class="font-semibold"
+            :error="getFieldError('groupName')"
+            required
+          >
             <input
               v-model="form.groupName"
               :disabled="!canChangeGroupName"
@@ -261,13 +261,14 @@ async function handleSubmit() {
               @blur="markTouched('groupName')"
               @input="markTouched('groupName')"
             />
-            <p v-if="getFieldError('groupName') && canChangeGroupName" class="text-xs text-danger">
-              {{ getFieldError('groupName') }}
-            </p>
-          </label>
+          </FormField>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">企画を出店する団体の名称（よみ） <span class="text-danger">*</span></span>
+          <FormField
+            label="企画を出店する団体の名称（よみ）"
+            label-class="font-semibold"
+            :error="getFieldError('groupNameYomi') && canChangeGroupName"
+            required
+          >
             <input
               v-model="form.groupNameYomi"
               :disabled="!canChangeGroupName"
@@ -279,19 +280,15 @@ async function handleSubmit() {
               @blur="markTouched('groupNameYomi')"
               @input="markTouched('groupNameYomi')"
             />
-            <p v-if="getFieldError('groupNameYomi') && canChangeGroupName" class="text-xs text-danger">
-              {{ getFieldError('groupNameYomi') }}
-            </p>
-          </label>
+          </FormField>
 
           <p v-if="!canChangeGroupName" class="text-sm text-muted">
             既に登録済みの企画があるため、団体名は既存企画から引き継がれます。
           </p>
 
-          <label class="grid gap-2 text-sm text-body">
-            <span class="font-semibold">備考</span>
+          <FormField label="備考" label-class="font-semibold">
             <textarea v-model="form.notes" name="notes" rows="3" placeholder="任意のメモ" />
-          </label>
+          </FormField>
         </div>
       </SettingsRow>
     </SettingsSection>
@@ -344,9 +341,7 @@ async function handleSubmit() {
                     :download-href="() => ''"
                   />
                 </div>
-                <p v-if="getAnswerFieldError(question.id)" class="text-xs text-danger">
-                  {{ getAnswerFieldError(question.id) }}
-                </p>
+                <FormError v-if="getAnswerFieldError(question.id)" :message="getAnswerFieldError(question.id)" />
               </template>
             </div>
           </div>
@@ -358,16 +353,18 @@ async function handleSubmit() {
           <AlertMessage v-if="errorMessage" tone="danger">
             {{ errorMessage }}
           </AlertMessage>
-          <div class="flex justify-end">
-            <button
-              class="rounded bg-primary px-6 py-3 font-bold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+          <ActionsFooter align="end">
+            <BaseButton
+              variant="primary"
+              size="wide"
+              weight="bold"
               :disabled="createMutation.isPending.value || form.participationTypeId === ''"
               type="button"
               @click="handleSubmit"
             >
               {{ createMutation.isPending.value ? '保存中...' : requiresMemberStep ? '保存して次へ' : '確認画面へ' }}
-            </button>
-          </div>
+            </BaseButton>
+          </ActionsFooter>
         </div>
       </template>
     </SettingsSection>

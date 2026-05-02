@@ -18,6 +18,7 @@ import DataCard from '@/components/layouts/DataCard.vue'
 import { type StaffContactCategory, useStaffContactCategoriesQuery } from '@/features/staff/masters/contactCategories'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -69,7 +70,7 @@ function handleDeleted() {
           @click="openCreateEditor"
         >
           <span class="inline-flex items-center gap-2 font-medium text-primary">
-            <i class="fas fa-plus fa-fw" aria-hidden="true" />
+            <FaIcon name="plus" fixed-width />
             メールアドレスを追加
           </span>
         </button>
@@ -85,10 +86,8 @@ function handleDeleted() {
             <div class="font-medium text-body">{{ category.name }}</div>
             <div class="mt-1 text-sm text-muted">{{ category.email }}</div>
           </div>
-          <span
-            class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
-          >
-            <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded text-body">
+            <FaIcon name="pencil-alt" fixed-width />
           </span>
         </button>
       </DataCard>

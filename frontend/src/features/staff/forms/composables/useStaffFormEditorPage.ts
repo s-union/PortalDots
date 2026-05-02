@@ -13,7 +13,7 @@ import {
 } from '@/features/staff/forms/api'
 import type { AllowedQuestionType } from '@/features/staff/forms/editor/useQuestionTypeMeta'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
-import { buildStaffFormTabs } from '@/features/ui/tabStrip'
+import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 
 export function useStaffFormEditorPage(
   formIdValue: MaybeRefOrGetter<string>,

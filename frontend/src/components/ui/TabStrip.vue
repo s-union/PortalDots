@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { tabStripBadgeVariants, tabStripItemVariants } from '@/lib/ui/variants'
-import type { TabStripItem } from '@/features/ui/tabStrip'
+import type { TabStripItem } from '@/lib/ui/tabStrip'
 
 const { tabs } = defineProps<{
   tabs: TabStripItem[]

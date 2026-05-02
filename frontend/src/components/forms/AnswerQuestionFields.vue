@@ -10,6 +10,7 @@ import {
   type FormAnswerDraft
 } from '@/features/forms/answers'
 import type { FormQuestion } from '@/features/forms/api'
+import ErrorState from '@/components/ui/ErrorState.vue'
 
 const {
   answer,
@@ -188,8 +189,6 @@ function eventTargetChecked(event: Event) {
       </button>
     </div>
 
-    <p v-if="uploadErrorMessage" class="rounded border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-      {{ uploadErrorMessage }}
-    </p>
+    <ErrorState v-if="uploadErrorMessage" :message="uploadErrorMessage" />
   </div>
 </template>

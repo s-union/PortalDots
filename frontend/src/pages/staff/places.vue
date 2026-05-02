@@ -11,12 +11,17 @@ definePage({
 
 import { computed, ref } from 'vue'
 import { useMutation } from '@tanstack/vue-query'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import CsvExportLink from '@/components/ui/CsvExportLink.vue'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StaffPlaceEditor from '@/components/staff/StaffPlaceEditor.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
+import { compareString } from '@/lib/compareString'
+import { resolveRowId } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
@@ -30,6 +35,7 @@ import {
 } from '@/features/staff/masters/places'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
+import FaIcon from '@/components/ui/FaIcon.vue'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -166,14 +172,6 @@ function handleSort(nextSortKey: string) {
     sort.toggleSort(nextSortKey)
   }
 }
-
-function resolveRowId(row: StaffDataGridRow) {
-  return typeof row.id === 'string' ? row.id : ''
-}
-
-function compareString(left: string, right: string) {
-  return left.localeCompare(right, 'ja')
-}
 </script>
 
 <template>
@@ -201,43 +199,27 @@ function compareString(left: string, right: string) {
           @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
-            <button
-              class="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-              type="button"
-              @click="openCreateEditor"
-            >
-              <i class="fas fa-plus fa-fw" aria-hidden="true" />
+            <BaseButton variant="primary" size="md" weight="semibold" @click="openCreateEditor">
+              <FaIcon name="plus" fixed-width />
               新規場所
-            </button>
-            <a
-              :href="exportHref"
-              class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
-            >
-              <i class="fas fa-file-csv fa-fw" aria-hidden="true" />
-              CSVで出力(場所別企画一覧)
-            </a>
+            </BaseButton>
+            <CsvExportLink :href="exportHref">CSVで出力(場所別企画一覧)</CsvExportLink>
           </template>
 
           <template #actions="{ row }">
             <div class="flex items-center gap-1">
-              <button
-                class="inline-flex h-8 w-8 items-center justify-center rounded text-body transition hover:bg-primary-light hover:text-primary"
-                type="button"
-                title="編集"
-                @click="openEditEditor(resolveRowId(row))"
-              >
-                <i class="fas fa-pencil-alt fa-fw" aria-hidden="true" />
-              </button>
-              <button
+              <IconActionButton title="編集" @click="openEditEditor(resolveRowId(row))">
+                <FaIcon name="pencil-alt" fixed-width />
+              </IconActionButton>
+              <IconActionButton
                 v-if="canDelete"
-                class="inline-flex h-8 w-8 items-center justify-center rounded text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
-                type="button"
+                variant="danger"
                 title="削除"
                 :disabled="deletePlaceMutation.isPending.value"
                 @click="handleDeletePlace(row)"
               >
-                <i class="fas fa-trash fa-fw" aria-hidden="true" />
-              </button>
+                <FaIcon name="trash" fixed-width />
+              </IconActionButton>
             </div>
           </template>
 
