@@ -52,6 +52,8 @@ type Config struct {
 	EmailFrom                 string
 	EmailProducerURL          string
 	EmailProducerToken        string
+	RateLimitPerMinute        int
+	MaintenanceMode           bool
 	AuthUser                  AuthUser
 	Users                     []User
 	StaffVerifyCode           string
@@ -422,6 +424,8 @@ func FromEnv() Config {
 		EmailFrom:                 getenv("PORTALDOTS_SMTP_FROM", ""),
 		EmailProducerURL:          getenv("PORTALDOTS_EMAIL_PRODUCER_URL", ""),
 		EmailProducerToken:        getenv("PORTALDOTS_EMAIL_PRODUCER_TOKEN", ""),
+		RateLimitPerMinute:        getenvInt("PORTALDOTS_RATE_LIMIT_PER_MINUTE", 60),
+		MaintenanceMode:           getenv("PORTALDOTS_MAINTENANCE_MODE", "") == "true",
 		AuthUser: AuthUser{
 			ID:          getenv("PORTALDOTS_AUTH_USER_ID", defaultAuthUser.ID),
 			LoginIDs:    splitCSV(getenv("PORTALDOTS_AUTH_LOGIN_IDS", strings.Join(defaultAuthUser.LoginIDs, ","))),

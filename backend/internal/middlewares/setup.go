@@ -14,6 +14,10 @@ type SetupConfig struct {
 	// AllowedOrigins is a list of origins allowed for CORS requests.
 	// If empty, CORS middleware is not added.
 	AllowedOrigins []string
+	// RateLimit configures IP-based rate limiting. Zero value disables it.
+	RateLimit RateLimitConfig
+	// MaintenanceMode, if true, returns 503 for all requests except /healthz.
+	MaintenanceMode bool
 }
 
 // Setup applies the standard middleware stack to the Echo instance.
@@ -35,6 +39,20 @@ func Setup(e *echo.Echo, cfg SetupConfig) {
 			return next(c)
 		}
 	})
+	e.Use(AccessLogMiddleware())
+	if cfg.MaintenanceMode {
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				if c.Request().URL.Path == "/healthz" {
+					return next(c)
+				}
+				return c.JSON(http.StatusServiceUnavailable, map[string]string{
+					"message": "maintenance_mode",
+				})
+			}
+		})
+	}
+	e.Use(RateLimitMiddleware(cfg.RateLimit))
 	e.Use(TransformExternalIDs())
 	if len(cfg.AllowedOrigins) > 0 {
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{

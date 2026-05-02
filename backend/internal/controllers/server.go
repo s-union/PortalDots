@@ -26,6 +26,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"golang.org/x/time/rate"
 )
 
 // sharedDeps holds session-related dependencies shared across all domain handler structs.
@@ -273,6 +274,11 @@ func NewServerWithDependencies(
 	}
 	middlewares.Setup(e, middlewares.SetupConfig{
 		AllowedOrigins: []string{allowedOrigin},
+		RateLimit: middlewares.RateLimitConfig{
+			Rate:  rate.Limit(cfg.RateLimitPerMinute) / rate.Limit(60),
+			Burst: cfg.RateLimitPerMinute,
+		},
+		MaintenanceMode: cfg.MaintenanceMode,
 	})
 
 	shared := sharedDeps{
