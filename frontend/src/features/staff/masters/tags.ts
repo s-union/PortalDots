@@ -1,7 +1,7 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, staffTagSchema } from '@/lib/api/schema'
+import { parseWithSchema, parseArrayWithSchema, staffTagSchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { useSessionStore } from '@/features/session/store'
 
@@ -138,7 +138,7 @@ export function buildDeleteStaffTagConfirmMessage(tagName: string) {
 }
 
 function parseStaffTags(value: unknown): StaffTag[] {
-  return parseWithSchema(staffTagSchema.array(), value, 'staff tags')
+  return parseArrayWithSchema(staffTagSchema, value, 'staff tags')
 }
 
 function parseStaffTag(value: unknown): StaffTag {

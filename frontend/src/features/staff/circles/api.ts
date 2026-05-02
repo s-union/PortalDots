@@ -4,6 +4,7 @@ import type { z } from 'zod'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import {
   parseWithSchema,
+  parseArrayWithSchema,
   staffCircleMemberSchema,
   staffCircleMailFormSchema,
   staffCircleSchema,
@@ -595,11 +596,11 @@ export function buildStaffCirclesExportUrl() {
 }
 
 function parseStaffCircles(value: unknown): StaffCircle[] {
-  return parseWithSchema(staffCircleSchema.array(), value, 'staff circles')
+  return parseArrayWithSchema(staffCircleSchema, value, 'staff circles')
 }
 
 function parseManagedStaffCircles(value: unknown): StaffManagedCircle[] {
-  return parseWithSchema(staffManagedCircleSchema.array(), value, 'managed staff circles')
+  return parseArrayWithSchema(staffManagedCircleSchema, value, 'managed staff circles')
 }
 
 function parseStaffCircle(value: unknown): StaffCircle {
@@ -611,7 +612,7 @@ function parseStaffCircleMailForm(value: unknown): StaffCircleMailForm {
 }
 
 function parseStaffCircleMembers(value: unknown): StaffCircleMember[] {
-  return parseWithSchema(staffCircleMemberSchema.array(), value, 'staff circle members')
+  return parseArrayWithSchema(staffCircleMemberSchema, value, 'staff circle members')
 }
 
 export type StaffCirclePage = PaginatedResult<StaffCircle>

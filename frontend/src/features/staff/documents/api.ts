@@ -1,7 +1,12 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, encodePathSegment, $api, postMultipart, putMultipart } from '@/lib/api/client'
-import { parseWithSchema, staffDocumentDetailSchema, staffDocumentSummarySchema } from '@/lib/api/schema'
+import {
+  parseWithSchema,
+  parseArrayWithSchema,
+  staffDocumentDetailSchema,
+  staffDocumentSummarySchema
+} from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { useSessionStore } from '@/features/session/store'
 
@@ -274,7 +279,7 @@ export function buildStaffDocumentsExportUrl() {
 }
 
 function parseStaffDocuments(value: unknown): StaffDocumentSummary[] {
-  return parseWithSchema(staffDocumentSummarySchema.array(), value, 'staff documents')
+  return parseArrayWithSchema(staffDocumentSummarySchema, value, 'staff documents')
 }
 
 function parseStaffDocument(value: unknown): StaffDocumentSummary {

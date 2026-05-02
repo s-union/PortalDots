@@ -1,7 +1,7 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, staffPlaceSchema } from '@/lib/api/schema'
+import { parseWithSchema, parseArrayWithSchema, staffPlaceSchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { useSessionStore } from '@/features/session/store'
 
@@ -167,7 +167,7 @@ export function buildStaffPlacesExportUrl() {
 }
 
 function parseStaffPlaces(value: unknown): StaffPlace[] {
-  return parseWithSchema(staffPlaceSchema.array(), value, 'staff places')
+  return parseArrayWithSchema(staffPlaceSchema, value, 'staff places')
 }
 
 function parseStaffPlace(value: unknown): StaffPlace {

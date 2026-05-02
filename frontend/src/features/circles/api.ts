@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import {
   parseWithSchema,
+  parseArrayWithSchema,
   addCircleMemberInputSchema,
   selectableCircleSchema,
   circleDetailSchema,
@@ -426,7 +427,7 @@ export function extractAddCircleMemberValidationMessage(error: unknown) {
 }
 
 function parseSelectableCircles(value: unknown): SelectableCircle[] {
-  return parseWithSchema(selectableCircleSchema.array(), value, 'circles')
+  return parseArrayWithSchema(selectableCircleSchema, value, 'circles')
 }
 
 function parseCircleDetail(value: unknown): CircleDetail {
@@ -434,5 +435,5 @@ function parseCircleDetail(value: unknown): CircleDetail {
 }
 
 function parseCircleMembers(value: unknown): CircleMember[] {
-  return parseWithSchema(circleMemberSchema.array(), value, 'circle members')
+  return parseArrayWithSchema(circleMemberSchema, value, 'circle members')
 }

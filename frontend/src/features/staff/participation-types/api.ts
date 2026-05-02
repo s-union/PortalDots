@@ -2,7 +2,12 @@ import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { z } from 'zod'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, staffCircleSchema, staffParticipationTypeSchema } from '@/lib/api/schema'
+import {
+  parseWithSchema,
+  parseArrayWithSchema,
+  staffCircleSchema,
+  staffParticipationTypeSchema
+} from '@/lib/api/schema'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { parseTagString, formatTags } from '@/lib/tags'
@@ -31,7 +36,7 @@ export async function fetchStaffParticipationTypes() {
     {
       headers: createJsonHeaders()
     },
-    (value) => parseWithSchema(staffParticipationTypeSchema.array(), value, 'participation types'),
+    (value) => parseArrayWithSchema(staffParticipationTypeSchema, value, 'participation types'),
     {
       errorMessage: 'Failed to fetch participation types'
     }
@@ -171,7 +176,7 @@ export function useStaffParticipationTypesQuery(enabled: MaybeRefOrGetter<boolea
     {
       headers: createJsonHeaders()
     },
-    (value) => parseWithSchema(staffParticipationTypeSchema.array(), value, 'participation types'),
+    (value) => parseArrayWithSchema(staffParticipationTypeSchema, value, 'participation types'),
     {
       queryKey: ['staff', 'participation-types'],
       enabled: isEnabled,

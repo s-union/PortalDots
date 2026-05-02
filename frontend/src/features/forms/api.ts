@@ -1,7 +1,13 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import type { z } from 'zod'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
-import { formDetailSchema, formSummarySchema, parseWithSchema, type formQuestionSchema } from '@/lib/api/schema'
+import {
+  formDetailSchema,
+  formSummarySchema,
+  parseWithSchema,
+  parseArrayWithSchema,
+  type formQuestionSchema
+} from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'
 export type FormSummary = z.infer<typeof formSummarySchema>
 export type FormQuestion = z.infer<typeof formQuestionSchema>
@@ -110,7 +116,7 @@ export function useFormDetailQuery(formId: MaybeRefOrGetter<string>) {
 }
 
 function parseForms(value: unknown): FormSummary[] {
-  return parseWithSchema(formSummarySchema.array(), value, 'forms')
+  return parseArrayWithSchema(formSummarySchema, value, 'forms')
 }
 
 function parseFormDetail(value: unknown): FormDetail {

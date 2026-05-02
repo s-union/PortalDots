@@ -1,7 +1,7 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, staffContactCategorySchema } from '@/lib/api/schema'
+import { parseWithSchema, parseArrayWithSchema, staffContactCategorySchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { useSessionStore } from '@/features/session/store'
 
@@ -141,7 +141,7 @@ export function buildDeleteStaffContactCategoryConfirmMessage(category: StaffCon
 }
 
 function parseStaffContactCategories(value: unknown): StaffContactCategory[] {
-  return parseWithSchema(staffContactCategorySchema.array(), value, 'staff contact categories')
+  return parseArrayWithSchema(staffContactCategorySchema, value, 'staff contact categories')
 }
 
 function parseStaffContactCategory(value: unknown): StaffContactCategory {

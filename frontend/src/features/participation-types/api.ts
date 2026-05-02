@@ -1,7 +1,7 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import type { z } from 'zod'
 import { createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, participationTypeSchema } from '@/lib/api/schema'
+import { parseArrayWithSchema, participationTypeSchema } from '@/lib/api/schema'
 
 export type ParticipationType = z.infer<typeof participationTypeSchema>
 
@@ -12,7 +12,7 @@ export async function fetchParticipationTypes() {
     {
       headers: createJsonHeaders()
     },
-    (value) => parseWithSchema(participationTypeSchema.array(), value, 'participation types'),
+    (value) => parseArrayWithSchema(participationTypeSchema, value, 'participation types'),
     {
       errorMessage: 'Failed to fetch participation types'
     }
@@ -26,7 +26,7 @@ export function useParticipationTypesQuery(enabled: MaybeRefOrGetter<boolean>) {
     {
       headers: createJsonHeaders()
     },
-    (value) => parseWithSchema(participationTypeSchema.array(), value, 'participation types'),
+    (value) => parseArrayWithSchema(participationTypeSchema, value, 'participation types'),
     {
       queryKey: ['participation-types'],
       enabled: computed(() => toValue(enabled)),

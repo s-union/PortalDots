@@ -5,6 +5,7 @@ import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import {
   formQuestionSchema,
   parseWithSchema,
+  parseArrayWithSchema,
   staffFormDetailSchema,
   staffFormPreviewSchema,
   staffFormSummarySchema
@@ -516,7 +517,7 @@ export function extractStaffFormValidationMessage(error: unknown) {
 }
 
 function parseStaffForms(value: unknown): StaffFormSummary[] {
-  return parseWithSchema(staffFormSummarySchema.array(), value, 'staff forms')
+  return parseArrayWithSchema(staffFormSummarySchema, value, 'staff forms')
 }
 
 export function createDefaultStaffFormPayload(): CreateStaffFormPayload {

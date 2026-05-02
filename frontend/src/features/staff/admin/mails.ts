@@ -1,7 +1,8 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, staffMailSchema } from '@/lib/api/schema'
+import { parseWithSchema, parseArrayWithSchema, staffMailSchema } from '@/lib/api/schema'
+import { parseTagString } from '@/lib/tags'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { useSessionStore } from '@/features/session/store'
 
@@ -128,14 +129,7 @@ export function useStaffMailForm() {
 }
 
 export function normalizeRecipientList(recipientsText: string) {
-  return [
-    ...new Set(
-      recipientsText
-        .split(/[\n,]/)
-        .map((value) => value.trim())
-        .filter(Boolean)
-    )
-  ]
+  return parseTagString(recipientsText)
 }
 
 export function extractStaffMailValidationMessage(error: unknown) {
@@ -143,7 +137,7 @@ export function extractStaffMailValidationMessage(error: unknown) {
 }
 
 function parseStaffMails(value: unknown): StaffMail[] {
-  return parseWithSchema(staffMailSchema.array(), value, 'staff mails')
+  return parseArrayWithSchema(staffMailSchema, value, 'staff mails')
 }
 
 function parseStaffMail(value: unknown): StaffMail {

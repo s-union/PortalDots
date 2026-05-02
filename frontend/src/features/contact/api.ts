@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
-import { contactCategorySchema, contactSubmissionSchema, parseWithSchema } from '@/lib/api/schema'
+import { contactCategorySchema, contactSubmissionSchema, parseWithSchema, parseArrayWithSchema } from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 
@@ -128,7 +128,7 @@ export function extractContactValidationMessage(error: unknown) {
 }
 
 function parseContactCategories(value: unknown): ContactCategory[] {
-  return parseWithSchema(contactCategorySchema.array(), value, 'contact categories')
+  return parseArrayWithSchema(contactCategorySchema, value, 'contact categories')
 }
 
 function parseContactResult(value: unknown): SubmitContactResult {
@@ -136,5 +136,5 @@ function parseContactResult(value: unknown): SubmitContactResult {
 }
 
 function parseContactHistory(value: unknown): ContactSubmission[] {
-  return parseWithSchema(contactSubmissionSchema.array(), value, 'contact history')
+  return parseArrayWithSchema(contactSubmissionSchema, value, 'contact history')
 }

@@ -20,6 +20,10 @@ export function parseWithSchema<T>(schema: z.ZodType<T>, value: unknown, label: 
   return parsed.data
 }
 
+export function parseArrayWithSchema<T>(schema: z.ZodType<T>, value: unknown, label: string): T[] {
+  return parseWithSchema(schema.array(), value, label)
+}
+
 export const stringArraySchema = z.array(z.string())
 const apiRelativePathSchema = z
   .string()

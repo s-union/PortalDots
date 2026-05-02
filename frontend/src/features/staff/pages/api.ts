@@ -1,7 +1,7 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, staffPageDetailSchema, staffPageSummarySchema } from '@/lib/api/schema'
+import { parseWithSchema, parseArrayWithSchema, staffPageDetailSchema, staffPageSummarySchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { parseTagString, formatTags } from '@/lib/tags'
 import { useSessionStore } from '@/features/session/store'
@@ -350,7 +350,7 @@ export function formatStaffPageTags(tags: string[]) {
 }
 
 function parseStaffPages(value: unknown): StaffPageSummary[] {
-  return parseWithSchema(staffPageSummarySchema.array(), value, 'staff pages')
+  return parseArrayWithSchema(staffPageSummarySchema, value, 'staff pages')
 }
 
 function parseStaffPageSummary(value: unknown): StaffPageSummary {
