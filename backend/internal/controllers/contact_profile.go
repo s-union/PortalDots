@@ -481,6 +481,9 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+
+	_ = h.sessions.DeleteOtherSessionsByUserID(currentSession.User.ID, sessionID)
+
 	if err := h.enqueuePasswordChangedMail(c.Request().Context(), currentSession.User.ID, collectUserEmailRecipients(managedUser)); err != nil {
 		return internalError(c)
 	}

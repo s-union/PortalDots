@@ -3,6 +3,7 @@ package session
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"sync"
 	"time"
 
@@ -23,6 +24,7 @@ type Store interface {
 	Get(id string) (Session, bool)
 	Delete(id string) error
 	DeleteByUserID(userID string) error
+	DeleteOtherSessionsByUserID(userID string, currentSessionID string) error
 	Update(id string, update func(*Session)) bool
 }
 
@@ -47,6 +49,10 @@ func NewMemoryStore(ttl time.Duration) *MemoryStore {
 }
 
 func (s *MemoryStore) Create(user *auth.User) (string, Session, error) {
+	if user == nil {
+		return "", Session{}, errors.New("session: cannot create session with nil user")
+	}
+
 	id, err := randomToken(32)
 	if err != nil {
 		return "", Session{}, err
@@ -121,6 +127,22 @@ func (s *MemoryStore) DeleteByUserID(userID string) error {
 	defer s.mu.Unlock()
 
 	for id, entry := range s.sessions {
+		if entry.session.User == nil || entry.session.User.ID != userID {
+			continue
+		}
+		delete(s.sessions, id)
+	}
+	return nil
+}
+
+func (s *MemoryStore) DeleteOtherSessionsByUserID(userID string, currentSessionID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for id, entry := range s.sessions {
+		if id == currentSessionID {
+			continue
+		}
 		if entry.session.User == nil || entry.session.User.ID != userID {
 			continue
 		}

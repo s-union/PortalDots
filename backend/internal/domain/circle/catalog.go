@@ -281,30 +281,34 @@ func (c *StaticCatalog) GetUserCircle(user *auth.User, circleID string) (Circle,
 }
 
 func (c *StaticCatalog) CreateForUser(user *auth.User, params CreateCircleParams) (Circle, error) {
-	created, err := c.Create(params.Name, params.NameYomi, params.GroupName, params.GroupNameYomi, params.ParticipationTypeID, params.ParticipationTypeName, params.Notes, nil, "pending", "", "", nil)
-	if err != nil {
-		return Circle{}, err
-	}
-
-	created.CanChangeGroupName = params.CanChangeGroupName
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	for index := range c.circles {
-		if c.circles[index].ID == created.ID {
-			c.circles[index].CanChangeGroupName = params.CanChangeGroupName
-			if user != nil && !c.isCircleMemberLocked(created.ID, user.ID) {
-				c.members[created.ID] = append(c.members[created.ID], CircleMember{
-					UserID:      user.ID,
-					DisplayName: user.DisplayName,
-					IsLeader:    true,
-				})
-				sortMembersForDisplay(c.members[created.ID])
-			}
-			return cloneCircle(c.circles[index]), nil
-		}
+
+	circle := Circle{
+		ID:                    uuidv7.MustString(),
+		Name:                  params.Name,
+		NameYomi:              params.NameYomi,
+		GroupName:             params.GroupName,
+		GroupNameYomi:         params.GroupNameYomi,
+		ParticipationTypeID:   params.ParticipationTypeID,
+		ParticipationTypeName: params.ParticipationTypeName,
+		Notes:                 params.Notes,
+		UpdatedAt:             time.Now().UTC(),
+		CanChangeGroupName:    params.CanChangeGroupName,
+		Status:                "pending",
+	}
+	c.nextID++
+	c.circles = append(c.circles, circle)
+
+	if user != nil {
+		c.members[circle.ID] = []CircleMember{{
+			UserID:      user.ID,
+			DisplayName: user.DisplayName,
+			IsLeader:    true,
+		}}
 	}
 
-	return created, nil
+	return cloneCircle(circle), nil
 }
 
 func (c *StaticCatalog) UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {

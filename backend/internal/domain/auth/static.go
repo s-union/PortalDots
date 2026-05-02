@@ -58,14 +58,20 @@ type staticCredential struct {
 }
 
 type StaticAuthenticator struct {
-	mu    sync.RWMutex
-	users map[string]staticCredential
+	mu        sync.RWMutex
+	users     map[string]staticCredential
+	dummyHash string
 }
 
 func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) (*StaticAuthenticator, error) {
 	defaultPasswordHash, err := bcrypt.GenerateFromPassword([]byte(cfg.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash default auth password: %w", err)
+	}
+
+	dummyHashBytes, err := bcrypt.GenerateFromPassword([]byte("__dummy__"), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate dummy password hash: %w", err)
 	}
 
 	built := map[string]staticCredential{
@@ -111,7 +117,7 @@ func NewStaticAuthenticator(cfg config.AuthUser, users []config.User) (*StaticAu
 		return nil, err
 	}
 
-	return &StaticAuthenticator{users: built}, nil
+	return &StaticAuthenticator{users: built, dummyHash: string(dummyHashBytes)}, nil
 }
 
 func (a *StaticAuthenticator) Authenticate(_ context.Context, loginID, password string) (*User, bool) {
@@ -119,10 +125,12 @@ func (a *StaticAuthenticator) Authenticate(_ context.Context, loginID, password 
 	defer a.mu.RUnlock()
 
 	normalizedLoginID := normalizeStaticLoginID(loginID)
+	found := false
 	for _, candidate := range a.users {
 		if !matchesStaticLoginID(candidate, normalizedLoginID) {
 			continue
 		}
+		found = true
 		if bcrypt.CompareHashAndPassword([]byte(candidate.passwordHash), []byte(password)) != nil {
 			continue
 		}
@@ -133,10 +141,18 @@ func (a *StaticAuthenticator) Authenticate(_ context.Context, loginID, password 
 		return &user, true
 	}
 
+	if !found {
+		_ = bcrypt.CompareHashAndPassword([]byte(a.dummyHash), []byte(password))
+	}
+
 	return nil, false
 }
 
 func (a *StaticAuthenticator) ChangePassword(_ context.Context, userID, currentPassword, newPassword string) error {
+	if userID == "" || newPassword == "" {
+		return ErrInvalidPassword
+	}
+
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -158,6 +174,10 @@ func (a *StaticAuthenticator) ChangePassword(_ context.Context, userID, currentP
 }
 
 func (a *StaticAuthenticator) ResetPassword(_ context.Context, userID, newPassword string) error {
+	if userID == "" || newPassword == "" {
+		return ErrInvalidPassword
+	}
+
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
