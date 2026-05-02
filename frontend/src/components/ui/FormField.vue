@@ -1,5 +1,8 @@
 <script setup lang="ts">
-const props = defineProps<{
+import { computed } from 'vue'
+import FormError from '@/components/ui/FormError.vue'
+
+const { label, required, helper, error, labelClass, as } = defineProps<{
   label: string
   required?: boolean
   helper?: string
@@ -8,10 +11,7 @@ const props = defineProps<{
   as?: 'label' | 'div'
 }>()
 
-function errorMessage(): string | undefined {
-  if (typeof props.error === 'string') return props.error
-  return undefined
-}
+const errorString = computed(() => (typeof error === 'string' ? error : undefined))
 </script>
 
 <template>
@@ -22,6 +22,6 @@ function errorMessage(): string | undefined {
     </span>
     <span v-if="helper" class="text-xs text-muted">{{ helper }}</span>
     <slot />
-    <FormError v-if="errorMessage()" :message="errorMessage()!" />
+    <FormError v-if="errorString" :message="errorString!" />
   </component>
 </template>

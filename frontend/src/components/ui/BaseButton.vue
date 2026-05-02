@@ -12,6 +12,8 @@ const {
   weight = 'normal',
   fullWidth = false,
   disabled,
+  target,
+  rel,
   class: className
 } = defineProps<{
   to?: string
@@ -22,18 +24,35 @@ const {
   weight?: ButtonVariantProps['weight']
   fullWidth?: boolean
   disabled?: boolean
+  target?: string
+  rel?: string
   class?: string
 }>()
 
 const component = computed(() => {
-  if (to) return 'RouterLink'
-  if (href) return 'a'
+  if (to) {
+    return 'RouterLink'
+  }
+  if (href) {
+    return 'a'
+  }
   return 'button'
 })
 
 const extraProps = computed(() => {
-  if (to) return { to }
-  if (href) return { href }
+  if (to) {
+    return { to }
+  }
+  if (href) {
+    const props: Record<string, string | undefined> = { href }
+    if (target) {
+      props.target = target
+    }
+    if (rel) {
+      props.rel = rel
+    }
+    return props
+  }
   return { type }
 })
 </script>

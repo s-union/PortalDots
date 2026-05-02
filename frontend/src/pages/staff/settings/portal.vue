@@ -109,7 +109,7 @@ async function handleSave() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <p class="text-sm font-semibold text-body">HTTPS 強制</p>
-            <CheckboxField v-model="form.appForceHttps" label="https 接続を強制する" />
+            <CheckboxField v-model="form.appForceHttps" label="https 接続を強制する" name="appForceHttps" />
           </div>
         </SettingsRow>
       </SettingsSection>

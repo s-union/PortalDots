@@ -144,7 +144,7 @@ async function handleSave() {
               <InfoBox class="text-muted">
                 詳細な設問追加や並び替えは専用エディターで行います。ここでは公開状態と文面を先に整えます。
               </InfoBox>
-              <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" />
+              <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" name="isPublic" />
             </div>
           </div>
         </SettingsRow>

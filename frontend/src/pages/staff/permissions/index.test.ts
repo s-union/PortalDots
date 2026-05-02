@@ -110,6 +110,6 @@ describe('StaffPermissionsPage', () => {
     expect(wrapper.text()).toContain('Content User')
     expect(wrapper.text()).not.toContain('Participant User')
     expect(wrapper.text()).toContain('権限設定(全機能)')
-    expect(wrapper.get('a[href="/staff/permissions/content-user"]').exists()).toBe(true)
+    expect(wrapper.get('button[title="編集"]').exists()).toBe(true)
   })
 })

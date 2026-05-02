@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{
+const { href, download } = defineProps<{
   href: string
   download?: boolean
 }>()

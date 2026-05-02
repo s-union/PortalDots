@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref } from 'vue'
-// import { within, userEvent, expect } from 'storybook/test'
+// Import { within, userEvent, expect } from 'storybook/test'
 import MarkdownEditorField from './MarkdownEditorField.vue'
 
 const meta = {
@@ -74,6 +74,6 @@ export const WithPreviewOpen: Story = {
     template: `<MarkdownEditorField v-model="content" name="content" />`
   }),
   play: async () => {
-    // interaction test は今回のプロジェクトでは使用しないため無効化
+    // Interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

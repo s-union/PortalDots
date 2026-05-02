@@ -145,7 +145,7 @@ describe('StaffFormsIndexPage', () => {
         .some((link) => link.text().includes('展示チェックフォーム'))
     ).toBe(true)
     expect(wrapper.find('a[href="/staff/forms/0195ec00-0014-7000-8000-000000000001/answers"]').exists()).toBe(false)
-    expect(wrapper.get('a[title="設定"]').exists()).toBe(true)
+    expect(wrapper.get('button[title="設定"]').exists()).toBe(true)
   })
 
   it('confirms before copying and deleting a staff form', async () => {

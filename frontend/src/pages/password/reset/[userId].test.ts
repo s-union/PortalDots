@@ -48,6 +48,9 @@ describe('PasswordResetSignedPage', () => {
     expect(wrapper.text()).toContain('パスワードの再設定')
     expect(wrapper.get('input[name="password"]').exists()).toBe(true)
     expect(wrapper.get('input[name="passwordConfirmation"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('新しいパスワードを設定')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('新しいパスワードを設定')
+    })
   })
 })

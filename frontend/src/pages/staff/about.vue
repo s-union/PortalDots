@@ -45,6 +45,8 @@ import FaIcon from '@/components/ui/FaIcon.vue'
             variant="primary"
             size="lg"
             weight="bold"
+            target="_blank"
+            rel="noopener noreferrer"
             class="inline-flex items-center"
           >
             <FaIcon name="external-link-alt" fixed-width />

@@ -104,9 +104,9 @@ async function handleCreateDocument() {
           <input name="file" type="file" @change="handleFileChange" />
         </FormField>
 
-        <CheckboxField v-model="form.isImportant" label="重要資料として扱う" />
+        <CheckboxField v-model="form.isImportant" label="重要資料として扱う" name="isImportant" />
 
-        <CheckboxField v-model="form.isPublic" label="公開する" />
+        <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
 
         <AlertMessage tone="info">
           現在の upload は DB 保存です。外部ストレージ連携はまだ実装していません。

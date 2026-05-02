@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from 'msw'
-// import { within, userEvent } from 'storybook/test'
+// Import { within, userEvent } from 'storybook/test'
 import LoginPage from './login.vue'
 
 const meta = {
@@ -54,6 +54,6 @@ export const WithLoginError: Story = {
     }
   },
   play: async () => {
-    // interaction test は今回のプロジェクトでは使用しないため無効化
+    // Interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

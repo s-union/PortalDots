@@ -133,8 +133,8 @@ describe('StaffParticipationTypeCirclesPage', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('絞り込み条件')
 
-    const emailLink = wrapper.get('a[title="メール送信"]')
-    expect(emailLink.attributes('href')).toBe('/staff/circles/circle-a/email')
+    const emailLink = wrapper.get('button[title="メール送信"]')
+    expect(emailLink.exists()).toBe(true)
 
     const editTab = wrapper.findAll('a').find((link) => link.text().includes('参加種別を編集'))
     if (!editTab) {

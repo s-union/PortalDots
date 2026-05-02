@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { ref } from 'vue'
-// import { within, userEvent, expect } from 'storybook/test'
+// Import { within, userEvent, expect } from 'storybook/test'
 import StaffTagPicker from './StaffTagPicker.vue'
 
 const meta = {
@@ -109,6 +109,6 @@ export const WithSearch: Story = {
     `
   }),
   play: async () => {
-    // interaction test は今回のプロジェクトでは使用しないため無効化
+    // Interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

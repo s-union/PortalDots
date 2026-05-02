@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{
+const { value } = defineProps<{
   value: boolean
 }>()
 </script>

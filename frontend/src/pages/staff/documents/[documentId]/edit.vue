@@ -163,9 +163,9 @@ async function handleDeleteDocument() {
               </span>
             </FormField>
 
-            <CheckboxField v-model="form.isImportant" label="重要資料として扱う" />
+            <CheckboxField v-model="form.isImportant" label="重要資料として扱う" name="isImportant" />
 
-            <CheckboxField v-model="form.isPublic" label="公開する" />
+            <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
           </div>
         </SettingsRow>
       </SettingsSection>

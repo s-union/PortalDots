@@ -194,7 +194,7 @@ async function handleCreate() {
             name="formConfirmationMessage"
           />
         </FormField>
-        <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" />
+        <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" name="isPublic" />
         <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
       </div>
       <div class="mt-5">

@@ -103,11 +103,11 @@ function handleDocumentChange(documentId: string, event: Event) {
       </div>
     </fieldset>
 
-    <CheckboxField v-model="form.isPinned" label="固定表示する" />
+    <CheckboxField v-model="form.isPinned" label="固定表示する" name="isPinned" />
 
-    <CheckboxField v-model="form.isPublic" label="公開する" />
+    <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
 
-    <CheckboxField v-model="form.sendEmails" label="保存後にメール配信を予約する" />
+    <CheckboxField v-model="form.sendEmails" label="保存後にメール配信を予約する" name="sendEmails" />
 
     <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
     <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{
+const { align } = defineProps<{
   align?: 'end' | 'center'
 }>()
 </script>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { cn } from '@/lib/ui/cn'
 
-defineProps<{
+const { hasError } = defineProps<{
   hasError?: boolean
 }>()
 

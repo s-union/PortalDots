@@ -328,7 +328,12 @@ async function handleDeleteForm() {
               <p class="text-xs text-muted-2">受付期間外では、公開中でもユーザーは回答や編集を行えません。</p>
             </div>
             <div class="flex flex-wrap gap-4">
-              <CheckboxField v-model="editForm.isPublic" label="公開する" :disabled="isParticipationForm" />
+              <CheckboxField
+                v-model="editForm.isPublic"
+                label="公開する"
+                :disabled="isParticipationForm"
+                name="isPublic"
+              />
             </div>
           </div>
         </SettingsRow>
