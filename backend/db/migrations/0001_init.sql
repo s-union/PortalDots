@@ -117,6 +117,12 @@ ALTER TABLE circles
 CREATE INDEX IF NOT EXISTS circles_participation_type_id_idx
     ON circles(participation_type_id);
 
+CREATE INDEX IF NOT EXISTS circles_status_idx
+    ON circles(status);
+
+CREATE INDEX IF NOT EXISTS circles_tags_gin_idx
+    ON circles USING GIN (tags);
+
 -- ── pages ──
 CREATE TABLE IF NOT EXISTS pages (
     id uuid PRIMARY KEY DEFAULT uuidv7(),
@@ -135,12 +141,23 @@ CREATE TABLE IF NOT EXISTS pages (
 CREATE INDEX IF NOT EXISTS pages_updated_at_idx
     ON pages(updated_at DESC, id DESC);
 
+CREATE INDEX IF NOT EXISTS pages_viewable_tags_gin_idx
+    ON pages USING GIN (viewable_tags);
+
 -- ── reads ──
 CREATE TABLE IF NOT EXISTS reads (
     page_id uuid NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
     user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (page_id, user_id)
+);
+
+-- ── document_reads ──
+CREATE TABLE IF NOT EXISTS document_reads (
+    document_id uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (document_id, user_id)
 );
 
 -- ── documents ──
@@ -158,6 +175,9 @@ CREATE TABLE IF NOT EXISTS documents (
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE INDEX IF NOT EXISTS documents_is_public_idx
+    ON documents(is_public);
 
 -- ── form_questions ──
 CREATE TABLE IF NOT EXISTS form_questions (
@@ -349,6 +369,7 @@ DROP TABLE IF EXISTS answer_details;
 DROP TABLE IF EXISTS answers;
 DROP TABLE IF EXISTS form_questions;
 DROP TABLE IF EXISTS documents;
+DROP TABLE IF EXISTS document_reads;
 DROP TABLE IF EXISTS reads;
 DROP TABLE IF EXISTS pages;
 DROP TABLE IF EXISTS circle_user;

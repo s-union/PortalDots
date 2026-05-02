@@ -69,3 +69,14 @@ RETURNING id, circle_id, name, description, notes, is_public, is_important, file
 DELETE FROM documents
 WHERE circle_id = $1
   AND id = $2;
+
+-- name: MarkDocumentRead :exec
+INSERT INTO document_reads (document_id, user_id)
+VALUES ($1, $2)
+ON CONFLICT (document_id, user_id) DO NOTHING;
+
+-- name: ListReadDocumentIDsByUser :many
+SELECT document_id
+FROM document_reads
+WHERE user_id = $1
+  AND document_id = ANY($2::uuid[]);
