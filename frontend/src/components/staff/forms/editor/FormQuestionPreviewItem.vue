@@ -175,7 +175,16 @@ const inputClass =
     @dragover.prevent="emit('dragOver', $event)"
     @drop.prevent="emit('drop', $event)"
   >
-    <div class="px-6 py-4" :class="{ 'cursor-pointer': !isOpen }" @click="!isOpen && emit('toggle')">
+    <div
+      role="button"
+      :tabindex="isOpen ? -1 : 0"
+      :aria-expanded="isOpen"
+      class="px-6 py-4"
+      :class="{ 'cursor-pointer': !isOpen }"
+      @click="!isOpen && emit('toggle')"
+      @keydown.enter.prevent="!isOpen && emit('toggle')"
+      @keydown.space.prevent="!isOpen && emit('toggle')"
+    >
       <div class="absolute inset-x-0 top-0 flex justify-center">
         <span
           class="cursor-move select-none px-2 py-0.5 text-sm leading-none text-muted-2 opacity-0 transition-opacity group-hover:opacity-100"

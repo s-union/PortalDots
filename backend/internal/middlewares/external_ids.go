@@ -298,12 +298,14 @@ func decodeExternalIDRequest(c echo.Context) error {
 	}
 }
 
+const maxExternalIDBodyBytes = 1 << 20
+
 func decodeExternalIDJSONBody(c echo.Context) error {
 	if c.Request().Body == nil {
 		return nil
 	}
 
-	body, err := io.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(io.LimitReader(c.Request().Body, maxExternalIDBodyBytes))
 	if err != nil {
 		return err
 	}

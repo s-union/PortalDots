@@ -52,7 +52,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 
 <template>
   <div class="grid gap-4">
-    <FormField as="div" label="タイトル" label-class="font-medium" :error="fieldErrors?.title">
+    <FormField label="タイトル" label-class="font-medium" :error="fieldErrors?.title">
       <input
         v-model="form.title"
         :class="[formControlVariants(), { 'border-danger': fieldErrors?.title }]"

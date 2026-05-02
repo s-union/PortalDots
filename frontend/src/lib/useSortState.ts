@@ -20,7 +20,7 @@ export interface UseSortStateReturn<K extends string> {
    * - If different key: switches to new key with 'asc' direction
    *
    * @param nextKey - The key to sort by
-   * @returns true if sort changed, false if key was invalid
+   * @returns Always returns true
    */
   toggleSort: (nextKey: K) => boolean
 }

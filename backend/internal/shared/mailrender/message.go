@@ -12,14 +12,13 @@ import (
 
 func BuildMultipartAlternativeMessage(from, recipient string, rendered RenderedMail) string {
 	boundary := newMultipartBoundary(rendered.Text, rendered.HTML)
-	safeFrom := sanitizeMailHeaderValue(from)
-	safeRecipient := sanitizeMailHeaderValue(recipient)
-	safeSubject := sanitizeMailHeaderValue(rendered.Subject)
-	encodedSubject := mime.BEncoding.Encode("UTF-8", safeSubject)
+	encodedFrom := mime.BEncoding.Encode("UTF-8", sanitizeMailHeaderValue(from))
+	encodedRecipient := mime.BEncoding.Encode("UTF-8", sanitizeMailHeaderValue(recipient))
+	encodedSubject := mime.BEncoding.Encode("UTF-8", sanitizeMailHeaderValue(rendered.Subject))
 
 	lines := []string{
-		fmt.Sprintf("From: %s", safeFrom),
-		fmt.Sprintf("To: %s", safeRecipient),
+		fmt.Sprintf("From: %s", encodedFrom),
+		fmt.Sprintf("To: %s", encodedRecipient),
 		fmt.Sprintf("Subject: %s", encodedSubject),
 		"MIME-Version: 1.0",
 		fmt.Sprintf(`Content-Type: multipart/alternative; boundary="%s"`, boundary),
@@ -80,5 +79,6 @@ func containsAny(values []string, needle string) bool {
 
 func toCRLF(value string) string {
 	normalized := strings.ReplaceAll(value, "\r\n", "\n")
+	normalized = strings.ReplaceAll(normalized, "\r", "\n")
 	return strings.ReplaceAll(normalized, "\n", "\r\n")
 }

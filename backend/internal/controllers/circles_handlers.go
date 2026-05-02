@@ -242,7 +242,9 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 		h.answers.Upsert(formValue.ID, created.ID, buildAnswerSummary(questions, normalizedDetails, nil), normalizedDetails)
 	}
 	if !canChangeGroupName && len(managedUser.LeaderCircleIDs) > 0 {
-		h.copyExistingMembersToCircle(currentSession.User, managedUser.LeaderCircleIDs[0], created.ID)
+		if err := h.copyExistingMembersToCircle(currentSession.User, managedUser.LeaderCircleIDs[0], created.ID); err != nil {
+			return internalError(c)
+		}
 	}
 
 	h.sessions.Update(sessionID, func(next *session.Session) {

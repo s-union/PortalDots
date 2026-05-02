@@ -71,17 +71,20 @@ func (h *workspaceHandlers) defaultGroupForUser(userValue useradmin.User) (strin
 	return existingCircle.GroupName, existingCircle.GroupNameYomi, false
 }
 
-func (h *workspaceHandlers) copyExistingMembersToCircle(requester *auth.User, sourceCircleID, destinationCircleID string) {
+func (h *workspaceHandlers) copyExistingMembersToCircle(requester *auth.User, sourceCircleID, destinationCircleID string) error {
 	members, err := h.circles.ListMembers(sourceCircleID)
 	if err != nil {
-		return
+		return err
 	}
 	for _, member := range members {
 		if member.IsLeader {
 			continue
 		}
-		_ = h.circles.AddMember(requester, destinationCircleID, member.UserID, member.DisplayName, true)
+		if err := h.circles.AddMember(requester, destinationCircleID, member.UserID, member.DisplayName, true); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (h *workspaceHandlers) validateCircleMemberCount(pt participationtype.ParticipationType, members []circle.CircleMember) map[string][]string {
