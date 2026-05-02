@@ -4,7 +4,7 @@ import StaffParticipationTypesRedirectPage from './index.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/参加種別管理/転送（一覧）',
+  title: 'Staff Mode/Participation Type Management/Redirect (List)',
   component: StaffParticipationTypesRedirectPage,
   tags: ['autodocs'],
   parameters: {

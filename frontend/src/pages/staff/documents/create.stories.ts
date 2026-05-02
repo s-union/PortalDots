@@ -4,7 +4,7 @@ import StaffDocumentCreatePage from './create.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/配布資料管理/新規作成',
+  title: 'Staff Mode/Document Management/Create New',
   component: StaffDocumentCreatePage,
   tags: ['autodocs'],
   parameters: {

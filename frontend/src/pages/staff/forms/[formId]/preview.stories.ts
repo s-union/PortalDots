@@ -47,7 +47,7 @@ const mockFormPreview = {
 }
 
 const meta = {
-  title: 'スタッフモード/申請管理/プレビュー',
+  title: 'Staff Mode/Application Management/Preview',
   component: StaffFormPreviewPage,
   tags: ['autodocs'],
   parameters: {

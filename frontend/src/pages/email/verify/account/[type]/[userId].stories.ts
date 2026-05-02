@@ -4,7 +4,7 @@ import AccountVerifyPage from './[userId].vue'
 import { mockSessionBootstrap, mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: '認証/メールアドレス変更確認',
+  title: 'Auth/Email Address Change Verification',
   component: AccountVerifyPage,
   tags: ['autodocs'],
   parameters: {

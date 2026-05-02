@@ -4,7 +4,7 @@ import EmailVerifyPage from './[userId].vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: '認証/メール認証コード入力',
+  title: 'Auth/Email Verification Code Input',
   component: EmailVerifyPage,
   tags: ['autodocs'],
   parameters: {

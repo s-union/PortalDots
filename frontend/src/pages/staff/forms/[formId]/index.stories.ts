@@ -4,7 +4,7 @@ import StaffFormDetailIndexPage from './index.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/申請管理/詳細',
+  title: 'Staff Mode/Application Management/Detail',
   component: StaffFormDetailIndexPage,
   tags: ['autodocs'],
   parameters: {

@@ -4,7 +4,7 @@ import DocumentsIndexPage from './index.vue'
 import { mockSessionBootstrap, mockDocument } from '@/mocks/data'
 
 const meta = {
-  title: '一般モード/配布資料一覧',
+  title: 'General Mode/Documents List',
   component: DocumentsIndexPage,
   tags: ['autodocs'],
   parameters: {

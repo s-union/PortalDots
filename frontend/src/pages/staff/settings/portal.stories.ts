@@ -4,7 +4,7 @@ import StaffPortalSettingsPage from './portal.vue'
 import { mockSessionBootstrapStaff, mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/全体設定/PortalDots設定',
+  title: 'Staff Mode/General Settings/PortalDots Settings',
   component: StaffPortalSettingsPage,
   tags: ['autodocs'],
   parameters: {

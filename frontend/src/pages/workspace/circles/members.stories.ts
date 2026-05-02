@@ -4,7 +4,7 @@ import MembersPage from './members.vue'
 import { mockSessionBootstrap, mockCircle } from '@/mocks/data'
 
 const meta = {
-  title: '一般モード/企画メンバー',
+  title: 'General Mode/Circle Members',
   component: MembersPage,
   tags: ['autodocs'],
   parameters: {

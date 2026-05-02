@@ -5,7 +5,7 @@ import { mockSessionBootstrapStaff } from '@/mocks/data'
 import { staffFormStoryAnswersIndex } from '../../story-fixtures'
 
 const meta = {
-  title: 'スタッフモード/申請管理/回答一覧',
+  title: 'Staff Mode/Application Management/Answer List',
   component: StaffFormAnswersIndexPage,
   tags: ['autodocs'],
   parameters: {

@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw'
 import LoginPage from './login.vue'
 
 const meta = {
-  title: '認証/ログイン',
+  title: 'Auth/Login',
   component: LoginPage,
   tags: ['autodocs'],
   parameters: {

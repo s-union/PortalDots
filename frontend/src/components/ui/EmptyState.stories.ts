@@ -30,14 +30,6 @@ export const WithDescription: Story = {
   }
 }
 
-export const WithIcon: Story = {
-  args: {
-    title: '企画はありません',
-    description: '参加登録された企画がまだありません。',
-    icon: '📋'
-  }
-}
-
 export const ForDocuments: Story = {
   args: {
     title: '配布資料はありません',

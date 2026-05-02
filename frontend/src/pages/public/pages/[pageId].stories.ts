@@ -4,7 +4,7 @@ import PageDetailPage from './[pageId].vue'
 import { mockPageDetail, mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: '一般モード/公開お知らせ詳細',
+  title: 'Public Mode/Public Announcement Detail',
   component: PageDetailPage,
   tags: ['autodocs'],
   parameters: {

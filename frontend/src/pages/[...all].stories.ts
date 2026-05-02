@@ -4,7 +4,7 @@ import NotFoundPage from './[...all].vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: '共通/404',
+  title: 'Common/404',
   component: NotFoundPage,
   tags: ['autodocs'],
   parameters: {
