@@ -93,14 +93,23 @@ function onAddField(event: Event) {
   target.value = ''
 }
 
+function isStaffFilterOperator(value: string): value is StaffFilterOperator {
+  return ['=', '!=', 'like', 'not like'].includes(value)
+}
+
 function handleOperatorChange(event: Event, query: StaffFilterQuery) {
   const target = event.target
   if (!(target instanceof HTMLSelectElement)) {
     return
   }
 
+  const operator = target.value
+  if (!isStaffFilterOperator(operator)) {
+    return
+  }
+
   emit('updateQuery', query.id, {
-    operator: target.value as StaffFilterOperator
+    operator
   })
 }
 

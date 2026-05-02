@@ -9,7 +9,7 @@ const {
   pulse = false,
   className = ''
 } = defineProps<{
-  name: string
+  name: IconName
   prefix?: IconPrefix
   fixedWidth?: boolean
   pulse?: boolean
@@ -17,7 +17,7 @@ const {
 }>()
 
 const svgHtml = computed(() => {
-  const definition = findIconDefinition({ prefix, iconName: name as IconName })
+  const definition = findIconDefinition({ prefix, iconName: name })
   if (!definition) {
     return ''
   }

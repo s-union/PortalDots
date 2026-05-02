@@ -145,6 +145,13 @@ async function handleDelete(answerId: string, groupName: string) {
   }
   await deleteAnswerMutation.mutateAsync(String(answerId))
 }
+
+function resolveCircleCell(value: unknown): { name: string; groupName: string } | null {
+  if (value && typeof value === 'object' && 'name' in value && 'groupName' in value) {
+    return value as { name: string; groupName: string }
+  }
+  return null
+}
 </script>
 
 <template>
@@ -245,9 +252,9 @@ async function handleDelete(answerId: string, groupName: string) {
           </template>
 
           <template #cell-circle="{ value }">
-            <span v-if="value && typeof value === 'object' && 'name' in value">
-              <span class="font-semibold">{{ (value as unknown as { name: string }).name }}</span>
-              <span class="ml-1 text-muted-2"> — {{ (value as unknown as { groupName: string }).groupName }} </span>
+            <span v-if="resolveCircleCell(value)">
+              <span class="font-semibold">{{ resolveCircleCell(value)!.name }}</span>
+              <span class="ml-1 text-muted-2"> — {{ resolveCircleCell(value)!.groupName }} </span>
             </span>
           </template>
         </StaffDataGrid>
