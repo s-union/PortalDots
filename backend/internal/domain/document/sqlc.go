@@ -16,6 +16,14 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
+func (r *SQLCRepository) ListReadDocumentIDs(_ string, _ []string) []string {
+	return nil
+}
+
+func (r *SQLCRepository) MarkRead(_, _ string) error {
+	return nil
+}
+
 func (r *SQLCRepository) ListByCircle(circleID string) []Document {
 	rows, err := r.queries.ListPublicDocumentsByCircle(context.Background(), circleID)
 	if err != nil {

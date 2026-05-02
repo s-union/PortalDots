@@ -39,12 +39,15 @@ type Repository interface {
 	Create(circleID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
 	Update(circleID, documentID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
 	Delete(circleID, documentID string) bool
+	ListReadDocumentIDs(userID string, documentIDs []string) []string
+	MarkRead(documentID, userID string) error
 }
 
 type StaticRepository struct {
 	mu        sync.RWMutex
 	documents []Document
 	nextID    int
+	reads     map[string]map[string]struct{}
 }
 
 func NewStaticRepository(cfg []config.Document) *StaticRepository {
@@ -71,6 +74,7 @@ func NewStaticRepository(cfg []config.Document) *StaticRepository {
 	return &StaticRepository{
 		documents: documents,
 		nextID:    len(documents) + 1,
+		reads:     map[string]map[string]struct{}{},
 	}
 }
 
@@ -275,4 +279,30 @@ func sortDocumentsByUpdatedAt(documents []Document) {
 		}
 		return documents[i].UpdatedAt > documents[j].UpdatedAt
 	})
+}
+
+func (r *StaticRepository) ListReadDocumentIDs(userID string, documentIDs []string) []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	readIDs := make([]string, 0, len(documentIDs))
+	for _, docID := range documentIDs {
+		if users, ok := r.reads[docID]; ok {
+			if _, read := users[userID]; read {
+				readIDs = append(readIDs, docID)
+			}
+		}
+	}
+	return readIDs
+}
+
+func (r *StaticRepository) MarkRead(documentID, userID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, ok := r.reads[documentID]; !ok {
+		r.reads[documentID] = map[string]struct{}{}
+	}
+	r.reads[documentID][userID] = struct{}{}
+	return nil
 }

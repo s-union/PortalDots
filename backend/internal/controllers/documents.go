@@ -16,6 +16,7 @@ type documentSummaryResponse struct {
 	Description string `json:"description"`
 	IsImportant bool   `json:"isImportant"`
 	IsNew       bool   `json:"isNew"`
+	IsUnread    bool   `json:"isUnread"`
 	Extension   string `json:"extension"`
 	SizeBytes   int64  `json:"sizeBytes"`
 	UpdatedAt   string `json:"updatedAt"`
@@ -23,12 +24,22 @@ type documentSummaryResponse struct {
 }
 
 func (h *workspaceHandlers) listDocuments(c echo.Context) error {
-	_, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return statusError(c, status)
 	}
 
 	documents := h.documents.ListPublic()
+	docIDs := make([]string, len(documents))
+	for i, doc := range documents {
+		docIDs[i] = doc.ID
+	}
+	readDocIDs := h.documents.ListReadDocumentIDs(currentSession.User.ID, docIDs)
+	readSet := make(map[string]bool, len(readDocIDs))
+	for _, id := range readDocIDs {
+		readSet[id] = true
+	}
+
 	response := make([]documentSummaryResponse, 0, len(documents))
 	for _, document := range documents {
 		response = append(response, documentSummaryResponse{
@@ -37,6 +48,7 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 			Description: document.Description,
 			IsImportant: document.IsImportant,
 			IsNew:       isDocumentNew(document),
+			IsUnread:    !readSet[document.ID],
 			Extension:   document.Extension,
 			SizeBytes:   document.SizeBytes,
 			UpdatedAt:   document.UpdatedAt,
@@ -49,7 +61,7 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) getDocument(c echo.Context) error {
-	_, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return statusError(c, status)
 	}
@@ -57,6 +69,10 @@ func (h *workspaceHandlers) getDocument(c echo.Context) error {
 	document, found := h.documents.FindPublic(c.Param("documentID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
+	}
+
+	if currentSession.User != nil {
+		_ = h.documents.MarkRead(document.ID, currentSession.User.ID)
 	}
 
 	c.Response().Header().Set(echo.HeaderContentType, document.MimeType)
