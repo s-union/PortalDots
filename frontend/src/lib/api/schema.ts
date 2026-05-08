@@ -272,19 +272,12 @@ export const staffContactCategorySchema = z.object({
 })
 
 export const staffMailSchema = z.object({
-  circle: z
-    .object({
-      id: z.string(),
-      name: z.string()
-    })
-    .default({ id: '', name: '' }),
-  id: z.string(),
+  jobId: z.string(),
+  template: z.string(),
   subject: z.string(),
   body: z.string(),
   recipients: stringArraySchema,
-  status: z.literal('queued'),
-  createdAt: z.string(),
-  deliveredAt: z.string()
+  sentAt: z.string()
 })
 
 export const staffPortalSettingsSchema = z.object({

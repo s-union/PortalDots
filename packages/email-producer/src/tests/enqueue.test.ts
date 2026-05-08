@@ -15,6 +15,7 @@ const validPayload = {
   from: 'sender@example.com',
   to: ['recipient@example.com'],
   subject: 'Test Subject',
+  body: 'Test Body',
   variables: { appName: 'Test' }
 }
 

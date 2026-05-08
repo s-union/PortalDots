@@ -10,6 +10,7 @@ interface EmailJob {
   from: string
   to: string[]
   subject: string
+  body: string
   variables: Record<string, string>
 }
 
@@ -65,6 +66,8 @@ export default {
             jobId: job.jobId,
             recipient,
             template: job.template,
+            subject: job.subject,
+            body: job.body,
             sentAt: now
           }))
         )

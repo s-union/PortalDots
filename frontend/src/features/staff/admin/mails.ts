@@ -7,17 +7,12 @@ import { extractValidationMessage, parseValidationError } from '@/lib/api/valida
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffMail {
-  circle: {
-    id: string
-    name: string
-  }
-  id: string
+  jobId: string
+  template: string
   subject: string
   body: string
   recipients: string[]
-  status: 'queued'
-  createdAt: string
-  deliveredAt: string
+  sentAt: string
 }
 
 interface CreateStaffMailPayload {

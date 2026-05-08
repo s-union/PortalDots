@@ -2202,9 +2202,6 @@ func TestSubmitCurrentCircleQueuesNotificationMail(t *testing.T) {
 	if len(queuedMails) != 1 {
 		t.Fatalf("expected one queued mail, got %#v", queuedMails)
 	}
-	if queuedMails[0].Circle.ID != "0195ec00-0022-7000-8000-000000000001" {
-		t.Fatalf("unexpected queued mail circle: %#v", queuedMails[0])
-	}
 	if queuedMails[0].Subject != "【参加登録】「デモ企画B」の参加登録を提出しました" {
 		t.Fatalf("unexpected queued mail subject: %#v", queuedMails[0])
 	}
@@ -3308,9 +3305,6 @@ func TestUpsertFormAnswerQueuesNotificationMail(t *testing.T) {
 
 	found := false
 	for _, queued := range queuedMails {
-		if queued.Circle.ID != "0195ec00-0022-7000-8000-000000000001" {
-			continue
-		}
 		if !strings.Contains(queued.Subject, "を承りました") {
 			continue
 		}
@@ -4933,7 +4927,7 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
 		t.Fatalf("unmarshal staff mails: %v", err)
 	}
-	if len(queuedMails) != 1 || queuedMails[0].Circle.ID != "0195ec00-0022-7000-8000-000000000001" {
+	if len(queuedMails) != 1 {
 		t.Fatalf("unexpected queued mails response: %#v", queuedMails)
 	}
 

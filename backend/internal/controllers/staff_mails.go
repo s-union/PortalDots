@@ -3,24 +3,20 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 )
 
 type staffMailResponse struct {
-	Circle      staffManagedCircleResponse `json:"circle"`
-	ID          string                     `json:"id"`
-	Subject     string                     `json:"subject"`
-	Body        string                     `json:"body"`
-	Recipients  []string                   `json:"recipients"`
-	Status      string                     `json:"status"`
-	CreatedAt   string                     `json:"createdAt"`
-	DeliveredAt string                     `json:"deliveredAt"`
+	JobId      string   `json:"jobId"`
+	Template   string   `json:"template"`
+	Subject    string   `json:"subject"`
+	Body       string   `json:"body"`
+	Recipients []string `json:"recipients"`
+	SentAt     string   `json:"sentAt"`
 }
 
 type enqueueStaffMailRequest struct {
@@ -36,22 +32,38 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	_, circlesByID, err := listStaffManagedCircles(h.circles)
-	if err != nil {
-		return internalError(c)
+	if h.emailProducer != nil {
+		deliveries, err := h.emailProducer.ListDeliveries(c.Request().Context())
+		if err != nil {
+			return internalError(c)
+		}
+		response := make([]staffMailResponse, 0, len(deliveries))
+		for _, d := range deliveries {
+			response = append(response, staffMailResponse{
+				JobId:      d.JobId,
+				Template:   d.Template,
+				Subject:    d.Subject,
+				Body:       d.Body,
+				Recipients: d.Recipients,
+				SentAt:     d.SentAt,
+			})
+		}
+		return c.JSON(http.StatusOK, response)
 	}
+
+	// Fallback to local queue for environments without producer
 	jobs := h.mails.ListAll()
 	response := make([]staffMailResponse, 0, len(jobs))
 	for _, job := range jobs {
-		circleValue := staffManagedCircleResponse{}
-		if job.CircleID != "" {
-			if mappedCircle, ok := circlesByID[job.CircleID]; ok {
-				circleValue = mappedCircle
-			}
-		}
-		response = append(response, mapStaffMail(job, circleValue))
+		response = append(response, staffMailResponse{
+			JobId:      job.ID,
+			Template:   "",
+			Subject:    job.Subject,
+			Body:       job.Body,
+			Recipients: job.Recipients,
+			SentAt:     job.CreatedAt,
+		})
 	}
-
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -61,7 +73,14 @@ func (h *staffAdminHandlers) deleteStaffMails(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	_ = h.mails.DeleteAll()
+	if h.emailProducer != nil {
+		if err := h.emailProducer.ClearDeliveries(c.Request().Context()); err != nil {
+			return internalError(c)
+		}
+	} else {
+		_ = h.mails.DeleteAll()
+	}
+
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
@@ -115,34 +134,14 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		return validationError(c, errors)
 	}
 
-	currentCircle, err := h.circles.Find(request.CircleID)
+	_, err := h.circles.Find(request.CircleID)
 	if err != nil {
 		return validationError(c, map[string][]string{
 			"circleId": {"企画を選択してください"},
 		})
 	}
 
-	if h.emailProducer != nil {
-		jobID := fmt.Sprintf("staff-%d", time.Now().UnixNano())
-		if err := h.emailProducer.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
-			JobId:    jobID,
-			Template: "markdown-notice",
-			Priority: cloudflareemail.PriorityNormal,
-			From:     h.from,
-			To:       recipients,
-			Subject:  request.Subject,
-			Variables: map[string]string{
-				"appName":      h.appName,
-				"appURL":       h.appURL,
-				"subject":      request.Subject,
-				"body":         request.Body,
-				"adminName":    h.adminName,
-				"contactEmail": h.contactEmail,
-				"preview":      request.Subject,
-			},
-		}); err != nil {
-			return internalError(c)
-		}
+	if h.emailProducer == nil {
 		job, err := h.mails.Enqueue(c.Request().Context(), request.CircleID, currentSession.User.ID, request.Subject, request.Body, recipients)
 		if err != nil {
 			return internalError(c)
@@ -158,36 +157,55 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 			job.CircleID,
 			buildActivitySummary("staff がメールをキューに追加しました", job.Subject),
 		)
-		return c.JSON(http.StatusCreated, mapStaffMail(job, mapStaffManagedCircle(currentCircle)))
+		return c.JSON(http.StatusCreated, staffMailResponse{
+			JobId:      job.ID,
+			Template:   "",
+			Subject:    job.Subject,
+			Body:       job.Body,
+			Recipients: job.Recipients,
+			SentAt:     job.CreatedAt,
+		})
 	}
 
-	job, err := h.mails.Enqueue(c.Request().Context(), request.CircleID, currentSession.User.ID, request.Subject, request.Body, recipients)
-	if err != nil {
+	jobID := fmt.Sprintf("staff-%d", time.Now().UnixNano())
+	if err := h.emailProducer.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "markdown-notice",
+		Priority: cloudflareemail.PriorityNormal,
+		From:     h.from,
+		To:       recipients,
+		Subject:  request.Subject,
+		Body:     request.Body,
+		Variables: map[string]string{
+			"appName":      h.appName,
+			"appURL":       h.appURL,
+			"subject":      request.Subject,
+			"body":         request.Body,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+			"preview":      request.Subject,
+		},
+	}); err != nil {
 		return internalError(c)
 	}
-	logQueuedMail("staff_mail_queue", job.ID, job.CircleID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
 		currentSession.User.ID,
 		"staff.mail.queued",
 		"mail_job",
-		job.ID,
-		job.CircleID,
-		buildActivitySummary("staff がメールをキューに追加しました", job.Subject),
+		jobID,
+		request.CircleID,
+		buildActivitySummary("staff がメールをキューに追加しました", request.Subject),
 	)
-	return c.JSON(http.StatusCreated, mapStaffMail(job, mapStaffManagedCircle(currentCircle)))
-}
 
-func mapStaffMail(job mailqueue.Job, circleValue staffManagedCircleResponse) staffMailResponse {
-	return staffMailResponse{
-		Circle:      circleValue,
-		ID:          job.ID,
-		Subject:     job.Subject,
-		Body:        job.Body,
-		Recipients:  slices.Clone(job.Recipients),
-		Status:      job.Status,
-		CreatedAt:   job.CreatedAt,
-		DeliveredAt: job.DeliveredAt,
-	}
+	return c.JSON(http.StatusCreated, staffMailResponse{
+		JobId:      jobID,
+		Template:   "markdown-notice",
+		Subject:    request.Subject,
+		Body:       request.Body,
+		Recipients: recipients,
+		SentAt:     time.Now().UTC().Format(time.RFC3339),
+	})
 }

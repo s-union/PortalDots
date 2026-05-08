@@ -3,6 +3,13 @@
   "name": "email-producer",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-02",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "email-idempotency",
+      "database_id": ""
+    }
+  ],
   "queues": {
     "producers": [
       {

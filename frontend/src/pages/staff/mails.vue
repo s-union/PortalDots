@@ -9,7 +9,6 @@ import { computed, ref } from 'vue'
 import { formatDateTime } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -25,7 +24,7 @@ const deleteMailsMutation = useDeleteStaffMailsMutation()
 const errorMessage = ref('')
 
 async function handleDeleteAll() {
-  if (typeof window !== 'undefined' && !window.confirm('メールキューを全件キャンセルしますか？')) {
+  if (typeof window !== 'undefined' && !window.confirm('送信済みメールの履歴を全件削除しますか？')) {
     return
   }
 
@@ -33,16 +32,8 @@ async function handleDeleteAll() {
   try {
     await deleteMailsMutation.mutateAsync()
   } catch {
-    errorMessage.value = 'メールキューの全件キャンセルに失敗しました。'
+    errorMessage.value = '送信済みメール履歴の全件削除に失敗しました。'
   }
-}
-
-function mailStatusTone(_status: 'queued'): 'primary' {
-  return 'primary'
-}
-
-function mailStatusLabel(_status: 'queued'): '送信依頼済み' {
-  return '送信依頼済み'
 }
 </script>
 
@@ -54,19 +45,17 @@ function mailStatusLabel(_status: 'queued'): '送信依頼済み' {
           <template #title>メール配信設定</template>
         </SurfaceHeader>
         <div class="grid gap-3 px-6 py-5 text-sm leading-7 text-body">
-          <p>メールの一斉送信機能を利用するには、サーバー側で定期実行の設定が必要です。</p>
-          <p>サーバーの CRON 設定で <code>php artisan schedule:run</code> が定期的に実行されるよう設定してください。</p>
-          <p class="text-muted">すでに設定が完了している場合でも、この案内は表示されます。</p>
+          <p>メールの一斉送信機能は Cloudflare Workers で実行されています。</p>
+          <p class="text-muted">送信されたメールの履歴は以下に表示されます。</p>
         </div>
       </SurfaceCard>
 
       <SurfaceCard>
         <SurfaceHeader>
-          <template #title>メールの配信をすべてキャンセル</template>
+          <template #title>送信済みメールをすべて削除</template>
         </SurfaceHeader>
         <div class="grid gap-3 px-6 py-5 text-sm leading-7 text-body">
-          <p>間違えて配信予約したメールは、ここからすべてキャンセルできます。</p>
-          <p>配信処理の途中だった場合、一部にはすでに送信されていることがあります。</p>
+          <p>送信済みメールの履歴をすべて削除できます。</p>
           <div>
             <BaseButton
               variant="dangerOutline"
@@ -76,7 +65,7 @@ function mailStatusLabel(_status: 'queued'): '送信依頼済み' {
               type="button"
               @click="handleDeleteAll"
             >
-              {{ deleteMailsMutation.isPending.value ? 'キャンセル中...' : 'キューを全件キャンセル' }}
+              {{ deleteMailsMutation.isPending.value ? '削除中...' : '履歴を全件削除' }}
             </BaseButton>
           </div>
           <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
@@ -85,29 +74,23 @@ function mailStatusLabel(_status: 'queued'): '送信依頼済み' {
 
       <SurfaceCard>
         <SurfaceHeader>
-          <template #title>現在のメールキュー</template>
+          <template #title>送信済みメール</template>
         </SurfaceHeader>
 
         <div v-if="mailsQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
 
         <div v-else-if="(mailsQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
-          メールキューはありません。
+          送信済みメールはありません。
         </div>
 
         <div v-else class="divide-y divide-border">
-          <article v-for="mail in mailsQuery.data.value" :key="mail.id" class="px-6 py-5">
+          <article v-for="mail in mailsQuery.data.value" :key="mail.jobId" class="px-6 py-5">
             <div class="flex items-center justify-between gap-3">
               <h3 class="text-lg font-medium text-body">{{ mail.subject }}</h3>
-              <StatusBadge :tone="mailStatusTone(mail.status)">
-                {{ mailStatusLabel(mail.status) }}
-              </StatusBadge>
             </div>
             <p class="mt-2 text-sm text-muted-2">recipients: {{ mail.recipients.join(', ') || 'なし' }}</p>
             <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{ mail.body }}</p>
-            <p class="mt-2 text-xs text-muted-2">
-              created: {{ formatDateTime(mail.createdAt) }}
-              <template v-if="mail.deliveredAt"> / delivered: {{ formatDateTime(mail.deliveredAt) }}</template>
-            </p>
+            <p class="mt-2 text-xs text-muted-2">sent: {{ formatDateTime(mail.sentAt) }}</p>
           </article>
         </div>
       </SurfaceCard>
