@@ -11,7 +11,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
-	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
@@ -71,25 +70,7 @@ func (h *authHandlers) listContactHistory(c echo.Context) error {
 		return statusError(c, http.StatusConflict)
 	}
 
-	jobs := h.mails.ListByCircle(selectedCircle.ID)
-	response := make([]submitContactResponse, 0, len(jobs))
-	for _, job := range jobs {
-		if job.CreatedByUserID != currentSession.User.ID {
-			continue
-		}
-
-		categoryID, categoryName := extractContactMetadata(job.Body)
-		response = append(response, submitContactResponse{
-			ID:           job.ID,
-			CategoryID:   categoryID,
-			CategoryName: categoryName,
-			Subject:      job.Subject,
-			Status:       job.Status,
-			CreatedAt:    job.CreatedAt,
-		})
-	}
-
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, []submitContactResponse{})
 }
 
 func (h *authHandlers) listContactCategories(c echo.Context) error {
@@ -183,101 +164,52 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 			request.Subject,
 			request.Body,
 		)
-		if h.emailProducer != nil && h.from != "" {
-			emailJob := cloudflareemail.EmailJob{
-				JobId:    "contact-confirm-" + uuidv7.MustString(),
-				Template: "markdown-notice",
-				Priority: cloudflareemail.PriorityNormal,
-				From:     h.from,
-				To:       confirmationRecipients,
-				Subject:  confirmationSubject,
-				Variables: map[string]string{
-					"subject":      confirmationSubject,
-					"body":         confirmationBody,
-					"appName":      h.appName,
-					"appURL":       h.appURL,
-					"adminName":    h.adminName,
-					"contactEmail": h.contactEmail,
-					"preview":      confirmationSubject,
-				},
-			}
-			if err := h.emailProducer.Enqueue(c.Request().Context(), emailJob); err != nil {
-				confirmationJob, err := h.mails.Enqueue(
-					c.Request().Context(),
-					"",
-					currentSession.User.ID,
-					confirmationSubject,
-					confirmationBody,
-					confirmationRecipients,
-				)
-				if err != nil {
-					return internalError(c)
-				}
-				logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients, h.allowDangerously)
-			}
-		} else {
-			confirmationJob, err := h.mails.Enqueue(
-				c.Request().Context(),
-				"",
-				currentSession.User.ID,
-				confirmationSubject,
-				confirmationBody,
-				confirmationRecipients,
-			)
-			if err != nil {
-				return internalError(c)
-			}
-			logQueuedMail("contact_confirmation", confirmationJob.ID, "", currentSession.User.ID, confirmationJob.Subject, confirmationJob.Body, confirmationJob.Recipients, h.allowDangerously)
-		}
-	}
-
-	var job mailqueue.Job
-	if h.emailProducer != nil && h.from != "" {
-		emailJob := cloudflareemail.EmailJob{
-			JobId:    "contact-" + uuidv7.MustString(),
+		confirmationJobID := "contact-confirm-" + uuidv7.MustString()
+		if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+			JobId:    confirmationJobID,
 			Template: "markdown-notice",
 			Priority: cloudflareemail.PriorityNormal,
 			From:     h.from,
-			To:       []string{category.Email},
-			Subject:  request.Subject,
+			To:       confirmationRecipients,
+			Subject:  confirmationSubject,
+			Body:     confirmationBody,
 			Variables: map[string]string{
-				"subject":      request.Subject,
-				"body":         staffBody,
+				"subject":      confirmationSubject,
+				"body":         confirmationBody,
 				"appName":      h.appName,
 				"appURL":       h.appURL,
 				"adminName":    h.adminName,
 				"contactEmail": h.contactEmail,
-				"preview":      request.Subject,
+				"preview":      confirmationSubject,
 			},
-		}
-		if err := h.emailProducer.Enqueue(c.Request().Context(), emailJob); err != nil {
-			job, err = h.mails.Enqueue(
-				c.Request().Context(),
-				selectedCircle.ID,
-				currentSession.User.ID,
-				request.Subject,
-				staffBody,
-				[]string{category.Email},
-			)
-			if err != nil {
-				return internalError(c)
-			}
-			logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
-		}
-	} else {
-		job, err = h.mails.Enqueue(
-			c.Request().Context(),
-			selectedCircle.ID,
-			currentSession.User.ID,
-			request.Subject,
-			staffBody,
-			[]string{category.Email},
-		)
-		if err != nil {
+		}); err != nil {
 			return internalError(c)
 		}
-		logQueuedMail("contact", job.ID, selectedCircle.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+		logQueuedMail("contact_confirmation", confirmationJobID, "", currentSession.User.ID, confirmationSubject, confirmationBody, confirmationRecipients, h.allowDangerously)
 	}
+
+	jobID := "contact-" + uuidv7.MustString()
+	if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "markdown-notice",
+		Priority: cloudflareemail.PriorityNormal,
+		From:     h.from,
+		To:       []string{category.Email},
+		Subject:  request.Subject,
+		Body:     staffBody,
+		Variables: map[string]string{
+			"subject":      request.Subject,
+			"body":         staffBody,
+			"appName":      h.appName,
+			"appURL":       h.appURL,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+			"preview":      request.Subject,
+		},
+	}); err != nil {
+		return internalError(c)
+	}
+	logQueuedMail("contact", jobID, selectedCircle.ID, currentSession.User.ID, request.Subject, staffBody, []string{category.Email}, h.allowDangerously)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
@@ -290,12 +222,12 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 	)
 
 	return c.JSON(http.StatusCreated, submitContactResponse{
-		ID:           job.ID,
+		ID:           jobID,
 		CategoryID:   category.ID,
 		CategoryName: category.Name,
-		Subject:      job.Subject,
-		Status:       job.Status,
-		CreatedAt:    job.CreatedAt,
+		Subject:      request.Subject,
+		Status:       "sent",
+		CreatedAt:    time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
@@ -325,22 +257,6 @@ func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID stri
 	}
 
 	return nil, nil
-}
-
-func extractContactMetadata(body string) (string, string) {
-	categoryID := ""
-	categoryName := ""
-
-	for _, line := range strings.Split(body, "\n") {
-		if strings.HasPrefix(line, "category_id: ") {
-			categoryID = strings.TrimPrefix(line, "category_id: ")
-		}
-		if strings.HasPrefix(line, "category_name: ") {
-			categoryName = strings.TrimPrefix(line, "category_name: ")
-		}
-	}
-
-	return categoryID, categoryName
 }
 
 func (h *authHandlers) updateProfile(c echo.Context) error {

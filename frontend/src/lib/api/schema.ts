@@ -274,10 +274,11 @@ export const staffContactCategorySchema = z.object({
 export const staffMailSchema = z.object({
   jobId: z.string(),
   template: z.string(),
+  priority: z.enum(['high', 'normal']).default('normal'),
   subject: z.string(),
   body: z.string(),
   recipients: stringArraySchema,
-  sentAt: z.string()
+  createdAt: z.string()
 })
 
 export const staffPortalSettingsSchema = z.object({

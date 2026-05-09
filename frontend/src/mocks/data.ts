@@ -246,12 +246,11 @@ export const mockActivityLog = {
 }
 
 export const mockMail = {
-  circle: { id: 'circle-1', name: 'テストサークル' },
-  id: 'mail-1',
+  jobId: 'mail-1',
+  template: 'markdown-notice',
+  priority: 'normal' as const,
   subject: 'テストメール',
   body: 'これはテスト用のメール本文です。',
   recipients: ['all'],
-  status: 'queued' as const,
-  createdAt: '2026-01-15T10:00:00Z',
-  deliveredAt: ''
+  createdAt: '2026-01-15T10:00:00Z'
 }

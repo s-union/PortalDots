@@ -13,7 +13,9 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
@@ -197,18 +199,35 @@ func (h *staffFormHandlers) enqueueStaffFormAnswerMail(ctx context.Context, crea
 		body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 	}
 
-	job, err := h.mails.Enqueue(ctx, formValue.CircleID, createdByUserID, subject, body, recipients)
-	if err != nil {
+	jobID := "staff-form-answer-" + uuidv7.MustString()
+	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "markdown-notice",
+		Priority: cloudflareemail.PriorityNormal,
+		From:     h.from,
+		To:       recipients,
+		Subject:  subject,
+		Body:     body,
+		Variables: map[string]string{
+			"subject":      subject,
+			"body":         body,
+			"appName":      h.appName,
+			"appURL":       h.appURL,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+			"preview":      subject,
+		},
+	}); err != nil {
 		return
 	}
-	logQueuedMail("staff_form_answer", job.ID, formValue.CircleID, createdByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+	logQueuedMail("staff_form_answer", jobID, formValue.CircleID, createdByUserID, subject, body, recipients, h.allowDangerously)
 	recordActivity(
 		ctx,
 		h.activities,
 		createdByUserID,
 		"staff.mail.queued",
 		"mail_job",
-		job.ID,
+		jobID,
 		formValue.CircleID,
 		buildActivitySummary("staff がフォーム回答通知メールをキューに追加しました", formValue.Name),
 	)

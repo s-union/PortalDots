@@ -14,7 +14,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
-	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
+	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
@@ -23,7 +23,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/mailworker"
 	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
@@ -68,11 +67,10 @@ type authHandlers struct {
 	registrationAuth          auth.RegistrationAuthenticator
 	circles                   circle.Catalog
 	contactCategories         contactcategory.Repository
-	mails                     mailqueue.Repository
 	pendingRegistrations      pendingregistration.Repository
 	passwordResetTokens       *passwordResetTokenStore
 	authVerificationTokens    *authVerificationTokenStore
-	emailProducer             *cloudflareemail.ProducerClient
+	emailSender               cloudflareemail.Sender
 	portalUnivemailDomainPart string
 	registrationVerifyTTL     time.Duration
 	appURL                    string
@@ -86,13 +84,12 @@ type authHandlers struct {
 // staffVerifyHandlers handles staff verification endpoints.
 type staffVerifyHandlers struct {
 	sharedDeps
-	mails         mailqueue.Repository
-	users         useradmin.Repository
-	appName       string
-	emailProducer *cloudflareemail.ProducerClient
-	from          string
-	adminName     string
-	contactEmail  string
+	users        useradmin.Repository
+	appName      string
+	emailSender  cloudflareemail.Sender
+	from         string
+	adminName    string
+	contactEmail string
 }
 
 // staffUserHandlers handles staff user management endpoints.
@@ -109,10 +106,9 @@ type staffCircleHandlers struct {
 	booths             booth.Repository
 	circles            circle.Catalog
 	forms              form.Repository
-	mails              mailqueue.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
-	emailProducer      *cloudflareemail.ProducerClient
+	emailSender        cloudflareemail.Sender
 	from               string
 	adminName          string
 	contactEmail       string
@@ -128,9 +124,14 @@ type staffFormHandlers struct {
 	circles            circle.Catalog
 	forms              form.Repository
 	formQuestions      formquestion.Repository
-	mails              mailqueue.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
+	emailSender        cloudflareemail.Sender
+	from               string
+	adminName          string
+	contactEmail       string
+	appName            string
+	appURL             string
 }
 
 // staffPageHandlers handles staff page endpoints.
@@ -139,11 +140,16 @@ type staffPageHandlers struct {
 	activities         activitylog.Repository
 	circles            circle.Catalog
 	documents          document.Repository
-	mails              mailqueue.Repository
 	pages              page.Repository
 	participationTypes participationtype.Repository
 	tags               tag.Repository
 	users              useradmin.Repository
+	emailSender        cloudflareemail.Sender
+	from               string
+	adminName          string
+	contactEmail       string
+	appName            string
+	appURL             string
 }
 
 // staffDocumentHandlers handles staff document endpoints.
@@ -161,10 +167,14 @@ type staffMastersHandlers struct {
 	booths            booth.Repository
 	circles           circle.Catalog
 	contactCategories contactcategory.Repository
-	mails             mailqueue.Repository
 	places            place.Repository
 	tags              tag.Repository
 	appName           string
+	emailSender       cloudflareemail.Sender
+	from              string
+	adminName         string
+	contactEmail      string
+	appURL            string
 }
 
 // staffPermissionHandlers handles staff permission endpoints.
@@ -177,20 +187,20 @@ type staffPermissionHandlers struct {
 // staffAdminHandlers handles staff admin endpoints (mails, exports, activity logs).
 type staffAdminHandlers struct {
 	sharedDeps
-	activities    activitylog.Repository
-	answers       answer.Repository
-	circles       circle.Catalog
-	documents     document.Repository
-	forms         form.Repository
-	mails         mailqueue.Repository
-	pages         page.Repository
-	portal        portalsetting.Repository
-	emailProducer *cloudflareemail.ProducerClient
-	from          string
-	adminName     string
-	contactEmail  string
-	appName       string
-	appURL        string
+	activities   activitylog.Repository
+	answers      answer.Repository
+	circles      circle.Catalog
+	documents    document.Repository
+	forms        form.Repository
+	pages        page.Repository
+	portal       portalsetting.Repository
+	emailSender  cloudflareemail.Sender
+	mailHistory  mailhistory.Repository
+	from         string
+	adminName    string
+	contactEmail string
+	appName      string
+	appURL       string
 }
 
 // workspaceHandlers handles participant-facing workspace endpoints.
@@ -202,11 +212,10 @@ type workspaceHandlers struct {
 	documents          document.Repository
 	forms              form.Repository
 	formQuestions      formquestion.Repository
-	mails              mailqueue.Repository
 	pages              page.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
-	emailProducer      *cloudflareemail.ProducerClient
+	emailSender        cloudflareemail.Sender
 	from               string
 	appName            string
 	appURL             string
@@ -230,7 +239,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 		document.NewStaticRepository(cfg.Documents),
 		form.NewStaticRepository(cfg.Forms),
 		formquestion.NewMemoryRepository(),
-		mailqueue.NewMemoryRepository(),
+		mailhistory.NewMemoryRepository(),
 		page.NewStaticRepository(cfg.Pages),
 		pendingregistration.NewMemoryRepository(),
 		participationtype.NewMemoryRepository(cfg.ParticipationTypes),
@@ -267,7 +276,7 @@ func NewServerWithDependencies(
 	documents document.Repository,
 	forms form.Repository,
 	formQuestions formquestion.Repository,
-	mails mailqueue.Repository,
+	mailHistory mailhistory.Repository,
 	pages page.Repository,
 	pendingRegistrations pendingregistration.Repository,
 	participationTypes participationtype.Repository,
@@ -277,6 +286,10 @@ func NewServerWithDependencies(
 	tags tag.Repository,
 	users useradmin.Repository,
 ) *echo.Echo {
+	if mailHistory == nil {
+		mailHistory = mailhistory.NewMemoryRepository()
+	}
+
 	e := echo.New()
 	e.HideBanner = true
 	allowedOrigin := cfg.AppURL
@@ -314,10 +327,11 @@ func NewServerWithDependencies(
 		passwordResetter = pr
 	}
 
-	var emailProducer *cloudflareemail.ProducerClient
+	var emailSender cloudflareemail.Sender = cloudflareemail.NewNoopSender()
 	if cfg.EmailProducerURL != "" {
-		emailProducer = cloudflareemail.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
+		emailSender = cloudflareemail.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
 	}
+	emailSender = mailhistory.NewRecordingSender(mailHistory, emailSender)
 
 	authH := &authHandlers{
 		sharedDeps:                shared,
@@ -328,11 +342,10 @@ func NewServerWithDependencies(
 		registrationAuth:          registrationAuth,
 		circles:                   circles,
 		contactCategories:         contactCategories,
-		mails:                     mails,
 		pendingRegistrations:      pendingRegistrations,
 		passwordResetTokens:       newPasswordResetTokenStore(),
 		authVerificationTokens:    newAuthVerificationTokenStore(),
-		emailProducer:             emailProducer,
+		emailSender:               emailSender,
 		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
 		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
 		appURL:                    cfg.AppURL,
@@ -357,14 +370,13 @@ func NewServerWithDependencies(
 	}
 
 	staffVerifyH := &staffVerifyHandlers{
-		sharedDeps:    shared,
-		mails:         mails,
-		users:         users,
-		appName:       cfg.AppName,
-		emailProducer: emailProducer,
-		from:          cfg.EmailFrom,
-		adminName:     cfg.PortalAdminName,
-		contactEmail:  cfg.PortalContactEmail,
+		sharedDeps:   shared,
+		users:        users,
+		appName:      cfg.AppName,
+		emailSender:  emailSender,
+		from:         cfg.EmailFrom,
+		adminName:    cfg.PortalAdminName,
+		contactEmail: cfg.PortalContactEmail,
 	}
 
 	staffUsersH := &staffUserHandlers{
@@ -379,10 +391,9 @@ func NewServerWithDependencies(
 		booths:             booths,
 		circles:            circles,
 		forms:              forms,
-		mails:              mails,
 		participationTypes: participationTypes,
 		users:              users,
-		emailProducer:      emailProducer,
+		emailSender:        emailSender,
 		from:               cfg.EmailFrom,
 		adminName:          cfg.PortalAdminName,
 		contactEmail:       cfg.PortalContactEmail,
@@ -397,9 +408,14 @@ func NewServerWithDependencies(
 		circles:            circles,
 		forms:              forms,
 		formQuestions:      formQuestions,
-		mails:              mails,
 		participationTypes: participationTypes,
 		users:              users,
+		emailSender:        emailSender,
+		from:               cfg.EmailFrom,
+		adminName:          cfg.PortalAdminName,
+		contactEmail:       cfg.PortalContactEmail,
+		appName:            cfg.AppName,
+		appURL:             cfg.AppURL,
 	}
 
 	staffPageH := &staffPageHandlers{
@@ -407,11 +423,16 @@ func NewServerWithDependencies(
 		activities:         activities,
 		circles:            circles,
 		documents:          documents,
-		mails:              mails,
 		pages:              pages,
 		participationTypes: participationTypes,
 		tags:               tags,
 		users:              users,
+		emailSender:        emailSender,
+		from:               cfg.EmailFrom,
+		adminName:          cfg.PortalAdminName,
+		contactEmail:       cfg.PortalContactEmail,
+		appName:            cfg.AppName,
+		appURL:             cfg.AppURL,
 	}
 
 	staffDocumentH := &staffDocumentHandlers{
@@ -427,10 +448,14 @@ func NewServerWithDependencies(
 		booths:            booths,
 		circles:           circles,
 		contactCategories: contactCategories,
-		mails:             mails,
 		places:            places,
 		tags:              tags,
 		appName:           cfg.AppName,
+		emailSender:       emailSender,
+		from:              cfg.EmailFrom,
+		adminName:         cfg.PortalAdminName,
+		contactEmail:      cfg.PortalContactEmail,
+		appURL:            cfg.AppURL,
 	}
 
 	staffPermissionH := &staffPermissionHandlers{
@@ -440,21 +465,21 @@ func NewServerWithDependencies(
 	}
 
 	staffAdminH := &staffAdminHandlers{
-		sharedDeps:    shared,
-		activities:    activities,
-		answers:       answers,
-		circles:       circles,
-		documents:     documents,
-		forms:         forms,
-		mails:         mails,
-		pages:         pages,
-		portal:        portal,
-		emailProducer: emailProducer,
-		from:          cfg.EmailFrom,
-		adminName:     cfg.PortalAdminName,
-		contactEmail:  cfg.PortalContactEmail,
-		appName:       cfg.AppName,
-		appURL:        cfg.AppURL,
+		sharedDeps:   shared,
+		activities:   activities,
+		answers:      answers,
+		circles:      circles,
+		documents:    documents,
+		forms:        forms,
+		pages:        pages,
+		portal:       portal,
+		emailSender:  emailSender,
+		mailHistory:  mailHistory,
+		from:         cfg.EmailFrom,
+		adminName:    cfg.PortalAdminName,
+		contactEmail: cfg.PortalContactEmail,
+		appName:      cfg.AppName,
+		appURL:       cfg.AppURL,
 	}
 
 	workspaceH := &workspaceHandlers{
@@ -465,11 +490,10 @@ func NewServerWithDependencies(
 		documents:          documents,
 		forms:              forms,
 		formQuestions:      formQuestions,
-		mails:              mails,
 		pages:              pages,
 		participationTypes: participationTypes,
 		users:              users,
-		emailProducer:      emailProducer,
+		emailSender:        emailSender,
 		from:               cfg.EmailFrom,
 		appName:            cfg.AppName,
 		appURL:             cfg.AppURL,
@@ -603,7 +627,6 @@ func NewServerWithDependencies(
 		// Admin
 		ListStaffMails:            staffAdminH.listStaffMails,
 		EnqueueStaffMail:          staffAdminH.enqueueStaffMail,
-		DeleteStaffMails:          staffAdminH.deleteStaffMails,
 		ListStaffActivityLogs:     staffAdminH.listStaffActivityLogs,
 		GetStaffPortalSettings:    staffAdminH.getStaffPortalSettings,
 		UpdateStaffPortalSettings: staffAdminH.updateStaffPortalSettings,
@@ -655,20 +678,6 @@ func NewServerWithDependencies(
 		ListPages:                            workspaceH.listPages,
 		GetPage:                              workspaceH.getPage,
 	}, middlewares.RequireWorkspaceUser(sessionMiddlewareConfig))
-
-	if emailProducer != nil && cfg.EmailFrom != "" {
-		worker := mailworker.New(
-			mails,
-			emailProducer,
-			cfg.EmailFrom,
-			cfg.AppName,
-			cfg.AppURL,
-			cfg.PortalAdminName,
-			cfg.PortalContactEmail,
-			30*time.Second,
-		)
-		worker.Start()
-	}
 
 	return e
 }

@@ -26,9 +26,10 @@ func main() {
 
 	server := httpserver.NewWithDependencies(cfg, httpserver.Dependencies{
 		Shared: httpserver.SharedDependencies{
-			Activities: dependencies.Activities,
-			Sessions:   dependencies.Sessions,
-			Users:      dependencies.Users,
+			Activities:  dependencies.Activities,
+			MailHistory: dependencies.MailHistory,
+			Sessions:    dependencies.Sessions,
+			Users:       dependencies.Users,
 		},
 		Public: httpserver.PublicDependencies{
 			Authenticator:        dependencies.Authenticator,
@@ -36,7 +37,6 @@ func main() {
 			ContactCategories:    dependencies.ContactCategories,
 			Documents:            dependencies.Documents,
 			Forms:                dependencies.Forms,
-			Mails:                dependencies.Mails,
 			Pages:                dependencies.Pages,
 			PendingRegistrations: dependencies.PendingRegistrations,
 			ParticipationTypes:   dependencies.ParticipationTypes,
@@ -61,7 +61,6 @@ func main() {
 			Documents:          dependencies.Documents,
 			Forms:              dependencies.Forms,
 			FormQuestions:      dependencies.FormQuestions,
-			Mails:              dependencies.Mails,
 			Pages:              dependencies.Pages,
 			ParticipationTypes: dependencies.ParticipationTypes,
 			Places:             dependencies.Places,

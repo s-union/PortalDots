@@ -102,6 +102,23 @@ describe('/enqueue', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 for unknown template', async () => {
+    const env = createTestEnv()
+    const res = await app.request(
+      '/enqueue',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer test-token'
+        },
+        body: JSON.stringify({ ...validPayload, template: 'unknown-template' })
+      },
+      env as never
+    )
+    expect(res.status).toBe(400)
+  })
+
   it('enqueues to HIGH_QUEUE for priority=high', async () => {
     const env = createTestEnv()
     const res = await app.request(

@@ -5,36 +5,19 @@ definePage({
   meta: staffPageMeta('mailQueue.use')
 })
 
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { formatDateTime } from '@/lib/format/datetime'
-import AlertMessage from '@/components/ui/AlertMessage.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
-import { useDeleteStaffMailsMutation, useStaffMailsQuery } from '@/features/staff/admin/mails'
+import { useStaffMailsQuery } from '@/features/staff/admin/mails'
 import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const mailsQuery = useStaffMailsQuery(enabled)
-const deleteMailsMutation = useDeleteStaffMailsMutation()
-const errorMessage = ref('')
-
-async function handleDeleteAll() {
-  if (typeof window !== 'undefined' && !window.confirm('送信済みメールの履歴を全件削除しますか？')) {
-    return
-  }
-
-  errorMessage.value = ''
-  try {
-    await deleteMailsMutation.mutateAsync()
-  } catch {
-    errorMessage.value = '送信済みメール履歴の全件削除に失敗しました。'
-  }
-}
 </script>
 
 <template>
@@ -46,41 +29,19 @@ async function handleDeleteAll() {
         </SurfaceHeader>
         <div class="grid gap-3 px-6 py-5 text-sm leading-7 text-body">
           <p>メールの一斉送信機能は Cloudflare Workers で実行されています。</p>
-          <p class="text-muted">送信されたメールの履歴は以下に表示されます。</p>
+          <p class="text-muted">送信依頼されたメールの履歴は以下に表示されます。</p>
         </div>
       </SurfaceCard>
 
       <SurfaceCard>
         <SurfaceHeader>
-          <template #title>送信済みメールをすべて削除</template>
-        </SurfaceHeader>
-        <div class="grid gap-3 px-6 py-5 text-sm leading-7 text-body">
-          <p>送信済みメールの履歴をすべて削除できます。</p>
-          <div>
-            <BaseButton
-              variant="dangerOutline"
-              size="lg"
-              weight="bold"
-              :disabled="deleteMailsMutation.isPending.value"
-              type="button"
-              @click="handleDeleteAll"
-            >
-              {{ deleteMailsMutation.isPending.value ? '削除中...' : '履歴を全件削除' }}
-            </BaseButton>
-          </div>
-          <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
-        </div>
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <SurfaceHeader>
-          <template #title>送信済みメール</template>
+          <template #title>配送履歴</template>
         </SurfaceHeader>
 
         <div v-if="mailsQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
 
         <div v-else-if="(mailsQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
-          送信済みメールはありません。
+          配送履歴はありません。
         </div>
 
         <div v-else class="divide-y divide-border">
@@ -90,7 +51,8 @@ async function handleDeleteAll() {
             </div>
             <p class="mt-2 text-sm text-muted-2">recipients: {{ mail.recipients.join(', ') || 'なし' }}</p>
             <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{ mail.body }}</p>
-            <p class="mt-2 text-xs text-muted-2">sent: {{ formatDateTime(mail.sentAt) }}</p>
+            <p class="mt-2 text-xs text-muted-2">priority: {{ mail.priority }}</p>
+            <p class="mt-2 text-xs text-muted-2">queued: {{ formatDateTime(mail.createdAt) }}</p>
           </article>
         </div>
       </SurfaceCard>

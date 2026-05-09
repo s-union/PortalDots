@@ -118,7 +118,6 @@ type StaffRoutes struct {
 	// Admin
 	ListStaffMails            echo.HandlerFunc
 	EnqueueStaffMail          echo.HandlerFunc
-	DeleteStaffMails          echo.HandlerFunc
 	ListStaffActivityLogs     echo.HandlerFunc
 	GetStaffPortalSettings    echo.HandlerFunc
 	UpdateStaffPortalSettings echo.HandlerFunc
@@ -283,7 +282,6 @@ func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.Midd
 	staff.POST("/circles/:circleID/email", r.SendStaffCircleMail, RequireCapability(canSendCircleEmails))
 	staff.GET("/mails", r.ListStaffMails, RequireCapability(canUseMailQueue))
 	staff.POST("/mails", r.EnqueueStaffMail, RequireCapability(canUseMailQueue))
-	staff.DELETE("/mails", r.DeleteStaffMails, RequireCapability(canUseMailQueue))
 	staff.GET("/activity-logs", r.ListStaffActivityLogs, RequireCapability(canViewActivityLogs))
 	staff.GET("/portal-settings", r.GetStaffPortalSettings, RequireCapability(canManagePortalSettings))
 	staff.PUT("/portal-settings", r.UpdateStaffPortalSettings, RequireCapability(canManagePortalSettings))

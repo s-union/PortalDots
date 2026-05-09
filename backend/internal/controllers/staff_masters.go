@@ -15,6 +15,8 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type staffTagResponse struct {
@@ -584,11 +586,28 @@ func (h *staffMastersHandlers) enqueueContactCategoryAssignedMail(
 		category.Email,
 	))
 
-	job, err := h.mails.Enqueue(ctx, "", createdByUserID, subject, body, recipients)
-	if err != nil {
+	jobID := "contact-category-" + uuidv7.MustString()
+	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "markdown-notice",
+		Priority: cloudflareemail.PriorityNormal,
+		From:     h.from,
+		To:       recipients,
+		Subject:  subject,
+		Body:     body,
+		Variables: map[string]string{
+			"subject":      subject,
+			"body":         body,
+			"appName":      h.appName,
+			"appURL":       h.appURL,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+			"preview":      subject,
+		},
+	}); err != nil {
 		return err
 	}
-	logQueuedMail("contact_category_assigned", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+	logQueuedMail("contact_category_assigned", jobID, "", createdByUserID, subject, body, recipients, h.allowDangerously)
 
 	return nil
 }

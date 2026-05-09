@@ -105,7 +105,7 @@ const staffCards = computed<StaffCard[]>(() => [
     to: '/staff/mails',
     title: 'メール配信設定',
     iconClass: 'far fa-envelope fa-fw',
-    description: '配信予約中のメールを確認し、必要に応じてキューを全件キャンセルします',
+    description: '送信依頼されたメールの履歴を確認します',
     hidden: isDemoMode.value || !mailQueueAvailable.value
   },
   {

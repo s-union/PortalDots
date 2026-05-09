@@ -180,28 +180,6 @@ func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
 
 	subject := fmt.Sprintf("スタッフ認証 (認証コード : %s)", verifyCode)
 
-	if h.emailProducer != nil && h.from != "" {
-		emailJob := cloudflareemail.EmailJob{
-			JobId:    "staff-auth-" + uuidv7.MustString(),
-			Template: "staff-auth-notice",
-			Priority: cloudflareemail.PriorityHigh,
-			From:     h.from,
-			To:       normalizedRecipients,
-			Subject:  subject,
-			Variables: map[string]string{
-				"subject":      subject,
-				"preview":      subject,
-				"authCode":     verifyCode,
-				"appName":      h.appName,
-				"adminName":    h.adminName,
-				"contactEmail": h.contactEmail,
-			},
-		}
-		if err := h.emailProducer.Enqueue(ctx, emailJob); err == nil {
-			return nil
-		}
-	}
-
 	body := strings.TrimSpace(fmt.Sprintf(
 		`スタッフ認証
 
@@ -214,12 +192,27 @@ func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
 		h.appName,
 		verifyCode,
 	))
-
-	job, err := h.mails.Enqueue(ctx, circleID, createdByUserID, subject, body, normalizedRecipients)
-	if err != nil {
+	jobID := "staff-auth-" + uuidv7.MustString()
+	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "staff-auth-notice",
+		Priority: cloudflareemail.PriorityHigh,
+		From:     h.from,
+		To:       normalizedRecipients,
+		Subject:  subject,
+		Body:     body,
+		Variables: map[string]string{
+			"subject":      subject,
+			"preview":      subject,
+			"authCode":     verifyCode,
+			"appName":      h.appName,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+		},
+	}); err != nil {
 		return err
 	}
-	logQueuedMail("staff_verify_code", job.ID, job.CircleID, job.CreatedByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+	logQueuedMail("staff_verify_code", jobID, circleID, createdByUserID, subject, body, normalizedRecipients, h.allowDangerously)
 
 	return nil
 }

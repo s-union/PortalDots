@@ -326,10 +326,9 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 			body = buildCircleRejectedMailBody(updated, members, updated.StatusReason)
 		}
 		if subject != "" {
-			job, queued, err := enqueueCircleNotificationMail(
+			jobID, queued, err := enqueueCircleNotificationMail(
 				c.Request().Context(),
-				h.emailProducer,
-				h.mails,
+				h.emailSender,
 				h.users,
 				members,
 				updated.ID,
@@ -354,9 +353,9 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 					currentSession.User.ID,
 					"staff.mail.queued",
 					"mail_job",
-					job.ID,
-					job.CircleID,
-					buildActivitySummary("staff が企画参加登録の通知メールをキューに追加しました", job.Subject),
+					jobID,
+					updated.ID,
+					buildActivitySummary("staff が企画参加登録の通知メールをキューに追加しました", subject),
 				)
 			}
 		}
@@ -389,7 +388,6 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 	if err := h.booths.DeleteByCircle(c.Request().Context(), circleID); err != nil {
 		return internalError(c)
 	}
-	_ = h.mails.DeleteByCircle(circleID)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
@@ -606,50 +604,28 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 		})
 	}
 
-	if h.emailProducer != nil {
-		jobID := fmt.Sprintf("circle-%d", time.Now().UnixNano())
-		if err := h.emailProducer.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
-			JobId:    jobID,
-			Template: "markdown-notice",
-			Priority: cloudflareemail.PriorityNormal,
-			From:     h.from,
-			To:       recipientEmails,
-			Subject:  request.Subject,
-			Variables: map[string]string{
-				"appName":      h.appName,
-				"appURL":       h.appURL,
-				"subject":      request.Subject,
-				"body":         request.Body,
-				"adminName":    h.adminName,
-				"contactEmail": h.contactEmail,
-				"preview":      request.Subject,
-			},
-		}); err != nil {
-			return internalError(c)
-		}
-		job, err := h.mails.Enqueue(c.Request().Context(), circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails)
-		if err != nil {
-			return internalError(c)
-		}
-		logQueuedMail("staff_circle", job.ID, circleValue.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
-		recordActivity(
-			c.Request().Context(),
-			h.activities,
-			currentSession.User.ID,
-			"staff.circle.mail_queued",
-			"circle",
-			circleValue.ID,
-			circleValue.ID,
-			buildActivitySummary("staff が企画所属者向けメールをキューに追加しました", circleValue.Name),
-		)
-		return c.NoContent(http.StatusCreated)
-	}
-
-	job, err := h.mails.Enqueue(c.Request().Context(), circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails)
-	if err != nil {
+	jobID := fmt.Sprintf("circle-%d", time.Now().UnixNano())
+	if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "markdown-notice",
+		Priority: cloudflareemail.PriorityNormal,
+		From:     h.from,
+		To:       recipientEmails,
+		Subject:  request.Subject,
+		Body:     request.Body,
+		Variables: map[string]string{
+			"appName":      h.appName,
+			"appURL":       h.appURL,
+			"subject":      request.Subject,
+			"body":         request.Body,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+			"preview":      request.Subject,
+		},
+	}); err != nil {
 		return internalError(c)
 	}
-	logQueuedMail("staff_circle", job.ID, circleValue.ID, currentSession.User.ID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+	logQueuedMail("staff_circle", jobID, circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails, h.allowDangerously)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,

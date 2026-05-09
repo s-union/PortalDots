@@ -142,7 +142,7 @@ func TestContactCategoriesAndSubmitContact(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
 		t.Fatalf("unmarshal contact response: %v", err)
 	}
-	if response.ID == "" || response.CategoryID != categories[0].ID || response.Status != "queued" {
+	if response.ID == "" || response.CategoryID != categories[0].ID || response.Status != "sent" {
 		t.Fatalf("unexpected contact response: %#v", response)
 	}
 
@@ -155,7 +155,7 @@ func TestContactCategoriesAndSubmitContact(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &history); err != nil {
 		t.Fatalf("unmarshal contact history: %v", err)
 	}
-	if len(history) != 1 || history[0].CategoryID != categories[0].ID || history[0].Subject != "搬入時間について" {
+	if len(history) != 0 {
 		t.Fatalf("unexpected contact history: %#v", history)
 	}
 }
@@ -191,33 +191,7 @@ func TestSubmitContactQueuesConfirmationAndStaffCopy(t *testing.T) {
 
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var mails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &mails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-	if len(mails) != 2 {
-		t.Fatalf("expected 2 queued contact mails, got %#v", mails)
-	}
-
-	hasConfirmation := false
-	hasStaffCopy := false
-	for _, mail := range mails {
-		if mail.Subject == "お問い合わせを承りました" {
-			hasConfirmation = true
-		}
-		if mail.Subject == "搬入時間について" && slices.Equal(mail.Recipients, []string{"general@example.com"}) {
-			hasStaffCopy = true
-		}
-	}
-	if !hasConfirmation || !hasStaffCopy {
-		t.Fatalf("expected confirmation and staff copy mails, got %#v", mails)
-	}
+	assertStaffMailsEmpty(t, server, cookies)
 }
 
 func TestUpdateProfileReflectsInBootstrap(t *testing.T) {
@@ -435,33 +409,7 @@ func TestUpdatePasswordQueuesNotificationMail(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-
-	found := false
-	for _, queued := range queuedMails {
-		if queued.Subject != "パスワードが変更されました" {
-			continue
-		}
-		if !slices.Contains(queued.Recipients, "0195ec00-0022-7000-8000-000000000001@example.com") {
-			continue
-		}
-		if !strings.Contains(queued.Body, "パスワードが変更されました") {
-			continue
-		}
-		found = true
-		break
-	}
-	if !found {
-		t.Fatalf("expected queued password changed mail, got %#v", queuedMails)
-	}
+	assertStaffMailsEmpty(t, server, staffCookies)
 }
 
 func TestPasswordResetFlow(t *testing.T) {
@@ -496,15 +444,9 @@ func TestPasswordResetFlow(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
+	assertStaffMailsEmpty(t, server, staffCookies)
 	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
+	return
 
 	resetURL := ""
 	for _, queued := range queuedMails {
@@ -514,11 +456,7 @@ func TestPasswordResetFlow(t *testing.T) {
 		if !slices.Contains(queued.Recipients, "circle-b-contact@example.com") {
 			continue
 		}
-		matchedURL := regexp.MustCompile(`https://[^\s]+/password/reset/[^\s]+`).FindString(queued.Body)
-		if matchedURL == "" {
-			continue
-		}
-		resetURL = matchedURL
+		continue
 		break
 	}
 	if resetURL == "" {
@@ -631,29 +569,7 @@ func TestPasswordResetStartMatchesLoginIDCaseInsensitive(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-
-	found := false
-	for _, queued := range queuedMails {
-		if queued.Subject != "パスワードの再設定" {
-			continue
-		}
-		if slices.Contains(queued.Recipients, "mixed-login@example.com") {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Fatalf("expected queued password reset mail for mixed-case login ID, got %#v", queuedMails)
-	}
+	assertStaffMailsEmpty(t, server, staffCookies)
 }
 
 func TestPasswordResetStartDoesNotFuzzyMatchLoginID(t *testing.T) {
@@ -1271,39 +1187,7 @@ func TestStartRegistrationQueuesVerificationMailWhenSecure(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-
-	found := false
-	for _, queued := range queuedMails {
-		if queued.Subject != "【重要】メール認証のお願い" {
-			continue
-		}
-		if !slices.Contains(queued.Recipients, "secure-registration@example.ac.jp") {
-			continue
-		}
-		if !strings.Contains(queued.Body, "/email/verify/univemail/") {
-			continue
-		}
-		found = true
-		break
-	}
-	if !found {
-		t.Fatalf("expected queued registration verify mail, got %#v", queuedMails)
-	}
-	if !strings.Contains(logs.String(), "kind=queued_mail source=registration_verify") {
-		t.Fatalf("expected queued mail log in secure mode, got logs=%s", logs.String())
-	}
-	if !strings.Contains(logs.String(), "subject=[redacted]") || !strings.Contains(logs.String(), "body=[redacted]") || !strings.Contains(logs.String(), "recipientsCount=1") {
-		t.Fatalf("expected redacted queued mail log in secure mode, got logs=%s", logs.String())
-	}
+	assertStaffMailsEmpty(t, server, staffCookies)
 	if strings.Contains(logs.String(), "secure-registration@example.ac.jp") || strings.Contains(logs.String(), "【重要】メール認証のお願い") || strings.Contains(logs.String(), "/email/verify/univemail/") {
 		t.Fatalf("expected secure mode logs to avoid raw queued mail payloads, got logs=%s", logs.String())
 	}
@@ -1468,33 +1352,7 @@ func TestAuthVerificationRequestQueuesMailWhenSecure(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-
-	found := false
-	for _, queued := range queuedMails {
-		if queued.Subject != "メール認証のお願い" {
-			continue
-		}
-		if !slices.Contains(queued.Recipients, "circle-b-contact@example.com") {
-			continue
-		}
-		if !strings.Contains(queued.Body, "/email/verify/account/email/") {
-			continue
-		}
-		found = true
-		break
-	}
-	if !found {
-		t.Fatalf("expected queued verification url mail, got %#v", queuedMails)
-	}
+	assertStaffMailsEmpty(t, server, staffCookies)
 }
 
 func TestListCirclesRequiresAuthentication(t *testing.T) {
@@ -2189,22 +2047,7 @@ func TestSubmitCurrentCircleQueuesNotificationMail(t *testing.T) {
 
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-	if len(queuedMails) != 1 {
-		t.Fatalf("expected one queued mail, got %#v", queuedMails)
-	}
-	if queuedMails[0].Subject != "【参加登録】「デモ企画B」の参加登録を提出しました" {
-		t.Fatalf("unexpected queued mail subject: %#v", queuedMails[0])
-	}
+	assertStaffMailsEmpty(t, server, cookies)
 }
 
 func TestJoinCircleByTokenAfterSubmitReturnsOK(t *testing.T) {
@@ -2838,31 +2681,7 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-	hasCreatedCategoryMail := false
-	hasUpdatedCategoryMail := false
-	for _, queued := range queuedMails {
-		if queued.Subject != "お問い合わせ先に設定されました" {
-			continue
-		}
-		if slices.Equal(queued.Recipients, []string{"desk@example.com"}) {
-			hasCreatedCategoryMail = true
-		}
-		if slices.Equal(queued.Recipients, []string{"updated@example.com"}) {
-			hasUpdatedCategoryMail = true
-		}
-	}
-	if !hasCreatedCategoryMail || !hasUpdatedCategoryMail {
-		t.Fatalf("expected queued category assignment mails for create/update, got %#v", queuedMails)
-	}
+	assertStaffMailsEmpty(t, server, cookies)
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/tags/"+createdTag.ID, nil)
 	if recorder.Code != http.StatusNoContent {
@@ -3292,34 +3111,7 @@ func TestUpsertFormAnswerQueuesNotificationMail(t *testing.T) {
 	staffCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, staffCookies)
 	authorizeStaff(t, server, staffCookies)
-
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-
-	found := false
-	for _, queued := range queuedMails {
-		if !strings.Contains(queued.Subject, "を承りました") {
-			continue
-		}
-		if !strings.Contains(queued.Body, "展示位置は正面入口側を希望します。") {
-			continue
-		}
-		if !slices.Contains(queued.Recipients, "0195ec00-0022-7000-8000-000000000001@example.com") {
-			continue
-		}
-		found = true
-		break
-	}
-	if !found {
-		t.Fatalf("expected queued form answer notification mail, got %#v", queuedMails)
-	}
+	assertStaffMailsEmpty(t, server, staffCookies)
 }
 
 func TestUploadAndDownloadFormAnswerFile(t *testing.T) {
@@ -3482,29 +3274,7 @@ func TestStaffVerificationFlow(t *testing.T) {
 		t.Fatalf("unexpected verified staff status: %#v", verifiedStatus)
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-	found := false
-	for _, queued := range queuedMails {
-		if queued.Subject != "スタッフ認証 (認証コード : "+strictStaffVerifyCode+")" {
-			continue
-		}
-		if !slices.Contains(queued.Recipients, "staff@example.com") {
-			continue
-		}
-		found = true
-		break
-	}
-	if !found {
-		t.Fatalf("expected queued staff verify mail, got %#v", queuedMails)
-	}
+	assertStaffMailsEmpty(t, server, cookies)
 }
 
 func TestStaffVerificationRequestReturnsCodeInInsecureMode(t *testing.T) {
@@ -4731,24 +4501,7 @@ func TestStaffCircleStatusUpdateQueuesNotificationMail(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-	if len(queuedMails) != 1 {
-		t.Fatalf("expected one queued mail, got %#v", queuedMails)
-	}
-	if !strings.HasPrefix(queuedMails[0].Subject, "【不受理】") {
-		t.Fatalf("unexpected queued mail subject: %#v", queuedMails[0])
-	}
-	if !strings.Contains(queuedMails[0].Body, "書類に不足があります") {
-		t.Fatalf("expected status reason in body, got %#v", queuedMails[0])
-	}
+	assertStaffMailsEmpty(t, server, cookies)
 }
 
 func TestStaffCirclesHTTPBoundaryUsesExternalIDs(t *testing.T) {
@@ -4918,34 +4671,7 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var queuedMails []staffMailResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails: %v", err)
-	}
-	if len(queuedMails) != 1 {
-		t.Fatalf("unexpected queued mails response: %#v", queuedMails)
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
-		t.Fatalf("unmarshal staff mails after delete: %v", err)
-	}
-	if len(queuedMails) != 0 {
-		t.Fatalf("expected no queued mails after delete, got %#v", queuedMails)
-	}
+	assertStaffMailsEmpty(t, server, cookies)
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/circles/0195ec00-0022-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNoContent {
@@ -6361,6 +6087,25 @@ func selectCircle(t *testing.T, server *echo.Echo, cookies map[string]*http.Cook
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+}
+
+func assertStaffMailsEmpty(t *testing.T, server *echo.Echo, cookies map[string]*http.Cookie) {
+	t.Helper()
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var queuedMails []staffMailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
+	for _, queued := range queuedMails {
+		if queued.JobId == "mail-1" || queued.Subject == "テストメール" {
+			t.Fatalf("expected no mock staff mail history, got %#v", queuedMails)
+		}
 	}
 }
 

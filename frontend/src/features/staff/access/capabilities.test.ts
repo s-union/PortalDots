@@ -139,7 +139,7 @@ describe('staff capabilities', () => {
     expect(canUseStaffExports([], ['staff.pages.read,export'])).toBe(true)
     expect(canUseStaffExports([], ['staff.documents.read,export'])).toBe(true)
     expect(canUseStaffExports([], ['staff.forms.answers.read,export'])).toBe(true)
-    expect(canUseMailQueue([], ['staff.pages.read,edit,send_emails'])).toBe(true)
+    expect(canUseMailQueue([], ['staff.pages.read,edit,send_emails'])).toBe(false)
   })
 
   it('resolves capability checks through the central dispatcher', () => {
@@ -156,7 +156,7 @@ describe('staff capabilities', () => {
     expect(canAccessStaffCapability('pages.edit', [], permissions)).toBe(true)
     expect(canAccessStaffCapability('documents.export', [], permissions)).toBe(true)
     expect(canAccessStaffCapability('formAnswers.export', [], permissions)).toBe(true)
-    expect(canAccessStaffCapability('mailQueue.use', [], permissions)).toBe(true)
+    expect(canAccessStaffCapability('mailQueue.use', [], permissions)).toBe(false)
     expect(canAccessStaffCapability('portalSettings.manage', [], permissions)).toBe(false)
   })
 })

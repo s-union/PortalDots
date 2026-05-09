@@ -327,6 +327,28 @@ describe('app router guards', () => {
     expect(router.currentRoute.value.fullPath).toBe('/staff')
   })
 
+  it('redirects non-admin staff mail access to staff top', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-a',
+        name: 'デモ企画A'
+      },
+      featureFlags: [],
+      roles: ['content_manager'],
+      permissions: ['staff.pages.read,edit,send_emails'],
+      user: {
+        id: 'content-user',
+        displayName: 'Content User',
+        canDeleteAccount: false
+      }
+    })
+
+    await router.push('/staff/mails')
+
+    expect(router.currentRoute.value.fullPath).toBe('/staff')
+  })
+
   it('redirects legacy staff mail paths to /staff/mails', async () => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
       csrfToken: 'csrf-token',

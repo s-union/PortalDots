@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
-	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
@@ -14,8 +13,7 @@ import (
 
 func enqueueCircleNotificationMail(
 	ctx context.Context,
-	emailProducer *cloudflareemail.ProducerClient,
-	mails mailqueue.Repository,
+	emailSender cloudflareemail.Sender,
 	users useradmin.Repository,
 	members []circle.CircleMember,
 	circleID string,
@@ -29,48 +27,40 @@ func enqueueCircleNotificationMail(
 	appURL string,
 	adminName string,
 	contactEmail string,
-) (mailqueue.Job, bool, error) {
+) (string, bool, error) {
 	memberUsers := listCircleMemberUsers(users, members)
 	recipients := collectUsersEmailRecipients(memberUsers)
 	if len(recipients) == 0 {
-		return mailqueue.Job{}, false, nil
+		return "", false, nil
 	}
 
-	if emailProducer != nil && from != "" {
-		priority := cloudflareemail.PriorityHigh
-		if source == "circle_status" {
-			priority = cloudflareemail.PriorityNormal
-		}
-		emailJob := cloudflareemail.EmailJob{
-			JobId:    source + "-" + uuidv7.MustString(),
-			Template: "markdown-notice",
-			Priority: priority,
-			From:     from,
-			To:       recipients,
-			Subject:  subject,
-			Variables: map[string]string{
-				"subject":      subject,
-				"body":         body,
-				"appName":      appName,
-				"appURL":       appURL,
-				"adminName":    adminName,
-				"contactEmail": contactEmail,
-				"preview":      subject,
-			},
-		}
-		if err := emailProducer.Enqueue(ctx, emailJob); err != nil {
-			// Fall through to local queue on failure
-		} else {
-			return mailqueue.Job{}, true, nil
-		}
+	priority := cloudflareemail.PriorityHigh
+	if source == "circle_status" {
+		priority = cloudflareemail.PriorityNormal
 	}
-
-	job, err := mails.Enqueue(ctx, circleID, createdByUserID, subject, body, recipients)
-	if err != nil {
-		return mailqueue.Job{}, false, err
+	jobID := source + "-" + uuidv7.MustString()
+	if err := emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "markdown-notice",
+		Priority: priority,
+		From:     from,
+		To:       recipients,
+		Subject:  subject,
+		Body:     body,
+		Variables: map[string]string{
+			"subject":      subject,
+			"body":         body,
+			"appName":      appName,
+			"appURL":       appURL,
+			"adminName":    adminName,
+			"contactEmail": contactEmail,
+			"preview":      subject,
+		},
+	}); err != nil {
+		return "", false, err
 	}
-	logQueuedMail(source, job.ID, circleID, createdByUserID, job.Subject, job.Body, job.Recipients, allowDangerously)
-	return job, true, nil
+	logQueuedMail(source, jobID, circleID, createdByUserID, subject, body, recipients, allowDangerously)
+	return jobID, true, nil
 }
 
 func buildCircleSubmittedMailBody(

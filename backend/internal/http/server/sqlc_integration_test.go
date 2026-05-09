@@ -94,7 +94,6 @@ func newSQLCIntegrationServer(t *testing.T, cfg config.Config) *echo.Echo {
 		dependencies.Documents,
 		dependencies.Forms,
 		dependencies.FormQuestions,
-		dependencies.Mails,
 		dependencies.Pages,
 		dependencies.PendingRegistrations,
 		dependencies.ParticipationTypes,

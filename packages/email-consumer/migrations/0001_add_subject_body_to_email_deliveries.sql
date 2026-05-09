@@ -1,2 +1,0 @@
-ALTER TABLE email_deliveries ADD COLUMN subject TEXT NOT NULL DEFAULT '';
-ALTER TABLE email_deliveries ADD COLUMN body TEXT NOT NULL DEFAULT '';

@@ -12,7 +12,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
-	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
+	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
@@ -34,7 +34,7 @@ type Dependencies struct {
 	Documents            document.Repository
 	Forms                form.Repository
 	FormQuestions        formquestion.Repository
-	Mails                mailqueue.Repository
+	MailHistory          mailhistory.Repository
 	Pages                page.Repository
 	PendingRegistrations pendingregistration.Repository
 	ParticipationTypes   participationtype.Repository
@@ -74,7 +74,7 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 		Documents:            document.NewSQLCRepository(queries),
 		Forms:                form.NewSQLCRepository(queries),
 		FormQuestions:        formquestion.NewSQLCRepository(store.Pool(), queries),
-		Mails:                mailqueue.NewSQLCRepository(queries),
+		MailHistory:          mailhistory.NewPostgresRepository(store.Pool()),
 		Pages:                page.NewSQLCRepository(queries),
 		PendingRegistrations: pendingregistration.NewSQLCRepository(queries),
 		ParticipationTypes:   participationtype.NewSQLCRepository(queries),

@@ -1,8 +1,5 @@
 import { Hono, type Context } from 'hono'
 import { z } from 'zod'
-import { desc } from 'drizzle-orm'
-import { emailDeliveries } from './db/schema'
-import { createDb } from './db/client'
 
 type EmailPriority = 'high' | 'normal'
 
@@ -20,11 +17,11 @@ export interface EmailJob {
 type Env = {
   HIGH_QUEUE: Queue<EmailJob>
   NORMAL_QUEUE: Queue<EmailJob>
-  DB: D1Database
   AUTH_TOKEN: string
 }
 
 const MAX_RECIPIENTS_PER_MESSAGE = 50
+const knownTemplates = ['markdown-notice', 'registration-verify', 'staff-auth-notice'] as const
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = []
@@ -45,7 +42,7 @@ function checkAuth(c: Context<{ Bindings: Env }>): Response | null {
 
 const enqueueRequestSchema = z.object({
   jobId: z.string().min(1),
-  template: z.string().min(1),
+  template: z.enum(knownTemplates),
   priority: z.enum(['high', 'normal']).optional(),
   from: z.string().email(),
   to: z.union([z.string().email(), z.array(z.string().email())]),
@@ -95,57 +92,6 @@ app.post('/enqueue', async (c) => {
     messageCount: chunks.length,
     status: 'queued'
   })
-})
-
-app.get('/deliveries', async (c) => {
-  const authError = checkAuth(c)
-  if (authError) return authError
-
-  const db = createDb(c.env.DB)
-  const rows = await db.select().from(emailDeliveries).orderBy(desc(emailDeliveries.sentAt))
-
-  // Group by jobId to present one entry per mail job
-  const grouped = new Map<
-    string,
-    {
-      jobId: string
-      template: string
-      subject: string
-      body: string
-      recipients: string[]
-      sentAt: string
-    }
-  >()
-
-  for (const row of rows) {
-    const existing = grouped.get(row.jobId)
-    if (existing) {
-      existing.recipients.push(row.recipient)
-    } else {
-      grouped.set(row.jobId, {
-        jobId: row.jobId,
-        template: row.template,
-        subject: row.subject,
-        body: row.body,
-        recipients: [row.recipient],
-        sentAt: row.sentAt.toISOString()
-      })
-    }
-  }
-
-  return c.json({
-    deliveries: Array.from(grouped.values())
-  })
-})
-
-app.delete('/deliveries', async (c) => {
-  const authError = checkAuth(c)
-  if (authError) return authError
-
-  const db = createDb(c.env.DB)
-  await db.delete(emailDeliveries)
-
-  return c.json({ success: true })
 })
 
 export default app

@@ -346,14 +346,7 @@ export const staffHandlers = [
       total: 1
     })
   ),
-  http.get(`${BASE}/staff/mails`, () =>
-    HttpResponse.json({
-      items: [mockMail],
-      page: 1,
-      pageSize: 20,
-      total: 1
-    })
-  ),
+  http.get(`${BASE}/staff/mails`, () => HttpResponse.json([mockMail])),
   http.get(`${BASE}/staff/mail/:mailId`, () => HttpResponse.json(mockMail)),
   http.get(`${BASE}/staff/tags`, () =>
     HttpResponse.json({

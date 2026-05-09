@@ -27,34 +27,24 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 		body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 	}
 
-	if h.emailProducer != nil && h.from != "" {
-		emailJob := cloudflareemail.EmailJob{
-			JobId:    "form-answer-" + uuidv7.MustString(),
-			Template: "markdown-notice",
-			Priority: cloudflareemail.PriorityNormal,
-			From:     h.from,
-			To:       recipients,
-			Subject:  subject,
-			Variables: map[string]string{
-				"subject":      subject,
-				"body":         body,
-				"appName":      h.appName,
-				"appURL":       h.appURL,
-				"adminName":    h.adminName,
-				"contactEmail": h.contactEmail,
-				"preview":      subject,
-			},
-		}
-		if err := h.emailProducer.Enqueue(ctx, emailJob); err == nil {
-			return
-		}
-	}
-
-	job, err := h.mails.Enqueue(ctx, answerValue.CircleID, createdByUserID, subject, body, recipients)
-	if err != nil {
-		return
-	}
-	logQueuedMail("workspace_form_answer", job.ID, answerValue.CircleID, createdByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+	_ = h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		JobId:    "form-answer-" + uuidv7.MustString(),
+		Template: "markdown-notice",
+		Priority: cloudflareemail.PriorityNormal,
+		From:     h.from,
+		To:       recipients,
+		Subject:  subject,
+		Body:     body,
+		Variables: map[string]string{
+			"subject":      subject,
+			"body":         body,
+			"appName":      h.appName,
+			"appURL":       h.appURL,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+			"preview":      subject,
+		},
+	})
 }
 
 func (h *workspaceHandlers) workspaceFormAnswerMailRecipients(createdByUserID, targetCircleID string) []string {

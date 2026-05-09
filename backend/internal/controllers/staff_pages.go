@@ -8,6 +8,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type staffPageSummaryResponse struct {
@@ -397,18 +399,35 @@ func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID
 		body += strings.Join(lines, "\n")
 	}
 
-	job, err := h.mails.Enqueue(ctx, "", createdByUserID, currentPage.Title, body, recipients)
-	if err != nil {
+	jobID := "staff-page-" + uuidv7.MustString()
+	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		JobId:    jobID,
+		Template: "markdown-notice",
+		Priority: cloudflareemail.PriorityNormal,
+		From:     h.from,
+		To:       recipients,
+		Subject:  currentPage.Title,
+		Body:     body,
+		Variables: map[string]string{
+			"subject":      currentPage.Title,
+			"body":         body,
+			"appName":      h.appName,
+			"appURL":       h.appURL,
+			"adminName":    h.adminName,
+			"contactEmail": h.contactEmail,
+			"preview":      currentPage.Title,
+		},
+	}); err != nil {
 		return
 	}
-	logQueuedMail("staff_page", job.ID, "", createdByUserID, job.Subject, job.Body, job.Recipients, h.allowDangerously)
+	logQueuedMail("staff_page", jobID, "", createdByUserID, currentPage.Title, body, recipients, h.allowDangerously)
 	recordActivity(
 		ctx,
 		h.activities,
 		createdByUserID,
 		"staff.mail.queued",
 		"mail_job",
-		job.ID,
+		jobID,
 		"",
 		buildActivitySummary("staff がページのお知らせメールをキューに追加しました", currentPage.Title),
 	)

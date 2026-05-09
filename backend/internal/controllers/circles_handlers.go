@@ -458,8 +458,7 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 	body := buildCircleSubmittedMailBody(submitted, members, formValue.ConfirmationMessage, answerSummary)
 	if _, _, err := enqueueCircleNotificationMail(
 		c.Request().Context(),
-		h.emailProducer,
-		h.mails,
+		h.emailSender,
 		h.users,
 		members,
 		submitted.ID,

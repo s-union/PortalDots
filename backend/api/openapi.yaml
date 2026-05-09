@@ -4640,28 +4640,25 @@ paths:
   /staff/mails:
     get:
       operationId: getStaffMails
-      summary: Return queued mails in staff mode
+      summary: Return queued mail history in staff mode
       responses:
         "200":
-          description: Staff mail queue
+          description: Staff mail history
           content:
             application/json:
               schema:
                 type: array
                 items:
                   type: object
-                  required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
+                  required: [jobId, template, priority, subject, body, recipients, createdAt]
                   properties:
-                    circle:
-                      type: object
-                      required: [id, name]
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                    id:
+                    jobId:
                       type: string
+                    template:
+                      type: string
+                    priority:
+                      type: string
+                      enum: [high, normal]
                     subject:
                       type: string
                     body:
@@ -4670,13 +4667,7 @@ paths:
                       type: array
                       items:
                         type: string
-                    status:
-                      type: string
-                      enum: [queued, sent, undeliverable]
                     createdAt:
-                      type: string
-                      format: date-time
-                    deliveredAt:
                       type: string
                       format: date-time
         "401":
@@ -4715,18 +4706,15 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [circle, id, subject, body, recipients, status, createdAt, deliveredAt]
+                required: [jobId, template, priority, subject, body, recipients, createdAt]
                 properties:
-                  circle:
-                    type: object
-                    required: [id, name]
-                    properties:
-                      id:
-                        type: string
-                      name:
-                        type: string
-                  id:
+                  jobId:
                     type: string
+                  template:
+                    type: string
+                  priority:
+                    type: string
+                    enum: [high, normal]
                   subject:
                     type: string
                   body:
@@ -4735,13 +4723,7 @@ paths:
                     type: array
                     items:
                       type: string
-                  status:
-                    type: string
-                    enum: [queued, sent, undeliverable]
                   createdAt:
-                    type: string
-                    format: date-time
-                  deliveredAt:
                     type: string
                     format: date-time
         "401":
@@ -4750,16 +4732,6 @@ paths:
           description: Staff verification or mail queue capability is required
         "422":
           description: Validation error
-    delete:
-      operationId: deleteStaffMails
-      summary: Cancel all queued mails in staff mode
-      responses:
-        "204":
-          description: Deleted
-        "401":
-          description: Unauthenticated
-        "403":
-          description: Staff verification or mail queue capability is required
   /staff/participation-types:
     get:
       operationId: getStaffParticipationTypes

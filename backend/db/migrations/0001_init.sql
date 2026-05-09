@@ -263,26 +263,6 @@ CREATE TABLE IF NOT EXISTS sessions (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- ── mail_jobs ──
-CREATE TABLE IF NOT EXISTS mail_jobs (
-    id uuid PRIMARY KEY DEFAULT uuidv7(),
-    circle_id uuid REFERENCES circles(id) ON DELETE SET NULL,
-    subject text NOT NULL,
-    body text NOT NULL,
-    recipients text[] NOT NULL,
-    status text NOT NULL DEFAULT 'queued',
-    created_by_user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    delivered_to text[] NOT NULL DEFAULT '{}',
-    created_at timestamptz NOT NULL DEFAULT now(),
-    delivered_at timestamptz
-);
-
-CREATE INDEX IF NOT EXISTS mail_jobs_circle_id_created_at_idx
-    ON mail_jobs(circle_id, created_at DESC);
-
-CREATE INDEX IF NOT EXISTS mail_jobs_status_created_at_idx
-    ON mail_jobs(status, created_at ASC);
-
 -- ── activity_logs ──
 CREATE TABLE IF NOT EXISTS activity_logs (
     id uuid PRIMARY KEY DEFAULT uuidv7(),
@@ -297,6 +277,21 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 
 CREATE INDEX IF NOT EXISTS activity_logs_created_at_idx
     ON activity_logs(created_at DESC);
+
+-- ── outbound_mails ──
+CREATE TABLE IF NOT EXISTS outbound_mails (
+    job_id text PRIMARY KEY,
+    template text NOT NULL,
+    priority text NOT NULL CHECK (priority IN ('high', 'normal')),
+    from_address text NOT NULL,
+    subject text NOT NULL,
+    body text NOT NULL,
+    recipients text[] NOT NULL DEFAULT '{}',
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS outbound_mails_created_at_idx
+    ON outbound_mails(created_at DESC, job_id DESC);
 
 -- ── tags ──
 CREATE TABLE IF NOT EXISTS tags (
@@ -361,8 +356,8 @@ DROP TABLE IF EXISTS booths;
 DROP TABLE IF EXISTS contact_categories;
 DROP TABLE IF EXISTS places;
 DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS outbound_mails;
 DROP TABLE IF EXISTS activity_logs;
-DROP TABLE IF EXISTS mail_jobs;
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS answer_uploads;
 DROP TABLE IF EXISTS answer_details;

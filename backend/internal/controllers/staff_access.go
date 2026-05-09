@@ -188,8 +188,8 @@ var staffCapabilityChecks = map[string]capabilityCheck{
 		permissions: []string{"staff.contacts", "staff.contacts.categories.read,edit,delete"},
 	},
 	"mailQueue.use": {
-		roles:       []string{"admin", "content_manager"},
-		permissions: []string{"staff.pages", "staff.pages.read,edit,send_emails"},
+		roles:       []string{"admin"},
+		permissions: []string{},
 	},
 	"exports.use": {
 		roles:       []string{"admin", "content_manager", "forms_manager"},

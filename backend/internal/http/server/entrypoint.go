@@ -12,7 +12,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
-	"github.com/s-union/PortalDots/backend/internal/domain/mailqueue"
+	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
@@ -25,9 +25,10 @@ import (
 )
 
 type SharedDependencies struct {
-	Activities activitylog.Repository
-	Sessions   session.Store
-	Users      useradmin.Repository
+	Activities  activitylog.Repository
+	MailHistory mailhistory.Repository
+	Sessions    session.Store
+	Users       useradmin.Repository
 }
 
 type PublicDependencies struct {
@@ -36,7 +37,6 @@ type PublicDependencies struct {
 	ContactCategories    contactcategory.Repository
 	Documents            document.Repository
 	Forms                form.Repository
-	Mails                mailqueue.Repository
 	Pages                page.Repository
 	PendingRegistrations pendingregistration.Repository
 	ParticipationTypes   participationtype.Repository
@@ -63,7 +63,6 @@ type StaffDependencies struct {
 	Documents          document.Repository
 	Forms              form.Repository
 	FormQuestions      formquestion.Repository
-	Mails              mailqueue.Repository
 	Pages              page.Repository
 	ParticipationTypes participationtype.Repository
 	Places             place.Repository
@@ -95,7 +94,7 @@ func NewWithDependencies(cfg config.Config, deps Dependencies) *echo.Echo {
 		deps.Public.Documents,
 		deps.Public.Forms,
 		deps.Workspace.FormQuestions,
-		deps.Public.Mails,
+		deps.Shared.MailHistory,
 		deps.Public.Pages,
 		deps.Public.PendingRegistrations,
 		deps.Public.ParticipationTypes,

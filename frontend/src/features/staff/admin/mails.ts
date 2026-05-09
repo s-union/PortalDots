@@ -9,10 +9,11 @@ import { useSessionStore } from '@/features/session/store'
 export interface StaffMail {
   jobId: string
   template: string
+  priority: 'high' | 'normal'
   subject: string
   body: string
   recipients: string[]
-  sentAt: string
+  createdAt: string
 }
 
 interface CreateStaffMailPayload {
@@ -54,19 +55,6 @@ export async function createStaffMail(payload: CreateStaffMailPayload, csrfToken
   )
 }
 
-export async function deleteStaffMails(csrfToken: string) {
-  await $api.noContentMutation(
-    'delete',
-    '/staff/mails',
-    {
-      headers: createJsonHeaders(csrfToken)
-    },
-    {
-      errorMessage: 'Failed to delete staff mails'
-    }
-  )
-}
-
 export function useStaffMailsQuery(enabled: MaybeRefOrGetter<boolean>) {
   return $api.useQueryData(
     'get',
@@ -92,20 +80,6 @@ export function useCreateStaffMailMutation() {
 
   return useMutation({
     mutationFn: async (payload: CreateStaffMailPayload) => createStaffMail(payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'mails']
-      })
-    }
-  })
-}
-
-export function useDeleteStaffMailsMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async () => deleteStaffMails(sessionStore.csrfToken),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['staff', 'mails']
