@@ -19,6 +19,7 @@ import {
   faEdit,
   faExclamationCircle,
   faExternalLinkAlt,
+  faEye,
   faFileCsv,
   faFileExport,
   faFilter,
@@ -60,7 +61,7 @@ import {
   faCopy,
   faEdit as faRegularEdit,
   faEnvelope,
-  faEye,
+  faEye as faRegularEye,
   faFileAlt,
   faFileArchive
 } from '@fortawesome/free-regular-svg-icons'
@@ -98,6 +99,7 @@ export function initializeFontAwesome() {
     faExternalLinkAlt,
     faEye,
     faFileAlt,
+    faRegularEye,
     faFileArchive,
     faFileCsv,
     faFileExport,

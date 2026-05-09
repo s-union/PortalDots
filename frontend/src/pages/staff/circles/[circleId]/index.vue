@@ -174,10 +174,8 @@ async function handleDeleteMember(userId: string, displayName: string) {
     <div v-else-if="circleQuery.data.value" class="space-y-6">
       <form class="space-y-6" @submit.prevent="handleSaveCircle">
         <SurfaceCard tag="header">
-          <p class="text-sm text-primary">Circle Detail</p>
-          <h2 class="mt-3 text-3xl font-semibold text-body">企画を編集</h2>
+          <h2 class="text-3xl font-semibold text-body">企画を編集</h2>
           <div class="mt-3 text-sm text-muted">企画ID : {{ circleQuery.data.value.id }}</div>
-          <div class="mt-1 text-sm text-muted">{{ circleQuery.data.value.name }}</div>
         </SurfaceCard>
 
         <SettingsSection title="企画基本情報">

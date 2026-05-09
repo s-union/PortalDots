@@ -68,5 +68,5 @@ const page = pageQuery.data
     </ListPanel>
   </article>
 
-  <ErrorState message="お知らせを取得できませんでした。" />
+  <ErrorState v-else message="お知らせを取得できませんでした。" />
 </template>

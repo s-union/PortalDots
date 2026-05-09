@@ -562,7 +562,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
         </AlertMessage>
       </template>
 
-      <ErrorState message="参加種別を取得できませんでした。" />
+      <ErrorState v-else message="参加種別を取得できませんでした。" />
     </PageLayout>
   </StaffSideWindowContainer>
 

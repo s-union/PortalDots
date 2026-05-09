@@ -6,7 +6,7 @@ definePage({
 
 import { staffPageMeta } from '@/lib/pageMeta'
 
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMutation } from '@tanstack/vue-query'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -15,7 +15,11 @@ import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
-import { compareBoolean, compareString } from '@/lib/compareString'
+import StaffFilterDrawer, { type StaffFilterField } from '@/components/staff/StaffFilterDrawer.vue'
+import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
+import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import { resolveRowId, resolveText } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { canDeleteDocuments } from '@/features/staff/access/capabilities'
@@ -26,12 +30,11 @@ import {
   buildStaffDocumentsExportUrl,
   buildStaffDocumentDownloadUrl,
   deleteStaffDocument,
-  useStaffDocumentsQuery,
-  type StaffDocumentSummary
+  useStaffDocumentsQuery
 } from '@/features/staff/documents/api'
 import { useSessionStore } from '@/features/session/store'
-import { usePaginationState } from '@/lib/usePaginationState'
-import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
+import { compareString } from '@/lib/compareString'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import YesNo from '@/components/ui/YesNo.vue'
 
@@ -65,8 +68,116 @@ const sortKeys = [
   'notes'
 ] as const
 type StaffDocumentSortKey = (typeof sortKeys)[number]
-const isStaffDocumentSortKey = createSortKeyGuard(sortKeys)
-const sort = useSortState<StaffDocumentSortKey>('documentNumber')
+
+const filterFields: StaffFilterField[] = [
+  { key: 'id', label: '配布資料ID', type: 'string' },
+  { key: 'name', label: '配布資料名', type: 'string' },
+  { key: 'extension', label: 'ファイル形式', type: 'string' },
+  { key: 'description', label: '説明', type: 'string' },
+  { key: 'isPublic', label: '公開', type: 'bool' },
+  { key: 'isImportant', label: '重要', type: 'bool' },
+  { key: 'createdAt', label: '作成日時', type: 'string' },
+  { key: 'updatedAt', label: '更新日時', type: 'string' },
+  { key: 'notes', label: 'スタッフ用メモ', type: 'string' }
+]
+
+function isFilterKey(key: string) {
+  return filterFields.some((f) => f.key === key)
+}
+
+const orderedDocuments = computed(() =>
+  [...(documentsQuery.data.value ?? [])]
+    .filter((document) => !isDemoMode.value || document.isPublic)
+    .sort((left, right) => compareString(left.createdAt, right.createdAt))
+)
+
+const documentOrderMap = computed(() => {
+  const order = new Map<string, number>()
+  orderedDocuments.value.forEach((document, index) => {
+    order.set(document.id, index + 1)
+  })
+  return order
+})
+
+const rawRows = computed<Record<string, unknown>[]>(() =>
+  orderedDocuments.value.map((document) => ({
+    id: document.id,
+    documentNumber: String(documentOrderMap.value.get(document.id) ?? 0),
+    name: document.name,
+    fileLinkLabel: '表示',
+    description: document.description,
+    sizeBytes: document.sizeBytes,
+    extension: document.extension,
+    isPublic: document.isPublic,
+    isImportant: document.isImportant,
+    createdAt: document.createdAt,
+    updatedAt: document.updatedAt,
+    notes: document.notes
+  }))
+)
+
+function resolveSortValue(row: Record<string, unknown>, key: StaffDocumentSortKey) {
+  if (key === 'documentNumber') return String(row.documentNumber ?? '0').padStart(10, '0')
+  if (key === 'isPublic') return row.isPublic ? '1' : '0'
+  if (key === 'isImportant') return row.isImportant ? '1' : '0'
+  if (key === 'sizeBytes') return String(row.sizeBytes ?? 0).padStart(20, '0')
+  return String(row[key] ?? '').toLowerCase()
+}
+
+function matchesSearch(row: Record<string, unknown>, search: string) {
+  const haystack = [row.id, row.name, row.description, row.extension, row.notes, row.documentNumber]
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(search)
+}
+
+function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
+  if (query.keyName === 'isPublic' || query.keyName === 'isImportant') {
+    const expected = query.value.trim() === 'true' || query.value.trim() === '1'
+    if (query.operator === '=') return row[query.keyName] === expected
+    if (query.operator === '!=') return row[query.keyName] !== expected
+    return true
+  }
+
+  const left = String(row[query.keyName] ?? '').toLowerCase()
+  const right = query.value.trim().toLowerCase()
+
+  if (query.operator === '=') return left === right
+  if (query.operator === '!=') return left !== right
+  if (query.operator === 'not like') return right === '' ? true : !left.includes(right)
+  return right === '' ? true : left.includes(right)
+}
+
+const {
+  pagedRows,
+  sortedRows,
+  filterActive,
+  sort,
+  pagination,
+  searchQuery,
+  isFilterOpen,
+  draftFilterMode,
+  draftFilterQueries,
+  handleSort,
+  handleSearch,
+  openFilter,
+  closeFilter,
+  handleAddFilter,
+  handleRemoveFilter,
+  handleUpdateFilter,
+  handleFilterModeUpdate,
+  handleApplyFilters,
+  handleClearFilters
+} = useStaffDataGridFilters<Record<string, unknown>, StaffDocumentSortKey>({
+  rows: rawRows,
+  sortKeys,
+  defaultSortKey: 'documentNumber',
+  filterFields,
+  resolveSortValue,
+  matchesSearch,
+  matchesFilterQuery,
+  isFilterKey
+})
 
 const columns: StaffDataGridColumn[] = [
   { key: 'documentNumber', label: '配布資料ID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
@@ -86,102 +197,6 @@ const isBusy = computed(
   () => documentsQuery.isPending.value || documentsQuery.isFetching.value || deleteDocumentMutation.isPending.value
 )
 
-const orderedDocuments = computed(() =>
-  [...(documentsQuery.data.value ?? [])]
-    .filter((document) => !isDemoMode.value || document.isPublic)
-    .sort((left, right) => compareString(left.createdAt, right.createdAt))
-)
-
-const documentOrderMap = computed(() => {
-  const order = new Map<string, number>()
-  orderedDocuments.value.forEach((document, index) => {
-    order.set(document.id, index + 1)
-  })
-  return order
-})
-
-const sortedDocuments = computed(() => {
-  const documents = orderedDocuments.value
-  const key = sort.sortKey.value
-  const direction = sort.sortDirection.value
-  const order = direction === 'asc' ? 1 : -1
-
-  return [...documents].sort((left, right) => {
-    switch (key) {
-      case 'documentNumber':
-        return ((documentOrderMap.value.get(left.id) ?? 0) - (documentOrderMap.value.get(right.id) ?? 0)) * order
-      case 'isImportant':
-        return compareBoolean(left.isImportant, right.isImportant) * order
-      case 'isPublic':
-        return compareBoolean(left.isPublic, right.isPublic) * order
-      case 'sizeBytes':
-        return (left.sizeBytes - right.sizeBytes) * order
-      default:
-        return compareString(resolveSortValue(left, key), resolveSortValue(right, key)) * order
-    }
-  })
-})
-
-const pagination = usePaginationState(computed(() => sortedDocuments.value.length))
-
-const rows = computed<StaffDataGridRow[]>(() => {
-  const start = (pagination.page.value - 1) * pagination.pageSize.value
-  const end = start + pagination.pageSize.value
-
-  return sortedDocuments.value.slice(start, end).map((document) => ({
-    id: document.id,
-    documentNumber: String(documentOrderMap.value.get(document.id) ?? start + 1),
-    name: document.name,
-    fileLinkLabel: '表示',
-    description: document.description,
-    sizeBytes: document.sizeBytes,
-    extension: document.extension,
-    isPublic: document.isPublic,
-    isImportant: document.isImportant,
-    createdAt: document.createdAt,
-    updatedAt: document.updatedAt,
-    notes: document.notes
-  }))
-})
-
-watch(
-  pagination.totalPages,
-  (nextTotalPages) => {
-    pagination.page.value = Math.min(pagination.page.value, nextTotalPages)
-  },
-  { immediate: true }
-)
-
-function resolveSortValue(document: StaffDocumentSummary, sortKey: StaffDocumentSortKey) {
-  switch (sortKey) {
-    case 'documentNumber':
-      return String(documentOrderMap.value.get(document.id) ?? 0)
-    case 'name':
-      return document.name
-    case 'extension':
-      return document.extension
-    case 'description':
-      return document.description
-    case 'createdAt':
-      return document.createdAt
-    case 'updatedAt':
-      return document.updatedAt
-    case 'notes':
-      return document.notes
-    default:
-      return ''
-  }
-}
-
-function handleSort(nextSortKey: string) {
-  if (!isStaffDocumentSortKey(nextSortKey)) {
-    return
-  }
-
-  sort.toggleSort(nextSortKey)
-  pagination.resetPage()
-}
-
 async function handleDeleteDocument(row: StaffDataGridRow) {
   const documentId = resolveRowId(row)
   const documentName = typeof row.name === 'string' ? row.name : 'この配布資料'
@@ -197,101 +212,144 @@ async function handleDeleteDocument(row: StaffDataGridRow) {
 function navigateToEdit(row: StaffDataGridRow) {
   router.push(`/staff/documents/${encodeURIComponent(resolveRowId(row))}/edit`)
 }
+
+async function handleReload() {
+  await documentsQuery.refetch()
+}
 </script>
 
 <template>
-  <PageLayout fullWidth>
-    <DataCard overflow-hidden>
-      <StaffDataGrid
-        :rows="rows"
-        :columns="columns"
-        :page="pagination.page.value"
-        :page-size="pagination.pageSize.value"
-        :total="sortedDocuments.length"
-        :loading="isBusy"
-        :sort-key="sort.sortKey.value"
-        :sort-direction="sort.sortDirection.value"
-        :show-filter-button="true"
-        table-label="配布資料一覧"
-        empty-message="staff documents はまだありません。"
-        @first="pagination.setFirstPage"
-        @prev="pagination.setPrevPage"
-        @next="pagination.setNextPage"
-        @last="pagination.setLastPage"
-        @reload="documentsQuery.refetch()"
-        @sort="handleSort"
-        @update:page-size="pagination.setPageSize"
-      >
-        <template #toolbar>
-          <BaseButton to="/staff/documents/create" variant="primary" size="md" weight="semibold">
-            <FaIcon name="plus" fixed-width />
-            新規配布資料
-          </BaseButton>
-          <CsvExportLink :href="exportHref">CSVで出力</CsvExportLink>
-        </template>
+  <StaffSideWindowContainer :is-open="isFilterOpen">
+    <PageLayout fullWidth>
+      <DataCard overflow-hidden>
+        <StaffDataGrid
+          :rows="pagedRows as StaffDataGridRow[]"
+          :columns="columns"
+          :page="pagination.page.value"
+          :page-size="pagination.pageSize.value"
+          :total="sortedRows.length"
+          :loading="isBusy"
+          :sort-key="sort.sortKey.value"
+          :sort-direction="sort.sortDirection.value"
+          :show-filter-button="true"
+          :filter-active="filterActive"
+          table-label="配布資料一覧"
+          empty-message="staff documents はまだありません。"
+          @first="pagination.setFirstPage"
+          @prev="pagination.setPrevPage"
+          @next="pagination.setNextPage"
+          @last="pagination.setLastPage"
+          @reload="handleReload"
+          @sort="handleSort"
+          @filter="openFilter"
+          @update:page-size="pagination.setPageSize"
+        >
+          <template #toolbar>
+            <ToolbarRow>
+              <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  placeholder="資料ID・資料名・説明・ファイル形式で絞り込み"
+                  class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
+                  <FaIcon name="search" fixed-width />
+                  絞り込み
+                </button>
+              </form>
+              <p class="text-sm text-muted">
+                現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全資料:
+                {{ rawRows.length }}
+              </p>
+            </ToolbarRow>
+            <ToolbarRow>
+              <BaseButton to="/staff/documents/create" variant="primary" size="md" weight="semibold">
+                <FaIcon name="plus" fixed-width />
+                新規配布資料
+              </BaseButton>
+              <CsvExportLink :href="exportHref">CSVで出力</CsvExportLink>
+            </ToolbarRow>
+          </template>
 
-        <template #actions="{ row }">
-          <div class="flex items-center gap-1">
-            <IconActionButton title="編集" @click="navigateToEdit(row)">
-              <FaIcon name="pencil-alt" fixed-width />
-            </IconActionButton>
-            <IconActionButton
-              v-if="canDelete"
-              variant="danger"
-              title="削除"
-              :disabled="deleteDocumentMutation.isPending.value"
-              @click="handleDeleteDocument(row)"
+          <template #actions="{ row }">
+            <div class="flex items-center gap-1">
+              <IconActionButton title="編集" @click="navigateToEdit(row)">
+                <FaIcon name="pencil-alt" fixed-width />
+              </IconActionButton>
+              <IconActionButton
+                v-if="canDelete"
+                variant="danger"
+                title="削除"
+                :disabled="deleteDocumentMutation.isPending.value"
+                @click="handleDeleteDocument(row)"
+              >
+                <FaIcon name="trash" fixed-width />
+              </IconActionButton>
+            </div>
+          </template>
+
+          <template #cell-name="{ value }">
+            <span class="font-medium text-body">
+              {{ typeof value === 'string' && value.trim().length > 0 ? value : '-' }}
+            </span>
+          </template>
+
+          <template #cell-fileLinkLabel="{ row }">
+            <a
+              :href="buildStaffDocumentDownloadUrl(resolveRowId(row))"
+              class="font-medium text-primary"
+              target="_blank"
+              rel="noreferrer"
             >
-              <FaIcon name="trash" fixed-width />
-            </IconActionButton>
-          </div>
-        </template>
+              表示
+            </a>
+          </template>
 
-        <template #cell-name="{ value }">
-          <span class="font-medium text-body">
-            {{ typeof value === 'string' && value.trim().length > 0 ? value : '-' }}
-          </span>
-        </template>
+          <template #cell-description="{ value }">
+            <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
+          </template>
 
-        <template #cell-fileLinkLabel="{ row }">
-          <a
-            :href="buildStaffDocumentDownloadUrl(resolveRowId(row))"
-            class="font-medium text-primary"
-            target="_blank"
-            rel="noreferrer"
-          >
-            表示
-          </a>
-        </template>
+          <template #cell-sizeBytes="{ value }">
+            <span>{{ typeof value === 'number' ? value : '-' }}</span>
+          </template>
 
-        <template #cell-description="{ value }">
-          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
-        </template>
+          <template #cell-isPublic="{ value }">
+            <YesNo :value="value === true" />
+          </template>
 
-        <template #cell-sizeBytes="{ value }">
-          <span>{{ typeof value === 'number' ? value : '-' }}</span>
-        </template>
+          <template #cell-isImportant="{ value }">
+            <YesNo :value="value === true" />
+          </template>
 
-        <template #cell-isPublic="{ value }">
-          <YesNo :value="value === true" />
-        </template>
+          <template #cell-createdAt="{ value }">
+            <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+          </template>
 
-        <template #cell-isImportant="{ value }">
-          <YesNo :value="value === true" />
-        </template>
+          <template #cell-updatedAt="{ value }">
+            <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+          </template>
 
-        <template #cell-createdAt="{ value }">
-          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
-        </template>
+          <template #cell-notes="{ value }">
+            <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
+          </template>
+        </StaffDataGrid>
+      </DataCard>
+    </PageLayout>
+  </StaffSideWindowContainer>
 
-        <template #cell-updatedAt="{ value }">
-          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
-        </template>
-
-        <template #cell-notes="{ value }">
-          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
-        </template>
-      </StaffDataGrid>
-    </DataCard>
-  </PageLayout>
+  <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">
+    <StaffFilterDrawer
+      :fields="filterFields"
+      :queries="draftFilterQueries"
+      :mode="draftFilterMode"
+      :loading="isBusy"
+      @add="handleAddFilter"
+      @remove="handleRemoveFilter"
+      @update-query="handleUpdateFilter"
+      @update-mode="handleFilterModeUpdate"
+      @apply="handleApplyFilters"
+      @clear="handleClearFilters"
+    />
+  </StaffSideWindow>
 </template>

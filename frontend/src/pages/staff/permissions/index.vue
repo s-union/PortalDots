@@ -12,6 +12,8 @@ import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import { canEditPermissions, canManagePermissions } from '@/features/staff/access/capabilities'
 import { useStaffPermissionsQuery } from '@/features/staff/permissions/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -27,6 +29,7 @@ const canUpdatePermissions = computed(() => canEditPermissions(sessionStore.role
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const page = ref(1)
 const pageSize = ref(25)
+const searchQuery = ref('')
 
 const permissionsQuery = useStaffPermissionsQuery(
   computed(() => canReadPermissions.value && staffStatusQuery.data.value?.authorized === true),
@@ -42,7 +45,7 @@ const columns: StaffDataGridColumn[] = [
   { key: 'permissionSummary', label: '割り当てられた権限', cellClass: 'whitespace-normal min-w-[18rem]' }
 ]
 
-const rows = computed<StaffDataGridRow[]>(() => {
+const allRows = computed<StaffDataGridRow[]>(() => {
   const items = permissionsQuery.data.value?.items ?? []
   const start = (page.value - 1) * pageSize.value
 
@@ -61,22 +64,20 @@ const rows = computed<StaffDataGridRow[]>(() => {
   }))
 })
 
+const rows = computed<StaffDataGridRow[]>(() => {
+  const search = searchQuery.value.trim().toLowerCase()
+  if (search.length === 0) return allRows.value
+  return allRows.value.filter((row) =>
+    [row.userNumber, row.displayName, row.permissionSummary, ...(Array.isArray(row.loginIds) ? row.loginIds : [])]
+      .join(' ')
+      .toLowerCase()
+      .includes(search)
+  )
+})
+
 const total = computed(() => permissionsQuery.data.value?.total ?? 0)
 const resolvedPageSize = computed(() => permissionsQuery.data.value?.pageSize ?? pageSize.value)
 const isBusy = computed(() => permissionsQuery.isPending.value || permissionsQuery.isFetching.value)
-
-function resolvePermissionSummary(row: StaffDataGridRow) {
-  if (!Array.isArray(row.permissions)) {
-    return []
-  }
-
-  return row.permissions
-    .filter(
-      (permission): permission is { shortName: string } =>
-        typeof permission === 'object' && permission !== null && 'shortName' in permission
-    )
-    .map((permission) => permission.shortName)
-}
 
 function setFirstPage() {
   page.value = 1
@@ -98,6 +99,10 @@ function setLastPage() {
 function handlePageSize(nextPageSize: number) {
   pageSize.value = nextPageSize
   page.value = 1
+}
+
+function handleSearch() {
+  // Client-side search - no API call needed
 }
 
 function navigateToEdit(userId: string) {
@@ -124,7 +129,6 @@ function navigateToEdit(userId: string) {
         :page-size="resolvedPageSize"
         :total="total"
         :loading="isBusy"
-        :show-filter-button="true"
         table-label="スタッフ権限一覧"
         empty-message="権限管理対象のユーザーは見つかりませんでした。"
         @first="setFirstPage"
@@ -134,6 +138,24 @@ function navigateToEdit(userId: string) {
         @reload="permissionsQuery.refetch()"
         @update:page-size="handlePageSize"
       >
+        <template #toolbar>
+          <ToolbarRow>
+            <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+              <input
+                v-model="searchQuery"
+                type="search"
+                placeholder="名前・権限・学生番号で絞り込み"
+                class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
+                <FaIcon name="search" fixed-width />
+                絞り込み
+              </button>
+            </form>
+            <p class="text-sm text-muted">現在の表示件数: {{ rows.length }} / 全{{ total }}件</p>
+          </ToolbarRow>
+        </template>
+
         <template #actions="{ row }">
           <IconActionButton
             v-if="row.isEditable || canUpdatePermissions"
@@ -157,11 +179,7 @@ function navigateToEdit(userId: string) {
         <template #cell-permissionSummary="{ row }">
           <div class="space-y-1">
             <div class="text-body">
-              {{
-                resolvePermissionSummary(row).length > 0
-                  ? resolvePermissionSummary(row).join(', ')
-                  : '利用可能な機能なし'
-              }}
+              {{ typeof row.permissionSummary === 'string' ? row.permissionSummary : '利用可能な機能なし' }}
             </div>
             <div v-if="Array.isArray(row.roles) && row.roles.length > 0" class="text-xs text-muted">
               {{ row.roles.join(', ') }}

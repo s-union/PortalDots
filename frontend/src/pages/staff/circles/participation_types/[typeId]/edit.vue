@@ -132,17 +132,18 @@ async function handleDelete() {
     <LoadingState v-if="detailQuery.isPending.value" />
 
     <form v-else-if="detailQuery.data.value" class="space-y-6" @submit.prevent="handleSave">
-      <SurfaceCard tag="header">
-        <h2 class="text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
+      <SurfaceCard tag="header" class="px-6 py-5">
+        <h2 class="text-3xl font-semibold text-body">参加種別を編集</h2>
+        <div class="mt-3 text-sm text-muted">参加種別ID : {{ detailQuery.data.value.id }}</div>
         <div class="mt-4 flex flex-wrap gap-3">
           <BaseButton
             variant="dangerOutline"
-            size="md"
+            size="sm"
             :disabled="deleteMutation.isPending.value"
             type="button"
             @click="handleDelete"
           >
-            {{ deleteMutation.isPending.value ? '削除中...' : '参加種別を削除' }}
+            {{ deleteMutation.isPending.value ? '削除中...' : 'この参加種別を削除' }}
           </BaseButton>
         </div>
       </SurfaceCard>
@@ -270,6 +271,6 @@ async function handleDelete() {
       </SettingsSection>
     </form>
 
-    <ErrorState message="参加種別を取得できませんでした。" />
+    <ErrorState v-else message="参加種別を取得できませんでした。" />
   </PageLayout>
 </template>

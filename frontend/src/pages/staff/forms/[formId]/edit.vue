@@ -421,6 +421,6 @@ async function handleDeleteForm() {
       </SettingsSection>
     </article>
 
-    <ErrorState message="フォームを取得できませんでした。" />
+    <ErrorState v-else message="フォームを取得できませんでした。" />
   </PageLayout>
 </template>

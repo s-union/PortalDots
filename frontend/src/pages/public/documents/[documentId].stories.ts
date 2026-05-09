@@ -6,7 +6,8 @@ const meta = {
   component: DocumentPage,
   tags: ['autodocs'],
   parameters: {
-    layout: 'fullscreen'
+    layout: 'fullscreen',
+    route: { path: '/public/documents/doc-1' }
   }
 } satisfies Meta<typeof DocumentPage>
 

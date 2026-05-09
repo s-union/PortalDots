@@ -24,6 +24,7 @@
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
     "@fortawesome/free-regular-svg-icons": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@fortawesome/vue-fontawesome": "^3.2.0",
     "@portaldots/api-client": "workspace:*",
     "@tanstack/vue-query": "^5.92.9",
     "class-variance-authority": "^0.7.1",

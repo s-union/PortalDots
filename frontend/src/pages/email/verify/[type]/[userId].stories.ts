@@ -9,6 +9,7 @@ const meta = {
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    route: { path: '/email/verify/univemail/user-1', query: { token: 'mock-token' } },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () =>
