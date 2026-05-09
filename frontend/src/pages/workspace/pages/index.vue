@@ -18,11 +18,12 @@ import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { calculateTotalPages } from '@/lib/pagination'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import { routePositiveInteger, routeString } from '@/lib/routeQuery'
 
 const route = useRoute()
 const router = useRouter()
-const searchQuery = ref(String(route.query.query ?? ''))
-const page = computed(() => Number.parseInt(String(route.query.page ?? '1'), 10) || 1)
+const searchQuery = ref(routeString(route.query.query))
+const page = computed(() => routePositiveInteger(route.query.page))
 const pageSize = 10
 const pagesQuery = usePagesQuery(
   searchQuery,
@@ -34,7 +35,7 @@ const shouldShowPagination = computed(() => calculateTotalPages(pageList.value.t
 watch(
   () => route.query.query,
   (value) => {
-    searchQuery.value = String(value ?? '')
+    searchQuery.value = routeString(value)
   }
 )
 
@@ -76,7 +77,7 @@ async function handlePageChange(nextPage: number) {
         <BaseButton variant="primary" size="lg" weight="bold" type="submit"> 検索 </BaseButton>
       </form>
 
-      <div v-if="String(route.query.query ?? '') !== ''" class="mt-3">
+      <div v-if="searchQuery.trim() !== ''" class="mt-3">
         <button class="text-sm font-semibold text-muted" type="button" @click="handleSearchReset">
           検索をリセット
         </button>
@@ -90,9 +91,9 @@ async function handlePageChange(nextPage: number) {
       class="rounded border border-border bg-surface p-10 text-center text-muted shadow-lv1"
     >
       <p class="text-base">
-        {{ String(route.query.query ?? '') === '' ? 'お知らせはまだありません' : '検索結果が見つかりませんでした' }}
+        {{ searchQuery.trim() === '' ? 'お知らせはまだありません' : '検索結果が見つかりませんでした' }}
       </p>
-      <p v-if="String(route.query.query ?? '') !== ''" class="mt-3 text-sm">
+      <p v-if="searchQuery.trim() !== ''" class="mt-3 text-sm">
         入力するキーワードを変えて、再度検索をお試しください。
       </p>
     </div>

@@ -19,14 +19,12 @@ import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useDocumentsPageQuery } from '@/features/documents/api'
 import { calculateTotalPages } from '@/lib/pagination'
+import { routePositiveInteger } from '@/lib/routeQuery'
 
 const route = useRoute()
 const router = useRouter()
 const pageSize = 10
-const currentPage = computed(() => {
-  const raw = Number(route.query.page ?? 1)
-  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 1
-})
+const currentPage = computed(() => routePositiveInteger(route.query.page))
 const documentsQuery = useDocumentsPageQuery(
   computed(() => ({
     page: currentPage.value,

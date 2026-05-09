@@ -156,6 +156,9 @@ importers:
       '@fortawesome/free-solid-svg-icons':
         specifier: ^7.2.0
         version: 7.2.0
+      '@fortawesome/vue-fontawesome':
+        specifier: ^3.2.0
+        version: 3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(vue@3.5.30(typescript@5.9.3))
       '@portaldots/api-client':
         specifier: workspace:*
         version: link:../packages/api-client
@@ -1139,6 +1142,12 @@ packages:
   '@fortawesome/free-solid-svg-icons@7.2.0':
     resolution: {integrity: sha512-YTVITFGN0/24PxzXrwqCgnyd7njDuzp5ZvaCx5nq/jg55kUYd94Nj8UTchBdBofi/L0nwRfjGOg0E41d2u9T1w==}
     engines: {node: '>=6'}
+
+  '@fortawesome/vue-fontawesome@3.2.0':
+    resolution: {integrity: sha512-7BwGjTZn8QDvVEIu8fvkHhsDRRv//tq7jtsldaDhF3dE1fyWLIQcEg3zvIzy33su7kcppWsZZ6XRYP5wp3UCgQ==}
+    peerDependencies:
+      '@fortawesome/fontawesome-svg-core': ~1 || ~6 || ~7
+      vue: '>= 3.0.0 < 4'
 
   '@headlessui/vue@1.7.23':
     resolution: {integrity: sha512-JzdCNqurrtuu0YW6QaDtR2PIYCKPUWq28csDyMvN4zmGccmE7lz40Is6hc3LA4HFeCI7sekZ/PQMTNmn9I/4Wg==}
@@ -7487,6 +7496,11 @@ snapshots:
   '@fortawesome/free-solid-svg-icons@7.2.0':
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.2.0
+
+  '@fortawesome/vue-fontawesome@3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(vue@3.5.30(typescript@5.9.3))':
+    dependencies:
+      '@fortawesome/fontawesome-svg-core': 7.2.0
+      vue: 3.5.30(typescript@5.9.3)
 
   '@headlessui/vue@1.7.23(vue@3.5.30(typescript@5.9.3))':
     dependencies:

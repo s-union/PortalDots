@@ -7,6 +7,7 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { z } from 'zod'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -14,7 +15,6 @@ import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '
 import StaffFilterDrawer, {
   type StaffFilterField,
   type StaffFilterMode,
-  type StaffFilterOperator,
   type StaffFilterQuery
 } from '@/components/staff/StaffFilterDrawer.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
@@ -36,6 +36,7 @@ import { buildStaffParticipationTypeTabs } from '@/lib/ui/tabStrip'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
+import { normalizeStaffFilterMode, normalizeStaffFilterOperator } from '@/lib/staffFilterSchema'
 
 const route = useRoute('/staff/circles/participation_types/[typeId]/')
 const router = useRouter()
@@ -93,9 +94,9 @@ const filterFields: StaffFilterField[] = [
   { key: 'places', label: '使用場所', type: 'string' }
 ]
 
-type StaffParticipationTypeCirclesSortKey = 'id' | 'name' | 'groupName' | 'status'
-
 const circlesSortKeys = ['id', 'name', 'groupName', 'status'] as const
+const circlesSortKeySchema = z.enum(circlesSortKeys)
+type StaffParticipationTypeCirclesSortKey = (typeof circlesSortKeys)[number]
 
 const circlesRows = computed(() => allCirclesQuery.data.value ?? [])
 
@@ -264,7 +265,7 @@ function handleUpdateFilter(queryId: number, patch: Partial<Omit<StaffFilterQuer
 }
 
 function handleFilterModeUpdate(mode: StaffFilterMode) {
-  draftFilterMode.value = mode
+  draftFilterMode.value = normalizeStaffFilterMode(mode)
 }
 
 function handleApplyFilters() {
@@ -272,9 +273,9 @@ function handleApplyFilters() {
     .filter((query) => isStaffParticipationCircleFilterKey(query.keyName))
     .map((query) => ({
       ...query,
-      operator: normalizeFilterOperator(query.operator)
+      operator: normalizeStaffFilterOperator(query.operator)
     }))
-  appliedFilterMode.value = draftFilterMode.value
+  appliedFilterMode.value = normalizeStaffFilterMode(draftFilterMode.value)
   circlesPage.value = 1
   closeFilter()
 }
@@ -322,7 +323,7 @@ function statusLabel(status: string) {
 }
 
 function isStaffParticipationTypeCirclesSortKey(value: string): value is StaffParticipationTypeCirclesSortKey {
-  return (circlesSortKeys as readonly string[]).includes(value)
+  return circlesSortKeySchema.safeParse(value).success
 }
 
 function isStaffParticipationCircleFilterKey(value: string) {
@@ -371,13 +372,6 @@ function matchesSearch(circle: StaffParticipationTypeCircle, normalizedSearch: s
     .join(' ')
     .toLowerCase()
   return haystack.includes(normalizedSearch)
-}
-
-function normalizeFilterOperator(operator: StaffFilterOperator): StaffFilterOperator {
-  if (operator === '=' || operator === '!=' || operator === 'not like') {
-    return operator
-  }
-  return 'like'
 }
 
 function resolveFilterValue(circle: StaffParticipationTypeCircle, keyName: string) {
@@ -561,7 +555,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
         </AlertMessage>
       </template>
 
-      <ErrorState message="参加種別を取得できませんでした。" />
+      <ErrorState v-else message="参加種別を取得できませんでした。" />
     </PageLayout>
   </StaffSideWindowContainer>
 

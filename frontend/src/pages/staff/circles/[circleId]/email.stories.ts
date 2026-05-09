@@ -4,7 +4,7 @@ import StaffCircleEmailPage from './email.vue'
 import { mockSessionBootstrapStaff, mockStaffCircle } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/企画管理/メール送信',
+  title: 'Staff Mode/Circle Management/Send Email',
   component: StaffCircleEmailPage,
   tags: ['autodocs'],
   parameters: {

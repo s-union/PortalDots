@@ -4,7 +4,7 @@ import FormsIndexPage from './index.vue'
 import { mockSessionBootstrap, mockForm } from '@/mocks/data'
 
 const meta = {
-  title: '一般モード/申請一覧',
+  title: 'General/Forms',
   component: FormsIndexPage,
   tags: ['autodocs'],
   parameters: {

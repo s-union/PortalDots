@@ -74,7 +74,7 @@ const mockAnswerDetail = {
 }
 
 const meta = {
-  title: 'スタッフモード/申請管理/回答編集',
+  title: 'Staff Mode/Application Management/Edit Answer',
   component: StaffFormAnswerEditPage,
   tags: ['autodocs'],
   parameters: {

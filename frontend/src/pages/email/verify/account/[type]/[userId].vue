@@ -13,20 +13,15 @@ import { extractFirstErrorMessage, useVerifyAuthVerificationLinkMutation } from 
 import ErrorState from '@/components/ui/ErrorState.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
+import { routeParamString, routeString } from '@/lib/routeQuery'
 
 const route = useRoute()
 const verifyType = computed(() => {
-  const value = (route.params as Record<string, string | undefined>).type
+  const value = routeParamString(route.params, 'type')
   return value === 'email' || value === 'univemail' ? value : ''
 })
-const userId = computed(() => {
-  const value = (route.params as Record<string, string | undefined>).userId
-  return typeof value === 'string' ? value : ''
-})
-const token = computed(() => {
-  const value = route.query.token
-  return typeof value === 'string' ? value : ''
-})
+const userId = computed(() => routeParamString(route.params, 'userId'))
+const token = computed(() => routeString(route.query.token))
 
 const verifyMutation = useVerifyAuthVerificationLinkMutation()
 const verificationErrorMessage = ref('')

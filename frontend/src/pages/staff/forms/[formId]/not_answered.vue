@@ -62,6 +62,6 @@ const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTa
       </ListPanel>
     </article>
 
-    <ErrorState message="未回答企画一覧を取得できませんでした。" />
+    <ErrorState v-else message="未回答企画一覧を取得できませんでした。" />
   </PageLayout>
 </template>

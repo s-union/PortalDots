@@ -4,11 +4,12 @@ import StaffCircleCreatePage from './create.vue'
 import { mockParticipationType, mockPlace, mockSessionBootstrapStaff, mockStaffCircle } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/企画管理/新規作成',
+  title: 'Staff Mode/Circle Management/Create New',
   component: StaffCircleCreatePage,
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    route: { path: '/staff/circles/create' },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),

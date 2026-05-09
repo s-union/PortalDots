@@ -1,4 +1,4 @@
-import type { StaffFilterField, StaffFilterQuery } from '@/components/staff/StaffFilterDrawer.vue'
+import type { StaffFilterField, StaffFilterQuery } from '@/lib/staffFilterSchema'
 
 export interface StaffCircleRow {
   id: string

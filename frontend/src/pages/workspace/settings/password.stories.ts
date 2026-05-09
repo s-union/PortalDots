@@ -4,7 +4,7 @@ import PasswordPage from './password.vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: '一般モード/アカウント設定/パスワード変更',
+  title: 'General/Account Settings/Change Password',
   component: PasswordPage,
   tags: ['autodocs'],
   parameters: {

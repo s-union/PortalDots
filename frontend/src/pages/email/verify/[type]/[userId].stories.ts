@@ -4,11 +4,12 @@ import EmailVerifyPage from './[userId].vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: '認証/メール認証コード入力',
+  title: 'Auth/Email Verification Code Input',
   component: EmailVerifyPage,
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    route: { path: '/email/verify/univemail/user-1', query: { token: 'mock-token' } },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () =>

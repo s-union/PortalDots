@@ -41,7 +41,7 @@ const mockAnswersIndex = {
 }
 
 const meta = {
-  title: 'スタッフモード/申請管理/未回答一覧',
+  title: 'Staff Mode/Application Management/Not Answered List',
   component: StaffFormNotAnsweredPage,
   tags: ['autodocs'],
   parameters: {

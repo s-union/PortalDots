@@ -27,19 +27,19 @@ type Story = StoryObj<typeof meta>
 
 const userLinks: DrawerNavLink[] = [
   { to: '/', label: 'ホーム', iconClass: 'fas fa-home', active: true },
-  { to: '/workspace/pages', label: 'お知らせ', iconClass: 'fas fa-bell', active: false },
+  { to: '/workspace/pages', label: 'お知らせ', iconClass: 'fas fa-bullhorn', active: false },
   { to: '/workspace/documents', label: '配布資料', iconClass: 'far fa-file-alt', active: false },
-  { to: '/workspace/forms', label: '申請フォーム', iconClass: 'fas fa-edit', active: false },
-  { to: '/workspace/circles/detail', label: '企画情報', iconClass: 'fas fa-circle', active: false }
+  { to: '/workspace/forms', label: '申請フォーム', iconClass: 'far fa-edit', active: false },
+  { to: '/workspace/circles/detail', label: '企画情報', iconClass: 'fas fa-star', active: false }
 ]
 
 const staffLinks: DrawerNavLink[] = [
   { to: '/staff', label: 'スタッフホーム', iconClass: 'fas fa-home', active: true },
-  { to: '/staff/circles', label: '企画管理', iconClass: 'fas fa-circle', active: false },
-  { to: '/staff/forms', label: 'フォーム管理', iconClass: 'fas fa-edit', active: false },
-  { to: '/staff/pages', label: 'お知らせ管理', iconClass: 'fas fa-bell', active: false },
-  { to: '/staff/users', label: 'ユーザー管理', iconClass: 'fas fa-users', active: false },
-  { to: '/staff/permissions', label: '権限管理', iconClass: 'fas fa-shield-alt', active: false, adminOnly: true }
+  { to: '/staff/circles', label: '企画管理', iconClass: 'fas fa-star', active: false },
+  { to: '/staff/forms', label: 'フォーム管理', iconClass: 'far fa-edit', active: false },
+  { to: '/staff/pages', label: 'お知らせ管理', iconClass: 'fas fa-bullhorn', active: false },
+  { to: '/staff/users', label: 'ユーザー管理', iconClass: 'far fa-address-book', active: false },
+  { to: '/staff/permissions', label: '権限管理', iconClass: 'fas fa-key', active: false, adminOnly: true }
 ]
 
 export const UserDrawerOpen: Story = {

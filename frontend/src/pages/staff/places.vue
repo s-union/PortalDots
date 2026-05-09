@@ -13,14 +13,15 @@ import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import StaffFilterDrawer, { type StaffFilterField } from '@/components/staff/StaffFilterDrawer.vue'
 import StaffPlaceEditor from '@/components/staff/StaffPlaceEditor.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
-import { compareString } from '@/lib/compareString'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import { resolveRowId } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
-import { usePaginationState } from '@/lib/usePaginationState'
-import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import { useOrderedItems } from '@/lib/useStaffDataTable'
 import { canDeletePlaces } from '@/features/staff/access/capabilities'
 import {
@@ -53,8 +54,19 @@ const deletePlaceMutation = useMutation({
 
 const sortKeys = ['placeNumber', 'name', 'typeLabel', 'notes', 'createdAt', 'updatedAt'] as const
 type StaffPlaceSortKey = (typeof sortKeys)[number]
-const isStaffPlaceSortKey = createSortKeyGuard(sortKeys)
-const sort = useSortState<StaffPlaceSortKey>('placeNumber')
+
+const filterFields: StaffFilterField[] = [
+  { key: 'id', label: '場所ID', type: 'string' },
+  { key: 'name', label: '場所名', type: 'string' },
+  { key: 'typeLabel', label: 'タイプ', type: 'string' },
+  { key: 'notes', label: 'スタッフ用メモ', type: 'string' },
+  { key: 'createdAt', label: '作成日時', type: 'string' },
+  { key: 'updatedAt', label: '更新日時', type: 'string' }
+]
+
+function isFilterKey(key: string) {
+  return filterFields.some((f) => f.key === key)
+}
 
 const columns: StaffDataGridColumn[] = [
   { key: 'placeNumber', label: '場所ID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
@@ -69,39 +81,75 @@ const { orderedItems: orderedPlaces, orderMap: placeOrderMap } = useOrderedItems
   computed(() => placesQuery.data.value ?? [])
 )
 
-const sortedPlaces = computed(() => {
-  const places = orderedPlaces.value
-  const key = sort.sortKey.value
-  const direction = sort.sortDirection.value
-  const order = direction === 'asc' ? 1 : -1
-
-  return [...places].sort((left, right) => {
-    switch (key) {
-      case 'placeNumber':
-        return ((placeOrderMap.value.get(left.id) ?? 0) - (placeOrderMap.value.get(right.id) ?? 0)) * order
-      case 'typeLabel':
-        return compareString(placeTypeLabel(left.type), placeTypeLabel(right.type)) * order
-      default:
-        return compareString(String(left[key]), String(right[key])) * order
-    }
-  })
-})
-
-const pagination = usePaginationState(computed(() => sortedPlaces.value.length))
-
-const rows = computed<StaffDataGridRow[]>(() => {
-  const start = (pagination.page.value - 1) * pagination.pageSize.value
-  const end = start + pagination.pageSize.value
-
-  return sortedPlaces.value.slice(start, end).map((place) => ({
+const rawRows = computed<Record<string, unknown>[]>(() =>
+  orderedPlaces.value.map((place) => ({
     id: place.id,
-    placeNumber: String(placeOrderMap.value.get(place.id) ?? start + 1),
+    placeNumber: String(placeOrderMap.value.get(place.id) ?? 0),
     name: place.name,
     typeLabel: placeTypeLabel(place.type),
     notes: place.notes,
-    createdAt: formatDateTimeTable(place.createdAt),
-    updatedAt: formatDateTimeTable(place.updatedAt)
+    createdAt: place.createdAt,
+    updatedAt: place.updatedAt
   }))
+)
+
+function resolveSortValue(row: Record<string, unknown>, key: StaffPlaceSortKey) {
+  if (key === 'placeNumber') {
+    return String(row.placeNumber ?? '0').padStart(10, '0')
+  }
+  return String(row[key] ?? '').toLowerCase()
+}
+
+function matchesSearch(row: Record<string, unknown>, search: string) {
+  const haystack = [row.id, row.name, row.typeLabel, row.notes, row.placeNumber].join(' ').toLowerCase()
+  return haystack.includes(search)
+}
+
+function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
+  const left = String(row[query.keyName] ?? '').toLowerCase()
+  const right = query.value.trim().toLowerCase()
+
+  if (query.operator === '=') {
+    return left === right
+  }
+  if (query.operator === '!=') {
+    return left !== right
+  }
+  if (query.operator === 'not like') {
+    return right === '' ? true : !left.includes(right)
+  }
+  return right === '' ? true : left.includes(right)
+}
+
+const {
+  pagedRows,
+  sortedRows,
+  filterActive,
+  sort,
+  pagination,
+  searchQuery,
+  isFilterOpen,
+  draftFilterMode,
+  draftFilterQueries,
+  handleSort,
+  handleSearch,
+  openFilter,
+  closeFilter,
+  handleAddFilter,
+  handleRemoveFilter,
+  handleUpdateFilter,
+  handleFilterModeUpdate,
+  handleApplyFilters,
+  handleClearFilters
+} = useStaffDataGridFilters<Record<string, unknown>, StaffPlaceSortKey>({
+  rows: rawRows,
+  sortKeys,
+  defaultSortKey: 'placeNumber',
+  filterFields,
+  resolveSortValue,
+  matchesSearch,
+  matchesFilterQuery,
+  isFilterKey
 })
 
 const selectedPlace = computed(() => orderedPlaces.value.find((place) => place.id === selectedPlaceId.value) ?? null)
@@ -156,43 +204,63 @@ async function handleDeletePlace(row: StaffDataGridRow) {
   }
 }
 
-function handleSort(nextSortKey: string) {
-  if (isStaffPlaceSortKey(nextSortKey)) {
-    sort.toggleSort(nextSortKey)
-  }
+async function handleReload() {
+  await placesQuery.refetch()
 }
 </script>
 
 <template>
   <PageLayout fullWidth>
-    <StaffSideWindowContainer :is-open="isEditorOpen">
+    <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
       <DataCard>
         <StaffDataGrid
-          :rows="rows"
+          :rows="pagedRows as StaffDataGridRow[]"
           :columns="columns"
           :page="pagination.page.value"
           :page-size="pagination.pageSize.value"
-          :total="sortedPlaces.length"
+          :total="sortedRows.length"
           :loading="isBusy"
           :sort-key="sort.sortKey.value"
           :sort-direction="sort.sortDirection.value"
           :show-filter-button="true"
+          :filter-active="filterActive"
           table-label="場所一覧"
           empty-message="場所情報はまだありません。"
           @first="pagination.setFirstPage"
           @prev="pagination.setPrevPage"
           @next="pagination.setNextPage"
           @last="pagination.setLastPage"
-          @reload="placesQuery.refetch()"
+          @reload="handleReload"
           @sort="handleSort"
+          @filter="openFilter"
           @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
-            <BaseButton variant="primary" size="md" weight="semibold" @click="openCreateEditor">
-              <FaIcon name="plus" fixed-width />
-              新規場所
-            </BaseButton>
-            <CsvExportLink :href="exportHref">CSVで出力(場所別企画一覧)</CsvExportLink>
+            <ToolbarRow>
+              <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  placeholder="場所ID・場所名・タイプ・メモで絞り込み"
+                  class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
+                  <FaIcon name="search" fixed-width />
+                  絞り込み
+                </button>
+              </form>
+              <p class="text-sm text-muted">
+                現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全場所:
+                {{ rawRows.length }}
+              </p>
+            </ToolbarRow>
+            <ToolbarRow>
+              <BaseButton variant="primary" size="md" weight="semibold" @click="openCreateEditor">
+                <FaIcon name="plus" fixed-width />
+                新規場所
+              </BaseButton>
+              <CsvExportLink :href="exportHref">CSVで出力(場所別企画一覧)</CsvExportLink>
+            </ToolbarRow>
           </template>
 
           <template #actions="{ row }">
@@ -236,6 +304,21 @@ function handleSort(nextSortKey: string) {
         {{ selectedPlace ? '場所を編集' : '新規場所' }}
       </template>
       <StaffPlaceEditor :place="selectedPlace" @deleted="handleDeleted" @saved="handleSaved" />
+    </StaffSideWindow>
+
+    <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">
+      <StaffFilterDrawer
+        :fields="filterFields"
+        :queries="draftFilterQueries"
+        :mode="draftFilterMode"
+        :loading="isBusy"
+        @add="handleAddFilter"
+        @remove="handleRemoveFilter"
+        @update-query="handleUpdateFilter"
+        @update-mode="handleFilterModeUpdate"
+        @apply="handleApplyFilters"
+        @clear="handleClearFilters"
+      />
     </StaffSideWindow>
   </PageLayout>
 </template>

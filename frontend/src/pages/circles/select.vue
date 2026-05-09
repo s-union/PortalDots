@@ -16,6 +16,7 @@ import { useSessionStore } from '@/features/session/store'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import PanelBody from '@/components/ui/PanelBody.vue'
 import { formatDateTime } from '@/lib/format/datetime'
+import { optionalRouteString } from '@/lib/routeQuery'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,12 +28,10 @@ const selectCircleMutation = useSelectCurrentCircleMutation()
 
 const isSelecting = computed(() => selectCircleMutation.isPending.value)
 const redirectDestination = computed(() => {
-  const redirect = route.query.redirect
-  return resolveCircleSelectorDestination(typeof redirect === 'string' ? redirect : undefined)
+  return resolveCircleSelectorDestination(optionalRouteString(route.query.redirect))
 })
 const requestedCircleId = computed(() => {
-  const circle = route.query.circle
-  return sanitizeCircleSelectorCircleId(typeof circle === 'string' ? circle : undefined)
+  return sanitizeCircleSelectorCircleId(optionalRouteString(route.query.circle))
 })
 const hasTriedAutoSelect = ref(false)
 const participationTypeCards = computed(() =>

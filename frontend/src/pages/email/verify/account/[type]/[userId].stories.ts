@@ -4,11 +4,12 @@ import AccountVerifyPage from './[userId].vue'
 import { mockSessionBootstrap, mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: '認証/メールアドレス変更確認',
+  title: 'Auth/Email Address Change Verification',
   component: AccountVerifyPage,
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    route: { path: '/email/verify/account/email/user-1', query: { token: 'mock-token' } },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),

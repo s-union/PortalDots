@@ -6,6 +6,8 @@ import StaffFilterDrawer from '@/components/staff/StaffFilterDrawer.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import { useStaffUsersIndexPage } from '@/features/staff/users/composables/useStaffUsersIndexPage'
 import StaffUserEditor from './StaffUserEditor.vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
@@ -28,6 +30,7 @@ const {
   handleReload,
   handleRemoveFilter,
   handleSaved,
+  handleSearch,
   handleSort,
   handleUpdateFilter,
   isEditorOpen,
@@ -35,6 +38,7 @@ const {
   openEditor,
   openFilter,
   pagination,
+  searchQuery,
   selectedUserId,
   sort,
   usersQuery
@@ -86,6 +90,20 @@ const columns: StaffDataGridColumn[] = [
           @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
+            <ToolbarRow>
+              <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  placeholder="名前・学生番号・メールアドレスで絞り込み"
+                  class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
+                  <FaIcon name="search" fixed-width />
+                  絞り込み
+                </button>
+              </form>
+            </ToolbarRow>
             <a
               :href="exportUrl"
               class="inline-flex items-center gap-2 px-3 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"

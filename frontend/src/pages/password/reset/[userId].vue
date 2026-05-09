@@ -18,16 +18,11 @@ import {
   useCompletePasswordResetMutation,
   useVerifyPasswordResetMutation
 } from '@/features/auth/api'
+import { routeParamString, routeString } from '@/lib/routeQuery'
 
 const route = useRoute()
-const userId = computed(() => {
-  const value = (route.params as Record<string, string | undefined>).userId
-  return typeof value === 'string' ? value : ''
-})
-const token = computed(() => {
-  const value = route.query.token
-  return typeof value === 'string' ? value : ''
-})
+const userId = computed(() => routeParamString(route.params, 'userId'))
+const token = computed(() => routeString(route.query.token))
 
 const verifyMutation = useVerifyPasswordResetMutation()
 const completeMutation = useCompletePasswordResetMutation()

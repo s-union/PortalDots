@@ -4,7 +4,7 @@ import StaffParticipationTypesIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockParticipationType, mockTag } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/参加種別管理',
+  title: 'Staff Mode/Participation Type Management',
   component: StaffParticipationTypesIndexPage,
   tags: ['autodocs'],
   parameters: {

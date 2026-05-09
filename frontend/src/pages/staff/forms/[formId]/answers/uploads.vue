@@ -61,6 +61,6 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
       </section>
     </article>
 
-    <ErrorState message="アップロード管理画面を表示できませんでした。" />
+    <ErrorState v-else message="アップロード管理画面を表示できませんでした。" />
   </PageLayout>
 </template>

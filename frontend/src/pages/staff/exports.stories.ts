@@ -4,7 +4,7 @@ import StaffExportsPage from './exports.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/CSV出力',
+  title: 'Staff Mode/CSV Export',
   component: StaffExportsPage,
   tags: ['autodocs'],
   parameters: {

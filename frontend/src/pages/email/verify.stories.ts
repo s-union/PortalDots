@@ -4,7 +4,7 @@ import VerifyPage from './verify.vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: '認証/メール認証',
+  title: 'Auth/Email Verification',
   component: VerifyPage,
   tags: ['autodocs'],
   parameters: {

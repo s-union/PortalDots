@@ -4,7 +4,7 @@ import StaffPermissionsUserPage from './[userId].vue'
 import { mockSessionBootstrapStaff, mockStaffUser2 } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/権限設定/詳細',
+  title: 'Staff Mode/Permission Settings/Detail',
   component: StaffPermissionsUserPage,
   tags: ['autodocs'],
   parameters: {

@@ -276,6 +276,6 @@ function handleFileChange(questionId: string, event: Event) {
       </SurfaceCard>
     </article>
 
-    <ErrorState message="回答を取得できませんでした。" />
+    <ErrorState v-else message="回答を取得できませんでした。" />
   </PageLayout>
 </template>

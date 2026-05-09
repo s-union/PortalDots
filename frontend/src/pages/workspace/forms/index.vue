@@ -14,19 +14,10 @@ import AsyncBoundary from '@/components/async/AsyncBoundary.vue'
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
 import WorkspaceFormsListContent from '@/features/forms/components/WorkspaceFormsListContent.vue'
 import type { TabStripItem } from '@/lib/ui/tabStrip'
-
-type FormStatusTab = 'open' | 'closed' | 'all'
+import { parseFormStatusTab } from '@/features/forms/formStatusSchema'
 
 const route = useRoute()
-const formStatusTab = computed<FormStatusTab>(() => {
-  const status = route.query.status
-
-  if (status === 'closed' || status === 'all') {
-    return status
-  }
-
-  return 'open'
-})
+const formStatusTab = computed(() => parseFormStatusTab(route.query.status))
 
 const tabs = computed<TabStripItem[]>(() => [
   { label: '受付中', to: { query: {} }, active: formStatusTab.value === 'open' },

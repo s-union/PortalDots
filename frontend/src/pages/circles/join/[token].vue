@@ -8,6 +8,7 @@ import { useJoinCircleMutation } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import { routeParamString } from '@/lib/routeQuery'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,10 +17,7 @@ const joinMutation = useJoinCircleMutation()
 
 const errorMessage = ref('')
 
-const invitationToken = computed(() => {
-  const token = Reflect.get(route.params, 'token')
-  return typeof token === 'string' ? token : ''
-})
+const invitationToken = computed(() => routeParamString(route.params, 'token'))
 const isAuthenticated = computed(() => sessionStore.isAuthenticated)
 
 async function handleAcceptInvite() {

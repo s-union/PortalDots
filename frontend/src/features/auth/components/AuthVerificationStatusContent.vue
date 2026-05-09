@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
+import { routeString } from '@/lib/routeQuery'
 import {
   extractFirstErrorMessage,
   useRequestAuthVerificationMutation,
@@ -26,7 +27,7 @@ const requestMutation = useRequestAuthVerificationMutation()
 const requestResult = ref<{ type: 'email' | 'univemail'; message: string } | null>(null)
 const errorMessage = ref('')
 const autoSentMessage = computed(() => {
-  const sent = route.query.sent
+  const sent = routeString(route.query.sent)
   if (sent === 'email') {
     return '連絡先メールアドレスに認証URLを送信しました。メール内のリンクを開いて認証してください。'
   }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
 import { useSuspenseStaffActivityLogsQuery } from '@/features/staff/admin/activityLogs'
 
 const { page, pageSize } = defineProps<{
@@ -13,6 +14,8 @@ const emit = defineEmits<{
   'update:page': [nextPage: number]
   'update:pageSize': [nextPageSize: number]
 }>()
+
+const searchQuery = ref('')
 
 const columns: StaffDataGridColumn[] = [
   { key: 'action', label: '種別', sortable: false },
@@ -32,13 +35,23 @@ const query = useSuspenseStaffActivityLogsQuery(
 await query.suspense()
 const activityLogs = query.data
 
-const rows = computed<StaffDataGridRow[]>(() =>
+const allRows = computed<StaffDataGridRow[]>(() =>
   (activityLogs.value?.items ?? []).map((entry) => ({
     ...entry,
     target: `${entry.targetType} / ${entry.targetId}`,
     circleId: entry.circleId || 'global'
   }))
 )
+
+const rows = computed<StaffDataGridRow[]>(() => {
+  const search = searchQuery.value.trim().toLowerCase()
+  if (search.length === 0) {
+    return allRows.value
+  }
+  return allRows.value.filter((row) =>
+    [row.action, row.summary, row.actorUserId, row.target, row.circleId].join(' ').toLowerCase().includes(search)
+  )
+})
 
 const total = computed(() => activityLogs.value?.total ?? 0)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
@@ -76,6 +89,15 @@ function setLastPage() {
     @reload="query.refetch()"
     @update:page-size="emit('update:pageSize', $event)"
   >
+    <template #toolbar>
+      <ToolbarRow>
+        <form class="flex items-center gap-2" @submit.prevent>
+          <input type="search" v-model="searchQuery" />
+        </form>
+        <p class="text-sm text-muted">現在の表示件数: {{ rows.length }} / 全{{ total }}件</p>
+      </ToolbarRow>
+    </template>
+
     <template #cell-action="{ value }">
       <StatusBadge tone="primary">{{ value }}</StatusBadge>
     </template>

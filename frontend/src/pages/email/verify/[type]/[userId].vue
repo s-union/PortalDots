@@ -23,21 +23,13 @@ import FormError from '@/components/ui/FormError.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 import FormField from '@/components/ui/FormField.vue'
+import { routeParamString, routeString } from '@/lib/routeQuery'
 
 const router = useRouter()
 const route = useRoute()
-const verifyType = computed(() => {
-  const value = (route.params as Record<string, string | undefined>).type
-  return typeof value === 'string' ? value : 'unknown'
-})
-const pendingRegistrationId = computed(() => {
-  const value = (route.params as Record<string, string | undefined>).userId
-  return typeof value === 'string' ? value : 'unknown'
-})
-const token = computed(() => {
-  const value = route.query.token
-  return typeof value === 'string' ? value : ''
-})
+const verifyType = computed(() => routeParamString(route.params, 'type', 'unknown'))
+const pendingRegistrationId = computed(() => routeParamString(route.params, 'userId', 'unknown'))
+const token = computed(() => routeString(route.query.token))
 const verifyMutation = useVerifyRegistrationMutation()
 const completeMutation = useCompleteRegistrationMutation()
 const verification = ref<{ univemail: string; studentId: string } | null>(null)

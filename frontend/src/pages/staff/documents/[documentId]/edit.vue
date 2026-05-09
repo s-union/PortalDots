@@ -192,6 +192,6 @@ async function handleDeleteDocument() {
       </div>
     </form>
 
-    <ErrorState message="配布資料を取得できませんでした。" />
+    <ErrorState v-else message="配布資料を取得できませんでした。" />
   </PageLayout>
 </template>

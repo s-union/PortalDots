@@ -1,6 +1,8 @@
 import { readonly, shallowRef } from 'vue'
+import { z } from 'zod'
 
 export const uiThemeValues = ['system', 'light', 'dark'] as const
+const uiThemeSchema = z.enum(uiThemeValues)
 
 export type UiTheme = (typeof uiThemeValues)[number]
 
@@ -98,5 +100,5 @@ function persistUiThemeStorage(theme: UiTheme) {
 }
 
 function isUiTheme(value: string): value is UiTheme {
-  return (uiThemeValues as readonly string[]).includes(value)
+  return uiThemeSchema.safeParse(value).success
 }

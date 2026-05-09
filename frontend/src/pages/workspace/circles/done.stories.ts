@@ -4,7 +4,7 @@ import DonePage from './done.vue'
 import { mockSessionBootstrap, mockCircle } from '@/mocks/data'
 
 const meta = {
-  title: '一般モード/企画作成完了',
+  title: 'General Mode/Circle Creation Complete',
   component: DonePage,
   tags: ['autodocs'],
   parameters: {

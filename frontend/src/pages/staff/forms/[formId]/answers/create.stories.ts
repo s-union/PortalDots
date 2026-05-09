@@ -43,7 +43,7 @@ const mockAnswersIndex = {
 }
 
 const meta = {
-  title: 'スタッフモード/申請管理/回答作成',
+  title: 'Staff Mode/Application Management/Create Answer',
   component: StaffFormAnswerCreatePage,
   tags: ['autodocs'],
   parameters: {

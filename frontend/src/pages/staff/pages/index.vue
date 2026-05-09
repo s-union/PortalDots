@@ -5,7 +5,7 @@ definePage({
   meta: staffPageMeta('pages.read')
 })
 
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import CsvExportLink from '@/components/ui/CsvExportLink.vue'
@@ -13,6 +13,11 @@ import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import StaffFilterDrawer, { type StaffFilterField } from '@/components/staff/StaffFilterDrawer.vue'
+import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
+import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { canUseMailQueue } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -20,14 +25,11 @@ import {
   buildStaffPagesExportUrl,
   useDeleteStaffPageByIdMutation,
   usePatchStaffPagePinByIdMutation,
-  useStaffPagesQuery,
-  type StaffPageSummary
+  useStaffPagesQuery
 } from '@/features/staff/pages/api'
 import { useSessionStore } from '@/features/session/store'
-import { usePaginationState } from '@/lib/usePaginationState'
-import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
-import { compareBoolean, compareString } from '@/lib/compareString'
-import { resolveRowId, resolveTags, resolveText } from '@/lib/dataGridHelpers'
+import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
+import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import YesNo from '@/components/ui/YesNo.vue'
@@ -44,8 +46,21 @@ const mailQueueAvailable = computed(() => canUseMailQueue(sessionStore.roles, se
 
 const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt'] as const
 type StaffPageSortKey = (typeof sortKeys)[number]
-const isStaffPageSortKey = createSortKeyGuard(sortKeys)
-const sort = useSortState<StaffPageSortKey>('id')
+
+const filterFields: StaffFilterField[] = [
+  { key: 'id', label: 'お知らせID', type: 'string' },
+  { key: 'title', label: 'タイトル', type: 'string' },
+  { key: 'isPinned', label: '固定', type: 'bool' },
+  { key: 'isPublic', label: '公開', type: 'bool' },
+  { key: 'body', label: '本文', type: 'string' },
+  { key: 'notes', label: 'スタッフ用メモ', type: 'string' },
+  { key: 'createdAt', label: '作成日時', type: 'string' },
+  { key: 'updatedAt', label: '更新日時', type: 'string' }
+]
+
+function isFilterKey(key: string) {
+  return filterFields.some((f) => f.key === key)
+}
 
 const columns: StaffDataGridColumn[] = [
   { key: 'pageNumber', label: 'お知らせID', sortable: false, cellClass: 'font-medium text-body' },
@@ -68,41 +83,10 @@ const isBusy = computed(
     deletePageMutation.isPending.value
 )
 
-const sortedPages = computed(() => {
-  const pages = pagesQuery.data.value ?? []
-  const key = sort.sortKey.value
-  const direction = sort.sortDirection.value
-  const order = direction === 'asc' ? 1 : -1
-
-  return [...pages].sort((left, right) => {
-    switch (key) {
-      case 'isPinned':
-        return compareBoolean(left.isPinned, right.isPinned) * order
-      case 'isPublic':
-        return compareBoolean(left.isPublic, right.isPublic) * order
-      case 'createdAt':
-        return compareString(left.createdAt, right.createdAt) * order
-      case 'updatedAt':
-        return compareString(left.updatedAt, right.updatedAt) * order
-      case 'id':
-        return compareString(left.id, right.id) * order
-      case 'title':
-        return compareString(left.title, right.title) * order
-      default:
-        return 0
-    }
-  })
-})
-
-const pagination = usePaginationState(computed(() => sortedPages.value.length))
-
-const rows = computed<StaffDataGridRow[]>(() => {
-  const start = (pagination.page.value - 1) * pagination.pageSize.value
-  const end = start + pagination.pageSize.value
-
-  return sortedPages.value.slice(start, end).map((page, index) => ({
+const rawRows = computed<Record<string, unknown>[]>(() =>
+  (pagesQuery.data.value ?? []).map((page, index) => ({
     id: page.id,
-    pageNumber: String(start + index + 1),
+    pageNumber: String(index + 1),
     title: page.title,
     viewableTags: page.viewableTags,
     documents: page.documents,
@@ -113,34 +97,80 @@ const rows = computed<StaffDataGridRow[]>(() => {
     updatedAt: page.updatedAt,
     notes: page.notes
   }))
-})
-
-watch(
-  pagination.totalPages,
-  (nextTotalPages) => {
-    pagination.page.value = Math.min(pagination.page.value, nextTotalPages)
-  },
-  { immediate: true }
 )
 
-function handleSort(nextSortKey: string) {
-  if (!isStaffPageSortKey(nextSortKey)) {
-    return
+function resolveSortValue(row: Record<string, unknown>, key: StaffPageSortKey) {
+  if (key === 'isPinned') {
+    return row.isPinned ? '1' : '0'
   }
-
-  sort.toggleSort(nextSortKey)
-  pagination.resetPage()
+  if (key === 'isPublic') {
+    return row.isPublic ? '1' : '0'
+  }
+  return String(row[key] ?? '').toLowerCase()
 }
 
-function resolveDocuments(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value.filter(
-    (item): item is StaffPageSummary['documents'][number] =>
-      typeof item === 'object' && item !== null && 'id' in item && 'name' in item
-  )
+function matchesSearch(row: Record<string, unknown>, search: string) {
+  const haystack = [row.id, row.title, row.body, row.notes, row.pageNumber].join(' ').toLowerCase()
+  return haystack.includes(search)
 }
+
+function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
+  if (query.keyName === 'isPinned' || query.keyName === 'isPublic') {
+    const expected = query.value.trim() === 'true' || query.value.trim() === '1'
+    if (query.operator === '=') {
+      return row[query.keyName] === expected
+    }
+    if (query.operator === '!=') {
+      return row[query.keyName] !== expected
+    }
+    return true
+  }
+
+  const left = String(row[query.keyName] ?? '').toLowerCase()
+  const right = query.value.trim().toLowerCase()
+
+  if (query.operator === '=') {
+    return left === right
+  }
+  if (query.operator === '!=') {
+    return left !== right
+  }
+  if (query.operator === 'not like') {
+    return right === '' ? true : !left.includes(right)
+  }
+  return right === '' ? true : left.includes(right)
+}
+
+const {
+  pagedRows,
+  sortedRows,
+  filterActive,
+  sort,
+  pagination,
+  searchQuery,
+  isFilterOpen,
+  draftFilterMode,
+  draftFilterQueries,
+  handleSort,
+  handleSearch,
+  openFilter,
+  closeFilter,
+  handleAddFilter,
+  handleRemoveFilter,
+  handleUpdateFilter,
+  handleFilterModeUpdate,
+  handleApplyFilters,
+  handleClearFilters
+} = useStaffDataGridFilters<Record<string, unknown>, StaffPageSortKey>({
+  rows: rawRows,
+  sortKeys,
+  defaultSortKey: 'id',
+  filterFields,
+  resolveSortValue,
+  matchesSearch,
+  matchesFilterQuery,
+  isFilterKey
+})
 
 async function handleTogglePin(pageId: string, currentPinned: boolean) {
   await patchPinMutation.mutateAsync({
@@ -159,122 +189,163 @@ async function handleDeletePage(pageId: string, pageTitle: string) {
 function navigateToEdit(pageId: string) {
   router.push(`/staff/pages/${encodeURIComponent(pageId)}`)
 }
+
+async function handleReload() {
+  await pagesQuery.refetch()
+}
 </script>
 
 <template>
-  <PageLayout fullWidth>
-    <DataCard overflow-hidden>
-      <StaffDataGrid
-        :rows="rows"
-        :columns="columns"
-        :page="pagination.page.value"
-        :page-size="pagination.pageSize.value"
-        :total="sortedPages.length"
-        :loading="isBusy"
-        :sort-key="sort.sortKey.value"
-        :sort-direction="sort.sortDirection.value"
-        :show-filter-button="true"
-        table-label="お知らせ一覧"
-        empty-message="お知らせは見つかりませんでした。"
-        @first="pagination.setFirstPage"
-        @prev="pagination.setPrevPage"
-        @next="pagination.setNextPage"
-        @last="pagination.setLastPage"
-        @reload="pagesQuery.refetch()"
-        @sort="handleSort"
-        @update:page-size="pagination.setPageSize"
-      >
-        <template #toolbar>
-          <BaseButton to="/staff/pages/create" variant="primary" size="md" weight="semibold">
-            <FaIcon name="plus" fixed-width />
-            新規お知らせ
-          </BaseButton>
-          <RouterLink
-            v-if="mailQueueAvailable"
-            to="/staff/mails"
-            class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
-          >
-            <FaIcon prefix="far" name="envelope" fixed-width />
-            メール配信設定
-          </RouterLink>
-          <CsvExportLink :href="exportHref">CSVで出力</CsvExportLink>
-        </template>
+  <StaffSideWindowContainer :is-open="isFilterOpen">
+    <PageLayout fullWidth>
+      <DataCard overflow-hidden>
+        <StaffDataGrid
+          :rows="pagedRows as StaffDataGridRow[]"
+          :columns="columns"
+          :page="pagination.page.value"
+          :page-size="pagination.pageSize.value"
+          :total="sortedRows.length"
+          :loading="isBusy"
+          :sort-key="sort.sortKey.value"
+          :sort-direction="sort.sortDirection.value"
+          :show-filter-button="true"
+          :filter-active="filterActive"
+          table-label="お知らせ一覧"
+          empty-message="お知らせは見つかりませんでした。"
+          @first="pagination.setFirstPage"
+          @prev="pagination.setPrevPage"
+          @next="pagination.setNextPage"
+          @last="pagination.setLastPage"
+          @reload="handleReload"
+          @sort="handleSort"
+          @filter="openFilter"
+          @update:page-size="pagination.setPageSize"
+        >
+          <template #toolbar>
+            <ToolbarRow>
+              <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  placeholder="タイトル・本文・メモで絞り込み"
+                  class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
+                  <FaIcon name="search" fixed-width />
+                  絞り込み
+                </button>
+              </form>
+              <p class="text-sm text-muted">
+                現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全お知らせ:
+                {{ rawRows.length }}
+              </p>
+            </ToolbarRow>
+            <ToolbarRow>
+              <BaseButton to="/staff/pages/create" variant="primary" size="md" weight="semibold">
+                <FaIcon name="plus" fixed-width />
+                新規お知らせ
+              </BaseButton>
+              <RouterLink
+                v-if="mailQueueAvailable"
+                to="/staff/mails"
+                class="inline-flex items-center gap-2 px-2 text-[1.05rem] text-primary transition hover:text-primary-hover hover:no-underline"
+              >
+                <FaIcon prefix="far" name="envelope" fixed-width />
+                メール配信設定
+              </RouterLink>
+              <CsvExportLink :href="exportHref">CSVで出力</CsvExportLink>
+            </ToolbarRow>
+          </template>
 
-        <template #actions="{ row }">
-          <div class="flex items-center gap-1">
-            <IconActionButton title="編集" @click="navigateToEdit(resolveRowId(row))">
-              <FaIcon name="pencil-alt" fixed-width />
-            </IconActionButton>
-            <IconActionButton
-              :title="row.isPinned ? '固定表示を解除する' : '固定表示する'"
-              :disabled="patchPinMutation.isPending.value"
-              @click="handleTogglePin(resolveRowId(row), row.isPinned === true)"
-            >
-              <FaIcon name="thumbtack" fixed-width />
-            </IconActionButton>
-            <IconActionButton
-              variant="danger"
-              title="削除"
-              :disabled="deletePageMutation.isPending.value"
-              @click="handleDeletePage(resolveRowId(row), typeof row.title === 'string' ? row.title : '')"
-            >
-              <FaIcon name="trash" fixed-width />
-            </IconActionButton>
-          </div>
-        </template>
+          <template #actions="{ row }">
+            <div class="flex items-center gap-1">
+              <IconActionButton title="編集" @click="navigateToEdit(resolveRowId(row))">
+                <FaIcon name="pencil-alt" fixed-width />
+              </IconActionButton>
+              <IconActionButton
+                :title="row.isPinned ? '固定表示を解除する' : '固定表示する'"
+                :disabled="patchPinMutation.isPending.value"
+                @click="handleTogglePin(resolveRowId(row), row.isPinned === true)"
+              >
+                <FaIcon name="thumbtack" fixed-width />
+              </IconActionButton>
+              <IconActionButton
+                variant="danger"
+                title="削除"
+                :disabled="deletePageMutation.isPending.value"
+                @click="handleDeletePage(resolveRowId(row), typeof row.title === 'string' ? row.title : '')"
+              >
+                <FaIcon name="trash" fixed-width />
+              </IconActionButton>
+            </div>
+          </template>
 
-        <template #cell-title="{ row }">
-          <RouterLink class="font-medium text-primary" :to="`/staff/pages/${encodeURIComponent(resolveRowId(row))}`">
-            {{ row.title }}
-          </RouterLink>
-        </template>
+          <template #cell-title="{ row }">
+            <RouterLink class="font-medium text-primary" :to="`/staff/pages/${encodeURIComponent(resolveRowId(row))}`">
+              {{ row.title }}
+            </RouterLink>
+          </template>
 
-        <template #cell-viewableTags="{ value }">
-          <div class="flex flex-wrap gap-1">
-            <template v-for="tag in resolveTags(value)" :key="tag">
-              <StatusBadge tone="accent">
-                {{ tag }}
-              </StatusBadge>
-            </template>
-            <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
-          </div>
-        </template>
+          <template #cell-viewableTags="{ value }">
+            <div class="flex flex-wrap gap-1">
+              <template v-for="tag in resolveTags(value)" :key="tag">
+                <StatusBadge tone="accent">{{ tag }}</StatusBadge>
+              </template>
+              <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
+            </div>
+          </template>
 
-        <template #cell-documents="{ value }">
-          <div class="flex flex-wrap gap-1">
-            <template v-for="document in resolveDocuments(value)" :key="document.id">
-              <StatusBadge tone="accent">
-                {{ document.name }}
-              </StatusBadge>
-            </template>
-            <span v-if="resolveDocuments(value).length === 0" class="text-muted">-</span>
-          </div>
-        </template>
+          <template #cell-documents="{ value }">
+            <div class="flex flex-wrap gap-1">
+              <template v-for="document in Array.isArray(value) ? value : []" :key="document.id">
+                <StatusBadge tone="accent">{{ document.name }}</StatusBadge>
+              </template>
+              <span v-if="!Array.isArray(value) || value.length === 0" class="text-muted">-</span>
+            </div>
+          </template>
 
-        <template #cell-body="{ value }">
-          <span class="block min-w-[18rem] max-w-[24rem] truncate">{{ resolveText(value) }}</span>
-        </template>
+          <template #cell-body="{ row }">
+            <span class="block min-w-[18rem] max-w-[24rem] truncate">{{
+              typeof row.body === 'string' ? row.body : '-'
+            }}</span>
+          </template>
 
-        <template #cell-isPinned="{ value }">
-          <YesNo :value="value === true" />
-        </template>
+          <template #cell-isPinned="{ value }">
+            <YesNo :value="value === true" />
+          </template>
 
-        <template #cell-isPublic="{ value }">
-          <YesNo :value="value === true" />
-        </template>
+          <template #cell-isPublic="{ value }">
+            <YesNo :value="value === true" />
+          </template>
 
-        <template #cell-createdAt="{ value }">
-          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
-        </template>
+          <template #cell-createdAt="{ value }">
+            <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+          </template>
 
-        <template #cell-updatedAt="{ value }">
-          <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
-        </template>
+          <template #cell-updatedAt="{ value }">
+            <span>{{ typeof value === 'string' ? formatDateTimeTable(value) : '-' }}</span>
+          </template>
 
-        <template #cell-notes="{ value }">
-          <span class="whitespace-pre-wrap">{{ resolveText(value) }}</span>
-        </template>
-      </StaffDataGrid>
-    </DataCard>
-  </PageLayout>
+          <template #cell-notes="{ value }">
+            <span class="whitespace-pre-wrap">{{ typeof value === 'string' ? value : '-' }}</span>
+          </template>
+        </StaffDataGrid>
+      </DataCard>
+    </PageLayout>
+  </StaffSideWindowContainer>
+
+  <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">
+    <StaffFilterDrawer
+      :fields="filterFields"
+      :queries="draftFilterQueries"
+      :mode="draftFilterMode"
+      :loading="isBusy"
+      @add="handleAddFilter"
+      @remove="handleRemoveFilter"
+      @update-query="handleUpdateFilter"
+      @update-mode="handleFilterModeUpdate"
+      @apply="handleApplyFilters"
+      @clear="handleClearFilters"
+    />
+  </StaffSideWindow>
 </template>

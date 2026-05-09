@@ -25,6 +25,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import FormError from '@/components/ui/FormError.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 import FormField from '@/components/ui/FormField.vue'
+import { routeString } from '@/lib/routeQuery'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,13 +50,12 @@ const { getFieldError, validateAll, markTouched } = useFormValidation({
 
 const errorMessage = ref('')
 const requestedParticipationTypeId = computed(() => {
-  const legacyValue = route.query.participation_type
-  if (typeof legacyValue === 'string') {
+  const legacyValue = routeString(route.query.participation_type)
+  if (legacyValue !== '') {
     return legacyValue
   }
 
-  const migratedValue = route.query.participationTypeId
-  return typeof migratedValue === 'string' ? migratedValue : ''
+  return routeString(route.query.participationTypeId)
 })
 const selectedParticipationType = computed(
   () => participationTypesQuery.data.value?.find((item) => item.id === form.participationTypeId) ?? null

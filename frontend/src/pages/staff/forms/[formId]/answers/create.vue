@@ -24,6 +24,7 @@ import {
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import { routeString } from '@/lib/routeQuery'
 
 const route = useRoute('/staff/forms/[formId]/answers/create')
 const router = useRouter()
@@ -42,7 +43,7 @@ const createAnswerMutation = useCreateStaffFormAnswerMutation(formId)
 watch(
   () => route.query.circle,
   (value) => {
-    selectedCircleId.value = typeof value === 'string' ? value : ''
+    selectedCircleId.value = routeString(value)
   },
   { immediate: true }
 )

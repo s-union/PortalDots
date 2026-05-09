@@ -1,6 +1,12 @@
 import { computed, ref, watchEffect } from 'vue'
 import type { StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
-import type { StaffFilterField, StaffFilterQuery } from '@/components/staff/StaffFilterDrawer.vue'
+import {
+  normalizeStaffFilterMode,
+  staffFilterOperatorSchema,
+  type StaffFilterField,
+  type StaffFilterQuery
+} from '@/lib/staffFilterSchema'
+import { z } from 'zod'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
@@ -31,7 +37,24 @@ const staffUserSortKeys = [
   'isVerified'
 ] as const
 
-const filterFields: StaffFilterField[] = [
+const staffUserFilterKeys = [
+  'id',
+  'lastName',
+  'firstName',
+  'loginIds',
+  'contactEmail',
+  'univemail',
+  'phoneNumber',
+  'createdAt',
+  'updatedAt',
+  'isStaff',
+  'isAdmin',
+  'isEmailVerified',
+  'isVerified'
+] as const satisfies readonly StaffUserFilterKey[]
+const staffUserFilterKeySchema = z.enum(staffUserFilterKeys)
+
+const filterFields = [
   { key: 'id', label: 'ユーザーID', type: 'string' },
   { key: 'lastName', label: '姓', type: 'string' },
   { key: 'firstName', label: '名', type: 'string' },
@@ -45,7 +68,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'isAdmin', label: '管理者', type: 'bool' },
   { key: 'isEmailVerified', label: 'メール認証', type: 'bool' },
   { key: 'isVerified', label: '本人確認', type: 'bool' }
-]
+] satisfies StaffFilterField[]
 
 interface StaffUserRow extends StaffDataGridRow {
   id: string
@@ -68,7 +91,6 @@ interface StaffUserRow extends StaffDataGridRow {
 }
 
 const isStaffUserSortKey = createSortKeyGuard(staffUserSortKeys)
-const staffUserFilterOperators = ['=', '!=', 'like', 'not like'] as const
 
 export function useStaffUsersIndexPage() {
   const sessionStore = useSessionStore()
@@ -198,7 +220,7 @@ export function useStaffUsersIndexPage() {
 
   function handleApplyFilters() {
     appliedFilterQueries.value = toAppliedFilterQueries(draftFilterQueries.value)
-    appliedFilterMode.value = draftFilterMode.value
+    appliedFilterMode.value = normalizeStaffFilterMode(draftFilterMode.value)
     pagination.resetPage()
     closeFilter()
   }
@@ -305,9 +327,9 @@ function toAppliedFilterQueries(queries: StaffFilterQuery[]) {
 }
 
 function isStaffUserFilterKey(value: string): value is StaffUserFilterKey {
-  return filterFields.some((field) => field.key === value)
+  return staffUserFilterKeySchema.safeParse(value).success
 }
 
 function isStaffUserFilterOperator(value: string): value is StaffUserFilterOperator {
-  return (staffUserFilterOperators as readonly string[]).includes(value)
+  return staffFilterOperatorSchema.safeParse(value).success
 }

@@ -4,11 +4,12 @@ import PasswordResetPage from './[userId].vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: '認証/パスワード再設定',
+  title: 'Auth/Password Reset Confirmation',
   component: PasswordResetPage,
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
+    route: { path: '/password/reset/user-1', query: { token: 'mock-token' } },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () =>

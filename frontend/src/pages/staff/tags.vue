@@ -13,15 +13,16 @@ import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import StaffFilterDrawer, { type StaffFilterField } from '@/components/staff/StaffFilterDrawer.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import StaffTagEditor from '@/components/staff/StaffTagEditor.vue'
-import { compareString } from '@/lib/compareString'
+import ToolbarRow from '@/components/ui/ToolbarRow.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import { resolveRowId } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { buildApiUrl } from '@/lib/api/client'
-import { usePaginationState } from '@/lib/usePaginationState'
-import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import { useOrderedItems } from '@/lib/useStaffDataTable'
 import { canDeleteTags } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -48,8 +49,17 @@ const deleteTagMutation = useMutation({
 
 const sortKeys = ['tagNumber', 'name', 'createdAt', 'updatedAt'] as const
 type StaffTagSortKey = (typeof sortKeys)[number]
-const isStaffTagSortKey = createSortKeyGuard(sortKeys)
-const sort = useSortState<StaffTagSortKey>('tagNumber')
+
+const filterFields: StaffFilterField[] = [
+  { key: 'id', label: 'タグID', type: 'string' },
+  { key: 'name', label: 'タグ名', type: 'string' },
+  { key: 'createdAt', label: '作成日時', type: 'string' },
+  { key: 'updatedAt', label: '更新日時', type: 'string' }
+]
+
+function isFilterKey(key: string) {
+  return filterFields.some((f) => f.key === key)
+}
 
 const columns: StaffDataGridColumn[] = [
   { key: 'tagNumber', label: 'タグID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
@@ -60,34 +70,73 @@ const columns: StaffDataGridColumn[] = [
 
 const { orderedItems: orderedTags, orderMap: tagOrderMap } = useOrderedItems(computed(() => tagsQuery.data.value ?? []))
 
-const sortedTags = computed(() => {
-  const tags = orderedTags.value
-  const key = sort.sortKey.value
-  const direction = sort.sortDirection.value
-  const order = direction === 'asc' ? 1 : -1
-
-  return [...tags].sort((left, right) => {
-    if (key === 'tagNumber') {
-      return ((tagOrderMap.value.get(left.id) ?? 0) - (tagOrderMap.value.get(right.id) ?? 0)) * order
-    }
-
-    return compareString(left[key], right[key]) * order
-  })
-})
-
-const pagination = usePaginationState(computed(() => sortedTags.value.length))
-
-const rows = computed<StaffDataGridRow[]>(() => {
-  const start = (pagination.page.value - 1) * pagination.pageSize.value
-  const end = start + pagination.pageSize.value
-
-  return sortedTags.value.slice(start, end).map((tag) => ({
+const rawRows = computed<Record<string, unknown>[]>(() =>
+  orderedTags.value.map((tag) => ({
     id: tag.id,
-    tagNumber: String(tagOrderMap.value.get(tag.id) ?? start + 1),
+    tagNumber: String(tagOrderMap.value.get(tag.id) ?? 0),
     name: tag.name,
-    createdAt: formatDateTimeTable(tag.createdAt),
-    updatedAt: formatDateTimeTable(tag.updatedAt)
+    createdAt: tag.createdAt,
+    updatedAt: tag.updatedAt
   }))
+)
+
+function resolveSortValue(row: Record<string, unknown>, key: StaffTagSortKey) {
+  if (key === 'tagNumber') {
+    return String(row.tagNumber ?? '0').padStart(10, '0')
+  }
+  return String(row[key] ?? '').toLowerCase()
+}
+
+function matchesSearch(row: Record<string, unknown>, search: string) {
+  const haystack = [row.id, row.name, row.tagNumber].join(' ').toLowerCase()
+  return haystack.includes(search)
+}
+
+function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
+  const left = String(row[query.keyName] ?? '').toLowerCase()
+  const right = query.value.trim().toLowerCase()
+
+  if (query.operator === '=') {
+    return left === right
+  }
+  if (query.operator === '!=') {
+    return left !== right
+  }
+  if (query.operator === 'not like') {
+    return right === '' ? true : !left.includes(right)
+  }
+  return right === '' ? true : left.includes(right)
+}
+
+const {
+  pagedRows,
+  sortedRows,
+  filterActive,
+  sort,
+  pagination,
+  searchQuery,
+  isFilterOpen,
+  draftFilterMode,
+  draftFilterQueries,
+  handleSort,
+  handleSearch,
+  openFilter,
+  closeFilter,
+  handleAddFilter,
+  handleRemoveFilter,
+  handleUpdateFilter,
+  handleFilterModeUpdate,
+  handleApplyFilters,
+  handleClearFilters
+} = useStaffDataGridFilters<Record<string, unknown>, StaffTagSortKey>({
+  rows: rawRows,
+  sortKeys,
+  defaultSortKey: 'tagNumber',
+  filterFields,
+  resolveSortValue,
+  matchesSearch,
+  matchesFilterQuery,
+  isFilterKey
 })
 
 const selectedTag = computed(() => orderedTags.value.find((tag) => tag.id === selectedTagId.value) ?? null)
@@ -142,43 +191,63 @@ async function handleDeleteTag(row: StaffDataGridRow) {
   }
 }
 
-function handleSort(nextSortKey: string) {
-  if (isStaffTagSortKey(nextSortKey)) {
-    sort.toggleSort(nextSortKey)
-  }
+async function handleReload() {
+  await tagsQuery.refetch()
 }
 </script>
 
 <template>
   <PageLayout fullWidth>
-    <StaffSideWindowContainer :is-open="isEditorOpen">
+    <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
       <DataCard>
         <StaffDataGrid
-          :rows="rows"
+          :rows="pagedRows as StaffDataGridRow[]"
           :columns="columns"
           :page="pagination.page.value"
           :page-size="pagination.pageSize.value"
-          :total="sortedTags.length"
+          :total="sortedRows.length"
           :loading="isBusy"
           :sort-key="sort.sortKey.value"
           :sort-direction="sort.sortDirection.value"
           :show-filter-button="true"
+          :filter-active="filterActive"
           table-label="企画タグ一覧"
           empty-message="企画タグはまだありません。"
           @first="pagination.setFirstPage"
           @prev="pagination.setPrevPage"
           @next="pagination.setNextPage"
           @last="pagination.setLastPage"
-          @reload="tagsQuery.refetch()"
+          @reload="handleReload"
           @sort="handleSort"
+          @filter="openFilter"
           @update:page-size="pagination.setPageSize"
         >
           <template #toolbar>
-            <BaseButton variant="primary" size="md" weight="semibold" @click="openCreateEditor">
-              <FaIcon name="plus" fixed-width />
-              新規タグ
-            </BaseButton>
-            <CsvExportLink :href="exportHref">CSVで出力(タグ別企画一覧)</CsvExportLink>
+            <ToolbarRow>
+              <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  placeholder="タグID・タグ名で絞り込み"
+                  class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="submit">
+                  <FaIcon name="search" fixed-width />
+                  絞り込み
+                </button>
+              </form>
+              <p class="text-sm text-muted">
+                現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全タグ:
+                {{ rawRows.length }}
+              </p>
+            </ToolbarRow>
+            <ToolbarRow>
+              <BaseButton variant="primary" size="md" weight="semibold" @click="openCreateEditor">
+                <FaIcon name="plus" fixed-width />
+                新規タグ
+              </BaseButton>
+              <CsvExportLink :href="exportHref">CSVで出力(タグ別企画一覧)</CsvExportLink>
+            </ToolbarRow>
           </template>
 
           <template #actions="{ row }">
@@ -218,6 +287,21 @@ function handleSort(nextSortKey: string) {
         {{ selectedTag ? 'タグを編集' : '新規タグ' }}
       </template>
       <StaffTagEditor :tag="selectedTag" @deleted="handleDeleted" @saved="handleSaved" />
+    </StaffSideWindow>
+
+    <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">
+      <StaffFilterDrawer
+        :fields="filterFields"
+        :queries="draftFilterQueries"
+        :mode="draftFilterMode"
+        :loading="isBusy"
+        @add="handleAddFilter"
+        @remove="handleRemoveFilter"
+        @update-query="handleUpdateFilter"
+        @update-mode="handleFilterModeUpdate"
+        @apply="handleApplyFilters"
+        @clear="handleClearFilters"
+      />
     </StaffSideWindow>
   </PageLayout>
 </template>

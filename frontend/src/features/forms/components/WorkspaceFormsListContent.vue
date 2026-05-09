@@ -6,8 +6,8 @@ import ListPanel from '@/components/ui/ListPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useSuspenseFormsQuery, type FormSummary } from '@/features/forms/api'
 import { formatDateTime } from '@/lib/format/datetime'
+import { parseFormStatusTab } from '@/features/forms/formStatusSchema'
 
-type FormStatusTab = 'open' | 'closed' | 'all'
 type FormAvailability = 'open' | 'upcoming' | 'closed'
 
 const route = useRoute()
@@ -15,15 +15,7 @@ const formsQuery = useSuspenseFormsQuery()
 await formsQuery.suspense()
 const allForms = computed(() => formsQuery.data.value ?? [])
 
-const formStatusTab = computed<FormStatusTab>(() => {
-  const status = route.query.status
-
-  if (status === 'closed' || status === 'all') {
-    return status
-  }
-
-  return 'open'
-})
+const formStatusTab = computed(() => parseFormStatusTab(route.query.status))
 
 const openForms = computed(() => allForms.value.filter((form) => getFormAvailability(form) === 'open'))
 const closedForms = computed(() => allForms.value.filter((form) => getFormAvailability(form) === 'closed'))

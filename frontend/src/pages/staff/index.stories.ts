@@ -4,7 +4,7 @@ import StaffIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/ホーム',
+  title: 'Staff Mode/Home',
   component: StaffIndexPage,
   tags: ['autodocs'],
   parameters: {

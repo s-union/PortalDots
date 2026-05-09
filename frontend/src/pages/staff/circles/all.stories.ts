@@ -4,7 +4,7 @@ import StaffCirclesAllPage from './all.vue'
 import { mockSessionBootstrapStaff, mockStaffCircle } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/企画管理/全件表示',
+  title: 'Staff Mode/Circle Management/All Records',
   component: StaffCirclesAllPage,
   tags: ['autodocs'],
   parameters: {

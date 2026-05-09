@@ -4,23 +4,16 @@ import IconActionButton from '@/components/ui/IconActionButton.vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import FormField from '@/components/ui/FormField.vue'
+import {
+  staffFilterOperatorSchema,
+  type StaffFilterField,
+  type StaffFilterFieldType,
+  type StaffFilterMode,
+  type StaffFilterOperator,
+  type StaffFilterQuery
+} from '@/lib/staffFilterSchema'
 
-export type StaffFilterFieldType = 'string' | 'bool'
-export type StaffFilterOperator = '=' | '!=' | 'like' | 'not like'
-export type StaffFilterMode = 'and' | 'or'
-
-export interface StaffFilterField {
-  key: string
-  label: string
-  type: StaffFilterFieldType
-}
-
-export interface StaffFilterQuery {
-  id: number
-  keyName: string
-  operator: StaffFilterOperator
-  value: string
-}
+export type { StaffFilterField, StaffFilterFieldType, StaffFilterMode, StaffFilterOperator, StaffFilterQuery }
 
 const {
   fields,
@@ -93,23 +86,19 @@ function onAddField(event: Event) {
   target.value = ''
 }
 
-function isStaffFilterOperator(value: string): value is StaffFilterOperator {
-  return ['=', '!=', 'like', 'not like'].includes(value)
-}
-
 function handleOperatorChange(event: Event, query: StaffFilterQuery) {
   const target = event.target
   if (!(target instanceof HTMLSelectElement)) {
     return
   }
 
-  const operator = target.value
-  if (!isStaffFilterOperator(operator)) {
+  const operator = staffFilterOperatorSchema.safeParse(target.value)
+  if (!operator.success) {
     return
   }
 
   emit('updateQuery', query.id, {
-    operator
+    operator: operator.data
   })
 }
 

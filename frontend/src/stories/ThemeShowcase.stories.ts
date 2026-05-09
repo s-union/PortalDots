@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import ThemeShowcase from './ThemeShowcase.vue'
 
 const meta = {
-  title: 'Theme/ライトテーマ一覧',
+  title: 'Theme/Light Theme Showcase',
   component: ThemeShowcase,
   parameters: {
     layout: 'fullscreen'

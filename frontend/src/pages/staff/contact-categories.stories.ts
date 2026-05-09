@@ -4,7 +4,7 @@ import StaffContactCategoriesPage from './contact-categories.vue'
 import { mockSessionBootstrapStaff, mockContactCategory } from '@/mocks/data'
 
 const meta = {
-  title: 'スタッフモード/お問い合わせ設定',
+  title: 'Staff Mode/Contact Settings',
   component: StaffContactCategoriesPage,
   tags: ['autodocs'],
   parameters: {

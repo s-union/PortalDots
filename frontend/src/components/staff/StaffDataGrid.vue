@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { z } from 'zod'
 import { calculateTotalPages } from '@/lib/pagination'
 import { formatDateTime } from '@/lib/format/datetime'
 import FaIcon from '@/components/ui/FaIcon.vue'
@@ -62,6 +63,7 @@ const emit = defineEmits<{
 const totalPages = computed(() => calculateTotalPages(total, pageSize))
 const startIndex = computed(() => (total === 0 ? 0 : (page - 1) * pageSize + 1))
 const endIndex = computed(() => Math.min(page * pageSize, total))
+const positiveIntegerSchema = z.coerce.number().int().positive()
 
 function handleSort(column: StaffDataGridColumn) {
   if (!column.sortable) {
@@ -76,11 +78,11 @@ function handlePageSizeChange(event: Event) {
     return
   }
 
-  const next = Number.parseInt(target.value, 10)
-  if (Number.isNaN(next) || next <= 0) {
+  const next = positiveIntegerSchema.safeParse(target.value)
+  if (!next.success) {
     return
   }
-  emit('update:pageSize', next)
+  emit('update:pageSize', next.data)
 }
 
 function resolveAlignClass(column: StaffDataGridColumn) {

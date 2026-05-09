@@ -2,56 +2,40 @@ import { computed, ref, watch, type Ref } from 'vue'
 import {
   normalizeStaffFilterMode,
   normalizeStaffFilterOperator,
+  type StaffFilterField,
   type StaffFilterMode,
-  type StaffFilterQuery
+  type StaffFilterQuery,
+  type StaffFilterOperator
 } from '@/lib/staffFilterSchema'
-import {
-  buildStaffCirclesExportUrl,
-  extractStaffCircleValidationMessage,
-  useAllStaffCirclesQuery,
-  useDeleteStaffCircleMutation
-} from '@/features/staff/circles/api'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
-import {
-  filterFields,
-  isStaffCircleFilterKey,
-  matchesFilterQuery,
-  matchesSearch,
-  resolveCircleSortValue,
-  type StaffCircleRow,
-  type StaffCircleSortKey
-} from '@/features/staff/circles/helpers/circleFilters'
 
-const staffCircleSortKeys = [
-  'id',
-  'participationTypeName',
-  'name',
-  'nameYomi',
-  'groupName',
-  'groupNameYomi',
-  'notes',
-  'submittedAt',
-  'status'
-] as const
-const isStaffCircleSortKey = createSortKeyGuard(staffCircleSortKeys)
-
-export interface UseStaffCirclesAllPageOptions {
-  enabled: Ref<boolean>
+export interface UseStaffDataGridFiltersOptions<TRow, TSortKey extends string> {
+  rows: Ref<TRow[]>
+  sortKeys: readonly TSortKey[]
+  defaultSortKey: TSortKey
+  filterFields: StaffFilterField[]
+  resolveSortValue: (row: TRow, key: TSortKey) => string
+  matchesSearch: (row: TRow, normalizedSearch: string) => boolean
+  matchesFilterQuery: (row: TRow, query: StaffFilterQuery) => boolean
+  isFilterKey: (key: string) => boolean
 }
 
-export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
-  const { enabled } = options
+export function useStaffDataGridFilters<TRow, TSortKey extends string>(
+  options: UseStaffDataGridFiltersOptions<TRow, TSortKey>
+) {
+  const {
+    rows,
+    sortKeys,
+    defaultSortKey,
+    filterFields,
+    resolveSortValue,
+    matchesSearch,
+    matchesFilterQuery,
+    isFilterKey
+  } = options
 
-  // Queries
-  const allCirclesQuery = useAllStaffCirclesQuery(enabled)
-
-  // Mutations
-  const deletingCircleId = ref('')
-  const deleteCircleMutation = useDeleteStaffCircleMutation(computed(() => deletingCircleId.value))
-
-  const errorMessage = ref('')
-  const exportUrl = buildStaffCirclesExportUrl()
+  const isSortKey = createSortKeyGuard(sortKeys)
 
   // Filter state
   const searchQuery = ref('')
@@ -61,11 +45,10 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   const appliedFilterQueries = ref<StaffFilterQuery[]>([])
   const draftFilterMode = ref<StaffFilterMode>('and')
   const draftFilterQueries = ref<StaffFilterQuery[]>([])
+  const defaultFilterOperator: StaffFilterOperator = 'like'
 
-  // Computed rows
-  const rows = computed<StaffCircleRow[]>(() => allCirclesQuery.data.value ?? [])
-
-  const filteredRows = computed<StaffCircleRow[]>(() => {
+  // Filtered rows
+  const filteredRows = computed<TRow[]>(() => {
     const normalizedSearch = searchQuery.value.trim().toLowerCase()
     const queries = appliedFilterQueries.value
     const mode = appliedFilterMode.value
@@ -88,16 +71,16 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   })
 
   // Sorting
-  const sort = useSortState<StaffCircleSortKey>('id')
+  const sort = useSortState<TSortKey>(defaultSortKey)
 
-  const sortedRows = computed<StaffCircleRow[]>(() => {
+  const sortedRows = computed<TRow[]>(() => {
     const cloned = [...filteredRows.value]
     const direction = sort.sortDirection.value === 'asc' ? 1 : -1
     const key = sort.sortKey.value
 
     cloned.sort((left, right) => {
-      const leftValue = resolveCircleSortValue(left, key)
-      const rightValue = resolveCircleSortValue(right, key)
+      const leftValue = resolveSortValue(left, key)
+      const rightValue = resolveSortValue(right, key)
 
       if (leftValue < rightValue) {
         return -1 * direction
@@ -114,7 +97,7 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   // Pagination
   const pagination = usePaginationState(computed(() => sortedRows.value.length))
 
-  const pagedRows = computed<StaffCircleRow[]>(() => {
+  const pagedRows = computed<TRow[]>(() => {
     const start = (pagination.page.value - 1) * pagination.pageSize.value
     const end = start + pagination.pageSize.value
     return sortedRows.value.slice(start, end)
@@ -125,8 +108,8 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   // Pagination auto-adjust
   watch(
     () => [sortedRows.value.length, pagination.pageSize.value] as const,
-    ([total, currentPageSize]) => {
-      const totalPages = Math.max(1, Math.ceil(total / currentPageSize))
+    ([total, pageSize]) => {
+      const totalPages = Math.max(1, Math.ceil(total / pageSize))
       if (pagination.page.value > totalPages) {
         pagination.page.value = totalPages
       }
@@ -135,44 +118,14 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
 
   // Handlers
   function handleSort(nextKey: string) {
-    if (!isStaffCircleSortKey(nextKey)) {
+    if (!isSortKey(nextKey)) {
       return
     }
-
     sort.toggleSort(nextKey)
-    // Note: In circles/all.vue, page is not reset on sort toggle (original behavior)
-  }
-
-  async function handleReload() {
-    if (typeof allCirclesQuery.refetch === 'function') {
-      await allCirclesQuery.refetch()
-    }
   }
 
   function handleSearch() {
     pagination.resetPage()
-  }
-
-  async function handleDeleteCircle(circleId: string, circleName: string) {
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(
-        `企画「${circleName}」を削除しますか？\n\n• 「${circleName}」が送信した申請の回答はすべて削除されます。`
-      )
-    ) {
-      return
-    }
-
-    errorMessage.value = ''
-    deletingCircleId.value = circleId
-
-    try {
-      await deleteCircleMutation.mutateAsync()
-    } catch (error) {
-      errorMessage.value = extractStaffCircleValidationMessage(error)
-    } finally {
-      deletingCircleId.value = ''
-    }
   }
 
   function openFilter() {
@@ -187,7 +140,7 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   }
 
   function handleAddFilter(keyName: string) {
-    if (!isStaffCircleFilterKey(keyName)) {
+    if (!isFilterKey(keyName)) {
       return
     }
 
@@ -196,7 +149,7 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
       {
         id: nextFilterId.value++,
         keyName,
-        operator: 'like',
+        operator: defaultFilterOperator,
         value: ''
       }
     ]
@@ -211,11 +164,7 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
       if (query.id !== queryId) {
         return query
       }
-
-      return {
-        ...query,
-        ...patch
-      }
+      return { ...query, ...patch }
     })
   }
 
@@ -225,7 +174,7 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
 
   function handleApplyFilters() {
     appliedFilterQueries.value = draftFilterQueries.value
-      .filter((query) => isStaffCircleFilterKey(query.keyName))
+      .filter((query) => isFilterKey(query.keyName))
       .map((query) => ({
         ...query,
         operator: normalizeStaffFilterOperator(query.operator)
@@ -250,13 +199,6 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   }
 
   return {
-    // Queries
-    allCirclesQuery,
-    deleteCircleMutation,
-
-    errorMessage,
-    exportUrl,
-
     // Filter state
     searchQuery,
     isFilterOpen,
@@ -265,7 +207,7 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
     filterFields,
 
     // Rows
-    rows,
+    filteredRows,
     sortedRows,
     pagedRows,
     filterActive,
@@ -278,9 +220,7 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
 
     // Handlers
     handleSort,
-    handleReload,
     handleSearch,
-    handleDeleteCircle,
     openFilter,
     closeFilter,
     handleAddFilter,

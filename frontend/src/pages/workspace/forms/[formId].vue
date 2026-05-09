@@ -9,14 +9,12 @@ definePage({
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import WorkspaceFormDetailContent from '@/features/forms/components/WorkspaceFormDetailContent.vue'
+import { routeString } from '@/lib/routeQuery'
 
 const route = useRoute('/workspace/forms/[formId]')
 const router = useRouter()
 const formId = computed(() => String(route.params.formId ?? ''))
-const selectedAnswerId = computed(() => {
-  const answer = route.query.answer
-  return typeof answer === 'string' ? answer : ''
-})
+const selectedAnswerId = computed(() => routeString(route.query.answer))
 
 async function handleSelectAnswer(answerId: string) {
   await router.replace({
