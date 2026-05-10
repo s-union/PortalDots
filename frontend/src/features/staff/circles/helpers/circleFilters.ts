@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { StaffFilterField, StaffFilterQuery } from '@/lib/staffFilterSchema'
 
 export interface StaffCircleRow {
@@ -57,8 +58,21 @@ export function statusLabel(status: string) {
   return '審査中'
 }
 
+const circleFilterKeys = [
+  'id',
+  'participationTypeName',
+  'name',
+  'nameYomi',
+  'groupName',
+  'groupNameYomi',
+  'status',
+  'tags',
+  'places'
+] as const
+const circleFilterKeySchema = z.enum(circleFilterKeys)
+
 export function isStaffCircleFilterKey(value: string) {
-  return filterFields.some((field) => field.key === value)
+  return circleFilterKeySchema.safeParse(value).success
 }
 
 export function resolveCircleSortValue(circle: StaffCircleRow, key: StaffCircleSortKey) {

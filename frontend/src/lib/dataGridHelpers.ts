@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 
 export function resolveRowId(row: StaffDataGridRow): string {
@@ -12,9 +13,9 @@ export function resolveText(value: unknown): string {
   return normalized.length > 0 ? normalized : '-'
 }
 
+const tagsSchema = z.array(z.string())
+
 export function resolveTags(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value.filter((item): item is string => typeof item === 'string')
+  const result = tagsSchema.safeParse(value)
+  return result.success ? result.data : []
 }

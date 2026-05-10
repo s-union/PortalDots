@@ -12,7 +12,8 @@ import {
   useDeleteStaffCircleMutation
 } from '@/features/staff/circles/api'
 import { usePaginationState } from '@/lib/usePaginationState'
-import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { useSortState } from '@/lib/useSortState'
+import { z } from 'zod'
 import {
   filterFields,
   isStaffCircleFilterKey,
@@ -34,7 +35,11 @@ const staffCircleSortKeys = [
   'submittedAt',
   'status'
 ] as const
-const isStaffCircleSortKey = createSortKeyGuard(staffCircleSortKeys)
+const staffCircleSortKeySchema = z.enum(staffCircleSortKeys)
+
+function isStaffCircleSortKey(value: string): value is StaffCircleSortKey {
+  return staffCircleSortKeySchema.safeParse(value).success
+}
 
 export interface UseStaffCirclesAllPageOptions {
   enabled: Ref<boolean>

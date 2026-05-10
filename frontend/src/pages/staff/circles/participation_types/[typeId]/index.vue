@@ -326,8 +326,11 @@ function isStaffParticipationTypeCirclesSortKey(value: string): value is StaffPa
   return circlesSortKeySchema.safeParse(value).success
 }
 
+const circleFilterKeys = ['id', 'name', 'groupName', 'status', 'places'] as const
+const circleFilterKeySchema = z.enum(circleFilterKeys)
+
 function isStaffParticipationCircleFilterKey(value: string) {
-  return filterFields.some((field) => field.key === value)
+  return circleFilterKeySchema.safeParse(value).success
 }
 
 function sortCirclesRows(
