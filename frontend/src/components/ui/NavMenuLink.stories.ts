@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import NavMenuLink from './NavMenuLink.vue'
 
 const meta = {
-  title: 'UI/NavMenuLink',
+  title: 'UI/Navigation/NavMenuLink',
   component: NavMenuLink,
   tags: ['autodocs'],
   argTypes: {

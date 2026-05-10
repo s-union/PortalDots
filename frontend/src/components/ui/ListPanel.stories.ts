@@ -3,7 +3,7 @@ import ListPanel from './ListPanel.vue'
 import ListItemLink from './ListItemLink.vue'
 
 const meta = {
-  title: 'UI/ListPanel',
+  title: 'UI/Surfaces/ListPanel',
   component: ListPanel,
   tags: ['autodocs'],
   argTypes: {

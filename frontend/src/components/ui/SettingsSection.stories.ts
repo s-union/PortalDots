@@ -3,7 +3,7 @@ import SettingsSection from './SettingsSection.vue'
 import SettingsRow from './SettingsRow.vue'
 
 const meta = {
-  title: 'UI/SettingsSection',
+  title: 'UI/Settings/SettingsSection',
   component: SettingsSection,
   tags: ['autodocs'],
   argTypes: {

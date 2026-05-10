@@ -4,7 +4,7 @@ import DocumentsIndexPage from './index.vue'
 import { mockSessionBootstrap, mockDocument } from '@/mocks/data'
 
 const meta = {
-  title: 'General Mode/Documents List',
+  title: 'Pages/Workspace/Documents',
   component: DocumentsIndexPage,
   tags: ['autodocs'],
   parameters: {

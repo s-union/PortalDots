@@ -4,7 +4,7 @@ import StaffUserDetailPage from './[userId].vue'
 import { mockSessionBootstrapStaff, mockStaffUser2 } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/User Management/Detail',
+  title: 'Pages/Staff/Users/Detail',
   component: StaffUserDetailPage,
   tags: ['autodocs'],
   parameters: {

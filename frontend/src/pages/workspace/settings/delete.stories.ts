@@ -4,7 +4,7 @@ import DeletePage from './delete.vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: 'General/Account Settings/Delete Account',
+  title: 'Pages/Workspace/Settings/Delete Account',
   component: DeletePage,
   tags: ['autodocs'],
   parameters: {

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import StaffFilterDrawer, { type StaffFilterField } from './StaffFilterDrawer.vue'
 
 const meta = {
-  title: 'UI/Staff/StaffFilterDrawer',
+  title: 'UI/Staff/Data/StaffFilterDrawer',
   component: StaffFilterDrawer,
   tags: ['autodocs'],
   argTypes: {

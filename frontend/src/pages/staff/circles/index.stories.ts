@@ -4,7 +4,7 @@ import StaffCirclesIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockParticipationType } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Circle Management',
+  title: 'Pages/Staff/Circles',
   component: StaffCirclesIndexPage,
   tags: ['autodocs'],
   parameters: {

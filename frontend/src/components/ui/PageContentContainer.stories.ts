@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import PageContentContainer from './PageContentContainer.vue'
 
 const meta = {
-  title: 'UI/PageContentContainer',
+  title: 'UI/Layout/PageContentContainer',
   component: PageContentContainer,
   tags: ['autodocs'],
   argTypes: {

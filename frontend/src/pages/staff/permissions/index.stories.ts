@@ -4,7 +4,7 @@ import StaffPermissionsIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockStaffUser2 } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Permission Settings',
+  title: 'Pages/Staff/Permissions',
   component: StaffPermissionsIndexPage,
   tags: ['autodocs'],
   parameters: {

@@ -4,7 +4,7 @@ import PublicPagesIndexPage from './index.vue'
 import { mockPage } from '@/mocks/data'
 
 const meta = {
-  title: 'Public Mode/Public Announcements List',
+  title: 'Pages/Public/Announcements/List',
   component: PublicPagesIndexPage,
   tags: ['autodocs'],
   parameters: {

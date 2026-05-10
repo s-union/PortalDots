@@ -41,7 +41,7 @@ const mockAnswersIndex = {
 }
 
 const meta = {
-  title: 'Staff Mode/Application Management/Not Answered List',
+  title: 'Pages/Staff/Forms/Not Answered List',
   component: StaffFormNotAnsweredPage,
   tags: ['autodocs'],
   parameters: {

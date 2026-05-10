@@ -4,7 +4,7 @@ import CompletedPage from './completed.vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: 'Auth/Email Verification Complete',
+  title: 'Pages/Auth/Email Verification Complete',
   component: CompletedPage,
   tags: ['autodocs'],
   parameters: {

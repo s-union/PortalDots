@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import LoadingSkeleton from './LoadingSkeleton.vue'
 
 const meta = {
-  title: 'UI/LoadingSkeleton',
+  title: 'UI/Feedback/LoadingSkeleton',
   component: LoadingSkeleton,
   tags: ['autodocs'],
   argTypes: {

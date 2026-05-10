@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import LoadingMessage from './LoadingMessage.vue'
 
 const meta = {
-  title: 'UI/LoadingMessage',
+  title: 'UI/Feedback/LoadingMessage',
   component: LoadingMessage,
   tags: ['autodocs'],
   argTypes: {

@@ -47,7 +47,7 @@ const mockFormPreview = {
 }
 
 const meta = {
-  title: 'Staff Mode/Application Management/Preview',
+  title: 'Pages/Staff/Forms/Preview',
   component: StaffFormPreviewPage,
   tags: ['autodocs'],
   parameters: {

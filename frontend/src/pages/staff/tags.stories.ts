@@ -4,7 +4,7 @@ import StaffTagsPage from './tags.vue'
 import { mockSessionBootstrapStaff, mockTag } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Tag Management',
+  title: 'Pages/Staff/Tags',
   component: StaffTagsPage,
   tags: ['autodocs'],
   parameters: {

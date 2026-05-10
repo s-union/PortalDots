@@ -3,7 +3,7 @@ import AppBottomTabs from './AppBottomTabs.vue'
 import type { MobileTabLink } from '@/app/types/shell'
 
 const meta = {
-  title: 'UI/Shell/AppBottomTabs',
+  title: 'UI/App Shell/AppBottomTabs',
   component: AppBottomTabs,
   tags: ['autodocs']
 } satisfies Meta<typeof AppBottomTabs>

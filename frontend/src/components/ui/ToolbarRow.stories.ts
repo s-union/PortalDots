@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import ToolbarRow from './ToolbarRow.vue'
 
 const meta = {
-  title: 'UI/ToolbarRow',
+  title: 'UI/Actions/ToolbarRow',
   component: ToolbarRow,
   tags: ['autodocs']
 } satisfies Meta<typeof ToolbarRow>

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import IconActionButton from './IconActionButton.vue'
 
 const meta = {
-  title: 'UI/IconActionButton',
+  title: 'UI/Actions/IconActionButton',
   component: IconActionButton,
   tags: ['autodocs'],
   argTypes: {

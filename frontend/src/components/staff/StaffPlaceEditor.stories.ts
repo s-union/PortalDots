@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import StaffPlaceEditor from './StaffPlaceEditor.vue'
 
 const meta = {
-  title: 'UI/Staff/StaffPlaceEditor',
+  title: 'UI/Staff/Places/StaffPlaceEditor',
   component: StaffPlaceEditor,
   tags: ['autodocs']
 } satisfies Meta<typeof StaffPlaceEditor>

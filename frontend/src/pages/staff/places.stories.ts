@@ -4,7 +4,7 @@ import StaffPlacesPage from './places.vue'
 import { mockSessionBootstrapStaff, mockPlace } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Place Management',
+  title: 'Pages/Staff/Places',
   component: StaffPlacesPage,
   tags: ['autodocs'],
   parameters: {

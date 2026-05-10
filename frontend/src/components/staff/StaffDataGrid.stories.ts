@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from './StaffDataGrid.vue'
 
 const meta = {
-  title: 'UI/Staff/StaffDataGrid',
+  title: 'UI/Staff/Data/StaffDataGrid',
   component: StaffDataGrid,
   tags: ['autodocs'],
   argTypes: {

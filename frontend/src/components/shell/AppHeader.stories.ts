@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import AppHeader from './AppHeader.vue'
 
 const meta = {
-  title: 'UI/Shell/AppHeader',
+  title: 'UI/App Shell/AppHeader',
   component: AppHeader,
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' },

@@ -38,7 +38,7 @@ const mockAnswersIndex = {
 }
 
 const meta = {
-  title: 'Staff Mode/Application Management/Upload List',
+  title: 'Pages/Staff/Forms/Upload List',
   component: StaffFormAnswerUploadsPage,
   tags: ['autodocs'],
   parameters: {

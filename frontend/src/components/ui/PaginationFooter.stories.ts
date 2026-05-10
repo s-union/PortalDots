@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import PaginationFooter from './PaginationFooter.vue'
 
 const meta = {
-  title: 'UI/PaginationFooter',
+  title: 'UI/Navigation/PaginationFooter',
   component: PaginationFooter,
   tags: ['autodocs'],
   argTypes: {

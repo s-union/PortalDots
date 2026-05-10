@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import StatusBadge from './StatusBadge.vue'
 
 const meta = {
-  title: 'UI/StatusBadge',
+  title: 'UI/Feedback/StatusBadge',
   component: StatusBadge,
   tags: ['autodocs'],
   argTypes: {

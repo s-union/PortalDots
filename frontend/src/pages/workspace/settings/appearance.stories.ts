@@ -4,7 +4,7 @@ import AppearancePage from './appearance.vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: 'General/Account Settings/Appearance',
+  title: 'Pages/Workspace/Settings/Appearance',
   component: AppearancePage,
   tags: ['autodocs'],
   parameters: {

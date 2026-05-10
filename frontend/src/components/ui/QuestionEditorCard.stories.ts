@@ -3,7 +3,7 @@ import QuestionEditorCard from './QuestionEditorCard.vue'
 import IconActionButton from './IconActionButton.vue'
 
 const meta = {
-  title: 'UI/QuestionEditorCard',
+  title: 'UI/Forms/QuestionEditorCard',
   component: QuestionEditorCard,
   tags: ['autodocs'],
   argTypes: {

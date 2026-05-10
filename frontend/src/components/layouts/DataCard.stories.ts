@@ -3,7 +3,7 @@ import DataCard from './DataCard.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 
 const meta = {
-  title: 'UI/Layout/DataCard',
+  title: 'UI/Surfaces/DataCard',
   component: DataCard,
   tags: ['autodocs'],
   argTypes: {

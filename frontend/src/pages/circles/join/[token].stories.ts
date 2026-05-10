@@ -4,7 +4,7 @@ import JoinCirclePage from './[token].vue'
 import { mockSessionBootstrap, mockCircle } from '@/mocks/data'
 
 const meta = {
-  title: 'Circle Registration/Join from Invitation Link',
+  title: 'Pages/Circle Registration/Join from Invitation Link',
   component: JoinCirclePage,
   tags: ['autodocs'],
   parameters: {

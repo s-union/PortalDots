@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import ErrorState from './ErrorState.vue'
 
 const meta = {
-  title: 'UI/ErrorState',
+  title: 'UI/Feedback/ErrorState',
   component: ErrorState,
   tags: ['autodocs'],
   argTypes: {

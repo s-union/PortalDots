@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import StaffSideWindow from './StaffSideWindow.vue'
 
 const meta = {
-  title: 'UI/Staff/StaffSideWindow',
+  title: 'UI/Staff/Shell/StaffSideWindow',
   component: StaffSideWindow,
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' },

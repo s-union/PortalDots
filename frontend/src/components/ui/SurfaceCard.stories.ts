@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import SurfaceCard from './SurfaceCard.vue'
 
 const meta = {
-  title: 'UI/SurfaceCard',
+  title: 'UI/Surfaces/SurfaceCard',
   component: SurfaceCard,
   tags: ['autodocs'],
   argTypes: {

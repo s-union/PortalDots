@@ -14,7 +14,7 @@ const cannotCreateSession = {
 }
 
 const meta = {
-  title: 'Circle Registration/Create New',
+  title: 'Pages/Circle Registration/Create New',
   component: NewCirclePage,
   tags: ['autodocs'],
   parameters: {

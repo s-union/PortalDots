@@ -4,7 +4,7 @@ import StaffFormCreatePage from './create.vue'
 import { mockSessionBootstrapStaff, mockTag } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Application Management/Create New',
+  title: 'Pages/Staff/Forms/Create New',
   component: StaffFormCreatePage,
   tags: ['autodocs'],
   parameters: {

@@ -3,7 +3,7 @@ import TabbedSettingsPage from './TabbedSettingsPage.vue'
 import type { TabStripItem } from '@/lib/ui/tabStrip'
 
 const meta = {
-  title: 'UI/Layout/TabbedSettingsPage',
+  title: 'UI/Settings/TabbedSettingsPage',
   component: TabbedSettingsPage,
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' }

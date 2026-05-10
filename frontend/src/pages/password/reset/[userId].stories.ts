@@ -4,7 +4,7 @@ import PasswordResetPage from './[userId].vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'Auth/Password Reset Confirmation',
+  title: 'Pages/Auth/Password Reset Confirmation',
   component: PasswordResetPage,
   tags: ['autodocs'],
   parameters: {

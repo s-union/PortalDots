@@ -4,7 +4,7 @@ import StaffDocumentEditPage from './edit.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Document Management/Edit',
+  title: 'Pages/Staff/Documents/Edit',
   component: StaffDocumentEditPage,
   tags: ['autodocs'],
   parameters: {

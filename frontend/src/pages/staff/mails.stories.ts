@@ -4,7 +4,7 @@ import StaffMailsPage from './mails.vue'
 import { mockSessionBootstrapStaff, mockMail } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Mail List',
+  title: 'Pages/Staff/Mails',
   component: StaffMailsPage,
   tags: ['autodocs'],
   parameters: {

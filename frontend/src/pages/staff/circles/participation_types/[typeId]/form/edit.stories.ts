@@ -4,7 +4,7 @@ import StaffParticipationTypeFormEditPage from './edit.vue'
 import { mockSessionBootstrapStaff, mockParticipationType } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Participation Type Management/Form Settings',
+  title: 'Pages/Staff/Participation Types/Form Settings',
   component: StaffParticipationTypeFormEditPage,
   tags: ['autodocs'],
   parameters: {

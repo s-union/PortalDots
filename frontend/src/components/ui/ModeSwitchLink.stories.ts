@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import ModeSwitchLink from './ModeSwitchLink.vue'
 
 const meta = {
-  title: 'UI/ModeSwitchLink',
+  title: 'UI/Navigation/ModeSwitchLink',
   component: ModeSwitchLink,
   tags: ['autodocs'],
   argTypes: {

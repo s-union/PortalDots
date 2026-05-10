@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import StaffContactCategoryEditor from './StaffContactCategoryEditor.vue'
 
 const meta = {
-  title: 'UI/Staff/StaffContactCategoryEditor',
+  title: 'UI/Staff/Contact Categories/StaffContactCategoryEditor',
   component: StaffContactCategoryEditor,
   tags: ['autodocs']
 } satisfies Meta<typeof StaffContactCategoryEditor>

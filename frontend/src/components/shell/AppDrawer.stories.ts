@@ -3,7 +3,7 @@ import AppDrawer from './AppDrawer.vue'
 import type { DrawerNavLink } from '@/app/types/shell'
 
 const meta = {
-  title: 'UI/Shell/AppDrawer',
+  title: 'UI/App Shell/AppDrawer',
   component: AppDrawer,
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' },

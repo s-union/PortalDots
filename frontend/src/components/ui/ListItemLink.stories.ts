@@ -3,7 +3,7 @@ import ListItemLink from './ListItemLink.vue'
 import StatusBadge from './StatusBadge.vue'
 
 const meta = {
-  title: 'UI/ListItemLink',
+  title: 'UI/Navigation/ListItemLink',
   component: ListItemLink,
   tags: ['autodocs'],
   argTypes: {

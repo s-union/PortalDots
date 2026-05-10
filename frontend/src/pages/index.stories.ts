@@ -4,7 +4,7 @@ import IndexPage from './index.vue'
 import { mockSessionBootstrap, mockSessionBootstrapStaff, mockPublicConfig, mockPublicHome } from '@/mocks/data'
 
 const meta = {
-  title: 'Common/Top Page',
+  title: 'Pages/Common/Top Page',
   component: IndexPage,
   tags: ['autodocs'],
   parameters: {

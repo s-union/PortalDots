@@ -4,7 +4,7 @@ import PrivacyPolicyPage from './privacy_policy.vue'
 import { mockPublicConfig } from '@/mocks/data'
 
 const meta = {
-  title: 'Common/Privacy Policy',
+  title: 'Pages/Common/Privacy Policy',
   component: PrivacyPolicyPage,
   tags: ['autodocs'],
   parameters: {

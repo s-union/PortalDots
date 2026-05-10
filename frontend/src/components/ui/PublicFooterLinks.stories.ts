@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import PublicFooterLinks from './PublicFooterLinks.vue'
 
 const meta = {
-  title: 'UI/PublicFooterLinks',
+  title: 'UI/Navigation/PublicFooterLinks',
   component: PublicFooterLinks,
   tags: ['autodocs'],
   argTypes: {

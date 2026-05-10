@@ -5,7 +5,7 @@ import { mockSessionBootstrapStaff } from '@/mocks/data'
 import { staffFormStoryDetail, staffFormStoryQuestions } from '../story-fixtures'
 
 const meta = {
-  title: 'Staff Mode/Application Management/Editor',
+  title: 'Pages/Staff/Forms/Editor',
   component: StaffFormEditorPage,
   tags: ['autodocs'],
   parameters: {

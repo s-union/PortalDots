@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import BottomTabLink from './BottomTabLink.vue'
 
 const meta = {
-  title: 'UI/BottomTabLink',
+  title: 'UI/Navigation/BottomTabLink',
   component: BottomTabLink,
   tags: ['autodocs'],
   argTypes: {

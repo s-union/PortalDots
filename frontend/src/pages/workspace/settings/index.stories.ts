@@ -4,7 +4,7 @@ import WorkspaceSettingsPage from './index.vue'
 import { mockSessionBootstrap } from '@/mocks/data'
 
 const meta = {
-  title: 'General/Account Settings',
+  title: 'Pages/Workspace/Settings',
   component: WorkspaceSettingsPage,
   tags: ['autodocs'],
   parameters: {

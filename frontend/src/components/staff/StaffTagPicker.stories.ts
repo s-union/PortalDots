@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import StaffTagPicker from './StaffTagPicker.vue'
 
 const meta = {
-  title: 'UI/Staff/StaffTagPicker',
+  title: 'UI/Staff/Tags/StaffTagPicker',
   component: StaffTagPicker,
   tags: ['autodocs'],
   argTypes: {

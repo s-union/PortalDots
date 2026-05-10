@@ -3,7 +3,7 @@ import SurfaceCardBand from './SurfaceCardBand.vue'
 import SurfaceCard from './SurfaceCard.vue'
 
 const meta = {
-  title: 'UI/SurfaceCardBand',
+  title: 'UI/Surfaces/SurfaceCardBand',
   component: SurfaceCardBand,
   tags: ['autodocs'],
   argTypes: {

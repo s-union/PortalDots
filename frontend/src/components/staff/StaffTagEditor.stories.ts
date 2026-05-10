@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import StaffTagEditor from './StaffTagEditor.vue'
 
 const meta = {
-  title: 'UI/Staff/StaffTagEditor',
+  title: 'UI/Staff/Tags/StaffTagEditor',
   component: StaffTagEditor,
   tags: ['autodocs'],
   argTypes: {

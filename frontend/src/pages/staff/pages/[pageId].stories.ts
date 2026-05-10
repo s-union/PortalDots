@@ -4,7 +4,7 @@ import StaffPageDetailPage from './[pageId].vue'
 import { mockSessionBootstrapStaff, mockDocument } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Notice Management/Edit',
+  title: 'Pages/Staff/Notices/Edit',
   component: StaffPageDetailPage,
   tags: ['autodocs'],
   parameters: {

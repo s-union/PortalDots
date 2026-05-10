@@ -23,7 +23,7 @@ const richMarkdown = `# 企画参加登録について
 \`PortalDots\` 上で登録内容を更新できます。`
 
 const meta = {
-  title: 'UI/Notice/PageMarkdownContent',
+  title: 'UI/Content/PageMarkdownContent',
   component: PageMarkdownContent,
   tags: ['autodocs'],
   argTypes: {

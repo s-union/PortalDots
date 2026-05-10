@@ -3,7 +3,7 @@ import PanelBody from './PanelBody.vue'
 import SurfaceCard from './SurfaceCard.vue'
 
 const meta = {
-  title: 'UI/PanelBody',
+  title: 'UI/Surfaces/PanelBody',
   component: PanelBody,
   tags: ['autodocs'],
   argTypes: {

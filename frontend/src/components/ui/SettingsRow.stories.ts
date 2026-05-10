@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import SettingsRow from './SettingsRow.vue'
 
 const meta = {
-  title: 'UI/SettingsRow',
+  title: 'UI/Settings/SettingsRow',
   component: SettingsRow,
   tags: ['autodocs']
 } satisfies Meta<typeof SettingsRow>

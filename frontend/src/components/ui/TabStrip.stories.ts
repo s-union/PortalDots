@@ -3,7 +3,7 @@ import TabStrip from './TabStrip.vue'
 import type { TabStripItem } from '@/lib/ui/tabStrip'
 
 const meta = {
-  title: 'UI/TabStrip',
+  title: 'UI/Navigation/TabStrip',
   component: TabStrip,
   tags: ['autodocs']
 } satisfies Meta<typeof TabStrip>

@@ -4,7 +4,7 @@ import StaffCircleCreatePage from './create.vue'
 import { mockParticipationType, mockPlace, mockSessionBootstrapStaff, mockStaffCircle } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Circle Management/Create New',
+  title: 'Pages/Staff/Circles/Create New',
   component: StaffCircleCreatePage,
   tags: ['autodocs'],
   parameters: {

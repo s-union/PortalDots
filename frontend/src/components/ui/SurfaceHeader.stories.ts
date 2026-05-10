@@ -3,7 +3,7 @@ import SurfaceHeader from './SurfaceHeader.vue'
 import SurfaceCard from './SurfaceCard.vue'
 
 const meta = {
-  title: 'UI/SurfaceHeader',
+  title: 'UI/Surfaces/SurfaceHeader',
   component: SurfaceHeader,
   tags: ['autodocs'],
   argTypes: {

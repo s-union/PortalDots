@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import HomeModeTabs from './HomeModeTabs.vue'
 
 const meta = {
-  title: 'UI/Navigation/HomeModeTabs',
+  title: 'UI/App Shell/HomeModeTabs',
   component: HomeModeTabs,
   tags: ['autodocs'],
   argTypes: {

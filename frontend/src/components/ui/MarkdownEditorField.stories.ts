@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import MarkdownEditorField from './MarkdownEditorField.vue'
 
 const meta = {
-  title: 'UI/MarkdownEditorField',
+  title: 'UI/Forms/MarkdownEditorField',
   component: MarkdownEditorField,
   tags: ['autodocs'],
   argTypes: {

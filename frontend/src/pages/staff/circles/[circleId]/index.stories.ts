@@ -10,7 +10,7 @@ import {
 } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/Circle Management/Details',
+  title: 'Pages/Staff/Circles/Details',
   component: StaffCircleDetailPage,
   tags: ['autodocs'],
   parameters: {

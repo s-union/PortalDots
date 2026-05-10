@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import EmptyState from './EmptyState.vue'
 
 const meta = {
-  title: 'UI/EmptyState',
+  title: 'UI/Feedback/EmptyState',
   component: EmptyState,
   tags: ['autodocs'],
   argTypes: {

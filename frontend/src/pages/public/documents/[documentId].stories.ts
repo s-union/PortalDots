@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import DocumentPage from './[documentId].vue'
 
 const meta = {
-  title: 'Public Mode/Public Document Detail',
+  title: 'Pages/Public/Documents/Detail',
   component: DocumentPage,
   tags: ['autodocs'],
   parameters: {

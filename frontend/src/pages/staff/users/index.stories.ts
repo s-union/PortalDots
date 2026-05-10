@@ -4,7 +4,7 @@ import StaffUsersIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockStaffUser2 } from '@/mocks/data'
 
 const meta = {
-  title: 'Staff Mode/User Management',
+  title: 'Pages/Staff/Users',
   component: StaffUsersIndexPage,
   tags: ['autodocs'],
   parameters: {

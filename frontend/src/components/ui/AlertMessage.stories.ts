@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import AlertMessage from './AlertMessage.vue'
 
 const meta = {
-  title: 'UI/AlertMessage',
+  title: 'UI/Feedback/AlertMessage',
   component: AlertMessage,
   tags: ['autodocs'],
   argTypes: {
