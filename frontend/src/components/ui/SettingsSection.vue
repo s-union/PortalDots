@@ -16,7 +16,7 @@ const { id, title, titleOutside } = defineProps<{
     </h2>
     <SurfaceCard>
       <SurfaceCardBand v-if="!titleOutside" class="py-4">
-        <h3 class="text-lg font-semibold text-body">{{ title }}</h3>
+        <h2 class="text-lg font-semibold text-body">{{ title }}</h2>
       </SurfaceCardBand>
       <div class="divide-y divide-border">
         <slot />

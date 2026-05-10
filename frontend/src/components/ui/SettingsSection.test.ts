@@ -49,6 +49,6 @@ describe('SettingsSection', () => {
     const h2 = wrapper.find('h2')
     expect(h2.exists()).toBe(true)
     expect(h2.text()).toBe('外観')
-    expect(wrapper.find('h3').exists()).toBe(false)
+    expect(wrapper.findAll('h2')).toHaveLength(1)
   })
 })

@@ -92,7 +92,7 @@ function setLastPage() {
     <template #toolbar>
       <ToolbarRow>
         <form class="flex items-center gap-2" @submit.prevent>
-          <input type="search" v-model="searchQuery" />
+          <input v-model="searchQuery" aria-label="アクティビティログを検索" type="search" />
         </form>
         <p class="text-sm text-muted">現在の表示件数: {{ rows.length }} / 全{{ total }}件</p>
       </ToolbarRow>

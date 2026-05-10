@@ -174,7 +174,10 @@ async function handleDeleteMember(userId: string, displayName: string) {
       <form class="space-y-6" @submit.prevent="handleSaveCircle">
         <SurfaceCard tag="header">
           <h2 class="text-3xl font-semibold text-body">企画を編集</h2>
-          <div class="mt-3 text-sm text-muted">企画ID : {{ circleQuery.data.value.id }}</div>
+          <div class="mt-3 text-sm text-muted">
+            <div>企画名 : {{ circleQuery.data.value.name }}</div>
+            <div>企画ID : {{ circleQuery.data.value.id }}</div>
+          </div>
         </SurfaceCard>
 
         <SettingsSection title="企画基本情報">
@@ -237,7 +240,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
               <FormField v-if="form.status === 'rejected'" label="不受理理由" label-class="font-medium">
                 <MarkdownEditorField v-model="form.statusReason" min-height-class="min-h-16" name="statusReason" />
               </FormField>
-              <div class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-sm text-body">
                 <span class="font-medium">使用場所</span>
                 <select v-model="form.placeIds" name="placeIds" multiple>
                   <option v-for="place in placesQuery.data.value ?? []" :key="place.id" :value="place.id">
@@ -245,7 +248,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
                   </option>
                 </select>
                 <span class="text-xs text-muted">Ctrl/Cmd を押しながらクリックで複数選択できます</span>
-              </div>
+              </label>
             </div>
           </SettingsRow>
           <template #footer>

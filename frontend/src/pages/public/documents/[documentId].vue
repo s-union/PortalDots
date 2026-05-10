@@ -14,6 +14,10 @@ import { buildApiUrl } from '@/lib/api/client'
 const route = useRoute('/public/documents/[documentId]')
 
 onMounted(() => {
+  if (import.meta.env.STORYBOOK) {
+    return
+  }
+
   const documentId = String(route.params.documentId ?? '').trim()
   if (documentId === '' || documentId.startsWith(':')) {
     return

@@ -176,8 +176,8 @@ const inputClass =
     @drop.prevent="emit('drop', $event)"
   >
     <div
-      role="button"
-      :tabindex="isOpen ? -1 : 0"
+      :role="isOpen ? undefined : 'button'"
+      :tabindex="isOpen ? undefined : 0"
       :aria-expanded="isOpen"
       class="px-6 py-4"
       :class="{ 'cursor-pointer': !isOpen }"
@@ -229,6 +229,7 @@ const inputClass =
           class="w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
           type="text"
           placeholder="一行入力"
+          disabled
           readonly
           tabindex="-1"
         />
@@ -237,6 +238,7 @@ const inputClass =
           class="w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
           type="number"
           placeholder="整数入力"
+          disabled
           readonly
           tabindex="-1"
         />
@@ -244,6 +246,7 @@ const inputClass =
           v-else-if="edit.type === 'textarea'"
           class="min-h-28 w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
           placeholder="複数行入力"
+          disabled
           readonly
           rows="3"
           tabindex="-1"
@@ -251,7 +254,7 @@ const inputClass =
         <template v-else-if="edit.type === 'radio'">
           <div v-if="parsedOptions.length > 0" class="grid gap-2">
             <label v-for="option in parsedOptions" :key="option" class="flex items-center gap-3 text-sm text-body">
-              <input type="radio" tabindex="-1" />
+              <input disabled type="radio" tabindex="-1" />
               <span>{{ option }}</span>
             </label>
           </div>
@@ -263,6 +266,7 @@ const inputClass =
         <template v-else-if="edit.type === 'select'">
           <select
             class="w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
+            disabled
             tabindex="-1"
           >
             <option v-if="parsedOptions.length === 0">（選択肢なし）</option>
@@ -272,7 +276,7 @@ const inputClass =
         <template v-else-if="edit.type === 'checkbox'">
           <div v-if="parsedOptions.length > 0" class="grid gap-2">
             <label v-for="option in parsedOptions" :key="option" class="flex items-center gap-3 text-sm text-body">
-              <input type="checkbox" tabindex="-1" />
+              <input disabled type="checkbox" tabindex="-1" />
               <span>{{ option }}</span>
             </label>
           </div>

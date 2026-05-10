@@ -163,8 +163,8 @@ async function handleDelete() {
                 一般ユーザーに表示する名称です。模擬店や展示など、参加区分を分かりやすく入力します。
               </p>
             </div>
-            <div class="grid gap-2 text-sm text-body">
-              <span class="sr-only">参加種別名</span>
+            <label class="grid gap-2 text-sm text-body">
+              <span>参加種別名</span>
               <input
                 v-model="form.name"
                 name="name"
@@ -174,7 +174,7 @@ async function handleDelete() {
                 @input="markTouched('name')"
               />
               <FormError v-if="getFieldError('name')" :message="getFieldError('name')" />
-            </div>
+            </label>
           </div>
         </SettingsRow>
 
@@ -199,7 +199,7 @@ async function handleDelete() {
               </p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-sm text-body">
                 <span>最低人数</span>
                 <input
                   v-model.number="form.usersCountMin"
@@ -211,8 +211,8 @@ async function handleDelete() {
                   @input="markTouched('usersCountMin')"
                 />
                 <FormError v-if="getFieldError('usersCountMin')" :message="getFieldError('usersCountMin')" />
-              </div>
-              <div class="grid gap-2 text-sm text-body">
+              </label>
+              <label class="grid gap-2 text-sm text-body">
                 <span>最大人数</span>
                 <input
                   v-model.number="form.usersCountMax"
@@ -224,7 +224,7 @@ async function handleDelete() {
                   @input="markTouched('usersCountMax')"
                 />
                 <FormError v-if="getFieldError('usersCountMax')" :message="getFieldError('usersCountMax')" />
-              </div>
+              </label>
             </div>
           </div>
         </SettingsRow>

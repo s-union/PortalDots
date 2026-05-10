@@ -244,8 +244,8 @@ async function handleDeleteForm() {
               <p class="text-sm font-semibold text-body">フォーム名</p>
               <p class="text-xs text-muted-2">一覧と回答画面で表示する名称です。必須項目です。</p>
             </div>
-            <div class="grid gap-2 text-sm text-body">
-              <span class="sr-only">フォーム名</span>
+            <label class="grid gap-2 text-sm text-body">
+              <span>フォーム名</span>
               <input
                 v-model="editForm.name"
                 :disabled="isParticipationForm"
@@ -257,7 +257,7 @@ async function handleDeleteForm() {
                 @input="markTouched('name')"
               />
               <FormError v-if="getFieldError('name') && !isParticipationForm" :message="getFieldError('name')" />
-            </div>
+            </label>
           </div>
         </SettingsRow>
 
@@ -285,7 +285,7 @@ async function handleDeleteForm() {
               <p class="text-xs text-muted-2">受付開始日時と受付終了日時を指定します。</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-sm text-body">
                 <span>開始日時</span>
                 <input
                   v-model="openAtInput"
@@ -296,9 +296,9 @@ async function handleDeleteForm() {
                   @blur="markTouched('openAt')"
                 />
                 <FormError v-if="getFieldError('openAt') && !isParticipationForm" :message="getFieldError('openAt')" />
-              </div>
+              </label>
 
-              <div class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-sm text-body">
                 <span>締切日時</span>
                 <input
                   v-model="closeAtInput"
@@ -312,7 +312,7 @@ async function handleDeleteForm() {
                   v-if="getFieldError('closeAt') && !isParticipationForm"
                   :message="getFieldError('closeAt')"
                 />
-              </div>
+              </label>
             </div>
           </div>
         </SettingsRow>
@@ -341,7 +341,7 @@ async function handleDeleteForm() {
               <p class="text-xs text-muted-2">回答数上限と回答可能タグを設定します。</p>
             </div>
             <div class="grid gap-4">
-              <div class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-sm text-body">
                 <span>最大回答数</span>
                 <input
                   v-model.number="editForm.maxAnswers"
@@ -358,7 +358,7 @@ async function handleDeleteForm() {
                   v-if="getFieldError('maxAnswers') && !isParticipationForm"
                   :message="getFieldError('maxAnswers')"
                 />
-              </div>
+              </label>
               <FormField label="回答可能タグ">
                 <StaffTagPicker
                   v-model="editForm.answerableTags"

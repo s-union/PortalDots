@@ -57,6 +57,9 @@ export default defineConfig({
           },
           setupFiles: ['./.storybook/vitest.setup.ts'],
           exclude: []
+        },
+        optimizeDeps: {
+          include: ['@fortawesome/vue-fontawesome', 'vue-router/experimental']
         }
       }
     ]

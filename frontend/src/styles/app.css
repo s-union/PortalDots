@@ -15,24 +15,24 @@
 @theme {
   /* Primary Color — default: HSL(214, 91%, 45%) */
   --color-primary: hsla(214, 91%, 45%, 1);
-  --color-primary-hover: hsla(214, 91%, 45%, 0.8);
+  --color-primary-hover: rgb(8, 75, 175);
   --color-primary-light: hsla(214, 91%, 45%, 0.1);
   --color-primary-inverse-hover: hsla(214, 91%, 45%, 0.15);
 
   /* Danger */
   --color-danger: rgb(200, 50, 52);
-  --color-danger-hover: rgba(200, 50, 52, 0.8);
+  --color-danger-hover: rgb(160, 40, 42);
   --color-danger-light: rgba(200, 50, 52, 0.1);
 
   /* Success */
-  --color-success: rgb(27, 162, 78);
-  --color-success-hover: rgba(27, 162, 78, 0.8);
+  --color-success: rgb(18, 125, 60);
+  --color-success-hover: rgb(14, 96, 46);
   --color-success-light: rgba(27, 162, 78, 0.1);
 
   /* Muted */
   --color-muted: rgb(88, 97, 105);
-  --color-muted-2: rgb(108, 117, 125);
-  --color-muted-3: rgb(167, 182, 194);
+  --color-muted-2: rgb(92, 101, 109);
+  --color-muted-3: rgb(96, 105, 113);
   --color-muted-light: rgba(88, 97, 105, 0.1);
 
   /* Text / backgrounds — renamed for Tailwind-generated utilities */
