@@ -152,14 +152,6 @@ CREATE TABLE IF NOT EXISTS reads (
     PRIMARY KEY (page_id, user_id)
 );
 
--- ── document_reads ──
-CREATE TABLE IF NOT EXISTS document_reads (
-    document_id uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (document_id, user_id)
-);
-
 -- ── documents ──
 CREATE TABLE IF NOT EXISTS documents (
     id uuid PRIMARY KEY DEFAULT uuidv7(),
@@ -178,6 +170,14 @@ CREATE TABLE IF NOT EXISTS documents (
 
 CREATE INDEX IF NOT EXISTS documents_is_public_idx
     ON documents(is_public);
+
+-- ── document_reads ──
+CREATE TABLE IF NOT EXISTS document_reads (
+    document_id uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (document_id, user_id)
+);
 
 -- ── form_questions ──
 CREATE TABLE IF NOT EXISTS form_questions (
@@ -363,8 +363,8 @@ DROP TABLE IF EXISTS answer_uploads;
 DROP TABLE IF EXISTS answer_details;
 DROP TABLE IF EXISTS answers;
 DROP TABLE IF EXISTS form_questions;
-DROP TABLE IF EXISTS documents;
 DROP TABLE IF EXISTS document_reads;
+DROP TABLE IF EXISTS documents;
 DROP TABLE IF EXISTS reads;
 DROP TABLE IF EXISTS pages;
 DROP TABLE IF EXISTS circle_user;
