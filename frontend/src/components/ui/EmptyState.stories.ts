@@ -34,6 +34,6 @@ export const ForDocuments: Story = {
   args: {
     title: '配布資料はありません',
     description: '現在公開中の配布資料はありません。',
-    icon: '📄'
+    icon: 'file'
   }
 }

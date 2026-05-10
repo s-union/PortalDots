@@ -10,9 +10,6 @@ const { borderless } = defineProps<{
   <SurfaceCardBand class="py-4" :borderless="borderless">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <div v-if="$slots.eyebrow" class="text-sm text-primary">
-          <slot name="eyebrow" />
-        </div>
         <h2 v-if="$slots.title" class="text-lg font-semibold text-body">
           <slot name="title" />
         </h2>

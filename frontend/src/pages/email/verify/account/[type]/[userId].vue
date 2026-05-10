@@ -17,10 +17,14 @@ import { routeParamString, routeString } from '@/lib/routeQuery'
 
 const route = useRoute()
 const verifyType = computed(() => {
-  const value = routeParamString(route.params, 'type')
+  const fromParams = routeParamString(route.params, 'type', '')
+  const value = fromParams || route.path.split('/')[4] || ''
   return value === 'email' || value === 'univemail' ? value : ''
 })
-const userId = computed(() => routeParamString(route.params, 'userId'))
+const userId = computed(() => {
+  const fromParams = routeParamString(route.params, 'userId', '')
+  return fromParams || route.path.split('/')[5] || ''
+})
 const token = computed(() => routeString(route.query.token))
 
 const verifyMutation = useVerifyAuthVerificationLinkMutation()

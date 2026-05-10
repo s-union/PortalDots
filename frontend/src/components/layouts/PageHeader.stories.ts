@@ -6,7 +6,6 @@ const meta = {
   component: PageHeader,
   tags: ['autodocs'],
   argTypes: {
-    eyebrow: { control: 'text' },
     title: { control: 'text' },
     description: { control: 'text' }
   }
@@ -23,14 +22,6 @@ export const WithDescription: Story = {
   args: {
     title: '企画情報',
     description: '参加登録された企画の詳細情報を確認・編集できます。'
-  }
-}
-
-export const WithEyebrow: Story = {
-  args: {
-    eyebrow: 'スタッフ管理',
-    title: '企画詳細',
-    description: 'この企画の詳細情報を確認・編集できます。'
   }
 }
 

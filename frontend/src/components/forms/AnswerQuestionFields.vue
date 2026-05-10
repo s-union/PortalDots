@@ -17,8 +17,8 @@ const {
   draft,
   question,
   disabled,
-  uploadButtonLabel,
-  uploadPending,
+  uploadButtonLabel = 'アップロード',
+  uploadPending = false,
   uploadErrorMessage,
   downloadLabel,
   downloadHref
@@ -27,7 +27,7 @@ const {
   draft: FormAnswerDraft
   question: FormQuestion
   disabled?: boolean
-  uploadButtonLabel: string
+  uploadButtonLabel?: string
   uploadPending?: boolean
   uploadErrorMessage?: string
   downloadLabel?: string

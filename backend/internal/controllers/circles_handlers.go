@@ -563,6 +563,33 @@ func (h *workspaceHandlers) regenerateInvitationToken(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapCircleDetail(updated))
 }
 
+func (h *workspaceHandlers) getCircleByInvitationToken(c echo.Context) error {
+	token := c.Param("token")
+	if token == "" {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	joinTarget, err := h.circles.FindByInvitationToken(token)
+	if errors.Is(err, circle.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "invalid_token")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+	pt, formValue, _, err := h.resolveParticipationRegistrationForm(joinTarget.ParticipationTypeID)
+	if errors.Is(err, participationtype.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "invalid_token")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+	if !isPublicParticipationForm(formValue) || pt.ID == "" {
+		return errorJSON(c, http.StatusNotFound, "invalid_token")
+	}
+
+	return c.JSON(http.StatusOK, mapCircleDetail(joinTarget))
+}
+
 func (h *workspaceHandlers) joinCircleByToken(c echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {

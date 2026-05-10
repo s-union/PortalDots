@@ -27,8 +27,18 @@ import { routeParamString, routeString } from '@/lib/routeQuery'
 
 const router = useRouter()
 const route = useRoute()
-const verifyType = computed(() => routeParamString(route.params, 'type', 'unknown'))
-const pendingRegistrationId = computed(() => routeParamString(route.params, 'userId', 'unknown'))
+const verifyType = computed(() => {
+  const fromParams = routeParamString(route.params, 'type', '')
+  if (fromParams) return fromParams
+  const segments = route.path.split('/')
+  return segments[3] || 'unknown'
+})
+const pendingRegistrationId = computed(() => {
+  const fromParams = routeParamString(route.params, 'userId', '')
+  if (fromParams) return fromParams
+  const segments = route.path.split('/')
+  return segments[4] || 'unknown'
+})
 const token = computed(() => routeString(route.query.token))
 const verifyMutation = useVerifyRegistrationMutation()
 const completeMutation = useCompleteRegistrationMutation()

@@ -5971,6 +5971,61 @@ paths:
         "404":
           description: Current circle was not found
   /circles/join/{token}:
+    get:
+      operationId: getCirclesJoinByToken
+      summary: Get circle details by invitation token
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Circle details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  [
+                    id,
+                    name,
+                    nameYomi,
+                    groupName,
+                    groupNameYomi,
+                    participationTypeId,
+                    participationTypeName,
+                    notes,
+                    invitationToken,
+                    submittedAt,
+                  ]
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  nameYomi:
+                    type: string
+                  groupName:
+                    type: string
+                  groupNameYomi:
+                    type: string
+                  participationTypeId:
+                    type: string
+                  participationTypeName:
+                    type: string
+                  notes:
+                    type: string
+                  invitationToken:
+                    type: string
+                  submittedAt:
+                    anyOf:
+                      - type: "null"
+                      - type: string
+                        format: date-time
+        "404":
+          description: Invalid invitation token
     post:
       operationId: postCirclesJoinByToken
       summary: Join a circle by invitation token

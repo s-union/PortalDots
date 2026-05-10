@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import PanelBody from '@/components/ui/PanelBody.vue'
-import { useJoinCircleMutation } from '@/features/circles/api'
+import { useCircleByInvitationTokenQuery, useJoinCircleMutation } from '@/features/circles/api'
 import { useSessionStore } from '@/features/session/store'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -19,6 +19,7 @@ const errorMessage = ref('')
 
 const invitationToken = computed(() => routeParamString(route.params, 'token'))
 const isAuthenticated = computed(() => sessionStore.isAuthenticated)
+const circleQuery = useCircleByInvitationTokenQuery(invitationToken)
 
 async function handleAcceptInvite() {
   errorMessage.value = ''
@@ -67,6 +68,15 @@ function extractApiMessage(error: unknown) {
     <SurfaceCard>
       <PanelBody spacious class="space-y-4 text-sm leading-7 text-body">
         <h1 class="text-2xl font-semibold text-body">企画招待を受け入れる</h1>
+
+        <div v-if="circleQuery.data.value" class="rounded border border-border bg-surface-light px-4 py-3">
+          <p class="text-xs text-muted-2">招待元企画</p>
+          <p class="mt-1 text-lg font-semibold text-body">{{ circleQuery.data.value.name }}</p>
+          <p class="text-sm text-muted">
+            {{ circleQuery.data.value.groupName }} / {{ circleQuery.data.value.participationTypeName }}
+          </p>
+        </div>
+
         <p>招待リンクから、このアカウントを企画メンバーとして追加します。</p>
         <p v-if="isAuthenticated">
           現在は <strong>{{ sessionStore.user?.displayName ?? 'ログイン中ユーザー' }}</strong>

@@ -152,6 +152,7 @@ type WorkspaceRoutes struct {
 	AddCurrentCircleMember               echo.HandlerFunc
 	RemoveCurrentCircleMember            echo.HandlerFunc
 	RegenerateInvitationToken            echo.HandlerFunc
+	GetCircleByInvitationToken           echo.HandlerFunc
 	JoinCircleByToken                    echo.HandlerFunc
 	ListDocuments                        echo.HandlerFunc
 	GetDocument                          echo.HandlerFunc

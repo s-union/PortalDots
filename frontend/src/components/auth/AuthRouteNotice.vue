@@ -9,7 +9,6 @@ interface Action {
 }
 
 interface Props {
-  eyebrow?: string
   title: string
   lead: string
   body: string
@@ -17,34 +16,35 @@ interface Props {
   actions: Action[]
 }
 
-const { eyebrow = 'Auth', title, lead, body, notes = [], actions } = defineProps<Props>()
+const { title, lead, body, notes = [], actions } = defineProps<Props>()
 
 function actionClasses(variant: Action['variant'] = 'secondary') {
   if (variant === 'primary') {
-    return 'inline-flex rounded bg-primary px-4 py-3 font-bold text-white transition hover:bg-primary-hover'
+    return 'inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-white transition hover:bg-primary-hover'
   }
 
-  return 'inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light'
+  return 'inline-flex items-center justify-center rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-body transition hover:bg-surface-light'
 }
 </script>
 
 <template>
-  <section class="mx-auto max-w-3xl space-y-6 py-8">
+  <section class="mx-auto max-w-3xl py-8">
     <SurfaceCard>
       <SurfaceCardBand>
-        <p class="text-sm text-primary">{{ eyebrow }}</p>
-        <h2 class="mt-2 text-2xl font-semibold text-body">{{ title }}</h2>
+        <h2 class="text-2xl font-bold text-body">{{ title }}</h2>
       </SurfaceCardBand>
 
-      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
-        <p>{{ lead }}</p>
-        <p>{{ body }}</p>
+      <div class="space-y-4 px-6 py-6 text-sm leading-7">
+        <p class="text-base font-semibold text-body">{{ lead }}</p>
+        <p class="text-muted">{{ body }}</p>
 
-        <ul v-if="notes.length > 0" class="list-disc space-y-2 pl-5 text-muted">
-          <li v-for="note in notes" :key="note">{{ note }}</li>
-        </ul>
+        <div v-if="notes.length > 0" class="rounded-lg bg-surface-light px-4 py-3 text-muted">
+          <ul class="list-disc space-y-1.5 pl-5">
+            <li v-for="note in notes" :key="note">{{ note }}</li>
+          </ul>
+        </div>
 
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap justify-center gap-3 pt-4">
           <RouterLink
             v-for="action in actions"
             :key="`${action.label}:${action.to}`"

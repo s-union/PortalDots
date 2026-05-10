@@ -349,18 +349,6 @@ const circleStatusItems = computed(() => {
         </div>
       </ListPanel>
 
-      <ListPanel legacy title="お問い合わせ先">
-        <div class="px-6 py-6 text-sm leading-7 text-body">
-          <p>{{ publicHome?.appName ?? 'PortalDots' }}に関するお問い合わせは以下のメールアドレスまでお送りください。</p>
-          <p v-if="isDemoMode" class="mt-2 text-muted">
-            {{ publicHome?.appName ?? 'PortalDots' }}内の[お問い合わせ]からお問い合わせいただくことはできません。
-          </p>
-          <p class="mt-4 font-semibold text-body">
-            {{ publicHome?.portalContactEmail }}
-          </p>
-        </div>
-      </ListPanel>
-
       <ListPanel v-if="publicParticipationTypes.length > 0" legacy title="企画参加登録">
         <div class="divide-y divide-border">
           <ListItemLink v-for="pt in publicParticipationTypes" :key="pt.id" legacy :to="participationTypePath(pt.id)">

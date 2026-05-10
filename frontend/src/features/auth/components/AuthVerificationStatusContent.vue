@@ -31,11 +31,10 @@ const autoSentMessage = computed(() => {
   if (sent === 'email') {
     return '連絡先メールアドレスに認証URLを送信しました。メール内のリンクを開いて認証してください。'
   }
-  if (sent === 'univemail') {
-    return '大学メールアドレスに認証URLを送信しました。メール内のリンクを開いて認証してください。'
-  }
   return ''
 })
+
+const verificationItems = computed(() => (statusQuery.data.value?.items ?? []).filter((item) => item.type === 'email'))
 
 async function handleRequest(type: 'email' | 'univemail') {
   errorMessage.value = ''
@@ -75,7 +74,7 @@ async function handleRequest(type: 'email' | 'univemail') {
     </div>
   </SurfaceCard>
 
-  <SurfaceCard tag="section" v-for="item in statusQuery.data.value?.items ?? []" :key="item.type">
+  <SurfaceCard tag="section" v-for="item in verificationItems" :key="item.type">
     <SurfaceCardBand>
       <div class="flex items-center justify-between gap-3">
         <div>
@@ -98,7 +97,7 @@ async function handleRequest(type: 'email' | 'univemail') {
         type="button"
         @click="handleRequest(item.type)"
       >
-        {{ item.verified ? '認証済み' : '認証メールを送信' }}
+        {{ item.verified ? '認証済み' : requestResult?.type === item.type ? '再送信' : '認証メールを送信' }}
       </button>
 
       <div
@@ -109,4 +108,13 @@ async function handleRequest(type: 'email' | 'univemail') {
       </div>
     </div>
   </SurfaceCard>
+
+  <div class="flex justify-center">
+    <RouterLink
+      class="rounded border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-body transition hover:bg-surface-light"
+      to="/"
+    >
+      トップページに戻る
+    </RouterLink>
+  </div>
 </template>

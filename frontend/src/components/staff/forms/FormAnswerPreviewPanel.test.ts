@@ -136,7 +136,7 @@ describe('FormAnswerPreviewPanel', () => {
     })
 
     expect(wrapper.text()).toContain('現在企画の回答')
-    expect(wrapper.text()).toContain('last updated: 2026-03-10T10:00:00Z')
+    expect(wrapper.text()).toContain('最終更新 2026年3月10日(火) 19:00')
     expect(wrapper.text()).toContain('机, 椅子')
     expect(wrapper.text()).toContain('複数行\nテキスト')
     expect(wrapper.text()).toContain('山田太郎')

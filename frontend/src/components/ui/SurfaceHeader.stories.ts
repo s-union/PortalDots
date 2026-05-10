@@ -41,21 +41,6 @@ export const WithDescription: Story = {
   })
 }
 
-export const WithEyebrow: Story = {
-  render: () => ({
-    components: { SurfaceHeader, SurfaceCard },
-    template: `
-      <SurfaceCard>
-        <SurfaceHeader>
-          <template #eyebrow>スタッフ管理</template>
-          <template #title>企画詳細</template>
-          <template #description>この企画の詳細情報を確認・編集できます。</template>
-        </SurfaceHeader>
-      </SurfaceCard>
-    `
-  })
-}
-
 export const WithActions: Story = {
   render: () => ({
     components: { SurfaceHeader, SurfaceCard },

@@ -6,7 +6,6 @@ const meta = {
   component: AuthRouteNotice,
   tags: ['autodocs'],
   argTypes: {
-    eyebrow: { control: 'text' },
     title: { control: 'text' },
     lead: { control: 'text' },
     body: { control: 'text' }
@@ -30,7 +29,6 @@ export const LoginRequired: Story = {
 
 export const StaffAccessDenied: Story = {
   args: {
-    eyebrow: 'アクセス制限',
     title: 'スタッフ専用ページです',
     lead: 'このページはスタッフのみがアクセスできます。',
     body: 'スタッフとしてのアクセス権限がない場合は、管理者にお問い合わせください。',

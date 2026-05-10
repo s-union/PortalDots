@@ -557,6 +557,8 @@ func NewServerWithDependencies(
 		UpdateStaffPermissions: staffPermissionH.updateStaffPermissions,
 	}, middlewares.RequireStaffMode(sessionMiddlewareConfig, hasStaffAccess))
 
+	v1.GET("/circles/join/:token", workspaceH.getCircleByInvitationToken)
+
 	RegisterWorkspaceRoutes(v1, WorkspaceRoutes{
 		ListCircles:                          workspaceH.listCircles,
 		ListParticipationTypes:               workspaceH.listParticipationTypes,

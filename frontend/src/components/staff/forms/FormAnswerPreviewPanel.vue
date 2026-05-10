@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type StaffFormDetail } from '@/features/staff/forms/api'
+import { formatDateTime } from '@/lib/format/datetime'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import UploadFileRow from './UploadFileRow.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -29,7 +30,7 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
         <h3 class="text-lg font-medium text-body">現在企画の回答</h3>
         <div class="flex flex-wrap items-center gap-3">
           <p class="text-xs text-muted-2">
-            {{ form.answer?.updatedAt ? `last updated: ${form.answer.updatedAt}` : '未回答' }}
+            {{ form.answer?.updatedAt ? `最終更新 ${formatDateTime(form.answer.updatedAt)}` : '未回答' }}
           </p>
           <p v-if="isParticipationForm" class="text-xs text-muted-2">
             参加登録フォームの回答管理はここでは行えません。

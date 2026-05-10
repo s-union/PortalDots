@@ -1334,6 +1334,31 @@ func TestRegenerateInvitationTokenAfterSubmitReturnsOK(t *testing.T) {
 	}
 }
 
+func TestGetCircleByInvitationToken(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(circleMemberConfig())
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/circles/join/0195ec00-0022-7000-8000-000000000001-invite-token", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var detail circleDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal detail response: %v", err)
+	}
+	if detail.Name != "デモ企画B" {
+		t.Fatalf("expected circle name 'デモ企画B', got %s", detail.Name)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/circles/join/invalid-token", nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestJoinCircleByTokenAfterSubmitReturnsOK(t *testing.T) {
 	t.Parallel()
 

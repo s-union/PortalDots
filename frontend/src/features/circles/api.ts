@@ -397,6 +397,20 @@ export function useRegenerateInvitationTokenMutation() {
   })
 }
 
+export function useCircleByInvitationTokenQuery(token: MaybeRefOrGetter<string>) {
+  return useQuery({
+    queryKey: computed(() => ['circles', 'join', toValue(token)]),
+    queryFn: () => fetchCircleByInvitationToken(toValue(token)),
+    enabled: computed(() => toValue(token).trim() !== '')
+  })
+}
+
+export async function fetchCircleByInvitationToken(token: string): Promise<CircleDetail> {
+  return $api.queryData('get', '/circles/join/{token}', { params: { path: { token } } }, parseCircleDetail, {
+    errorMessage: '招待情報の取得に失敗しました'
+  })
+}
+
 export function useJoinCircleMutation() {
   const queryClient = useQueryClient()
   const sessionStore = useSessionStore()

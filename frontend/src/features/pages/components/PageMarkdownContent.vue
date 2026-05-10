@@ -75,6 +75,7 @@ const renderedHtml = computed(() => {
   margin-bottom: 0.75rem;
   font-weight: 700;
   line-height: 1.5;
+  color: var(--color-body);
 }
 
 .page-markdown:deep(h1) {

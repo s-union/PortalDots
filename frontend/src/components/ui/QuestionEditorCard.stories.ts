@@ -50,12 +50,7 @@ export const WithActions: Story = {
           <IconActionButton title="下へ移動"><i class="fas fa-arrow-down" aria-hidden="true" /></IconActionButton>
           <IconActionButton variant="subtleDanger" title="削除"><i class="fas fa-trash" aria-hidden="true" /></IconActionButton>
         </template>
-        <div class="grid gap-2 text-sm text-body">
-          <label class="grid gap-1">
-            <span class="font-medium">質問文</span>
-            <input type="text" value="希望する時間帯を選んでください" />
-          </label>
-        </div>
+        <div class="text-sm text-muted">この質問の設定はここに表示されます。</div>
       </QuestionEditorCard>
     `
   })

@@ -141,6 +141,7 @@ describe('EmailVerifyPage', () => {
       '連絡用メールアドレスにお知らせを届けるには、連絡先メールアドレスの認証が必要です。'
     )
     expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain('登録情報の変更')
+    expect(wrapper.get('a[href="/"]').text()).toContain('トップページに戻る')
   })
 
   it('shows an auto-sent guidance message from query params', async () => {

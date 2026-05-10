@@ -112,7 +112,7 @@ const {
 
                 <EmptyState
                   v-if="editableQuestions.length === 0"
-                  icon="✎"
+                  icon="pen"
                   title="右側の[設問を追加]から設問を追加しましょう"
                   description="このフォームには設問が1つもありません。"
                   class="rounded-none border-0 shadow-none"

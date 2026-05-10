@@ -12,6 +12,7 @@ const meta = {
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),
+        http.get('/v1/circles/join/:token', () => HttpResponse.json(mockCircle)),
         http.post('/v1/circles/join/:token', () => HttpResponse.json(mockCircle))
       ]
     }
@@ -37,6 +38,7 @@ export const NotAuthenticated: Story = {
             user: null
           })
         ),
+        http.get('/v1/circles/join/:token', () => HttpResponse.json(mockCircle)),
         http.post('/v1/circles/join/:token', () => HttpResponse.json(mockCircle))
       ]
     }
@@ -48,7 +50,8 @@ export const JoinError: Story = {
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),
-        http.post('/v1/circles/join/:token', () => HttpResponse.json({ message: 'invalid_token' }, { status: 422 }))
+        http.get('/v1/circles/join/:token', () => HttpResponse.json({ message: 'invalid_token' }, { status: 404 })),
+        http.post('/v1/circles/join/:token', () => HttpResponse.json({ message: 'invalid_token' }, { status: 404 }))
       ]
     }
   }

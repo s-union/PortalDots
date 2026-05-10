@@ -110,7 +110,6 @@ export const Textarea: Story = {
         :answer="null"
         :draft="draft"
         :question="question"
-        upload-button-label="アップロード"
         :download-href="() => ''"
       />
     `
@@ -129,7 +128,6 @@ export const NumberInput: Story = {
         :answer="null"
         :draft="draft"
         :question="question"
-        upload-button-label="アップロード"
         :download-href="() => ''"
       />
     `
@@ -148,7 +146,6 @@ export const Select: Story = {
         :answer="null"
         :draft="draft"
         :question="question"
-        upload-button-label="アップロード"
         :download-href="() => ''"
       />
     `
@@ -167,7 +164,6 @@ export const Radio: Story = {
         :answer="null"
         :draft="draft"
         :question="question"
-        upload-button-label="アップロード"
         :download-href="() => ''"
       />
     `
@@ -205,7 +201,6 @@ export const FileUpload: Story = {
         :answer="null"
         :draft="draft"
         :question="question"
-        upload-button-label="アップロード"
         :download-href="() => '/v1/forms/form-1/answers/q-7/download'"
       />
     `
@@ -225,7 +220,6 @@ export const Disabled: Story = {
         :draft="draft"
         :question="question"
         :disabled="true"
-        upload-button-label="アップロード"
         :download-href="() => ''"
       />
     `

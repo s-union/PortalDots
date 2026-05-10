@@ -33,7 +33,6 @@ function createProps(
     question,
     draft,
     answer,
-    uploadButtonLabel: 'アップロード',
     downloadHref: () => '/download/url'
   }
 }
@@ -146,21 +145,35 @@ describe('AnswerQuestionFields', () => {
     expect(wrapper.emitted('upload')?.[0]).toEqual(['question-upload'])
   })
 
-  it('uses custom download label and pending upload label', () => {
+  it('uses custom download label and shows empty state', () => {
     const question = createQuestion({ id: 'question-upload', type: 'upload' })
     const draft: FormAnswerDraft = {}
 
     const wrapper = mount(AnswerQuestionFields, {
       props: {
         ...createProps(question, draft),
-        uploadPending: true,
         downloadLabel: 'DL'
       }
     })
 
-    expect(wrapper.text()).toContain('送信中...')
     expect(wrapper.text()).toContain('まだファイルはアップロードされていません。')
     expect(wrapper.find('a[href="/download/url"]').exists()).toBe(false)
+  })
+
+  it('shows pending upload label and disables upload button', () => {
+    const question = createQuestion({ id: 'question-upload', type: 'upload' })
+    const draft: FormAnswerDraft = {}
+
+    const wrapper = mount(AnswerQuestionFields, {
+      props: {
+        ...createProps(question, draft),
+        uploadPending: true
+      }
+    })
+
+    const button = wrapper.get('button[type="button"]')
+    expect(button.text()).toBe('送信中...')
+    expect(button.attributes('disabled')).toBeDefined()
   })
 
   it('disables controls when disabled is true', () => {
