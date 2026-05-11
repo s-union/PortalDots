@@ -21,6 +21,8 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import FormField from '@/components/ui/FormField.vue'
 import CheckboxField from '@/components/ui/CheckboxField.vue'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import {
   buildDeleteStaffDocumentConfirmMessage,
   buildStaffDocumentDownloadUrl,
@@ -40,6 +42,8 @@ const detailEnabled = computed(() => staffStatusQuery.data.value?.authorized ===
 const documentQuery = useStaffDocumentDetailQuery(documentId, detailEnabled)
 const updateDocumentMutation = useUpdateStaffDocumentMutation(documentId)
 const deleteDocumentMutation = useDeleteStaffDocumentMutation(documentId)
+const tagsQuery = useStaffTagsQuery(detailEnabled)
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const form = useStaffDocumentForm()
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -58,6 +62,7 @@ watch(
       notes: document.notes,
       isPublic: document.isPublic,
       isImportant: document.isImportant,
+      viewableTags: [...document.viewableTags],
       file: null
     }
   },
@@ -85,6 +90,7 @@ async function handleSaveDocument() {
       notes: form.value.notes,
       isPublic: form.value.isPublic,
       isImportant: form.value.isImportant,
+      viewableTags: form.value.viewableTags,
       file: form.value.file
     })
     form.value.file = null
@@ -119,8 +125,6 @@ async function handleDeleteDocument() {
     <form v-else-if="documentQuery.data.value" class="space-y-6" @submit.prevent="handleSaveDocument">
       <div class="space-y-1 px-1">
         <h1 class="text-2xl font-semibold text-body">配布資料を編集</h1>
-        <p class="text-sm text-muted">配布資料ID : {{ documentQuery.data.value.id }}</p>
-        <p class="text-sm text-muted">対象企画 : {{ documentQuery.data.value.circle.name }}</p>
         <p class="text-sm text-muted">
           {{ formatDateTimeUpdated(documentQuery.data.value.updatedAt) }} /
           {{ documentQuery.data.value.extension || 'FILE' }} /
@@ -162,6 +166,12 @@ async function handleDeleteDocument() {
             <CheckboxField v-model="form.isImportant" label="重要資料として扱う" name="isImportant" />
 
             <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
+
+            <label class="grid gap-2 text-sm text-body">
+              <span class="font-medium">閲覧可能なタグ</span>
+              <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
+              <p class="text-xs text-muted">空欄なら全員に公開、指定すると一致する企画タグだけに限定公開します。</p>
+            </label>
           </div>
         </SettingsRow>
       </SettingsSection>

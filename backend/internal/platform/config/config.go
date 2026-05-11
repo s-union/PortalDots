@@ -135,18 +135,19 @@ type Page struct {
 }
 
 type Document struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     string
-	CreatedAt   string
-	UpdatedAt   string
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	IsImportant  bool
+	ViewableTags []string
+	Filename     string
+	MimeType     string
+	Content      string
+	CreatedAt    string
+	UpdatedAt    string
 }
 
 type Form struct {

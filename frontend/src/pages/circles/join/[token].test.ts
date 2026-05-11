@@ -64,6 +64,20 @@ describe('CircleJoinPage', () => {
 
   it('joins a circle and redirects to workspace detail', async () => {
     server.use(
+      http.get('/v1/circles/join/:token', () =>
+        HttpResponse.json({
+          id: 'circle-a',
+          name: 'テスト企画A',
+          nameYomi: 'てすときかくえー',
+          groupName: 'テスト大学',
+          groupNameYomi: 'てすとだいがく',
+          participationTypeId: 'pt-exhibit',
+          participationTypeName: '展示',
+          notes: '',
+          invitationToken: 'invite-token',
+          submittedAt: null
+        })
+      ),
       http.post('/v1/circles/join/:token', () =>
         HttpResponse.json({
           id: 'circle-a',
@@ -98,11 +112,11 @@ describe('CircleJoinPage', () => {
 
   it('shows a message when the invitation token is invalid', async () => {
     server.use(
+      http.get('/v1/circles/join/:token', () => HttpResponse.json({ message: 'invalid_token' }, { status: 404 })),
       http.post('/v1/circles/join/:token', () => HttpResponse.json({ message: 'invalid_token' }, { status: 404 }))
     )
 
     const { wrapper } = await mountAt()
-    await wrapper.get('button[type="button"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('招待 URL が無効か、すでに利用できません')
@@ -110,6 +124,20 @@ describe('CircleJoinPage', () => {
 
   it('redirects already-member users to circle selector', async () => {
     server.use(
+      http.get('/v1/circles/join/:token', () =>
+        HttpResponse.json({
+          id: 'circle-a',
+          name: 'テスト企画A',
+          nameYomi: 'てすときかくえー',
+          groupName: 'テスト大学',
+          groupNameYomi: 'てすとだいがく',
+          participationTypeId: 'pt-exhibit',
+          participationTypeName: '展示',
+          notes: '',
+          invitationToken: 'invite-token',
+          submittedAt: null
+        })
+      ),
       http.post('/v1/circles/join/:token', () => HttpResponse.json({ message: 'already_member' }, { status: 409 }))
     )
 

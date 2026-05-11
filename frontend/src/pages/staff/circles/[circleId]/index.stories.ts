@@ -18,6 +18,9 @@ const meta = {
     route: {
       path: '/staff/circles/circle-1'
     },
+    session: {
+      bootstrap: mockSessionBootstrapStaff
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
@@ -51,6 +54,9 @@ export const Default: Story = {}
 
 export const EmptyMembers: Story = {
   parameters: {
+    session: {
+      bootstrap: mockSessionBootstrapStaff
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),

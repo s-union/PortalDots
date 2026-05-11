@@ -12,32 +12,35 @@ import (
 )
 
 type Document struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	Extension   string
-	MimeType    string
-	SizeBytes   int64
-	CreatedAt   string
-	UpdatedAt   string
-	Content     []byte
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	IsImportant  bool
+	ViewableTags []string
+	Filename     string
+	Extension    string
+	MimeType     string
+	SizeBytes    int64
+	CreatedAt    string
+	UpdatedAt    string
+	Content      []byte
 }
 
 type Repository interface {
 	ListByCircle(circleID string) []Document
 	ListPublic() []Document
+	ListForCircle(circleTags []string) []Document
 	ListByCircleForStaff(circleID string) []Document
 	FindByCircle(circleID, documentID string) (Document, bool)
 	FindPublic(documentID string) (Document, bool)
+	FindForCircle(circleTags []string, documentID string) (Document, bool)
 	FindForStaff(documentID string) (Document, bool)
 	FindByCircleForStaff(circleID, documentID string) (Document, bool)
-	Create(circleID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
-	Update(circleID, documentID, name, description, notes string, isPublic bool, isImportant bool, filename, mimeType string, content []byte) (Document, bool)
+	Create(circleID, name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
+	Update(circleID, documentID, name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
 	Delete(circleID, documentID string) bool
 	ListReadDocumentIDs(userID string, documentIDs []string) []string
 	MarkRead(documentID, userID string) error
@@ -54,20 +57,21 @@ func NewStaticRepository(cfg []config.Document) *StaticRepository {
 	documents := make([]Document, 0, len(cfg))
 	for _, item := range cfg {
 		documents = append(documents, Document{
-			ID:          item.ID,
-			CircleID:    item.CircleID,
-			Name:        item.Name,
-			Description: item.Description,
-			Notes:       item.Notes,
-			IsPublic:    item.IsPublic,
-			IsImportant: item.IsImportant,
-			Filename:    item.Filename,
-			Extension:   normalizeDocumentExtension(item.Filename),
-			MimeType:    item.MimeType,
-			SizeBytes:   int64(len(item.Content)),
-			CreatedAt:   item.CreatedAt,
-			UpdatedAt:   item.UpdatedAt,
-			Content:     []byte(item.Content),
+			ID:           item.ID,
+			CircleID:     item.CircleID,
+			Name:         item.Name,
+			Description:  item.Description,
+			Notes:        item.Notes,
+			IsPublic:     item.IsPublic,
+			IsImportant:  item.IsImportant,
+			ViewableTags: append([]string{}, item.ViewableTags...),
+			Filename:     item.Filename,
+			Extension:    normalizeDocumentExtension(item.Filename),
+			MimeType:     item.MimeType,
+			SizeBytes:    int64(len(item.Content)),
+			CreatedAt:    item.CreatedAt,
+			UpdatedAt:    item.UpdatedAt,
+			Content:      []byte(item.Content),
 		})
 	}
 
@@ -84,7 +88,7 @@ func (r *StaticRepository) ListByCircle(circleID string) []Document {
 
 	documents := make([]Document, 0, len(r.documents))
 	for _, document := range r.documents {
-		if document.CircleID == circleID && document.IsPublic {
+		if document.CircleID == circleID && document.IsPublic && documentVisibleForTags(document, nil) {
 			documents = append(documents, cloneDocument(document))
 		}
 	}
@@ -98,7 +102,21 @@ func (r *StaticRepository) ListPublic() []Document {
 
 	documents := make([]Document, 0, len(r.documents))
 	for _, document := range r.documents {
-		if document.IsPublic {
+		if document.IsPublic && documentVisibleForTags(document, nil) {
+			documents = append(documents, cloneDocument(document))
+		}
+	}
+	sortDocumentsByUpdatedAt(documents)
+	return documents
+}
+
+func (r *StaticRepository) ListForCircle(circleTags []string) []Document {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	documents := make([]Document, 0, len(r.documents))
+	for _, document := range r.documents {
+		if document.IsPublic && documentVisibleForTags(document, circleTags) {
 			documents = append(documents, cloneDocument(document))
 		}
 	}
@@ -125,7 +143,7 @@ func (r *StaticRepository) FindByCircle(circleID, documentID string) (Document, 
 	defer r.mu.RUnlock()
 
 	for _, document := range r.documents {
-		if document.CircleID == circleID && document.ID == documentID && document.IsPublic {
+		if document.CircleID == circleID && document.ID == documentID && document.IsPublic && documentVisibleForTags(document, nil) {
 			return cloneDocument(document), true
 		}
 	}
@@ -137,7 +155,19 @@ func (r *StaticRepository) FindPublic(documentID string) (Document, bool) {
 	defer r.mu.RUnlock()
 
 	for _, document := range r.documents {
-		if document.ID == documentID && document.IsPublic {
+		if document.ID == documentID && document.IsPublic && documentVisibleForTags(document, nil) {
+			return cloneDocument(document), true
+		}
+	}
+	return Document{}, false
+}
+
+func (r *StaticRepository) FindForCircle(circleTags []string, documentID string) (Document, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, document := range r.documents {
+		if document.ID == documentID && document.IsPublic && documentVisibleForTags(document, circleTags) {
 			return cloneDocument(document), true
 		}
 	}
@@ -175,6 +205,7 @@ func (r *StaticRepository) Create(
 	notes string,
 	isPublic bool,
 	isImportant bool,
+	viewableTags []string,
 	filename,
 	mimeType string,
 	content []byte,
@@ -184,20 +215,21 @@ func (r *StaticRepository) Create(
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	created := Document{
-		ID:          uuidv7.MustString(),
-		CircleID:    circleID,
-		Name:        name,
-		Description: description,
-		Notes:       notes,
-		IsPublic:    isPublic,
-		IsImportant: isImportant,
-		Filename:    filename,
-		Extension:   normalizeDocumentExtension(filename),
-		MimeType:    mimeType,
-		SizeBytes:   int64(len(content)),
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		Content:     append([]byte(nil), content...),
+		ID:           uuidv7.MustString(),
+		CircleID:     circleID,
+		Name:         name,
+		Description:  description,
+		Notes:        notes,
+		IsPublic:     isPublic,
+		IsImportant:  isImportant,
+		ViewableTags: append([]string{}, viewableTags...),
+		Filename:     filename,
+		Extension:    normalizeDocumentExtension(filename),
+		MimeType:     mimeType,
+		SizeBytes:    int64(len(content)),
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		Content:      append([]byte(nil), content...),
 	}
 	r.nextID++
 	r.documents = append(r.documents, created)
@@ -213,6 +245,7 @@ func (r *StaticRepository) Update(
 	notes string,
 	isPublic bool,
 	isImportant bool,
+	viewableTags []string,
 	filename,
 	mimeType string,
 	content []byte,
@@ -230,6 +263,7 @@ func (r *StaticRepository) Update(
 		currentDocument.Notes = notes
 		currentDocument.IsPublic = isPublic
 		currentDocument.IsImportant = isImportant
+		currentDocument.ViewableTags = append([]string{}, viewableTags...)
 		currentDocument.Filename = filename
 		currentDocument.Extension = normalizeDocumentExtension(filename)
 		currentDocument.MimeType = mimeType
@@ -260,8 +294,23 @@ func (r *StaticRepository) Delete(circleID, documentID string) bool {
 }
 
 func cloneDocument(document Document) Document {
+	document.ViewableTags = append([]string{}, document.ViewableTags...)
 	document.Content = append([]byte(nil), document.Content...)
 	return document
+}
+
+func documentVisibleForTags(document Document, circleTags []string) bool {
+	if len(document.ViewableTags) == 0 {
+		return true
+	}
+	for _, viewableTag := range document.ViewableTags {
+		for _, circleTag := range circleTags {
+			if viewableTag == circleTag {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func normalizeDocumentExtension(filename string) string {

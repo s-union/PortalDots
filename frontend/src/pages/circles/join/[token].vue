@@ -21,6 +21,20 @@ const invitationToken = computed(() => routeParamString(route.params, 'token'))
 const isAuthenticated = computed(() => sessionStore.isAuthenticated)
 const circleQuery = useCircleByInvitationTokenQuery(invitationToken)
 
+const queryErrorMessage = computed(() => {
+  if (!circleQuery.isError.value) {
+    return ''
+  }
+
+  const apiMessage = extractApiMessage(circleQuery.error.value)
+
+  if (apiMessage === 'invalid_token') {
+    return '招待 URL が無効か、すでに利用できません。最新の招待リンクを共有してもらってください。'
+  }
+
+  return '招待情報の取得に失敗しました。時間をおいて再度お試しください。'
+})
+
 async function handleAcceptInvite() {
   errorMessage.value = ''
 
@@ -77,28 +91,32 @@ function extractApiMessage(error: unknown) {
           </p>
         </div>
 
-        <p>招待リンクから、このアカウントを企画メンバーとして追加します。</p>
-        <p v-if="isAuthenticated">
-          現在は <strong>{{ sessionStore.user?.displayName ?? 'ログイン中ユーザー' }}</strong>
-          として受け入れます。受け入れ後は企画情報画面へ移動します。
-        </p>
-        <p v-else>招待を受け入れるには先にログインが必要です。ログイン後にこの URL をもう一度開いてください。</p>
+        <template v-if="!circleQuery.isError.value">
+          <p>招待リンクから、このアカウントを企画メンバーとして追加します。</p>
+          <p v-if="isAuthenticated">
+            現在は <strong>{{ sessionStore.user?.displayName ?? 'ログイン中ユーザー' }}</strong>
+            として受け入れます。受け入れ後は企画情報画面へ移動します。
+          </p>
+          <p v-else>招待を受け入れるには先にログインが必要です。ログイン後にこの URL をもう一度開いてください。</p>
+        </template>
 
-        <ErrorState v-if="errorMessage" :message="errorMessage" />
+        <ErrorState v-if="errorMessage || queryErrorMessage" :message="errorMessage || queryErrorMessage" />
 
         <div class="flex flex-wrap gap-3">
-          <BaseButton
-            variant="primary"
-            size="lg"
-            weight="bold"
-            v-if="isAuthenticated"
-            :disabled="joinMutation.isPending.value"
-            type="button"
-            @click="handleAcceptInvite"
-          >
-            {{ joinMutation.isPending.value ? '受け入れ中...' : '招待を受け入れる' }}
-          </BaseButton>
-          <BaseButton v-else to="/login" variant="primary" size="lg" weight="bold"> ログインして続ける </BaseButton>
+          <template v-if="!circleQuery.isError.value">
+            <BaseButton
+              variant="primary"
+              size="lg"
+              weight="bold"
+              v-if="isAuthenticated"
+              :disabled="joinMutation.isPending.value"
+              type="button"
+              @click="handleAcceptInvite"
+            >
+              {{ joinMutation.isPending.value ? '受け入れ中...' : '招待を受け入れる' }}
+            </BaseButton>
+            <BaseButton v-else to="/login" variant="primary" size="lg" weight="bold"> ログインして続ける </BaseButton>
+          </template>
           <RouterLink
             to="/circles/select"
             class="inline-flex rounded border border-border px-4 py-3 font-semibold text-body transition hover:bg-surface-light"

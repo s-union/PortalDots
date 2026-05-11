@@ -4,8 +4,8 @@ import { createPinia } from 'pinia'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { routes } from 'vue-router/auto-routes'
-import { initialize, mswLoader } from 'msw-storybook-addon'
-import { onBeforeUnmount, shallowRef } from 'vue'
+import { setupWorker } from 'msw/browser'
+import { onBeforeUnmount, provide, shallowRef } from 'vue'
 import App from '../src/app/App.vue'
 import { defaultHandlers } from '../src/mocks/handlers'
 import { useSessionStore, type SessionBootstrap } from '../src/features/session/store'
@@ -32,18 +32,47 @@ function isStorybookInternalRequest(request: Request) {
   ].some((prefix) => url.pathname.startsWith(prefix))
 }
 
-initialize(
-  {
-    onUnhandledRequest(request, print) {
-      if (isStorybookInternalRequest(request)) {
-        return
-      }
+const worker = setupWorker(...defaultHandlers)
 
-      print.warning()
+let workerStartPromise: Promise<void> | null = null
+
+async function ensureWorkerStarted() {
+  if (!workerStartPromise) {
+    workerStartPromise = worker.start({
+      onUnhandledRequest(request, print) {
+        if (isStorybookInternalRequest(request)) {
+          return
+        }
+        print.warning()
+      }
+    })
+  }
+  await workerStartPromise
+}
+
+function applyRequestHandlers(mswParam: unknown) {
+  if (mswParam == null) {
+    worker.resetHandlers(...defaultHandlers)
+    return
+  }
+
+  let storyHandlers: unknown[] = []
+
+  if (Array.isArray(mswParam) && mswParam.length > 0) {
+    storyHandlers = mswParam
+  } else if (typeof mswParam === 'object' && 'handlers' in mswParam && mswParam.handlers) {
+    const handlers = mswParam.handlers
+    if (Array.isArray(handlers)) {
+      storyHandlers = handlers
+    } else if (typeof handlers === 'object' && handlers !== null) {
+      storyHandlers = Object.values(handlers)
+        .filter((v): v is unknown[] => Array.isArray(v))
+        .reduce<unknown[]>((acc, list) => acc.concat(list), [])
     }
-  },
-  defaultHandlers
-)
+  }
+
+  worker.resetHandlers(...storyHandlers, ...defaultHandlers)
+}
 
 const pinia = createPinia()
 const queryClient = new QueryClient({
@@ -108,8 +137,6 @@ const pageStoryRoutePaths: Record<string, string> = {
   'Pages/Staff/Participation Types': '/staff/circles/participation_types',
   'Pages/Staff/Participation Types/Circle List': '/staff/circles/participation_types/:typeId',
   'Pages/Staff/Participation Types/Form Settings': '/staff/circles/participation_types/:typeId/form/edit',
-  'Pages/Staff/Participation Types/Redirect (Detail)': '/staff/participation-types/:typeId',
-  'Pages/Staff/Participation Types/Redirect (List)': '/staff/participation-types',
   'Pages/Staff/Participation Types/Settings': '/staff/circles/participation_types/:typeId/edit',
   'Pages/Staff/Permissions/Detail': '/staff/permissions/:userId',
   'Pages/Staff/Permissions': '/staff/permissions',
@@ -143,13 +170,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function getStoryRoutePath(parameters: Record<string, unknown>, title: string) {
+function getStoryRoute(parameters: Record<string, unknown>, title: string) {
   const route = parameters.route
   if (!isRecord(route) || typeof route.path !== 'string') {
     return pageStoryRoutePaths[title] ?? '/'
   }
 
-  return route.path
+  const query: Record<string, string> = {}
+  if (isRecord(route.query)) {
+    for (const [key, value] of Object.entries(route.query)) {
+      if (typeof value === 'string') {
+        query[key] = value
+      }
+    }
+  }
+
+  if (Object.keys(query).length === 0) {
+    return route.path
+  }
+
+  return { path: route.path, query }
 }
 
 function shouldRenderAppShell(title: string) {
@@ -194,7 +234,7 @@ const preview: Preview = {
   decorators: [
     (renderStory, context) => {
       const renderWithAppShell = shouldRenderAppShell(context.title)
-      const routePath = getStoryRoutePath(context.parameters, context.title)
+      const route = getStoryRoute(context.parameters, context.title)
       const session = getStorySession(context.parameters)
       const StoryComponent = renderStory()
 
@@ -209,12 +249,15 @@ const preview: Preview = {
 
           if (session) {
             sessionStore.hydrate(session)
+            if (session.roles?.length > 0 || session.permissions?.length > 0) {
+              queryClient.setQueryData(['staff', 'status'], { allowed: true, authorized: true })
+            }
           } else {
             sessionStore.reset()
           }
 
           void router
-            .replace(routePath)
+            .replace(route)
             .then(() => router.isReady())
             .finally(() => {
               if (isMounted) {
@@ -226,18 +269,26 @@ const preview: Preview = {
             isMounted = false
           })
 
-          return { isReady, renderWithAppShell, storyKey: context.id }
+          provide('storybookErrorMessage', (context.parameters as Record<string, unknown>).errorMessage)
+
+          return { isReady, renderWithAppShell, storyKey: context.id, storyProps: context.args }
         },
         template: `
           <div v-if="isReady" :key="storyKey">
             <App v-if="renderWithAppShell" />
-            <StoryComponent v-else />
+            <component :is="StoryComponent" v-bind="storyProps" v-else />
           </div>
         `
       }
     }
   ],
-  loaders: [mswLoader],
+  loaders: [
+    async (context) => {
+      await ensureWorkerStarted()
+      applyRequestHandlers(context.parameters.msw)
+      return {}
+    }
+  ],
   parameters: {
     controls: {
       matchers: {

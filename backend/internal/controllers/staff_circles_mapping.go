@@ -4,7 +4,6 @@ import (
 	"slices"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
-	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
 
 func mapStaffCircle(circleValue circle.Circle) staffCircleResponse {
@@ -45,10 +44,11 @@ func mapStaffCircle(circleValue circle.Circle) staffCircleResponse {
 	}
 }
 
-func mapStaffCircleMailRecipient(userValue useradmin.User) staffCircleMailRecipientResponse {
+func mapStaffCircleMailRecipient(recipient staffCircleMailRecipient) staffCircleMailRecipientResponse {
 	return staffCircleMailRecipientResponse{
-		ID:          userValue.ID,
-		DisplayName: userValue.DisplayName,
-		LoginIDs:    slices.Clone(userValue.LoginIDs),
+		ID:          recipient.User.ID,
+		DisplayName: recipient.User.DisplayName,
+		LoginIDs:    slices.Clone(recipient.User.LoginIDs),
+		IsLeader:    recipient.IsLeader,
 	}
 }

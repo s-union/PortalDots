@@ -13,7 +13,7 @@ const meta = {
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),
-        http.get('/v1/public/pages/:pageId', () => HttpResponse.json(mockPageDetail))
+        http.get('/v1/public/pages/:pageID', () => HttpResponse.json(mockPageDetail))
       ]
     }
   }
@@ -29,7 +29,7 @@ export const WithDocuments: Story = {
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),
-        http.get('/v1/public/pages/:pageId', () =>
+        http.get('/v1/public/pages/:pageID', () =>
           HttpResponse.json({
             ...mockPageDetail,
             documents: [
@@ -54,7 +54,7 @@ export const NotFound: Story = {
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),
-        http.get('/v1/public/pages/:pageId', () => new HttpResponse(null, { status: 404 }))
+        http.get('/v1/public/pages/:pageID', () => new HttpResponse(null, { status: 404 }))
       ]
     }
   }

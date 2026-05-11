@@ -74,8 +74,11 @@ const defaultCircle = {
 }
 
 describe('StaffCircleMailPage', () => {
-  it('renders and queues circle mail', async () => {
-    const recipients = [{ id: 'user-1', displayName: '責任者A', loginIds: ['leader@example.com'] }]
+  it('renders and sends circle mail', async () => {
+    const recipients = [
+      { id: 'user-1', displayName: '責任者A', loginIds: ['leader@example.com'], isLeader: true },
+      { id: 'user-2', displayName: 'メンバーB', loginIds: ['member@example.com'], isLeader: false }
+    ]
 
     server.use(
       http.get('/v1/staff/circles/circle-b/email', () => HttpResponse.json({ circle: defaultCircle, recipients })),
@@ -93,23 +96,26 @@ describe('StaffCircleMailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('デモ企画B')
-    expect(wrapper.text()).toContain('企画情報')
-    expect(wrapper.text()).toContain('メール送信')
-    expect(wrapper.text()).toContain('送信対象: 1 名')
+    expect(wrapper.text()).toContain('Bブロック')
+    expect(wrapper.text()).toContain('企画所属者向けメール送信')
+    expect(wrapper.text()).toContain('送信対象: 2 名')
 
     await wrapper.get('select[name="recipient"]').setValue('leader')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('送信対象: 1 名')
+
     await wrapper.get('input[name="subject"]').setValue('搬入のご案内')
     await wrapper.get('textarea[name="body"]').setValue('9:00 に集合してください。')
 
-    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('メールをキューに追加'))
+    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('送信'))
     if (!mailButton) {
       throw new Error('mail button not found')
     }
     await mailButton.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('企画所属者向けメールをキューに追加しました。')
-    expect(wrapper.text()).toContain('責任者A')
+    expect(wrapper.text()).toContain('企画所属者向けメールを送信しました。')
     expect(wrapper.text()).toContain('Markdown 記法')
   })
 
@@ -129,7 +135,7 @@ describe('StaffCircleMailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('宛先となる企画所属者がいないため、メールは送信できません。')
-    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('メールをキューに追加'))
+    const mailButton = wrapper.findAll('button').find((button) => button.text().includes('送信'))
     if (!mailButton) {
       throw new Error('mail button not found')
     }

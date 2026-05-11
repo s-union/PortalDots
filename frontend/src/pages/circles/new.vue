@@ -177,7 +177,7 @@ async function handleSubmit() {
       </div>
     </SettingsSection>
 
-    <SettingsSection v-if="canCreateCircleRegistration" title="企画基本情報">
+    <SettingsSection v-if="canCreateCircleRegistration" title="企画情報を入力">
       <SettingsRow>
         <div class="grid gap-4">
           <AlertMessage v-if="selectedParticipationType && selectedParticipationType.usersCountMax > 1" tone="info">
@@ -291,62 +291,62 @@ async function handleSubmit() {
           </FormField>
         </div>
       </SettingsRow>
-    </SettingsSection>
 
-    <SettingsSection v-if="canCreateCircleRegistration" title="参加登録フォーム">
-      <div v-if="form.participationTypeId === ''" class="px-6 py-6 text-sm text-muted">
-        先に参加種別を選択してください。
-      </div>
+      <SettingsRow>
+        <div v-if="form.participationTypeId === ''" class="text-sm text-muted">先に参加種別を選択してください。</div>
 
-      <div v-else-if="registrationFormQuery.isPending.value" class="px-6 py-6 text-sm text-muted">
-        フォームを読み込み中...
-      </div>
+        <div v-else-if="registrationFormQuery.isPending.value" class="text-sm text-muted">フォームを読み込み中...</div>
 
-      <div v-else-if="registrationFormQuery.data.value" class="grid gap-0">
-        <template v-for="question in questions" :key="question.id">
-          <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
-            <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
-            <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
-              {{ question.description }}
-            </p>
-          </div>
-
-          <div v-else class="border-b border-border px-6 py-5">
-            <div class="grid gap-3">
-              <div>
-                <p class="text-sm font-semibold text-body">
-                  {{ question.name }}
-                  <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
-                </p>
-                <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
-                  {{ question.description }}
-                </p>
-              </div>
-
-              <div
-                v-if="question.type === 'upload'"
-                class="rounded border border-border bg-form-control px-4 py-3 text-sm text-muted"
-              >
-                添付ファイルは企画作成後の編集画面でアップロードできます。
-              </div>
-
-              <template v-else>
-                <div @focusout.capture="markAnswerTouched(question.id)">
-                  <AnswerQuestionFields
-                    :answer="null"
-                    :draft="draft"
-                    :question="question"
-                    :disabled="createMutation.isPending.value"
-                    :upload-button-label="'ファイルを追加'"
-                    :download-href="() => ''"
-                  />
-                </div>
-                <FormError v-if="getAnswerFieldError(question.id)" :message="getAnswerFieldError(question.id)" />
-              </template>
+        <div v-else-if="registrationFormQuery.data.value" class="grid gap-0">
+          <template v-for="(question, index) in questions" :key="question.id">
+            <div
+              v-if="question.type === 'heading'"
+              class="px-6 py-5"
+              :class="index < questions.length - 1 ? 'border-b border-border' : ''"
+            >
+              <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
+              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                {{ question.description }}
+              </p>
             </div>
-          </div>
-        </template>
-      </div>
+
+            <div v-else class="px-6 py-5" :class="index < questions.length - 1 ? 'border-b border-border' : ''">
+              <div class="grid gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-body">
+                    {{ question.name }}
+                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
+                  </p>
+                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                    {{ question.description }}
+                  </p>
+                </div>
+
+                <div
+                  v-if="question.type === 'upload'"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-sm text-muted"
+                >
+                  添付ファイルは企画作成後の編集画面でアップロードできます。
+                </div>
+
+                <template v-else>
+                  <div @focusout.capture="markAnswerTouched(question.id)">
+                    <AnswerQuestionFields
+                      :answer="null"
+                      :draft="draft"
+                      :question="question"
+                      :disabled="createMutation.isPending.value"
+                      :upload-button-label="'ファイルを追加'"
+                      :download-href="() => ''"
+                    />
+                  </div>
+                  <FormError v-if="getAnswerFieldError(question.id)" :message="getAnswerFieldError(question.id)" />
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </SettingsRow>
 
       <template #footer>
         <div class="space-y-4">

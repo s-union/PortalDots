@@ -22,7 +22,7 @@ import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
       <div class="space-y-5 px-6 py-6 text-center text-sm leading-7 text-body">
         <p class="text-success">
           <FaIcon name="check-circle" />
-          <strong>必須のメール認証が完了しました。企画参加登録を進められます。</strong>
+          <strong>メール認証が完了しました。</strong>
         </p>
         <p>
           <RouterLink

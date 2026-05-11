@@ -37,6 +37,7 @@ type staffCircleMailRecipientResponse struct {
 	ID          string   `json:"id"`
 	DisplayName string   `json:"displayName"`
 	LoginIDs    []string `json:"loginIds"`
+	IsLeader    bool     `json:"isLeader"`
 }
 
 type staffCircleMemberResponse struct {
@@ -67,6 +68,12 @@ type sendStaffCircleMailRequest struct {
 	Recipient string `json:"recipient"`
 	Subject   string `json:"subject"`
 	Body      string `json:"body"`
+	CcToStaff bool   `json:"ccToStaff"`
+}
+
+type staffCircleMailRecipient struct {
+	User     useradmin.User
+	IsLeader bool
 }
 
 type addStaffCircleMemberRequest struct {
@@ -597,7 +604,7 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 		return internalError(c)
 	}
 
-	recipientEmails := collectUsersEmailRecipients(recipients)
+	recipientEmails := collectStaffCircleMailRecipientEmails(recipients)
 	if len(recipientEmails) == 0 {
 		return validationError(c, map[string][]string{
 			"recipient": {"宛先が存在しないため送信できませんでした"},
@@ -626,6 +633,34 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 		return internalError(c)
 	}
 	logQueuedMail("staff_circle", jobID, circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails, h.allowDangerously)
+
+	if request.CcToStaff {
+		staffRecipients := normalizeRecipients([]string{h.contactEmail})
+		if len(staffRecipients) > 0 {
+			staffCopyJobID := fmt.Sprintf("circle-staff-copy-%d", time.Now().UnixNano())
+			if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+				JobId:    staffCopyJobID,
+				Template: "markdown-notice",
+				Priority: cloudflareemail.PriorityNormal,
+				From:     h.from,
+				To:       staffRecipients,
+				Subject:  "[スタッフ控え] " + request.Subject,
+				Body:     request.Body,
+				Variables: map[string]string{
+					"appName":      h.appName,
+					"appURL":       h.appURL,
+					"subject":      "[スタッフ控え] " + request.Subject,
+					"body":         request.Body,
+					"adminName":    h.adminName,
+					"contactEmail": h.contactEmail,
+					"preview":      request.Subject,
+				},
+			}); err != nil {
+				return internalError(c)
+			}
+			logQueuedMail("staff_circle_copy", staffCopyJobID, circleValue.ID, currentSession.User.ID, request.Subject, request.Body, staffRecipients, h.allowDangerously)
+		}
+	}
 	recordActivity(
 		c.Request().Context(),
 		h.activities,

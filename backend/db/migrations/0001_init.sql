@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS documents (
     name text NOT NULL,
     description text NOT NULL,
     is_public boolean NOT NULL DEFAULT true,
+    viewable_tags text[] NOT NULL DEFAULT '{}',
     notes text NOT NULL DEFAULT '',
     is_important boolean NOT NULL DEFAULT false,
     filename text NOT NULL,
@@ -170,6 +171,9 @@ CREATE TABLE IF NOT EXISTS documents (
 
 CREATE INDEX IF NOT EXISTS documents_is_public_idx
     ON documents(is_public);
+
+CREATE INDEX IF NOT EXISTS documents_viewable_tags_gin_idx
+    ON documents USING GIN (viewable_tags);
 
 -- ── document_reads ──
 CREATE TABLE IF NOT EXISTS document_reads (

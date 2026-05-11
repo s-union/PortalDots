@@ -17,7 +17,15 @@ const meta = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/participation-types/:typeId', () => HttpResponse.json(mockParticipationType)),
-        http.get('/v1/staff/participation-types/:typeId/circles', () => HttpResponse.json([mockStaffCircle])),
+        http.get('/v1/staff/participation-types/:typeId/circles', ({ request }) => {
+          const url = new URL(request.url)
+          return HttpResponse.json({
+            items: [mockStaffCircle],
+            page: Number(url.searchParams.get('page') ?? 1),
+            pageSize: Number(url.searchParams.get('pageSize') ?? 25),
+            total: 1
+          })
+        }),
         http.delete('/v1/staff/circles/:circleId', () => new HttpResponse(null, { status: 204 }))
       ]
     }
@@ -36,7 +44,15 @@ export const Empty: Story = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/participation-types/:typeId', () => HttpResponse.json(mockParticipationType)),
-        http.get('/v1/staff/participation-types/:typeId/circles', () => HttpResponse.json([])),
+        http.get('/v1/staff/participation-types/:typeId/circles', ({ request }) => {
+          const url = new URL(request.url)
+          return HttpResponse.json({
+            items: [],
+            page: Number(url.searchParams.get('page') ?? 1),
+            pageSize: Number(url.searchParams.get('pageSize') ?? 25),
+            total: 0
+          })
+        }),
         http.delete('/v1/staff/circles/:circleId', () => new HttpResponse(null, { status: 204 }))
       ]
     }

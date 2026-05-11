@@ -14,8 +14,7 @@ import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
-import PageLayout from '@/components/layouts/PageLayout.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
@@ -125,26 +124,26 @@ async function handleDelete() {
 </script>
 
 <template>
-  <PageLayout fullWidth>
-    <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
-
+  <TabbedSettingsPage :tabs="participationTypeTabs">
     <LoadingState v-if="detailQuery.isPending.value" />
 
     <form v-else-if="detailQuery.data.value" class="space-y-6" @submit.prevent="handleSave">
-      <SurfaceCard tag="header" class="px-6 py-5">
-        <h2 class="text-3xl font-semibold text-body">参加種別を編集</h2>
-        <div class="mt-3 text-sm text-muted">参加種別ID : {{ detailQuery.data.value.id }}</div>
-        <div class="mt-4 flex flex-wrap gap-3">
-          <BaseButton
-            variant="dangerOutline"
-            size="sm"
-            :disabled="deleteMutation.isPending.value"
-            type="button"
-            @click="handleDelete"
-          >
-            {{ deleteMutation.isPending.value ? '削除中...' : 'この参加種別を削除' }}
-          </BaseButton>
-        </div>
+      <SurfaceCard tag="header">
+        <SurfaceHeader>
+          <template #title>参加種別を編集</template>
+          <template #description>参加種別名 : {{ detailQuery.data.value.name }}</template>
+          <template #actions>
+            <BaseButton
+              variant="dangerOutline"
+              size="sm"
+              :disabled="deleteMutation.isPending.value"
+              type="button"
+              @click="handleDelete"
+            >
+              {{ deleteMutation.isPending.value ? '削除中...' : 'この参加種別を削除' }}
+            </BaseButton>
+          </template>
+        </SurfaceHeader>
       </SurfaceCard>
 
       <SettingsSection title="参加種別を編集">
@@ -271,5 +270,5 @@ async function handleDelete() {
     </form>
 
     <ErrorState v-else message="参加種別を取得できませんでした。" />
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>

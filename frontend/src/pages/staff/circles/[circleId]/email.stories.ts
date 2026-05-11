@@ -12,6 +12,9 @@ const meta = {
     route: {
       path: '/staff/circles/circle-1/email'
     },
+    session: {
+      bootstrap: mockSessionBootstrapStaff
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
@@ -20,8 +23,8 @@ const meta = {
           HttpResponse.json({
             circle: mockStaffCircle,
             recipients: [
-              { id: 'user-1', displayName: '山田 太郎', loginIds: ['yamada@example.com'] },
-              { id: 'user-2', displayName: '鈴木 二郎', loginIds: ['suzuki@example.com'] }
+              { id: 'user-1', displayName: '山田 太郎', loginIds: ['yamada@example.com'], isLeader: true },
+              { id: 'user-2', displayName: '鈴木 二郎', loginIds: ['suzuki@example.com'], isLeader: false }
             ]
           })
         ),
@@ -38,6 +41,9 @@ export const Default: Story = {}
 
 export const NoRecipients: Story = {
   parameters: {
+    session: {
+      bootstrap: mockSessionBootstrapStaff
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),

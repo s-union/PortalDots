@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { allowedQuestionTypes } from '@/features/staff/forms/api'
 import { QUESTION_TYPE_META, type AllowedQuestionType } from '@/features/staff/forms/editor/useQuestionTypeMeta'
 
@@ -21,9 +22,16 @@ const emit = defineEmits<{
         type="button"
         @click="emit('addQuestion', type)"
       >
-        <span class="w-5 shrink-0 text-center text-muted-2" style="font-size: 1.1rem; line-height: 1">
-          {{ QUESTION_TYPE_META[type].icon }}
-        </span>
+        <FaIcon
+          v-if="type === 'upload'"
+          name="file"
+          prefix="far"
+          class-name="text-[1.1rem] text-muted-2"
+          style="width: 1.25rem; line-height: 1"
+        />
+        <span v-else class="w-5 shrink-0 text-center text-muted-2" style="font-size: 1.1rem; line-height: 1">{{
+          QUESTION_TYPE_META[type].icon
+        }}</span>
         <span>{{ QUESTION_TYPE_META[type].label }}</span>
         <span class="pointer-events-none absolute inset-x-4 bottom-0 border-b border-border" aria-hidden="true" />
       </button>

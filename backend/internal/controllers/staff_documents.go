@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -16,31 +17,33 @@ import (
 const maxStaffDocumentUploadBytes = 10 * 1024 * 1024
 
 type staffDocumentSummaryResponse struct {
-	Circle      staffManagedCircleResponse `json:"circle"`
-	ID          string                     `json:"id"`
-	Name        string                     `json:"name"`
-	Description string                     `json:"description"`
-	Notes       string                     `json:"notes"`
-	IsImportant bool                       `json:"isImportant"`
-	Filename    string                     `json:"filename"`
-	Extension   string                     `json:"extension"`
-	MimeType    string                     `json:"mimeType"`
-	SizeBytes   int64                      `json:"sizeBytes"`
-	IsPublic    bool                       `json:"isPublic"`
-	CreatedAt   string                     `json:"createdAt"`
-	UpdatedAt   string                     `json:"updatedAt"`
-	DownloadURL string                     `json:"downloadUrl"`
+	Circle       staffManagedCircleResponse `json:"circle"`
+	ID           string                     `json:"id"`
+	Name         string                     `json:"name"`
+	Description  string                     `json:"description"`
+	Notes        string                     `json:"notes"`
+	IsImportant  bool                       `json:"isImportant"`
+	Filename     string                     `json:"filename"`
+	Extension    string                     `json:"extension"`
+	MimeType     string                     `json:"mimeType"`
+	SizeBytes    int64                      `json:"sizeBytes"`
+	IsPublic     bool                       `json:"isPublic"`
+	ViewableTags []string                   `json:"viewableTags"`
+	CreatedAt    string                     `json:"createdAt"`
+	UpdatedAt    string                     `json:"updatedAt"`
+	DownloadURL  string                     `json:"downloadUrl"`
 }
 
 type staffDocumentDetailResponse = staffDocumentSummaryResponse
 
 type mutateStaffDocumentRequest struct {
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	IsImportant  bool
+	ViewableTags []string
 }
 
 func (h *staffDocumentHandlers) listStaffDocuments(c echo.Context) error {
@@ -106,6 +109,7 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 		request.Notes,
 		request.IsPublic,
 		request.IsImportant,
+		request.ViewableTags,
 		filename,
 		mimeType,
 		content,
@@ -168,6 +172,7 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 		request.Notes,
 		request.IsPublic,
 		request.IsImportant,
+		request.ViewableTags,
 		filename,
 		mimeType,
 		content,
@@ -258,7 +263,7 @@ func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c echo.Context) error 
 	}
 
 	csvBytes, err := writeCSV(append([][]string{
-		{"circle_id", "circle_name", "id", "name", "filename", "size_bytes", "extension", "description", "is_public", "is_important", "notes", "created_at", "updated_at"},
+		{"circle_id", "circle_name", "id", "name", "filename", "size_bytes", "extension", "description", "is_public", "is_important", "viewable_tags", "notes", "created_at", "updated_at"},
 	}, staffDocumentRowsWithCircles(documents, circleNames)...))
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
@@ -270,39 +275,41 @@ func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c echo.Context) error 
 
 func mapStaffDocumentSummary(document backenddocument.Document, circleValue staffManagedCircleResponse) staffDocumentSummaryResponse {
 	return staffDocumentSummaryResponse{
-		Circle:      circleValue,
-		ID:          document.ID,
-		Name:        document.Name,
-		Description: document.Description,
-		Notes:       document.Notes,
-		IsImportant: document.IsImportant,
-		Filename:    document.Filename,
-		Extension:   document.Extension,
-		MimeType:    document.MimeType,
-		SizeBytes:   document.SizeBytes,
-		IsPublic:    document.IsPublic,
-		CreatedAt:   document.CreatedAt,
-		UpdatedAt:   document.UpdatedAt,
-		DownloadURL: "/v1/staff/documents/" + document.ID,
+		Circle:       circleValue,
+		ID:           document.ID,
+		Name:         document.Name,
+		Description:  document.Description,
+		Notes:        document.Notes,
+		IsImportant:  document.IsImportant,
+		Filename:     document.Filename,
+		Extension:    document.Extension,
+		MimeType:     document.MimeType,
+		SizeBytes:    document.SizeBytes,
+		IsPublic:     document.IsPublic,
+		ViewableTags: append([]string{}, document.ViewableTags...),
+		CreatedAt:    document.CreatedAt,
+		UpdatedAt:    document.UpdatedAt,
+		DownloadURL:  "/v1/staff/documents/" + document.ID,
 	}
 }
 
 func mapStaffDocumentDetail(document backenddocument.Document, circleValue staffManagedCircleResponse) staffDocumentDetailResponse {
 	return staffDocumentDetailResponse{
-		Circle:      circleValue,
-		ID:          document.ID,
-		Name:        document.Name,
-		Description: document.Description,
-		Notes:       document.Notes,
-		IsImportant: document.IsImportant,
-		Filename:    document.Filename,
-		Extension:   document.Extension,
-		MimeType:    document.MimeType,
-		SizeBytes:   document.SizeBytes,
-		IsPublic:    document.IsPublic,
-		CreatedAt:   document.CreatedAt,
-		UpdatedAt:   document.UpdatedAt,
-		DownloadURL: "/v1/staff/documents/" + document.ID,
+		Circle:       circleValue,
+		ID:           document.ID,
+		Name:         document.Name,
+		Description:  document.Description,
+		Notes:        document.Notes,
+		IsImportant:  document.IsImportant,
+		Filename:     document.Filename,
+		Extension:    document.Extension,
+		MimeType:     document.MimeType,
+		SizeBytes:    document.SizeBytes,
+		IsPublic:     document.IsPublic,
+		ViewableTags: append([]string{}, document.ViewableTags...),
+		CreatedAt:    document.CreatedAt,
+		UpdatedAt:    document.UpdatedAt,
+		DownloadURL:  "/v1/staff/documents/" + document.ID,
 	}
 }
 
@@ -333,6 +340,15 @@ func bindStaffDocumentRequest(
 		}, false
 	}
 	request.IsImportant = isImportant
+
+	viewableTagsValue := strings.TrimSpace(c.FormValue("viewableTags"))
+	if viewableTagsValue != "" {
+		if err := json.Unmarshal([]byte(viewableTagsValue), &request.ViewableTags); err != nil {
+			return mutateStaffDocumentRequest{}, nil, map[string][]string{
+				"viewableTags": {"閲覧可能なタグの形式が不正です"},
+			}, false
+		}
+	}
 
 	validationErrors := map[string][]string{}
 	if circleRequired && request.CircleID == "" {
@@ -401,6 +417,7 @@ func staffDocumentRowsWithCircles(documents []backenddocument.Document, circleNa
 			singleLine(currentDocument.Description),
 			visibilityLabel(currentDocument.IsPublic),
 			boolString(currentDocument.IsImportant),
+			strings.Join(currentDocument.ViewableTags, ","),
 			singleLine(currentDocument.Notes),
 			currentDocument.CreatedAt,
 			currentDocument.UpdatedAt,

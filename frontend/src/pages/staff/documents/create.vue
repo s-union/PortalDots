@@ -5,7 +5,7 @@ definePage({
   meta: staffPageMeta('documents.edit')
 })
 
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -15,6 +15,8 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 import FormField from '@/components/ui/FormField.vue'
 import CheckboxField from '@/components/ui/CheckboxField.vue'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import {
   extractStaffDocumentValidationMessage,
   useCreateStaffDocumentMutation,
@@ -23,6 +25,8 @@ import {
 
 const createDocumentMutation = useCreateStaffDocumentMutation()
 const circlesQuery = useManagedStaffCirclesQuery(true)
+const tagsQuery = useStaffTagsQuery(true)
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const form = useStaffDocumentForm()
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -48,6 +52,7 @@ async function handleCreateDocument() {
       notes: form.value.notes,
       isPublic: form.value.isPublic,
       isImportant: form.value.isImportant,
+      viewableTags: form.value.viewableTags,
       file: form.value.file
     })
     form.value = {
@@ -57,6 +62,7 @@ async function handleCreateDocument() {
       notes: '',
       isPublic: true,
       isImportant: false,
+      viewableTags: [],
       file: null
     }
     successMessage.value = '配布資料を作成しました。'
@@ -103,6 +109,12 @@ async function handleCreateDocument() {
         <CheckboxField v-model="form.isImportant" label="重要資料として扱う" name="isImportant" />
 
         <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
+
+        <label class="grid gap-2 text-sm text-body">
+          <span class="font-medium">閲覧可能なタグ</span>
+          <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
+          <p class="text-xs text-muted">空欄なら全員に公開、指定すると一致する企画タグだけに限定公開します。</p>
+        </label>
 
         <AlertMessage tone="info">
           現在の upload は DB 保存です。外部ストレージ連携はまだ実装していません。

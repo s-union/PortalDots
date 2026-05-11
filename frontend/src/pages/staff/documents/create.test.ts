@@ -32,6 +32,11 @@ describe('StaffDocumentCreatePage', () => {
     let receivedName = ''
 
     server.use(
+      http.get('/v1/staff/tags', () =>
+        HttpResponse.json([
+          { id: 'tag-1', name: 'タグA', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
+        ])
+      ),
       http.get('/v1/staff/circles/managed', () => HttpResponse.json([{ id: 'circle-b', name: 'デモ企画B' }])),
       http.post('/v1/staff/documents', async ({ request }) => {
         postReceived = true
@@ -53,6 +58,7 @@ describe('StaffDocumentCreatePage', () => {
             mimeType: 'application/pdf',
             sizeBytes: 4096,
             isPublic: true,
+            viewableTags: [],
             createdAt: '2026-03-06T09:00:00Z',
             updatedAt: '2026-03-06T09:00:00Z',
             downloadUrl: '/v1/staff/documents/0195ec00-00a2-7000-8000-000000000001'

@@ -25,6 +25,7 @@ export interface StaffDocumentSummary {
   mimeType: string
   sizeBytes: number
   isPublic: boolean
+  viewableTags: string[]
   createdAt: string
   updatedAt: string
   downloadUrl: string
@@ -41,6 +42,7 @@ export interface MutateStaffDocumentPayload {
   notes: string
   isPublic: boolean
   isImportant: boolean
+  viewableTags: string[]
   file: File | null
 }
 
@@ -85,6 +87,7 @@ export async function createStaffDocument(payload: MutateStaffDocumentPayload, c
   formData.set('notes', payload.notes)
   formData.set('isPublic', String(payload.isPublic))
   formData.set('isImportant', String(payload.isImportant))
+  formData.set('viewableTags', JSON.stringify(payload.viewableTags))
   if (payload.file !== null) {
     formData.set('file', payload.file)
   }
@@ -115,6 +118,7 @@ export async function updateStaffDocument(documentId: string, payload: MutateSta
   formData.set('notes', payload.notes)
   formData.set('isPublic', String(payload.isPublic))
   formData.set('isImportant', String(payload.isImportant))
+  formData.set('viewableTags', JSON.stringify(payload.viewableTags))
   if (payload.file !== null) {
     formData.set('file', payload.file)
   }
@@ -258,6 +262,7 @@ export function useStaffDocumentForm() {
     notes: '',
     isPublic: true,
     isImportant: false,
+    viewableTags: [],
     file: null
   })
 }

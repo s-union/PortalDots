@@ -162,7 +162,7 @@ func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
 			IsLimited: false,
 			CreatedAt: pageValue.CreatedAt,
 			UpdatedAt: pageValue.UpdatedAt,
-			Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, true),
+			Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, true, nil),
 		})
 	}
 
@@ -260,7 +260,7 @@ func (h *publicHomeHandlers) collectPinnedPublicPages(circleTags []string) []pub
 			UpdatedAt: currentPage.UpdatedAt,
 			IsLimited: len(currentPage.ViewableTags) > 0,
 			IsNew:     isPageNew(currentPage),
-			Documents: pageDocuments(h.documents, currentPage.DocumentIDs, false, true),
+			Documents: pageDocuments(h.documents, currentPage.DocumentIDs, false, true, nil),
 		})
 	}
 

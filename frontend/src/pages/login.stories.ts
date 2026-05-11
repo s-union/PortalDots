@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from 'msw'
-// Import { within, userEvent } from 'storybook/test'
 import LoginPage from './login.vue'
 
 const meta = {
@@ -35,6 +34,7 @@ export const Default: Story = {}
 export const WithLoginError: Story = {
   parameters: {
     layout: 'fullscreen',
+    errorMessage: 'ログインIDまたはパスワードが正しくありません。',
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () =>
@@ -52,8 +52,5 @@ export const WithLoginError: Story = {
         )
       ]
     }
-  },
-  play: async () => {
-    // Interaction test は今回のプロジェクトでは使用しないため無効化
   }
 }

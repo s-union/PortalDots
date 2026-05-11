@@ -7,12 +7,11 @@ definePage({
 
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildStaffFormAnswerUploadsZipUrl, useStaffFormAnswersIndexQuery } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
-import PageLayout from '@/components/layouts/PageLayout.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -31,9 +30,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
 </script>
 
 <template>
-  <PageLayout>
-    <TabStrip :tabs="staffFormTabs" />
-
+  <TabbedSettingsPage :tabs="staffFormTabs">
     <LoadingState v-if="answersQuery.isPending.value" />
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
@@ -62,5 +59,5 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
     </article>
 
     <ErrorState v-else message="アップロード管理画面を表示できませんでした。" />
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>

@@ -29,21 +29,3 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
-
-export const AllVerified: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrap)),
-        http.get('/v1/auth/verification', () =>
-          HttpResponse.json({
-            userId: 'user-1',
-            displayName: '山田 太郎',
-            completed: true,
-            items: [{ type: 'email', label: '連絡先メールアドレス', address: 'taro@example.com', verified: true }]
-          })
-        )
-      ]
-    }
-  }
-}

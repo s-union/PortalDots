@@ -10,7 +10,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { z } from 'zod'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
-import PageLayout from '@/components/layouts/PageLayout.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StaffFilterDrawer, {
   type StaffFilterField,
@@ -21,7 +20,7 @@ import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { canAccessCircleMail, canDeleteCircles, canEditCircles } from '@/features/staff/access/capabilities'
 import { extractStaffCircleValidationMessage, useDeleteStaffCircleMutation } from '@/features/staff/circles/api'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
@@ -419,9 +418,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
 
 <template>
   <StaffSideWindowContainer :is-open="isFilterOpen">
-    <PageLayout fullWidth>
-      <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
-
+    <TabbedSettingsPage :tabs="participationTypeTabs">
       <LoadingState v-if="detailQuery.isPending.value" />
 
       <template v-else-if="detailQuery.data.value">
@@ -559,7 +556,7 @@ function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFi
       </template>
 
       <ErrorState v-else message="参加種別を取得できませんでした。" />
-    </PageLayout>
+    </TabbedSettingsPage>
   </StaffSideWindowContainer>
 
   <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">

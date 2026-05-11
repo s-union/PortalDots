@@ -150,7 +150,12 @@ describe('StaffCircleDetailPage', () => {
       http.get('/v1/staff/circles/circle-b/email', () =>
         HttpResponse.json({
           circle: defaultCircle,
-          recipients: defaultMembers.map((m) => ({ id: m.userId, displayName: m.displayName, loginIds: m.loginIds }))
+          recipients: defaultMembers.map((m) => ({
+            id: m.userId,
+            displayName: m.displayName,
+            loginIds: m.loginIds,
+            isLeader: m.isLeader
+          }))
         })
       ),
       http.put('/v1/staff/circles/circle-b', () =>
@@ -208,7 +213,12 @@ describe('StaffCircleDetailPage', () => {
       http.get('/v1/staff/circles/circle-b/email', () =>
         HttpResponse.json({
           circle: defaultCircle,
-          recipients: defaultMembers.map((m) => ({ id: m.userId, displayName: m.displayName, loginIds: m.loginIds }))
+          recipients: defaultMembers.map((m) => ({
+            id: m.userId,
+            displayName: m.displayName,
+            loginIds: m.loginIds,
+            isLeader: m.isLeader
+          }))
         })
       ),
       http.put('/v1/staff/circles/circle-b', () => HttpResponse.json(defaultCircle)),

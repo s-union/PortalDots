@@ -12,6 +12,9 @@ const meta = {
     route: {
       path: '/staff/circles/participation_types/type-1/form/edit'
     },
+    session: {
+      bootstrap: mockSessionBootstrapStaff
+    },
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),

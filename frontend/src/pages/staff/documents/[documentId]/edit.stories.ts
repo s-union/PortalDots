@@ -16,6 +16,12 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
+        http.get('/v1/staff/tags', () =>
+          HttpResponse.json([
+            { id: 'tag-1', name: 'タグA', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+            { id: 'tag-2', name: 'タグB', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
+          ])
+        ),
         http.get('/v1/staff/documents/:documentID/edit', () =>
           HttpResponse.json({
             circle: { id: 'circle-1', name: 'テストサークル' },
@@ -29,6 +35,7 @@ const meta = {
             mimeType: 'application/pdf',
             sizeBytes: 204800,
             isPublic: true,
+            viewableTags: ['タグA'],
             createdAt: '2026-01-01T00:00:00Z',
             updatedAt: '2026-01-15T12:00:00Z',
             downloadUrl: '/v1/documents/doc-1/download'
@@ -47,6 +54,7 @@ const meta = {
             mimeType: 'application/pdf',
             sizeBytes: 204800,
             isPublic: true,
+            viewableTags: ['タグA'],
             createdAt: '2026-01-01T00:00:00Z',
             updatedAt: '2026-01-15T12:00:00Z',
             downloadUrl: '/v1/documents/doc-1/download'

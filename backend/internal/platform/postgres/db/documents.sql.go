@@ -12,36 +12,38 @@ import (
 )
 
 const createStaffDocument = `-- name: CreateStaffDocument :one
-INSERT INTO documents (circle_id, name, description, notes, is_public, is_important, filename, mime_type, content)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+INSERT INTO documents (circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 `
 
 type CreateStaffDocumentParams struct {
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
 }
 
 type CreateStaffDocumentRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) CreateStaffDocument(ctx context.Context, arg CreateStaffDocumentParams) (CreateStaffDocumentRow, error) {
@@ -51,6 +53,7 @@ func (q *Queries) CreateStaffDocument(ctx context.Context, arg CreateStaffDocume
 		arg.Description,
 		arg.Notes,
 		arg.IsPublic,
+		arg.ViewableTags,
 		arg.IsImportant,
 		arg.Filename,
 		arg.MimeType,
@@ -64,6 +67,7 @@ func (q *Queries) CreateStaffDocument(ctx context.Context, arg CreateStaffDocume
 		&i.Description,
 		&i.Notes,
 		&i.IsPublic,
+		&i.ViewableTags,
 		&i.IsImportant,
 		&i.Filename,
 		&i.MimeType,
@@ -94,11 +98,12 @@ func (q *Queries) DeleteStaffDocument(ctx context.Context, arg DeleteStaffDocume
 }
 
 const getPublicDocumentByID = `-- name: GetPublicDocumentByID :one
-SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE circle_id = $1
   AND id = $2
   AND is_public = true
+  AND cardinality(viewable_tags) = 0
 LIMIT 1
 `
 
@@ -108,18 +113,19 @@ type GetPublicDocumentByIDParams struct {
 }
 
 type GetPublicDocumentByIDRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) GetPublicDocumentByID(ctx context.Context, arg GetPublicDocumentByIDParams) (GetPublicDocumentByIDRow, error) {
@@ -132,6 +138,7 @@ func (q *Queries) GetPublicDocumentByID(ctx context.Context, arg GetPublicDocume
 		&i.Description,
 		&i.Notes,
 		&i.IsPublic,
+		&i.ViewableTags,
 		&i.IsImportant,
 		&i.Filename,
 		&i.MimeType,
@@ -143,26 +150,28 @@ func (q *Queries) GetPublicDocumentByID(ctx context.Context, arg GetPublicDocume
 }
 
 const getPublicDocumentByIDGlobal = `-- name: GetPublicDocumentByIDGlobal :one
-SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE id = $1
   AND is_public = true
+  AND cardinality(viewable_tags) = 0
 LIMIT 1
 `
 
 type GetPublicDocumentByIDGlobalRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) GetPublicDocumentByIDGlobal(ctx context.Context, id string) (GetPublicDocumentByIDGlobalRow, error) {
@@ -175,6 +184,58 @@ func (q *Queries) GetPublicDocumentByIDGlobal(ctx context.Context, id string) (G
 		&i.Description,
 		&i.Notes,
 		&i.IsPublic,
+		&i.ViewableTags,
+		&i.IsImportant,
+		&i.Filename,
+		&i.MimeType,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPublicDocumentByIDGlobalForCircleTags = `-- name: GetPublicDocumentByIDGlobalForCircleTags :one
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE id = $1
+  AND is_public = true
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
+LIMIT 1
+`
+
+type GetPublicDocumentByIDGlobalForCircleTagsParams struct {
+	ID      string
+	Column2 []string
+}
+
+type GetPublicDocumentByIDGlobalForCircleTagsRow struct {
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+func (q *Queries) GetPublicDocumentByIDGlobalForCircleTags(ctx context.Context, arg GetPublicDocumentByIDGlobalForCircleTagsParams) (GetPublicDocumentByIDGlobalForCircleTagsRow, error) {
+	row := q.db.QueryRow(ctx, getPublicDocumentByIDGlobalForCircleTags, arg.ID, arg.Column2)
+	var i GetPublicDocumentByIDGlobalForCircleTagsRow
+	err := row.Scan(
+		&i.ID,
+		&i.CircleID,
+		&i.Name,
+		&i.Description,
+		&i.Notes,
+		&i.IsPublic,
+		&i.ViewableTags,
 		&i.IsImportant,
 		&i.Filename,
 		&i.MimeType,
@@ -186,7 +247,7 @@ func (q *Queries) GetPublicDocumentByIDGlobal(ctx context.Context, id string) (G
 }
 
 const getStaffDocumentByID = `-- name: GetStaffDocumentByID :one
-SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE circle_id = $1
   AND id = $2
@@ -199,18 +260,19 @@ type GetStaffDocumentByIDParams struct {
 }
 
 type GetStaffDocumentByIDRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) GetStaffDocumentByID(ctx context.Context, arg GetStaffDocumentByIDParams) (GetStaffDocumentByIDRow, error) {
@@ -223,6 +285,7 @@ func (q *Queries) GetStaffDocumentByID(ctx context.Context, arg GetStaffDocument
 		&i.Description,
 		&i.Notes,
 		&i.IsPublic,
+		&i.ViewableTags,
 		&i.IsImportant,
 		&i.Filename,
 		&i.MimeType,
@@ -234,25 +297,26 @@ func (q *Queries) GetStaffDocumentByID(ctx context.Context, arg GetStaffDocument
 }
 
 const getStaffDocumentByIDGlobal = `-- name: GetStaffDocumentByIDGlobal :one
-SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE id = $1
 LIMIT 1
 `
 
 type GetStaffDocumentByIDGlobalRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) GetStaffDocumentByIDGlobal(ctx context.Context, id string) (GetStaffDocumentByIDGlobalRow, error) {
@@ -265,6 +329,7 @@ func (q *Queries) GetStaffDocumentByIDGlobal(ctx context.Context, id string) (Ge
 		&i.Description,
 		&i.Notes,
 		&i.IsPublic,
+		&i.ViewableTags,
 		&i.IsImportant,
 		&i.Filename,
 		&i.MimeType,
@@ -276,25 +341,27 @@ func (q *Queries) GetStaffDocumentByIDGlobal(ctx context.Context, id string) (Ge
 }
 
 const listPublicDocuments = `-- name: ListPublicDocuments :many
-SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE is_public = true
+  AND cardinality(viewable_tags) = 0
 ORDER BY updated_at DESC, id DESC
 `
 
 type ListPublicDocumentsRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) ListPublicDocuments(ctx context.Context) ([]ListPublicDocumentsRow, error) {
@@ -313,6 +380,7 @@ func (q *Queries) ListPublicDocuments(ctx context.Context) ([]ListPublicDocument
 			&i.Description,
 			&i.Notes,
 			&i.IsPublic,
+			&i.ViewableTags,
 			&i.IsImportant,
 			&i.Filename,
 			&i.MimeType,
@@ -331,26 +399,28 @@ func (q *Queries) ListPublicDocuments(ctx context.Context) ([]ListPublicDocument
 }
 
 const listPublicDocumentsByCircle = `-- name: ListPublicDocumentsByCircle :many
-SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE circle_id = $1
   AND is_public = true
+  AND cardinality(viewable_tags) = 0
 ORDER BY updated_at DESC, id DESC
 `
 
 type ListPublicDocumentsByCircleRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) ListPublicDocumentsByCircle(ctx context.Context, circleID string) ([]ListPublicDocumentsByCircleRow, error) {
@@ -369,6 +439,65 @@ func (q *Queries) ListPublicDocumentsByCircle(ctx context.Context, circleID stri
 			&i.Description,
 			&i.Notes,
 			&i.IsPublic,
+			&i.ViewableTags,
+			&i.IsImportant,
+			&i.Filename,
+			&i.MimeType,
+			&i.Content,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPublicDocumentsForCircleTags = `-- name: ListPublicDocumentsForCircleTags :many
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+FROM documents
+WHERE is_public = true
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
+ORDER BY updated_at DESC, id DESC
+`
+
+type ListPublicDocumentsForCircleTagsRow struct {
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+func (q *Queries) ListPublicDocumentsForCircleTags(ctx context.Context, dollar_1 []string) ([]ListPublicDocumentsForCircleTagsRow, error) {
+	rows, err := q.db.Query(ctx, listPublicDocumentsForCircleTags, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublicDocumentsForCircleTagsRow
+	for rows.Next() {
+		var i ListPublicDocumentsForCircleTagsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CircleID,
+			&i.Name,
+			&i.Description,
+			&i.Notes,
+			&i.IsPublic,
+			&i.ViewableTags,
 			&i.IsImportant,
 			&i.Filename,
 			&i.MimeType,
@@ -419,25 +548,26 @@ func (q *Queries) ListReadDocumentIDsByUser(ctx context.Context, arg ListReadDoc
 }
 
 const listStaffDocumentsByCircle = `-- name: ListStaffDocumentsByCircle :many
-SELECT id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE circle_id = $1
 ORDER BY updated_at DESC, id DESC
 `
 
 type ListStaffDocumentsByCircleRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) ListStaffDocumentsByCircle(ctx context.Context, circleID string) ([]ListStaffDocumentsByCircleRow, error) {
@@ -456,6 +586,7 @@ func (q *Queries) ListStaffDocumentsByCircle(ctx context.Context, circleID strin
 			&i.Description,
 			&i.Notes,
 			&i.IsPublic,
+			&i.ViewableTags,
 			&i.IsImportant,
 			&i.Filename,
 			&i.MimeType,
@@ -495,42 +626,45 @@ SET name = $3,
     description = $4,
     notes = $5,
     is_public = $6,
-    is_important = $7,
-    filename = $8,
-    mime_type = $9,
-    content = $10,
+    viewable_tags = $7,
+    is_important = $8,
+    filename = $9,
+    mime_type = $10,
+    content = $11,
     updated_at = now()
 WHERE circle_id = $1
   AND id = $2
-RETURNING id, circle_id, name, description, notes, is_public, is_important, filename, mime_type, content, created_at, updated_at
+RETURNING id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 `
 
 type UpdateStaffDocumentParams struct {
-	CircleID    string
-	ID          string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
+	CircleID     string
+	ID           string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
 }
 
 type UpdateStaffDocumentRow struct {
-	ID          string
-	CircleID    string
-	Name        string
-	Description string
-	Notes       string
-	IsPublic    bool
-	IsImportant bool
-	Filename    string
-	MimeType    string
-	Content     []byte
-	CreatedAt   pgtype.Timestamptz
-	UpdatedAt   pgtype.Timestamptz
+	ID           string
+	CircleID     string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	Content      []byte
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) UpdateStaffDocument(ctx context.Context, arg UpdateStaffDocumentParams) (UpdateStaffDocumentRow, error) {
@@ -541,6 +675,7 @@ func (q *Queries) UpdateStaffDocument(ctx context.Context, arg UpdateStaffDocume
 		arg.Description,
 		arg.Notes,
 		arg.IsPublic,
+		arg.ViewableTags,
 		arg.IsImportant,
 		arg.Filename,
 		arg.MimeType,
@@ -554,6 +689,7 @@ func (q *Queries) UpdateStaffDocument(ctx context.Context, arg UpdateStaffDocume
 		&i.Description,
 		&i.Notes,
 		&i.IsPublic,
+		&i.ViewableTags,
 		&i.IsImportant,
 		&i.Filename,
 		&i.MimeType,

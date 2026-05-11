@@ -46,7 +46,7 @@ const pageQuery = usePageDetailQuery(pageId)
         </div>
       </section>
 
-      <div class="py-2">
+      <div class="rounded bg-surface px-6 py-8 shadow-lv1">
         <PageMarkdownContent :source="pageQuery.data.value.body" />
       </div>
 

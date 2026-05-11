@@ -19,7 +19,6 @@ import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEdit
 import {
   extractStaffPageValidationMessage,
   useDeleteStaffPageMutation,
-  usePatchStaffPagePinMutation,
   useStaffPageDetailQuery,
   useStaffPageForm,
   useUpdateStaffPageMutation
@@ -41,7 +40,6 @@ const tagsQuery = useStaffTagsQuery(enabled)
 const documentsQuery = useStaffDocumentsQuery(enabled)
 const updatePageMutation = useUpdateStaffPageMutation(pageId)
 const deletePageMutation = useDeleteStaffPageMutation(pageId)
-const patchPinMutation = usePatchStaffPagePinMutation(pageId)
 const form = useStaffPageForm()
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -101,23 +99,6 @@ async function handleSavePage() {
   }
 }
 
-async function handleTogglePin() {
-  if (!pageQuery.data.value) {
-    return
-  }
-
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    const nextPinned = !pageQuery.data.value.isPinned
-    await patchPinMutation.mutateAsync(nextPinned)
-    successMessage.value = nextPinned ? 'お知らせを固定表示しました。' : 'お知らせの固定表示を解除しました。'
-  } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error)
-  }
-}
-
 async function handleDeletePage() {
   if (typeof window !== 'undefined' && !window.confirm('このお知らせを削除しますか？')) {
     return
@@ -169,10 +150,8 @@ async function handleDeletePage() {
             :on-blur-field="markTouched"
           />
         </div>
-      </SurfaceCard>
 
-      <SurfaceCard>
-        <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border px-6 py-5">
           <BaseButton
             variant="dangerOutline"
             size="wide"
@@ -183,21 +162,6 @@ async function handleDeletePage() {
           >
             {{ deletePageMutation.isPending.value ? '削除中...' : '削除' }}
           </BaseButton>
-
-          <button
-            class="rounded border border-border bg-surface px-6 py-3 font-bold text-body transition hover:bg-surface-light disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="patchPinMutation.isPending.value"
-            type="button"
-            @click="handleTogglePin"
-          >
-            {{
-              patchPinMutation.isPending.value
-                ? '更新中...'
-                : pageQuery.data.value.isPinned
-                  ? '固定表示を解除'
-                  : '固定表示'
-            }}
-          </button>
         </div>
       </SurfaceCard>
     </form>

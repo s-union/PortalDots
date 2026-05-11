@@ -4584,7 +4584,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [id, displayName, loginIds]
+                      required: [id, displayName, loginIds, isLeader]
                       properties:
                         id:
                           type: string
@@ -4594,6 +4594,8 @@ paths:
                           type: array
                           items:
                             type: string
+                        isLeader:
+                          type: boolean
         "401":
           description: Unauthenticated
         "403":
@@ -4626,6 +4628,8 @@ paths:
                 body:
                   type: string
                   minLength: 1
+                ccToStaff:
+                  type: boolean
       responses:
         "201":
           description: Created

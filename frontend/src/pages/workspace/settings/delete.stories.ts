@@ -22,33 +22,3 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
-
-export const CannotDeleteBelongsToCircle: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('/v1/session/bootstrap', () =>
-          HttpResponse.json({
-            ...mockSessionBootstrap,
-            currentCircle: { id: 'circle-1', name: 'テストサークル' }
-          })
-        )
-      ]
-    }
-  }
-}
-
-export const CannotDeleteStaff: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('/v1/session/bootstrap', () =>
-          HttpResponse.json({
-            ...mockSessionBootstrap,
-            roles: ['admin']
-          })
-        )
-      ]
-    }
-  }
-}

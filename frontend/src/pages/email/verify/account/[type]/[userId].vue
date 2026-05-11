@@ -70,7 +70,7 @@ onMounted(() => {
           <p class="rounded border border-success bg-success-light px-4 py-3 text-success">
             {{
               verificationCompleted
-                ? '必須のメール認証が完了しました。企画参加登録を進められます。'
+                ? 'メール認証が完了しました。'
                 : 'メール認証が完了しました。大学メールアドレスを認証すると、企画参加登録を進められます。'
             }}
           </p>

@@ -184,7 +184,7 @@ export const staffHandlers = [
   http.get(`${BASE}/staff/circles/:circleID/email`, () =>
     HttpResponse.json({
       circle: mockStaffCircle,
-      recipients: [{ id: 'user-1', displayName: '山田 太郎', loginIds: ['s12345678@example.ac.jp'] }]
+      recipients: [{ id: 'user-1', displayName: '山田 太郎', loginIds: ['s12345678@example.ac.jp'], isLeader: true }]
     })
   ),
   http.get(`${BASE}/staff/forms`, () =>
@@ -348,14 +348,7 @@ export const staffHandlers = [
   ),
   http.get(`${BASE}/staff/mails`, () => HttpResponse.json([mockMail])),
   http.get(`${BASE}/staff/mail/:mailId`, () => HttpResponse.json(mockMail)),
-  http.get(`${BASE}/staff/tags`, () =>
-    HttpResponse.json({
-      items: [mockTag],
-      page: 1,
-      pageSize: 20,
-      total: 1
-    })
-  ),
+  http.get(`${BASE}/staff/tags`, () => HttpResponse.json([mockTag])),
   http.get(`${BASE}/staff/places`, () =>
     HttpResponse.json({
       items: [mockPlace],

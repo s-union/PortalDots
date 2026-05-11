@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
-	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
 
 func (h *staffCircleHandlers) requireCircleRead(c echo.Context) (string, session.Session, int, bool) {
@@ -104,7 +103,7 @@ func (h *staffCircleHandlers) loadStaffCircleMembers(circleID string) ([]staffCi
 	return response, nil
 }
 
-func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, leadersOnly bool) (circle.Circle, []useradmin.User, error) {
+func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, leadersOnly bool) (circle.Circle, []staffCircleMailRecipient, error) {
 	circleValue, err := h.circles.Find(circleID)
 	if err != nil {
 		return circle.Circle{}, nil, err
@@ -115,7 +114,7 @@ func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, lea
 		return circleValue, nil, err
 	}
 
-	recipients := make([]useradmin.User, 0, len(members))
+	recipients := make([]staffCircleMailRecipient, 0, len(members))
 	for _, member := range members {
 		if leadersOnly && !member.IsLeader {
 			continue
@@ -124,7 +123,10 @@ func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, lea
 		if findErr != nil {
 			continue
 		}
-		recipients = append(recipients, userValue)
+		recipients = append(recipients, staffCircleMailRecipient{
+			User:     userValue,
+			IsLeader: member.IsLeader,
+		})
 	}
 
 	return circleValue, recipients, nil

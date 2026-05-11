@@ -11,7 +11,7 @@ import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
@@ -29,7 +29,6 @@ import {
   useUploadStaffFormAnswerFileMutation
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
-import PageLayout from '@/components/layouts/PageLayout.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -136,9 +135,7 @@ function handleFileChange(questionId: string, event: Event) {
 </script>
 
 <template>
-  <PageLayout>
-    <TabStrip :tabs="staffFormTabs" />
-
+  <TabbedSettingsPage :tabs="staffFormTabs">
     <LoadingState v-if="answerQuery.isPending.value" />
 
     <article v-else-if="answerQuery.data.value" class="space-y-6">
@@ -150,7 +147,6 @@ function handleFileChange(questionId: string, event: Event) {
             受付期間 : {{ formatDateTime(answerQuery.data.value.form.openAt) }}〜{{
               formatDateTime(answerQuery.data.value.form.closeAt)
             }}<br />
-            回答 ID : {{ answerQuery.data.value.answer.id }}<br />
             作成日時 : {{ formatDateTime(answerQuery.data.value.answer.createdAt) }}
           </template>
         </SurfaceHeader>
@@ -277,5 +273,5 @@ function handleFileChange(questionId: string, event: Event) {
     </article>
 
     <ErrorState v-else message="回答を取得できませんでした。" />
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>

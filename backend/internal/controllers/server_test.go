@@ -4683,7 +4683,7 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &form); err != nil {
 		t.Fatalf("unmarshal circle mail form: %v", err)
 	}
-	if form.Circle.ID != "0195ec00-0022-7000-8000-000000000001" || len(form.Recipients) != 2 || form.Recipients[0].ID != "0195ec00-0058-7000-8000-000000000001" || form.Recipients[1].ID != "0195ec00-0056-7000-8000-000000000001" {
+	if form.Circle.ID != "0195ec00-0022-7000-8000-000000000001" || len(form.Recipients) != 2 || form.Recipients[0].ID != "0195ec00-0058-7000-8000-000000000001" || !form.Recipients[0].IsLeader || form.Recipients[1].ID != "0195ec00-0056-7000-8000-000000000001" || form.Recipients[1].IsLeader {
 		t.Fatalf("unexpected circle mail form: %#v", form)
 	}
 
@@ -4691,6 +4691,7 @@ func TestStaffCirclesAllExportMailAndDelete(t *testing.T) {
 		"recipient": "leader",
 		"subject":   "搬入のご案内",
 		"body":      "9:00 に集合してください。",
+		"ccToStaff": true,
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())

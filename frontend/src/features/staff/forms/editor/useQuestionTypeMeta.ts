@@ -15,7 +15,7 @@ export const QUESTION_TYPE_META: Record<AllowedQuestionType, QuestionTypeMeta> =
   radio: { label: '単一選択（ラジオボタン）', icon: '◉' },
   select: { label: '単一選択（ドロップダウン）', icon: '▼' },
   checkbox: { label: '複数選択（チェックボックス）', icon: '☑' },
-  upload: { label: 'ファイルアップロード', icon: '⬆' }
+  upload: { label: 'ファイルアップロード', icon: 'file' }
 }
 
 function isAllowedQuestionType(type: string): type is AllowedQuestionType {

@@ -12,14 +12,7 @@ const meta = {
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
-        http.get('/v1/staff/tags', () =>
-          HttpResponse.json({
-            items: [mockTag, { ...mockTag, id: 'tag-2', name: 'スポーツ系' }],
-            page: 1,
-            pageSize: 20,
-            total: 2
-          })
-        ),
+        http.get('/v1/staff/tags', () => HttpResponse.json([mockTag, { ...mockTag, id: 'tag-2', name: 'スポーツ系' }])),
         http.post('/v1/staff/tags', () =>
           HttpResponse.json({
             id: 'tag-new',
@@ -45,7 +38,7 @@ export const Empty: Story = {
     msw: {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
-        http.get('/v1/staff/tags', () => HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 })),
+        http.get('/v1/staff/tags', () => HttpResponse.json([])),
         http.post('/v1/staff/tags', () =>
           HttpResponse.json({
             id: 'tag-new',

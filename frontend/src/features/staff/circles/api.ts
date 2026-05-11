@@ -42,6 +42,7 @@ interface SendStaffCircleMailPayload {
   recipient: 'all' | 'leader'
   subject: string
   body: string
+  ccToStaff: boolean
 }
 
 interface AddStaffCircleMemberPayload {
@@ -242,8 +243,9 @@ export async function sendStaffCircleMail(payload: SendStaffCircleMailPayload, c
       body: {
         recipient: payload.recipient,
         subject: payload.subject,
-        body: payload.body
-      }
+        body: payload.body,
+        ccToStaff: payload.ccToStaff
+      } as { recipient: 'all' | 'leader'; subject: string; body: string; ccToStaff: boolean }
     },
     {
       errorMessage: 'Failed to queue staff circle mail',
@@ -572,10 +574,11 @@ export function useStaffCircleForm() {
 }
 
 export function useStaffCircleMailForm() {
-  return ref<{ recipient: 'all' | 'leader'; subject: string; body: string }>({
+  return ref<{ recipient: 'all' | 'leader'; subject: string; body: string; ccToStaff: boolean }>({
     recipient: 'all',
     subject: '',
-    body: ''
+    body: '',
+    ccToStaff: false
   })
 }
 

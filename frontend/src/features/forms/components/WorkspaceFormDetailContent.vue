@@ -81,7 +81,6 @@ const remainingAnswerCount = computed(() => {
         <form class="space-y-6 py-6" @submit.prevent="saveAnswer">
           <header class="space-y-4">
             <div>
-              <RouterLink to="/workspace/forms" class="text-sm text-primary hover:underline">申請</RouterLink>
               <h1 class="text-3xl font-semibold text-body">{{ form.name }}</h1>
               <p class="mt-3 text-sm text-muted">
                 受付期間 : {{ formatDateTime(form.openAt) }}〜{{ formatDateTime(form.closeAt) }}

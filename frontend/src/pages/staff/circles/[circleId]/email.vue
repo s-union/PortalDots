@@ -16,9 +16,8 @@ import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
-import PageLayout from '@/components/layouts/PageLayout.vue'
-import { canAccessCircleMail, canEditCircles } from '@/features/staff/access/capabilities'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
+import { canAccessCircleMail, canAccessStaffCapability, canEditCircles } from '@/features/staff/access/capabilities'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   extractStaffCircleMailValidationMessage,
@@ -47,7 +46,13 @@ const circleTabs = computed(() =>
     canSendEmails: canAccessCircleMail(sessionStore.roles, sessionStore.permissions)
   })
 )
-const mailRecipientCount = computed(() => mailFormQuery.data.value?.recipients.length ?? 0)
+const mailRecipientCount = computed(() => {
+  const recipients = mailFormQuery.data.value?.recipients ?? []
+  if (mailForm.value.recipient === 'leader') {
+    return recipients.filter((r) => r.isLeader === true).length
+  }
+  return recipients.length
+})
 const canSendMail = computed(() => mailRecipientCount.value > 0 && !sendCircleMailMutation.isPending.value)
 
 async function handleSendMail() {
@@ -58,14 +63,16 @@ async function handleSendMail() {
     await sendCircleMailMutation.mutateAsync({
       recipient: mailForm.value.recipient,
       subject: mailForm.value.subject,
-      body: mailForm.value.body
+      body: mailForm.value.body,
+      ccToStaff: mailForm.value.ccToStaff
     })
     mailForm.value = {
       recipient: mailForm.value.recipient,
       subject: '',
-      body: ''
+      body: '',
+      ccToStaff: mailForm.value.ccToStaff
     }
-    successMessage.value = '企画所属者向けメールをキューに追加しました。'
+    successMessage.value = '企画所属者向けメールを送信しました。'
   } catch (error) {
     errorMessage.value = extractStaffCircleMailValidationMessage(error)
   }
@@ -73,9 +80,7 @@ async function handleSendMail() {
 </script>
 
 <template>
-  <PageLayout>
-    <TabStrip :tabs="circleTabs" />
-
+  <TabbedSettingsPage :tabs="circleTabs">
     <LoadingState v-if="mailFormQuery.isPending.value" />
 
     <div v-else-if="mailFormQuery.data.value" class="space-y-6">
@@ -84,7 +89,7 @@ async function handleSendMail() {
           <template #title>{{ mailFormQuery.data.value.circle.name }}</template>
           <template #description>企画所属者向けのメール送信内容を登録します。</template>
         </SurfaceHeader>
-        <p class="mt-4 text-sm text-muted">{{ mailFormQuery.data.value.circle.groupName }}</p>
+        <p class="mt-2 pt-2 text-sm font-semibold text-body">{{ mailFormQuery.data.value.circle.groupName }}</p>
       </SurfaceCard>
 
       <SettingsSection title="企画所属者向けメール送信">
@@ -116,16 +121,13 @@ async function handleSendMail() {
               />
             </FormField>
 
+            <label class="flex items-center gap-2 text-sm text-body">
+              <input v-model="mailForm.ccToStaff" name="ccToStaff" type="checkbox" />
+              スタッフ用控えも送信する
+            </label>
+
             <InfoBox class="text-muted leading-7">
-              <p>登録内容はキューに保存され、配信処理の対象になります。</p>
               <p>本文は Markdown 記法をそのまま記入できます。</p>
-              <p class="mt-2">現在はスタッフ用控えを送らず、本体送信のみを先行実装しています。</p>
-              <p class="mt-2">
-                宛先候補:
-                {{
-                  mailFormQuery.data.value.recipients.map((recipient) => recipient.displayName).join(' / ') || 'なし'
-                }}
-              </p>
             </InfoBox>
           </div>
         </SettingsRow>
@@ -138,7 +140,7 @@ async function handleSendMail() {
             type="button"
             @click="handleSendMail"
           >
-            {{ sendCircleMailMutation.isPending.value ? '登録中...' : 'メールをキューに追加' }}
+            {{ sendCircleMailMutation.isPending.value ? '送信中...' : '送信' }}
           </BaseButton>
         </template>
       </SettingsSection>
@@ -148,5 +150,5 @@ async function handleSendMail() {
     </div>
 
     <ErrorState v-else message="企画向けメール送信情報を取得できませんでした。" />
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>

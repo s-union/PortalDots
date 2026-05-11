@@ -27,6 +27,7 @@ const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const requestMutation = useRequestStaffVerificationMutation()
 const confirmMutation = useConfirmStaffVerificationMutation()
+const isAuthorized = computed(() => staffStatusQuery.data.value?.authorized === true)
 const form = reactive({
   verifyCode: ''
 })
@@ -63,9 +64,13 @@ async function handleConfirm() {
     <ListPanel
       legacy
       title="スタッフ認証"
-      description="あなたの連絡先メールアドレス宛に認証メールを送信できます。認証メールに記載されている認証コードを入力してください。"
+      :description="
+        isAuthorized
+          ? '既に認証済みです。スタッフモードをご利用いただけます。'
+          : 'あなたの連絡先メールアドレス宛に認証メールを送信できます。認証メールに記載されている認証コードを入力してください。'
+      "
     >
-      <form class="px-6 py-6" @submit.prevent="handleConfirm">
+      <form v-if="!isAuthorized" class="px-6 py-6" @submit.prevent="handleConfirm">
         <FormField label="認証コード" label-class="font-medium">
           <input v-model="form.verifyCode" :class="formControlVariants()" name="verifyCode" type="text" />
         </FormField>

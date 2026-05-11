@@ -12,7 +12,7 @@ import FormField from '@/components/ui/FormField.vue'
 import InfoBox from '@/components/ui/InfoBox.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
@@ -23,7 +23,6 @@ import {
   useStaffFormAnswersIndexQuery
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
-import PageLayout from '@/components/layouts/PageLayout.vue'
 import { routeString } from '@/lib/routeQuery'
 
 const route = useRoute('/staff/forms/[formId]/answers/create')
@@ -90,9 +89,7 @@ async function handleCreateAnswer() {
 </script>
 
 <template>
-  <PageLayout>
-    <TabStrip :tabs="staffFormTabs" />
-
+  <TabbedSettingsPage :tabs="staffFormTabs">
     <div v-if="answersQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
@@ -173,5 +170,5 @@ async function handleCreateAnswer() {
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       回答作成画面を表示できませんでした。
     </div>
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>

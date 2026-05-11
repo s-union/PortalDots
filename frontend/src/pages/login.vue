@@ -8,7 +8,7 @@ definePage({
   }
 })
 
-import { computed, reactive, ref } from 'vue'
+import { computed, inject, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AuthPageLayout from '@/components/layouts/AuthPageLayout.vue'
 import { extractFirstErrorMessage, useLoginMutation } from '@/features/auth/api'
@@ -24,6 +24,13 @@ const form = reactive({
 })
 
 const errorMessage = ref('')
+const storybookErrorMessage = inject<string>('storybookErrorMessage', '')
+
+onMounted(() => {
+  if (storybookErrorMessage) {
+    errorMessage.value = storybookErrorMessage
+  }
+})
 
 async function handleSubmit() {
   errorMessage.value = ''

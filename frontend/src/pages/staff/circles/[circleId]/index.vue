@@ -15,8 +15,8 @@ import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
-import PageLayout from '@/components/layouts/PageLayout.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { canAccessCircleMail } from '@/features/staff/access/capabilities'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
@@ -164,8 +164,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
 </script>
 
 <template>
-  <TabStrip :tabs="circleTabs" />
-  <PageLayout>
+  <TabbedSettingsPage :tabs="circleTabs">
     <div v-if="circleQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
@@ -173,11 +172,10 @@ async function handleDeleteMember(userId: string, displayName: string) {
     <div v-else-if="circleQuery.data.value" class="space-y-6">
       <form class="space-y-6" @submit.prevent="handleSaveCircle">
         <SurfaceCard tag="header">
-          <h2 class="text-3xl font-semibold text-body">企画を編集</h2>
-          <div class="mt-3 text-sm text-muted">
-            <div>企画名 : {{ circleQuery.data.value.name }}</div>
-            <div>企画ID : {{ circleQuery.data.value.id }}</div>
-          </div>
+          <SurfaceHeader>
+            <template #title>企画を編集</template>
+            <template #description>企画名 : {{ circleQuery.data.value.name }}</template>
+          </SurfaceHeader>
         </SurfaceCard>
 
         <SettingsSection title="企画基本情報">
@@ -353,5 +351,5 @@ async function handleDeleteMember(userId: string, displayName: string) {
     </div>
 
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">企画を取得できませんでした。</div>
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>

@@ -38,3 +38,12 @@ func collectUsersEmailRecipients(users []useradmin.User) []string {
 
 	return normalizeRecipients(recipients)
 }
+
+func collectStaffCircleMailRecipientEmails(recipients []staffCircleMailRecipient) []string {
+	emails := make([]string, 0, len(recipients))
+	for _, recipient := range recipients {
+		emails = append(emails, collectUserEmailRecipients(recipient.User)...)
+	}
+
+	return normalizeRecipients(emails)
+}

@@ -350,18 +350,19 @@ func seedDocuments(ctx context.Context, q *dbgen.Queries, documents []config.Doc
 		}
 
 		if err := q.SeedUpsertDocument(ctx, dbgen.SeedUpsertDocumentParams{
-			ID:          item.ID,
-			CircleID:    item.CircleID,
-			Name:        item.Name,
-			Description: item.Description,
-			Notes:       item.Notes,
-			IsPublic:    item.IsPublic,
-			IsImportant: item.IsImportant,
-			Filename:    item.Filename,
-			MimeType:    item.MimeType,
-			Content:     []byte(item.Content),
-			CreatedAt:   toTimestamptz(createdAt),
-			UpdatedAt:   toTimestamptz(updatedAt),
+			ID:           item.ID,
+			CircleID:     item.CircleID,
+			Name:         item.Name,
+			Description:  item.Description,
+			Notes:        item.Notes,
+			IsPublic:     item.IsPublic,
+			ViewableTags: item.ViewableTags,
+			IsImportant:  item.IsImportant,
+			Filename:     item.Filename,
+			MimeType:     item.MimeType,
+			Content:      []byte(item.Content),
+			CreatedAt:    toTimestamptz(createdAt),
+			UpdatedAt:    toTimestamptz(updatedAt),
 		}); err != nil {
 			return err
 		}

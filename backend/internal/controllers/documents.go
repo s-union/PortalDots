@@ -24,12 +24,12 @@ type documentSummaryResponse struct {
 }
 
 func (h *workspaceHandlers) listDocuments(c echo.Context) error {
-	currentSession, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	documents := h.documents.ListPublic()
+	documents := h.documents.ListForCircle(effectiveCircleTags(currentCircle, h.participationTypes))
 	docIDs := make([]string, len(documents))
 	for i, doc := range documents {
 		docIDs[i] = doc.ID
@@ -61,12 +61,12 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) getDocument(c echo.Context) error {
-	currentSession, _, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	document, found := h.documents.FindPublic(c.Param("documentID"))
+	document, found := h.documents.FindForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.Param("documentID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}

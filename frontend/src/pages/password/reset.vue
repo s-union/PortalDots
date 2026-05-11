@@ -8,12 +8,16 @@ definePage({
 })
 
 import { computed, reactive, ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import NarrowPageLayout from '@/components/layouts/NarrowPageLayout.vue'
 import { extractFirstErrorMessage, useStartPasswordResetMutation } from '@/features/auth/api'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
+
+const route = useRoute()
+const isIndexRoute = computed(() => route.path === '/password/reset')
 
 const form = reactive({
   loginId: ''
@@ -45,7 +49,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <NarrowPageLayout class="space-y-6 py-8">
+  <NarrowPageLayout v-if="isIndexRoute" class="space-y-6 py-8">
     <SurfaceCard tag="section" class="mx-auto w-full max-w-[800px]">
       <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">パスワードの再設定</h1>
@@ -78,4 +82,5 @@ async function handleSubmit() {
       </button>
     </div>
   </NarrowPageLayout>
+  <RouterView v-else />
 </template>

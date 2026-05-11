@@ -35,13 +35,13 @@ const mailsQuery = useStaffMailsQuery(enabled)
 
       <SurfaceCard>
         <SurfaceHeader>
-          <template #title>配送履歴</template>
+          <template #title>配信履歴</template>
         </SurfaceHeader>
 
         <div v-if="mailsQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
 
         <div v-else-if="(mailsQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
-          配送履歴はありません。
+          配信履歴はありません。
         </div>
 
         <div v-else class="divide-y divide-border">
@@ -49,10 +49,10 @@ const mailsQuery = useStaffMailsQuery(enabled)
             <div class="flex items-center justify-between gap-3">
               <h3 class="text-lg font-medium text-body">{{ mail.subject }}</h3>
             </div>
-            <p class="mt-2 text-sm text-muted-2">recipients: {{ mail.recipients.join(', ') || 'なし' }}</p>
+            <p class="mt-2 text-sm text-muted-2">送信先: {{ mail.recipients.join(', ') || 'なし' }}</p>
             <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{ mail.body }}</p>
-            <p class="mt-2 text-xs text-muted-2">priority: {{ mail.priority }}</p>
-            <p class="mt-2 text-xs text-muted-2">queued: {{ formatDateTime(mail.createdAt) }}</p>
+            <p class="mt-2 text-xs text-muted-2">優先度: {{ mail.priority }}</p>
+            <p class="mt-2 text-xs text-muted-2">作成日時: {{ formatDateTime(mail.createdAt) }}</p>
           </article>
         </div>
       </SurfaceCard>

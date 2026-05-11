@@ -336,7 +336,8 @@ export const staffCircleSchema = z.object({
 export const staffCircleMailRecipientSchema = z.object({
   id: z.string(),
   displayName: z.string(),
-  loginIds: stringArraySchema
+  loginIds: stringArraySchema,
+  isLeader: z.boolean()
 })
 
 export const staffCircleMemberSchema = z.object({
@@ -546,13 +547,15 @@ export const staffDocumentSummarySchema = z.object({
   mimeType: z.string(),
   sizeBytes: z.number(),
   isPublic: z.boolean(),
+  viewableTags: stringArraySchema,
   createdAt: z.string(),
   updatedAt: z.string(),
   downloadUrl: apiRelativePathSchema
 })
 
 export const staffDocumentDetailSchema = staffDocumentSummarySchema.extend({
-  notes: z.string()
+  notes: z.string(),
+  viewableTags: stringArraySchema
 })
 
 export const staffPermissionDefinitionSchema = z.object({

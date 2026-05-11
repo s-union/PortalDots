@@ -27,7 +27,7 @@ const meta = {
             questions: [
               {
                 id: 'q-1',
-                name: '申請内容を入力してください',
+                name: '申請内容',
                 description: '',
                 type: 'textarea',
                 isRequired: true,

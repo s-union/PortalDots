@@ -80,7 +80,7 @@ func (h *workspaceHandlers) getPage(c echo.Context) error {
 		IsLimited: len(pageValue.ViewableTags) > 0,
 		CreatedAt: pageValue.CreatedAt,
 		UpdatedAt: pageValue.UpdatedAt,
-		Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, false),
+		Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, false, effectiveCircleTags(currentCircle, h.participationTypes)),
 	})
 }
 
@@ -89,6 +89,7 @@ func pageDocuments(
 	documentIDs []string,
 	forStaff bool,
 	publicDownload bool,
+	circleTags []string,
 ) []pageDocumentResponse {
 	documents := make([]pageDocumentResponse, 0, len(documentIDs))
 	for _, documentID := range documentIDs {
@@ -102,7 +103,7 @@ func pageDocuments(
 			docValue, found = docs.FindForStaff(documentID)
 			downloadURL = "/v1/staff/documents/" + documentID
 		} else {
-			docValue, found = docs.FindPublic(documentID)
+			docValue, found = docs.FindForCircle(circleTags, documentID)
 			if publicDownload {
 				downloadURL = "/v1/public/documents/" + documentID
 			} else {

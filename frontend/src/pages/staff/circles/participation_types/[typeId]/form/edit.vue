@@ -17,8 +17,7 @@ import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
-import PageLayout from '@/components/layouts/PageLayout.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
@@ -103,17 +102,17 @@ async function handleSave() {
 </script>
 
 <template>
-  <PageLayout fullWidth>
-    <TabStrip v-if="detailQuery.data.value" :tabs="participationTypeTabs" />
-
+  <TabbedSettingsPage :tabs="participationTypeTabs">
     <div v-if="detailQuery.isPending.value" class="rounded border border-border bg-surface p-6 text-muted shadow-lv1">
       読み込み中...
     </div>
 
     <form v-else-if="detailQuery.data.value" class="space-y-6" @submit.prevent="handleSave">
       <SurfaceCard tag="header">
-        <h2 class="text-3xl font-semibold text-body">{{ detailQuery.data.value.name }}</h2>
-        <p class="mt-3 text-sm text-muted">参加登録フォームの公開状態と文面を管理します。</p>
+        <SurfaceHeader>
+          <template #title>{{ detailQuery.data.value.name }}</template>
+          <template #description>参加登録フォームの公開状態と文面を管理します。</template>
+        </SurfaceHeader>
       </SurfaceCard>
 
       <SettingsSection title="参加登録フォームの設定">
@@ -238,5 +237,5 @@ async function handleSave() {
     <div v-else class="rounded border border-danger bg-danger-light p-6 text-danger">
       参加種別を取得できませんでした。
     </div>
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>

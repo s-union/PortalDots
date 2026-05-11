@@ -25,7 +25,6 @@ const confirmationMessage = computed(() => detailQuery.data.value?.confirmationM
     <SurfaceCard>
       <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">参加登録を提出しました！</h1>
-        <p v-if="detailQuery.data.value?.id" class="mt-2 text-sm text-muted">企画ID: {{ detailQuery.data.value.id }}</p>
       </SurfaceCardBand>
       <div class="space-y-5 px-6 py-6 text-sm leading-7 text-body">
         <div class="text-center text-success">

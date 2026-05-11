@@ -342,7 +342,11 @@ func staffPageRows(pages []backendpage.Page) [][]string {
 }
 
 func (h *staffPageHandlers) pageDocuments(documentIDs []string, forStaff bool) []pageDocumentResponse {
-	return pageDocuments(h.documents, documentIDs, forStaff, false)
+	return pageDocuments(h.documents, documentIDs, forStaff, false, nil)
+}
+
+func (h *staffPageHandlers) publicPageDocuments(documentIDs []string, circleTags []string) []pageDocumentResponse {
+	return pageDocuments(h.documents, documentIDs, false, false, circleTags)
 }
 
 func normalizePageDocumentIDs(documentIDs []string) []string {
@@ -385,7 +389,7 @@ func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID
 	}
 
 	body := currentPage.Body
-	documents := h.pageDocuments(currentPage.DocumentIDs, false)
+	documents := h.publicPageDocuments(currentPage.DocumentIDs, currentPage.ViewableTags)
 	if len(documents) > 0 {
 		lines := make([]string, 0, len(documents)+2)
 		lines = append(lines, "", "", "関連する配布資料")

@@ -36,10 +36,16 @@ const documentFixture = {
   mimeType: 'text/plain',
   sizeBytes: 1024,
   isPublic: true,
+  viewableTags: [],
   createdAt: '2026-03-03T09:00:00Z',
   updatedAt: '2026-03-05T09:00:00Z',
   downloadUrl: '/v1/staff/documents/document-circle-b-1'
 }
+
+const tagsFixture = [
+  { id: 'tag-1', name: 'タグA', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'tag-2', name: 'タグB', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
+]
 
 describe('StaffDocumentDetailPage', () => {
   afterEach(() => {
@@ -66,6 +72,7 @@ describe('StaffDocumentDetailPage', () => {
     let deleted = false
 
     server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json(tagsFixture)),
       http.get('/v1/staff/documents/document-circle-b-1/edit', () => HttpResponse.json(documentFixture)),
       http.put('/v1/staff/documents/document-circle-b-1', () =>
         HttpResponse.json({
@@ -135,7 +142,9 @@ describe('StaffDocumentDetailPage', () => {
 
     expect(wrapper.text()).toContain('配布資料を更新しました。')
 
-    await wrapper.get('button[type="button"]').trigger('click')
+    const deleteButton = wrapper.findAll('button').find((btn) => btn.text().includes('削除'))
+    expect(deleteButton).toBeTruthy()
+    await deleteButton!.trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledWith('配布資料「展示ガイド」を削除しますか？')
@@ -147,6 +156,7 @@ describe('StaffDocumentDetailPage', () => {
     let deleted = false
 
     server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json(tagsFixture)),
       http.get('/v1/staff/documents/document-circle-b-1/edit', () => HttpResponse.json(documentFixture)),
       http.delete('/v1/staff/documents/document-circle-b-1', () => {
         deleted = true
@@ -191,7 +201,9 @@ describe('StaffDocumentDetailPage', () => {
     await flushPromises()
     await flushPromises()
 
-    await wrapper.get('button[type="button"]').trigger('click')
+    const deleteButton = wrapper.findAll('button').find((btn) => btn.text().includes('削除'))
+    expect(deleteButton).toBeTruthy()
+    await deleteButton!.trigger('click')
     await flushPromises()
 
     expect(confirmMock).toHaveBeenCalledWith('配布資料「展示ガイド」を削除しますか？')

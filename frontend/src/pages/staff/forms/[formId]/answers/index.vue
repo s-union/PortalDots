@@ -6,11 +6,11 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 import StaffFilterDrawer, { type StaffFilterField } from '@/components/staff/StaffFilterDrawer.vue'
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
@@ -27,7 +27,6 @@ import {
   useStaffFormAnswersIndexQuery
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
-import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
@@ -36,7 +35,6 @@ import FaIcon from '@/components/ui/FaIcon.vue'
 
 const route = useRoute('/staff/forms/[formId]/answers/')
 const sessionStore = useSessionStore()
-const router = useRouter()
 const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const answersQuery = useStaffFormAnswersIndexQuery(
@@ -64,40 +62,20 @@ function isFilterKey(key: string) {
   return filterFields.some((f) => f.key === key)
 }
 
-const columns = computed<StaffDataGridColumn[]>(() => {
-  const base: StaffDataGridColumn[] = [
-    { key: 'circle', label: '提出した企画', sortable: false },
-    { key: 'createdAt', label: '作成日時', sortable: true },
-    { key: 'updatedAt', label: '更新日時', sortable: true }
-  ]
-  const questionCols: StaffDataGridColumn[] = (answersQuery.data.value?.form.questions ?? [])
-    .filter((q) => q.type !== 'heading')
-    .map((q) => ({
-      key: `question_${q.id}`,
-      label: q.name,
-      sortable: false
-    }))
-  return [...base, ...questionCols]
-})
+const columns = computed<StaffDataGridColumn[]>(() => [
+  { key: 'circle', label: '提出した企画', sortable: false },
+  { key: 'createdAt', label: '作成日時', sortable: true },
+  { key: 'updatedAt', label: '更新日時', sortable: true }
+])
 
 const rawAnswers = computed<Record<string, unknown>[]>(() =>
-  (answersQuery.data.value?.answers ?? []).map((answer) => {
-    const row: Record<string, unknown> = {
-      id: answer.id,
-      circle: answer.circle?.name ?? '',
-      createdAt: answer.createdAt,
-      updatedAt: answer.updatedAt,
-      groupName: answer.circle?.groupName ?? ''
-    }
-    for (const question of answersQuery.data.value?.form.questions ?? []) {
-      if (question.type === 'heading') {
-        continue
-      }
-      const values = answer.details[question.id] ?? []
-      row[`question_${question.id}`] = values.join(', ')
-    }
-    return row
-  })
+  (answersQuery.data.value?.answers ?? []).map((answer) => ({
+    id: answer.id,
+    circle: answer.circle?.name ?? '',
+    createdAt: answer.createdAt,
+    updatedAt: answer.updatedAt,
+    groupName: answer.circle?.groupName ?? ''
+  }))
 )
 
 function resolveSortValue(row: Record<string, unknown>, key: AnswersSortKey) {
@@ -156,10 +134,6 @@ const {
   isFilterKey
 })
 
-function navigateToEdit(answerId: string) {
-  router.push(`/staff/forms/${formId.value}/answers/${answerId}/edit`)
-}
-
 async function handleDelete(answerId: string, groupName: string) {
   if (typeof window !== 'undefined' && !window.confirm(buildDeleteStaffFormAnswerConfirmMessage(groupName))) {
     return
@@ -170,9 +144,7 @@ async function handleDelete(answerId: string, groupName: string) {
 
 <template>
   <StaffSideWindowContainer :is-open="isFilterOpen">
-    <PageLayout fullWidth>
-      <TabStrip :tabs="staffFormTabs" />
-
+    <TabbedSettingsPage :tabs="staffFormTabs">
       <LoadingState v-if="answersQuery.isPending.value" />
 
       <article v-else-if="answersQuery.data.value" class="space-y-6">
@@ -276,9 +248,12 @@ async function handleDelete(answerId: string, groupName: string) {
 
             <template #actions="{ row }">
               <div class="flex items-center gap-1">
-                <IconActionButton title="編集" @click="navigateToEdit(String(row.id))">
-                  <FaIcon name="pencil-alt" fixed-width />
-                </IconActionButton>
+                <a
+                  :href="`/staff/forms/${formId}/answers/${String(row.id)}/edit`"
+                  class="rounded border border-primary/25 px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-primary-light"
+                >
+                  回答
+                </a>
                 <IconActionButton
                   variant="danger"
                   title="削除"
@@ -303,7 +278,7 @@ async function handleDelete(answerId: string, groupName: string) {
       </article>
 
       <ErrorState v-else message="回答一覧を取得できませんでした。" />
-    </PageLayout>
+    </TabbedSettingsPage>
   </StaffSideWindowContainer>
 
   <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">

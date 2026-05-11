@@ -89,14 +89,13 @@ describe('StaffFormNotAnsweredPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('未回答企画一覧')
-    expect(wrapper.text()).toContain('展示チェックフォーム')
+    expect(wrapper.text()).toContain('デモ企画A')
+    expect(wrapper.text()).toContain('Aブロック')
+    expect(wrapper.text()).toContain('模擬店')
 
-    const links = wrapper.findAllComponents({ name: 'RouterLink' })
-    const circleLink = links.find((link) => link.props('to') === '/staff/circles/circle-a')
-    expect(circleLink?.text()).toContain('デモ企画A')
-    expect(circleLink?.text()).not.toContain('circle-a')
-
-    await circleLink?.trigger('click')
+    const openCircleButton = wrapper.findAll('button').find((button) => button.attributes('title') === '企画を開く')
+    expect(openCircleButton).toBeTruthy()
+    await openCircleButton?.trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/staff/circles/circle-a')

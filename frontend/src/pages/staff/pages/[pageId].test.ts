@@ -33,8 +33,7 @@ const documentCircleB1 = {
 }
 
 describe('StaffPageDetailPage', () => {
-  it('updates, toggles pin, and deletes a staff page', async () => {
-    let currentPinned = false
+  it('updates and deletes a staff page', async () => {
     let deleted = false
     let updatedRequestBody: Record<string, unknown> | null = null
 
@@ -73,7 +72,7 @@ describe('StaffPageDetailPage', () => {
           notes: '内部メモです。',
           createdAt: '2026-03-05T10:00:00Z',
           updatedAt: '2026-03-05T10:00:00Z',
-          isPinned: currentPinned,
+          isPinned: false,
           isPublic: true,
           viewableTags: ['展示'],
           documentIds: ['document-circle-b-1'],
@@ -90,23 +89,7 @@ describe('StaffPageDetailPage', () => {
           body: '更新後本文です。',
           createdAt: '2026-03-05T10:00:00Z',
           updatedAt: '2026-03-06T10:00:00Z',
-          isPinned: currentPinned,
-          isPublic: false,
-          viewableTags: ['展示', 'ステージ'],
-          documentIds: ['document-circle-b-1'],
-          documents: [documentCircleB1]
-        })
-      }),
-      http.patch('/v1/staff/pages/page-circle-b-1/pin', () => {
-        currentPinned = true
-        return HttpResponse.json({
-          id: 'page-circle-b-1',
-          title: '展示担当向け更新連絡',
-          body: '更新後本文です。',
-          notes: '更新後メモです。',
-          createdAt: '2026-03-05T10:00:00Z',
-          updatedAt: '2026-03-06T10:00:00Z',
-          isPinned: true,
+          isPinned: false,
           isPublic: false,
           viewableTags: ['展示', 'ステージ'],
           documentIds: ['document-circle-b-1'],
@@ -184,16 +167,6 @@ describe('StaffPageDetailPage', () => {
       viewableTags: ['展示', 'ステージ'],
       sendEmails: true
     })
-
-    const pinButton = wrapper.findAll('button[type="button"]').find((button) => button.text().includes('固定表示'))
-    if (!pinButton) {
-      throw new Error('pin button not found')
-    }
-    await pinButton.trigger('click')
-    await flushPromises()
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('お知らせを固定表示しました。')
 
     const deleteButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === '削除')
     if (!deleteButton) {

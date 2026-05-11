@@ -15,7 +15,7 @@ import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import TabStrip from '@/components/ui/TabStrip.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import {
   buildCopyStaffFormConfirmMessage,
   buildDeleteStaffFormConfirmMessage,
@@ -29,7 +29,6 @@ import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
-import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useFormValidation, staffFormSchema } from '@/lib/form-validation'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
@@ -168,17 +167,12 @@ async function handleDeleteForm() {
 </script>
 
 <template>
-  <PageLayout fullWidth>
+  <TabbedSettingsPage :tabs="staffFormTabs">
     <LoadingState v-if="formQuery.isPending.value" />
 
     <article v-else-if="formQuery.data.value" class="space-y-6">
-      <TabStrip :tabs="staffFormTabs" />
-
       <div class="space-y-1 px-1">
-        <p class="text-sm text-primary">Form Detail</p>
-        <h2 class="mt-3 text-3xl font-semibold text-body">設定</h2>
-        <p class="mt-3 text-sm text-muted">フォームID : {{ formQuery.data.value.id }}</p>
-        <p class="text-sm text-muted">対象企画 : {{ formQuery.data.value.circle.name || '-' }}</p>
+        <h2 class="text-3xl font-semibold text-body">設定</h2>
         <p v-if="isParticipationForm" class="mt-3 text-sm text-muted">
           このフォームは参加登録フォームです。基本設定は参加種別画面で管理し、ここでは設問編集のみ行えます。
         </p>
@@ -421,5 +415,5 @@ async function handleDeleteForm() {
     </article>
 
     <ErrorState v-else message="フォームを取得できませんでした。" />
-  </PageLayout>
+  </TabbedSettingsPage>
 </template>
