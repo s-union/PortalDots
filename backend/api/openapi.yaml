@@ -52,52 +52,6 @@ paths:
       responses:
         "204":
           description: Logged out
-  /auth/register:
-    post:
-      operationId: postAuthRegister
-      summary: Register a new participant account
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                [
-                  studentId,
-                  univemailLocalPart,
-                  univemailDomainPart,
-                  name,
-                  nameYomi,
-                  contactEmail,
-                  phoneNumber,
-                  password,
-                  passwordConfirmation,
-                ]
-              properties:
-                studentId:
-                  type: string
-                univemailLocalPart:
-                  type: string
-                univemailDomainPart:
-                  type: string
-                name:
-                  type: string
-                nameYomi:
-                  type: string
-                contactEmail:
-                  type: string
-                phoneNumber:
-                  type: string
-                password:
-                  type: string
-                passwordConfirmation:
-                  type: string
-      responses:
-        "204":
-          description: Registered and logged in
-        "422":
-          description: Validation error
   /auth/register/start:
     post:
       operationId: postAuthRegisterStart
@@ -578,6 +532,17 @@ paths:
           required: false
           schema:
             type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Staff page list
@@ -1027,6 +992,23 @@ paths:
     get:
       operationId: getStaffForms
       summary: Return current-circle forms visible from staff mode
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Staff form list
@@ -1184,6 +1166,23 @@ paths:
     get:
       operationId: getStaffDocuments
       summary: Return current-circle documents visible from staff mode
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Staff document list
@@ -1508,6 +1507,23 @@ paths:
     get:
       operationId: getStaffTags
       summary: Return staff-manageable tags
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Tag list
@@ -1624,6 +1640,23 @@ paths:
     get:
       operationId: getStaffPlaces
       summary: Return staff-manageable places
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Place list
@@ -2342,6 +2375,22 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Staff permissions list
@@ -3159,6 +3208,22 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Staff form answers index
@@ -4007,6 +4072,22 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Staff circle list
@@ -4160,6 +4241,23 @@ paths:
     get:
       operationId: getAllStaffCircles
       summary: Return all circles editable from staff mode without pagination
+      parameters:
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Staff circle list
@@ -5100,6 +5198,11 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Staff activity log list
@@ -5344,6 +5447,22 @@ paths:
           required: false
           schema:
             type: integer
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: queries
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            enum: [and, or]
       responses:
         "200":
           description: Paginated circle list
@@ -6175,43 +6294,77 @@ paths:
     get:
       operationId: getForms
       summary: Return public forms visible in the current circle context
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [open, closed, all]
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Form list
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  required: [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, hasAnswer]
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    description:
-                      type: string
-                    openAt:
-                      type: string
-                      format: date-time
-                    closeAt:
-                      type: string
-                      format: date-time
-                    maxAnswers:
-                      type: integer
-                    answerableTags:
-                      type: array
-                      items:
-                        type: string
-                    confirmationMessage:
-                      type: string
-                    isPublic:
-                      type: boolean
-                    isOpen:
-                      type: boolean
-                    hasAnswer:
-                      type: boolean
+                type: object
+                required: [items, page, pageSize, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, name, description, openAt, closeAt, maxAnswers, answerableTags, confirmationMessage, isPublic, isOpen, hasAnswer]
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        openAt:
+                          type: string
+                          format: date-time
+                        closeAt:
+                          type: string
+                          format: date-time
+                        maxAnswers:
+                          type: integer
+                        answerableTags:
+                          type: array
+                          items:
+                            type: string
+                        confirmationMessage:
+                          type: string
+                        isPublic:
+                          type: boolean
+                        isOpen:
+                          type: boolean
+                        hasAnswer:
+                          type: boolean
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  total:
+                    type: integer
         "401":
           description: Unauthenticated
         "409":

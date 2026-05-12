@@ -102,6 +102,10 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c echo.Context) 
 	if !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffCircleFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	participationType, err := h.participationTypes.Find(c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
@@ -121,7 +125,11 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c echo.Context) 
 		if currentCircle.ParticipationTypeID != participationType.ID {
 			continue
 		}
-		filtered = append(filtered, mapStaffCircle(currentCircle))
+		item := mapStaffCircle(currentCircle)
+		if !matchesStaffCircleSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffCircleFilterResolver(item), filterQueries, filterMode) {
+			continue
+		}
+		filtered = append(filtered, item)
 	}
 	slices.SortFunc(filtered, func(a, b staffCircleResponse) int {
 		return strings.Compare(a.Name, b.Name)

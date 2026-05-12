@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormAnswerUploadsPage from './uploads.vue'
 import { mockSessionBootstrapStaff, mockForm } from '@/mocks/data'
 
@@ -48,7 +48,7 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/forms/:formID/answers', () => HttpResponse.json(mockAnswersIndex))
+        http.get('/v1/staff/forms/{formID}/answers', () => HttpResponse.json(mockAnswersIndex))
       ]
     }
   }
@@ -65,7 +65,7 @@ export const NoUploads: Story = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/forms/:formID/answers', () =>
+        http.get('/v1/staff/forms/{formID}/answers', () =>
           HttpResponse.json({
             ...mockAnswersIndex,
             answers: [{ ...mockAnswersIndex.answers[0], uploadCount: 0 }]

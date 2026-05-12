@@ -10,6 +10,7 @@ import {
 } from '@/lib/api/schema'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { parseTagString, formatTags } from '@/lib/tags'
 import { useSessionStore } from '@/features/session/store'
 
@@ -62,7 +63,12 @@ export async function fetchStaffParticipationType(typeId: string) {
   )
 }
 
-export async function fetchStaffParticipationTypeCircles(typeId: string, page: number, pageSize: number) {
+export async function fetchStaffParticipationTypeCircles(
+  typeId: string,
+  page: number,
+  pageSize: number,
+  params?: StaffListQueryParamsInput
+) {
   return $api.queryData(
     'get',
     '/staff/participation-types/{typeID}/circles',
@@ -74,7 +80,8 @@ export async function fetchStaffParticipationTypeCircles(typeId: string, page: n
         },
         query: {
           page,
-          pageSize
+          pageSize,
+          ...resolveStaffListQueryParams(params)
         }
       }
     },
@@ -85,13 +92,13 @@ export async function fetchStaffParticipationTypeCircles(typeId: string, page: n
   )
 }
 
-export async function fetchAllStaffParticipationTypeCircles(typeId: string) {
+export async function fetchAllStaffParticipationTypeCircles(typeId: string, params?: StaffListQueryParamsInput) {
   const pageSize = 100
   let page = 1
   const allItems: StaffParticipationTypeCircle[] = []
 
   while (true) {
-    const current = await fetchStaffParticipationTypeCircles(typeId, page, pageSize)
+    const current = await fetchStaffParticipationTypeCircles(typeId, page, pageSize, params)
     allItems.push(...current.items)
 
     const totalPages = Math.max(1, Math.ceil(current.total / current.pageSize))
@@ -219,7 +226,8 @@ export function useStaffParticipationTypeCirclesQuery(
   typeId: MaybeRefOrGetter<string>,
   enabled: MaybeRefOrGetter<boolean>,
   page: MaybeRefOrGetter<number>,
-  pageSize: MaybeRefOrGetter<number>
+  pageSize: MaybeRefOrGetter<number>,
+  params?: StaffListQueryParamsInput
 ) {
   return $api.useQueryData(
     'get',
@@ -232,7 +240,8 @@ export function useStaffParticipationTypeCirclesQuery(
         },
         query: {
           page: toValue(page),
-          pageSize: toValue(pageSize)
+          pageSize: toValue(pageSize),
+          ...resolveStaffListQueryParams(params)
         }
       }
     }),
@@ -244,7 +253,8 @@ export function useStaffParticipationTypeCirclesQuery(
         toValue(typeId),
         'circles',
         toValue(page),
-        toValue(pageSize)
+        toValue(pageSize),
+        toValue(params)
       ]),
       enabled: computed(() => toValue(enabled) && toValue(typeId).trim().length > 0),
       retry: false
@@ -257,11 +267,12 @@ export function useStaffParticipationTypeCirclesQuery(
 
 export function useAllStaffParticipationTypeCirclesQuery(
   typeId: MaybeRefOrGetter<string>,
-  enabled: MaybeRefOrGetter<boolean>
+  enabled: MaybeRefOrGetter<boolean>,
+  params?: StaffListQueryParamsInput
 ) {
   return useQuery({
-    queryKey: computed(() => ['staff', 'participation-types', toValue(typeId), 'circles', 'all']),
-    queryFn: () => fetchAllStaffParticipationTypeCircles(toValue(typeId)),
+    queryKey: computed(() => ['staff', 'participation-types', toValue(typeId), 'circles', 'all', toValue(params)]),
+    queryFn: () => fetchAllStaffParticipationTypeCircles(toValue(typeId), params),
     enabled: computed(() => toValue(enabled) && toValue(typeId).trim().length > 0),
     retry: false
   })

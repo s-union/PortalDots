@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import IndexPage from './index.vue'
 import { mockSessionBootstrap, mockSessionBootstrapStaff, mockPublicConfig, mockPublicHome } from '@/mocks/data'
 
@@ -56,7 +56,7 @@ export const Authenticated: Story = {
         ),
         http.get('/v1/circles/current', () => HttpResponse.json(null)),
         http.get('/v1/circles/current/detail', () => new HttpResponse(null, { status: 404 })),
-        http.get('/v1/forms', () => HttpResponse.json([]))
+        http.get('/v1/forms', () => HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 }))
       ]
     }
   }
@@ -75,7 +75,7 @@ export const StaffUser: Story = {
         http.get('/v1/circles', () => HttpResponse.json([])),
         http.get('/v1/circles/current', () => HttpResponse.json(null)),
         http.get('/v1/circles/current/detail', () => new HttpResponse(null, { status: 404 })),
-        http.get('/v1/forms', () => HttpResponse.json([]))
+        http.get('/v1/forms', () => HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 }))
       ]
     }
   }

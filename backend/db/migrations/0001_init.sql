@@ -155,7 +155,6 @@ CREATE TABLE IF NOT EXISTS reads (
 -- ── documents ──
 CREATE TABLE IF NOT EXISTS documents (
     id uuid PRIMARY KEY DEFAULT uuidv7(),
-    circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
     name text NOT NULL,
     description text NOT NULL,
     is_public boolean NOT NULL DEFAULT true,

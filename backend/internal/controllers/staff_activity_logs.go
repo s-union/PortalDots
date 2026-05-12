@@ -35,10 +35,25 @@ func (h *staffAdminHandlers) listStaffActivityLogs(c echo.Context) error {
 	pagination := readPagination(c)
 	response := make([]staffActivityLogResponse, 0, len(logs))
 	for _, entry := range logs {
-		response = append(response, mapStaffActivityLog(entry))
+		item := mapStaffActivityLog(entry)
+		if !matchesStaffActivityLogSearch(item, c.QueryParam("query")) {
+			continue
+		}
+		response = append(response, item)
 	}
 
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+}
+
+func matchesStaffActivityLogSearch(item staffActivityLogResponse, query string) bool {
+	return matchesStaffListSearch([]string{
+		item.Action,
+		item.Summary,
+		item.ActorUserID,
+		item.TargetType,
+		item.TargetID,
+		item.CircleID,
+	}, query)
 }
 
 func recordActivity(

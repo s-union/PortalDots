@@ -13,6 +13,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
+	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
@@ -99,11 +100,6 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 		return internalError(c)
 	}
 
-	selectableCircles, err := h.circles.ListSelectable(nil)
-	if err != nil {
-		return internalError(c)
-	}
-
 	circleTags := h.currentPublicHomeCircleTags(c)
 
 	return c.JSON(http.StatusOK, publicHomeResponse{
@@ -115,7 +111,7 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 		PinnedPages:        h.collectPinnedPublicPages(circleTags),
 		ParticipationTypes: participationTypes,
 		Pages:              h.collectPublicPages(circleTags, 5),
-		Documents:          h.collectPublicDocuments(selectableCircles, 3),
+		Documents:          h.collectPublicDocuments(3),
 	})
 }
 
@@ -135,6 +131,16 @@ func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
 
 func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
 	pages := h.pages.ListGuest(c.QueryParam("query"))
+	pagination := readPagesPagination(c)
+	total := len(pages)
+	if h.pages.SupportsPagination() {
+		total = h.pages.CountGuest(c.QueryParam("query"))
+		page, pageSize := models.NormalizePagination(pagination, total)
+		pagination.Page = page
+		pagination.PageSize = pageSize
+		pages = h.pages.ListGuestPaginated(c.QueryParam("query"), pageSize, (page-1)*pageSize)
+	}
+
 	response := make([]pageSummaryResponse, 0, len(pages))
 	for _, currentPage := range pages {
 		response = append(response, pageSummaryResponse{
@@ -149,7 +155,16 @@ func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, paginatePages(response, readPagesPagination(c)))
+	if h.pages.SupportsPagination() {
+		return c.JSON(http.StatusOK, models.PaginatedResponse[pageSummaryResponse]{
+			Items:    response,
+			Page:     pagination.Page,
+			PageSize: pagination.PageSize,
+			Total:    total,
+		})
+	}
+
+	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
 func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
@@ -170,17 +185,12 @@ func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
 }
 
 func (h *publicHomeHandlers) listPublicDocuments(c echo.Context) error {
-	selectableCircles, err := h.circles.ListSelectable(nil)
-	if err != nil {
-		return internalError(c)
-	}
-
-	return c.JSON(http.StatusOK, h.collectPublicDocuments(selectableCircles, 0))
+	return c.JSON(http.StatusOK, h.collectPublicDocuments(0))
 }
 
 func (h *publicHomeHandlers) getPublicDocument(c echo.Context) error {
 	documentID := c.Param("documentID")
-	documentValue, found := h.documents.FindPublic(documentID)
+	documentValue, found := h.documents.FindPublic(documentID, nil)
 	if found {
 		c.Response().Header().Set(echo.HeaderContentType, documentValue.MimeType)
 		c.Response().Header().Set(echo.HeaderContentDisposition, publicInlineContentDisposition(documentValue))
@@ -288,29 +298,21 @@ func (h *publicHomeHandlers) currentPublicHomeCircleTags(c echo.Context) []strin
 	return effectiveCircleTags(currentCircle, h.participationTypes)
 }
 
-func (h *publicHomeHandlers) collectPublicDocuments(circles []circle.Circle, limit int) []publicHomeDocumentResponse {
-	documents := make([]publicHomeDocumentResponse, 0)
-	seen := map[string]struct{}{}
-
-	for _, currentCircle := range circles {
-		visibleDocuments := h.documents.ListByCircle(currentCircle.ID)
-		for _, currentDocument := range visibleDocuments {
-			if _, ok := seen[currentDocument.ID]; ok {
-				continue
-			}
-			seen[currentDocument.ID] = struct{}{}
-			documents = append(documents, publicHomeDocumentResponse{
-				ID:          currentDocument.ID,
-				Name:        currentDocument.Name,
-				Description: currentDocument.Description,
-				IsImportant: currentDocument.IsImportant,
-				IsNew:       isDocumentNew(currentDocument),
-				Extension:   currentDocument.Extension,
-				SizeBytes:   currentDocument.SizeBytes,
-				UpdatedAt:   currentDocument.UpdatedAt,
-				DownloadURL: "/v1/public/documents/" + currentDocument.ID,
-			})
-		}
+func (h *publicHomeHandlers) collectPublicDocuments(limit int) []publicHomeDocumentResponse {
+	visibleDocuments := h.documents.ListPublic(nil)
+	documents := make([]publicHomeDocumentResponse, 0, len(visibleDocuments))
+	for _, currentDocument := range visibleDocuments {
+		documents = append(documents, publicHomeDocumentResponse{
+			ID:          currentDocument.ID,
+			Name:        currentDocument.Name,
+			Description: currentDocument.Description,
+			IsImportant: currentDocument.IsImportant,
+			IsNew:       isDocumentNew(currentDocument),
+			Extension:   currentDocument.Extension,
+			SizeBytes:   currentDocument.SizeBytes,
+			UpdatedAt:   currentDocument.UpdatedAt,
+			DownloadURL: "/v1/public/documents/" + currentDocument.ID,
+		})
 	}
 
 	slices.SortFunc(documents, func(left, right publicHomeDocumentResponse) int {

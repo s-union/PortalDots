@@ -69,7 +69,6 @@ import {
   useCompleteRegistrationMutation,
   useLoginMutation,
   useLogoutMutation,
-  useRegisterMutation,
   useRequestAuthVerificationMutation,
   useVerifyAuthVerificationLinkMutation
 } from './api'
@@ -200,17 +199,15 @@ describe('auth api', () => {
     )
   })
 
-  it('hydrates the session and updates the bootstrap cache after login/register/complete', async () => {
+  it('hydrates the session and updates the bootstrap cache after login/complete', async () => {
     const loginMutation = useLoginMutation()
-    const registerMutation = useRegisterMutation()
     const completeMutation = useCompleteRegistrationMutation()
 
     await loginMutation.onSuccess?.()
-    await registerMutation.onSuccess?.()
     await completeMutation.onSuccess?.()
 
-    expect(sessionApiMocks.fetchSessionBootstrap).toHaveBeenCalledTimes(3)
-    expect(sessionStoreMocks.store.hydrate).toHaveBeenCalledTimes(3)
+    expect(sessionApiMocks.fetchSessionBootstrap).toHaveBeenCalledTimes(2)
+    expect(sessionStoreMocks.store.hydrate).toHaveBeenCalledTimes(2)
     expect(setQueryData).toHaveBeenCalledWith(
       ['session', 'bootstrap'],
       expect.objectContaining({

@@ -8,6 +8,7 @@ import {
   staffDocumentSummarySchema
 } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffDocumentSummary {
@@ -36,7 +37,6 @@ export type StaffDocumentDetail = StaffDocumentSummary & {
 }
 
 export interface MutateStaffDocumentPayload {
-  circleId: string
   name: string
   description: string
   notes: string
@@ -46,12 +46,13 @@ export interface MutateStaffDocumentPayload {
   file: File | null
 }
 
-export async function fetchStaffDocuments() {
+export async function fetchStaffDocuments(params?: StaffListQueryParamsInput) {
   return $api.queryData(
     'get',
     '/staff/documents',
     {
-      headers: createJsonHeaders()
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
     },
     parseStaffDocuments,
     {
@@ -81,7 +82,6 @@ export async function fetchStaffDocument(documentId: string) {
 
 export async function createStaffDocument(payload: MutateStaffDocumentPayload, csrfToken: string) {
   const formData = new FormData()
-  formData.set('circleId', payload.circleId)
   formData.set('name', payload.name)
   formData.set('description', payload.description)
   formData.set('notes', payload.notes)
@@ -112,7 +112,6 @@ export async function createStaffDocument(payload: MutateStaffDocumentPayload, c
 
 export async function updateStaffDocument(documentId: string, payload: MutateStaffDocumentPayload, csrfToken: string) {
   const formData = new FormData()
-  formData.set('circleId', payload.circleId)
   formData.set('name', payload.name)
   formData.set('description', payload.description)
   formData.set('notes', payload.notes)
@@ -159,16 +158,17 @@ export async function deleteStaffDocument(documentId: string, csrfToken: string)
   )
 }
 
-export function useStaffDocumentsQuery(enabled: MaybeRefOrGetter<boolean>) {
+export function useStaffDocumentsQuery(enabled: MaybeRefOrGetter<boolean>, params?: StaffListQueryParamsInput) {
   return $api.useQueryData(
     'get',
     '/staff/documents',
-    {
-      headers: createJsonHeaders()
-    },
+    () => ({
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
+    }),
     parseStaffDocuments,
     {
-      queryKey: ['staff', 'documents'],
+      queryKey: computed(() => ['staff', 'documents', toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },
@@ -256,7 +256,6 @@ export function useDeleteStaffDocumentMutation(documentId: MaybeRefOrGetter<stri
 
 export function useStaffDocumentForm() {
   return ref<MutateStaffDocumentPayload>({
-    circleId: '',
     name: '',
     description: '',
     notes: '',

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormAnswerEditPage from './edit.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 import { staffFormStoryQuestions } from '../../../story-fixtures'
@@ -81,8 +81,8 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/forms/:formID/answers/:answerID/edit', () => HttpResponse.json(editFixture)),
-        http.put('/v1/staff/forms/:formID/answers/:answerID', () =>
+        http.get('/v1/staff/forms/{formID}/answers/{answerID}/edit', () => HttpResponse.json(editFixture)),
+        http.put('/v1/staff/forms/{formID}/answers/{answerID}', () =>
           HttpResponse.json({
             id: 'answer-1',
             body: '更新後本文',
@@ -92,7 +92,7 @@ const meta = {
             uploads: []
           })
         ),
-        http.post('/v1/staff/forms/:formID/answers/:answerID/uploads', () =>
+        http.post('/v1/staff/forms/{formID}/answers/{answerID}/uploads', () =>
           HttpResponse.json({
             id: 'upload-new',
             questionId: 'question-layout',
@@ -102,7 +102,7 @@ const meta = {
             createdAt: '2026-03-08T10:00:00Z'
           })
         ),
-        http.delete('/v1/staff/forms/:formID/answers/:answerID', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/forms/{formID}/answers/{answerID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -119,7 +119,7 @@ export const NoQuestions: Story = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/forms/:formID/answers/:answerID/edit', () =>
+        http.get('/v1/staff/forms/{formID}/answers/{answerID}/edit', () =>
           HttpResponse.json({
             ...editFixture,
             form: { ...editFixture.form, questions: [], answerableTags: [] },
@@ -127,7 +127,7 @@ export const NoQuestions: Story = {
             siblingAnswers: []
           })
         ),
-        http.put('/v1/staff/forms/:formID/answers/:answerID', () =>
+        http.put('/v1/staff/forms/{formID}/answers/{answerID}', () =>
           HttpResponse.json({
             id: 'answer-1',
             body: '更新後本文',
@@ -137,7 +137,7 @@ export const NoQuestions: Story = {
             uploads: []
           })
         ),
-        http.delete('/v1/staff/forms/:formID/answers/:answerID', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/forms/{formID}/answers/{answerID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

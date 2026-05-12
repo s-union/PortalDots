@@ -10,7 +10,6 @@ import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
-import { useManagedStaffCirclesQuery } from '@/features/staff/circles/api'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 import FormField from '@/components/ui/FormField.vue'
@@ -24,7 +23,6 @@ import {
 } from '@/features/staff/documents/api'
 
 const createDocumentMutation = useCreateStaffDocumentMutation()
-const circlesQuery = useManagedStaffCirclesQuery(true)
 const tagsQuery = useStaffTagsQuery(true)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const form = useStaffDocumentForm()
@@ -46,7 +44,6 @@ async function handleCreateDocument() {
 
   try {
     await createDocumentMutation.mutateAsync({
-      circleId: form.value.circleId,
       name: form.value.name,
       description: form.value.description,
       notes: form.value.notes,
@@ -56,7 +53,6 @@ async function handleCreateDocument() {
       file: form.value.file
     })
     form.value = {
-      circleId: '',
       name: '',
       description: '',
       notes: '',
@@ -81,15 +77,6 @@ async function handleCreateDocument() {
       </SurfaceHeader>
 
       <form class="grid gap-4 px-6 py-6" @submit.prevent="handleCreateDocument">
-        <FormField label="対象企画">
-          <select v-model="form.circleId" name="circleId">
-            <option value="">企画を選択してください</option>
-            <option v-for="circle in circlesQuery.data.value ?? []" :key="circle.id" :value="circle.id">
-              {{ circle.name }}
-            </option>
-          </select>
-        </FormField>
-
         <FormField label="配布資料名">
           <input v-model="form.name" name="name" type="text" />
         </FormField>

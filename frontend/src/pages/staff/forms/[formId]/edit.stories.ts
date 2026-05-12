@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormEditPage from './edit.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 import { staffFormStoryDetail } from '../story-fixtures'
@@ -24,8 +24,8 @@ const meta = {
             { id: 'tag-required', name: '必須', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
           ])
         ),
-        http.get('/v1/staff/forms/:formID', () => HttpResponse.json(staffFormStoryDetail)),
-        http.put('/v1/staff/forms/:formID', () =>
+        http.get('/v1/staff/forms/{formID}', () => HttpResponse.json(staffFormStoryDetail)),
+        http.put('/v1/staff/forms/{formID}', () =>
           HttpResponse.json({
             ...staffFormStoryDetail,
             questions: undefined,
@@ -33,7 +33,7 @@ const meta = {
             updatedAt: '2026-03-09T10:00:00Z'
           })
         ),
-        http.post('/v1/staff/forms/:formID/copy', () =>
+        http.post('/v1/staff/forms/{formID}/copy', () =>
           HttpResponse.json({
             ...staffFormStoryDetail,
             id: 'form-circle-b-1-copy',
@@ -41,7 +41,7 @@ const meta = {
             answer: undefined
           })
         ),
-        http.delete('/v1/staff/forms/:formID', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/forms/{formID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -59,7 +59,7 @@ export const ParticipationForm: Story = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/tags', () => HttpResponse.json([])),
-        http.get('/v1/staff/forms/:formID', () =>
+        http.get('/v1/staff/forms/{formID}', () =>
           HttpResponse.json({
             ...staffFormStoryDetail,
             circle: { id: 'type-1', name: '一般参加' },

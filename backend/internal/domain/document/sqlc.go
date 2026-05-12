@@ -37,22 +37,8 @@ func (r *SQLCRepository) MarkRead(documentID, userID string) error {
 	})
 }
 
-func (r *SQLCRepository) ListByCircle(circleID string) []Document {
-	rows, err := r.queries.ListPublicDocumentsByCircle(context.Background(), circleID)
-	if err != nil {
-		return nil
-	}
-
-	documents := make([]Document, 0, len(rows))
-	for _, row := range rows {
-		documents = append(documents, mapPublicDocumentByCircle(row))
-	}
-
-	return documents
-}
-
-func (r *SQLCRepository) ListPublic() []Document {
-	rows, err := r.queries.ListPublicDocuments(context.Background())
+func (r *SQLCRepository) ListPublic(circleTags []string) []Document {
+	rows, err := r.queries.ListPublicDocuments(context.Background(), circleTags)
 	if err != nil {
 		return nil
 	}
@@ -65,22 +51,20 @@ func (r *SQLCRepository) ListPublic() []Document {
 	return documents
 }
 
-func (r *SQLCRepository) ListForCircle(circleTags []string) []Document {
-	rows, err := r.queries.ListPublicDocumentsForCircleTags(context.Background(), circleTags)
+func (r *SQLCRepository) FindPublic(documentID string, circleTags []string) (Document, bool) {
+	row, err := r.queries.GetPublicDocumentByID(context.Background(), dbgen.GetPublicDocumentByIDParams{
+		ID:      documentID,
+		Column2: circleTags,
+	})
 	if err != nil {
-		return nil
+		return Document{}, false
 	}
 
-	documents := make([]Document, 0, len(rows))
-	for _, row := range rows {
-		documents = append(documents, mapPublicDocumentForCircleTags(row))
-	}
-
-	return documents
+	return mapPublicDocumentByID(row), true
 }
 
-func (r *SQLCRepository) ListByCircleForStaff(circleID string) []Document {
-	rows, err := r.queries.ListStaffDocumentsByCircle(context.Background(), circleID)
+func (r *SQLCRepository) ListForStaff() []Document {
+	rows, err := r.queries.ListStaffDocuments(context.Background())
 	if err != nil {
 		return nil
 	}
@@ -93,53 +77,8 @@ func (r *SQLCRepository) ListByCircleForStaff(circleID string) []Document {
 	return documents
 }
 
-func (r *SQLCRepository) FindByCircle(circleID, documentID string) (Document, bool) {
-	row, err := r.queries.GetPublicDocumentByID(context.Background(), dbgen.GetPublicDocumentByIDParams{
-		CircleID: circleID,
-		ID:       documentID,
-	})
-	if err != nil {
-		return Document{}, false
-	}
-
-	return mapPublicDocumentByID(row), true
-}
-
-func (r *SQLCRepository) FindPublic(documentID string) (Document, bool) {
-	row, err := r.queries.GetPublicDocumentByIDGlobal(context.Background(), documentID)
-	if err != nil {
-		return Document{}, false
-	}
-
-	return mapPublicDocumentGlobal(row), true
-}
-
-func (r *SQLCRepository) FindForCircle(circleTags []string, documentID string) (Document, bool) {
-	row, err := r.queries.GetPublicDocumentByIDGlobalForCircleTags(context.Background(), dbgen.GetPublicDocumentByIDGlobalForCircleTagsParams{
-		ID:      documentID,
-		Column2: circleTags,
-	})
-	if err != nil {
-		return Document{}, false
-	}
-
-	return mapPublicDocumentGlobalForCircleTags(row), true
-}
-
 func (r *SQLCRepository) FindForStaff(documentID string) (Document, bool) {
-	row, err := r.queries.GetStaffDocumentByIDGlobal(context.Background(), documentID)
-	if err != nil {
-		return Document{}, false
-	}
-
-	return mapStaffDocumentByIDGlobal(row), true
-}
-
-func (r *SQLCRepository) FindByCircleForStaff(circleID, documentID string) (Document, bool) {
-	row, err := r.queries.GetStaffDocumentByID(context.Background(), dbgen.GetStaffDocumentByIDParams{
-		CircleID: circleID,
-		ID:       documentID,
-	})
+	row, err := r.queries.GetStaffDocumentByID(context.Background(), documentID)
 	if err != nil {
 		return Document{}, false
 	}
@@ -148,7 +87,6 @@ func (r *SQLCRepository) FindByCircleForStaff(circleID, documentID string) (Docu
 }
 
 func (r *SQLCRepository) Create(
-	circleID,
 	name,
 	description,
 	notes string,
@@ -160,7 +98,6 @@ func (r *SQLCRepository) Create(
 	content []byte,
 ) (Document, bool) {
 	row, err := r.queries.CreateStaffDocument(context.Background(), dbgen.CreateStaffDocumentParams{
-		CircleID:     circleID,
 		Name:         name,
 		Description:  description,
 		Notes:        notes,
@@ -177,7 +114,6 @@ func (r *SQLCRepository) Create(
 
 	return Document{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Name:         row.Name,
 		Description:  row.Description,
 		Notes:        row.Notes,
@@ -195,7 +131,6 @@ func (r *SQLCRepository) Create(
 }
 
 func (r *SQLCRepository) Update(
-	circleID,
 	documentID,
 	name,
 	description,
@@ -208,7 +143,6 @@ func (r *SQLCRepository) Update(
 	content []byte,
 ) (Document, bool) {
 	row, err := r.queries.UpdateStaffDocument(context.Background(), dbgen.UpdateStaffDocumentParams{
-		CircleID:     circleID,
 		ID:           documentID,
 		Name:         name,
 		Description:  description,
@@ -226,7 +160,6 @@ func (r *SQLCRepository) Update(
 
 	return Document{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Name:         row.Name,
 		Description:  row.Description,
 		Notes:        row.Notes,
@@ -243,11 +176,8 @@ func (r *SQLCRepository) Update(
 	}, true
 }
 
-func (r *SQLCRepository) Delete(circleID, documentID string) bool {
-	deleted, err := r.queries.DeleteStaffDocument(context.Background(), dbgen.DeleteStaffDocumentParams{
-		CircleID: circleID,
-		ID:       documentID,
-	})
+func (r *SQLCRepository) Delete(documentID string) bool {
+	deleted, err := r.queries.DeleteStaffDocument(context.Background(), documentID)
 	if err != nil {
 		return false
 	}
@@ -262,30 +192,9 @@ func formatDocumentTimestamp(value pgtype.Timestamptz) string {
 	return value.Time.UTC().Format(time.RFC3339)
 }
 
-func mapPublicDocumentByCircle(row dbgen.ListPublicDocumentsByCircleRow) Document {
-	return Document{
-		ID:           row.ID,
-		CircleID:     row.CircleID,
-		Name:         row.Name,
-		Description:  row.Description,
-		Notes:        row.Notes,
-		IsPublic:     row.IsPublic,
-		ViewableTags: append([]string{}, row.ViewableTags...),
-		IsImportant:  row.IsImportant,
-		Filename:     row.Filename,
-		Extension:    normalizeDocumentExtension(row.Filename),
-		MimeType:     row.MimeType,
-		SizeBytes:    int64(len(row.Content)),
-		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
-		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
-		Content:      append([]byte(nil), row.Content...),
-	}
-}
-
 func mapPublicDocument(row dbgen.ListPublicDocumentsRow) Document {
 	return Document{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Name:         row.Name,
 		Description:  row.Description,
 		Notes:        row.Notes,
@@ -302,30 +211,9 @@ func mapPublicDocument(row dbgen.ListPublicDocumentsRow) Document {
 	}
 }
 
-func mapPublicDocumentForCircleTags(row dbgen.ListPublicDocumentsForCircleTagsRow) Document {
+func mapStaffDocument(row dbgen.ListStaffDocumentsRow) Document {
 	return Document{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
-		Name:         row.Name,
-		Description:  row.Description,
-		Notes:        row.Notes,
-		IsPublic:     row.IsPublic,
-		ViewableTags: append([]string{}, row.ViewableTags...),
-		IsImportant:  row.IsImportant,
-		Filename:     row.Filename,
-		Extension:    normalizeDocumentExtension(row.Filename),
-		MimeType:     row.MimeType,
-		SizeBytes:    int64(len(row.Content)),
-		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
-		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
-		Content:      append([]byte(nil), row.Content...),
-	}
-}
-
-func mapStaffDocument(row dbgen.ListStaffDocumentsByCircleRow) Document {
-	return Document{
-		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Name:         row.Name,
 		Description:  row.Description,
 		Notes:        row.Notes,
@@ -345,67 +233,6 @@ func mapStaffDocument(row dbgen.ListStaffDocumentsByCircleRow) Document {
 func mapPublicDocumentByID(row dbgen.GetPublicDocumentByIDRow) Document {
 	return Document{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
-		Name:         row.Name,
-		Description:  row.Description,
-		Notes:        row.Notes,
-		IsPublic:     row.IsPublic,
-		ViewableTags: append([]string{}, row.ViewableTags...),
-		IsImportant:  row.IsImportant,
-		Filename:     row.Filename,
-		Extension:    normalizeDocumentExtension(row.Filename),
-		MimeType:     row.MimeType,
-		SizeBytes:    int64(len(row.Content)),
-		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
-		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
-		Content:      append([]byte(nil), row.Content...),
-	}
-}
-
-func mapStaffDocumentByIDGlobal(row dbgen.GetStaffDocumentByIDGlobalRow) Document {
-	return Document{
-		ID:           row.ID,
-		CircleID:     row.CircleID,
-		Name:         row.Name,
-		Description:  row.Description,
-		Notes:        row.Notes,
-		IsPublic:     row.IsPublic,
-		ViewableTags: append([]string{}, row.ViewableTags...),
-		IsImportant:  row.IsImportant,
-		Filename:     row.Filename,
-		Extension:    normalizeDocumentExtension(row.Filename),
-		MimeType:     row.MimeType,
-		SizeBytes:    int64(len(row.Content)),
-		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
-		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
-		Content:      append([]byte(nil), row.Content...),
-	}
-}
-
-func mapPublicDocumentGlobal(row dbgen.GetPublicDocumentByIDGlobalRow) Document {
-	return Document{
-		ID:           row.ID,
-		CircleID:     row.CircleID,
-		Name:         row.Name,
-		Description:  row.Description,
-		Notes:        row.Notes,
-		IsPublic:     row.IsPublic,
-		ViewableTags: append([]string{}, row.ViewableTags...),
-		IsImportant:  row.IsImportant,
-		Filename:     row.Filename,
-		Extension:    normalizeDocumentExtension(row.Filename),
-		MimeType:     row.MimeType,
-		SizeBytes:    int64(len(row.Content)),
-		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
-		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
-		Content:      append([]byte(nil), row.Content...),
-	}
-}
-
-func mapPublicDocumentGlobalForCircleTags(row dbgen.GetPublicDocumentByIDGlobalForCircleTagsRow) Document {
-	return Document{
-		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Name:         row.Name,
 		Description:  row.Description,
 		Notes:        row.Notes,
@@ -425,7 +252,6 @@ func mapPublicDocumentGlobalForCircleTags(row dbgen.GetPublicDocumentByIDGlobalF
 func mapStaffDocumentByID(row dbgen.GetStaffDocumentByIDRow) Document {
 	return Document{
 		ID:           row.ID,
-		CircleID:     row.CircleID,
 		Name:         row.Name,
 		Description:  row.Description,
 		Notes:        row.Notes,

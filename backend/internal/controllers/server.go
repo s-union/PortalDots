@@ -207,6 +207,7 @@ type staffAdminHandlers struct {
 type workspaceHandlers struct {
 	sharedDeps
 	answers            answer.Repository
+	authenticator      auth.Authenticator
 	circles            circle.Catalog
 	contactCategories  contactcategory.Repository
 	documents          document.Repository
@@ -485,6 +486,7 @@ func NewServerWithDependencies(
 	workspaceH := &workspaceHandlers{
 		sharedDeps:         shared,
 		answers:            answers,
+		authenticator:      authenticator,
 		circles:            circles,
 		contactCategories:  contactCategories,
 		documents:          documents,
@@ -524,7 +526,6 @@ func NewServerWithDependencies(
 		UpdateProfile:            authH.updateProfile,
 		UpdatePassword:           authH.updatePassword,
 		DeleteAccount:            authH.deleteAccount,
-		Register:                 authH.register,
 		StartRegistration:        authH.startRegistration,
 		VerifyRegistration:       authH.verifyRegistration,
 		CompleteRegistration:     authH.completeRegistration,
@@ -655,6 +656,7 @@ func NewServerWithDependencies(
 		CreateCircle:                         workspaceH.createCircle,
 		SetCurrentCircle:                     workspaceH.setCurrentCircle,
 		GetCurrentCircleDetail:               workspaceH.getCurrentCircleDetail,
+		AuthCurrentCircle:                    workspaceH.authCurrentCircle,
 		UpdateCurrentCircle:                  workspaceH.updateCurrentCircle,
 		DeleteCurrentCircle:                  workspaceH.deleteCurrentCircle,
 		SubmitCurrentCircle:                  workspaceH.submitCurrentCircle,

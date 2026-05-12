@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import FormDetailPage from './[formId].vue'
 import { mockSessionBootstrap, mockForm } from '@/mocks/data'
 
@@ -20,7 +20,7 @@ const meta = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/forms/:formID', () =>
+        http.get('/v1/forms/{formID}', () =>
           HttpResponse.json({
             ...mockForm,
             currentCircleStatus: 'approved',
@@ -42,8 +42,8 @@ const meta = {
             ]
           })
         ),
-        http.get('/v1/forms/:formID/answer', () => HttpResponse.json({ answer: null })),
-        http.put('/v1/forms/:formID/answer', () => new HttpResponse(null, { status: 204 }))
+        http.get('/v1/forms/{formID}/answer', () => HttpResponse.json({ answer: null })),
+        http.put('/v1/forms/{formID}/answer', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -64,14 +64,14 @@ export const WithExistingAnswer: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/forms/:formID', () =>
+        http.get('/v1/forms/{formID}', () =>
           HttpResponse.json({
             ...mockForm,
             currentCircleStatus: 'approved',
             questions: []
           })
         ),
-        http.get('/v1/forms/:formID/answer', () =>
+        http.get('/v1/forms/{formID}/answer', () =>
           HttpResponse.json({
             answer: {
               id: 'ans-1',

@@ -21,18 +21,6 @@ interface LoginPayload {
   remember?: boolean
 }
 
-export interface RegisterPayload {
-  studentId: string
-  univemailLocalPart: string
-  univemailDomainPart: string
-  name: string
-  nameYomi: string
-  contactEmail: string
-  phoneNumber: string
-  password: string
-  passwordConfirmation: string
-}
-
 export interface StartRegistrationPayload {
   univemailLocalPart: string
 }
@@ -141,23 +129,6 @@ export async function logout(csrfToken: string) {
     },
     {
       errorMessage: 'Failed to logout'
-    }
-  )
-}
-
-export async function register(payload: RegisterPayload) {
-  await $api.noContentMutation(
-    'post',
-    '/auth/register',
-    {
-      headers: createJsonHeaders(),
-      body: payload
-    },
-    {
-      errorMessage: 'Failed to register',
-      errorParsers: {
-        422: (error) => parseValidationError(error, 'register')
-      }
     }
   )
 }
@@ -368,34 +339,6 @@ export function useLogoutMutation() {
     onSuccess: () => {
       sessionStore.reset()
       queryClient.clear()
-    }
-  })
-}
-
-export function useRegisterMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (payload: RegisterPayload) =>
-      $api.noContentMutation(
-        'post',
-        '/auth/register',
-        {
-          headers: createJsonHeaders(),
-          body: payload
-        },
-        {
-          errorMessage: 'Failed to register',
-          errorParsers: {
-            422: (error) => parseValidationError(error, 'register')
-          }
-        }
-      ),
-    onSuccess: async () => {
-      const session = await fetchSessionBootstrap()
-      sessionStore.hydrate(session)
-      queryClient.setQueryData(['session', 'bootstrap'], session)
     }
   })
 }

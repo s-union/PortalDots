@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormPreviewPage from './preview.vue'
 import { mockSessionBootstrapStaff, mockPublicConfig } from '@/mocks/data'
 
@@ -58,7 +58,7 @@ const meta = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/public/config', () => HttpResponse.json(mockPublicConfig)),
-        http.get('/v1/staff/forms/:formID/preview', () => HttpResponse.json(mockFormPreview))
+        http.get('/v1/staff/forms/{formID}/preview', () => HttpResponse.json(mockFormPreview))
       ]
     }
   }
@@ -76,7 +76,7 @@ export const LimitedPublic: Story = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/public/config', () => HttpResponse.json(mockPublicConfig)),
-        http.get('/v1/staff/forms/:formID/preview', () =>
+        http.get('/v1/staff/forms/{formID}/preview', () =>
           HttpResponse.json({
             ...mockFormPreview,
             answerableTags: ['文化系']

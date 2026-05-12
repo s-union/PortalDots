@@ -56,7 +56,6 @@ watch(
     }
 
     form.value = {
-      circleId: document.circle.id,
       name: document.name,
       description: document.description,
       notes: document.notes,
@@ -84,7 +83,6 @@ async function handleSaveDocument() {
 
   try {
     await updateDocumentMutation.mutateAsync({
-      circleId: form.value.circleId,
       name: form.value.name,
       description: form.value.description,
       notes: form.value.notes,

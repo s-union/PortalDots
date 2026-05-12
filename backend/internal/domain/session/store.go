@@ -16,6 +16,7 @@ type Session struct {
 	StaffAuthorized    bool
 	StaffVerifyCode    string
 	StaffVerifyExpires time.Time
+	ReauthorizedAt     time.Time
 	User               *auth.User
 }
 
@@ -102,6 +103,7 @@ func (s *MemoryStore) Get(id string) (Session, bool) {
 		StaffAuthorized:    session.StaffAuthorized,
 		StaffVerifyCode:    session.StaffVerifyCode,
 		StaffVerifyExpires: session.StaffVerifyExpires,
+		ReauthorizedAt:     session.ReauthorizedAt,
 	}
 	if session.User != nil {
 		cloned.User = &auth.User{

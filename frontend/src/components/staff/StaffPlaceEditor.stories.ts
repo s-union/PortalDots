@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffPlaceEditor from './StaffPlaceEditor.vue'
 
 const meta = {
@@ -22,7 +22,7 @@ const mutationHandlers = [
       updatedAt: '2026-01-01T00:00:00Z'
     })
   ),
-  http.put('/v1/staff/places/:placeId', () =>
+  http.put('/v1/staff/places/{placeID}', () =>
     HttpResponse.json({
       id: 'place-1',
       name: '更新会場',
@@ -32,7 +32,7 @@ const mutationHandlers = [
       updatedAt: '2026-01-01T00:00:00Z'
     })
   ),
-  http.delete('/v1/staff/places/:placeId', () => new HttpResponse(null, { status: 204 }))
+  http.delete('/v1/staff/places/{placeID}', () => new HttpResponse(null, { status: 204 }))
 ]
 
 export const CreateNew: Story = {

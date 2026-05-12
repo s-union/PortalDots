@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormEditorPage from './editor.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 import { staffFormStoryDetail, staffFormStoryQuestions } from '../story-fixtures'
@@ -17,8 +17,8 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/forms/:formID', () => HttpResponse.json(staffFormStoryDetail)),
-        http.put('/v1/staff/forms/:formID', () =>
+        http.get('/v1/staff/forms/{formID}', () => HttpResponse.json(staffFormStoryDetail)),
+        http.put('/v1/staff/forms/{formID}', () =>
           HttpResponse.json({
             ...staffFormStoryDetail,
             questions: undefined,
@@ -26,7 +26,7 @@ const meta = {
             updatedAt: '2026-03-09T10:00:00Z'
           })
         ),
-        http.post('/v1/staff/forms/:formID/questions', () =>
+        http.post('/v1/staff/forms/{formID}/questions', () =>
           HttpResponse.json(
             {
               id: 'question-new',
@@ -45,14 +45,14 @@ const meta = {
             { status: 201 }
           )
         ),
-        http.put('/v1/staff/forms/:formID/questions/:questionID', ({ params }) =>
+        http.put('/v1/staff/forms/{formID}/questions/{questionID}', ({ params }) =>
           HttpResponse.json({
             ...staffFormStoryQuestions.find((question) => question.id === params.questionID),
             updatedAt: '2026-03-09T10:00:00Z'
           })
         ),
-        http.put('/v1/staff/forms/:formID/questions/order', () => new HttpResponse(null, { status: 204 })),
-        http.delete('/v1/staff/forms/:formID/questions/:questionID', () => new HttpResponse(null, { status: 204 }))
+        http.put('/v1/staff/forms/{formID}/questions/order', () => new HttpResponse(null, { status: 204 })),
+        http.delete('/v1/staff/forms/{formID}/questions/{questionID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -69,7 +69,7 @@ export const EmptyForm: Story = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/forms/:formID', () => HttpResponse.json({ ...staffFormStoryDetail, questions: [] }))
+        http.get('/v1/staff/forms/{formID}', () => HttpResponse.json({ ...staffFormStoryDetail, questions: [] }))
       ]
     }
   }

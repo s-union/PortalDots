@@ -60,6 +60,10 @@ func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadTags); !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffTagFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	tags, err := h.tags.List()
 	if err != nil {
@@ -68,7 +72,11 @@ func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
 
 	response := make([]staffTagResponse, 0, len(tags))
 	for _, item := range tags {
-		response = append(response, mapStaffTag(item))
+		mapped := mapStaffTag(item)
+		if !matchesStaffListSearch([]string{mapped.ID, mapped.Name}, c.QueryParam("query")) || !matchesStaffListFilters(staffTagFilterResolver(mapped), filterQueries, filterMode) {
+			continue
+		}
+		response = append(response, mapped)
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -154,6 +162,15 @@ func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {
 	if request.Name == "" {
 		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
+	existingTags, err := h.tags.List()
+	if err != nil {
+		return internalError(c)
+	}
+	for _, existing := range existingTags {
+		if strings.EqualFold(existing.Name, request.Name) {
+			return validationError(c, map[string][]string{"name": {"同じ名前のタグがすでに存在します"}})
+		}
+	}
 
 	created, err := h.tags.Create(request.Name)
 	if err != nil {
@@ -177,8 +194,18 @@ func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
 	if request.Name == "" {
 		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
+	tagID := c.Param("tagID")
+	existingTags, err := h.tags.List()
+	if err != nil {
+		return internalError(c)
+	}
+	for _, existing := range existingTags {
+		if existing.ID != tagID && strings.EqualFold(existing.Name, request.Name) {
+			return validationError(c, map[string][]string{"name": {"同じ名前のタグがすでに存在します"}})
+		}
+	}
 
-	updated, err := h.tags.Update(c.Param("tagID"), request.Name)
+	updated, err := h.tags.Update(tagID, request.Name)
 	if errors.Is(err, tag.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "tag_not_found")
 	}
@@ -210,6 +237,10 @@ func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadPlaces); !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffPlaceFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	items, err := h.places.List()
 	if err != nil {
@@ -218,9 +249,67 @@ func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
 
 	response := make([]staffPlaceResponse, 0, len(items))
 	for _, item := range items {
-		response = append(response, mapStaffPlace(item))
+		mapped := mapStaffPlace(item)
+		if !matchesStaffListSearch([]string{mapped.ID, mapped.Name, staffPlaceTypeLabel(mapped.Type), mapped.Notes}, c.QueryParam("query")) || !matchesStaffListFilters(staffPlaceFilterResolver(mapped), filterQueries, filterMode) {
+			continue
+		}
+		response = append(response, mapped)
 	}
 	return c.JSON(http.StatusOK, response)
+}
+
+var staffTagFilterableFields = map[string]staffListFilterFieldType{
+	"id":        staffListFilterFieldTypeString,
+	"name":      staffListFilterFieldTypeString,
+	"createdAt": staffListFilterFieldTypeString,
+	"updatedAt": staffListFilterFieldTypeString,
+}
+
+var staffPlaceFilterableFields = map[string]staffListFilterFieldType{
+	"id":        staffListFilterFieldTypeString,
+	"name":      staffListFilterFieldTypeString,
+	"typeLabel": staffListFilterFieldTypeString,
+	"notes":     staffListFilterFieldTypeString,
+	"createdAt": staffListFilterFieldTypeString,
+	"updatedAt": staffListFilterFieldTypeString,
+}
+
+func staffTagFilterResolver(item staffTagResponse) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		switch key {
+		case "id":
+			return item.ID, true
+		case "name":
+			return item.Name, true
+		case "createdAt":
+			return item.CreatedAt, true
+		case "updatedAt":
+			return item.UpdatedAt, true
+		default:
+			return "", false
+		}
+	}
+}
+
+func staffPlaceFilterResolver(item staffPlaceResponse) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		switch key {
+		case "id":
+			return item.ID, true
+		case "name":
+			return item.Name, true
+		case "typeLabel":
+			return staffPlaceTypeLabel(item.Type), true
+		case "notes":
+			return item.Notes, true
+		case "createdAt":
+			return item.CreatedAt, true
+		case "updatedAt":
+			return item.UpdatedAt, true
+		default:
+			return "", false
+		}
+	}
 }
 
 func (h *staffMastersHandlers) downloadStaffPlacesCSV(c echo.Context) error {
@@ -263,6 +352,15 @@ func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 	if !valid {
 		return validationError(c, map[string][]string{"request": {"場所情報が不正です"}})
 	}
+	existingPlaces, err := h.places.List()
+	if err != nil {
+		return internalError(c)
+	}
+	for _, existing := range existingPlaces {
+		if strings.EqualFold(existing.Name, request.Name) {
+			return validationError(c, map[string][]string{"name": {"同じ名前の場所がすでに存在します"}})
+		}
+	}
 
 	created, err := h.places.Create(request.Name, request.Type, request.Notes)
 	if err != nil {
@@ -282,8 +380,18 @@ func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
 	if !valid {
 		return validationError(c, map[string][]string{"request": {"場所情報が不正です"}})
 	}
+	placeID := c.Param("placeID")
+	existingPlaces, err := h.places.List()
+	if err != nil {
+		return internalError(c)
+	}
+	for _, existing := range existingPlaces {
+		if existing.ID != placeID && strings.EqualFold(existing.Name, request.Name) {
+			return validationError(c, map[string][]string{"name": {"同じ名前の場所がすでに存在します"}})
+		}
+	}
 
-	updated, err := h.places.Update(c.Param("placeID"), request.Name, request.Type, request.Notes)
+	updated, err := h.places.Update(placeID, request.Name, request.Type, request.Notes)
 	if errors.Is(err, place.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "place_not_found")
 	}
@@ -423,8 +531,8 @@ func bindStaffContactCategoryRequest(c echo.Context) (mutateStaffContactCategory
 	if request.Name == "" {
 		errors["name"] = []string{"カテゴリ名を入力してください"}
 	}
-	if request.Email == "" || !strings.Contains(request.Email, "@") {
-		errors["email"] = []string{"メールアドレスを入力してください"}
+	if request.Email == "" || !isValidEmail(request.Email) {
+		errors["email"] = []string{"メールアドレスを正しく入力してください"}
 	}
 
 	return request, errors

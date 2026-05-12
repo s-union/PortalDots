@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import {
   mockSessionBootstrap,
   mockSessionBootstrapStaff,
@@ -50,7 +50,7 @@ export const publicHandlers = [
       total: 2
     })
   ),
-  http.get(`${BASE}/public/pages/:pageID`, () => HttpResponse.json(mockPageDetail)),
+  http.get(`${BASE}/public/pages/{pageID}`, () => HttpResponse.json(mockPageDetail)),
   http.get(`${BASE}/public/documents`, () => HttpResponse.json([mockDocument]))
 ]
 
@@ -65,7 +65,6 @@ export const authHandlers = [
     })
   ),
   http.post(`${BASE}/auth/register/complete`, () => new HttpResponse(null, { status: 204 })),
-  http.post(`${BASE}/auth/register`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${BASE}/auth/password/reset/start`, () =>
     HttpResponse.json({ message: 'パスワードリセットメールを送信しました。' })
   ),
@@ -109,28 +108,33 @@ export const circleHandlers = [
     ])
   ),
   http.post(`${BASE}/circles/current/members`, () => new HttpResponse(null, { status: 204 })),
-  http.delete(`${BASE}/circles/current/members/:userID`, () => new HttpResponse(null, { status: 204 })),
+  http.delete(`${BASE}/circles/current/members/{userID}`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${BASE}/circles/current/submit`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${BASE}/circles/current/invitation-token/regenerate`, () =>
     HttpResponse.json({ invitationToken: 'new-token-xyz' })
   ),
-  http.get(`${BASE}/circles/join/:token`, () => HttpResponse.json({ id: 'circle-1', name: 'テストサークル' })),
-  http.post(`${BASE}/circles/join/:token`, () => new HttpResponse(null, { status: 204 }))
+  http.get(`${BASE}/circles/join/{token}`, () => HttpResponse.json({ id: 'circle-1', name: 'テストサークル' })),
+  http.post(`${BASE}/circles/join/{token}`, () => new HttpResponse(null, { status: 204 }))
 ]
 
 export const formsHandlers = [
   http.get(`${BASE}/forms`, () =>
-    HttpResponse.json([mockForm, { ...mockForm, id: 'form-2', name: '第2回申請フォーム', hasAnswer: true }])
+    HttpResponse.json({
+      items: [mockForm, { ...mockForm, id: 'form-2', name: '第2回申請フォーム', hasAnswer: true }],
+      page: 1,
+      pageSize: 20,
+      total: 2
+    })
   ),
-  http.get(`${BASE}/forms/:formID`, () =>
+  http.get(`${BASE}/forms/{formID}`, () =>
     HttpResponse.json({
       ...mockForm,
       currentCircleStatus: 'pending',
       questions: []
     })
   ),
-  http.get(`${BASE}/forms/:formID/answer`, () => HttpResponse.json({ answer: null })),
-  http.put(`${BASE}/forms/:formID/answer`, () => new HttpResponse(null, { status: 204 }))
+  http.get(`${BASE}/forms/{formID}/answer`, () => HttpResponse.json({ answer: null })),
+  http.put(`${BASE}/forms/{formID}/answer`, () => new HttpResponse(null, { status: 204 }))
 ]
 
 export const pagesHandlers = [
@@ -142,7 +146,7 @@ export const pagesHandlers = [
       total: 2
     })
   ),
-  http.get(`${BASE}/pages/:pageID`, () => HttpResponse.json(mockPageDetail))
+  http.get(`${BASE}/pages/{pageID}`, () => HttpResponse.json(mockPageDetail))
 ]
 
 export const documentsHandlers = [
@@ -158,7 +162,9 @@ export const contactHandlers = [
 
 export const participationTypeHandlers = [
   http.get(`${BASE}/participation-types`, () => HttpResponse.json([mockParticipationType])),
-  http.get(`${BASE}/participation-types/:typeID/registration-form`, () => HttpResponse.json(mockParticipationType.form))
+  http.get(`${BASE}/participation-types/{typeID}/registration-form`, () =>
+    HttpResponse.json(mockParticipationType.form)
+  )
 ]
 
 export const staffHandlers = [
@@ -172,16 +178,16 @@ export const staffHandlers = [
   ),
   http.get(`${BASE}/staff/circles/all`, () => HttpResponse.json([mockStaffCircle])),
   http.get(`${BASE}/staff/circles/managed`, () => HttpResponse.json([{ id: 'circle-1', name: 'テストサークル' }])),
-  http.get(`${BASE}/staff/circles/:circleID`, () => HttpResponse.json(mockStaffCircle)),
-  http.put(`${BASE}/staff/circles/:circleID`, () => HttpResponse.json(mockStaffCircle)),
-  http.get(`${BASE}/staff/circles/:circleID/members`, () =>
+  http.get(`${BASE}/staff/circles/{circleID}`, () => HttpResponse.json(mockStaffCircle)),
+  http.put(`${BASE}/staff/circles/{circleID}`, () => HttpResponse.json(mockStaffCircle)),
+  http.get(`${BASE}/staff/circles/{circleID}/members`, () =>
     HttpResponse.json([
       { userId: 'user-1', displayName: '山田 太郎', loginIds: ['s12345678@example.ac.jp'], isLeader: true },
       { userId: 'user-2', displayName: '田中 花子', loginIds: ['s99999999@example.ac.jp'], isLeader: false }
     ])
   ),
-  http.delete(`${BASE}/staff/circles/:circleID/members/:userID`, () => new HttpResponse(null, { status: 204 })),
-  http.get(`${BASE}/staff/circles/:circleID/email`, () =>
+  http.delete(`${BASE}/staff/circles/{circleID}/members/{userID}`, () => new HttpResponse(null, { status: 204 })),
+  http.get(`${BASE}/staff/circles/{circleID}/email`, () =>
     HttpResponse.json({
       circle: mockStaffCircle,
       recipients: [{ id: 'user-1', displayName: '山田 太郎', loginIds: ['s12345678@example.ac.jp'], isLeader: true }]
@@ -207,7 +213,7 @@ export const staffHandlers = [
       }
     ])
   ),
-  http.get(`${BASE}/staff/forms/:formID`, () =>
+  http.get(`${BASE}/staff/forms/{formID}`, () =>
     HttpResponse.json({
       circle: { id: '', name: '' },
       ...mockForm,
@@ -218,7 +224,7 @@ export const staffHandlers = [
       answer: null
     })
   ),
-  http.post(`${BASE}/staff/forms/:formID/copy`, () =>
+  http.post(`${BASE}/staff/forms/{formID}/copy`, () =>
     HttpResponse.json({
       circle: { id: '', name: '' },
       ...mockForm,
@@ -229,8 +235,8 @@ export const staffHandlers = [
       isParticipationForm: false
     })
   ),
-  http.delete(`${BASE}/staff/forms/:formID`, () => new HttpResponse(null, { status: 204 })),
-  http.get(`${BASE}/staff/forms/:formID/preview`, () =>
+  http.delete(`${BASE}/staff/forms/{formID}`, () => new HttpResponse(null, { status: 204 })),
+  http.get(`${BASE}/staff/forms/{formID}/preview`, () =>
     HttpResponse.json({
       id: 'form-1',
       name: 'テスト申請フォーム',
@@ -245,7 +251,7 @@ export const staffHandlers = [
       questions: []
     })
   ),
-  http.get(`${BASE}/staff/forms/:formID/questions`, () => HttpResponse.json([])),
+  http.get(`${BASE}/staff/forms/{formID}/questions`, () => HttpResponse.json([])),
   http.get(`${BASE}/staff/pages`, () =>
     HttpResponse.json({
       items: [
@@ -264,7 +270,7 @@ export const staffHandlers = [
       total: 1
     })
   ),
-  http.get(`${BASE}/staff/pages/:pageID`, () =>
+  http.get(`${BASE}/staff/pages/{pageID}`, () =>
     HttpResponse.json({
       ...mockPageDetail,
       notes: '',
@@ -302,7 +308,7 @@ export const staffHandlers = [
       total: 1
     })
   ),
-  http.get(`${BASE}/staff/users/:userId`, () => HttpResponse.json(mockStaffUser2)),
+  http.get(`${BASE}/staff/users/{userID}`, () => HttpResponse.json(mockStaffUser2)),
   http.get(`${BASE}/staff/permissions`, () =>
     HttpResponse.json({
       items: [],
@@ -311,7 +317,7 @@ export const staffHandlers = [
       total: 0
     })
   ),
-  http.get(`${BASE}/staff/permissions/:userId`, () =>
+  http.get(`${BASE}/staff/permissions/{userID}`, () =>
     HttpResponse.json({
       user: {
         id: 'user-1',
@@ -347,7 +353,7 @@ export const staffHandlers = [
     })
   ),
   http.get(`${BASE}/staff/mails`, () => HttpResponse.json([mockMail])),
-  http.get(`${BASE}/staff/mail/:mailId`, () => HttpResponse.json(mockMail)),
+  http.get(`${BASE}/staff/mail/{mailID}`, () => HttpResponse.json(mockMail)),
   http.get(`${BASE}/staff/tags`, () => HttpResponse.json([mockTag])),
   http.get(`${BASE}/staff/places`, () =>
     HttpResponse.json({

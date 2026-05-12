@@ -815,164 +815,8 @@ func TestLogoutClearsSession(t *testing.T) {
 	}
 }
 
-func TestRegisterCreatesUserAndSession(t *testing.T) {
-	t.Parallel()
-
-	server := NewServer(testConfig())
-	cookies := map[string]*http.Cookie{}
-
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
-		"studentId":            "24z9999",
-		"univemailLocalPart":   "24z9999",
-		"univemailDomainPart":  "example.ac.jp",
-		"name":                 "登録 太郎",
-		"nameYomi":             "とうろく たろう",
-		"contactEmail":         "register-user@example.com",
-		"phoneNumber":          "090-1234-5678",
-		"password":             "password123",
-		"passwordConfirmation": "password123",
-	})
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
-	if _, ok := cookies["test_session"]; !ok {
-		t.Fatalf("expected session cookie to be set, got %#v", cookies)
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/session/bootstrap", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-
-	var bootstrap sessionBootstrapResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &bootstrap); err != nil {
-		t.Fatalf("unmarshal bootstrap response: %v", err)
-	}
-	if bootstrap.User == nil {
-		t.Fatal("expected authenticated user after registration")
-	}
-	if bootstrap.User.DisplayName != "登録 太郎" {
-		t.Fatalf("expected registered user display name, got %#v", bootstrap.User)
-	}
-
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/auth/verification", nil)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
-	}
-	var verification authVerificationStatusResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &verification); err != nil {
-		t.Fatalf("unmarshal auth verification response: %v", err)
-	}
-	if verification.Completed {
-		t.Fatalf("expected verification to start incomplete, got %#v", verification)
-	}
-}
-
-func TestRegisterValidationAndConflict(t *testing.T) {
-	t.Parallel()
-
-	server := NewServer(testConfig())
-	cookies := map[string]*http.Cookie{}
-
-	invalid := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
-		"studentId":            "",
-		"univemailLocalPart":   "",
-		"univemailDomainPart":  "invalid.example.com",
-		"name":                 "単一名",
-		"nameYomi":             "たんめい",
-		"contactEmail":         "invalid-email",
-		"phoneNumber":          "",
-		"password":             "short",
-		"passwordConfirmation": "mismatch",
-	})
-	if invalid.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, invalid.Code, invalid.Body.String())
-	}
-
-	var invalidResponse models.ValidationErrorResponse
-	if err := json.Unmarshal(invalid.Body.Bytes(), &invalidResponse); err != nil {
-		t.Fatalf("unmarshal validation response: %v", err)
-	}
-	for _, key := range []string{
-		"studentId",
-		"univemailLocalPart",
-		"univemailDomainPart",
-		"name",
-		"nameYomi",
-		"contactEmail",
-		"phoneNumber",
-		"password",
-		"passwordConfirmation",
-	} {
-		if len(invalidResponse.Errors[key]) == 0 {
-			t.Fatalf("expected validation error for %s, got %#v", key, invalidResponse.Errors)
-		}
-	}
-
-	duplicateStudentID := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
-		"studentId":            "24a0000",
-		"univemailLocalPart":   "demo",
-		"univemailDomainPart":  "example.ac.jp",
-		"name":                 "重複 太郎",
-		"nameYomi":             "ちょうふく たろう",
-		"contactEmail":         "duplicate-student@example.com",
-		"phoneNumber":          "090-0000-0000",
-		"password":             "password123",
-		"passwordConfirmation": "password123",
-	})
-	if duplicateStudentID.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, duplicateStudentID.Code, duplicateStudentID.Body.String())
-	}
-
-	var duplicateStudentResponse models.ValidationErrorResponse
-	if err := json.Unmarshal(duplicateStudentID.Body.Bytes(), &duplicateStudentResponse); err != nil {
-		t.Fatalf("unmarshal conflict validation response: %v", err)
-	}
-	if len(duplicateStudentResponse.Errors["studentId"]) == 0 {
-		t.Fatalf("expected studentId conflict error, got %#v", duplicateStudentResponse.Errors)
-	}
-
-	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/register", map[string]string{
-		"studentId":            "24z1001",
-		"univemailLocalPart":   "24z1001",
-		"univemailDomainPart":  "example.ac.jp",
-		"name":                 "先行 登録",
-		"nameYomi":             "せんこう とうろく",
-		"contactEmail":         "duplicate-contact@example.com",
-		"phoneNumber":          "090-1111-1111",
-		"password":             "password123",
-		"passwordConfirmation": "password123",
-	})
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
-
-	duplicateContact := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/register", map[string]string{
-		"studentId":            "24z1002",
-		"univemailLocalPart":   "24z1002",
-		"univemailDomainPart":  "example.ac.jp",
-		"name":                 "後続 登録",
-		"nameYomi":             "こうぞく とうろく",
-		"contactEmail":         "duplicate-contact@example.com",
-		"phoneNumber":          "090-2222-2222",
-		"password":             "password123",
-		"passwordConfirmation": "password123",
-	})
-	if duplicateContact.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, duplicateContact.Code, duplicateContact.Body.String())
-	}
-
-	var duplicateContactResponse models.ValidationErrorResponse
-	if err := json.Unmarshal(duplicateContact.Body.Bytes(), &duplicateContactResponse); err != nil {
-		t.Fatalf("unmarshal contact conflict validation response: %v", err)
-	}
-	if len(duplicateContactResponse.Errors["contactEmail"]) == 0 {
-		t.Fatalf("expected contactEmail conflict error, got %#v", duplicateContactResponse.Errors)
-	}
-}
-
 func TestAuthVerificationFlow(t *testing.T) {
-	server := NewServer(testConfig())
+	server := NewServer(authFlowConfig())
 	cookies := map[string]*http.Cookie{}
 	var logs bytes.Buffer
 	previousLogger := slog.Default()
@@ -980,16 +824,9 @@ func TestAuthVerificationFlow(t *testing.T) {
 	t.Cleanup(func() {
 		slog.SetDefault(previousLogger)
 	})
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
-		"studentId":            "24v2001",
-		"univemailLocalPart":   "24v2001",
-		"univemailDomainPart":  "example.ac.jp",
-		"name":                 "認証 太郎",
-		"nameYomi":             "にんしょう たろう",
-		"contactEmail":         "auth-flow@example.com",
-		"phoneNumber":          "090-3333-3333",
-		"password":             "password123",
-		"passwordConfirmation": "password123",
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "24v2001",
+		"password": "password123",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1089,18 +926,11 @@ func TestAuthVerificationFlow(t *testing.T) {
 func TestAuthVerificationRejectsInvalidInputAndWrongToken(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	server := NewServer(authFlowConfig())
 	cookies := map[string]*http.Cookie{}
-	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/register", map[string]string{
-		"studentId":            "24v3001",
-		"univemailLocalPart":   "24v3001",
-		"univemailDomainPart":  "example.ac.jp",
-		"name":                 "誤入力 太郎",
-		"nameYomi":             "ごにゅうりょく たろう",
-		"contactEmail":         "auth-errors@example.com",
-		"phoneNumber":          "090-4444-4444",
-		"password":             "password123",
-		"passwordConfirmation": "password123",
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId":  "24v3001",
+		"password": "password123",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -1746,7 +1576,20 @@ func TestGetPublicPageReturnsGuestPageDetail(t *testing.T) {
 func TestListPublicDocumentsReturnsGuestDocumentCollection(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testConfig())
+	cfg := testConfig()
+	cfg.Documents = append(cfg.Documents, config.Document{
+		ID:           "0195ec00-0049-7000-8000-000000000001",
+		Name:         "展示限定資料",
+		Description:  "展示企画向けの資料です。",
+		IsPublic:     true,
+		ViewableTags: []string{"展示"},
+		Filename:     "limited.txt",
+		MimeType:     "text/plain; charset=utf-8",
+		Content:      "limited",
+		CreatedAt:    "2026-03-06T09:00:00Z",
+		UpdatedAt:    "2026-03-06T09:00:00Z",
+	})
+	server := NewServer(cfg)
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents", nil)
@@ -1761,6 +1604,11 @@ func TestListPublicDocumentsReturnsGuestDocumentCollection(t *testing.T) {
 
 	if len(response) != 2 || response[0].ID != "0195ec00-0042-7000-8000-000000000001" {
 		t.Fatalf("expected public documents sorted desc, got %#v", response)
+	}
+	for _, item := range response {
+		if item.ID == "0195ec00-0049-7000-8000-000000000001" {
+			t.Fatalf("expected guest document list to hide limited document, got %#v", response)
+		}
 	}
 }
 
@@ -1850,30 +1698,28 @@ func TestSetCurrentCircleRejectsUnselectableCircle(t *testing.T) {
 func TestAddCurrentCircleMemberReturnsForbidden(t *testing.T) {
 	t.Parallel()
 
-	cfg := testConfig()
-	cfg.AuthUser = circleMemberConfig().AuthUser
-	server := NewServer(cfg)
+	server := NewServer(memberOnlyConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"loginId":  "member-only@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
-		"loginId": "demo@example.com",
+		"userId": "0195ec00-0057-7000-8000-000000000001",
 	})
 	if recorder.Code != http.StatusForbidden {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
 	}
 }
 
-func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
+func TestAddCurrentCircleMemberRejectsUnknownUserID(t *testing.T) {
 	t.Parallel()
 
 	cfg := testConfig()
@@ -1903,14 +1749,14 @@ func TestAddCurrentCircleMemberRejectsUnknownLoginID(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
-		"loginId": "missing-user",
+		"userId": "0195ec00-0099-7000-8000-000000000001",
 	})
-	if recorder.Code != http.StatusForbidden {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
 }
 
-func TestAddCurrentCircleMemberAcceptsContactEmail(t *testing.T) {
+func TestAddCurrentCircleMemberAcceptsVerifiedUser(t *testing.T) {
 	t.Parallel()
 
 	cfg := testConfig()
@@ -1937,39 +1783,34 @@ func TestAddCurrentCircleMemberAcceptsContactEmail(t *testing.T) {
 	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
-		"loginId": "contact-add@example.com",
+		"userId": "0195ec00-0091-7000-8000-000000000001",
 	})
-	if recorder.Code != http.StatusForbidden {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 }
 
 func TestAddCurrentCircleMemberRejectsUnverifiedUser(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(circleMemberConfig())
+	server := NewServer(testConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
-		"loginId":  "0195ec00-0022-7000-8000-000000000001@example.com",
+		"loginId":  "0195ec00-0021-7000-8000-000000000001@example.com",
 		"password": "password",
 	})
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/circles/current", map[string]string{
-		"circleId": "0195ec00-0022-7000-8000-000000000001",
-	})
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/members", map[string]string{
-		"loginId": "0195ec00-0022-7000-8000-000000000001-unverified@example.com",
+		"userId": "0195ec00-0056-7000-8000-000000000001",
 	})
-	if recorder.Code != http.StatusForbidden {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusConflict, recorder.Code, recorder.Body.String())
 	}
 }
 
@@ -2750,14 +2591,18 @@ func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms?status=all", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response []formSummaryResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+	var formsPage models.PaginatedResponse[formSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &formsPage); err != nil {
 		t.Fatalf("unmarshal forms response: %v", err)
+	}
+	response := formsPage.Items
+	if formsPage.Total != 2 || formsPage.Page != 1 {
+		t.Fatalf("unexpected forms pagination metadata: %#v", formsPage)
 	}
 
 	if len(response) != 2 {
@@ -2774,6 +2619,17 @@ func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 	}
 	if response[1].ConfirmationMessage != "展示チェックフォームへの回答を受け付けました。" {
 		t.Fatalf("unexpected confirmation message: %#v", response[1])
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms?status=all&query="+url.QueryEscape("展示"), nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &formsPage); err != nil {
+		t.Fatalf("unmarshal searched forms response: %v", err)
+	}
+	if formsPage.Total != 1 || len(formsPage.Items) != 1 || formsPage.Items[0].ID != "0195ec00-0014-7000-8000-000000000001" {
+		t.Fatalf("expected backend search to filter forms before pagination, got %#v", formsPage)
 	}
 }
 
@@ -2800,15 +2656,16 @@ func TestListFormsUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) 
 
 	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms?status=all", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response []formSummaryResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+	var formsPage models.PaginatedResponse[formSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &formsPage); err != nil {
 		t.Fatalf("unmarshal forms response: %v", err)
 	}
+	response := formsPage.Items
 
 	if len(response) != 2 {
 		t.Fatalf("expected 2 accessible forms from participation type tags, got %#v", response)
@@ -2894,15 +2751,16 @@ func TestListAndGetFormsIncludeGlobalAccessibleForm(t *testing.T) {
 
 	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms", nil)
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/forms?status=all", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var response []formSummaryResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+	var formsPage models.PaginatedResponse[formSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &formsPage); err != nil {
 		t.Fatalf("unmarshal forms response: %v", err)
 	}
+	response := formsPage.Items
 	if len(response) != 3 {
 		t.Fatalf("expected 3 accessible forms including global form, got %#v", response)
 	}
@@ -6362,7 +6220,6 @@ func testConfig() config.Config {
 		Documents: []config.Document{
 			{
 				ID:          "0195ec00-0041-7000-8000-000000000001",
-				CircleID:    "0195ec00-0021-7000-8000-000000000001",
 				Name:        "搬入手順書",
 				Description: "Aブロック向けの搬入手順です。",
 				Notes:       "搬入班で最終確認してください。",
@@ -6376,7 +6233,6 @@ func testConfig() config.Config {
 			},
 			{
 				ID:          "0195ec00-0042-7000-8000-000000000001",
-				CircleID:    "0195ec00-0022-7000-8000-000000000001",
 				Name:        "展示ガイド",
 				Description: "Bブロック向けの展示ガイドです。",
 				Notes:       "展示班の責任者に共有済みです。",
@@ -6390,7 +6246,6 @@ func testConfig() config.Config {
 			},
 			{
 				ID:          "0195ec00-0043-7000-8000-000000000001",
-				CircleID:    "0195ec00-0022-7000-8000-000000000001",
 				Name:        "内部メモ",
 				Description: "この資料は公開しません。",
 				Notes:       "スタッフ内だけで参照します。",
@@ -6557,6 +6412,30 @@ func demoCircleConfig() config.Config {
 		IsVerified:      true,
 	})
 
+	return cfg
+}
+
+func authFlowConfig() config.Config {
+	cfg := testConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:              "0195ec00-0094-7000-8000-000000000001",
+		LoginIDs:        []string{"24v2001", "24v2001@example.ac.jp"},
+		DisplayName:     "認証 太郎",
+		Password:        "password123",
+		Roles:           []string{"participant"},
+		IsVerified:      false,
+		IsEmailVerified: false,
+		ContactEmail:    "auth-flow@example.com",
+	}, config.User{
+		ID:              "0195ec00-0095-7000-8000-000000000001",
+		LoginIDs:        []string{"24v3001", "24v3001@example.ac.jp"},
+		DisplayName:     "誤入力 太郎",
+		Password:        "password123",
+		Roles:           []string{"participant"},
+		IsVerified:      false,
+		IsEmailVerified: false,
+		ContactEmail:    "auth-errors@example.com",
+	})
 	return cfg
 }
 

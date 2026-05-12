@@ -25,7 +25,11 @@ type Page struct {
 
 type Repository interface {
 	ListGuest(query string) []Page
+	CountGuest(query string) int
+	ListGuestPaginated(query string, limit, offset int) []Page
 	ListForCircle(circleTags []string, query string) []Page
+	CountForCircle(circleTags []string, query string) int
+	ListForCirclePaginated(circleTags []string, query string, limit, offset int) []Page
 	ListForStaff(query string) []Page
 	FindGuest(pageID string) (Page, bool)
 	FindForCircle(circleTags []string, pageID string) (Page, bool)
@@ -36,6 +40,7 @@ type Repository interface {
 	Delete(pageID string) bool
 	ListReadPageIDs(userID string, pageIDs []string) []string
 	MarkRead(pageID, userID string) error
+	SupportsPagination() bool
 }
 
 type StaticRepository struct {
@@ -73,8 +78,24 @@ func (r *StaticRepository) ListGuest(query string) []Page {
 	return r.listPages(query, []string{}, true)
 }
 
+func (r *StaticRepository) CountGuest(query string) int {
+	return len(r.ListGuest(query))
+}
+
+func (r *StaticRepository) ListGuestPaginated(query string, limit, offset int) []Page {
+	return paginateStaticPages(r.ListGuest(query), limit, offset)
+}
+
 func (r *StaticRepository) ListForCircle(circleTags []string, query string) []Page {
 	return r.listPages(query, circleTags, false)
+}
+
+func (r *StaticRepository) CountForCircle(circleTags []string, query string) int {
+	return len(r.ListForCircle(circleTags, query))
+}
+
+func (r *StaticRepository) ListForCirclePaginated(circleTags []string, query string, limit, offset int) []Page {
+	return paginateStaticPages(r.ListForCircle(circleTags, query), limit, offset)
 }
 
 func (r *StaticRepository) ListForStaff(query string) []Page {
@@ -92,6 +113,10 @@ func (r *StaticRepository) ListForStaff(query string) []Page {
 
 	sortPages(filtered)
 	return filtered
+}
+
+func (r *StaticRepository) SupportsPagination() bool {
+	return false
 }
 
 func (r *StaticRepository) FindGuest(pageID string) (Page, bool) {
@@ -301,6 +326,28 @@ func clonePage(page Page) Page {
 	page.ViewableTags = append([]string{}, page.ViewableTags...)
 	page.DocumentIDs = append([]string{}, page.DocumentIDs...)
 	return page
+}
+
+func paginateStaticPages(pages []Page, limit, offset int) []Page {
+	if limit <= 0 || offset >= len(pages) {
+		return []Page{}
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	end := offset + limit
+	if end > len(pages) {
+		end = len(pages)
+	}
+	return slicesClonePages(pages[offset:end])
+}
+
+func slicesClonePages(pages []Page) []Page {
+	cloned := make([]Page, 0, len(pages))
+	for _, currentPage := range pages {
+		cloned = append(cloned, clonePage(currentPage))
+	}
+	return cloned
 }
 
 func normalizePageQuery(query string) string {

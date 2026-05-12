@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"math"
 	"net/http"
 	"time"
 
@@ -50,6 +49,16 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 	}
 
 	pages := h.pages.ListForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.QueryParam("query"))
+	pagination := readPagesPagination(c)
+	total := len(pages)
+	if h.pages.SupportsPagination() {
+		total = h.pages.CountForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.QueryParam("query"))
+		page, pageSize := models.NormalizePagination(pagination, total)
+		pagination.Page = page
+		pagination.PageSize = pageSize
+		pages = h.pages.ListForCirclePaginated(effectiveCircleTags(currentCircle, h.participationTypes), c.QueryParam("query"), pageSize, (page-1)*pageSize)
+	}
+
 	readPageIDs := listReadPageIDSet(h.pages, currentSession.User.ID, pages)
 
 	response := make([]pageSummaryResponse, 0, len(pages))
@@ -57,7 +66,16 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 		response = append(response, mapPageSummary(currentPage, readPageIDs))
 	}
 
-	return c.JSON(http.StatusOK, paginatePages(response, readPagesPagination(c)))
+	if h.pages.SupportsPagination() {
+		return c.JSON(http.StatusOK, models.PaginatedResponse[pageSummaryResponse]{
+			Items:    response,
+			Page:     pagination.Page,
+			PageSize: pagination.PageSize,
+			Total:    total,
+		})
+	}
+
+	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
 func (h *workspaceHandlers) getPage(c echo.Context) error {
@@ -103,7 +121,7 @@ func pageDocuments(
 			docValue, found = docs.FindForStaff(documentID)
 			downloadURL = "/v1/staff/documents/" + documentID
 		} else {
-			docValue, found = docs.FindForCircle(circleTags, documentID)
+			docValue, found = docs.FindPublic(documentID, circleTags)
 			if publicDownload {
 				downloadURL = "/v1/public/documents/" + documentID
 			} else {
@@ -158,25 +176,6 @@ func readPagesPagination(c echo.Context) models.PaginationParams {
 		pagination.PageSize = 10
 	}
 	return pagination
-}
-
-func paginatePages(items []pageSummaryResponse, pagination models.PaginationParams) models.PaginatedResponse[pageSummaryResponse] {
-	total := len(items)
-	if total == 0 {
-		return models.PaginatedResponse[pageSummaryResponse]{
-			Items:    []pageSummaryResponse{},
-			Page:     1,
-			PageSize: pagination.PageSize,
-			Total:    0,
-		}
-	}
-
-	totalPages := int(math.Ceil(float64(total) / float64(pagination.PageSize)))
-	if pagination.Page > totalPages {
-		pagination.Page = totalPages
-	}
-
-	return paginateItems(items, pagination)
 }
 
 func listReadPageIDSet(repo backendpage.Repository, userID string, pages []backendpage.Page) map[string]struct{} {

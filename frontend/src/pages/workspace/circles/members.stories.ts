@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import MembersPage from './members.vue'
 import { mockSessionBootstrap, mockCircle } from '@/mocks/data'
 
@@ -24,7 +24,7 @@ const meta = {
             { userId: 'user-2', displayName: '田中 花子', isLeader: false }
           ])
         ),
-        http.delete('/v1/circles/current/members/:userID', () => new HttpResponse(null, { status: 204 })),
+        http.delete('/v1/circles/current/members/{userID}', () => new HttpResponse(null, { status: 204 })),
         http.post('/v1/circles/current/invitation-token/regenerate', () =>
           HttpResponse.json({ invitationToken: 'new-token-xyz' })
         )

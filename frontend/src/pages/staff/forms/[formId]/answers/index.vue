@@ -28,6 +28,7 @@ import {
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
+import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -37,9 +38,18 @@ const route = useRoute('/staff/forms/[formId]/answers/')
 const sessionStore = useSessionStore()
 const formId = computed(() => String(route.params.formId ?? ''))
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const searchQuery = ref('')
+const appliedFilterMode = ref<StaffFilterMode>('and')
+const appliedFilterQueries = ref<StaffFilterQuery[]>([])
+const staffListParams = computed(() => ({
+  query: searchQuery.value,
+  queries: appliedFilterQueries.value,
+  mode: appliedFilterMode.value
+}))
 const answersQuery = useStaffFormAnswersIndexQuery(
   formId,
-  computed(() => staffStatusQuery.data.value?.authorized === true)
+  computed(() => staffStatusQuery.data.value?.authorized === true),
+  staffListParams
 )
 const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId)
 
@@ -109,7 +119,6 @@ const {
   filterActive,
   sort,
   pagination,
-  searchQuery,
   isFilterOpen,
   draftFilterMode,
   draftFilterQueries,
@@ -128,6 +137,10 @@ const {
   sortKeys: answersSortKeys,
   defaultSortKey: 'id',
   filterFields,
+  searchQuery,
+  appliedFilterMode,
+  appliedFilterQueries,
+  serverSideFiltering: true,
   resolveSortValue,
   matchesSearch,
   matchesFilterQuery,

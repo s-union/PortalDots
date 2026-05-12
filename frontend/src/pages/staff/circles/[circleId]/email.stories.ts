@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffCircleEmailPage from './email.vue'
 import { mockSessionBootstrapStaff, mockStaffCircle } from '@/mocks/data'
 
@@ -19,7 +19,7 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/circles/:circleId/email', () =>
+        http.get('/v1/staff/circles/{circleID}/email', () =>
           HttpResponse.json({
             circle: mockStaffCircle,
             recipients: [
@@ -28,7 +28,7 @@ const meta = {
             ]
           })
         ),
-        http.post('/v1/staff/circles/:circleId/email', () => new HttpResponse(null, { status: 204 }))
+        http.post('/v1/staff/circles/{circleID}/email', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -48,13 +48,13 @@ export const NoRecipients: Story = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/circles/:circleId/email', () =>
+        http.get('/v1/staff/circles/{circleID}/email', () =>
           HttpResponse.json({
             circle: mockStaffCircle,
             recipients: []
           })
         ),
-        http.post('/v1/staff/circles/:circleId/email', () => new HttpResponse(null, { status: 204 }))
+        http.post('/v1/staff/circles/{circleID}/email', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

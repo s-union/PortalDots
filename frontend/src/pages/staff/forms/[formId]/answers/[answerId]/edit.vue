@@ -186,7 +186,7 @@ function handleFileChange(questionId: string, event: Event) {
 
           <template v-for="question in answerQuery.data.value.form.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
-              <h4 class="text-lg font-semibold text-body">{{ question.name }}</h4>
+              <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
               <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
                 {{ question.description }}
               </p>

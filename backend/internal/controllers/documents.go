@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"math"
 	"net/http"
 	"time"
 
@@ -29,7 +28,7 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	documents := h.documents.ListForCircle(effectiveCircleTags(currentCircle, h.participationTypes))
+	documents := h.documents.ListPublic(effectiveCircleTags(currentCircle, h.participationTypes))
 	docIDs := make([]string, len(documents))
 	for i, doc := range documents {
 		docIDs[i] = doc.ID
@@ -57,7 +56,7 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 	}
 
 	pagination := readDocumentsPagination(c)
-	return c.JSON(http.StatusOK, paginateDocuments(response, pagination))
+	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
 func (h *workspaceHandlers) getDocument(c echo.Context) error {
@@ -66,7 +65,7 @@ func (h *workspaceHandlers) getDocument(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	document, found := h.documents.FindForCircle(effectiveCircleTags(currentCircle, h.participationTypes), c.Param("documentID"))
+	document, found := h.documents.FindPublic(c.Param("documentID"), effectiveCircleTags(currentCircle, h.participationTypes))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
@@ -85,25 +84,6 @@ func readDocumentsPagination(c echo.Context) models.PaginationParams {
 		pagination.PageSize = 10
 	}
 	return pagination
-}
-
-func paginateDocuments(items []documentSummaryResponse, pagination models.PaginationParams) models.PaginatedResponse[documentSummaryResponse] {
-	total := len(items)
-	if total == 0 {
-		return models.PaginatedResponse[documentSummaryResponse]{
-			Items:    []documentSummaryResponse{},
-			Page:     1,
-			PageSize: pagination.PageSize,
-			Total:    0,
-		}
-	}
-
-	totalPages := int(math.Ceil(float64(total) / float64(pagination.PageSize)))
-	if pagination.Page > totalPages {
-		pagination.Page = totalPages
-	}
-
-	return paginateItems(items, pagination)
 }
 
 func isDocumentNew(document backenddocument.Document) bool {

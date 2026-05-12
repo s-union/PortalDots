@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffTagsPage from './tags.vue'
 import { mockSessionBootstrapStaff, mockTag } from '@/mocks/data'
 
@@ -21,8 +21,8 @@ const meta = {
             updatedAt: '2026-01-01T00:00:00Z'
           })
         ),
-        http.put('/v1/staff/tags/:tagId', () => HttpResponse.json(mockTag)),
-        http.delete('/v1/staff/tags/:tagId', () => new HttpResponse(null, { status: 204 }))
+        http.put('/v1/staff/tags/{tagID}', () => HttpResponse.json(mockTag)),
+        http.delete('/v1/staff/tags/{tagID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

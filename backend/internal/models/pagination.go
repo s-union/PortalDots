@@ -1,6 +1,10 @@
 package models
 
-import "github.com/labstack/echo/v4"
+import (
+	"math"
+
+	"github.com/labstack/echo/v4"
+)
 
 const (
 	DefaultPage     = 1
@@ -39,17 +43,7 @@ func ReadPagination(c echo.Context) PaginationParams {
 // PaginateItems applies pagination to a slice and returns a paginated response.
 func PaginateItems[T any](items []T, pagination PaginationParams) PaginatedResponse[T] {
 	total := len(items)
-	page := pagination.Page
-	if page <= 0 {
-		page = DefaultPage
-	}
-	pageSize := pagination.PageSize
-	if pageSize <= 0 {
-		pageSize = DefaultPageSize
-	}
-	if pageSize > MaxPageSize {
-		pageSize = MaxPageSize
-	}
+	page, pageSize := NormalizePagination(pagination, total)
 
 	start := (page - 1) * pageSize
 	if start >= total {
@@ -72,6 +66,30 @@ func PaginateItems[T any](items []T, pagination PaginationParams) PaginatedRespo
 		PageSize: pageSize,
 		Total:    total,
 	}
+}
+
+func NormalizePagination(pagination PaginationParams, total int) (int, int) {
+	page := pagination.Page
+	if page <= 0 {
+		page = DefaultPage
+	}
+	pageSize := pagination.PageSize
+	if pageSize <= 0 {
+		pageSize = DefaultPageSize
+	}
+	if pageSize > MaxPageSize {
+		pageSize = MaxPageSize
+	}
+	if total <= 0 {
+		return DefaultPage, pageSize
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+	if page > totalPages {
+		page = totalPages
+	}
+
+	return page, pageSize
 }
 
 func parsePositiveInt(raw string, fallback int) int {

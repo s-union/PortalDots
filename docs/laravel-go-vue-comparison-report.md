@@ -18,10 +18,10 @@
 **一致:** 登録後の自動ログイン、学籍番号/メール重複チェック、Remember Me、ユーザー列挙対策(常に成功メッセージ)
 
 **差異:**
-- `name_yomi` にひらがな/カタカナ制限がない（Go `helpers.go:114`）Laravel: `[ぁ-んァ-ヶー]`
-- Emailバリデーションが `@`を含むのみの緩いチェック（Go `helpers.go:31`）Laravel: `FILTER_VALIDATE_EMAIL`
+- ~~`name_yomi` にひらがな/カタカナ制限がない~~ → **解決済み**: `isValidYomi` を実装
+- ~~Emailバリデーションが `@`を含むのみの緩いチェック~~ → **解決済み**: `net/mail.ParseAddress` を使用
 - パスワードに英字+数字必須を追加（Go `helpers.go:38`）Laravel: min:8のみ
-- 直接登録(`register()`)で確認メール未送信 → 多段階登録のみ対応（`auth_registration.go:164`）
+- ~~直接登録(`register()`)で確認メール未送信~~ → **解決済み**: `POST /auth/register` を削除し多段階登録のみに統一
 - `univemail_local_part` の `same:student_id` ルール未実装
 - 登録完了判定: Laravelは両メール認証必要、Goはunivemailのみで完了（`helpers.go:72`）
 - `setSignedUpAt` 未実装
@@ -33,9 +33,9 @@
 **一致:** 認証+企画選択、検索、タグフィルタ、公開のみ、"NEW"バッジ(72時間)、既読/未読、10件ページネーション、Markdownレンダリング(Vue側)、ファイルダウンロード、基本CRUD
 
 **差異:**
-- Goはメモリ内ページネーション（全件取得→スライス）Laravel: DBレベル `paginate(10)`（`pages.go:162`）
+- 解決済み: Workspace/Public Pages はDBレベルページネーション（COUNT + LIMIT/OFFSET）へ移行済み
 - 全文検索互換性チェックなし（Go）
-- ページオーバーフロー時リダイレクトなし（Goはページ番号キャップのみ `pages.go:174`）
+- 解決済み: ページオーバーフロー時は最後のページへ正規化
 - 文書一覧に既読トラッキング+"NEW"バッジあり（Go新機能）
 - Workspace文書ダウンロードに `Content-Disposition` なし（`documents.go:78`）
 - 公開お知らせ/文書はGoのみの完全新機能（Laravelでは全認証必須）
@@ -46,8 +46,9 @@
 **一致:** フォーム一覧、回答CRUD、設問バリデーション、ファイルアップロード/ダウンロード、max_answers超過チェック
 
 **差異:**
-- Goはページネーションなし全件返却（`forms.go:44`）
-- open/closedフィルターがサーバーサイド→クライアントサイドに移動
+- 解決済み: Workspace Forms は `page`/`pageSize` と `{ items, page, pageSize, total }` のページネーション応答へ移行済み
+- 解決済み: open/closed/allフィルターはサーバーサイドに移動済み
+- 解決済み: フォーム一覧検索はサーバーサイドに移動し、検索後の結果にページネーションを適用済み
 - フォーム割り当て: Laravelはタグのみ、GoはCircleID直接指定+タグ両方
 - Hidden questions (`"申請ページ"`, `"申請企画名"`) をフィルター（Go新機能 `workspace_form_helpers.go:17`）
 - `currentCircleStatus` による書き込み不可判定（Go新機能）
@@ -62,8 +63,8 @@
 **一致:** 企画CRUD、参加種別表示、メンバー管理、招待トークン、企画選択、回答upsert
 
 **差異（高重要度）:**
-- **Circle Auth（再認証）完全未実装**: 提出済み企画詳細が再認証なしで閲覧可能
-- **`addCurrentCircleMember` がスタブ**: 招待トークン経由のメンバー追加が常に403（`circles_handlers.go:514`）
+- ~~Circle Auth（再認証）完全未実装~~ → **解決済み**: `POST /circles/current/auth` + `GET /circles/current/detail` で2時間TTLの再認証を実装
+- ~~`addCurrentCircleMember` がスタブ~~ → **解決済み**: リーダー権限・対象ユーザー存在・未認証チェックを実装
 - `approved()` チェックなしで選択可能（セレクター）
 - オープンリダイレクト対策なし（セレクター）
 - Doneページのセッションガードなし
@@ -76,7 +77,8 @@
 **一致:** CRUD基本操作、ピン留め、CSVエクスポート、権限チェック、title/body必須バリデーション
 
 **差異:**
-- **文書データモデルが根本的に異なる**: LaravelではDocumentsは企画非依存。Goでは必ず `CircleID` を持つ
+- 解決済み: Staff Pages / Documents の一覧検索・絞り込みはサーバーサイドに移動済み
+- ~~文書データモデルが根本的に異なる~~ → **解決済み**: Documents から `CircleID` を完全に削除（Laravelと同じ企画非依存モデルに統一）
 - Pin時の `updated_at` 更新: Laravelは `timestamps=false` で更新しない、Goは更新する可能性
 - メール送信Markdown→プレーンテキストに簡略化
 - 文書IDの存在バリデーションあり（Go新機能 `staff_pages.go:366`）
@@ -88,6 +90,7 @@
 **一致:** Forms/Answers/Editor全CRUD、ファイルアップロード/ダウンロード、ZIPダウンロード、エクスポート、複製、設問並べ替え
 
 **差異:**
+- 解決済み: Staff Forms / Answers の一覧検索・絞り込みはサーバーサイドに移動済み
 - Go認可: 8種の細粒度capability。Laravel: `FormRequest::authorize()` が常に `true`
 - デモモード未実装（Laravel `AddQuestionAction:22`）
 - 参加登録フォームの固定設問未実装（Laravel `GetQuestionsAction:31`）
@@ -101,6 +104,7 @@
 **一致:** 企画CRUD、参加種別CRUD、メール送信、エクスポート、ステータス変更通知
 
 **差異:**
+- 解決済み: Staff Circles / ParticipationTypes の一覧検索・絞り込みはサーバーサイドに移動済み
 - `name_yomi`/`group_name_yomi` のひらがな正規表現バリデーションなし（Go `staff_circles_helpers.go:56,62`）
 - `leader` の学籍番号DB存在チェックなし
 - メンバー未登録/未認証カスタムバリデーションなし
@@ -114,6 +118,7 @@
 **一致:** ユーザーCRUD、ロール更新、本人確認、権限一覧/編集、スタッフ認証フロー(5分TTL)
 
 **差異:**
+- 解決済み: Staff Permissions の一覧検索はサーバーサイドに移動済み
 - **認可モデルの根本的差異**: Laravelは `is_admin/is_staff` bool。Goはcapabilityベース集中管理（`staff_access.go:37`）
 - ユーザーデータモデル: `name`(スペース) → `firstName/lastName`分割 + `displayName`
 - Goの自己削除禁止・admin削除制限あり（Laravel未実装）
@@ -126,8 +131,9 @@
 **一致:** 基本CRUD、Places CSVエクスポート
 
 **差異:**
-- **Tags/Placesのnameユニーク制約なし**（Go `staff_masters.go:153,406`、高重要度）
-- ContactCategoriesのemail検証が `@` のみ（弱すぎる `staff_masters.go:426`）
+- 解決済み: Staff Tags / Places の一覧検索・絞り込みはサーバーサイドに移動済み
+- ~~Tags/Placesのnameユニーク制約なし~~ → **解決済み**: ソフトチェックを追加
+- ~~ContactCategoriesのemail検証が `@` のみ~~ → **解決済み**: `net/mail.ParseAddress` を使用
 - Tags CSV: 9カラム→7カラムに減少（`created_at`/`updated_at`欠落 `staff_masters.go:102`）
 - ContactCategories更新時にメール変更の有無に関わらず常にメール送信（Go `staff_masters.go:375`）
 - Export権限: Laravelは独立export権限、Goはread権限と兼用
@@ -137,7 +143,8 @@
 ### Staff Admin (ActivityLogs / Mails / Exports / Portal)
 
 **ActivityLogs:**
-- Goはインメモリのみ（再起動で消失 `activitylog/repository.go:30`）。LaravelはDB永続化
+- 解決済み: ActivityLogs の一覧検索はサーバーサイドに移動済み
+- ~~Goはインメモリのみ~~ → **解決済み**: 本番環境では `database.BuildDependencies` 経由で SQLC リポジトリを使用（テストのみ `MemoryRepository`）
 - フィルタリング・ソート・Actor名列挙なし（Go）
 - 認可: Laravelはadmin限定、Goはcapabilityベース（緩和）
 
@@ -182,16 +189,16 @@
 ## 優先度別 重要差異一覧
 
 ### 高優先度（要修正）
-1. `name_yomi` にひらがな/カタカナ制限なし（`helpers.go:114`）
-2. 直接登録(`register`)で確認メール未送信（`auth_registration.go:164`）
-3. `addCurrentCircleMember` がスタブ（`circles_handlers.go:514` 常に403）
-4. Circle Auth（再認証）完全未実装
+1. ~~`name_yomi` にひらがな/カタカナ制限なし~~ → **解決済み**: `isValidYomi` を実装し、ユーザー登録・プロフィール更新・企画作成/更新に適用
+2. ~~直接登録(`register`)で確認メール未送信~~ → **解決済み**: `POST /auth/register` エンドポイントを削除し、多段階登録のみに統一
+3. ~~`addCurrentCircleMember` がスタブ~~ → **解決済み**: リーダー権限チェック・対象ユーザー存在確認・既存メンバー/未認証チェックを実装
+4. ~~Circle Auth（再認証）~~ → **解決済み**: `POST /circles/current/auth` でパスワード再認証、`GET /circles/current/detail` で2時間経過後に `403 reauth_required` を返す
 5. パスワードリセット新サーバー未配線
 6. `POST /auth/verification/verify` が新Goルートに不在
-7. Tags/Placesのnameユニーク制約なし（`staff_masters.go:153,406`）
-8. Emailバリデーションが `@` のみの緩いチェック（`helpers.go:31`, `staff_masters.go:426`）
-9. ActivityLogsがインメモリのみ（DB永続化なし）
-10. 文書データモデルの根本的差異（GoでCircleID必須）
+7. ~~Tags/Placesのnameユニーク制約なし~~ → **解決済み**: `staff_masters.go` で名前重複のソフトチェックを追加
+8. ~~Emailバリデーションが `@` のみ~~ → **解決済み**: `net/mail.ParseAddress` を使用し、ContactCategories 含む全箇所を強化
+9. ~~ActivityLogsがインメモリのみ~~ → **解決済み**: 本番環境では `database.BuildDependencies` 経由で `activitylog.NewSQLCRepository(queries)` を使用（テストのみ `MemoryRepository`）
+10. ~~文書データモデルの根本的差異（GoでCircleID必須）~~ → **解決済み**: Documents から `CircleID` を完全に削除（DBスキーマ、ドメイン、コントローラ、フロントエンド）
 
 ### 中優先度（挙動差あり）
 11. `univemail_local_part` の `same:student_id` 未実装
@@ -203,7 +210,7 @@
 17. デモモード未実装
 
 ### 低優先度（改善推奨）
-18. Goは全件メモリ内ページネーション（パフォーマンス）
+18. 解決済み: Workspace/Public Pages の全件メモリ内ページネーション、およびWorkspace Formsの全件返却
 19. `setSignedUpAt` 未実装
 20. Tags CSVカラム減少（`created_at`/`updated_at`欠落）
 21. ログアウト時のスタッフモード/企画選択解除なし

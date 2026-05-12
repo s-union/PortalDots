@@ -20,6 +20,43 @@ vi.mock('@/features/forms/api', async () => {
 
 import FormsIndexPage from './index.vue'
 
+function formsPage(items: unknown[]) {
+  return {
+    items,
+    page: 1,
+    pageSize: 20,
+    total: items.length
+  }
+}
+
+const openForm = {
+  id: 'form-circle-b-1',
+  name: '展示チェックフォーム',
+  description: '展示レイアウトと機材使用申請を提出してください。',
+  openAt: '2026-03-02T00:00:00Z',
+  closeAt: '2026-03-22T23:59:59Z',
+  maxAnswers: 2,
+  answerableTags: ['展示'],
+  confirmationMessage: '回答ありがとうございました。',
+  isPublic: true,
+  isOpen: true,
+  hasAnswer: false
+}
+
+const closedForm = {
+  id: 'form-circle-b-2',
+  name: '備品返却報告',
+  description: '使用した備品の返却状況を報告してください。',
+  openAt: '2026-02-01T00:00:00Z',
+  closeAt: '2026-02-20T23:59:59Z',
+  maxAnswers: 1,
+  answerableTags: [],
+  confirmationMessage: '',
+  isPublic: true,
+  isOpen: false,
+  hasAnswer: true
+}
+
 function createQueryPlugin() {
   return [
     VueQueryPlugin,
@@ -35,6 +72,7 @@ function createQueryPlugin() {
 
 describe('FormsIndexPage', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.unstubAllGlobals()
   })
 
@@ -68,34 +106,7 @@ describe('FormsIndexPage', () => {
     await router.isReady()
 
     formsApiMocks.useSuspenseFormsQuery.mockReturnValue({
-      data: ref([
-        {
-          id: 'form-circle-b-1',
-          name: '展示チェックフォーム',
-          description: '展示レイアウトと機材使用申請を提出してください。',
-          openAt: '2026-03-02T00:00:00Z',
-          closeAt: '2026-03-22T23:59:59Z',
-          maxAnswers: 2,
-          answerableTags: ['展示'],
-          confirmationMessage: '回答ありがとうございました。',
-          isPublic: true,
-          isOpen: true,
-          hasAnswer: false
-        },
-        {
-          id: 'form-circle-b-2',
-          name: '備品返却報告',
-          description: '使用した備品の返却状況を報告してください。',
-          openAt: '2026-02-01T00:00:00Z',
-          closeAt: '2026-02-20T23:59:59Z',
-          maxAnswers: 1,
-          answerableTags: [],
-          confirmationMessage: '',
-          isPublic: true,
-          isOpen: false,
-          hasAnswer: true
-        }
-      ]),
+      data: ref(formsPage([openForm])),
       suspense: vi.fn().mockResolvedValue(undefined)
     })
 
@@ -143,34 +154,7 @@ describe('FormsIndexPage', () => {
     await router.isReady()
 
     formsApiMocks.useSuspenseFormsQuery.mockReturnValue({
-      data: ref([
-        {
-          id: 'form-circle-b-1',
-          name: '展示チェックフォーム',
-          description: '展示レイアウトと機材使用申請を提出してください。',
-          openAt: '2026-03-02T00:00:00Z',
-          closeAt: '2026-03-22T23:59:59Z',
-          maxAnswers: 2,
-          answerableTags: ['展示'],
-          confirmationMessage: '回答ありがとうございました。',
-          isPublic: true,
-          isOpen: true,
-          hasAnswer: false
-        },
-        {
-          id: 'form-circle-b-2',
-          name: '備品返却報告',
-          description: '使用した備品の返却状況を報告してください。',
-          openAt: '2026-02-01T00:00:00Z',
-          closeAt: '2026-02-20T23:59:59Z',
-          maxAnswers: 1,
-          answerableTags: [],
-          confirmationMessage: '',
-          isPublic: true,
-          isOpen: false,
-          hasAnswer: true
-        }
-      ]),
+      data: ref(formsPage([closedForm])),
       suspense: vi.fn().mockResolvedValue(undefined)
     })
 
@@ -215,35 +199,9 @@ describe('FormsIndexPage', () => {
     await router.push('/workspace/forms')
     await router.isReady()
 
+    const formsPageRef = ref(formsPage([openForm]))
     formsApiMocks.useSuspenseFormsQuery.mockReturnValue({
-      data: ref([
-        {
-          id: 'form-circle-b-1',
-          name: '展示チェックフォーム',
-          description: '展示レイアウトと機材使用申請を提出してください。',
-          openAt: '2026-03-02T00:00:00Z',
-          closeAt: '2026-03-22T23:59:59Z',
-          maxAnswers: 2,
-          answerableTags: ['展示'],
-          confirmationMessage: '回答ありがとうございました。',
-          isPublic: true,
-          isOpen: true,
-          hasAnswer: false
-        },
-        {
-          id: 'form-circle-b-2',
-          name: '備品返却報告',
-          description: '使用した備品の返却状況を報告してください。',
-          openAt: '2026-02-01T00:00:00Z',
-          closeAt: '2026-02-20T23:59:59Z',
-          maxAnswers: 1,
-          answerableTags: [],
-          confirmationMessage: '',
-          isPublic: true,
-          isOpen: false,
-          hasAnswer: true
-        }
-      ]),
+      data: formsPageRef,
       suspense: vi.fn().mockResolvedValue(undefined)
     })
 
@@ -256,6 +214,7 @@ describe('FormsIndexPage', () => {
 
     const tabs = wrapper.findAll('.border-b.border-border.bg-surface a')
     await tabs[1].trigger('click')
+    formsPageRef.value = formsPage([closedForm])
     await flushPromises()
 
     expect(router.currentRoute.value.query.status).toBe('closed')
@@ -263,10 +222,62 @@ describe('FormsIndexPage', () => {
     expect(wrapper.text()).not.toContain('展示チェックフォーム')
 
     await tabs[2].trigger('click')
+    formsPageRef.value = formsPage([openForm, closedForm])
     await flushPromises()
 
     expect(router.currentRoute.value.query.status).toBe('all')
     expect(wrapper.text()).toContain('備品返却報告')
     expect(wrapper.text()).toContain('展示チェックフォーム')
+  })
+
+  it('passes search query to the forms API and keeps it when switching tabs', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/workspace', component: { template: '<div>workspace</div>' } },
+        { path: '/workspace/forms', component: FormsIndexPage },
+        { path: '/workspace/forms/:formId', component: { template: '<div>detail</div>' } }
+      ]
+    })
+    await router.push('/workspace/forms?query=展示')
+    await router.isReady()
+
+    formsApiMocks.useSuspenseFormsQuery.mockReturnValue({
+      data: ref(formsPage([openForm])),
+      suspense: vi.fn().mockResolvedValue(undefined)
+    })
+
+    const wrapper = mount(FormsIndexPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    const pagination = formsApiMocks.useSuspenseFormsQuery.mock.calls[0][0]
+    expect(pagination.value.query).toBe('展示')
+
+    const tabs = wrapper.findAll('.border-b.border-border.bg-surface a')
+    await tabs[1].trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ query: '展示', status: 'closed' })
   })
 })

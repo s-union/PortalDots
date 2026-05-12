@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import FormsIndexPage from './index.vue'
 import { mockSessionBootstrap, mockForm } from '@/mocks/data'
 
@@ -18,7 +18,12 @@ const meta = {
           })
         ),
         http.get('/v1/forms', () =>
-          HttpResponse.json([mockForm, { ...mockForm, id: 'form-2', name: '第2回申請フォーム', hasAnswer: true }])
+          HttpResponse.json({
+            items: [mockForm, { ...mockForm, id: 'form-2', name: '第2回申請フォーム', hasAnswer: true }],
+            page: 1,
+            pageSize: 20,
+            total: 2
+          })
         )
       ]
     }
@@ -40,7 +45,7 @@ export const NoForms: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/forms', () => HttpResponse.json([]))
+        http.get('/v1/forms', () => HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 }))
       ]
     }
   }
@@ -57,28 +62,33 @@ export const MixedStatus: Story = {
           })
         ),
         http.get('/v1/forms', () =>
-          HttpResponse.json([
-            {
-              ...mockForm,
-              id: 'form-open-limited',
-              name: '食品販売申請',
-              description: '食品を扱う企画のみ回答が必要な申請です。',
-              answerableTags: [{ id: 'tag-food', name: '食品販売' }]
-            },
-            {
-              ...mockForm,
-              id: 'form-answered',
-              name: '備品貸出申請',
-              hasAnswer: true
-            },
-            {
-              ...mockForm,
-              id: 'form-closed',
-              name: '締切済み申請',
-              isOpen: false,
-              closeAt: '2026-01-10T23:59:59Z'
-            }
-          ])
+          HttpResponse.json({
+            items: [
+              {
+                ...mockForm,
+                id: 'form-open-limited',
+                name: '食品販売申請',
+                description: '食品を扱う企画のみ回答が必要な申請です。',
+                answerableTags: [{ id: 'tag-food', name: '食品販売' }]
+              },
+              {
+                ...mockForm,
+                id: 'form-answered',
+                name: '備品貸出申請',
+                hasAnswer: true
+              },
+              {
+                ...mockForm,
+                id: 'form-closed',
+                name: '締切済み申請',
+                isOpen: false,
+                closeAt: '2026-01-10T23:59:59Z'
+              }
+            ],
+            page: 1,
+            pageSize: 20,
+            total: 3
+          })
         )
       ]
     }

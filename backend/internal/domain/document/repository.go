@@ -13,7 +13,6 @@ import (
 
 type Document struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -30,18 +29,13 @@ type Document struct {
 }
 
 type Repository interface {
-	ListByCircle(circleID string) []Document
-	ListPublic() []Document
-	ListForCircle(circleTags []string) []Document
-	ListByCircleForStaff(circleID string) []Document
-	FindByCircle(circleID, documentID string) (Document, bool)
-	FindPublic(documentID string) (Document, bool)
-	FindForCircle(circleTags []string, documentID string) (Document, bool)
+	ListPublic(circleTags []string) []Document
+	FindPublic(documentID string, circleTags []string) (Document, bool)
+	ListForStaff() []Document
 	FindForStaff(documentID string) (Document, bool)
-	FindByCircleForStaff(circleID, documentID string) (Document, bool)
-	Create(circleID, name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
-	Update(circleID, documentID, name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
-	Delete(circleID, documentID string) bool
+	Create(name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
+	Update(documentID, name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
+	Delete(documentID string) bool
 	ListReadDocumentIDs(userID string, documentIDs []string) []string
 	MarkRead(documentID, userID string) error
 }
@@ -58,7 +52,6 @@ func NewStaticRepository(cfg []config.Document) *StaticRepository {
 	for _, item := range cfg {
 		documents = append(documents, Document{
 			ID:           item.ID,
-			CircleID:     item.CircleID,
 			Name:         item.Name,
 			Description:  item.Description,
 			Notes:        item.Notes,
@@ -82,35 +75,7 @@ func NewStaticRepository(cfg []config.Document) *StaticRepository {
 	}
 }
 
-func (r *StaticRepository) ListByCircle(circleID string) []Document {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	documents := make([]Document, 0, len(r.documents))
-	for _, document := range r.documents {
-		if document.CircleID == circleID && document.IsPublic && documentVisibleForTags(document, nil) {
-			documents = append(documents, cloneDocument(document))
-		}
-	}
-	sortDocumentsByUpdatedAt(documents)
-	return documents
-}
-
-func (r *StaticRepository) ListPublic() []Document {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	documents := make([]Document, 0, len(r.documents))
-	for _, document := range r.documents {
-		if document.IsPublic && documentVisibleForTags(document, nil) {
-			documents = append(documents, cloneDocument(document))
-		}
-	}
-	sortDocumentsByUpdatedAt(documents)
-	return documents
-}
-
-func (r *StaticRepository) ListForCircle(circleTags []string) []Document {
+func (r *StaticRepository) ListPublic(circleTags []string) []Document {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -124,45 +89,7 @@ func (r *StaticRepository) ListForCircle(circleTags []string) []Document {
 	return documents
 }
 
-func (r *StaticRepository) ListByCircleForStaff(circleID string) []Document {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	documents := make([]Document, 0, len(r.documents))
-	for _, document := range r.documents {
-		if document.CircleID == circleID {
-			documents = append(documents, cloneDocument(document))
-		}
-	}
-	sortDocumentsByUpdatedAt(documents)
-	return documents
-}
-
-func (r *StaticRepository) FindByCircle(circleID, documentID string) (Document, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	for _, document := range r.documents {
-		if document.CircleID == circleID && document.ID == documentID && document.IsPublic && documentVisibleForTags(document, nil) {
-			return cloneDocument(document), true
-		}
-	}
-	return Document{}, false
-}
-
-func (r *StaticRepository) FindPublic(documentID string) (Document, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	for _, document := range r.documents {
-		if document.ID == documentID && document.IsPublic && documentVisibleForTags(document, nil) {
-			return cloneDocument(document), true
-		}
-	}
-	return Document{}, false
-}
-
-func (r *StaticRepository) FindForCircle(circleTags []string, documentID string) (Document, bool) {
+func (r *StaticRepository) FindPublic(documentID string, circleTags []string) (Document, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -172,6 +99,18 @@ func (r *StaticRepository) FindForCircle(circleTags []string, documentID string)
 		}
 	}
 	return Document{}, false
+}
+
+func (r *StaticRepository) ListForStaff() []Document {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	documents := make([]Document, 0, len(r.documents))
+	for _, document := range r.documents {
+		documents = append(documents, cloneDocument(document))
+	}
+	sortDocumentsByUpdatedAt(documents)
+	return documents
 }
 
 func (r *StaticRepository) FindForStaff(documentID string) (Document, bool) {
@@ -186,20 +125,7 @@ func (r *StaticRepository) FindForStaff(documentID string) (Document, bool) {
 	return Document{}, false
 }
 
-func (r *StaticRepository) FindByCircleForStaff(circleID, documentID string) (Document, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	for _, document := range r.documents {
-		if document.CircleID == circleID && document.ID == documentID {
-			return cloneDocument(document), true
-		}
-	}
-	return Document{}, false
-}
-
 func (r *StaticRepository) Create(
-	circleID,
 	name,
 	description,
 	notes string,
@@ -216,7 +142,6 @@ func (r *StaticRepository) Create(
 	now := time.Now().UTC().Format(time.RFC3339)
 	created := Document{
 		ID:           uuidv7.MustString(),
-		CircleID:     circleID,
 		Name:         name,
 		Description:  description,
 		Notes:        notes,
@@ -238,7 +163,6 @@ func (r *StaticRepository) Create(
 }
 
 func (r *StaticRepository) Update(
-	circleID,
 	documentID,
 	name,
 	description,
@@ -254,7 +178,7 @@ func (r *StaticRepository) Update(
 	defer r.mu.Unlock()
 
 	for index, currentDocument := range r.documents {
-		if currentDocument.CircleID != circleID || currentDocument.ID != documentID {
+		if currentDocument.ID != documentID {
 			continue
 		}
 
@@ -277,12 +201,12 @@ func (r *StaticRepository) Update(
 	return Document{}, false
 }
 
-func (r *StaticRepository) Delete(circleID, documentID string) bool {
+func (r *StaticRepository) Delete(documentID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	for index, currentDocument := range r.documents {
-		if currentDocument.CircleID != circleID || currentDocument.ID != documentID {
+		if currentDocument.ID != documentID {
 			continue
 		}
 

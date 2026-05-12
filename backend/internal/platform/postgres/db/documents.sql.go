@@ -12,13 +12,12 @@ import (
 )
 
 const createStaffDocument = `-- name: CreateStaffDocument :one
-INSERT INTO documents (circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+INSERT INTO documents (name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 `
 
 type CreateStaffDocumentParams struct {
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -32,7 +31,6 @@ type CreateStaffDocumentParams struct {
 
 type CreateStaffDocumentRow struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -48,7 +46,6 @@ type CreateStaffDocumentRow struct {
 
 func (q *Queries) CreateStaffDocument(ctx context.Context, arg CreateStaffDocumentParams) (CreateStaffDocumentRow, error) {
 	row := q.db.QueryRow(ctx, createStaffDocument,
-		arg.CircleID,
 		arg.Name,
 		arg.Description,
 		arg.Notes,
@@ -62,7 +59,6 @@ func (q *Queries) CreateStaffDocument(ctx context.Context, arg CreateStaffDocume
 	var i CreateStaffDocumentRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Name,
 		&i.Description,
 		&i.Notes,
@@ -80,17 +76,11 @@ func (q *Queries) CreateStaffDocument(ctx context.Context, arg CreateStaffDocume
 
 const deleteStaffDocument = `-- name: DeleteStaffDocument :execrows
 DELETE FROM documents
-WHERE circle_id = $1
-  AND id = $2
+WHERE id = $1
 `
 
-type DeleteStaffDocumentParams struct {
-	CircleID string
-	ID       string
-}
-
-func (q *Queries) DeleteStaffDocument(ctx context.Context, arg DeleteStaffDocumentParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteStaffDocument, arg.CircleID, arg.ID)
+func (q *Queries) DeleteStaffDocument(ctx context.Context, id string) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteStaffDocument, id)
 	if err != nil {
 		return 0, err
 	}
@@ -98,23 +88,21 @@ func (q *Queries) DeleteStaffDocument(ctx context.Context, arg DeleteStaffDocume
 }
 
 const getPublicDocumentByID = `-- name: GetPublicDocumentByID :one
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
-WHERE circle_id = $1
-  AND id = $2
+WHERE id = $1
   AND is_public = true
-  AND cardinality(viewable_tags) = 0
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
 LIMIT 1
 `
 
 type GetPublicDocumentByIDParams struct {
-	CircleID string
-	ID       string
+	ID      string
+	Column2 []string
 }
 
 type GetPublicDocumentByIDRow struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -129,108 +117,10 @@ type GetPublicDocumentByIDRow struct {
 }
 
 func (q *Queries) GetPublicDocumentByID(ctx context.Context, arg GetPublicDocumentByIDParams) (GetPublicDocumentByIDRow, error) {
-	row := q.db.QueryRow(ctx, getPublicDocumentByID, arg.CircleID, arg.ID)
+	row := q.db.QueryRow(ctx, getPublicDocumentByID, arg.ID, arg.Column2)
 	var i GetPublicDocumentByIDRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
-		&i.Name,
-		&i.Description,
-		&i.Notes,
-		&i.IsPublic,
-		&i.ViewableTags,
-		&i.IsImportant,
-		&i.Filename,
-		&i.MimeType,
-		&i.Content,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getPublicDocumentByIDGlobal = `-- name: GetPublicDocumentByIDGlobal :one
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
-FROM documents
-WHERE id = $1
-  AND is_public = true
-  AND cardinality(viewable_tags) = 0
-LIMIT 1
-`
-
-type GetPublicDocumentByIDGlobalRow struct {
-	ID           string
-	CircleID     string
-	Name         string
-	Description  string
-	Notes        string
-	IsPublic     bool
-	ViewableTags []string
-	IsImportant  bool
-	Filename     string
-	MimeType     string
-	Content      []byte
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-}
-
-func (q *Queries) GetPublicDocumentByIDGlobal(ctx context.Context, id string) (GetPublicDocumentByIDGlobalRow, error) {
-	row := q.db.QueryRow(ctx, getPublicDocumentByIDGlobal, id)
-	var i GetPublicDocumentByIDGlobalRow
-	err := row.Scan(
-		&i.ID,
-		&i.CircleID,
-		&i.Name,
-		&i.Description,
-		&i.Notes,
-		&i.IsPublic,
-		&i.ViewableTags,
-		&i.IsImportant,
-		&i.Filename,
-		&i.MimeType,
-		&i.Content,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getPublicDocumentByIDGlobalForCircleTags = `-- name: GetPublicDocumentByIDGlobalForCircleTags :one
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
-FROM documents
-WHERE id = $1
-  AND is_public = true
-  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
-LIMIT 1
-`
-
-type GetPublicDocumentByIDGlobalForCircleTagsParams struct {
-	ID      string
-	Column2 []string
-}
-
-type GetPublicDocumentByIDGlobalForCircleTagsRow struct {
-	ID           string
-	CircleID     string
-	Name         string
-	Description  string
-	Notes        string
-	IsPublic     bool
-	ViewableTags []string
-	IsImportant  bool
-	Filename     string
-	MimeType     string
-	Content      []byte
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-}
-
-func (q *Queries) GetPublicDocumentByIDGlobalForCircleTags(ctx context.Context, arg GetPublicDocumentByIDGlobalForCircleTagsParams) (GetPublicDocumentByIDGlobalForCircleTagsRow, error) {
-	row := q.db.QueryRow(ctx, getPublicDocumentByIDGlobalForCircleTags, arg.ID, arg.Column2)
-	var i GetPublicDocumentByIDGlobalForCircleTagsRow
-	err := row.Scan(
-		&i.ID,
-		&i.CircleID,
 		&i.Name,
 		&i.Description,
 		&i.Notes,
@@ -247,65 +137,14 @@ func (q *Queries) GetPublicDocumentByIDGlobalForCircleTags(ctx context.Context, 
 }
 
 const getStaffDocumentByID = `-- name: GetStaffDocumentByID :one
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
-FROM documents
-WHERE circle_id = $1
-  AND id = $2
-LIMIT 1
-`
-
-type GetStaffDocumentByIDParams struct {
-	CircleID string
-	ID       string
-}
-
-type GetStaffDocumentByIDRow struct {
-	ID           string
-	CircleID     string
-	Name         string
-	Description  string
-	Notes        string
-	IsPublic     bool
-	ViewableTags []string
-	IsImportant  bool
-	Filename     string
-	MimeType     string
-	Content      []byte
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-}
-
-func (q *Queries) GetStaffDocumentByID(ctx context.Context, arg GetStaffDocumentByIDParams) (GetStaffDocumentByIDRow, error) {
-	row := q.db.QueryRow(ctx, getStaffDocumentByID, arg.CircleID, arg.ID)
-	var i GetStaffDocumentByIDRow
-	err := row.Scan(
-		&i.ID,
-		&i.CircleID,
-		&i.Name,
-		&i.Description,
-		&i.Notes,
-		&i.IsPublic,
-		&i.ViewableTags,
-		&i.IsImportant,
-		&i.Filename,
-		&i.MimeType,
-		&i.Content,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getStaffDocumentByIDGlobal = `-- name: GetStaffDocumentByIDGlobal :one
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE id = $1
 LIMIT 1
 `
 
-type GetStaffDocumentByIDGlobalRow struct {
+type GetStaffDocumentByIDRow struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -319,12 +158,11 @@ type GetStaffDocumentByIDGlobalRow struct {
 	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) GetStaffDocumentByIDGlobal(ctx context.Context, id string) (GetStaffDocumentByIDGlobalRow, error) {
-	row := q.db.QueryRow(ctx, getStaffDocumentByIDGlobal, id)
-	var i GetStaffDocumentByIDGlobalRow
+func (q *Queries) GetStaffDocumentByID(ctx context.Context, id string) (GetStaffDocumentByIDRow, error) {
+	row := q.db.QueryRow(ctx, getStaffDocumentByID, id)
+	var i GetStaffDocumentByIDRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Name,
 		&i.Description,
 		&i.Notes,
@@ -341,16 +179,15 @@ func (q *Queries) GetStaffDocumentByIDGlobal(ctx context.Context, id string) (Ge
 }
 
 const listPublicDocuments = `-- name: ListPublicDocuments :many
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
 WHERE is_public = true
-  AND cardinality(viewable_tags) = 0
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
 ORDER BY updated_at DESC, id DESC
 `
 
 type ListPublicDocumentsRow struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -364,8 +201,8 @@ type ListPublicDocumentsRow struct {
 	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) ListPublicDocuments(ctx context.Context) ([]ListPublicDocumentsRow, error) {
-	rows, err := q.db.Query(ctx, listPublicDocuments)
+func (q *Queries) ListPublicDocuments(ctx context.Context, dollar_1 []string) ([]ListPublicDocumentsRow, error) {
+	rows, err := q.db.Query(ctx, listPublicDocuments, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -375,124 +212,6 @@ func (q *Queries) ListPublicDocuments(ctx context.Context) ([]ListPublicDocument
 		var i ListPublicDocumentsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.CircleID,
-			&i.Name,
-			&i.Description,
-			&i.Notes,
-			&i.IsPublic,
-			&i.ViewableTags,
-			&i.IsImportant,
-			&i.Filename,
-			&i.MimeType,
-			&i.Content,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listPublicDocumentsByCircle = `-- name: ListPublicDocumentsByCircle :many
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
-FROM documents
-WHERE circle_id = $1
-  AND is_public = true
-  AND cardinality(viewable_tags) = 0
-ORDER BY updated_at DESC, id DESC
-`
-
-type ListPublicDocumentsByCircleRow struct {
-	ID           string
-	CircleID     string
-	Name         string
-	Description  string
-	Notes        string
-	IsPublic     bool
-	ViewableTags []string
-	IsImportant  bool
-	Filename     string
-	MimeType     string
-	Content      []byte
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-}
-
-func (q *Queries) ListPublicDocumentsByCircle(ctx context.Context, circleID string) ([]ListPublicDocumentsByCircleRow, error) {
-	rows, err := q.db.Query(ctx, listPublicDocumentsByCircle, circleID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListPublicDocumentsByCircleRow
-	for rows.Next() {
-		var i ListPublicDocumentsByCircleRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.CircleID,
-			&i.Name,
-			&i.Description,
-			&i.Notes,
-			&i.IsPublic,
-			&i.ViewableTags,
-			&i.IsImportant,
-			&i.Filename,
-			&i.MimeType,
-			&i.Content,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listPublicDocumentsForCircleTags = `-- name: ListPublicDocumentsForCircleTags :many
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
-FROM documents
-WHERE is_public = true
-  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
-ORDER BY updated_at DESC, id DESC
-`
-
-type ListPublicDocumentsForCircleTagsRow struct {
-	ID           string
-	CircleID     string
-	Name         string
-	Description  string
-	Notes        string
-	IsPublic     bool
-	ViewableTags []string
-	IsImportant  bool
-	Filename     string
-	MimeType     string
-	Content      []byte
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
-}
-
-func (q *Queries) ListPublicDocumentsForCircleTags(ctx context.Context, dollar_1 []string) ([]ListPublicDocumentsForCircleTagsRow, error) {
-	rows, err := q.db.Query(ctx, listPublicDocumentsForCircleTags, dollar_1)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListPublicDocumentsForCircleTagsRow
-	for rows.Next() {
-		var i ListPublicDocumentsForCircleTagsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.CircleID,
 			&i.Name,
 			&i.Description,
 			&i.Notes,
@@ -547,16 +266,14 @@ func (q *Queries) ListReadDocumentIDsByUser(ctx context.Context, arg ListReadDoc
 	return items, nil
 }
 
-const listStaffDocumentsByCircle = `-- name: ListStaffDocumentsByCircle :many
-SELECT id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+const listStaffDocuments = `-- name: ListStaffDocuments :many
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 FROM documents
-WHERE circle_id = $1
 ORDER BY updated_at DESC, id DESC
 `
 
-type ListStaffDocumentsByCircleRow struct {
+type ListStaffDocumentsRow struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -570,18 +287,17 @@ type ListStaffDocumentsByCircleRow struct {
 	UpdatedAt    pgtype.Timestamptz
 }
 
-func (q *Queries) ListStaffDocumentsByCircle(ctx context.Context, circleID string) ([]ListStaffDocumentsByCircleRow, error) {
-	rows, err := q.db.Query(ctx, listStaffDocumentsByCircle, circleID)
+func (q *Queries) ListStaffDocuments(ctx context.Context) ([]ListStaffDocumentsRow, error) {
+	rows, err := q.db.Query(ctx, listStaffDocuments)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListStaffDocumentsByCircleRow
+	var items []ListStaffDocumentsRow
 	for rows.Next() {
-		var i ListStaffDocumentsByCircleRow
+		var i ListStaffDocumentsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.CircleID,
 			&i.Name,
 			&i.Description,
 			&i.Notes,
@@ -622,23 +338,21 @@ func (q *Queries) MarkDocumentRead(ctx context.Context, arg MarkDocumentReadPara
 
 const updateStaffDocument = `-- name: UpdateStaffDocument :one
 UPDATE documents
-SET name = $3,
-    description = $4,
-    notes = $5,
-    is_public = $6,
-    viewable_tags = $7,
-    is_important = $8,
-    filename = $9,
-    mime_type = $10,
-    content = $11,
+SET name = $2,
+    description = $3,
+    notes = $4,
+    is_public = $5,
+    viewable_tags = $6,
+    is_important = $7,
+    filename = $8,
+    mime_type = $9,
+    content = $10,
     updated_at = now()
-WHERE circle_id = $1
-  AND id = $2
-RETURNING id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+WHERE id = $1
+RETURNING id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
 `
 
 type UpdateStaffDocumentParams struct {
-	CircleID     string
 	ID           string
 	Name         string
 	Description  string
@@ -653,7 +367,6 @@ type UpdateStaffDocumentParams struct {
 
 type UpdateStaffDocumentRow struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -669,7 +382,6 @@ type UpdateStaffDocumentRow struct {
 
 func (q *Queries) UpdateStaffDocument(ctx context.Context, arg UpdateStaffDocumentParams) (UpdateStaffDocumentRow, error) {
 	row := q.db.QueryRow(ctx, updateStaffDocument,
-		arg.CircleID,
 		arg.ID,
 		arg.Name,
 		arg.Description,
@@ -684,7 +396,6 @@ func (q *Queries) UpdateStaffDocument(ctx context.Context, arg UpdateStaffDocume
 	var i UpdateStaffDocumentRow
 	err := row.Scan(
 		&i.ID,
-		&i.CircleID,
 		&i.Name,
 		&i.Description,
 		&i.Notes,

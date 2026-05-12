@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import PublicPagesIndexPage from './index.vue'
 import { mockPage } from '@/mocks/data'
 

@@ -14,7 +14,6 @@ type PublicRoutes struct {
 	UpdateProfile            echo.HandlerFunc
 	UpdatePassword           echo.HandlerFunc
 	DeleteAccount            echo.HandlerFunc
-	Register                 echo.HandlerFunc
 	StartRegistration        echo.HandlerFunc
 	VerifyRegistration       echo.HandlerFunc
 	CompleteRegistration     echo.HandlerFunc
@@ -145,6 +144,7 @@ type WorkspaceRoutes struct {
 	CreateCircle                         echo.HandlerFunc
 	SetCurrentCircle                     echo.HandlerFunc
 	GetCurrentCircleDetail               echo.HandlerFunc
+	AuthCurrentCircle                    echo.HandlerFunc
 	UpdateCurrentCircle                  echo.HandlerFunc
 	DeleteCurrentCircle                  echo.HandlerFunc
 	SubmitCurrentCircle                  echo.HandlerFunc
@@ -184,7 +184,6 @@ func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
 	v1.PUT("/session/profile", r.UpdateProfile)
 	v1.PUT("/session/password", r.UpdatePassword)
 	v1.DELETE("/session/account", r.DeleteAccount)
-	v1.POST("/auth/register", r.Register)
 	v1.POST("/auth/register/start", r.StartRegistration)
 	v1.POST("/auth/register/verify", r.VerifyRegistration)
 	v1.POST("/auth/register/complete", r.CompleteRegistration)
@@ -309,6 +308,7 @@ func RegisterWorkspaceRoutes(v1 *echo.Group, r WorkspaceRoutes, middlewares ...e
 	workspace.POST("/circles", r.CreateCircle)
 	workspace.PUT("/circles/current", r.SetCurrentCircle)
 	workspace.GET("/circles/current/detail", r.GetCurrentCircleDetail)
+	workspace.POST("/circles/current/auth", r.AuthCurrentCircle)
 	workspace.PUT("/circles/current/detail", r.UpdateCurrentCircle)
 	workspace.DELETE("/circles/current", r.DeleteCurrentCircle)
 	workspace.POST("/circles/current/submit", r.SubmitCurrentCircle)

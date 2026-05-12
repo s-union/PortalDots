@@ -34,6 +34,7 @@ import {
 import { useSessionStore } from '@/features/session/store'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
+import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
 import { compareString } from '@/lib/compareString'
 import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -42,7 +43,18 @@ import YesNo from '@/components/ui/YesNo.vue'
 const router = useRouter()
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
-const formsQuery = useStaffFormsQuery(computed(() => staffStatusQuery.data.value?.authorized === true))
+const searchQuery = ref('')
+const appliedFilterMode = ref<StaffFilterMode>('and')
+const appliedFilterQueries = ref<StaffFilterQuery[]>([])
+const staffListParams = computed(() => ({
+  query: searchQuery.value,
+  queries: appliedFilterQueries.value,
+  mode: appliedFilterMode.value
+}))
+const formsQuery = useStaffFormsQuery(
+  computed(() => staffStatusQuery.data.value?.authorized === true),
+  staffListParams
+)
 const copyFormMutation = useCopyStaffFormMutation()
 const deleteFormMutation = useDeleteStaffFormMutation()
 const errorMessage = ref('')
@@ -149,7 +161,6 @@ const {
   filterActive,
   sort,
   pagination,
-  searchQuery,
   isFilterOpen,
   draftFilterMode,
   draftFilterQueries,
@@ -168,6 +179,10 @@ const {
   sortKeys,
   defaultSortKey: 'formNumber',
   filterFields,
+  searchQuery,
+  appliedFilterMode,
+  appliedFilterQueries,
+  serverSideFiltering: true,
   resolveSortValue,
   matchesSearch,
   matchesFilterQuery,

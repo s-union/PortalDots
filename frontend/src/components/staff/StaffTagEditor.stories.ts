@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffTagEditor from './StaffTagEditor.vue'
 
 const meta = {
@@ -23,7 +23,7 @@ const tagMutationHandlers = [
       updatedAt: '2026-01-01T00:00:00Z'
     })
   ),
-  http.put('/v1/staff/tags/:tagId', () =>
+  http.put('/v1/staff/tags/{tagID}', () =>
     HttpResponse.json({
       id: 'tag-1',
       name: '更新されたタグ',
@@ -31,7 +31,7 @@ const tagMutationHandlers = [
       updatedAt: '2026-01-01T00:00:00Z'
     })
   ),
-  http.delete('/v1/staff/tags/:tagId', () => new HttpResponse(null, { status: 204 }))
+  http.delete('/v1/staff/tags/{tagID}', () => new HttpResponse(null, { status: 204 }))
 ]
 
 export const CreateNew: Story = {

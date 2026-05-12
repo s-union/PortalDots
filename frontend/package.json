@@ -59,6 +59,7 @@
     "jsdom": "^28.1.0",
     "msw": "^2.13.6",
     "msw-storybook-addon": "^2.0.7",
+    "openapi-msw": "^2.0.0",
     "storybook": "^10.3.6",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",

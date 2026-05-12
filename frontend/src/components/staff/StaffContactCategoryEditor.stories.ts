@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffContactCategoryEditor from './StaffContactCategoryEditor.vue'
 
 const meta = {
@@ -15,10 +15,10 @@ const mutationHandlers = [
   http.post('/v1/staff/contact-categories', () =>
     HttpResponse.json({ id: 'cat-new', name: '新カテゴリ', email: 'new@example.com' })
   ),
-  http.put('/v1/staff/contact-categories/:catId', () =>
+  http.put('/v1/staff/contact-categories/{categoryID}', () =>
     HttpResponse.json({ id: 'cat-1', name: '更新カテゴリ', email: 'updated@example.com' })
   ),
-  http.delete('/v1/staff/contact-categories/:catId', () => new HttpResponse(null, { status: 204 }))
+  http.delete('/v1/staff/contact-categories/{categoryID}', () => new HttpResponse(null, { status: 204 }))
 ]
 
 export const CreateNew: Story = {

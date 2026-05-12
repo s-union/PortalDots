@@ -17,8 +17,6 @@ import { z } from 'zod'
 import {
   filterFields,
   isStaffCircleFilterKey,
-  matchesFilterQuery,
-  matchesSearch,
   resolveCircleSortValue,
   type StaffCircleRow,
   type StaffCircleSortKey
@@ -48,16 +46,6 @@ export interface UseStaffCirclesAllPageOptions {
 export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   const { enabled } = options
 
-  // Queries
-  const allCirclesQuery = useAllStaffCirclesQuery(enabled)
-
-  // Mutations
-  const deletingCircleId = ref('')
-  const deleteCircleMutation = useDeleteStaffCircleMutation(computed(() => deletingCircleId.value))
-
-  const errorMessage = ref('')
-  const exportUrl = buildStaffCirclesExportUrl()
-
   // Filter state
   const searchQuery = ref('')
   const isFilterOpen = ref(false)
@@ -66,30 +54,27 @@ export function useStaffCirclesAllPage(options: UseStaffCirclesAllPageOptions) {
   const appliedFilterQueries = ref<StaffFilterQuery[]>([])
   const draftFilterMode = ref<StaffFilterMode>('and')
   const draftFilterQueries = ref<StaffFilterQuery[]>([])
+  const staffListParams = computed(() => ({
+    query: searchQuery.value,
+    queries: appliedFilterQueries.value,
+    mode: appliedFilterMode.value
+  }))
+
+  // Queries
+  const allCirclesQuery = useAllStaffCirclesQuery(enabled, staffListParams)
+
+  // Mutations
+  const deletingCircleId = ref('')
+  const deleteCircleMutation = useDeleteStaffCircleMutation(computed(() => deletingCircleId.value))
+
+  const errorMessage = ref('')
+  const exportUrl = buildStaffCirclesExportUrl()
 
   // Computed rows
   const rows = computed<StaffCircleRow[]>(() => allCirclesQuery.data.value ?? [])
 
   const filteredRows = computed<StaffCircleRow[]>(() => {
-    const normalizedSearch = searchQuery.value.trim().toLowerCase()
-    const queries = appliedFilterQueries.value
-    const mode = appliedFilterMode.value
-
-    return rows.value.filter((row) => {
-      if (normalizedSearch.length > 0 && !matchesSearch(row, normalizedSearch)) {
-        return false
-      }
-
-      if (queries.length === 0) {
-        return true
-      }
-
-      if (mode === 'or') {
-        return queries.some((query) => matchesFilterQuery(row, query))
-      }
-
-      return queries.every((query) => matchesFilterQuery(row, query))
-    })
+    return rows.value
   })
 
   // Sorting

@@ -85,6 +85,10 @@ func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 	if !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffCircleFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
@@ -94,7 +98,11 @@ func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 	pagination := readPagination(c)
 	response := make([]staffCircleResponse, 0, len(circles))
 	for _, currentCircle := range circles {
-		response = append(response, mapStaffCircle(currentCircle))
+		item := mapStaffCircle(currentCircle)
+		if !matchesStaffCircleSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffCircleFilterResolver(item), filterQueries, filterMode) {
+			continue
+		}
+		response = append(response, item)
 	}
 
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
@@ -105,6 +113,10 @@ func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
 	if !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffCircleFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
@@ -113,10 +125,84 @@ func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
 
 	response := make([]staffCircleResponse, 0, len(circles))
 	for _, currentCircle := range circles {
-		response = append(response, mapStaffCircle(currentCircle))
+		item := mapStaffCircle(currentCircle)
+		if !matchesStaffCircleSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffCircleFilterResolver(item), filterQueries, filterMode) {
+			continue
+		}
+		response = append(response, item)
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+var staffCircleFilterableFields = map[string]staffListFilterFieldType{
+	"id":                    staffListFilterFieldTypeString,
+	"name":                  staffListFilterFieldTypeString,
+	"nameYomi":              staffListFilterFieldTypeString,
+	"groupName":             staffListFilterFieldTypeString,
+	"groupNameYomi":         staffListFilterFieldTypeString,
+	"participationTypeName": staffListFilterFieldTypeString,
+	"notes":                 staffListFilterFieldTypeString,
+	"submittedAt":           staffListFilterFieldTypeString,
+	"status":                staffListFilterFieldTypeString,
+	"places":                staffListFilterFieldTypeString,
+}
+
+func matchesStaffCircleSearch(item staffCircleResponse, query string) bool {
+	return matchesStaffListSearch([]string{
+		item.ID,
+		item.Name,
+		item.NameYomi,
+		item.GroupName,
+		item.GroupNameYomi,
+		item.ParticipationTypeName,
+		item.Notes,
+		staffCircleStatusLabel(item.Status),
+		strings.Join(item.Places, " "),
+	}, query)
+}
+
+func staffCircleFilterResolver(item staffCircleResponse) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		switch key {
+		case "id":
+			return item.ID, true
+		case "name":
+			return item.Name, true
+		case "nameYomi":
+			return item.NameYomi, true
+		case "groupName":
+			return item.GroupName, true
+		case "groupNameYomi":
+			return item.GroupNameYomi, true
+		case "participationTypeName":
+			return item.ParticipationTypeName, true
+		case "notes":
+			return item.Notes, true
+		case "submittedAt":
+			if item.SubmittedAt == nil {
+				return "", true
+			}
+			return *item.SubmittedAt, true
+		case "status":
+			return staffCircleStatusLabel(item.Status), true
+		case "places":
+			return strings.Join(item.Places, " "), true
+		default:
+			return "", false
+		}
+	}
+}
+
+func staffCircleStatusLabel(status string) string {
+	switch status {
+	case "approved":
+		return "受理"
+	case "rejected":
+		return "不受理"
+	default:
+		return "審査中"
+	}
 }
 
 func (h *staffCircleHandlers) listManagedStaffCircles(c echo.Context) error {

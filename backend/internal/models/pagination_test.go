@@ -39,8 +39,8 @@ func TestPaginateItemsHandlesBounds(t *testing.T) {
 		Page:     3,
 		PageSize: 2,
 	})
-	if len(result.Items) != 0 || result.Total != 3 || result.Page != 3 || result.PageSize != 2 {
-		t.Fatalf("unexpected out-of-range pagination result: %#v", result)
+	if len(result.Items) != 1 || result.Items[0] != 3 || result.Total != 3 || result.Page != 2 || result.PageSize != 2 {
+		t.Fatalf("expected out-of-range pagination to use the last page, got %#v", result)
 	}
 
 	result = PaginateItems(items, PaginationParams{
@@ -57,6 +57,18 @@ func TestPaginateItemsHandlesBounds(t *testing.T) {
 	})
 	if len(result.Items) != 1 || result.Items[0] != 3 {
 		t.Fatalf("unexpected second page result: %#v", result)
+	}
+}
+
+func TestNormalizePaginationHandlesEmptyResult(t *testing.T) {
+	t.Parallel()
+
+	page, pageSize := NormalizePagination(PaginationParams{
+		Page:     9,
+		PageSize: 2,
+	}, 0)
+	if page != 1 || pageSize != 2 {
+		t.Fatalf("expected empty result to normalize to page 1 with requested page size, got page=%d pageSize=%d", page, pageSize)
 	}
 }
 

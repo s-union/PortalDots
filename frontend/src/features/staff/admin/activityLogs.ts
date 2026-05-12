@@ -2,6 +2,7 @@ import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { parseWithSchema, staffActivityLogSchema } from '@/lib/api/schema'
+import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 
 export interface StaffActivityLog {
   id: string
@@ -17,9 +18,13 @@ export interface StaffActivityLog {
 interface StaffActivityLogPagination {
   page: number
   pageSize: number
+  query?: string
 }
 
-export async function fetchStaffActivityLogs(pagination: StaffActivityLogPagination) {
+export async function fetchStaffActivityLogs(
+  pagination: StaffActivityLogPagination,
+  params?: StaffListQueryParamsInput
+) {
   return $api.queryData(
     'get',
     '/staff/activity-logs',
@@ -28,7 +33,8 @@ export async function fetchStaffActivityLogs(pagination: StaffActivityLogPaginat
       params: {
         query: {
           page: pagination.page,
-          pageSize: pagination.pageSize
+          pageSize: pagination.pageSize,
+          ...resolveStaffListQueryParams({ ...toValue(params), query: pagination.query ?? toValue(params)?.query })
         }
       }
     },
@@ -41,7 +47,8 @@ export async function fetchStaffActivityLogs(pagination: StaffActivityLogPaginat
 
 export function useStaffActivityLogsQuery(
   enabled: MaybeRefOrGetter<boolean>,
-  pagination: MaybeRefOrGetter<StaffActivityLogPagination>
+  pagination: MaybeRefOrGetter<StaffActivityLogPagination>,
+  params?: StaffListQueryParamsInput
 ) {
   return $api.useQueryData(
     'get',
@@ -51,13 +58,17 @@ export function useStaffActivityLogsQuery(
       params: {
         query: {
           page: toValue(pagination).page,
-          pageSize: toValue(pagination).pageSize
+          pageSize: toValue(pagination).pageSize,
+          ...resolveStaffListQueryParams({
+            ...toValue(params),
+            query: toValue(pagination).query ?? toValue(params)?.query
+          })
         }
       }
     }),
     (value) => parsePaginatedResult(value, parseStaffActivityLog, 'staff activity logs'),
     {
-      queryKey: computed(() => ['staff', 'activity-logs', toValue(pagination)]),
+      queryKey: computed(() => ['staff', 'activity-logs', toValue(pagination), toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },
@@ -67,7 +78,10 @@ export function useStaffActivityLogsQuery(
   )
 }
 
-export function useSuspenseStaffActivityLogsQuery(pagination: MaybeRefOrGetter<StaffActivityLogPagination>) {
+export function useSuspenseStaffActivityLogsQuery(
+  pagination: MaybeRefOrGetter<StaffActivityLogPagination>,
+  params?: StaffListQueryParamsInput
+) {
   return $apiSuspense.useSuspenseQueryData(
     'get',
     '/staff/activity-logs',
@@ -76,13 +90,17 @@ export function useSuspenseStaffActivityLogsQuery(pagination: MaybeRefOrGetter<S
       params: {
         query: {
           page: toValue(pagination).page,
-          pageSize: toValue(pagination).pageSize
+          pageSize: toValue(pagination).pageSize,
+          ...resolveStaffListQueryParams({
+            ...toValue(params),
+            query: toValue(pagination).query ?? toValue(params)?.query
+          })
         }
       }
     }),
     (value) => parsePaginatedResult(value, parseStaffActivityLog, 'staff activity logs'),
     {
-      queryKey: computed(() => ['staff', 'activity-logs', toValue(pagination)]),
+      queryKey: computed(() => ['staff', 'activity-logs', toValue(pagination), toValue(params)]),
       retry: false
     },
     {

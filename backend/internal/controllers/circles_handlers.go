@@ -271,7 +271,63 @@ func (h *workspaceHandlers) getCurrentCircleDetail(c echo.Context) error {
 		return internalError(c)
 	}
 
+	if circleValue.SubmittedAt != nil && circleValue.SubmittedAt.Before(time.Now()) {
+		if currentSession.ReauthorizedAt.IsZero() || time.Since(currentSession.ReauthorizedAt) > 2*time.Hour {
+			return errorJSON(c, http.StatusForbidden, "reauth_required")
+		}
+	}
+
 	return h.respondWithCircleRegistration(c, currentSession.User, circleValue)
+}
+
+type authCurrentCircleRequest struct {
+	Password string `json:"password"`
+}
+
+func (h *workspaceHandlers) authCurrentCircle(c echo.Context) error {
+	sessionID, currentSession, ok := h.getSession(c)
+	if !ok || currentSession.User == nil {
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
+	}
+	if currentSession.CurrentCircleID == "" {
+		return errorJSON(c, http.StatusNotFound, "no_current_circle")
+	}
+
+	var request authCurrentCircleRequest
+	if err := c.Bind(&request); err != nil {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	managedUser, err := h.users.Find(currentSession.User.ID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	authenticated := false
+	for _, loginID := range managedUser.LoginIDs {
+		if _, ok := h.authenticator.Authenticate(c.Request().Context(), loginID, request.Password); ok {
+			authenticated = true
+			break
+		}
+	}
+	if !authenticated {
+		return errorJSON(c, http.StatusForbidden, "invalid_password")
+	}
+
+	if _, err := h.circles.GetUserCircle(currentSession.User, currentSession.CurrentCircleID); errors.Is(err, circle.ErrNotFound) || errors.Is(err, circle.ErrForbidden) {
+		return errorJSON(c, http.StatusNotFound, "circle_not_found")
+	} else if err != nil {
+		return internalError(c)
+	}
+
+	h.sessions.Update(sessionID, func(next *session.Session) {
+		next.ReauthorizedAt = time.Now()
+	})
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
@@ -502,6 +558,10 @@ func (h *workspaceHandlers) listCurrentCircleMembers(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+type addCurrentCircleMemberRequest struct {
+	UserID string `json:"userId"`
+}
+
 func (h *workspaceHandlers) addCurrentCircleMember(c echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
@@ -511,7 +571,34 @@ func (h *workspaceHandlers) addCurrentCircleMember(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
-	return errorJSON(c, http.StatusForbidden, "forbidden")
+	var request addCurrentCircleMemberRequest
+	if err := c.Bind(&request); err != nil {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+	request.UserID = strings.TrimSpace(request.UserID)
+	if request.UserID == "" {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+
+	targetUser, err := h.users.Find(request.UserID)
+	if errors.Is(err, useradmin.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "user_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	if err := h.circles.AddMember(currentSession.User, currentSession.CurrentCircleID, targetUser.ID, targetUser.DisplayName, targetUser.IsVerified); errors.Is(err, circle.ErrForbidden) {
+		return errorJSON(c, http.StatusForbidden, "forbidden")
+	} else if errors.Is(err, circle.ErrInviteeUnverified) {
+		return errorJSON(c, http.StatusConflict, "invitee_unverified")
+	} else if errors.Is(err, circle.ErrAlreadyMember) {
+		return errorJSON(c, http.StatusConflict, "already_member")
+	} else if err != nil {
+		return internalError(c)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *workspaceHandlers) removeCurrentCircleMember(c echo.Context) error {

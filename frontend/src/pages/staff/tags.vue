@@ -23,6 +23,7 @@ import { resolveRowId } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { buildApiUrl } from '@/lib/api/client'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
+import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
 import { useOrderedItems } from '@/lib/useStaffDataTable'
 import { canDeleteTags } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
@@ -33,7 +34,15 @@ import FaIcon from '@/components/ui/FaIcon.vue'
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const tagsQuery = useStaffTagsQuery(enabled)
+const searchQuery = ref('')
+const appliedFilterMode = ref<StaffFilterMode>('and')
+const appliedFilterQueries = ref<StaffFilterQuery[]>([])
+const staffListParams = computed(() => ({
+  query: searchQuery.value,
+  queries: appliedFilterQueries.value,
+  mode: appliedFilterMode.value
+}))
+const tagsQuery = useStaffTagsQuery(enabled, staffListParams)
 const exportHref = computed(() => buildApiUrl('/staff/tags/export'))
 const canDelete = computed(() => canDeleteTags(sessionStore.roles, sessionStore.permissions))
 const isEditorOpen = ref(false)
@@ -114,7 +123,6 @@ const {
   filterActive,
   sort,
   pagination,
-  searchQuery,
   isFilterOpen,
   draftFilterMode,
   draftFilterQueries,
@@ -133,6 +141,10 @@ const {
   sortKeys,
   defaultSortKey: 'tagNumber',
   filterFields,
+  searchQuery,
+  appliedFilterMode,
+  appliedFilterQueries,
+  serverSideFiltering: true,
   resolveSortValue,
   matchesSearch,
   matchesFilterQuery,

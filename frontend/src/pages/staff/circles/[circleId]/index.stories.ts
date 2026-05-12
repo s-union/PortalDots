@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffCircleDetailPage from './index.vue'
 import {
   mockSessionBootstrapStaff,
@@ -25,10 +25,10 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/circles/:circleId', () => HttpResponse.json(mockStaffCircle)),
+        http.get('/v1/staff/circles/{circleID}', () => HttpResponse.json(mockStaffCircle)),
         http.get('/v1/staff/participation-types', () => HttpResponse.json([mockParticipationType])),
         http.get('/v1/staff/places', () => HttpResponse.json([mockPlace])),
-        http.get('/v1/staff/circles/:circleId/members', () =>
+        http.get('/v1/staff/circles/{circleID}/members', () =>
           HttpResponse.json([
             {
               userId: mockStaffUser2.id,
@@ -38,10 +38,10 @@ const meta = {
             }
           ])
         ),
-        http.put('/v1/staff/circles/:circleId', () => HttpResponse.json(mockStaffCircle)),
-        http.delete('/v1/staff/circles/:circleId', () => new HttpResponse(null, { status: 204 })),
-        http.post('/v1/staff/circles/:circleId/members', () => new HttpResponse(null, { status: 204 })),
-        http.delete('/v1/staff/circles/:circleId/members/:userId', () => new HttpResponse(null, { status: 204 }))
+        http.put('/v1/staff/circles/{circleID}', () => HttpResponse.json(mockStaffCircle)),
+        http.delete('/v1/staff/circles/{circleID}', () => new HttpResponse(null, { status: 204 })),
+        http.post('/v1/staff/circles/{circleID}/members', () => new HttpResponse(null, { status: 204 })),
+        http.delete('/v1/staff/circles/{circleID}/members/{userID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -61,14 +61,14 @@ export const EmptyMembers: Story = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/circles/:circleId', () => HttpResponse.json(mockStaffCircle)),
+        http.get('/v1/staff/circles/{circleID}', () => HttpResponse.json(mockStaffCircle)),
         http.get('/v1/staff/participation-types', () => HttpResponse.json([mockParticipationType])),
         http.get('/v1/staff/places', () => HttpResponse.json([mockPlace])),
-        http.get('/v1/staff/circles/:circleId/members', () => HttpResponse.json([])),
-        http.put('/v1/staff/circles/:circleId', () => HttpResponse.json(mockStaffCircle)),
-        http.delete('/v1/staff/circles/:circleId', () => new HttpResponse(null, { status: 204 })),
-        http.post('/v1/staff/circles/:circleId/members', () => new HttpResponse(null, { status: 204 })),
-        http.delete('/v1/staff/circles/:circleId/members/:userId', () => new HttpResponse(null, { status: 204 }))
+        http.get('/v1/staff/circles/{circleID}/members', () => HttpResponse.json([])),
+        http.put('/v1/staff/circles/{circleID}', () => HttpResponse.json(mockStaffCircle)),
+        http.delete('/v1/staff/circles/{circleID}', () => new HttpResponse(null, { status: 204 })),
+        http.post('/v1/staff/circles/{circleID}/members', () => new HttpResponse(null, { status: 204 })),
+        http.delete('/v1/staff/circles/{circleID}/members/{userID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

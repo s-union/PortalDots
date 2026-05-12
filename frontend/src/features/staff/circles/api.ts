@@ -12,6 +12,11 @@ import {
 } from '@/lib/api/schema'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import {
+  buildStaffListRequestParams,
+  resolveStaffListQueryParams,
+  type StaffListQueryParamsInput
+} from '@/lib/staffListQuery'
 import { fetchSessionBootstrap } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
 
@@ -53,9 +58,10 @@ interface AddStaffCircleMemberPayload {
 interface StaffCirclesPagination {
   page: number
   pageSize: number
+  query?: string
 }
 
-export async function fetchStaffCircles(pagination: StaffCirclesPagination) {
+export async function fetchStaffCircles(pagination: StaffCirclesPagination, params?: StaffListQueryParamsInput) {
   return $api.queryData(
     'get',
     '/staff/circles',
@@ -64,7 +70,8 @@ export async function fetchStaffCircles(pagination: StaffCirclesPagination) {
       params: {
         query: {
           page: pagination.page,
-          pageSize: pagination.pageSize
+          pageSize: pagination.pageSize,
+          ...resolveStaffListQueryParams({ ...toValue(params), query: pagination.query ?? toValue(params)?.query })
         }
       }
     },
@@ -75,12 +82,13 @@ export async function fetchStaffCircles(pagination: StaffCirclesPagination) {
   )
 }
 
-export async function fetchAllStaffCircles() {
+export async function fetchAllStaffCircles(params?: StaffListQueryParamsInput) {
   return $api.queryData(
     'get',
     '/staff/circles/all',
     {
-      headers: createJsonHeaders()
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
     },
     parseStaffCircles,
     {
@@ -304,7 +312,8 @@ export async function deleteStaffCircleMember(circleId: string, userId: string, 
 
 export function useStaffCirclesQuery(
   enabled: MaybeRefOrGetter<boolean>,
-  pagination: MaybeRefOrGetter<StaffCirclesPagination>
+  pagination: MaybeRefOrGetter<StaffCirclesPagination>,
+  params?: StaffListQueryParamsInput
 ) {
   return $api.useQueryData(
     'get',
@@ -314,13 +323,17 @@ export function useStaffCirclesQuery(
       params: {
         query: {
           page: toValue(pagination).page,
-          pageSize: toValue(pagination).pageSize
+          pageSize: toValue(pagination).pageSize,
+          ...resolveStaffListQueryParams({
+            ...toValue(params),
+            query: toValue(pagination).query ?? toValue(params)?.query
+          })
         }
       }
     }),
     (value) => parsePaginatedResult(value, parseStaffCircle, 'staff circles'),
     {
-      queryKey: computed(() => ['staff', 'circles', toValue(pagination)]),
+      queryKey: computed(() => ['staff', 'circles', toValue(pagination), toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },
@@ -330,16 +343,17 @@ export function useStaffCirclesQuery(
   )
 }
 
-export function useAllStaffCirclesQuery(enabled: MaybeRefOrGetter<boolean>) {
+export function useAllStaffCirclesQuery(enabled: MaybeRefOrGetter<boolean>, params?: StaffListQueryParamsInput) {
   return $api.useQueryData(
     'get',
     '/staff/circles/all',
-    {
-      headers: createJsonHeaders()
-    },
+    () => ({
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
+    }),
     parseStaffCircles,
     {
-      queryKey: ['staff', 'circles', 'all'],
+      queryKey: computed(() => ['staff', 'circles', 'all', toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },

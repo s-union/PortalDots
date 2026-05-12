@@ -29,13 +29,17 @@ const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthe
 const page = ref(1)
 const pageSize = ref(25)
 const searchQuery = ref('')
+const staffListParams = computed(() => ({
+  query: searchQuery.value
+}))
 
 const permissionsQuery = useStaffPermissionsQuery(
   computed(() => canReadPermissions.value && staffStatusQuery.data.value?.authorized === true),
   computed(() => ({
     page: page.value,
     pageSize: pageSize.value
-  }))
+  })),
+  staffListParams
 )
 
 const columns: StaffDataGridColumn[] = [
@@ -63,18 +67,7 @@ const allRows = computed<StaffDataGridRow[]>(() => {
   }))
 })
 
-const rows = computed<StaffDataGridRow[]>(() => {
-  const search = searchQuery.value.trim().toLowerCase()
-  if (search.length === 0) {
-    return allRows.value
-  }
-  return allRows.value.filter((row) =>
-    [row.userNumber, row.displayName, row.permissionSummary, ...(Array.isArray(row.loginIds) ? row.loginIds : [])]
-      .join(' ')
-      .toLowerCase()
-      .includes(search)
-  )
-})
+const rows = computed<StaffDataGridRow[]>(() => allRows.value)
 
 const total = computed(() => permissionsQuery.data.value?.total ?? 0)
 const resolvedPageSize = computed(() => permissionsQuery.data.value?.pageSize ?? pageSize.value)
@@ -103,7 +96,7 @@ function handlePageSize(nextPageSize: number) {
 }
 
 function handleSearch() {
-  // Client-side search - no API call needed
+  page.value = 1
 }
 
 function navigateToEdit(userId: string) {

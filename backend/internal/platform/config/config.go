@@ -136,7 +136,6 @@ type Page struct {
 
 type Document struct {
 	ID           string
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -541,7 +540,6 @@ func FromEnv() Config {
 		Documents: []Document{
 			{
 				ID:          "0195ec00-0041-7000-8000-000000000001",
-				CircleID:    "0195ec00-0021-7000-8000-000000000001",
 				Name:        "デモサイトへのログイン方法",
 				Description: "",
 				Notes:       "デモサイト案内のサンプル資料です。",
@@ -555,7 +553,6 @@ func FromEnv() Config {
 			},
 			{
 				ID:          "0195ec00-0042-7000-8000-000000000001",
-				CircleID:    "0195ec00-0021-7000-8000-000000000001",
 				Name:        "サンプル配布資料",
 				Description: "配布資料PDFのサンプルです。",
 				Notes:       "公開配布資料のサンプルです。",

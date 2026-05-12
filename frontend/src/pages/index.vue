@@ -37,7 +37,7 @@ const publicDocuments = computed(() => publicHome.value?.documents ?? [])
 const publicLoginMethods = computed(() => publicHome.value?.loginMethods ?? [])
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo ?? false)
 const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
-const openForms = computed(() => (formsQuery.data.value ?? []).filter((form) => form.isOpen))
+const openForms = computed(() => formsQuery.data.value?.items ?? [])
 const selectableCircles = computed(() => selectableCirclesQuery.data.value ?? [])
 const currentCircleDetail = computed(() => currentCircleDetailQuery.data.value ?? null)
 const shouldShowOpenFormsPanel = computed(

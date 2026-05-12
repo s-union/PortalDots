@@ -13,6 +13,7 @@ import {
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { nowPlusOneHourISO, plusDaysEndOfDayISO } from '@/lib/format/datetime'
 import { parseTagString, formatTags } from '@/lib/tags'
+import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 
 export type StaffFormSummary = z.infer<typeof staffFormSummarySchema>
@@ -61,12 +62,13 @@ interface UpdateStaffFormQuestionPayload {
   priority: number
 }
 
-export async function fetchStaffForms() {
+export async function fetchStaffForms(params?: StaffListQueryParamsInput) {
   return $api.queryData(
     'get',
     '/staff/forms',
     {
-      headers: createJsonHeaders()
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
     },
     parseStaffForms,
     {
@@ -296,16 +298,17 @@ export async function deleteStaffForm(formId: string, csrfToken: string) {
   )
 }
 
-export function useStaffFormsQuery(enabled: MaybeRefOrGetter<boolean>) {
+export function useStaffFormsQuery(enabled: MaybeRefOrGetter<boolean>, params?: StaffListQueryParamsInput) {
   return $api.useQueryData(
     'get',
     '/staff/forms',
-    {
-      headers: createJsonHeaders()
-    },
+    () => ({
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
+    }),
     parseStaffForms,
     {
-      queryKey: ['staff', 'forms'],
+      queryKey: computed(() => ['staff', 'forms', toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },

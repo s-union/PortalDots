@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormsIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockForm } from '@/mocks/data'
 
@@ -24,7 +24,7 @@ const meta = {
             }
           ])
         ),
-        http.post('/v1/staff/forms/:formID/copy', () =>
+        http.post('/v1/staff/forms/{formID}/copy', () =>
           HttpResponse.json({
             circle: { id: '', name: '' },
             ...mockForm,
@@ -35,7 +35,7 @@ const meta = {
             isParticipationForm: false
           })
         ),
-        http.delete('/v1/staff/forms/:formID', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/forms/{formID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -53,8 +53,8 @@ export const Empty: Story = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/forms', () => HttpResponse.json([])),
-        http.post('/v1/staff/forms/:formID/copy', () => HttpResponse.json(mockForm)),
-        http.delete('/v1/staff/forms/:formID', () => new HttpResponse(null, { status: 204 }))
+        http.post('/v1/staff/forms/{formID}/copy', () => HttpResponse.json(mockForm)),
+        http.delete('/v1/staff/forms/{formID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -87,7 +87,7 @@ export const MultipleForms: Story = {
             }
           ])
         ),
-        http.post('/v1/staff/forms/:formID/copy', () =>
+        http.post('/v1/staff/forms/{formID}/copy', () =>
           HttpResponse.json({
             circle: { id: '', name: '' },
             ...mockForm,
@@ -98,7 +98,7 @@ export const MultipleForms: Story = {
             isParticipationForm: false
           })
         ),
-        http.delete('/v1/staff/forms/:formID', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/forms/{formID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

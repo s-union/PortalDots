@@ -16,6 +16,9 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
+const staffListParams = computed(() => ({
+  query: searchQuery.value
+}))
 
 const columns: StaffDataGridColumn[] = [
   { key: 'action', label: '種別', sortable: false },
@@ -30,7 +33,8 @@ const query = useSuspenseStaffActivityLogsQuery(
   computed(() => ({
     page,
     pageSize
-  }))
+  })),
+  staffListParams
 )
 await query.suspense()
 const activityLogs = query.data
@@ -43,15 +47,7 @@ const allRows = computed<StaffDataGridRow[]>(() =>
   }))
 )
 
-const rows = computed<StaffDataGridRow[]>(() => {
-  const search = searchQuery.value.trim().toLowerCase()
-  if (search.length === 0) {
-    return allRows.value
-  }
-  return allRows.value.filter((row) =>
-    [row.action, row.summary, row.actorUserId, row.target, row.circleId].join(' ').toLowerCase().includes(search)
-  )
-})
+const rows = computed<StaffDataGridRow[]>(() => allRows.value)
 
 const total = computed(() => activityLogs.value?.total ?? 0)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))

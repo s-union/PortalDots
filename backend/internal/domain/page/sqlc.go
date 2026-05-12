@@ -29,6 +29,32 @@ func (r *SQLCRepository) ListGuest(query string) []Page {
 	return pages
 }
 
+func (r *SQLCRepository) CountGuest(query string) int {
+	total, err := r.queries.CountGuestPages(context.Background(), query)
+	if err != nil {
+		return 0
+	}
+	return int(total)
+}
+
+func (r *SQLCRepository) ListGuestPaginated(query string, limit, offset int) []Page {
+	rows, err := r.queries.ListGuestPagesPaginated(context.Background(), dbgen.ListGuestPagesPaginatedParams{
+		Column1: query,
+		Limit:   int32(limit),
+		Offset:  int32(offset),
+	})
+	if err != nil {
+		return nil
+	}
+
+	pages := make([]Page, 0, len(rows))
+	for _, row := range rows {
+		pages = append(pages, mapGuestPagePaginated(row))
+	}
+
+	return pages
+}
+
 func (r *SQLCRepository) ListForCircle(circleTags []string, query string) []Page {
 	rows, err := r.queries.ListPagesForCircle(context.Background(), dbgen.ListPagesForCircleParams{
 		Column1: circleTags,
@@ -46,6 +72,36 @@ func (r *SQLCRepository) ListForCircle(circleTags []string, query string) []Page
 	return pages
 }
 
+func (r *SQLCRepository) CountForCircle(circleTags []string, query string) int {
+	total, err := r.queries.CountPagesForCircle(context.Background(), dbgen.CountPagesForCircleParams{
+		Column1: circleTags,
+		Column2: query,
+	})
+	if err != nil {
+		return 0
+	}
+	return int(total)
+}
+
+func (r *SQLCRepository) ListForCirclePaginated(circleTags []string, query string, limit, offset int) []Page {
+	rows, err := r.queries.ListPagesForCirclePaginated(context.Background(), dbgen.ListPagesForCirclePaginatedParams{
+		Column1: circleTags,
+		Column2: query,
+		Limit:   int32(limit),
+		Offset:  int32(offset),
+	})
+	if err != nil {
+		return nil
+	}
+
+	pages := make([]Page, 0, len(rows))
+	for _, row := range rows {
+		pages = append(pages, mapCirclePagePaginated(row))
+	}
+
+	return pages
+}
+
 func (r *SQLCRepository) ListForStaff(query string) []Page {
 	rows, err := r.queries.ListStaffPages(context.Background(), query)
 	if err != nil {
@@ -58,6 +114,10 @@ func (r *SQLCRepository) ListForStaff(query string) []Page {
 	}
 
 	return pages
+}
+
+func (r *SQLCRepository) SupportsPagination() bool {
+	return true
 }
 
 func (r *SQLCRepository) FindGuest(pageID string) (Page, bool) {
@@ -206,6 +266,36 @@ func mapGuestPage(row dbgen.ListGuestPagesRow) Page {
 }
 
 func mapCirclePage(row dbgen.ListPagesForCircleRow) Page {
+	return Page{
+		ID:           row.ID,
+		Title:        row.Title,
+		Body:         row.Body,
+		Notes:        row.Notes,
+		IsPinned:     row.IsPinned,
+		IsPublic:     row.IsPublic,
+		ViewableTags: append([]string{}, row.ViewableTags...),
+		DocumentIDs:  append([]string{}, row.DocumentIds...),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+	}
+}
+
+func mapGuestPagePaginated(row dbgen.ListGuestPagesPaginatedRow) Page {
+	return Page{
+		ID:           row.ID,
+		Title:        row.Title,
+		Body:         row.Body,
+		Notes:        row.Notes,
+		IsPinned:     row.IsPinned,
+		IsPublic:     row.IsPublic,
+		ViewableTags: append([]string{}, row.ViewableTags...),
+		DocumentIDs:  append([]string{}, row.DocumentIds...),
+		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+	}
+}
+
+func mapCirclePagePaginated(row dbgen.ListPagesForCirclePaginatedRow) Page {
 	return Page{
 		ID:           row.ID,
 		Title:        row.Title,

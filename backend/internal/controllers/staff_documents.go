@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
 )
 
@@ -37,7 +35,6 @@ type staffDocumentSummaryResponse struct {
 type staffDocumentDetailResponse = staffDocumentSummaryResponse
 
 type mutateStaffDocumentRequest struct {
-	CircleID     string
 	Name         string
 	Description  string
 	Notes        string
@@ -51,17 +48,68 @@ func (h *staffDocumentHandlers) listStaffDocuments(c echo.Context) error {
 	if !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffDocumentFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
-	_, circlesByID, documents, err := h.listManagedStaffDocuments()
+	documents, err := h.listManagedStaffDocuments()
 	if err != nil {
 		return internalError(c)
 	}
 	response := make([]staffDocumentSummaryResponse, 0, len(documents))
 	for _, currentDocument := range documents {
-		response = append(response, mapStaffDocumentSummary(currentDocument, circlesByID[currentDocument.CircleID]))
+		item := mapStaffDocumentSummary(currentDocument, staffManagedCircleResponse{})
+		if !matchesStaffDocumentSummarySearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffDocumentSummaryFilterResolver(item), filterQueries, filterMode) {
+			continue
+		}
+		response = append(response, item)
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+var staffDocumentFilterableFields = map[string]staffListFilterFieldType{
+	"id":          staffListFilterFieldTypeString,
+	"name":        staffListFilterFieldTypeString,
+	"extension":   staffListFilterFieldTypeString,
+	"description": staffListFilterFieldTypeString,
+	"isPublic":    staffListFilterFieldTypeBool,
+	"isImportant": staffListFilterFieldTypeBool,
+	"createdAt":   staffListFilterFieldTypeString,
+	"updatedAt":   staffListFilterFieldTypeString,
+	"notes":       staffListFilterFieldTypeString,
+}
+
+func matchesStaffDocumentSummarySearch(item staffDocumentSummaryResponse, query string) bool {
+	return matchesStaffListSearch([]string{item.ID, item.Name, item.Description, item.Extension, item.Notes}, query)
+}
+
+func staffDocumentSummaryFilterResolver(item staffDocumentSummaryResponse) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		switch key {
+		case "id":
+			return item.ID, true
+		case "name":
+			return item.Name, true
+		case "extension":
+			return item.Extension, true
+		case "description":
+			return item.Description, true
+		case "isPublic":
+			return boolString(item.IsPublic), true
+		case "isImportant":
+			return boolString(item.IsImportant), true
+		case "createdAt":
+			return item.CreatedAt, true
+		case "updatedAt":
+			return item.UpdatedAt, true
+		case "notes":
+			return item.Notes, true
+		default:
+			return "", false
+		}
+	}
 }
 
 func (h *staffDocumentHandlers) getStaffDocument(c echo.Context) error {
@@ -70,15 +118,12 @@ func (h *staffDocumentHandlers) getStaffDocument(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	documentValue, circleValue, err := h.findManagedStaffDocument(c.Param("documentID"))
-	if err != nil {
-		return internalError(c)
-	}
-	if documentValue.ID == "" {
+	documentValue, found := h.findManagedStaffDocument(c.Param("documentID"))
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	return c.JSON(http.StatusOK, mapStaffDocumentDetail(documentValue, mapStaffManagedCircle(circleValue)))
+	return c.JSON(http.StatusOK, mapStaffDocumentDetail(documentValue, staffManagedCircleResponse{}))
 }
 
 func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
@@ -87,14 +132,9 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, true, true)
+	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, true)
 	if !valid {
 		return validationError(c, validationErrors)
-	}
-	if _, err := h.circles.Find(request.CircleID); err != nil {
-		return validationError(c, map[string][]string{
-			"circleId": {"企画を選択してください"},
-		})
 	}
 
 	filename, mimeType, content, readErrors, ok := readStaffDocumentUpload(fileHeader)
@@ -103,7 +143,6 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 	}
 
 	created, createdOK := h.documents.Create(
-		request.CircleID,
 		request.Name,
 		request.Description,
 		request.Notes,
@@ -125,11 +164,11 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 		"staff.document.created",
 		"document",
 		created.ID,
-		created.CircleID,
+		"",
 		buildActivitySummary("staff が配布資料を作成しました", created.Name),
 	)
 
-	return c.JSON(http.StatusCreated, mapStaffDocumentSummary(created, staffManagedCircleResponse{ID: created.CircleID}))
+	return c.JSON(http.StatusCreated, mapStaffDocumentSummary(created, staffManagedCircleResponse{}))
 }
 
 func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
@@ -139,15 +178,12 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 	}
 
 	documentID := c.Param("documentID")
-	currentDocument, circleValue, err := h.findManagedStaffDocument(documentID)
-	if err != nil {
-		return internalError(c)
-	}
-	if currentDocument.ID == "" {
+	currentDocument, found := h.findManagedStaffDocument(documentID)
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c, false, false)
+	request, fileHeader, validationErrors, valid := bindStaffDocumentRequest(c)
 	if !valid {
 		return validationError(c, validationErrors)
 	}
@@ -165,7 +201,6 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 	}
 
 	updated, updatedOK := h.documents.Update(
-		currentDocument.CircleID,
 		documentID,
 		request.Name,
 		request.Description,
@@ -188,11 +223,11 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 		"staff.document.updated",
 		"document",
 		updated.ID,
-		updated.CircleID,
+		"",
 		buildActivitySummary("staff が配布資料を更新しました", updated.Name),
 	)
 
-	return c.JSON(http.StatusOK, mapStaffDocumentSummary(updated, mapStaffManagedCircle(circleValue)))
+	return c.JSON(http.StatusOK, mapStaffDocumentSummary(updated, staffManagedCircleResponse{}))
 }
 
 func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
@@ -202,15 +237,12 @@ func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
 	}
 
 	documentID := c.Param("documentID")
-	currentDocument, _, err := h.findManagedStaffDocument(documentID)
-	if err != nil {
-		return internalError(c)
-	}
-	if currentDocument.ID == "" {
+	currentDocument, found := h.findManagedStaffDocument(documentID)
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
-	if deleted := h.documents.Delete(currentDocument.CircleID, documentID); !deleted {
+	if deleted := h.documents.Delete(documentID); !deleted {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
@@ -221,7 +253,7 @@ func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
 		"staff.document.deleted",
 		"document",
 		documentID,
-		currentDocument.CircleID,
+		"",
 		buildActivitySummary("staff が配布資料を削除しました", currentDocument.Name),
 	)
 
@@ -234,11 +266,8 @@ func (h *staffDocumentHandlers) downloadStaffDocumentFile(c echo.Context) error 
 		return statusError(c, status)
 	}
 
-	documentValue, _, err := h.findManagedStaffDocument(c.Param("documentID"))
-	if err != nil {
-		return internalError(c)
-	}
-	if documentValue.ID == "" {
+	documentValue, found := h.findManagedStaffDocument(c.Param("documentID"))
+	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}
 
@@ -252,19 +281,14 @@ func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c echo.Context) error 
 		return statusError(c, status)
 	}
 
-	circles, _, documents, err := h.listManagedStaffDocuments()
+	documents, err := h.listManagedStaffDocuments()
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	circleNames := make(map[string]string, len(circles))
-	for _, currentCircle := range circles {
-		circleNames[currentCircle.ID] = currentCircle.Name
-	}
-
 	csvBytes, err := writeCSV(append([][]string{
-		{"circle_id", "circle_name", "id", "name", "filename", "size_bytes", "extension", "description", "is_public", "is_important", "viewable_tags", "notes", "created_at", "updated_at"},
-	}, staffDocumentRowsWithCircles(documents, circleNames)...))
+		{"id", "name", "filename", "size_bytes", "extension", "description", "is_public", "is_important", "viewable_tags", "notes", "created_at", "updated_at"},
+	}, staffDocumentRows(documents)...))
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
@@ -315,11 +339,10 @@ func mapStaffDocumentDetail(document backenddocument.Document, circleValue staff
 
 func bindStaffDocumentRequest(
 	c echo.Context,
-	fileRequired bool,
-	circleRequired bool,
+	fileRequired ...bool,
 ) (mutateStaffDocumentRequest, *multipart.FileHeader, map[string][]string, bool) {
+	required := len(fileRequired) > 0 && fileRequired[0]
 	request := mutateStaffDocumentRequest{
-		CircleID:    strings.TrimSpace(c.FormValue("circleId")),
 		Name:        strings.TrimSpace(c.FormValue("name")),
 		Description: strings.TrimSpace(c.FormValue("description")),
 		Notes:       strings.TrimSpace(c.FormValue("notes")),
@@ -351,9 +374,6 @@ func bindStaffDocumentRequest(
 	}
 
 	validationErrors := map[string][]string{}
-	if circleRequired && request.CircleID == "" {
-		validationErrors["circleId"] = []string{"企画を選択してください"}
-	}
 	if request.Name == "" {
 		validationErrors["name"] = []string{"配布資料名を入力してください"}
 	}
@@ -363,7 +383,7 @@ func bindStaffDocumentRequest(
 	switch {
 	case err == nil:
 		fileHeader = formFile
-	case fileRequired:
+	case required:
 		validationErrors["file"] = []string{"ファイルを選択してください"}
 	}
 
@@ -374,53 +394,30 @@ func bindStaffDocumentRequest(
 	return request, fileHeader, nil, true
 }
 
-func (h *staffDocumentHandlers) listManagedStaffDocuments() ([]circle.Circle, map[string]staffManagedCircleResponse, []backenddocument.Document, error) {
-	circles, circlesByID, err := listStaffManagedCircles(h.circles)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	documents := make([]backenddocument.Document, 0)
-	for _, currentCircle := range circles {
-		documents = append(documents, h.documents.ListByCircleForStaff(currentCircle.ID)...)
-	}
-
-	return circles, circlesByID, documents, nil
+func (h *staffDocumentHandlers) listManagedStaffDocuments() ([]backenddocument.Document, error) {
+	return h.documents.ListForStaff(), nil
 }
 
-func (h *staffDocumentHandlers) findManagedStaffDocument(documentID string) (backenddocument.Document, circle.Circle, error) {
-	circles, _, err := listStaffManagedCircles(h.circles)
-	if err != nil {
-		return backenddocument.Document{}, circle.Circle{}, err
-	}
-
-	for _, currentCircle := range circles {
-		if currentDocument, found := h.documents.FindByCircleForStaff(currentCircle.ID, documentID); found {
-			return currentDocument, currentCircle, nil
-		}
-	}
-
-	return backenddocument.Document{}, circle.Circle{}, nil
+func (h *staffDocumentHandlers) findManagedStaffDocument(documentID string) (backenddocument.Document, bool) {
+	return h.documents.FindForStaff(documentID)
 }
 
-func staffDocumentRowsWithCircles(documents []backenddocument.Document, circleNames map[string]string) [][]string {
+func staffDocumentRows(documents []backenddocument.Document) [][]string {
 	rows := make([][]string, 0, len(documents))
 	for _, currentDocument := range documents {
 		rows = append(rows, []string{
-			currentDocument.CircleID,
-			circleNames[currentDocument.CircleID],
 			currentDocument.ID,
 			currentDocument.Name,
+			currentDocument.Description,
+			currentDocument.Notes,
 			currentDocument.Filename,
-			fmt.Sprintf("%d", currentDocument.SizeBytes),
 			currentDocument.Extension,
-			singleLine(currentDocument.Description),
-			visibilityLabel(currentDocument.IsPublic),
-			boolString(currentDocument.IsImportant),
-			strings.Join(currentDocument.ViewableTags, ","),
-			singleLine(currentDocument.Notes),
+			currentDocument.MimeType,
+			strconv.FormatInt(currentDocument.SizeBytes, 10),
 			currentDocument.CreatedAt,
 			currentDocument.UpdatedAt,
+			visibilityLabel(currentDocument.IsPublic),
+			strings.Join(currentDocument.ViewableTags, ","),
 		})
 	}
 	return rows

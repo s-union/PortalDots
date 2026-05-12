@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -106,6 +107,10 @@ func (h *staffFormHandlers) listStaffForms(c echo.Context) error {
 	if !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffFormFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	_, circlesByID, forms, err := h.listManagedStaffForms()
 	if err != nil {
@@ -116,10 +121,57 @@ func (h *staffFormHandlers) listStaffForms(c echo.Context) error {
 		if h.isParticipationForm(currentForm.ID) {
 			continue
 		}
-		response = append(response, h.mapStaffFormSummary(currentForm, circlesByID[currentForm.CircleID]))
+		item := h.mapStaffFormSummary(currentForm, circlesByID[currentForm.CircleID])
+		if !matchesStaffFormSummarySearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffFormSummaryFilterResolver(item), filterQueries, filterMode) {
+			continue
+		}
+		response = append(response, item)
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+var staffFormFilterableFields = map[string]staffListFilterFieldType{
+	"id":          staffListFilterFieldTypeString,
+	"name":        staffListFilterFieldTypeString,
+	"description": staffListFilterFieldTypeString,
+	"isPublic":    staffListFilterFieldTypeBool,
+	"openAt":      staffListFilterFieldTypeString,
+	"closeAt":     staffListFilterFieldTypeString,
+	"createdAt":   staffListFilterFieldTypeString,
+	"updatedAt":   staffListFilterFieldTypeString,
+	"maxAnswers":  staffListFilterFieldTypeString,
+}
+
+func matchesStaffFormSummarySearch(item staffFormSummaryResponse, query string) bool {
+	return matchesStaffListSearch([]string{item.ID, item.Name, item.Description}, query)
+}
+
+func staffFormSummaryFilterResolver(item staffFormSummaryResponse) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		switch key {
+		case "id":
+			return item.ID, true
+		case "name":
+			return item.Name, true
+		case "description":
+			return item.Description, true
+		case "isPublic":
+			return boolString(item.IsPublic), true
+		case "openAt":
+			return item.OpenAt, true
+		case "closeAt":
+			return item.CloseAt, true
+		case "createdAt":
+			return item.CreatedAt, true
+		case "updatedAt":
+			return item.UpdatedAt, true
+		case "maxAnswers":
+			return fmt.Sprint(item.MaxAnswers), true
+		default:
+			return "", false
+		}
+	}
 }
 
 func (h *staffFormHandlers) getStaffForm(c echo.Context) error {

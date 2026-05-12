@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffTagSchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffTag {
@@ -12,12 +13,13 @@ export interface StaffTag {
   updatedAt: string
 }
 
-export async function fetchStaffTags() {
+export async function fetchStaffTags(params?: StaffListQueryParamsInput) {
   return $api.queryData(
     'get',
     '/staff/tags',
     {
-      headers: createJsonHeaders()
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
     },
     parseStaffTags,
     {
@@ -77,16 +79,17 @@ export async function deleteStaffTag(tagId: string, csrfToken: string) {
   )
 }
 
-export function useStaffTagsQuery(enabled: MaybeRefOrGetter<boolean>) {
+export function useStaffTagsQuery(enabled: MaybeRefOrGetter<boolean>, params?: StaffListQueryParamsInput) {
   return $api.useQueryData(
     'get',
     '/staff/tags',
-    {
-      headers: createJsonHeaders()
-    },
+    () => ({
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
+    }),
     parseStaffTags,
     {
-      queryKey: ['staff', 'tags'],
+      queryKey: computed(() => ['staff', 'tags', toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },

@@ -48,14 +48,58 @@ func (h *staffPageHandlers) listStaffPages(c echo.Context) error {
 	if !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffPageFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	pages := h.pages.ListForStaff(c.QueryParam("query"))
 	response := make([]staffPageSummaryResponse, 0, len(pages))
 	for _, currentPage := range pages {
-		response = append(response, mapStaffPageSummary(currentPage, h.pageDocuments(currentPage.DocumentIDs, true)))
+		item := mapStaffPageSummary(currentPage, h.pageDocuments(currentPage.DocumentIDs, true))
+		if !matchesStaffListFilters(staffPageSummaryFilterResolver(item), filterQueries, filterMode) {
+			continue
+		}
+		response = append(response, item)
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+var staffPageFilterableFields = map[string]staffListFilterFieldType{
+	"id":        staffListFilterFieldTypeString,
+	"title":     staffListFilterFieldTypeString,
+	"isPinned":  staffListFilterFieldTypeBool,
+	"isPublic":  staffListFilterFieldTypeBool,
+	"body":      staffListFilterFieldTypeString,
+	"notes":     staffListFilterFieldTypeString,
+	"createdAt": staffListFilterFieldTypeString,
+	"updatedAt": staffListFilterFieldTypeString,
+}
+
+func staffPageSummaryFilterResolver(item staffPageSummaryResponse) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		switch key {
+		case "id":
+			return item.ID, true
+		case "title":
+			return item.Title, true
+		case "isPinned":
+			return boolString(item.IsPinned), true
+		case "isPublic":
+			return boolString(item.IsPublic), true
+		case "body":
+			return item.Body, true
+		case "notes":
+			return item.Notes, true
+		case "createdAt":
+			return item.CreatedAt, true
+		case "updatedAt":
+			return item.UpdatedAt, true
+		default:
+			return "", false
+		}
+	}
 }
 
 func (h *staffPageHandlers) getStaffPage(c echo.Context) error {

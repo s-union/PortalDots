@@ -298,6 +298,8 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 			validationErrors["nameYomi"] = []string{"名前(よみ)を入力してください"}
 		} else if !yomiOK {
 			validationErrors["nameYomi"] = []string{"名前(よみ)は姓と名の両方を入力してください"}
+		} else if !isValidYomi(lastNameReading) || !isValidYomi(firstNameReading) {
+			validationErrors["nameYomi"] = []string{"ひらがなで入力してください"}
 		}
 		if request.ContactEmail == "" || !isValidEmail(request.ContactEmail) {
 			validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}

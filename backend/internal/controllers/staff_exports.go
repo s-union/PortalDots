@@ -10,7 +10,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
-	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
@@ -76,19 +75,19 @@ func (h *staffAdminHandlers) buildStaffSummaryCSV() ([]byte, error) {
 			currentPage.UpdatedAt,
 		})
 	}
+	for _, currentDocument := range h.documents.ListForStaff() {
+		rows = append(rows, []string{
+			"document",
+			"",
+			"",
+			currentDocument.ID,
+			currentDocument.Name,
+			visibilityLabel(currentDocument.IsPublic),
+			currentDocument.Filename,
+			currentDocument.MimeType,
+		})
+	}
 	for _, currentCircle := range circles {
-		for _, currentDocument := range h.documents.ListByCircleForStaff(currentCircle.ID) {
-			rows = append(rows, []string{
-				"document",
-				currentCircle.ID,
-				currentCircle.Name,
-				currentDocument.ID,
-				currentDocument.Name,
-				visibilityLabel(currentDocument.IsPublic),
-				currentDocument.Filename,
-				currentDocument.MimeType,
-			})
-		}
 		for _, currentForm := range h.forms.ListByCircleForStaff(currentCircle.ID) {
 			rows = append(rows, []string{
 				"form",
@@ -125,12 +124,11 @@ func (h *staffAdminHandlers) buildStaffBundleZIP() ([]byte, error) {
 	}
 	circleNames := make(map[string]string, len(circles))
 	pages := h.pages.ListForStaff("")
-	documents := make([]document.Document, 0)
+	documents := h.documents.ListForStaff()
 	forms := make([]form.Form, 0)
 	answers := make([]answer.Answer, 0)
 	for _, currentCircle := range circles {
 		circleNames[currentCircle.ID] = currentCircle.Name
-		documents = append(documents, h.documents.ListByCircleForStaff(currentCircle.ID)...)
 		forms = append(forms, h.forms.ListByCircleForStaff(currentCircle.ID)...)
 		answers = append(answers, h.answers.ListByCircle(currentCircle.ID)...)
 	}
@@ -146,7 +144,7 @@ func (h *staffAdminHandlers) buildStaffBundleZIP() ([]byte, error) {
 	}
 	documentsCSV, err := writeCSV(append([][]string{
 		{"circle_id", "circle_name", "id", "name", "filename", "size_bytes", "extension", "description", "visibility", "is_important", "notes", "created_at", "updated_at"},
-	}, staffDocumentRowsWithCircles(documents, circleNames)...))
+	}, staffDocumentRows(documents)...))
 	if err != nil {
 		return nil, err
 	}

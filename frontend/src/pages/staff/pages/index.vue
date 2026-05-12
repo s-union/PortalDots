@@ -5,7 +5,7 @@ definePage({
   meta: staffPageMeta('pages.read')
 })
 
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import CsvExportLink from '@/components/ui/CsvExportLink.vue'
@@ -29,6 +29,7 @@ import {
 } from '@/features/staff/pages/api'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
+import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
 import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -38,7 +39,15 @@ const router = useRouter()
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const pagesQuery = useStaffPagesQuery('', enabled)
+const searchQuery = ref('')
+const appliedFilterMode = ref<StaffFilterMode>('and')
+const appliedFilterQueries = ref<StaffFilterQuery[]>([])
+const staffListParams = computed(() => ({
+  query: searchQuery.value,
+  queries: appliedFilterQueries.value,
+  mode: appliedFilterMode.value
+}))
+const pagesQuery = useStaffPagesQuery(staffListParams, enabled)
 const patchPinMutation = usePatchStaffPagePinByIdMutation()
 const deletePageMutation = useDeleteStaffPageByIdMutation()
 const exportHref = computed(() => buildStaffPagesExportUrl())
@@ -147,7 +156,6 @@ const {
   filterActive,
   sort,
   pagination,
-  searchQuery,
   isFilterOpen,
   draftFilterMode,
   draftFilterQueries,
@@ -166,6 +174,10 @@ const {
   sortKeys,
   defaultSortKey: 'id',
   filterFields,
+  searchQuery,
+  appliedFilterMode,
+  appliedFilterQueries,
+  serverSideFiltering: true,
   resolveSortValue,
   matchesSearch,
   matchesFilterQuery,

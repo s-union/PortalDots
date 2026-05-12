@@ -351,7 +351,6 @@ func seedDocuments(ctx context.Context, q *dbgen.Queries, documents []config.Doc
 
 		if err := q.SeedUpsertDocument(ctx, dbgen.SeedUpsertDocumentParams{
 			ID:           item.ID,
-			CircleID:     item.CircleID,
 			Name:         item.Name,
 			Description:  item.Description,
 			Notes:        item.Notes,

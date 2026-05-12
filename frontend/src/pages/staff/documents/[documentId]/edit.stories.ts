@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffDocumentEditPage from './edit.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 
@@ -22,7 +22,7 @@ const meta = {
             { id: 'tag-2', name: 'タグB', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
           ])
         ),
-        http.get('/v1/staff/documents/:documentID/edit', () =>
+        http.get('/v1/staff/documents/{documentID}/edit', () =>
           HttpResponse.json({
             circle: { id: 'circle-1', name: 'テストサークル' },
             id: 'doc-1',
@@ -41,7 +41,7 @@ const meta = {
             downloadUrl: '/v1/documents/doc-1/download'
           })
         ),
-        http.put('/v1/staff/documents/:documentID', () =>
+        http.put('/v1/staff/documents/{documentID}', () =>
           HttpResponse.json({
             circle: { id: 'circle-1', name: 'テストサークル' },
             id: 'doc-1',
@@ -60,7 +60,7 @@ const meta = {
             downloadUrl: '/v1/documents/doc-1/download'
           })
         ),
-        http.delete('/v1/staff/documents/:documentID', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/documents/{documentID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

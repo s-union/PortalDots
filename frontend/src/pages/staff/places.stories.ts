@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffPlacesPage from './places.vue'
 import { mockSessionBootstrapStaff, mockPlace } from '@/mocks/data'
 
@@ -21,8 +21,8 @@ const meta = {
           })
         ),
         http.post('/v1/staff/places', () => HttpResponse.json(mockPlace)),
-        http.put('/v1/staff/places/:placeId', () => HttpResponse.json(mockPlace)),
-        http.delete('/v1/staff/places/:placeId', () => new HttpResponse(null, { status: 204 }))
+        http.put('/v1/staff/places/{placeID}', () => HttpResponse.json(mockPlace)),
+        http.delete('/v1/staff/places/{placeID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

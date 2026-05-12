@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import NewCirclePage from './new.vue'
 import { mockSessionBootstrap, mockParticipationType } from '@/mocks/data'
 
@@ -26,7 +26,7 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(canCreateSession)),
         http.get('/v1/participation-types', () => HttpResponse.json([mockParticipationType])),
-        http.get('/v1/participation-types/:typeID/registration-form', () =>
+        http.get('/v1/participation-types/{typeID}/registration-form', () =>
           HttpResponse.json(mockParticipationType.form)
         ),
         http.post('/v1/circles', () => HttpResponse.json({ id: 'circle-new', name: 'テスト企画' }))

@@ -14,6 +14,10 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 	if !ok {
 		return statusError(c, status)
 	}
+	filterQueries, filterMode, err := parseStaffListFilters(c.QueryParam("queries"), c.QueryParam("mode"), staffFormAnswerFilterableFields)
+	if err != nil {
+		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
+	}
 
 	circles, err := h.circles.ListForStaff()
 	if err != nil {
@@ -29,7 +33,11 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 	answerResponse := make([]staffManagedFormAnswerSummaryResponse, 0, len(answerValues))
 	for _, currentAnswer := range answerValues {
 		answerCircles[currentAnswer.CircleID] = struct{}{}
-		answerResponse = append(answerResponse, mapStaffManagedFormAnswerSummary(currentAnswer, circleMap[currentAnswer.CircleID], h.answers.ListUploadsByAnswer(currentAnswer.ID)))
+		item := mapStaffManagedFormAnswerSummary(currentAnswer, circleMap[currentAnswer.CircleID], h.answers.ListUploadsByAnswer(currentAnswer.ID))
+		if !matchesStaffFormAnswerSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffFormAnswerFilterResolver(item), filterQueries, filterMode) {
+			continue
+		}
+		answerResponse = append(answerResponse, item)
 	}
 
 	notAnswered := make([]staffAnswerCircleResponse, 0, len(circles))
@@ -48,6 +56,35 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 		Circles:            allCircles,
 		NotAnsweredCircles: notAnswered,
 	})
+}
+
+var staffFormAnswerFilterableFields = map[string]staffListFilterFieldType{
+	"circle":    staffListFilterFieldTypeString,
+	"createdAt": staffListFilterFieldTypeString,
+	"updatedAt": staffListFilterFieldTypeString,
+}
+
+func matchesStaffFormAnswerSearch(item staffManagedFormAnswerSummaryResponse, query string) bool {
+	return matchesStaffListSearch([]string{
+		item.Circle.Name,
+		item.Circle.GroupName,
+		item.Circle.ParticipationTypeName,
+	}, query)
+}
+
+func staffFormAnswerFilterResolver(item staffManagedFormAnswerSummaryResponse) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		switch key {
+		case "circle":
+			return item.Circle.Name, true
+		case "createdAt":
+			return item.CreatedAt, true
+		case "updatedAt":
+			return item.UpdatedAt, true
+		default:
+			return "", false
+		}
+	}
 }
 
 func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {

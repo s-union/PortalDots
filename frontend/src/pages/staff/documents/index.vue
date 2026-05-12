@@ -33,6 +33,7 @@ import {
 } from '@/features/staff/documents/api'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
+import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
 import { compareString } from '@/lib/compareString'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import YesNo from '@/components/ui/YesNo.vue'
@@ -42,7 +43,15 @@ const sessionStore = useSessionStore()
 const publicConfigQuery = usePublicConfigQuery()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
-const documentsQuery = useStaffDocumentsQuery(enabled)
+const searchQuery = ref('')
+const appliedFilterMode = ref<StaffFilterMode>('and')
+const appliedFilterQueries = ref<StaffFilterQuery[]>([])
+const staffListParams = computed(() => ({
+  query: searchQuery.value,
+  queries: appliedFilterQueries.value,
+  mode: appliedFilterMode.value
+}))
+const documentsQuery = useStaffDocumentsQuery(enabled, staffListParams)
 const exportHref = computed(() => buildStaffDocumentsExportUrl())
 const isDemoMode = computed(() => publicConfigQuery.data.value?.isDemo === true)
 const deletingDocumentId = ref('')
@@ -171,7 +180,6 @@ const {
   filterActive,
   sort,
   pagination,
-  searchQuery,
   isFilterOpen,
   draftFilterMode,
   draftFilterQueries,
@@ -190,6 +198,10 @@ const {
   sortKeys,
   defaultSortKey: 'documentNumber',
   filterFields,
+  searchQuery,
+  appliedFilterMode,
+  appliedFilterQueries,
+  serverSideFiltering: true,
   resolveSortValue,
   matchesSearch,
   matchesFilterQuery,

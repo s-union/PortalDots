@@ -4,6 +4,11 @@ import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffPageDetailSchema, staffPageSummarySchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { parseTagString, formatTags } from '@/lib/tags'
+import {
+  buildStaffListRequestParams,
+  type StaffListQueryParams,
+  type StaffListQueryParamsInput
+} from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffPageSummary {
@@ -44,17 +49,22 @@ export interface StaffPageDocument {
   downloadUrl: string
 }
 
-export async function fetchStaffPages(query = '') {
-  const normalizedQuery = query.trim()
+type StaffPagesQueryInput = string | StaffListQueryParams | undefined
 
+function normalizeStaffPagesQueryInput(input: StaffPagesQueryInput): StaffListQueryParams | undefined {
+  if (typeof input === 'string') {
+    return { query: input }
+  }
+  return input
+}
+
+export async function fetchStaffPages(query?: StaffPagesQueryInput) {
   return $api.queryData(
     'get',
     '/staff/pages',
     {
       headers: createJsonHeaders(),
-      params: {
-        query: normalizedQuery === '' ? {} : { query: normalizedQuery }
-      }
+      ...buildStaffListRequestParams(normalizeStaffPagesQueryInput(query))
     },
     parseStaffPages,
     {
@@ -163,20 +173,14 @@ export async function deleteStaffPage(pageId: string, csrfToken: string) {
   )
 }
 
-export function useStaffPagesQuery(query: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
+export function useStaffPagesQuery(query: StaffListQueryParamsInput, enabled: MaybeRefOrGetter<boolean>) {
   return $api.useQueryData(
     'get',
     '/staff/pages',
-    () => {
-      const normalizedQuery = toValue(query).trim()
-
-      return {
-        headers: createJsonHeaders(),
-        params: {
-          query: normalizedQuery === '' ? {} : { query: normalizedQuery }
-        }
-      }
-    },
+    () => ({
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(query)
+    }),
     parseStaffPages,
     {
       queryKey: computed(() => ['staff', 'pages', toValue(query)]),

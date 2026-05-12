@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import PrivacyPolicyPage from './privacy_policy.vue'
 import { mockPublicConfig } from '@/mocks/data'
 

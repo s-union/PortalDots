@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffParticipationTypeCirclesPage from './index.vue'
 import { mockSessionBootstrapStaff, mockParticipationType, mockStaffCircle } from '@/mocks/data'
 
@@ -16,8 +16,8 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/participation-types/:typeId', () => HttpResponse.json(mockParticipationType)),
-        http.get('/v1/staff/participation-types/:typeId/circles', ({ request }) => {
+        http.get('/v1/staff/participation-types/{typeID}', () => HttpResponse.json(mockParticipationType)),
+        http.get('/v1/staff/participation-types/{typeID}/circles', ({ request }) => {
           const url = new URL(request.url)
           return HttpResponse.json({
             items: [mockStaffCircle],
@@ -26,7 +26,7 @@ const meta = {
             total: 1
           })
         }),
-        http.delete('/v1/staff/circles/:circleId', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/circles/{circleID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }
@@ -43,8 +43,8 @@ export const Empty: Story = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/participation-types/:typeId', () => HttpResponse.json(mockParticipationType)),
-        http.get('/v1/staff/participation-types/:typeId/circles', ({ request }) => {
+        http.get('/v1/staff/participation-types/{typeID}', () => HttpResponse.json(mockParticipationType)),
+        http.get('/v1/staff/participation-types/{typeID}/circles', ({ request }) => {
           const url = new URL(request.url)
           return HttpResponse.json({
             items: [],
@@ -53,7 +53,7 @@ export const Empty: Story = {
             total: 0
           })
         }),
-        http.delete('/v1/staff/circles/:circleId', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/circles/{circleID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

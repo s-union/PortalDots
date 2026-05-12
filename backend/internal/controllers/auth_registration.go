@@ -17,18 +17,6 @@ import (
 
 const participantVerifyTTL = 5 * time.Minute
 
-type registerRequest struct {
-	StudentID            string `json:"studentId"`
-	UnivemailLocalPart   string `json:"univemailLocalPart"`
-	UnivemailDomainPart  string `json:"univemailDomainPart"`
-	Name                 string `json:"name"`
-	NameYomi             string `json:"nameYomi"`
-	ContactEmail         string `json:"contactEmail"`
-	PhoneNumber          string `json:"phoneNumber"`
-	Password             string `json:"password"`
-	PasswordConfirmation string `json:"passwordConfirmation"`
-}
-
 type authVerificationStatusResponse struct {
 	UserID      string                       `json:"userId"`
 	DisplayName string                       `json:"displayName"`
@@ -82,130 +70,6 @@ type completeRegistrationRequest struct {
 	PhoneNumber           string `json:"phoneNumber"`
 	Password              string `json:"password"`
 	PasswordConfirmation  string `json:"passwordConfirmation"`
-}
-
-func (h *authHandlers) register(c echo.Context) error {
-	var request registerRequest
-	if err := c.Bind(&request); err != nil {
-		return errorJSON(c, http.StatusBadRequest, "invalid_request")
-	}
-
-	request.StudentID = strings.TrimSpace(request.StudentID)
-	request.UnivemailLocalPart = strings.TrimSpace(request.UnivemailLocalPart)
-	request.UnivemailDomainPart = strings.TrimSpace(request.UnivemailDomainPart)
-	request.Name = strings.TrimSpace(request.Name)
-	request.NameYomi = strings.TrimSpace(request.NameYomi)
-	request.ContactEmail = strings.TrimSpace(strings.ToLower(request.ContactEmail))
-	request.PhoneNumber = strings.TrimSpace(request.PhoneNumber)
-
-	lastName, firstName, normalizedName, ok := splitFullName(request.Name)
-	if !ok {
-		lastName = ""
-		firstName = ""
-	}
-	lastNameReading, firstNameReading, _, yomiOK := splitFullName(request.NameYomi)
-	univemail := strings.ToLower(strings.TrimSpace(request.UnivemailLocalPart + "@" + request.UnivemailDomainPart))
-
-	validationErrors := map[string][]string{}
-	if request.StudentID == "" {
-		validationErrors["studentId"] = []string{"学籍番号を入力してください"}
-	}
-	if request.UnivemailLocalPart == "" {
-		validationErrors["univemailLocalPart"] = []string{"大学メールアドレスを入力してください"}
-	}
-	if request.UnivemailDomainPart == "" {
-		validationErrors["univemailDomainPart"] = []string{"大学メールアドレスを入力してください"}
-	} else if request.UnivemailDomainPart != h.portalUnivemailDomainPart {
-		validationErrors["univemailDomainPart"] = []string{"大学メールアドレスのドメインが正しくありません"}
-	}
-	if !strings.Contains(univemail, "@") {
-		validationErrors["univemailLocalPart"] = []string{"大学メールアドレスを入力してください"}
-	}
-	if !ok {
-		validationErrors["name"] = []string{"姓と名の間にはスペースを入れてください"}
-	}
-	if !yomiOK {
-		validationErrors["nameYomi"] = []string{"姓と名の間にはスペースを入れてください"}
-	}
-	if request.ContactEmail == "" || !isValidEmail(request.ContactEmail) {
-		validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}
-	}
-	if request.PhoneNumber == "" {
-		validationErrors["phoneNumber"] = []string{"連絡先電話番号を入力してください"}
-	} else if !isValidPhoneNumber(request.PhoneNumber) {
-		validationErrors["phoneNumber"] = []string{"電話番号の形式が正しくありません（例: 090-1234-5678）"}
-	}
-	if len(request.Password) < 8 {
-		validationErrors["password"] = []string{"パスワードは8文字以上で入力してください"}
-	} else if !passwordHasLetterAndDigit(request.Password) {
-		validationErrors["password"] = []string{"パスワードには英字と数字の両方を含めてください"}
-	}
-	if request.Password != request.PasswordConfirmation {
-		validationErrors["passwordConfirmation"] = []string{"確認用パスワードが一致しません"}
-	}
-	if _, err := h.users.FindByLoginID(request.StudentID); err == nil {
-		validationErrors["studentId"] = []string{"入力された学籍番号はすでに登録されています"}
-	}
-	if _, err := h.users.FindByLoginID(univemail); err == nil {
-		validationErrors["univemailLocalPart"] = []string{"入力された大学メールアドレスはすでに登録されています"}
-	}
-	if _, err := h.users.FindByContactEmail(request.ContactEmail); err == nil {
-		validationErrors["contactEmail"] = []string{"入力されたメールアドレスはすでに登録されています"}
-	}
-	if len(validationErrors) > 0 {
-		return validationError(c, validationErrors)
-	}
-
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "failed_to_hash_password")
-	}
-
-	createdUser, err := h.users.Create(useradmin.CreateParams{
-		LastName:            lastName,
-		LastNameReading:     lastNameReading,
-		FirstName:           firstName,
-		FirstNameReading:    firstNameReading,
-		DisplayName:         normalizedName,
-		LoginIDs:            []string{request.StudentID, univemail},
-		ContactEmail:        request.ContactEmail,
-		PhoneNumber:         request.PhoneNumber,
-		PasswordHash:        string(passwordHash),
-		Roles:               []string{"participant"},
-		Permissions:         []string{},
-		IsVerified:          false,
-		IsEmailVerified:     false,
-		IsUnivemailVerified: false,
-	})
-	if errors.Is(err, useradmin.ErrConflict) {
-		return validationError(c, map[string][]string{
-			"studentId": {"入力内容がすでに登録されています"},
-		})
-	}
-	if err != nil {
-		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_user")
-	}
-
-	if h.registrationAuth != nil {
-		if err := h.registrationAuth.RegisterUser(auth.RegisterParams{
-			ID:           createdUser.ID,
-			DisplayName:  createdUser.DisplayName,
-			LoginIDs:     createdUser.LoginIDs,
-			ContactEmail: createdUser.ContactEmail,
-			Password:     request.Password,
-			Roles:        createdUser.Roles,
-			Permissions:  createdUser.Permissions,
-		}); err != nil {
-			return errorJSON(c, http.StatusInternalServerError, "failed_to_register_auth_user")
-		}
-	}
-
-	_, err = h.issueRegisteredUserSession(c, createdUser)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *authHandlers) startRegistration(c echo.Context) error {
@@ -337,6 +201,8 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	}
 	if !yomiOK {
 		validationErrors["nameYomi"] = []string{"姓と名の間にはスペースを入れてください"}
+	} else if !isValidYomi(lastNameReading) || !isValidYomi(firstNameReading) {
+		validationErrors["nameYomi"] = []string{"ひらがなで入力してください"}
 	}
 	if request.ContactEmail != "" && !isValidEmail(request.ContactEmail) {
 		validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}

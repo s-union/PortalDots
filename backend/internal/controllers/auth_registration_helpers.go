@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/mail"
 	"net/url"
 	"regexp"
 	"strings"
@@ -26,11 +27,20 @@ func isValidPhoneNumber(s string) bool {
 	return len(s) > 0 && validPhoneNumberRegexp.MatchString(s)
 }
 
-// isValidEmail returns true for the minimal check used across all handlers:
-// exactly one "@", at least one character before it, and a "." somewhere after it.
+var validYomiRegexp = regexp.MustCompile(`^[ぁ-んァ-ヶー]+$`)
+
+// isValidYomi returns true when s contains only hiragana, katakana, and chōonpu.
+func isValidYomi(s string) bool {
+	return len(s) > 0 && validYomiRegexp.MatchString(s)
+}
+
+// isValidEmail returns true when s is a syntactically valid email address.
 func isValidEmail(s string) bool {
-	parts := strings.SplitN(s, "@", 2)
-	return len(parts) == 2 && len(parts[0]) > 0 && strings.Contains(parts[1], ".")
+	addr, err := mail.ParseAddress(s)
+	if err != nil {
+		return false
+	}
+	return addr.Address == s
 }
 
 // passwordHasLetterAndDigit returns true when s contains at least one ASCII letter

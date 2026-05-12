@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffPermissionsUserPage from './[userId].vue'
 import { mockSessionBootstrapStaff, mockStaffUser2 } from '@/mocks/data'
 
@@ -16,7 +16,7 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/permissions/:userID', () =>
+        http.get('/v1/staff/permissions/{userID}', () =>
           HttpResponse.json({
             user: {
               ...mockStaffUser2,
@@ -50,7 +50,7 @@ const meta = {
             assignedPermissionNames: ['circles.read']
           })
         ),
-        http.put('/v1/staff/permissions/:userID', () =>
+        http.put('/v1/staff/permissions/{userID}', () =>
           HttpResponse.json({
             user: {
               ...mockStaffUser2,

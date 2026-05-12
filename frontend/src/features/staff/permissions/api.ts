@@ -4,6 +4,7 @@ import { createJsonHeaders, $api } from '@/lib/api/client'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
 import { parseWithSchema, staffPermissionDetailSchema, staffPermissionUserSummarySchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffPermissionDefinition {
@@ -32,6 +33,7 @@ export interface StaffPermissionDetail {
 interface StaffPermissionsPagination {
   page: number
   pageSize: number
+  query?: string
 }
 
 interface UpdateStaffPermissionsPayload {
@@ -39,7 +41,10 @@ interface UpdateStaffPermissionsPayload {
   permissions: string[]
 }
 
-export async function fetchStaffPermissions(pagination: StaffPermissionsPagination) {
+export async function fetchStaffPermissions(
+  pagination: StaffPermissionsPagination,
+  params?: StaffListQueryParamsInput
+) {
   return $api.queryData(
     'get',
     '/staff/permissions',
@@ -48,7 +53,8 @@ export async function fetchStaffPermissions(pagination: StaffPermissionsPaginati
       params: {
         query: {
           page: pagination.page,
-          pageSize: pagination.pageSize
+          pageSize: pagination.pageSize,
+          ...resolveStaffListQueryParams({ ...toValue(params), query: pagination.query ?? toValue(params)?.query })
         }
       }
     },
@@ -105,7 +111,8 @@ export async function updateStaffPermissions(payload: UpdateStaffPermissionsPayl
 
 export function useStaffPermissionsQuery(
   enabled: MaybeRefOrGetter<boolean>,
-  pagination: MaybeRefOrGetter<StaffPermissionsPagination>
+  pagination: MaybeRefOrGetter<StaffPermissionsPagination>,
+  params?: StaffListQueryParamsInput
 ) {
   return $api.useQueryData(
     'get',
@@ -115,13 +122,17 @@ export function useStaffPermissionsQuery(
       params: {
         query: {
           page: toValue(pagination).page,
-          pageSize: toValue(pagination).pageSize
+          pageSize: toValue(pagination).pageSize,
+          ...resolveStaffListQueryParams({
+            ...toValue(params),
+            query: toValue(pagination).query ?? toValue(params)?.query
+          })
         }
       }
     }),
     (value) => parsePaginatedResult(value, parseStaffPermissionUserSummary, 'staff permissions'),
     {
-      queryKey: computed(() => ['staff', 'permissions', toValue(pagination)]),
+      queryKey: computed(() => ['staff', 'permissions', toValue(pagination), toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },

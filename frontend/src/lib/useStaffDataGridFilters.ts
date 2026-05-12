@@ -15,6 +15,10 @@ export interface UseStaffDataGridFiltersOptions<TRow, TSortKey extends string> {
   sortKeys: readonly TSortKey[]
   defaultSortKey: TSortKey
   filterFields: StaffFilterField[]
+  searchQuery?: Ref<string>
+  appliedFilterMode?: Ref<StaffFilterMode>
+  appliedFilterQueries?: Ref<StaffFilterQuery[]>
+  serverSideFiltering?: boolean
   resolveSortValue: (row: TRow, key: TSortKey) => string
   matchesSearch: (row: TRow, normalizedSearch: string) => boolean
   matchesFilterQuery: (row: TRow, query: StaffFilterQuery) => boolean
@@ -29,6 +33,7 @@ export function useStaffDataGridFilters<TRow, TSortKey extends string>(
     sortKeys,
     defaultSortKey,
     filterFields,
+    serverSideFiltering = false,
     resolveSortValue,
     matchesSearch,
     matchesFilterQuery,
@@ -38,17 +43,21 @@ export function useStaffDataGridFilters<TRow, TSortKey extends string>(
   const isSortKey = createSortKeyGuard(sortKeys)
 
   // Filter state
-  const searchQuery = ref('')
+  const searchQuery = options.searchQuery ?? ref('')
   const isFilterOpen = ref(false)
   const nextFilterId = ref(1)
-  const appliedFilterMode = ref<StaffFilterMode>('and')
-  const appliedFilterQueries = ref<StaffFilterQuery[]>([])
+  const appliedFilterMode = options.appliedFilterMode ?? ref<StaffFilterMode>('and')
+  const appliedFilterQueries = options.appliedFilterQueries ?? ref<StaffFilterQuery[]>([])
   const draftFilterMode = ref<StaffFilterMode>('and')
   const draftFilterQueries = ref<StaffFilterQuery[]>([])
   const defaultFilterOperator: StaffFilterOperator = 'like'
 
   // Filtered rows
   const filteredRows = computed<TRow[]>(() => {
+    if (serverSideFiltering) {
+      return rows.value
+    }
+
     const normalizedSearch = searchQuery.value.trim().toLowerCase()
     const queries = appliedFilterQueries.value
     const mode = appliedFilterMode.value
@@ -202,6 +211,8 @@ export function useStaffDataGridFilters<TRow, TSortKey extends string>(
     // Filter state
     searchQuery,
     isFilterOpen,
+    appliedFilterMode,
+    appliedFilterQueries,
     draftFilterMode,
     draftFilterQueries,
     filterFields,

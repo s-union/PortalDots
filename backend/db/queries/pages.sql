@@ -7,6 +7,24 @@ WHERE is_public = true
   AND ($1 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($1) || '%')
 ORDER BY updated_at DESC, id DESC;
 
+-- name: CountGuestPages :one
+SELECT count(*)
+FROM pages
+WHERE is_public = true
+  AND is_pinned = false
+  AND cardinality(viewable_tags) = 0
+  AND ($1 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($1) || '%');
+
+-- name: ListGuestPagesPaginated :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
+FROM pages
+WHERE is_public = true
+  AND is_pinned = false
+  AND cardinality(viewable_tags) = 0
+  AND ($1 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($1) || '%')
+ORDER BY updated_at DESC, id DESC
+LIMIT $2 OFFSET $3;
+
 -- name: ListPagesForCircle :many
 SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
 FROM pages
@@ -15,6 +33,24 @@ WHERE is_public = true
   AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
   AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%')
 ORDER BY updated_at DESC, id DESC;
+
+-- name: CountPagesForCircle :one
+SELECT count(*)
+FROM pages
+WHERE is_public = true
+  AND is_pinned = false
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
+  AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%');
+
+-- name: ListPagesForCirclePaginated :many
+SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at
+FROM pages
+WHERE is_public = true
+  AND is_pinned = false
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
+  AND ($2 = '' OR lower(title || E'\n' || body) LIKE '%' || lower($2) || '%')
+ORDER BY updated_at DESC, id DESC
+LIMIT $3 OFFSET $4;
 
 -- name: ListStaffPages :many
 SELECT id, title, body, notes, is_pinned, is_public, viewable_tags, document_ids, created_at, updated_at

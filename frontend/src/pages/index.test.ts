@@ -160,7 +160,7 @@ describe('HomePage', () => {
   }
 
   function makeFormsData() {
-    return [
+    const items = [
       {
         id: 'form-open',
         name: '展示レイアウト申請',
@@ -173,21 +173,23 @@ describe('HomePage', () => {
         isPublic: true,
         isOpen: true,
         hasAnswer: false
-      },
-      {
-        id: 'form-closed',
-        name: '備品申請',
-        description: '備品を申請してください。',
-        openAt: '2026-02-01T00:00:00Z',
-        closeAt: '2026-02-20T23:59:59Z',
-        maxAnswers: 1,
-        answerableTags: [],
-        confirmationMessage: '',
-        isPublic: true,
-        isOpen: false,
-        hasAnswer: false
       }
     ]
+    return {
+      items,
+      page: 1,
+      pageSize: 20,
+      total: items.length
+    }
+  }
+
+  function emptyFormsPage() {
+    return {
+      items: [],
+      page: 1,
+      pageSize: 20,
+      total: 0
+    }
   }
 
   function makeSelectableCircles() {
@@ -260,7 +262,7 @@ describe('HomePage', () => {
       data: ref({ isDemo: true, appName: 'PortalDots' })
     })
     formsApiMocks.useFormsQuery.mockReturnValue({
-      data: ref([]),
+      data: ref(emptyFormsPage()),
       isPending: ref(false)
     })
     circlesApiMocks.useSelectableCirclesQuery.mockReturnValue({
@@ -291,7 +293,6 @@ describe('HomePage', () => {
       expect(wrapper.text()).toContain('PortalDots デモサイトへようこそ！')
       expect(wrapper.text()).toContain('ログイン方法')
       expect(wrapper.text()).toContain('demo-circle')
-      expect(wrapper.text()).toContain('support@portaldots.com')
       expect(wrapper.text()).toContain('配布資料PDFのサンプルです。')
       expect(wrapper.text()).toContain('企画参加登録')
       expect(wrapper.get('a[href="/login"]').text()).toContain('ログイン')
@@ -325,7 +326,7 @@ describe('HomePage', () => {
       data: ref({ isDemo: false, appName: 'PortalDots' })
     })
     formsApiMocks.useFormsQuery.mockReturnValue({
-      data: ref([]),
+      data: ref(emptyFormsPage()),
       isPending: ref(false)
     })
     circlesApiMocks.useSelectableCirclesQuery.mockReturnValue({

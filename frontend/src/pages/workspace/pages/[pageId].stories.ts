@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import PageDetailPage from './[pageId].vue'
 import { mockSessionBootstrap, mockPageDetail } from '@/mocks/data'
 
@@ -20,7 +20,7 @@ const meta = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/pages/:pageID', () => HttpResponse.json(mockPageDetail))
+        http.get('/v1/pages/{pageID}', () => HttpResponse.json(mockPageDetail))
       ]
     }
   }
@@ -41,7 +41,7 @@ export const WithDocuments: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/pages/:pageID', () =>
+        http.get('/v1/pages/{pageID}', () =>
           HttpResponse.json({
             ...mockPageDetail,
             documents: [
@@ -73,7 +73,7 @@ export const Error: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/pages/:pageID', () => new HttpResponse(null, { status: 404 }))
+        http.get('/v1/pages/{pageID}', () => new HttpResponse(null, { status: 404 }))
       ]
     }
   }

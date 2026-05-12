@@ -26,8 +26,9 @@ describe('StaffCirclesAllPage', () => {
     let deleteWasCalled = false
 
     server.use(
-      http.get('/v1/staff/circles/all', () =>
-        HttpResponse.json([
+      http.get('/v1/staff/circles/all', ({ request }) => {
+        const query = new URL(request.url).searchParams.get('query')?.trim() ?? ''
+        const items = [
           {
             id: '0195ec00-0021-7000-8000-000000000001',
             name: '屋台企画A',
@@ -62,8 +63,12 @@ describe('StaffCirclesAllPage', () => {
             statusSetById: null,
             places: ['第二会場']
           }
-        ])
-      ),
+        ]
+        if (query === '') {
+          return HttpResponse.json(items)
+        }
+        return HttpResponse.json(items.filter((item) => `${item.name} ${item.groupName}`.includes(query)))
+      }),
       http.get('/v1/staff/participation-types', () =>
         HttpResponse.json([
           {

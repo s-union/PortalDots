@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
+	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 type formSummaryResponse struct {
@@ -47,16 +49,24 @@ func (h *workspaceHandlers) listForms(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	forms, err := h.listAccessibleWorkspaceForms(currentCircle)
+	forms, err := h.listAccessibleWorkspaceForms(currentCircle, c.QueryParam("status"), c.QueryParam("query"))
 	if err != nil {
 		return internalError(c)
 	}
+	pagination := readPagination(c)
+	paginated := paginateItems(forms, pagination)
+
 	response := make([]formSummaryResponse, 0, len(forms))
-	for _, form := range forms {
+	for _, form := range paginated.Items {
 		response = append(response, h.buildWorkspaceFormSummaryResponse(form, currentSession.CurrentCircleID))
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, models.PaginatedResponse[formSummaryResponse]{
+		Items:    response,
+		Page:     paginated.Page,
+		PageSize: paginated.PageSize,
+		Total:    paginated.Total,
+	})
 }
 
 func (h *workspaceHandlers) getForm(c echo.Context) error {
@@ -103,16 +113,17 @@ func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (se
 	return currentSession, currentCircle, http.StatusOK, true
 }
 
-func (h *workspaceHandlers) listAccessibleWorkspaceForms(currentCircle circle.Circle) ([]backendform.Form, error) {
+func (h *workspaceHandlers) listAccessibleWorkspaceForms(currentCircle circle.Circle, status string, query string) ([]backendform.Form, error) {
 	formsByID := make(map[string]backendform.Form)
+	normalizedQuery := normalizeWorkspaceFormQuery(query)
 	for _, formValue := range h.forms.ListByCircleForStaff(currentCircle.ID) {
-		if !h.canAccessWorkspaceForm(currentCircle, formValue) {
+		if !h.canAccessWorkspaceForm(currentCircle, formValue) || !matchesWorkspaceFormStatus(formValue, status) || !matchesWorkspaceFormQuery(formValue, normalizedQuery) {
 			continue
 		}
 		formsByID[formValue.ID] = formValue
 	}
 	for _, formValue := range h.forms.ListByCircleForStaff("") {
-		if !h.canAccessWorkspaceForm(currentCircle, formValue) {
+		if !h.canAccessWorkspaceForm(currentCircle, formValue) || !matchesWorkspaceFormStatus(formValue, status) || !matchesWorkspaceFormQuery(formValue, normalizedQuery) {
 			continue
 		}
 		formsByID[formValue.ID] = formValue
@@ -130,6 +141,36 @@ func (h *workspaceHandlers) listAccessibleWorkspaceForms(currentCircle circle.Ci
 	})
 
 	return forms, nil
+}
+
+func normalizeWorkspaceFormQuery(query string) string {
+	return strings.ToLower(strings.TrimSpace(query))
+}
+
+func matchesWorkspaceFormQuery(formValue backendform.Form, normalizedQuery string) bool {
+	if normalizedQuery == "" {
+		return true
+	}
+
+	haystack := strings.ToLower(strings.Join([]string{
+		formValue.ID,
+		formValue.Name,
+		formValue.Description,
+	}, "\n"))
+	return strings.Contains(haystack, normalizedQuery)
+}
+
+func matchesWorkspaceFormStatus(formValue backendform.Form, status string) bool {
+	switch status {
+	case "open", "":
+		return formValue.IsOpen
+	case "closed":
+		return !formValue.IsOpen
+	case "all":
+		return true
+	default:
+		return formValue.IsOpen
+	}
 }
 
 func (h *workspaceHandlers) findAccessibleWorkspaceForm(formID string, currentCircle circle.Circle) (backendform.Form, bool) {

@@ -42,7 +42,6 @@ const router = useRouter()
 const typeId = computed(() => String(route.params.typeId ?? ''))
 const { enabled } = useAuthorizedStaffContext({ capability: 'circles.participationTypes' })
 const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled)
-const allCirclesQuery = useAllStaffParticipationTypeCirclesQuery(typeId, enabled)
 const sessionStore = useSessionStore()
 
 const circlesPage = ref(1)
@@ -59,6 +58,12 @@ const appliedFilterMode = ref<StaffFilterMode>('and')
 const appliedFilterQueries = ref<StaffFilterQuery[]>([])
 const draftFilterMode = ref<StaffFilterMode>('and')
 const draftFilterQueries = ref<StaffFilterQuery[]>([])
+const staffListParams = computed(() => ({
+  query: searchQuery.value,
+  queries: appliedFilterQueries.value,
+  mode: appliedFilterMode.value
+}))
+const allCirclesQuery = useAllStaffParticipationTypeCirclesQuery(typeId, enabled, staffListParams)
 
 const circlesExportUrl = computed(() => buildStaffParticipationTypeCirclesExportUrl(typeId.value))
 
@@ -100,25 +105,7 @@ type StaffParticipationTypeCirclesSortKey = (typeof circlesSortKeys)[number]
 const circlesRows = computed(() => allCirclesQuery.data.value ?? [])
 
 const filteredRows = computed(() => {
-  const normalizedSearch = searchQuery.value.trim().toLowerCase()
-  const queries = appliedFilterQueries.value
-  const mode = appliedFilterMode.value
-
-  return circlesRows.value.filter((circle) => {
-    if (normalizedSearch.length > 0 && !matchesSearch(circle, normalizedSearch)) {
-      return false
-    }
-
-    if (queries.length === 0) {
-      return true
-    }
-
-    if (mode === 'or') {
-      return queries.some((query) => matchesFilterQuery(circle, query))
-    }
-
-    return queries.every((query) => matchesFilterQuery(circle, query))
-  })
+  return circlesRows.value
 })
 
 const sortedRows = computed(() => sortCirclesRows(filteredRows.value, circlesSortKey.value, circlesSortDirection.value))
@@ -367,52 +354,6 @@ function resolveCircleSortValue(circle: StaffParticipationTypeCircle, key: Staff
     return circle.groupName.toLowerCase()
   }
   return circle.status.toLowerCase()
-}
-
-function matchesSearch(circle: StaffParticipationTypeCircle, normalizedSearch: string) {
-  const haystack = [circle.id, circle.name, circle.groupName, statusLabel(circle.status), circle.places.join(' ')]
-    .join(' ')
-    .toLowerCase()
-  return haystack.includes(normalizedSearch)
-}
-
-function resolveFilterValue(circle: StaffParticipationTypeCircle, keyName: string) {
-  if (keyName === 'id') {
-    return circle.id
-  }
-  if (keyName === 'name') {
-    return circle.name
-  }
-  if (keyName === 'groupName') {
-    return circle.groupName
-  }
-  if (keyName === 'status') {
-    return statusLabel(circle.status)
-  }
-  if (keyName === 'places') {
-    return circle.places.join(' ')
-  }
-  return ''
-}
-
-function matchesFilterQuery(circle: StaffParticipationTypeCircle, query: StaffFilterQuery) {
-  if (!isStaffParticipationCircleFilterKey(query.keyName)) {
-    return true
-  }
-
-  const left = resolveFilterValue(circle, query.keyName).toLowerCase()
-  const right = query.value.trim().toLowerCase()
-
-  if (query.operator === '=') {
-    return left === right
-  }
-  if (query.operator === '!=') {
-    return left !== right
-  }
-  if (query.operator === 'not like') {
-    return right === '' ? true : !left.includes(right)
-  }
-  return right === '' ? true : left.includes(right)
 }
 </script>
 

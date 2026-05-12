@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffParticipationTypesIndexPage from './index.vue'
 import { mockSessionBootstrapStaff, mockParticipationType, mockTag } from '@/mocks/data'
 

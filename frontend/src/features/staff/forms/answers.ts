@@ -11,6 +11,7 @@ import {
   staffManagedFormAnswerValueSchema
 } from '@/lib/api/schema'
 import { extractValidationMessage as extractApiValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 import type { FormAnswerDraft } from '@/features/forms/answers'
 import type { StaffFormDetail, StaffFormUpload } from '@/features/staff/forms/api'
@@ -59,7 +60,7 @@ interface MutateStaffFormAnswerPayload {
   details: Record<string, string | string[]>
 }
 
-export async function fetchStaffFormAnswersIndex(formId: string) {
+export async function fetchStaffFormAnswersIndex(formId: string, params?: StaffListQueryParamsInput) {
   return $api.queryData(
     'get',
     '/staff/forms/{formID}/answers',
@@ -68,7 +69,8 @@ export async function fetchStaffFormAnswersIndex(formId: string) {
       params: {
         path: {
           formID: formId
-        }
+        },
+        query: resolveStaffListQueryParams(params)
       }
     },
     parseStaffFormAnswersIndex,
@@ -200,7 +202,11 @@ export async function uploadStaffFormAnswerFile(
   }
 }
 
-export function useStaffFormAnswersIndexQuery(formId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
+export function useStaffFormAnswersIndexQuery(
+  formId: MaybeRefOrGetter<string>,
+  enabled: MaybeRefOrGetter<boolean>,
+  params?: StaffListQueryParamsInput
+) {
   return $api.useQueryData(
     'get',
     '/staff/forms/{formID}/answers',
@@ -209,12 +215,13 @@ export function useStaffFormAnswersIndexQuery(formId: MaybeRefOrGetter<string>, 
       params: {
         path: {
           formID: toValue(formId)
-        }
+        },
+        query: resolveStaffListQueryParams(params)
       }
     }),
     parseStaffFormAnswersIndex,
     {
-      queryKey: computed(() => ['staff', 'forms', toValue(formId), 'answers']),
+      queryKey: computed(() => ['staff', 'forms', toValue(formId), 'answers', toValue(params)]),
       enabled: computed(() => toValue(enabled) && toValue(formId).trim().length > 0),
       retry: false
     },

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffPlaceSchema } from '@/lib/api/schema'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 
 export interface StaffPlace {
@@ -20,12 +21,13 @@ export interface StaffPlaceFormInput {
   notes: string
 }
 
-export async function fetchStaffPlaces() {
+export async function fetchStaffPlaces(params?: StaffListQueryParamsInput) {
   return $api.queryData(
     'get',
     '/staff/places',
     {
-      headers: createJsonHeaders()
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
     },
     parseStaffPlaces,
     {
@@ -89,16 +91,17 @@ export async function deleteStaffPlace(placeId: string, csrfToken: string) {
   )
 }
 
-export function useStaffPlacesQuery(enabled: MaybeRefOrGetter<boolean>) {
+export function useStaffPlacesQuery(enabled: MaybeRefOrGetter<boolean>, params?: StaffListQueryParamsInput) {
   return $api.useQueryData(
     'get',
     '/staff/places',
-    {
-      headers: createJsonHeaders()
-    },
+    () => ({
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
+    }),
     parseStaffPlaces,
     {
-      queryKey: ['staff', 'places'],
+      queryKey: computed(() => ['staff', 'places', toValue(params)]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },

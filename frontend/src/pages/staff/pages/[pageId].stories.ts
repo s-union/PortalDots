@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from '@/mocks/openapi'
 import StaffPageDetailPage from './[pageId].vue'
 import { mockSessionBootstrapStaff, mockDocument } from '@/mocks/data'
 
@@ -16,7 +16,7 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/pages/:pageID', () =>
+        http.get('/v1/staff/pages/{pageID}', () =>
           HttpResponse.json({
             id: 'page-1',
             title: 'テストお知らせ',
@@ -50,7 +50,7 @@ const meta = {
             }
           ])
         ),
-        http.put('/v1/staff/pages/:pageID', () =>
+        http.put('/v1/staff/pages/{pageID}', () =>
           HttpResponse.json({
             id: 'page-1',
             title: 'テストお知らせ',
@@ -65,7 +65,7 @@ const meta = {
             documents: []
           })
         ),
-        http.patch('/v1/staff/pages/:pageID/pin', () =>
+        http.patch('/v1/staff/pages/{pageID}/pin', () =>
           HttpResponse.json({
             id: 'page-1',
             title: 'テストお知らせ',
@@ -80,7 +80,7 @@ const meta = {
             documents: []
           })
         ),
-        http.delete('/v1/staff/pages/:pageID', () => new HttpResponse(null, { status: 204 }))
+        http.delete('/v1/staff/pages/{pageID}', () => new HttpResponse(null, { status: 204 }))
       ]
     }
   }

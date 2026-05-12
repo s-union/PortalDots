@@ -89,11 +89,10 @@ ON CONFLICT (circle_id, user_id) DO UPDATE
 SET is_leader = EXCLUDED.is_leader;
 
 -- name: SeedUpsertDocument :exec
-INSERT INTO documents (id, circle_id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+INSERT INTO documents (id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 ON CONFLICT (id) DO UPDATE
-SET circle_id = EXCLUDED.circle_id,
-    name = EXCLUDED.name,
+SET name = EXCLUDED.name,
     description = EXCLUDED.description,
     notes = EXCLUDED.notes,
     is_public = EXCLUDED.is_public,
