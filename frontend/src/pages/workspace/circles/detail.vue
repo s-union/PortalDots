@@ -233,6 +233,13 @@ function downloadHref(questionId: string) {
         この企画の編集と提出は責任者のみが行えます。
       </AlertMessage>
 
+      <AlertMessage
+        v-if="detailQuery.data.value.status === 'rejected' && detailQuery.data.value.statusReason"
+        tone="danger"
+      >
+        {{ `【不受理理由】 ${detailQuery.data.value.statusReason}` }}
+      </AlertMessage>
+
       <SettingsSection v-if="formDescription" title="必ずお読みください">
         <div class="px-6 py-6 whitespace-pre-wrap text-sm leading-7 text-body">
           {{ formDescription }}

@@ -5,10 +5,11 @@ import VueRouter from 'vue-router/vite'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, `${process.cwd()}/..`, '')
   const apiProxyTarget = (env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:8080').trim()
 
   return {
+    envDir: '../',
     plugins: [VueRouter(), vue(), tailwindcss()],
     resolve: {
       alias: {

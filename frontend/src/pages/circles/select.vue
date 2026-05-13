@@ -9,6 +9,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import { resolveCircleSelectorDestination, sanitizeCircleSelectorCircleId } from '@/app/router/circleSelectorRedirect'
 import { useSelectableCirclesQuery, useSelectCurrentCircleMutation } from '@/features/circles/api'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
@@ -37,6 +38,8 @@ const hasTriedAutoSelect = ref(false)
 const participationTypeCards = computed(() =>
   canCreateCircleRegistration.value ? (participationTypesQuery.data.value ?? []) : []
 )
+
+const unsubmittedCircles = computed(() => (circlesQuery.data.value ?? []).filter((circle) => !circle.submittedAt))
 
 async function handleSelectCircle(circleId: string) {
   await selectCircleMutation.mutateAsync(circleId)
@@ -81,20 +84,27 @@ watch(
         該当する企画はありません。
       </PanelBody>
 
-      <div v-else class="divide-y divide-border">
-        <button
-          v-for="circle in circlesQuery.data.value"
-          :key="circle.id"
-          class="w-full px-5 py-5 text-left transition hover:bg-form-control disabled:opacity-50 sm:px-7 sm:py-6"
-          :class="sessionStore.currentCircle?.id === circle.id ? 'bg-primary-light' : ''"
-          :disabled="isSelecting"
-          type="button"
-          @click="handleSelectCircle(circle.id)"
-        >
-          <p class="text-base font-semibold text-body">{{ circle.name }}</p>
-          <p class="mt-2 text-sm text-muted">{{ circle.groupName }} / {{ circle.participationTypeName }}</p>
-        </button>
-      </div>
+      <template v-else>
+        <AlertMessage v-if="unsubmittedCircles.length > 0" tone="info">
+          <p class="font-semibold">まだ提出されていない企画があります。</p>
+          <p class="mt-1">締切までに参加登録の提出を完了してください。</p>
+        </AlertMessage>
+
+        <div class="divide-y divide-border">
+          <button
+            v-for="circle in circlesQuery.data.value"
+            :key="circle.id"
+            class="w-full px-5 py-5 text-left transition hover:bg-form-control disabled:opacity-50 sm:px-7 sm:py-6"
+            :class="sessionStore.currentCircle?.id === circle.id ? 'bg-primary-light' : ''"
+            :disabled="isSelecting"
+            type="button"
+            @click="handleSelectCircle(circle.id)"
+          >
+            <p class="text-base font-semibold text-body">{{ circle.name }}</p>
+            <p class="mt-2 text-sm text-muted">{{ circle.groupName }} / {{ circle.participationTypeName }}</p>
+          </button>
+        </div>
+      </template>
     </ListPanel>
 
     <ListPanel

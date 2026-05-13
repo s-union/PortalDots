@@ -81,6 +81,7 @@ type Catalog interface {
 	UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error)
 	DeleteForUser(user *auth.User, circleID string) error
 	Submit(user *auth.User, circleID string) (Circle, error)
+	SubmitByStaff(circleID string) error
 	ListMembers(circleID string) ([]CircleMember, error)
 	AddMemberAsStaff(circleID, targetUserID, targetDisplayName string) error
 	RemoveMemberAsStaff(circleID, targetUserID string) error
@@ -389,6 +390,25 @@ func (c *StaticCatalog) Submit(user *auth.User, circleID string) (Circle, error)
 	}
 
 	return Circle{}, ErrNotFound
+}
+
+func (c *StaticCatalog) SubmitByStaff(circleID string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	now := time.Now().UTC()
+	for index := range c.circles {
+		if c.circles[index].ID != circleID {
+			continue
+		}
+		if c.circles[index].SubmittedAt != nil {
+			return nil
+		}
+		c.circles[index].SubmittedAt = &now
+		return nil
+	}
+
+	return ErrNotFound
 }
 
 func (c *StaticCatalog) ListMembers(circleID string) ([]CircleMember, error) {

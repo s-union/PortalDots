@@ -19,7 +19,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
-	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -74,7 +73,6 @@ type authHandlers struct {
 	authVerificationTokens    *authVerificationTokenStore
 	emailSender               cloudflareemail.Sender
 	portalUnivemailDomainPart string
-	portalUnivemailLocalPart  string
 	registrationVerifyTTL     time.Duration
 	loginAttempts             *loginAttemptTracker
 	appURL                    string
@@ -197,9 +195,9 @@ type staffAdminHandlers struct {
 	documents    document.Repository
 	forms        form.Repository
 	pages        page.Repository
-	portal       portalsetting.Repository
 	emailSender  cloudflareemail.Sender
 	mailHistory  mailhistory.Repository
+	version      string
 	from         string
 	adminName    string
 	contactEmail string
@@ -248,21 +246,6 @@ func NewServer(cfg config.Config) *echo.Echo {
 		page.NewStaticRepository(cfg.Pages),
 		pendingregistration.NewMemoryRepository(),
 		participationtype.NewMemoryRepository(cfg.ParticipationTypes),
-		portalsetting.NewMemoryRepository(portalsetting.Settings{
-			AppName:                   cfg.AppName,
-			PortalDescription:         cfg.PortalDescription,
-			AppURL:                    cfg.AppURL,
-			AppForceHTTPS:             cfg.AppForceHTTPS,
-			PortalAdminName:           cfg.PortalAdminName,
-			PortalContactEmail:        cfg.PortalContactEmail,
-			PortalUnivemailLocalPart:  cfg.PortalUnivemailLocalPart,
-			PortalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
-			PortalStudentIDName:       cfg.PortalStudentIDName,
-			PortalUnivemailName:       cfg.PortalUnivemailName,
-			PortalPrimaryColorH:       cfg.PortalPrimaryColorH,
-			PortalPrimaryColorS:       cfg.PortalPrimaryColorS,
-			PortalPrimaryColorL:       cfg.PortalPrimaryColorL,
-		}),
 		place.NewMemoryRepository(cfg.Places),
 		session.NewMemoryStore(cfg.SessionTTL),
 		tag.NewMemoryRepository(cfg.Tags),
@@ -285,7 +268,6 @@ func NewServerWithDependencies(
 	pages page.Repository,
 	pendingRegistrations pendingregistration.Repository,
 	participationTypes participationtype.Repository,
-	portal portalsetting.Repository,
 	places place.Repository,
 	sessionStore session.Store,
 	tags tag.Repository,
@@ -354,7 +336,6 @@ func NewServerWithDependencies(
 		authVerificationTokens:    newAuthVerificationTokenStore(),
 		emailSender:               emailSender,
 		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
-		portalUnivemailLocalPart:  cfg.PortalUnivemailLocalPart,
 		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
 		loginAttempts:             newLoginAttemptTracker(5, 5*time.Minute),
 		appURL:                    cfg.AppURL,
@@ -366,15 +347,21 @@ func NewServerWithDependencies(
 	}
 
 	publicHomeH := &publicHomeHandlers{
-		sharedDeps:         shared,
-		circles:            circles,
-		documents:          documents,
-		forms:              forms,
-		pages:              pages,
-		participationTypes: participationTypes,
-		portal:             portal,
-		authUser:           cfg.AuthUser,
-		users:              cfg.Users,
+		sharedDeps:                shared,
+		appName:                   cfg.AppName,
+		portalDescription:         cfg.PortalDescription,
+		portalAdminName:           cfg.PortalAdminName,
+		portalContactEmail:        cfg.PortalContactEmail,
+		portalStudentIDName:       cfg.PortalStudentIDName,
+		portalUnivemailName:       cfg.PortalUnivemailName,
+		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
+		circles:                   circles,
+		documents:                 documents,
+		forms:                     forms,
+		pages:                     pages,
+		participationTypes:        participationTypes,
+		authUser:                  cfg.AuthUser,
+		users:                     cfg.Users,
 	}
 
 	staffVerifyH := &staffVerifyHandlers{
@@ -480,9 +467,9 @@ func NewServerWithDependencies(
 		documents:    documents,
 		forms:        forms,
 		pages:        pages,
-		portal:       portal,
 		emailSender:  emailSender,
 		mailHistory:  mailHistory,
+		version:      cfg.Version,
 		from:         cfg.EmailFrom,
 		adminName:    cfg.PortalAdminName,
 		contactEmail: cfg.PortalContactEmail,
@@ -635,13 +622,11 @@ func NewServerWithDependencies(
 		GetStaffCircleMailForm:  staffCircleH.getStaffCircleMailForm,
 		SendStaffCircleMail:     staffCircleH.sendStaffCircleMail,
 		// Admin
-		ListStaffMails:            staffAdminH.listStaffMails,
-		EnqueueStaffMail:          staffAdminH.enqueueStaffMail,
-		ListStaffActivityLogs:     staffAdminH.listStaffActivityLogs,
-		GetStaffPortalSettings:    staffAdminH.getStaffPortalSettings,
-		UpdateStaffPortalSettings: staffAdminH.updateStaffPortalSettings,
-		DownloadStaffSummaryCSV:   staffAdminH.downloadStaffSummaryCSV,
-		DownloadStaffBundleZIP:    staffAdminH.downloadStaffBundleZIP,
+		ListStaffMails:          staffAdminH.listStaffMails,
+		EnqueueStaffMail:        staffAdminH.enqueueStaffMail,
+		ListStaffActivityLogs:   staffAdminH.listStaffActivityLogs,
+		DownloadStaffSummaryCSV: staffAdminH.downloadStaffSummaryCSV,
+		DownloadStaffBundleZIP:  staffAdminH.downloadStaffBundleZIP,
 		// Users
 		ListStaffUsers:        staffUsersH.listStaffUsers,
 		DownloadStaffUsersCSV: staffUsersH.downloadStaffUsersCSV,

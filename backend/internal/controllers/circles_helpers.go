@@ -38,6 +38,7 @@ func mapCircleDetail(c circle.Circle) circleDetailResponse {
 		InvitationToken:       c.InvitationToken,
 		SubmittedAt:           submittedAt,
 		Status:                c.Status,
+		StatusReason:          c.StatusReason,
 		Places:                places,
 	}
 }

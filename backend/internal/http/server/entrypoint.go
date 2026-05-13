@@ -17,7 +17,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
-	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -40,7 +39,6 @@ type PublicDependencies struct {
 	Pages                page.Repository
 	PendingRegistrations pendingregistration.Repository
 	ParticipationTypes   participationtype.Repository
-	Portal               portalsetting.Repository
 }
 
 type WorkspaceDependencies struct {
@@ -66,7 +64,6 @@ type StaffDependencies struct {
 	Pages              page.Repository
 	ParticipationTypes participationtype.Repository
 	Places             place.Repository
-	Portal             portalsetting.Repository
 	Tags               tag.Repository
 	Users              useradmin.Repository
 }
@@ -98,7 +95,6 @@ func NewWithDependencies(cfg config.Config, deps Dependencies) *echo.Echo {
 		deps.Public.Pages,
 		deps.Public.PendingRegistrations,
 		deps.Public.ParticipationTypes,
-		deps.Public.Portal,
 		deps.Staff.Places,
 		deps.Shared.Sessions,
 		deps.Staff.Tags,

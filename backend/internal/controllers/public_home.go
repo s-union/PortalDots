@@ -12,21 +12,26 @@ import (
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
-	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
 	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
 type publicHomeHandlers struct {
 	sharedDeps
-	circles            circle.Catalog
-	documents          backenddocument.Repository
-	forms              backendform.Repository
-	pages              page.Repository
-	participationTypes participationtype.Repository
-	portal             portalsetting.Repository
-	authUser           config.AuthUser
-	users              []config.User
+	appName                   string
+	portalDescription         string
+	portalAdminName           string
+	portalContactEmail        string
+	portalStudentIDName       string
+	portalUnivemailName       string
+	portalUnivemailDomainPart string
+	circles                   circle.Catalog
+	documents                 backenddocument.Repository
+	forms                     backendform.Repository
+	pages                     page.Repository
+	participationTypes        participationtype.Repository
+	authUser                  config.AuthUser
+	users                     []config.User
 }
 
 type publicHomeResponse struct {
@@ -89,11 +94,6 @@ type publicHomeDocumentResponse struct {
 }
 
 func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
-	settings, err := h.portal.Get()
-	if err != nil {
-		return internalError(c)
-	}
-
 	participationTypes, err := h.listPublicParticipationTypes()
 	if err != nil {
 		return internalError(c)
@@ -102,10 +102,10 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 	circleTags := h.currentPublicHomeCircleTags(c)
 
 	return c.JSON(http.StatusOK, publicHomeResponse{
-		AppName:            settings.AppName,
-		PortalDescription:  settings.PortalDescription,
-		PortalAdminName:    settings.PortalAdminName,
-		PortalContactEmail: settings.PortalContactEmail,
+		AppName:            h.appName,
+		PortalDescription:  h.portalDescription,
+		PortalAdminName:    h.portalAdminName,
+		PortalContactEmail: h.portalContactEmail,
 		LoginMethods:       h.buildPublicHomeLoginMethods(),
 		PinnedPages:        h.collectPinnedPublicPages(circleTags),
 		ParticipationTypes: participationTypes,
@@ -115,16 +115,12 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 }
 
 func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
-	settings, err := h.portal.Get()
-	if err != nil {
-		return internalError(c)
-	}
 	return c.JSON(http.StatusOK, publicConfigResponse{
 		IsDemo:                    h.allowDangerously,
-		AppName:                   settings.AppName,
-		PortalStudentIDName:       settings.PortalStudentIDName,
-		PortalUnivemailName:       settings.PortalUnivemailName,
-		PortalUnivemailDomainPart: settings.PortalUnivemailDomainPart,
+		AppName:                   h.appName,
+		PortalStudentIDName:       h.portalStudentIDName,
+		PortalUnivemailName:       h.portalUnivemailName,
+		PortalUnivemailDomainPart: h.portalUnivemailDomainPart,
 	})
 }
 

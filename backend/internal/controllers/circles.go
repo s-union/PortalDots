@@ -43,6 +43,7 @@ type circleDetailResponse struct {
 	InvitationToken       string              `json:"invitationToken"`
 	SubmittedAt           *string             `json:"submittedAt"`
 	Status                string              `json:"status"`
+	StatusReason          string              `json:"statusReason"`
 	FormCloseAt           string              `json:"formCloseAt"`
 	Places                []string            `json:"places"`
 }

@@ -20,7 +20,7 @@ function createQueryPlugin() {
 }
 
 describe('StaffSettingsPage', () => {
-  it('shows staff settings hub links including static helper pages', async () => {
+  it('shows staff settings hub links', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const sessionStore = useSessionStore()
@@ -46,9 +46,7 @@ describe('StaffSettingsPage', () => {
         },
         { path: '/staff/tags', component: { template: '<div>tags</div>' } },
         { path: '/staff/places', component: { template: '<div>places</div>' } },
-        { path: '/staff/settings/portal', component: { template: '<div>portal</div>' } },
         { path: '/staff/exports', component: { template: '<div>exports</div>' } },
-        { path: '/staff/about', component: { template: '<div>about</div>' } },
         { path: '/staff/markdown-guide', component: { template: '<div>markdown</div>' } }
       ]
     })
@@ -63,8 +61,8 @@ describe('StaffSettingsPage', () => {
 
     expect(wrapper.text()).toContain('PortalDots の設定')
     expect(wrapper.text()).toContain('デモ企画B')
-    expect(wrapper.text()).toContain('Portal 設定')
-    expect(wrapper.text()).toContain('PortalDots について')
+    expect(wrapper.text()).not.toContain('Portal 設定')
+    expect(wrapper.text()).not.toContain('PortalDots について')
     expect(wrapper.text()).toContain('Markdown ガイド')
   })
 })

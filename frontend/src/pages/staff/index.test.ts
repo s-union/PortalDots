@@ -77,11 +77,6 @@ describe('StaffDashboardPage', () => {
         { path: '/staff/forms', component: { template: '<div>staff forms</div>' } },
         { path: '/staff/settings', component: { template: '<div>staff settings</div>' } },
         {
-          path: '/staff/settings/portal',
-          component: { template: '<div>portal settings</div>' }
-        },
-        { path: '/staff/about', component: { template: '<div>staff about</div>' } },
-        {
           path: '/staff/markdown-guide',
           component: { template: '<div>staff markdown guide</div>' }
         },
@@ -117,7 +112,6 @@ describe('StaffDashboardPage', () => {
     expect(wrapper.text()).toContain('スタッフの権限設定')
     expect(wrapper.text()).toContain('CSV / ZIP 出力')
     expect(wrapper.text()).toContain('アクティビティログ')
-    expect(wrapper.text()).toContain('PortalDots の設定')
     expect(wrapper.text()).toContain('PortalDotsに登録しているユーザーの情報を管理します')
     expect(wrapper.text()).toContain('PortalDots上に表示するお知らせを管理します')
   })

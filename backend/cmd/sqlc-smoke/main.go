@@ -18,7 +18,7 @@ func main() {
 
 	store, err := database.Open(context.Background(), cfg.DatabaseURL)
 	if errors.Is(err, database.ErrDisabled) {
-		log.Fatal("PORTALDOTS_DATABASE_URL is required")
+		log.Fatal("PORTAL_DATABASE_URL is required")
 	}
 	if err != nil {
 		log.Fatal(err)

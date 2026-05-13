@@ -5,7 +5,6 @@ import { useSessionBootstrapQuery } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
 import {
   canManageParticipationTypes,
-  canManagePortalSettings,
   canReadCircles,
   canReadContactCategories,
   canReadDocuments,
@@ -88,7 +87,6 @@ export function useAppShell() {
   )
   const canAccessExports = computed(() => canUseStaffExports(sessionStore.roles, sessionStore.permissions))
   const canAccessActivityLogs = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
-  const canAccessPortalSettings = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
   const isStaffRoute = computed(() => route.path.startsWith('/staff'))
   const hasDrawer = computed(() => route.meta.noDrawer !== true)
   const showFooter = computed(() => route.meta.noFooter !== true)
@@ -284,14 +282,6 @@ export function useAppShell() {
       adminOnly: true
     },
     {
-      to: '/staff/settings/portal',
-      label: 'PortalDots の設定',
-      iconClass: 'fas fa-cog fa-fw',
-      active: route.path.startsWith('/staff/settings'),
-      hidden: !canAccessPortalSettings.value,
-      adminOnly: true
-    },
-    {
       to: '/staff/exports',
       label: 'CSV / ZIP 出力',
       iconClass: 'fas fa-file-export fa-fw',
@@ -356,9 +346,6 @@ export function useAppShell() {
     }
     if (route.path === '/staff') {
       return 'スタッフモード'
-    }
-    if (route.path === '/staff/about') {
-      return 'PortalDotsについて'
     }
 
     const activeLink = [...(isStaffRoute.value ? staffLinks.value : generalLinks.value)].find((link) => link.active)

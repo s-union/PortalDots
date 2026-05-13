@@ -8,7 +8,7 @@ import (
 )
 
 func TestLoadDotEnvLoadsMissingVariables(t *testing.T) {
-	passwordKey := "PORTALDOTS_AUTH_PASSWORD_LOAD_TEST"
+	passwordKey := "PORTAL_AUTH_PASSWORD_LOAD_TEST"
 	appNameKey := "APP_NAME_LOAD_TEST"
 
 	path := filepath.Join(t.TempDir(), ".env")
@@ -36,7 +36,7 @@ func TestLoadDotEnvLoadsMissingVariables(t *testing.T) {
 }
 
 func TestLoadDotEnvOverridesExistingVariables(t *testing.T) {
-	key := "PORTALDOTS_AUTH_PASSWORD_OVERRIDE_TEST"
+	key := "PORTAL_AUTH_PASSWORD_OVERRIDE_TEST"
 	t.Setenv(key, "shell-value")
 
 	path := filepath.Join(t.TempDir(), ".env")

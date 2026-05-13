@@ -20,7 +20,6 @@ import {
   canReadPlaces,
   canReadTags,
   canUseStaffExports,
-  canManagePortalSettings,
   canUseMailQueue,
   canViewActivityLogs
 } from '@/features/staff/access/capabilities'
@@ -46,7 +45,6 @@ const userAdminAvailable = computed(() => canManageUsers(sessionStore.roles, ses
 const permissionAdminAvailable = computed(() => canManagePermissions(sessionStore.roles, sessionStore.permissions))
 const exportAvailable = computed(() => canUseStaffExports(sessionStore.roles, sessionStore.permissions))
 const activityLogAvailable = computed(() => canViewActivityLogs(sessionStore.roles, sessionStore.permissions))
-const portalSettingsAvailable = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
 
 interface StaffCard {
   to: string
@@ -140,23 +138,9 @@ const staffCards = computed<StaffCard[]>(() => [
     to: '/staff/activity-logs',
     title: 'アクティビティログ',
     iconClass: 'fas fa-user-edit fa-fw',
-    description: 'PortalDots内で行われた各種データ操作の履歴を確認します',
+    description: `${appName.value}内で行われた各種データ操作の履歴を確認します`,
     hidden: !activityLogAvailable.value,
     adminOnly: true
-  },
-  {
-    to: '/staff/settings/portal',
-    title: 'PortalDots の設定',
-    iconClass: 'fas fa-cog fa-fw',
-    description: 'このウェブシステムの設定を変更します',
-    hidden: !portalSettingsAvailable.value,
-    adminOnly: true
-  },
-  {
-    to: '/staff/about',
-    title: 'PortalDots のアップデートの確認',
-    iconClass: 'fa-solid fa-arrows-rotate fa-fw',
-    description: 'セキュリティのため、定期的に PortalDots をアップデートしましょう'
   },
   {
     to: '/staff/exports',

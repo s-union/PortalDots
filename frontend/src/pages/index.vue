@@ -4,6 +4,7 @@ import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
 import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'
 import PageContentContainer from '@/components/ui/PageContentContainer.vue'
 import { buildApiUrl } from '@/lib/api/client'
@@ -17,6 +18,7 @@ import {
   type CircleDetail,
   type SelectableCircle
 } from '@/features/circles/api'
+import { useAuthVerificationStatusQuery } from '@/features/auth/api'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
@@ -27,6 +29,7 @@ const publicConfigQuery = usePublicConfigQuery()
 const formsQuery = useFormsQuery()
 const selectableCirclesQuery = useSelectableCirclesQuery()
 const currentCircleDetailQuery = useCurrentCircleDetailQuery()
+const authVerificationStatusQuery = useAuthVerificationStatusQuery(computed(() => sessionStore.isAuthenticated))
 
 const canAccessStaff = computed(() => hasStaffAccess(sessionStore.roles, sessionStore.permissions))
 const publicHome = computed(() => publicHomeQuery.data.value)
@@ -246,6 +249,18 @@ const circleStatusItems = computed(() => {
 <template>
   <section class="space-y-6">
     <HomeModeTabs v-if="sessionStore.isAuthenticated && canAccessStaff" :is-staff-page="false" />
+
+    <AlertMessage
+      v-if="
+        sessionStore.isAuthenticated &&
+        authVerificationStatusQuery.data.value &&
+        !authVerificationStatusQuery.data.value.completed
+      "
+      tone="info"
+    >
+      メール認証が完了していません。すべての機能を利用するにはメール認証を完了してください。
+      <RouterLink to="/email/verify" class="underline">メール認証ページへ</RouterLink>
+    </AlertMessage>
 
     <header v-if="!sessionStore.isAuthenticated" class="border-b border-border bg-surface">
       <div

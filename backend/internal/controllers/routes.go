@@ -116,13 +116,11 @@ type StaffRoutes struct {
 	GetStaffCircleMailForm  echo.HandlerFunc
 	SendStaffCircleMail     echo.HandlerFunc
 	// Admin
-	ListStaffMails            echo.HandlerFunc
-	EnqueueStaffMail          echo.HandlerFunc
-	ListStaffActivityLogs     echo.HandlerFunc
-	GetStaffPortalSettings    echo.HandlerFunc
-	UpdateStaffPortalSettings echo.HandlerFunc
-	DownloadStaffSummaryCSV   echo.HandlerFunc
-	DownloadStaffBundleZIP    echo.HandlerFunc
+	ListStaffMails          echo.HandlerFunc
+	EnqueueStaffMail        echo.HandlerFunc
+	ListStaffActivityLogs   echo.HandlerFunc
+	DownloadStaffSummaryCSV echo.HandlerFunc
+	DownloadStaffBundleZIP  echo.HandlerFunc
 	// Users
 	ListStaffUsers        echo.HandlerFunc
 	DownloadStaffUsersCSV echo.HandlerFunc
@@ -284,8 +282,6 @@ func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.Midd
 	staff.GET("/mails", r.ListStaffMails, RequireCapability(canUseMailQueue))
 	staff.POST("/mails", r.EnqueueStaffMail, RequireCapability(canUseMailQueue))
 	staff.GET("/activity-logs", r.ListStaffActivityLogs, RequireCapability(canViewActivityLogs))
-	staff.GET("/portal-settings", r.GetStaffPortalSettings, RequireCapability(canManagePortalSettings))
-	staff.PUT("/portal-settings", r.UpdateStaffPortalSettings, RequireCapability(canManagePortalSettings))
 	staff.GET("/exports/summary.csv", r.DownloadStaffSummaryCSV, RequireCapability(canUseStaffExports))
 	staff.GET("/exports/bundle.zip", r.DownloadStaffBundleZIP, RequireCapability(canUseStaffExports))
 	staff.GET("/users", r.ListStaffUsers, RequireCapability(canReadUsers))

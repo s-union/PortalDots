@@ -63,10 +63,10 @@ Current scope:
 
 Useful commands:
 
-- `PORTALDOTS_DATABASE_URL=postgres://... mise run backend-migrate`
+- `PORTAL_DATABASE_URL=postgres://... mise run backend-migrate`
 - `mise run backend-sqlc-generate`
-- `PORTALDOTS_DATABASE_URL=postgres://... mise run backend-sqlc-smoke`
-- `PORTALDOTS_DATABASE_URL=postgres://... PORTALDOTS_STAFF_VERIFY_CODE=... go run ./cmd/api`
+- `PORTAL_DATABASE_URL=postgres://... mise run backend-sqlc-smoke`
+- `PORTAL_DATABASE_URL=postgres://... PORTAL_STAFF_VERIFY_CODE=... go run ./cmd/api`
 
 Local development notes:
 
@@ -77,11 +77,11 @@ Behavior notes:
 
 - `cmd/api` runs SQL migrations on startup before wiring repositories.
 - Seed data is inserted when the database is empty (`users` count is zero).
-- When `PORTALDOTS_ALLOW_DANGEROUSLY=true` and `PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP=true`, configured demo seed data is reapplied on every startup.
-- `cmd/api` requires an explicit non-default value for `PORTALDOTS_STAFF_VERIFY_CODE` unless `PORTALDOTS_ALLOW_DANGEROUSLY=true` is set.
-- Session cookies now use `PORTALDOTS_SESSION_TTL_SECONDS` and default to 12 hours.
-- Staff verify email delivery is currently mocked. `POST /v1/staff/verify/request` returns the verification code only when `PORTALDOTS_ALLOW_DANGEROUSLY=true`; otherwise the configured staff verify code is required and is not exposed in the response.
-- When `PORTALDOTS_ALLOW_DANGEROUSLY=true` (demo mode), staff endpoints treat staff users as already authorized without an extra verify step.
+- When `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` and `PORTAL_SYNC_AUTH_USER_ON_STARTUP=true`, configured demo seed data is reapplied on every startup.
+- `cmd/api` requires an explicit non-default value for `PORTAL_STAFF_VERIFY_CODE` unless `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` is set.
+- Session cookies now use `PORTAL_SESSION_TTL_SECONDS` and default to 12 hours.
+- Staff verify email delivery is currently mocked. `POST /v1/staff/verify/request` returns the verification code only when `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true`; otherwise the configured staff verify code is required and is not exposed in the response.
+- When `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` (demo mode), staff endpoints treat staff users as already authorized without an extra verify step.
 - 現在の upload 保存先は PostgreSQL です。`answer_uploads` と `documents.content` にバイナリを直接保存しており、外部ストレージ連携はまだありません。
 - form answer は `answer_details` と `question_id 付き answer_uploads` で保持しています。設問が 0 件の既存フォームだけは後方互換のため `body` ベースでも保存できます。
 - staff form editor は設問の追加、更新、削除、並び替えまで実装済みです。participant / staff ともに設問ベースの回答表示に切り替わっています。

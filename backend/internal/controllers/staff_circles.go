@@ -325,6 +325,11 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	if request.Status == "approved" {
+		if err := h.circles.SubmitByStaff(created.ID); err != nil {
+			return internalError(c)
+		}
+	}
 	recordActivity(
 		c.Request().Context(),
 		h.activities,

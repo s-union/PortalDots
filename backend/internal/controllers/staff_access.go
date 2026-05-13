@@ -278,9 +278,6 @@ func canListManagedCircles(user *auth.User) bool {
 		canUseMailQueue(user) ||
 		canUseStaffExports(user)
 }
-func canManagePortalSettings(user *auth.User) bool {
-	return userHasAnyRole(user, "admin")
-}
 
 func (s *sharedDeps) requireStaffCapability(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, int, bool) {
 	sessionID, currentSession, status, ok := s.requireStaffMode(c)

@@ -49,6 +49,7 @@ export interface CircleDetail {
   invitationToken: string
   submittedAt: string | null
   status: 'pending' | 'approved' | 'rejected'
+  statusReason?: string
   formCloseAt?: string
   places?: string[]
 }

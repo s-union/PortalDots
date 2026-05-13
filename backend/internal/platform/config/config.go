@@ -42,7 +42,6 @@ type Config struct {
 	AppForceHTTPS             bool
 	PortalAdminName           string
 	PortalContactEmail        string
-	PortalUnivemailLocalPart  string
 	PortalUnivemailDomainPart string
 	PortalStudentIDName       string
 	PortalUnivemailName       string
@@ -50,6 +49,7 @@ type Config struct {
 	PortalPrimaryColorS       int
 	PortalPrimaryColorL       int
 	RegistrationVerifyTTL     time.Duration
+	Version                   string
 	EmailFrom                 string
 	EmailProducerURL          string
 	EmailProducerToken        string
@@ -394,48 +394,48 @@ func defaultDemoUsers() []User {
 }
 
 func FromEnv() Config {
-	authPassword, authPasswordProvided := getenvWithPresence("PORTALDOTS_AUTH_PASSWORD", defaultAuthPassword)
-	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTALDOTS_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
+	authPassword, authPasswordProvided := getenvWithPresence("PORTAL_AUTH_PASSWORD", defaultAuthPassword)
+	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTAL_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
 	defaultAuthUser := defaultDemoAuthUser()
-	allowDangerously := getenv("PORTALDOTS_ALLOW_DANGEROUSLY", "") == "true"
-	enableDemoMode := getenv("PORTALDOTS_ENABLE_DEMO_MODE", "") == "true"
+	allowDangerously := getenv("PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE", "") == "true"
+	enableDemoMode := getenv("PORTAL_ENABLE_DEMO_MODE", "") == "true"
 	appURL := getenv("APP_URL", "http://127.0.0.1:8080")
 
 	return Config{
-		BindAddress:               getenv("PORTALDOTS_API_BIND", ":8081"),
-		DatabaseURL:               getenv("PORTALDOTS_DATABASE_URL", ""),
-		MigrationsDir:             getenv("PORTALDOTS_MIGRATIONS_DIR", "db/migrations"),
+		BindAddress:               getenv("PORTAL_API_BIND", ":8081"),
+		DatabaseURL:               getenv("PORTAL_DATABASE_URL", ""),
+		MigrationsDir:             getenv("PORTAL_MIGRATIONS_DIR", "db/migrations"),
 		AllowDangerously:          allowDangerously,
 		EnableDemoMode:            enableDemoMode,
-		SyncAuthUserOnStartup:     getenv("PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP", "") == "true",
-		SessionCookieName:         getenv("PORTALDOTS_SESSION_COOKIE", "portaldots_session"),
-		SessionCookieSecure:       getenvBool("PORTALDOTS_SESSION_COOKIE_SECURE", strings.HasPrefix(appURL, "https://")),
-		SessionTTL:                time.Duration(getenvInt("PORTALDOTS_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
-		AppName:                   getenv("APP_NAME", "PortalDots"),
+		SyncAuthUserOnStartup:     getenv("PORTAL_SYNC_AUTH_USER_ON_STARTUP", "") == "true",
+		SessionCookieName:         getenv("PORTAL_SESSION_COOKIE", "portaldots_session"),
+		SessionCookieSecure:       getenvBool("PORTAL_SESSION_COOKIE_SECURE", strings.HasPrefix(appURL, "https://")),
+		SessionTTL:                time.Duration(getenvInt("PORTAL_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
+		AppName:                   getenv("PORTAL_APP_NAME", "PortalDots"),
 		PortalDescription:         getenv("PORTAL_DESCRIPTION", ternaryString(allowDangerously, "PortalDots デモサイトです。", "学園祭参加団体向けポータル")),
 		AppURL:                    appURL,
 		AppForceHTTPS:             getenv("APP_FORCE_HTTPS", "") == "true",
 		PortalAdminName:           getenv("PORTAL_ADMIN_NAME", ternaryString(allowDangerously, "PortalDots 実行委員会", "PortalDots 実行委員会")),
 		PortalContactEmail:        getenv("PORTAL_CONTACT_EMAIL", ternaryString(allowDangerously, "support@portaldots.com", "contact@example.com")),
-		PortalUnivemailLocalPart:  getenv("PORTAL_UNIVEMAIL_LOCAL_PART", "student_id"),
 		PortalUnivemailDomainPart: getenv("PORTAL_UNIVEMAIL_DOMAIN_PART", ternaryString(allowDangerously, "portaldots.com", "example.ac.jp")),
 		PortalStudentIDName:       getenv("PORTAL_STUDENT_ID_NAME", "学籍番号"),
 		PortalUnivemailName:       getenv("PORTAL_UNIVEMAIL_NAME", ternaryString(allowDangerously, "学生用メールアドレス", "大学メールアドレス")),
 		PortalPrimaryColorH:       getenvInt("PORTAL_PRIMARY_COLOR_H", 214),
 		PortalPrimaryColorS:       getenvInt("PORTAL_PRIMARY_COLOR_S", 91),
 		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 53),
-		RegistrationVerifyTTL:     time.Duration(getenvInt("PORTALDOTS_REGISTRATION_VERIFY_TTL_MINUTES", 60)) * time.Minute,
-		EmailFrom:                 getenv("PORTALDOTS_SMTP_FROM", ""),
-		EmailProducerURL:          getenv("PORTALDOTS_EMAIL_PRODUCER_URL", ""),
-		EmailProducerToken:        getenv("PORTALDOTS_EMAIL_PRODUCER_TOKEN", ""),
-		RateLimitPerMinute:        getenvInt("PORTALDOTS_RATE_LIMIT_PER_MINUTE", 60),
-		MaintenanceMode:           getenv("PORTALDOTS_MAINTENANCE_MODE", "") == "true",
+		RegistrationVerifyTTL:     time.Duration(getenvInt("PORTAL_REGISTRATION_VERIFY_TTL_MINUTES", 60)) * time.Minute,
+		Version:                   getenv("PORTAL_VERSION", ""),
+		EmailFrom:                 getenv("PORTAL_SMTP_FROM", ""),
+		EmailProducerURL:          getenv("PORTAL_EMAIL_PRODUCER_URL", ""),
+		EmailProducerToken:        getenv("PORTAL_EMAIL_PRODUCER_TOKEN", ""),
+		RateLimitPerMinute:        getenvInt("PORTAL_RATE_LIMIT_PER_MINUTE", 60),
+		MaintenanceMode:           getenv("PORTAL_MAINTENANCE_MODE", "") == "true",
 		AuthUser: AuthUser{
-			ID:          getenv("PORTALDOTS_AUTH_USER_ID", defaultAuthUser.ID),
-			LoginIDs:    splitCSV(getenv("PORTALDOTS_AUTH_LOGIN_IDS", strings.Join(defaultAuthUser.LoginIDs, ","))),
-			DisplayName: getenv("PORTALDOTS_AUTH_DISPLAY_NAME", defaultAuthUser.DisplayName),
+			ID:          getenv("PORTAL_AUTH_USER_ID", defaultAuthUser.ID),
+			LoginIDs:    splitCSV(getenv("PORTAL_AUTH_LOGIN_IDS", strings.Join(defaultAuthUser.LoginIDs, ","))),
+			DisplayName: getenv("PORTAL_AUTH_DISPLAY_NAME", defaultAuthUser.DisplayName),
 			Password:    authPassword,
-			Roles:       splitCSV(getenv("PORTALDOTS_AUTH_ROLES", strings.Join(defaultAuthUser.Roles, ","))),
+			Roles:       splitCSV(getenv("PORTAL_AUTH_ROLES", strings.Join(defaultAuthUser.Roles, ","))),
 			Permissions: []string{},
 		},
 		Users: func() []User {
@@ -725,55 +725,52 @@ func (c Config) ValidateForAPI() error {
 	var issues []string
 
 	if strings.TrimSpace(c.DatabaseURL) == "" {
-		issues = append(issues, "PORTALDOTS_DATABASE_URL is required")
+		issues = append(issues, "PORTAL_DATABASE_URL is required")
 	}
 	if strings.TrimSpace(c.MigrationsDir) == "" {
-		issues = append(issues, "PORTALDOTS_MIGRATIONS_DIR is required")
+		issues = append(issues, "PORTAL_MIGRATIONS_DIR is required")
 	}
 	if c.SessionTTL <= 0 {
-		issues = append(issues, "PORTALDOTS_SESSION_TTL_SECONDS must be greater than zero")
+		issues = append(issues, "PORTAL_SESSION_TTL_SECONDS must be greater than zero")
 	}
 	if strings.TrimSpace(c.SessionCookieName) == "" {
-		issues = append(issues, "PORTALDOTS_SESSION_COOKIE must not be empty")
+		issues = append(issues, "PORTAL_SESSION_COOKIE must not be empty")
 	}
 	appOrigin, appURLErr := appOrigin(c.AppURL)
 	if appURLErr != nil {
 		issues = append(issues, "APP_URL must be an absolute http or https URL")
 	}
 	if strings.TrimSpace(c.StaffVerifyCode) == "" {
-		issues = append(issues, "PORTALDOTS_STAFF_VERIFY_CODE must not be empty")
+		issues = append(issues, "PORTAL_STAFF_VERIFY_CODE must not be empty")
 	}
 	if c.RegistrationVerifyTTL <= 0 {
-		issues = append(issues, "PORTALDOTS_REGISTRATION_VERIFY_TTL_MINUTES must be greater than zero")
-	}
-	if strings.TrimSpace(c.PortalUnivemailLocalPart) != "student_id" {
-		issues = append(issues, "PORTAL_UNIVEMAIL_LOCAL_PART must be student_id")
+		issues = append(issues, "PORTAL_REGISTRATION_VERIFY_TTL_MINUTES must be greater than zero")
 	}
 	if c.AllowDangerously {
 		if len(c.AuthUser.LoginIDs) == 0 {
-			issues = append(issues, "PORTALDOTS_AUTH_LOGIN_IDS must contain at least one login ID")
+			issues = append(issues, "PORTAL_AUTH_LOGIN_IDS must contain at least one login ID")
 		}
 		if strings.TrimSpace(c.AuthUser.Password) == "" {
-			issues = append(issues, "PORTALDOTS_AUTH_PASSWORD must not be empty")
+			issues = append(issues, "PORTAL_AUTH_PASSWORD must not be empty")
 		}
 	} else {
 		if appURLErr == nil && !strings.HasPrefix(appOrigin, "https://") {
-			issues = append(issues, "APP_URL must use https unless PORTALDOTS_ALLOW_DANGEROUSLY=true")
+			issues = append(issues, "APP_URL must use https unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 		if !c.SessionCookieSecure {
-			issues = append(issues, "PORTALDOTS_SESSION_COOKIE_SECURE must be true unless PORTALDOTS_ALLOW_DANGEROUSLY=true")
+			issues = append(issues, "PORTAL_SESSION_COOKIE_SECURE must be true unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 		if !c.staffVerifyCodeProvided || c.StaffVerifyCode == defaultStaffVerifyCode {
-			issues = append(issues, "PORTALDOTS_STAFF_VERIFY_CODE must be set to a non-default value unless PORTALDOTS_ALLOW_DANGEROUSLY=true")
+			issues = append(issues, "PORTAL_STAFF_VERIFY_CODE must be set to a non-default value unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 		if !c.authPasswordProvided || c.AuthUser.Password == defaultAuthPassword {
-			issues = append(issues, "PORTALDOTS_AUTH_PASSWORD must be set to a non-default value unless PORTALDOTS_ALLOW_DANGEROUSLY=true")
+			issues = append(issues, "PORTAL_AUTH_PASSWORD must be set to a non-default value unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 		if strings.TrimSpace(c.EmailProducerURL) == "" {
-			issues = append(issues, "PORTALDOTS_EMAIL_PRODUCER_URL is required unless PORTALDOTS_ALLOW_DANGEROUSLY=true")
+			issues = append(issues, "PORTAL_EMAIL_PRODUCER_URL is required unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 		if strings.TrimSpace(c.EmailProducerToken) == "" {
-			issues = append(issues, "PORTALDOTS_EMAIL_PRODUCER_TOKEN is required unless PORTALDOTS_ALLOW_DANGEROUSLY=true")
+			issues = append(issues, "PORTAL_EMAIL_PRODUCER_TOKEN is required unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 	}
 

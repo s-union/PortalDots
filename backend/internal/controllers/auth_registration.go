@@ -94,7 +94,7 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 		validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "大学メールアドレスのドメインが正しくありません")
 	}
 	// A8: univemail_local_part が "student_id" の場合、クロスフィールド検証
-	if h.portalUnivemailLocalPart == "student_id" && request.UnivemailLocalPart != "" {
+	if request.UnivemailLocalPart != "" {
 		if strings.Contains(request.UnivemailLocalPart, "@") {
 			validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "学籍番号を入力してください")
 		}

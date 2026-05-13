@@ -22,7 +22,7 @@ func TestValidateForAPIRejectsInsecureDefaults(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected insecure defaults to be rejected")
 	}
-	if !strings.Contains(err.Error(), "PORTALDOTS_STAFF_VERIFY_CODE") {
+	if !strings.Contains(err.Error(), "PORTAL_STAFF_VERIFY_CODE") {
 		t.Fatalf("expected staff verify code error, got %v", err)
 	}
 }
@@ -31,18 +31,17 @@ func TestValidateForAPIAllowsSecureExplicitConfigurationWithoutDemoAuthSettings(
 	t.Parallel()
 
 	cfg := Config{
-		DatabaseURL:              "postgres://example",
-		MigrationsDir:            "db/migrations",
-		SessionCookieName:        "portaldots_session",
-		SessionCookieSecure:      true,
-		SessionTTL:               time.Hour,
-		AppURL:                   "https://portal.example.com",
-		RegistrationVerifyTTL:    time.Hour,
-		PortalUnivemailLocalPart: "student_id",
-		EmailProducerURL:         "https://email-producer.example.com",
-		EmailProducerToken:       "super-secret-token",
-		StaffVerifyCode:          "654321",
-		staffVerifyCodeProvided:  true,
+		DatabaseURL:             "postgres://example",
+		MigrationsDir:           "db/migrations",
+		SessionCookieName:       "portaldots_session",
+		SessionCookieSecure:     true,
+		SessionTTL:              time.Hour,
+		AppURL:                  "https://portal.example.com",
+		RegistrationVerifyTTL:   time.Hour,
+		EmailProducerURL:        "https://email-producer.example.com",
+		EmailProducerToken:      "super-secret-token",
+		StaffVerifyCode:         "654321",
+		staffVerifyCodeProvided: true,
 		AuthUser: AuthUser{
 			Password: "strong-production-password",
 		},
@@ -76,7 +75,7 @@ func TestValidateForAPIRejectsDefaultAuthPassword(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected default auth password to be rejected")
 	}
-	if !strings.Contains(err.Error(), "PORTALDOTS_AUTH_PASSWORD") {
+	if !strings.Contains(err.Error(), "PORTAL_AUTH_PASSWORD") {
 		t.Fatalf("expected auth password error, got %v", err)
 	}
 }
@@ -100,7 +99,7 @@ func TestValidateForAPIRejectsUnprovidedAuthPassword(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected unprovided auth password to be rejected")
 	}
-	if !strings.Contains(err.Error(), "PORTALDOTS_AUTH_PASSWORD") {
+	if !strings.Contains(err.Error(), "PORTAL_AUTH_PASSWORD") {
 		t.Fatalf("expected auth password error, got %v", err)
 	}
 }
@@ -122,10 +121,10 @@ func TestValidateForAPIRequiresDemoAuthSettingsWhenInsecureDefaultsEnabled(t *te
 	if err == nil {
 		t.Fatal("expected demo auth settings to be required")
 	}
-	if !strings.Contains(err.Error(), "PORTALDOTS_AUTH_LOGIN_IDS") {
+	if !strings.Contains(err.Error(), "PORTAL_AUTH_LOGIN_IDS") {
 		t.Fatalf("expected login ids error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "PORTALDOTS_AUTH_PASSWORD") {
+	if !strings.Contains(err.Error(), "PORTAL_AUTH_PASSWORD") {
 		t.Fatalf("expected auth password error, got %v", err)
 	}
 }
@@ -134,17 +133,16 @@ func TestValidateForAPIRejectsInsecureAppURLAndCookieInSecureMode(t *testing.T) 
 	t.Parallel()
 
 	cfg := Config{
-		DatabaseURL:              "postgres://example",
-		MigrationsDir:            "db/migrations",
-		SessionCookieName:        "portaldots_session",
-		SessionTTL:               time.Hour,
-		AppURL:                   "http://portal.example.com",
-		RegistrationVerifyTTL:    time.Hour,
-		PortalUnivemailLocalPart: "student_id",
-		EmailProducerURL:         "https://email-producer.example.com",
-		EmailProducerToken:       "super-secret-token",
-		StaffVerifyCode:          "654321",
-		staffVerifyCodeProvided:  true,
+		DatabaseURL:             "postgres://example",
+		MigrationsDir:           "db/migrations",
+		SessionCookieName:       "portaldots_session",
+		SessionTTL:              time.Hour,
+		AppURL:                  "http://portal.example.com",
+		RegistrationVerifyTTL:   time.Hour,
+		EmailProducerURL:        "https://email-producer.example.com",
+		EmailProducerToken:      "super-secret-token",
+		StaffVerifyCode:         "654321",
+		staffVerifyCodeProvided: true,
 		AuthUser: AuthUser{
 			Password: "strong-production-password",
 		},
@@ -158,7 +156,7 @@ func TestValidateForAPIRejectsInsecureAppURLAndCookieInSecureMode(t *testing.T) 
 	if !strings.Contains(err.Error(), "APP_URL must use https") {
 		t.Fatalf("expected APP_URL error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "PORTALDOTS_SESSION_COOKIE_SECURE") {
+	if !strings.Contains(err.Error(), "PORTAL_SESSION_COOKIE_SECURE") {
 		t.Fatalf("expected secure cookie error, got %v", err)
 	}
 }
@@ -177,7 +175,7 @@ func TestAppOriginNormalizesPath(t *testing.T) {
 	}
 }
 
-func TestFromEnvUsesLegacyPrimaryColorFallback(t *testing.T) {
+func TestFromEnvUsesDefaultPrimaryColor(t *testing.T) {
 	t.Parallel()
 
 	keys := []string{
@@ -194,7 +192,7 @@ func TestFromEnvUsesLegacyPrimaryColorFallback(t *testing.T) {
 	cfg := FromEnv()
 	if cfg.PortalPrimaryColorH != 214 || cfg.PortalPrimaryColorS != 91 || cfg.PortalPrimaryColorL != 53 {
 		t.Fatalf(
-			"expected legacy primary color fallback 214/91/53, got %d/%d/%d",
+			"expected default primary color 214/91/53, got %d/%d/%d",
 			cfg.PortalPrimaryColorH,
 			cfg.PortalPrimaryColorS,
 			cfg.PortalPrimaryColorL,

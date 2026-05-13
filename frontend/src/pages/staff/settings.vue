@@ -5,23 +5,14 @@ definePage({
   meta: staffPageMeta()
 })
 
-import { computed } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import { canManagePortalSettings } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
 
 const sessionStore = useSessionStore()
-const portalSettingsAvailable = computed(() => canManagePortalSettings(sessionStore.roles, sessionStore.permissions))
 
-const settingLinks = computed(() => [
-  {
-    to: '/staff/settings/portal',
-    label: 'Portal 設定',
-    description: 'ポータル名、URL、連絡先、基本配色などの全体設定を管理します。',
-    hidden: !portalSettingsAvailable.value
-  },
+const settingLinks = [
   {
     to: '/staff/contact-categories',
     label: 'お問い合わせ受付設定',
@@ -43,16 +34,11 @@ const settingLinks = computed(() => [
     description: 'CSV・ZIP などのデータ出力を管理します。'
   },
   {
-    to: '/staff/about',
-    label: 'PortalDots について',
-    description: 'システム概要と公式サイトへの導線を確認します。'
-  },
-  {
     to: '/staff/markdown-guide',
     label: 'Markdown ガイド',
     description: '本文入力でよく使う Markdown 記法を確認します。'
   }
-])
+]
 </script>
 
 <template>
@@ -63,7 +49,7 @@ const settingLinks = computed(() => [
       overflow-hidden
     >
       <div class="divide-y divide-border">
-        <ListItemLink v-for="link in settingLinks.filter((link) => link.hidden !== true)" :key="link.to" :to="link.to">
+        <ListItemLink v-for="link in settingLinks" :key="link.to" :to="link.to">
           <template #title>{{ link.label }}</template>
           {{ link.description }}
         </ListItemLink>

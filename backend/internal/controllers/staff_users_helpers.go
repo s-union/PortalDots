@@ -50,6 +50,12 @@ func bindAndValidateStaffUser(c echo.Context) (updateStaffUserRequest, map[strin
 	request.LoginIDs = loginIDs
 
 	errors := map[string][]string{}
+	if request.LastName == "" {
+		errors["lastName"] = []string{"姓を入力してください"}
+	}
+	if request.FirstName == "" {
+		errors["firstName"] = []string{"名を入力してください"}
+	}
 	if request.DisplayName == "" {
 		errors["displayName"] = []string{"表示名を入力してください"}
 	}

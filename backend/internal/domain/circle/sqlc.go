@@ -516,6 +516,14 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 	}, nil
 }
 
+func (c *SQLCCatalog) SubmitByStaff(circleID string) error {
+	_, err := c.queries.SubmitCircle(context.Background(), circleID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	}
+	return err
+}
+
 func (c *SQLCCatalog) ListMembers(circleID string) ([]CircleMember, error) {
 	rows, err := c.queries.ListCircleMembers(context.Background(), circleID)
 	if err != nil {

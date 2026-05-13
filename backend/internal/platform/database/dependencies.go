@@ -17,7 +17,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
-	"github.com/s-union/PortalDots/backend/internal/domain/portalsetting"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -38,7 +37,6 @@ type Dependencies struct {
 	Pages                page.Repository
 	PendingRegistrations pendingregistration.Repository
 	ParticipationTypes   participationtype.Repository
-	Portal               portalsetting.Repository
 	Places               place.Repository
 	Sessions             session.Store
 	Tags                 tag.Repository
@@ -78,26 +76,11 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 		Pages:                page.NewSQLCRepository(queries),
 		PendingRegistrations: pendingregistration.NewSQLCRepository(queries),
 		ParticipationTypes:   participationtype.NewSQLCRepository(queries),
-		Portal: portalsetting.NewMemoryRepository(portalsetting.Settings{
-			AppName:                   cfg.AppName,
-			PortalDescription:         cfg.PortalDescription,
-			AppURL:                    cfg.AppURL,
-			AppForceHTTPS:             cfg.AppForceHTTPS,
-			PortalAdminName:           cfg.PortalAdminName,
-			PortalContactEmail:        cfg.PortalContactEmail,
-			PortalUnivemailLocalPart:  cfg.PortalUnivemailLocalPart,
-			PortalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
-			PortalStudentIDName:       cfg.PortalStudentIDName,
-			PortalUnivemailName:       cfg.PortalUnivemailName,
-			PortalPrimaryColorH:       cfg.PortalPrimaryColorH,
-			PortalPrimaryColorS:       cfg.PortalPrimaryColorS,
-			PortalPrimaryColorL:       cfg.PortalPrimaryColorL,
-		}),
-		Places:   place.NewSQLCRepository(queries),
-		Sessions: session.NewSQLCStore(queries, cfg.SessionTTL),
-		Tags:     tag.NewSQLCRepository(queries),
-		Users:    useradmin.NewSQLCRepository(store.Pool(), queries),
-		Close:    store.Close,
+		Places:               place.NewSQLCRepository(queries),
+		Sessions:             session.NewSQLCStore(queries, cfg.SessionTTL),
+		Tags:                 tag.NewSQLCRepository(queries),
+		Users:                useradmin.NewSQLCRepository(store.Pool(), queries),
+		Close:                store.Close,
 	}, nil
 }
 

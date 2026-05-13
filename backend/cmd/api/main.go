@@ -40,7 +40,6 @@ func main() {
 			Pages:                dependencies.Pages,
 			PendingRegistrations: dependencies.PendingRegistrations,
 			ParticipationTypes:   dependencies.ParticipationTypes,
-			Portal:               dependencies.Portal,
 		},
 		Workspace: httpserver.WorkspaceDependencies{
 			Answers:            dependencies.Answers,
@@ -64,7 +63,6 @@ func main() {
 			Pages:              dependencies.Pages,
 			ParticipationTypes: dependencies.ParticipationTypes,
 			Places:             dependencies.Places,
-			Portal:             dependencies.Portal,
 			Tags:               dependencies.Tags,
 			Users:              dependencies.Users,
 		},

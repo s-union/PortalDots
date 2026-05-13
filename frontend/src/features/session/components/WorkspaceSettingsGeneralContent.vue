@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -7,9 +8,12 @@ import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useUserSettingsGeneralTab } from '@/features/session/composables/useUserSettingsGeneralTab'
+import { useSessionStore } from '@/features/session/store'
 import FormError from '@/components/ui/FormError.vue'
 
 const publicConfigQuery = usePublicConfigQuery()
+const sessionStore = useSessionStore()
+const isInCircle = computed(() => sessionStore.currentCircle !== null)
 const {
   errorMessage,
   forgotPasswordHref,
@@ -61,6 +65,7 @@ const {
             <input
               v-model="form.name"
               aria-label="名前"
+              :disabled="isInCircle"
               name="name"
               placeholder="姓 名"
               type="text"
@@ -68,6 +73,7 @@ const {
               @blur="markTouched('name')"
               @input="markTouched('name')"
             />
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('name')" :message="getFieldError('name')" />
           </div>
         </div>
@@ -79,6 +85,7 @@ const {
             <input
               v-model="form.nameYomi"
               aria-label="名前(よみ)"
+              :disabled="isInCircle"
               name="nameYomi"
               placeholder="せい めい"
               type="text"
@@ -86,6 +93,7 @@ const {
               @blur="markTouched('nameYomi')"
               @input="markTouched('nameYomi')"
             />
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('nameYomi')" :message="getFieldError('nameYomi')" />
           </div>
         </div>
@@ -97,12 +105,14 @@ const {
             <input
               v-model="form.contactEmail"
               aria-label="連絡先メールアドレス"
+              :disabled="isInCircle"
               name="contactEmail"
               type="email"
               :class="{ 'border-danger': getFieldError('contactEmail') }"
               @blur="markTouched('contactEmail')"
               @input="markTouched('contactEmail')"
             />
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('contactEmail')" :message="getFieldError('contactEmail')" />
           </div>
         </div>
@@ -114,12 +124,14 @@ const {
             <input
               v-model="form.phoneNumber"
               aria-label="連絡先電話番号"
+              :disabled="isInCircle"
               name="phoneNumber"
               type="tel"
               :class="{ 'border-danger': getFieldError('phoneNumber') }"
               @blur="markTouched('phoneNumber')"
               @input="markTouched('phoneNumber')"
             />
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('phoneNumber')" :message="getFieldError('phoneNumber')" />
           </div>
         </div>

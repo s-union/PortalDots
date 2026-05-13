@@ -17,9 +17,9 @@ const integrationLockKey = 91059
 func RequireDatabaseURL(t testing.TB) string {
 	t.Helper()
 
-	databaseURL := strings.TrimSpace(os.Getenv("PORTALDOTS_DATABASE_URL"))
+	databaseURL := strings.TrimSpace(os.Getenv("PORTAL_DATABASE_URL"))
 	if databaseURL == "" {
-		t.Skip("integration tests require PORTALDOTS_DATABASE_URL")
+		t.Skip("integration tests require PORTAL_DATABASE_URL")
 	}
 
 	return databaseURL
