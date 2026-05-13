@@ -267,6 +267,49 @@ func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi,
 	return circleFromSetStatusRow(statusRow, placeNames), nil
 }
 
+func (c *SQLCCatalog) UpdateTags(circleID string, tags []string) (Circle, error) {
+	current, err := c.Find(circleID)
+	if err != nil {
+		return Circle{}, err
+	}
+
+	row, err := c.queries.UpdateCircle(context.Background(), dbgen.UpdateCircleParams{
+		ID:                    circleID,
+		Name:                  current.Name,
+		GroupName:             current.GroupName,
+		ParticipationTypeID:   optionalString(current.ParticipationTypeID),
+		ParticipationTypeName: current.ParticipationTypeName,
+		Tags:                  tags,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Circle{}, ErrNotFound
+		}
+		return Circle{}, err
+	}
+
+	return Circle{
+		ID:                    row.ID,
+		Name:                  row.Name,
+		NameYomi:              row.NameYomi,
+		GroupName:             row.GroupName,
+		GroupNameYomi:         row.GroupNameYomi,
+		ParticipationTypeID:   derefString(row.ParticipationTypeID),
+		ParticipationTypeName: row.ParticipationTypeName,
+		Tags:                  append([]string{}, row.Tags...),
+		InvitationToken:       nullableTextValue(row.InvitationToken),
+		SubmittedAt:           nullableTime(row.SubmittedAt),
+		UpdatedAt:             requiredTime(row.UpdatedAt),
+		Notes:                 row.Notes,
+		CanChangeGroupName:    row.CanChangeGroupName,
+		Status:                row.Status,
+		StatusReason:          row.StatusReason,
+		StatusSetAt:           nullableTime(row.StatusSetAt),
+		StatusSetByID:         row.StatusSetBy,
+		Places:                current.Places,
+	}, nil
+}
+
 func (c *SQLCCatalog) Delete(circleID string) error {
 	err := c.queries.DeleteCircle(context.Background(), circleID)
 	if err != nil {

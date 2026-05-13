@@ -178,6 +178,8 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 	}
 	if req.NameYomi == "" {
 		validationErrors["nameYomi"] = []string{"企画名(よみ)を入力してください"}
+	} else if !isValidYomi(req.NameYomi) {
+		validationErrors["nameYomi"] = []string{"ひらがなで入力してください"}
 	}
 	if req.ParticipationTypeID == "" {
 		validationErrors["participationTypeId"] = []string{"参加種別を選択してください"}
@@ -210,6 +212,8 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 		}
 		if req.GroupNameYomi == "" {
 			validationErrors["groupNameYomi"] = []string{"団体名(よみ)を入力してください"}
+		} else if !isValidYomi(req.GroupNameYomi) {
+			validationErrors["groupNameYomi"] = []string{"ひらがなで入力してください"}
 		}
 	} else {
 		req.GroupName = groupName
@@ -510,6 +514,25 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
+	// 参加種別のタグを企画に同期（syncWithoutDetaching）
+	mergedTags := make([]string, len(submitted.Tags))
+	copy(mergedTags, submitted.Tags)
+	existingTagMap := map[string]bool{}
+	for _, t := range mergedTags {
+		existingTagMap[t] = true
+	}
+	for _, t := range pt.Tags {
+		if !existingTagMap[t] {
+			mergedTags = append(mergedTags, t)
+		}
+	}
+	if len(mergedTags) > len(submitted.Tags) {
+		_, err = h.circles.UpdateTags(submitted.ID, mergedTags)
+		if err != nil {
+			return internalError(c)
+		}
+	}
+
 	subject := fmt.Sprintf("【参加登録】「%s」の参加登録を提出しました", submitted.Name)
 	body := buildCircleSubmittedMailBody(submitted, members, formValue.ConfirmationMessage, answerSummary)
 	if _, _, err := enqueueCircleNotificationMail(
@@ -662,6 +685,9 @@ func (h *workspaceHandlers) getCircleByInvitationToken(c echo.Context) error {
 	}
 	if err != nil {
 		return internalError(c)
+	}
+	if joinTarget.SubmittedAt != nil {
+		return errorJSON(c, http.StatusNotFound, "invalid_token")
 	}
 	pt, formValue, _, err := h.resolveParticipationRegistrationForm(joinTarget.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {

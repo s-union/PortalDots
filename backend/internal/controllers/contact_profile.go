@@ -70,7 +70,46 @@ func (h *authHandlers) listContactHistory(c echo.Context) error {
 		return statusError(c, http.StatusConflict)
 	}
 
-	return c.JSON(http.StatusOK, []submitContactResponse{})
+	entries, err := h.mailHistory.List(c.Request().Context())
+	if err != nil {
+		return internalError(c)
+	}
+
+	response := make([]submitContactResponse, 0)
+	for _, entry := range entries {
+		if !contactHistoryMatches(entry.Body, selectedCircle.ID, currentSession.User.ID) {
+			continue
+		}
+		categoryID, categoryName := extractContactMetadata(entry.Body)
+		response = append(response, submitContactResponse{
+			ID:           entry.JobID,
+			CategoryID:   categoryID,
+			CategoryName: categoryName,
+			Subject:      entry.Subject,
+			Status:       "sent",
+			CreatedAt:    entry.CreatedAt,
+		})
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func contactHistoryMatches(body, circleID, userID string) bool {
+	return strings.Contains(body, circleID) && strings.Contains(body, userID)
+}
+
+func extractContactMetadata(body string) (string, string) {
+	categoryID := ""
+	categoryName := ""
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(line, "category_id: ") {
+			categoryID = strings.TrimPrefix(line, "category_id: ")
+		}
+		if strings.HasPrefix(line, "category_name: ") {
+			categoryName = strings.TrimPrefix(line, "category_name: ")
+		}
+	}
+	return categoryID, categoryName
 }
 
 func (h *authHandlers) listContactCategories(c echo.Context) error {
@@ -141,11 +180,13 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 	}
 
 	staffBody := fmt.Sprintf(
-		"PortalDots contact request\ncategory_id: %s\ncategory_name: %s\nfrom: %s (%s)\ncircle: %s (%s)\nsubject: %s\n\n%s",
+		"PortalDots contact request\ncategory_id: %s\ncategory_name: %s\nfrom_user_id: %s\nfrom: %s (%s)\ncircle_id: %s\ncircle: %s (%s)\nsubject: %s\n\n%s",
 		category.ID,
 		category.Name,
+		currentSession.User.ID,
 		currentSession.User.DisplayName,
 		currentSession.User.ID,
+		selectedCircle.ID,
 		selectedCircle.Name,
 		selectedCircle.ID,
 		request.Subject,

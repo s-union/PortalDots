@@ -72,6 +72,7 @@ type Catalog interface {
 	Find(circleID string) (Circle, error)
 	Create(name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
 	Update(circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
+	UpdateTags(circleID string, tags []string) (Circle, error)
 	Delete(circleID string) error
 
 	// Workspace user-facing methods
@@ -244,6 +245,21 @@ func (c *StaticCatalog) Update(circleID, name, nameYomi, groupName, groupNameYom
 		c.circles[index].Status = status
 		c.circles[index].StatusReason = statusReason
 		c.circles[index].Places = slices.Clone(placeIDs)
+		return cloneCircle(c.circles[index]), nil
+	}
+
+	return Circle{}, ErrNotFound
+}
+
+func (c *StaticCatalog) UpdateTags(circleID string, tags []string) (Circle, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for index := range c.circles {
+		if c.circles[index].ID != circleID {
+			continue
+		}
+		c.circles[index].Tags = slices.Clone(tags)
 		return cloneCircle(c.circles[index]), nil
 	}
 

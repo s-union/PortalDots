@@ -4,33 +4,34 @@ import "github.com/labstack/echo/v4"
 
 // PublicRoutes holds handler function references for public endpoints.
 type PublicRoutes struct {
-	GetPublicConfig          echo.HandlerFunc
-	GetPublicHome            echo.HandlerFunc
-	ListPublicPages          echo.HandlerFunc
-	GetPublicPage            echo.HandlerFunc
-	ListPublicDocuments      echo.HandlerFunc
-	GetPublicDocument        echo.HandlerFunc
-	SessionBootstrap         echo.HandlerFunc
-	UpdateProfile            echo.HandlerFunc
-	UpdatePassword           echo.HandlerFunc
-	DeleteAccount            echo.HandlerFunc
-	StartRegistration        echo.HandlerFunc
-	VerifyRegistration       echo.HandlerFunc
-	CompleteRegistration     echo.HandlerFunc
-	StartPasswordReset       echo.HandlerFunc
-	VerifyPasswordReset      echo.HandlerFunc
-	CompletePasswordReset    echo.HandlerFunc
-	Login                    echo.HandlerFunc
-	Logout                   echo.HandlerFunc
-	GetAuthVerification      echo.HandlerFunc
-	RequestAuthVerification  echo.HandlerFunc
-	VerifyAuthVerification   echo.HandlerFunc
-	ListContactCategories    echo.HandlerFunc
-	ListContactHistory       echo.HandlerFunc
-	SubmitContact            echo.HandlerFunc
-	StaffStatus              echo.HandlerFunc
-	RequestStaffVerification echo.HandlerFunc
-	ConfirmStaffVerification echo.HandlerFunc
+	GetPublicConfig            echo.HandlerFunc
+	GetPublicHome              echo.HandlerFunc
+	ListPublicPages            echo.HandlerFunc
+	GetPublicPage              echo.HandlerFunc
+	ListPublicDocuments        echo.HandlerFunc
+	GetPublicDocument          echo.HandlerFunc
+	SessionBootstrap           echo.HandlerFunc
+	UpdateProfile              echo.HandlerFunc
+	UpdatePassword             echo.HandlerFunc
+	DeleteAccount              echo.HandlerFunc
+	StartRegistration          echo.HandlerFunc
+	VerifyRegistration         echo.HandlerFunc
+	CompleteRegistration       echo.HandlerFunc
+	StartPasswordReset         echo.HandlerFunc
+	VerifyPasswordReset        echo.HandlerFunc
+	CompletePasswordReset      echo.HandlerFunc
+	Login                      echo.HandlerFunc
+	Logout                     echo.HandlerFunc
+	GetAuthVerification        echo.HandlerFunc
+	RequestAuthVerification    echo.HandlerFunc
+	VerifyAuthVerification     echo.HandlerFunc
+	ListContactCategories      echo.HandlerFunc
+	ListContactHistory         echo.HandlerFunc
+	SubmitContact              echo.HandlerFunc
+	StaffStatus                echo.HandlerFunc
+	RequestStaffVerification   echo.HandlerFunc
+	ConfirmStaffVerification   echo.HandlerFunc
+	GetCircleByInvitationToken echo.HandlerFunc
 }
 
 // StaffRoutes holds handler function references for staff endpoints.
@@ -152,7 +153,6 @@ type WorkspaceRoutes struct {
 	AddCurrentCircleMember               echo.HandlerFunc
 	RemoveCurrentCircleMember            echo.HandlerFunc
 	RegenerateInvitationToken            echo.HandlerFunc
-	GetCircleByInvitationToken           echo.HandlerFunc
 	JoinCircleByToken                    echo.HandlerFunc
 	ListDocuments                        echo.HandlerFunc
 	GetDocument                          echo.HandlerFunc
@@ -195,6 +195,7 @@ func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
 	v1.GET("/auth/verification", r.GetAuthVerification)
 	v1.POST("/auth/verification/request", r.RequestAuthVerification)
 	v1.POST("/auth/verification/verify", r.VerifyAuthVerification)
+	v1.GET("/circles/join/:token", r.GetCircleByInvitationToken)
 	v1.GET("/contact-categories", r.ListContactCategories)
 	v1.GET("/contact", r.ListContactHistory)
 	v1.POST("/contact", r.SubmitContact)

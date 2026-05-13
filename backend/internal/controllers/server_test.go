@@ -155,8 +155,11 @@ func TestContactCategoriesAndSubmitContact(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &history); err != nil {
 		t.Fatalf("unmarshal contact history: %v", err)
 	}
-	if len(history) != 0 {
-		t.Fatalf("unexpected contact history: %#v", history)
+	if len(history) == 0 {
+		t.Fatal("expected contact history after submitting")
+	}
+	if history[0].Subject != "搬入時間について" {
+		t.Fatalf("unexpected contact history subject: %#v", history[0])
 	}
 }
 

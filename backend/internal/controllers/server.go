@@ -68,12 +68,15 @@ type authHandlers struct {
 	registrationAuth          auth.RegistrationAuthenticator
 	circles                   circle.Catalog
 	contactCategories         contactcategory.Repository
+	mailHistory               mailhistory.Repository
 	pendingRegistrations      pendingregistration.Repository
 	passwordResetTokens       *passwordResetTokenStore
 	authVerificationTokens    *authVerificationTokenStore
 	emailSender               cloudflareemail.Sender
 	portalUnivemailDomainPart string
+	portalUnivemailLocalPart  string
 	registrationVerifyTTL     time.Duration
+	loginAttempts             *loginAttemptTracker
 	appURL                    string
 	appName                   string
 	from                      string
@@ -345,12 +348,15 @@ func NewServerWithDependencies(
 		registrationAuth:          registrationAuth,
 		circles:                   circles,
 		contactCategories:         contactCategories,
+		mailHistory:               mailHistory,
 		pendingRegistrations:      pendingRegistrations,
 		passwordResetTokens:       newPasswordResetTokenStore(),
 		authVerificationTokens:    newAuthVerificationTokenStore(),
 		emailSender:               emailSender,
 		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
+		portalUnivemailLocalPart:  cfg.PortalUnivemailLocalPart,
 		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
+		loginAttempts:             newLoginAttemptTracker(5, 5*time.Minute),
 		appURL:                    cfg.AppURL,
 		appName:                   cfg.AppName,
 		from:                      cfg.EmailFrom,
@@ -518,33 +524,34 @@ func NewServerWithDependencies(
 	v1.Use(demoModeMiddleware(cfg.EnableDemoMode))
 
 	RegisterPublicRoutes(v1, PublicRoutes{
-		GetPublicConfig:          publicHomeH.getPublicConfig,
-		GetPublicHome:            publicHomeH.getPublicHome,
-		ListPublicPages:          publicHomeH.listPublicPages,
-		GetPublicPage:            publicHomeH.getPublicPage,
-		ListPublicDocuments:      publicHomeH.listPublicDocuments,
-		GetPublicDocument:        publicHomeH.getPublicDocument,
-		SessionBootstrap:         authH.sessionBootstrap,
-		UpdateProfile:            authH.updateProfile,
-		UpdatePassword:           authH.updatePassword,
-		DeleteAccount:            authH.deleteAccount,
-		StartRegistration:        authH.startRegistration,
-		VerifyRegistration:       authH.verifyRegistration,
-		CompleteRegistration:     authH.completeRegistration,
-		StartPasswordReset:       authH.startPasswordReset,
-		VerifyPasswordReset:      authH.verifyPasswordReset,
-		CompletePasswordReset:    authH.completePasswordReset,
-		Login:                    authH.login,
-		Logout:                   authH.logout,
-		GetAuthVerification:      authH.getAuthVerification,
-		RequestAuthVerification:  authH.requestAuthVerification,
-		VerifyAuthVerification:   authH.verifyAuthVerification,
-		ListContactCategories:    authH.listContactCategories,
-		ListContactHistory:       authH.listContactHistory,
-		SubmitContact:            authH.submitContact,
-		StaffStatus:              staffVerifyH.staffStatus,
-		RequestStaffVerification: staffVerifyH.requestStaffVerification,
-		ConfirmStaffVerification: staffVerifyH.confirmStaffVerification,
+		GetPublicConfig:            publicHomeH.getPublicConfig,
+		GetPublicHome:              publicHomeH.getPublicHome,
+		ListPublicPages:            publicHomeH.listPublicPages,
+		GetPublicPage:              publicHomeH.getPublicPage,
+		ListPublicDocuments:        publicHomeH.listPublicDocuments,
+		GetPublicDocument:          publicHomeH.getPublicDocument,
+		SessionBootstrap:           authH.sessionBootstrap,
+		UpdateProfile:              authH.updateProfile,
+		UpdatePassword:             authH.updatePassword,
+		DeleteAccount:              authH.deleteAccount,
+		StartRegistration:          authH.startRegistration,
+		VerifyRegistration:         authH.verifyRegistration,
+		CompleteRegistration:       authH.completeRegistration,
+		StartPasswordReset:         authH.startPasswordReset,
+		VerifyPasswordReset:        authH.verifyPasswordReset,
+		CompletePasswordReset:      authH.completePasswordReset,
+		Login:                      authH.login,
+		Logout:                     authH.logout,
+		GetAuthVerification:        authH.getAuthVerification,
+		RequestAuthVerification:    authH.requestAuthVerification,
+		VerifyAuthVerification:     authH.verifyAuthVerification,
+		ListContactCategories:      authH.listContactCategories,
+		ListContactHistory:         authH.listContactHistory,
+		SubmitContact:              authH.submitContact,
+		StaffStatus:                staffVerifyH.staffStatus,
+		RequestStaffVerification:   staffVerifyH.requestStaffVerification,
+		ConfirmStaffVerification:   staffVerifyH.confirmStaffVerification,
+		GetCircleByInvitationToken: workspaceH.getCircleByInvitationToken,
 	})
 
 	RegisterStaffRoutes(v1, StaffRoutes{
@@ -648,8 +655,6 @@ func NewServerWithDependencies(
 		GetStaffPermission:     staffPermissionH.getStaffPermission,
 		UpdateStaffPermissions: staffPermissionH.updateStaffPermissions,
 	}, middlewares.RequireStaffMode(sessionMiddlewareConfig, hasStaffAccess))
-
-	v1.GET("/circles/join/:token", workspaceH.getCircleByInvitationToken)
 
 	RegisterWorkspaceRoutes(v1, WorkspaceRoutes{
 		ListCircles:                          workspaceH.listCircles,

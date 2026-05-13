@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const participantVerifyTTL = 5 * time.Minute
+const participantVerifyTTL = 60 * time.Minute
 
 type authVerificationStatusResponse struct {
 	UserID      string                       `json:"userId"`
@@ -88,6 +88,16 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 	}
 	if strings.TrimSpace(h.portalUnivemailDomainPart) == "" {
 		validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "大学メールアドレスのドメインが未設定です")
+	}
+	// A7: 構築したunivemailのドメインが設定値と一致するか検証
+	if univemail != "" && h.portalUnivemailDomainPart != "" && !strings.HasSuffix(univemail, "@"+strings.ToLower(strings.TrimSpace(h.portalUnivemailDomainPart))) {
+		validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "大学メールアドレスのドメインが正しくありません")
+	}
+	// A8: univemail_local_part が "student_id" の場合、クロスフィールド検証
+	if h.portalUnivemailLocalPart == "student_id" && request.UnivemailLocalPart != "" {
+		if strings.Contains(request.UnivemailLocalPart, "@") {
+			validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "学籍番号を入力してください")
+		}
 	}
 	if _, err := h.users.FindByLoginID(studentID); err == nil {
 		validationErrors["univemailLocalPart"] = append(validationErrors["univemailLocalPart"], "この大学メールアドレスはすでに登録されています")
@@ -286,7 +296,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	if _, err := h.issueRegisteredUserSession(c, createdUser); err != nil {
 		return err
 	}
-	if request.ContactEmail != "" && !contactEmailMatchesUnivemail {
+	if request.ContactEmail != "" {
 		if err := h.sendParticipantVerificationLink(
 			c.Request().Context(),
 			createdUser.ID,
@@ -295,6 +305,15 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 		); err != nil {
 			return internalError(c)
 		}
+	}
+	// 大学メールにも認証リンクを送信（Laravel互換）
+	if err := h.sendParticipantVerificationLink(
+		c.Request().Context(),
+		createdUser.ID,
+		"univemail",
+		pendingValue.Univemail,
+	); err != nil {
+		return internalError(c)
 	}
 
 	return c.NoContent(http.StatusNoContent)
