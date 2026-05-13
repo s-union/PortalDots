@@ -20,6 +20,7 @@ type Category struct {
 
 type Repository interface {
 	List() ([]Category, error)
+	Find(id string) (Category, error)
 	Create(name, email string) (Category, error)
 	Update(id, name, email string) (Category, error)
 	Delete(id string) error
@@ -53,6 +54,18 @@ func (r *MemoryRepository) List() ([]Category, error) {
 	defer r.mu.RUnlock()
 
 	return slices.Clone(r.items), nil
+}
+
+func (r *MemoryRepository) Find(id string) (Category, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, item := range r.items {
+		if item.ID == id {
+			return item, nil
+		}
+	}
+	return Category{}, ErrNotFound
 }
 
 func (r *MemoryRepository) Create(name, email string) (Category, error) {

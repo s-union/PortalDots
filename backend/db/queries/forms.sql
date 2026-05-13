@@ -1,5 +1,5 @@
 -- name: ListPublicOpenFormsByCircle :many
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
+SELECT *
 FROM forms
 WHERE circle_id = $1
   AND is_public = true
@@ -7,7 +7,7 @@ WHERE circle_id = $1
 ORDER BY close_at ASC, id ASC;
 
 -- name: GetPublicOpenFormByID :one
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
+SELECT *
 FROM forms
 WHERE circle_id = $1
   AND id = $2
@@ -16,28 +16,28 @@ WHERE circle_id = $1
 LIMIT 1;
 
 -- name: ListStaffFormsByCircle :many
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
+SELECT *
 FROM forms
 WHERE circle_id IS NOT DISTINCT FROM $1
 ORDER BY close_at ASC, id ASC;
 
 -- name: GetStaffFormByID :one
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
+SELECT *
 FROM forms
 WHERE circle_id IS NOT DISTINCT FROM $1
   AND id = $2
 LIMIT 1;
 
 -- name: GetAnyStaffFormByID :one
-SELECT id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at
+SELECT *
 FROM forms
 WHERE id = $1
 LIMIT 1;
 
 -- name: CreateForm :one
-INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message)
-VALUES (uuidv7(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at;
+INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_by_user_id)
+VALUES (uuidv7(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+RETURNING *;
 
 -- name: UpdateForm :one
 UPDATE forms
@@ -53,7 +53,7 @@ SET name = $3,
     confirmation_message = $11
 WHERE circle_id = $1
   AND id = $2
-RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at;
+RETURNING *;
 
 -- name: UpdateAnyFormByID :one
 UPDATE forms
@@ -68,7 +68,7 @@ SET name = $2,
     answerable_tags = $9,
     confirmation_message = $10
 WHERE id = $1
-RETURNING id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_at, updated_at;
+RETURNING *;
 
 -- name: DeleteForm :execrows
 DELETE FROM forms

@@ -473,6 +473,14 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 		return validationError(c, validationErrors)
 	}
 
+	old, err := h.contactCategories.Find(c.Param("categoryID"))
+	if errors.Is(err, contactcategory.ErrNotFound) {
+		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
 	updated, err := h.contactCategories.Update(c.Param("categoryID"), request.Name, request.Email)
 	if errors.Is(err, contactcategory.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
@@ -480,8 +488,10 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 	if err != nil {
 		return internalError(c)
 	}
-	if err := h.enqueueContactCategoryAssignedMail(c.Request().Context(), currentSession.User.ID, updated); err != nil {
-		return internalError(c)
+	if old.Email != updated.Email {
+		if err := h.enqueueContactCategoryAssignedMail(c.Request().Context(), currentSession.User.ID, updated); err != nil {
+			return internalError(c)
+		}
 	}
 
 	recordActivity(c.Request().Context(), h.activities, currentSession.User.ID, "staff.contact_category.updated", "contact_category", updated.ID, "", buildActivitySummary("staff が問い合わせカテゴリを更新しました", updated.Name))

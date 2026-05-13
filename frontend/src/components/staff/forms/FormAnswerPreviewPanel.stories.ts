@@ -21,6 +21,7 @@ const baseQuestion = {
   description: '',
   type: 'text' as const,
   isRequired: true,
+  isPermanent: false,
   numberMin: null,
   numberMax: null,
   allowedTypes: '',

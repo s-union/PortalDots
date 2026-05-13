@@ -1839,6 +1839,11 @@ func TestRegenerateInvitationTokenAfterSubmitReturnsOK(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal detail response: %v", err)
 	}
+	if slices.ContainsFunc(detail.Questions, func(question staffFormQuestion) bool {
+		return question.IsPermanent || strings.HasPrefix(question.ID, "circle.")
+	}) {
+		t.Fatalf("expected circle registration questions to exclude permanent circle fields, got %#v", detail.Questions)
+	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/circles/current/submit", map[string]string{
 		"lastUpdatedAt": detail.LastUpdatedAt,
@@ -4239,6 +4244,11 @@ func TestParticipationFormUsesParticipationTypeSettingsRoute(t *testing.T) {
 	}
 	if preview.ID != "0195ec00-0012-7000-8000-000000000001" {
 		t.Fatalf("unexpected participation form preview: %#v", preview)
+	}
+	if slices.ContainsFunc(preview.Questions, func(question staffFormQuestion) bool {
+		return question.IsPermanent || strings.HasPrefix(question.ID, "circle.")
+	}) {
+		t.Fatalf("expected participation form preview to exclude permanent circle fields, got %#v", preview.Questions)
 	}
 	if len(preview.AnswerableTags) != 0 {
 		t.Fatalf("expected participation preview tags to be empty, got %#v", preview.AnswerableTags)

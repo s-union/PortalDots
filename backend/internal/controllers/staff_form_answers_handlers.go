@@ -51,7 +51,7 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, staffFormAnswersIndexResponse{
-		Form:               h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentCircle), questions, nil),
+		Form:               h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentCircle), mapStaffFormQuestions(questions), nil),
 		Answers:            answerResponse,
 		Circles:            allCircles,
 		NotAnsweredCircles: notAnswered,
@@ -110,7 +110,7 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, staffManagedFormAnswerDetailResponse{
-		Form:           h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentFormCircle), questions, nil),
+		Form:           h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentFormCircle), mapStaffFormQuestions(questions), nil),
 		Circle:         mapStaffAnswerCircle(currentCircle),
 		Answer:         buildStaffFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(answerValue.ID)),
 		SiblingAnswers: siblingResponse,

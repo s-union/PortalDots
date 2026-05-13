@@ -3575,7 +3575,7 @@ paths:
                         type: array
                         items:
                           type: object
-                          required: [id, name, description, type, isRequired, numberMin, numberMax, allowedTypes, options, priority, createdAt, updatedAt]
+                          required: [id, name, description, type, isRequired, isPermanent, numberMin, numberMax, allowedTypes, options, priority, createdAt, updatedAt]
                           properties:
                             id:
                               type: string
@@ -3586,6 +3586,8 @@ paths:
                             type:
                               type: string
                             isRequired:
+                              type: boolean
+                            isPermanent:
                               type: boolean
                             numberMin:
                               oneOf:

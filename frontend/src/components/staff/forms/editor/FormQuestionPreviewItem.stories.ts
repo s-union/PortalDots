@@ -25,6 +25,7 @@ const baseQuestion: StaffFormQuestion = {
   description: '企画の正式名称を入力してください。',
   type: 'text',
   isRequired: true,
+  isPermanent: false,
   numberMin: null,
   numberMax: null,
   allowedTypes: '',

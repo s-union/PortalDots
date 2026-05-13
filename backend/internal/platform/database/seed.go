@@ -300,6 +300,7 @@ func seedForms(ctx context.Context, q *dbgen.Queries, forms []config.Form) error
 			MaxAnswers:          item.MaxAnswers,
 			AnswerableTags:      item.AnswerableTags,
 			ConfirmationMessage: item.ConfirmationMessage,
+			CreatedByUserID:     optionalString(item.CreatedByUserID),
 		}); err != nil {
 			return err
 		}

@@ -96,6 +96,7 @@ func (r *SQLCRepository) Create(
 	maxAnswers int32,
 	answerableTags []string,
 	confirmationMessage string,
+	createdByUserID string,
 ) Form {
 	openAtValue, err := time.Parse(time.RFC3339, openAt)
 	if err != nil {
@@ -117,6 +118,7 @@ func (r *SQLCRepository) Create(
 		MaxAnswers:          maxAnswers,
 		AnswerableTags:      answerableTags,
 		ConfirmationMessage: confirmationMessage,
+		CreatedByUserID:     optionalString(createdByUserID),
 	})
 	if err != nil {
 		return Form{}
@@ -231,6 +233,7 @@ func mapStaffListRowToForm(row dbgen.Form) Form {
 		row.MaxAnswers,
 		row.AnswerableTags,
 		row.ConfirmationMessage,
+		row.CreatedByUserID,
 	)
 }
 
@@ -248,6 +251,7 @@ func mapStaffDetailRowToForm(row dbgen.Form) Form {
 		row.MaxAnswers,
 		row.AnswerableTags,
 		row.ConfirmationMessage,
+		row.CreatedByUserID,
 	)
 }
 
@@ -265,6 +269,7 @@ func mapAnyStaffDetailRowToForm(row dbgen.Form) Form {
 		row.MaxAnswers,
 		row.AnswerableTags,
 		row.ConfirmationMessage,
+		row.CreatedByUserID,
 	)
 }
 
@@ -282,6 +287,7 @@ func mapCreateRowToForm(row dbgen.Form) Form {
 		row.MaxAnswers,
 		row.AnswerableTags,
 		row.ConfirmationMessage,
+		row.CreatedByUserID,
 	)
 }
 
@@ -299,6 +305,7 @@ func mapUpdateRowToForm(row dbgen.Form) Form {
 		row.MaxAnswers,
 		row.AnswerableTags,
 		row.ConfirmationMessage,
+		row.CreatedByUserID,
 	)
 }
 
@@ -316,6 +323,7 @@ func mapUpdateAnyRowToForm(row dbgen.Form) Form {
 		row.MaxAnswers,
 		row.AnswerableTags,
 		row.ConfirmationMessage,
+		row.CreatedByUserID,
 	)
 }
 
@@ -332,6 +340,7 @@ func buildForm(
 	maxAnswers int32,
 	answerableTags []string,
 	confirmationMessage string,
+	createdByUserID *string,
 ) Form {
 	openAt := pgutil.FormatTimestamptz(openAtValue)
 	closeAt := pgutil.FormatTimestamptz(closeAtValue)
@@ -351,6 +360,7 @@ func buildForm(
 		MaxAnswers:          maxAnswers,
 		AnswerableTags:      append([]string{}, answerableTags...),
 		ConfirmationMessage: confirmationMessage,
+		CreatedByUserID:     derefString(createdByUserID),
 	}
 }
 

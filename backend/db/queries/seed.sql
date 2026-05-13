@@ -23,8 +23,8 @@ SET name = EXCLUDED.name,
     tags = EXCLUDED.tags;
 
 -- name: SeedUpsertForm :exec
-INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_by_user_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 ON CONFLICT (id) DO UPDATE
 SET circle_id = EXCLUDED.circle_id,
     name = EXCLUDED.name,
@@ -35,7 +35,8 @@ SET circle_id = EXCLUDED.circle_id,
     close_at = EXCLUDED.close_at,
     max_answers = EXCLUDED.max_answers,
     answerable_tags = EXCLUDED.answerable_tags,
-    confirmation_message = EXCLUDED.confirmation_message;
+    confirmation_message = EXCLUDED.confirmation_message,
+    created_by_user_id = EXCLUDED.created_by_user_id;
 
 -- name: SeedUpsertParticipationType :exec
 INSERT INTO participation_types (id, name, description, users_count_min, users_count_max, tags, form_id)

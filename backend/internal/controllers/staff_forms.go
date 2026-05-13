@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type staffFormSummaryResponse struct {
@@ -61,6 +63,7 @@ type staffFormQuestion struct {
 	Description  string   `json:"description"`
 	Type         string   `json:"type"`
 	IsRequired   bool     `json:"isRequired"`
+	IsPermanent  bool     `json:"isPermanent"`
 	NumberMin    *int32   `json:"numberMin"`
 	NumberMax    *int32   `json:"numberMax"`
 	AllowedTypes string   `json:"allowedTypes"`
@@ -190,7 +193,7 @@ func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
 		return internalError(c)
 	}
 
-	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(form, mapStaffManagedCircle(currentCircle), questions, nil))
+	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(form, mapStaffManagedCircle(currentCircle), mapStaffFormQuestions(questions), nil))
 }
 
 func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
@@ -222,7 +225,12 @@ func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
 		request.MaxAnswers,
 		request.AnswerableTags,
 		request.ConfirmationMessage,
+		currentSession.User.ID,
 	)
+	if created.ID == "" {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_form")
+	}
+
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
@@ -301,7 +309,7 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 		return internalError(c)
 	}
 
-	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentCircle), questions, nil))
+	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentCircle), mapStaffFormQuestions(questions), nil))
 }
 
 func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
@@ -333,6 +341,7 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 		source.MaxAnswers,
 		source.AnswerableTags,
 		source.ConfirmationMessage,
+		currentSession.User.ID,
 	)
 	if copied.ID == "" {
 		return errorJSON(c, http.StatusInternalServerError, "copy_failed")
@@ -495,6 +504,21 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 	request.Type = strings.TrimSpace(request.Type)
 	if !slices.Contains(formquestion.AllowedQuestionTypes, request.Type) {
 		return validationError(c, map[string][]string{"type": {"設問タイプが不正です"}})
+	}
+
+	if h.sharedDeps.enableDemoMode {
+		now := time.Now().UTC().Format(time.RFC3339)
+		return c.JSON(http.StatusCreated, staffFormQuestion{
+			ID:          uuidv7.MustString(),
+			Name:        "",
+			Description: "",
+			Type:        request.Type,
+			IsRequired:  false,
+			IsPermanent: false,
+			Priority:    9999,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		})
 	}
 
 	created, err := h.formQuestions.Create(formValue.ID, request.Type)

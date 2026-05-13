@@ -31,12 +31,13 @@ import (
 
 // sharedDeps holds session-related dependencies shared across all domain handler structs.
 type sharedDeps struct {
-	sessionCookieName   string
-	sessionCookieTTL    time.Duration
-	sessionCookieSecure bool
-	staffVerifyCode     string
-	allowDangerously    bool
 	sessions            session.Store
+	allowDangerously    bool
+	enableDemoMode      bool
+	staffVerifyCode     string
+	sessionCookieName   string
+	sessionCookieSecure bool
+	sessionCookieTTL    time.Duration
 }
 
 func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) {
@@ -312,6 +313,7 @@ func NewServerWithDependencies(
 		sessionCookieSecure: cfg.SessionCookieSecure,
 		staffVerifyCode:     cfg.StaffVerifyCode,
 		allowDangerously:    cfg.AllowDangerously,
+		enableDemoMode:      cfg.EnableDemoMode,
 		sessions:            sessionStore,
 	}
 
@@ -365,7 +367,6 @@ func NewServerWithDependencies(
 		pages:              pages,
 		participationTypes: participationTypes,
 		portal:             portal,
-		allowDangerously:   cfg.AllowDangerously,
 		authUser:           cfg.AuthUser,
 		users:              cfg.Users,
 	}
@@ -514,6 +515,7 @@ func NewServerWithDependencies(
 		Sessions:          sessionStore,
 	}
 	v1.Use(middlewares.VerifyCSRF(sessionMiddlewareConfig))
+	v1.Use(demoModeMiddleware(cfg.EnableDemoMode))
 
 	RegisterPublicRoutes(v1, PublicRoutes{
 		GetPublicConfig:          publicHomeH.getPublicConfig,

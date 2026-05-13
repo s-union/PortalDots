@@ -17,6 +17,7 @@ const baseQuestion = {
   id: 'q-1',
   description: '',
   isRequired: true,
+  isPermanent: false,
   numberMin: null,
   numberMax: null,
   allowedTypes: '',

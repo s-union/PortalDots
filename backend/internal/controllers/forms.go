@@ -40,6 +40,7 @@ type formDetailResponse struct {
 	HasAnswer           bool                `json:"hasAnswer,omitempty"`
 	AnswerableTags      []string            `json:"answerableTags"`
 	ConfirmationMessage string              `json:"confirmationMessage"`
+	CreatedByUserID     string              `json:"createdByUserId"`
 	Questions           []staffFormQuestion `json:"questions"`
 }
 
@@ -250,6 +251,7 @@ func (h *workspaceHandlers) buildWorkspaceFormDetailResponse(
 		HasAnswer:           answered,
 		AnswerableTags:      slices.Clone(formValue.AnswerableTags),
 		ConfirmationMessage: formValue.ConfirmationMessage,
+		CreatedByUserID:     formValue.CreatedByUserID,
 		Questions:           questions,
 	}
 }

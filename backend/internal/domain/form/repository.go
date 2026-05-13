@@ -22,6 +22,7 @@ type Form struct {
 	MaxAnswers          int32
 	AnswerableTags      []string
 	ConfirmationMessage string
+	CreatedByUserID     string
 }
 
 type Repository interface {
@@ -30,7 +31,7 @@ type Repository interface {
 	FindByCircle(circleID, formID string) (Form, bool)
 	FindByCircleForStaff(circleID, formID string) (Form, bool)
 	FindByIDForStaff(formID string) (Form, bool)
-	Create(circleID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string) Form
+	Create(circleID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string, createdByUserID string) Form
 	Update(circleID, formID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string) (Form, bool)
 	UpdateByID(formID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string) (Form, bool)
 	Delete(circleID, formID string) bool
@@ -68,6 +69,7 @@ func NewStaticRepository(cfg []config.Form) *StaticRepository {
 			MaxAnswers:          item.MaxAnswers,
 			AnswerableTags:      append([]string{}, item.AnswerableTags...),
 			ConfirmationMessage: item.ConfirmationMessage,
+			CreatedByUserID:     item.CreatedByUserID,
 		})
 	}
 
@@ -151,6 +153,7 @@ func (r *StaticRepository) Create(
 	maxAnswers int32,
 	answerableTags []string,
 	confirmationMessage string,
+	createdByUserID string,
 ) Form {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -169,6 +172,7 @@ func (r *StaticRepository) Create(
 		MaxAnswers:          maxAnswers,
 		AnswerableTags:      append([]string{}, answerableTags...),
 		ConfirmationMessage: confirmationMessage,
+		CreatedByUserID:     createdByUserID,
 	}
 
 	if form.OpenAt == "" {

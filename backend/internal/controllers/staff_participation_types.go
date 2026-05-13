@@ -212,6 +212,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error
 		1,
 		[]string{},
 		request.FormConfirmationMessage,
+		currentSession.User.ID,
 	)
 	if formValue.ID == "" {
 		return internalError(c)

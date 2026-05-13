@@ -32,6 +32,19 @@ func (r *SQLCRepository) List() ([]Category, error) {
 	return categories, nil
 }
 
+func (r *SQLCRepository) Find(id string) (Category, error) {
+	items, err := r.List()
+	if err != nil {
+		return Category{}, err
+	}
+	for _, item := range items {
+		if item.ID == id {
+			return item, nil
+		}
+	}
+	return Category{}, ErrNotFound
+}
+
 func (r *SQLCRepository) Create(name, email string) (Category, error) {
 	row, err := r.queries.CreateContactCategory(context.Background(), dbgen.CreateContactCategoryParams{
 		Name:  name,

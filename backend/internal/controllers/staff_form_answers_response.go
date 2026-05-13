@@ -84,7 +84,7 @@ func (h *staffFormHandlers) staffFormContext(c echo.Context, allowed func(*auth.
 func (h *staffFormHandlers) buildStaffFormDetailResponse(
 	formValue backendform.Form,
 	circleValue staffManagedCircleResponse,
-	questions []formquestion.Question,
+	questions []staffFormQuestion,
 	answerResponse *staffFormAnswerResponse,
 ) staffFormDetailResponse {
 	return staffFormDetailResponse{
@@ -100,7 +100,7 @@ func (h *staffFormHandlers) buildStaffFormDetailResponse(
 		AnswerableTags:      append([]string{}, formValue.AnswerableTags...),
 		ConfirmationMessage: formValue.ConfirmationMessage,
 		IsParticipationForm: h.isParticipationForm(formValue.ID),
-		Questions:           mapStaffFormQuestions(questions),
+		Questions:           questions,
 		Answer:              answerResponse,
 	}
 }

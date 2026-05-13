@@ -31,6 +31,7 @@ type Config struct {
 	DatabaseURL               string
 	MigrationsDir             string
 	AllowDangerously          bool
+	EnableDemoMode            bool
 	SyncAuthUserOnStartup     bool
 	SessionCookieName         string
 	SessionCookieSecure       bool
@@ -163,6 +164,7 @@ type Form struct {
 	MaxAnswers          int32
 	AnswerableTags      []string
 	ConfirmationMessage string
+	CreatedByUserID     string
 }
 
 type Tag struct {
@@ -396,6 +398,7 @@ func FromEnv() Config {
 	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTALDOTS_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
 	defaultAuthUser := defaultDemoAuthUser()
 	allowDangerously := getenv("PORTALDOTS_ALLOW_DANGEROUSLY", "") == "true"
+	enableDemoMode := getenv("PORTALDOTS_ENABLE_DEMO_MODE", "") == "true"
 	appURL := getenv("APP_URL", "http://127.0.0.1:8080")
 
 	return Config{
@@ -403,6 +406,7 @@ func FromEnv() Config {
 		DatabaseURL:               getenv("PORTALDOTS_DATABASE_URL", ""),
 		MigrationsDir:             getenv("PORTALDOTS_MIGRATIONS_DIR", "db/migrations"),
 		AllowDangerously:          allowDangerously,
+		EnableDemoMode:            enableDemoMode,
 		SyncAuthUserOnStartup:     getenv("PORTALDOTS_SYNC_AUTH_USER_ON_STARTUP", "") == "true",
 		SessionCookieName:         getenv("PORTALDOTS_SESSION_COOKIE", "portaldots_session"),
 		SessionCookieSecure:       getenvBool("PORTALDOTS_SESSION_COOKIE_SECURE", strings.HasPrefix(appURL, "https://")),

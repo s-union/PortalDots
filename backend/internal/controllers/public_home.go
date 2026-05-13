@@ -25,7 +25,6 @@ type publicHomeHandlers struct {
 	pages              page.Repository
 	participationTypes participationtype.Repository
 	portal             portalsetting.Repository
-	allowDangerously   bool
 	authUser           config.AuthUser
 	users              []config.User
 }

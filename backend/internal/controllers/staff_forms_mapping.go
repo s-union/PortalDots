@@ -44,6 +44,7 @@ func mapStaffFormQuestion(question formquestion.Question) staffFormQuestion {
 		Description:  question.Description,
 		Type:         question.Type,
 		IsRequired:   question.IsRequired,
+		IsPermanent:  false,
 		NumberMin:    question.NumberMin,
 		NumberMax:    question.NumberMax,
 		AllowedTypes: question.AllowedTypes,

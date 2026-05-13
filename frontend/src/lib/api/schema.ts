@@ -358,6 +358,7 @@ export const formQuestionSchema = z.object({
   description: z.string(),
   type: formQuestionTypeSchema,
   isRequired: z.boolean(),
+  isPermanent: z.boolean().default(false),
   numberMin: z.number().nullable(),
   numberMax: z.number().nullable(),
   allowedTypes: z.string(),
