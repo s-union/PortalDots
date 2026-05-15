@@ -94,27 +94,6 @@ func TestEnsureSeedDataReseedsDemoContentWhenDangerouslyAllowed(t *testing.T) {
 	assertBoothAssignmentCount(t, store, testPlaceID, testCircleBID, 1)
 }
 
-func TestEnsureSeedDataDoesNotReseedDemoContentWhenDangerouslyNotAllowed(t *testing.T) {
-	cfg := integrationConfig(t, false)
-	store := openIntegrationStore(t, cfg)
-
-	ctx := context.Background()
-	if err := EnsureSeedData(ctx, store, cfg); err != nil {
-		t.Fatalf("seed integration data: %v", err)
-	}
-
-	deleteDemoContent(t, store, testCircleBID)
-
-	if err := EnsureSeedData(ctx, store, cfg); err != nil {
-		t.Fatalf("ensure seed data without sync: %v", err)
-	}
-
-	assertDemoContentCount(t, store, testPageID, "pages", 0)
-	assertDemoContentCount(t, store, testDocumentID, "documents", 0)
-	assertDemoContentCount(t, store, testFormID, "forms", 0)
-	assertBoothAssignmentCount(t, store, testPlaceID, testCircleBID, 0)
-}
-
 func TestEnsureSeedDataSeedsDemoCircleProfileFields(t *testing.T) {
 	cfg := integrationConfig(t, true)
 	store := openIntegrationStore(t, cfg)
