@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Deploy email-consumer Worker (normal priority)"
+
+nr deploy:normal

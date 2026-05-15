@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Install dependencies and regenerate assets needed before startup"
+
+mise run frontend-install && \
+mise run generate

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Start Storybook dev server"
+
+nr storybook

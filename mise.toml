@@ -10,10 +10,6 @@ prek = "latest"
 description = "Install dependencies for the new frontend workspace"
 run = "ni"
 
-[tasks.dev]
-description = "Reset local db, then start backend and frontend dev servers"
-run = "go run ./scripts/dev.go"
-
 [tasks.frontend-dev]
 description = "Start vue vite dev server"
 dir = "frontend"
@@ -51,6 +47,7 @@ run = "nr dev:normal"
 description = "Start the new Go API"
 dir = "backend"
 run = "air -c .air.toml"
+env = { _.file = ".env" }
 
 [tasks.db-up]
 description = "Start local PostgreSQL container"
@@ -67,12 +64,14 @@ run = "docker compose -f docker-compose.postgres.yml down -v"
 [tasks.backend-migrate]
 description = "Apply backend SQL migrations against PORTAL_DATABASE_URL"
 dir = "backend"
-run = "go run ./cmd/migrate"
+run = "go run ./scripts/migrate/main.go"
+env = { _.file = ".env" }
 
 [tasks.backend-seed]
 description = "Seed or sync demo data against PORTAL_DATABASE_URL"
 dir = "backend"
-run = "go run ./cmd/seed"
+run = "go run ./scripts/seed/main.go"
+env = { _.file = ".env" }
 
 [tasks.backend-test]
 description = "Run Go tests for backend"
@@ -102,11 +101,8 @@ run = "sqlc generate"
 [tasks.backend-sqlc-smoke]
 description = "Run the sqlc smoke command against PORTAL_DATABASE_URL"
 dir = "backend"
-run = "go run ./cmd/sqlc-smoke"
-
-[tasks.generate]
-description = "Run code generation for frontend and backend"
-depends = ["frontend-generate", "backend-sqlc-generate"]
+run = "go run ./scripts/sqlc-smoke/main.go"
+env = { _.file = ".env" }
 
 [tasks."email-producer-check"]
 description = "Run static checks for the email producer Worker"
@@ -127,13 +123,3 @@ run = "nr ci:check"
 description = "Run tests for the email consumer Worker"
 dir = "packages/email-consumer"
 run = "nr test"
-
-[tasks.check]
-depends = ["generate", "frontend-check", "email-producer-check", "email-consumer-check", "backend-check"]
-
-[tasks.prepare]
-description = "Install dependencies and regenerate assets needed before startup"
-depends = ["frontend-install", "generate"]
-
-[tasks.format]
-depends = ["frontend-format", "backend-format"]

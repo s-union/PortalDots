@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Reset database: delete, recreate, migrate, seed"
+
+mise run db:delete && \
+mise run db-up && \
+mise run db:wait && \
+mise run backend-migrate && \
+mise run backend-seed

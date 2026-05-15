@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#MISE description="Wait for PostgreSQL to become healthy"
+
+set -euo pipefail
+
+compose_file="docker-compose.postgres.yml"
+service="postgres"
+timeout=30
+elapsed=0
+
+while [ $elapsed -lt $timeout ]; do
+  container_id=$(docker compose -f "$compose_file" ps -q "$service" 2>/dev/null)
+  if [ -n "$container_id" ]; then
+    status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_id" 2>/dev/null)
+    if [ "$status" = "healthy" ] || [ "$status" = "running" ]; then
+      exit 0
+    fi
+  fi
+  sleep 1
+  elapsed=$((elapsed + 1))
+done
+
+echo "timed out waiting for $service to become healthy" >&2
+exit 1

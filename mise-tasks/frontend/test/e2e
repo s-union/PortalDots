@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Run Playwright E2E tests"
+
+nr test:e2e

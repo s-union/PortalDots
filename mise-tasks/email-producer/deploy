@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Deploy email-producer Worker"
+
+nr deploy

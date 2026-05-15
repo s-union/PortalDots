@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run code generation for frontend and backend"
+
+mise run frontend-generate && \
+mise run backend-sqlc-generate
