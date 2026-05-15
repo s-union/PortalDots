@@ -104,5 +104,5 @@ func shouldReseedOnStartup(userCount int64, cfg config.Config) bool {
 		return true
 	}
 
-	return cfg.AllowDangerously && cfg.SyncAuthUserOnStartup
+	return cfg.AllowDangerously
 }

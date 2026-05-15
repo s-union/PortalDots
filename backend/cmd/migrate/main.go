@@ -14,6 +14,9 @@ func main() {
 	}
 
 	cfg := config.FromEnv()
+	if err := cfg.Validate(); err != nil {
+		log.Fatal(err)
+	}
 
 	store, err := database.Open(context.Background(), cfg.DatabaseURL)
 	if err != nil {

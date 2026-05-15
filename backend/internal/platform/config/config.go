@@ -32,7 +32,6 @@ type Config struct {
 	MigrationsDir             string
 	AllowDangerously          bool
 	EnableDemoMode            bool
-	SyncAuthUserOnStartup     bool
 	SessionCookieName         string
 	SessionCookieSecure       bool
 	SessionTTL                time.Duration
@@ -394,7 +393,6 @@ func defaultDemoUsers() []User {
 }
 
 func FromEnv() Config {
-	authPassword, authPasswordProvided := getenvWithPresence("PORTAL_AUTH_PASSWORD", defaultAuthPassword)
 	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTAL_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
 	defaultAuthUser := defaultDemoAuthUser()
 	allowDangerously := getenv("PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE", "") == "true"
@@ -407,7 +405,6 @@ func FromEnv() Config {
 		MigrationsDir:             getenv("PORTAL_MIGRATIONS_DIR", "db/migrations"),
 		AllowDangerously:          allowDangerously,
 		EnableDemoMode:            enableDemoMode,
-		SyncAuthUserOnStartup:     getenv("PORTAL_SYNC_AUTH_USER_ON_STARTUP", "") == "true",
 		SessionCookieName:         getenv("PORTAL_SESSION_COOKIE", "portaldots_session"),
 		SessionCookieSecure:       getenvBool("PORTAL_SESSION_COOKIE_SECURE", strings.HasPrefix(appURL, "https://")),
 		SessionTTL:                time.Duration(getenvInt("PORTAL_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
@@ -431,11 +428,11 @@ func FromEnv() Config {
 		RateLimitPerMinute:        getenvInt("PORTAL_RATE_LIMIT_PER_MINUTE", 60),
 		MaintenanceMode:           getenv("PORTAL_MAINTENANCE_MODE", "") == "true",
 		AuthUser: AuthUser{
-			ID:          getenv("PORTAL_AUTH_USER_ID", defaultAuthUser.ID),
-			LoginIDs:    splitCSV(getenv("PORTAL_AUTH_LOGIN_IDS", strings.Join(defaultAuthUser.LoginIDs, ","))),
-			DisplayName: getenv("PORTAL_AUTH_DISPLAY_NAME", defaultAuthUser.DisplayName),
-			Password:    authPassword,
-			Roles:       splitCSV(getenv("PORTAL_AUTH_ROLES", strings.Join(defaultAuthUser.Roles, ","))),
+			ID:          defaultAuthUser.ID,
+			LoginIDs:    defaultAuthUser.LoginIDs,
+			DisplayName: defaultAuthUser.DisplayName,
+			Password:    defaultAuthUser.Password,
+			Roles:       defaultAuthUser.Roles,
 			Permissions: []string{},
 		},
 		Users: func() []User {
@@ -445,7 +442,6 @@ func FromEnv() Config {
 			return []User{}
 		}(),
 		StaffVerifyCode:         staffVerifyCode,
-		authPasswordProvided:    authPasswordProvided,
 		staffVerifyCodeProvided: staffVerifyCodeProvided,
 		ParticipationTypes: []ParticipationType{
 			{
@@ -723,6 +719,23 @@ func FromEnv() Config {
 	}
 }
 
+func (c Config) Validate() error {
+	var issues []string
+
+	if strings.TrimSpace(c.DatabaseURL) == "" {
+		issues = append(issues, "PORTAL_DATABASE_URL is required")
+	}
+	if strings.TrimSpace(c.MigrationsDir) == "" {
+		issues = append(issues, "PORTAL_MIGRATIONS_DIR is required")
+	}
+
+	if len(issues) == 0 {
+		return nil
+	}
+
+	return errors.New(strings.Join(issues, "; "))
+}
+
 func (c Config) ValidateForAPI() error {
 	var issues []string
 
@@ -838,17 +851,4 @@ func getenvInt(key string, fallback int) int {
 	}
 
 	return parsed
-}
-
-func splitCSV(value string) []string {
-	parts := strings.Split(value, ",")
-	items := make([]string, 0, len(parts))
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed == "" {
-			continue
-		}
-		items = append(items, trimmed)
-	}
-	return items
 }

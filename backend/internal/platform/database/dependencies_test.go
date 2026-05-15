@@ -22,29 +22,18 @@ func TestShouldReseedOnStartup(t *testing.T) {
 			want:      true,
 		},
 		{
-			name:      "reseeds in demo mode when sync is enabled",
+			name:      "reseeds in demo mode",
 			userCount: 1,
 			cfg: config.Config{
-				AllowDangerously:      true,
-				SyncAuthUserOnStartup: true,
+				AllowDangerously: true,
 			},
 			want: true,
-		},
-		{
-			name:      "does not reseed in demo mode when sync is disabled",
-			userCount: 1,
-			cfg: config.Config{
-				AllowDangerously:      true,
-				SyncAuthUserOnStartup: false,
-			},
-			want: false,
 		},
 		{
 			name:      "does not reseed outside demo mode",
 			userCount: 1,
 			cfg: config.Config{
-				AllowDangerously:      false,
-				SyncAuthUserOnStartup: true,
+				AllowDangerously: false,
 			},
 			want: false,
 		},

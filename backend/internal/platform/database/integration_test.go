@@ -69,7 +69,7 @@ func TestListCirclePlaceNamesAndStaffCatalogWithPostgres(t *testing.T) {
 	}
 }
 
-func TestEnsureSeedDataReseedsDemoContentWhenSyncEnabled(t *testing.T) {
+func TestEnsureSeedDataReseedsDemoContentWhenDangerouslyAllowed(t *testing.T) {
 	cfg := integrationConfig(t, true)
 	store := openIntegrationStore(t, cfg)
 
@@ -94,7 +94,7 @@ func TestEnsureSeedDataReseedsDemoContentWhenSyncEnabled(t *testing.T) {
 	assertBoothAssignmentCount(t, store, testPlaceID, testCircleBID, 1)
 }
 
-func TestEnsureSeedDataDoesNotReseedDemoContentWhenSyncDisabled(t *testing.T) {
+func TestEnsureSeedDataDoesNotReseedDemoContentWhenDangerouslyNotAllowed(t *testing.T) {
 	cfg := integrationConfig(t, false)
 	store := openIntegrationStore(t, cfg)
 
@@ -242,21 +242,23 @@ func TestUserQueriesReturnActualUpdatedAt(t *testing.T) {
 	}
 }
 
-func integrationConfig(t *testing.T, syncAuthUserOnStartup bool) config.Config {
+func integrationConfig(t *testing.T, allowDangerously bool) config.Config {
 	t.Helper()
 
-	t.Setenv("PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE", "true")
-	if syncAuthUserOnStartup {
-		t.Setenv("PORTAL_SYNC_AUTH_USER_ON_STARTUP", "true")
-	} else {
-		t.Setenv("PORTAL_SYNC_AUTH_USER_ON_STARTUP", "false")
-	}
+	t.Setenv("PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE", ternaryString(allowDangerously, "true", "false"))
 
 	cfg := config.FromEnv()
 	cfg.DatabaseURL = dbtest.RequireDatabaseURL(t)
 	cfg.MigrationsDir = dbtest.MigrationsDir(t)
 
 	return cfg
+}
+
+func ternaryString(condition bool, trueVal, falseVal string) string {
+	if condition {
+		return trueVal
+	}
+	return falseVal
 }
 
 func openIntegrationStore(t *testing.T, cfg config.Config) *SQLCStore {

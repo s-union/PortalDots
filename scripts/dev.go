@@ -49,10 +49,19 @@ func run(rootDir string) error {
 		return err
 	}
 
-	if err := runCommand(rootDir, "mise", "run", "backend-migrate"); err != nil {
+	databaseURL, err := loadEnvVar(rootDir, ".env", "PORTAL_DATABASE_URL")
+	if err != nil {
 		return err
 	}
-	if err := runCommand(rootDir, "mise", "run", "backend-seed"); err != nil {
+	if strings.TrimSpace(databaseURL) == "" {
+		return fmt.Errorf("PORTAL_DATABASE_URL not found in .env")
+	}
+
+	env := []string{"PORTAL_DATABASE_URL=" + databaseURL}
+	if err := runCommandWithEnv(rootDir, env, "mise", "run", "backend-migrate"); err != nil {
+		return err
+	}
+	if err := runCommandWithEnv(rootDir, env, "mise", "run", "backend-seed"); err != nil {
 		return err
 	}
 
@@ -221,6 +230,40 @@ func runCommand(dir string, name string, args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func runCommandWithEnv(dir string, env []string, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	return cmd.Run()
+}
+
+func loadEnvVar(dir string, filename string, key string) (string, error) {
+	path := filepath.Join(dir, filename)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	prefix := key + "="
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "#") || line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, prefix) {
+			value := strings.TrimPrefix(line, prefix)
+			value = strings.Trim(value, "\"'")
+			return value, nil
+		}
+	}
+	return "", nil
 }
 
 func commandOutput(dir string, name string, args ...string) (string, error) {

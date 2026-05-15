@@ -77,7 +77,7 @@ Behavior notes:
 
 - `cmd/api` runs SQL migrations on startup before wiring repositories.
 - Seed data is inserted when the database is empty (`users` count is zero).
-- When `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` and `PORTAL_SYNC_AUTH_USER_ON_STARTUP=true`, configured demo seed data is reapplied on every startup.
+- When `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true`, configured demo seed data is reapplied on every startup.
 - `cmd/api` requires an explicit non-default value for `PORTAL_STAFF_VERIFY_CODE` unless `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` is set.
 - Session cookies now use `PORTAL_SESSION_TTL_SECONDS` and default to 12 hours.
 - Staff verify email delivery is currently mocked. `POST /v1/staff/verify/request` returns the verification code only when `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true`; otherwise the configured staff verify code is required and is not exposed in the response.
