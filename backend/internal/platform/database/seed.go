@@ -327,7 +327,7 @@ func seedPages(ctx context.Context, q *dbgen.Queries, pages []config.Page) error
 			Notes:        item.Notes,
 			IsPinned:     item.IsPinned,
 			IsPublic:     item.IsPublic,
-			ViewableTags: item.ViewableTags,
+			ViewableTags: nonNilStrings(item.ViewableTags),
 			DocumentIds:  item.DocumentIDs,
 			CreatedAt:    toTimestamptz(createdAt),
 			UpdatedAt:    toTimestamptz(updatedAt),
@@ -356,7 +356,7 @@ func seedDocuments(ctx context.Context, q *dbgen.Queries, documents []config.Doc
 			Description:  item.Description,
 			Notes:        item.Notes,
 			IsPublic:     item.IsPublic,
-			ViewableTags: item.ViewableTags,
+			ViewableTags: nonNilStrings(item.ViewableTags),
 			IsImportant:  item.IsImportant,
 			Filename:     item.Filename,
 			MimeType:     item.MimeType,
@@ -369,6 +369,10 @@ func seedDocuments(ctx context.Context, q *dbgen.Queries, documents []config.Doc
 	}
 
 	return nil
+}
+
+func nonNilStrings(values []string) []string {
+	return append([]string{}, values...)
 }
 
 func seedTags(ctx context.Context, q *dbgen.Queries, tags []config.Tag) error {

@@ -109,7 +109,7 @@ jobs:
           --health-retries 5
 
     env:
-      PORTALDOTS_DATABASE_URL: postgres://portaldots:portaldots@localhost:5432/portaldots_test
+      PORTAL_DATABASE_URL: postgres://portaldots:portaldots@localhost:5432/portaldots_test
 
     steps:
       - uses: actions/checkout@v4

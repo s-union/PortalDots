@@ -141,14 +141,14 @@ func TestSQLCStaffFormsSupportGlobalForms(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	var forms []formSummaryResponse
-	if err := json.Unmarshal(recorder.Body.Bytes(), &forms); err != nil {
+	var formsPage models.PaginatedResponse[formSummaryResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &formsPage); err != nil {
 		t.Fatalf("unmarshal sqlc workspace forms: %v", err)
 	}
-	if !slices.ContainsFunc(forms, func(form formSummaryResponse) bool {
+	if !slices.ContainsFunc(formsPage.Items, func(form formSummaryResponse) bool {
 		return form.ID == created.ID && form.Name == "SQLC全体フォーム"
 	}) {
-		t.Fatalf("expected sqlc global form in workspace list, got %#v", forms)
+		t.Fatalf("expected sqlc global form in workspace list, got %#v", formsPage.Items)
 	}
 }
 
