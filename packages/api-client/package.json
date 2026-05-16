@@ -25,7 +25,7 @@
         "openapi-typescript": "^7.13.0",
         "typescript": "^5.9.3",
         "vitest": "^4.1.0",
-        "vue": "^3.5.30"
+        "vue": "^3.5.34"
     },
     "peerDependencies": {
         "@tanstack/vue-query": "^5.0.0",
