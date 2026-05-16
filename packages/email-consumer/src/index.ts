@@ -82,6 +82,13 @@ export default {
           text
         })
 
+        console.info('Email job sent', {
+          jobId: job.jobId,
+          template: job.template,
+          priority: job.priority,
+          recipientsCount: job.to.length
+        })
+
         message.ack()
       } catch (error) {
         console.error('Failed to process email job:', error)

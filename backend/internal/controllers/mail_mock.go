@@ -19,30 +19,6 @@ func logMockRegistrationVerifyURL(univemail, verifyURL string) {
 	)
 }
 
-func logMockPasswordResetURL(recipient, resetURL string) {
-	slog.Info("mock password reset prepared",
-		"kind", "password_reset_url",
-		"recipient", recipient,
-		"resetURL", resetURL,
-	)
-}
-
-func logMockVerificationCode(kind, recipient, code string) {
-	slog.Info("mock verification prepared",
-		"kind", kind,
-		"recipient", recipient,
-		"verifyCode", code,
-	)
-}
-
-func logMockVerificationURL(kind, recipient, verifyURL string) {
-	slog.Info("mock verification prepared",
-		"kind", kind,
-		"recipient", recipient,
-		"verifyURL", verifyURL,
-	)
-}
-
 func logQueuedMail(
 	source,
 	jobID,

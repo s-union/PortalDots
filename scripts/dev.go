@@ -23,18 +23,30 @@ type processExit struct {
 	err  error
 }
 
+type devMode string
+
+const (
+	devModeMock   devMode = "mock"
+	devModeWorker devMode = "worker"
+)
+
 func main() {
 	rootDir, err := findRepoRoot()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := run(rootDir); err != nil {
+	mode, err := parseDevMode(os.Args[1:])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := run(rootDir, mode); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(rootDir string) error {
+func run(rootDir string, mode devMode) error {
 	composeFile := filepath.Join(rootDir, "docker-compose.postgres.yml")
 
 	if err := resetDatabase(rootDir, composeFile); err != nil {
@@ -57,20 +69,21 @@ func run(rootDir string) error {
 		return fmt.Errorf("PORTAL_DATABASE_URL not found in .env")
 	}
 
-	env := []string{"PORTAL_DATABASE_URL=" + databaseURL}
-	if err := runCommandWithEnv(rootDir, env, "mise", "run", "backend-migrate"); err != nil {
+	databaseEnv := []string{"PORTAL_DATABASE_URL=" + databaseURL}
+	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend-migrate"); err != nil {
 		return err
 	}
-	if err := runCommandWithEnv(rootDir, env, "mise", "run", "backend-seed"); err != nil {
+	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend-seed"); err != nil {
 		return err
 	}
 
+	backendEnv := append(databaseEnv, emailEnv(mode)...)
 	commands := []*managedCommand{
-		newManagedCommand("backend", rootDir, "mise", "run", "backend-dev"),
+		newManagedCommandWithEnv("backend", rootDir, backendEnv, "mise", "run", "backend-dev"),
 		newManagedCommand("frontend", rootDir, "mise", "run", "frontend-dev"),
-		newManagedCommand("email-producer", rootDir, "mise", "run", "email-producer-dev"),
-		newManagedCommand("email-consumer-high", rootDir, "mise", "run", "email-consumer-dev-high"),
-		newManagedCommand("email-consumer-normal", rootDir, "mise", "run", "email-consumer-dev-normal"),
+	}
+	if mode == devModeWorker {
+		commands = append(commands, newManagedCommand("email-workers", rootDir, "mise", "run", "email-workers-dev"))
 	}
 
 	started, err := startCommands(commands)
@@ -100,6 +113,40 @@ func run(rootDir string) error {
 			return fmt.Errorf("%s exited", result.name)
 		}
 		return fmt.Errorf("%s failed: %w", result.name, result.err)
+	}
+}
+
+func parseDevMode(args []string) (devMode, error) {
+	if len(args) == 0 {
+		return devModeMock, nil
+	}
+	if len(args) > 1 {
+		return "", fmt.Errorf("usage: dev [mock|worker]")
+	}
+
+	switch args[0] {
+	case "mock":
+		return devModeMock, nil
+	case "worker":
+		return devModeWorker, nil
+	default:
+		return "", fmt.Errorf("usage: dev [mock|worker]")
+	}
+}
+
+func emailEnv(mode devMode) []string {
+	if mode == devModeWorker {
+		return []string{
+			"PORTAL_EMAIL_PRODUCER_URL=http://localhost:8787",
+			"PORTAL_EMAIL_PRODUCER_ENABLED=true",
+			"PORTAL_EMAIL_PRODUCER_TOKEN=dev-token",
+		}
+	}
+
+	return []string{
+		"PORTAL_EMAIL_PRODUCER_URL=",
+		"PORTAL_EMAIL_PRODUCER_ENABLED=false",
+		"PORTAL_EMAIL_PRODUCER_TOKEN=",
 	}
 }
 
@@ -155,8 +202,15 @@ func waitForComposeService(rootDir string, composeFile string, service string, t
 }
 
 func newManagedCommand(name string, dir string, args ...string) *managedCommand {
+	return newManagedCommandWithEnv(name, dir, nil, args...)
+}
+
+func newManagedCommandWithEnv(name string, dir string, env []string, args ...string) *managedCommand {
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = dir
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

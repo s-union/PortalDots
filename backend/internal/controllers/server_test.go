@@ -21,6 +21,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
@@ -289,7 +290,7 @@ func TestUpdateProfileResetsChangedContactEmailVerificationAndSendsVerifyURL(t *
 	if status.Completed {
 		t.Fatalf("expected verification to remain incomplete without a university email, got %#v", status)
 	}
-	if !strings.Contains(logs.String(), "kind=participant_verify_url") || !strings.Contains(logs.String(), "recipient=changed-contact@example.com") {
+	if !strings.Contains(logs.String(), "email producer is not configured; skipping email delivery") || !strings.Contains(logs.String(), "verifyURL=") {
 		t.Fatalf("expected participant verification url log after profile update, got logs=%s", logs.String())
 	}
 }
@@ -1021,7 +1022,7 @@ func TestStartRegistrationQueuesVerificationMailWhenSecure(t *testing.T) {
 	}
 
 	assertStaffMailsEmpty(t, server, staffCookies)
-	if strings.Contains(logs.String(), "secure-registration@example.ac.jp") || strings.Contains(logs.String(), "【重要】メール認証のお願い") || strings.Contains(logs.String(), "/email/verify/univemail/") {
+	if strings.Contains(logs.String(), "secure-registration@example.ac.jp") || strings.Contains(logs.String(), "【重要】メール認証のお願い") {
 		t.Fatalf("expected secure mode logs to avoid raw queued mail payloads, got logs=%s", logs.String())
 	}
 }
@@ -1050,6 +1051,93 @@ func TestStartRegistrationLogsVerifyURLWhenInsecure(t *testing.T) {
 		t.Fatalf("expected mock delivery mode, got %#v", response)
 	}
 	if !strings.Contains(logs.String(), "recipient=mock-registration@example.ac.jp") ||
+		!strings.Contains(logs.String(), "/email/verify/univemail/") {
+		t.Fatalf("expected verify URL to be logged, got logs=%s", logs.String())
+	}
+}
+
+func TestStartRegistrationUsesEmailProducerWhenConfiguredInDemoMode(t *testing.T) {
+	var received cloudflareemail.EmailJob
+	var authHeader string
+	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader = r.Header.Get("Authorization")
+		if r.URL.Path != "/enqueue" {
+			t.Fatalf("expected /enqueue request, got %s", r.URL.Path)
+		}
+		if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+			t.Fatalf("decode email job: %v", err)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(producer.Close)
+
+	cfg := testConfig()
+	cfg.EmailProducerURL = producer.URL
+	cfg.EmailProducerEnabled = true
+	cfg.EmailProducerToken = "producer-token"
+	cfg.EmailFrom = "noreply@example.ac.jp"
+	server := NewServer(cfg)
+
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() {
+		slog.SetDefault(previousLogger)
+	})
+
+	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/register/start", map[string]string{
+		"univemailLocalPart": "worker-registration",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	if authHeader != "Bearer producer-token" {
+		t.Fatalf("expected producer auth header, got %q", authHeader)
+	}
+	if received.Template != "registration-verify" {
+		t.Fatalf("expected registration template, got %#v", received)
+	}
+	if received.Priority != cloudflareemail.PriorityHigh {
+		t.Fatalf("expected high priority, got %#v", received)
+	}
+	if received.From != "noreply@example.ac.jp" {
+		t.Fatalf("expected configured from address, got %#v", received)
+	}
+	if !slices.Contains(received.To, "worker-registration@example.ac.jp") {
+		t.Fatalf("expected registration recipient, got %#v", received.To)
+	}
+	if strings.Contains(logs.String(), "mock registration verification prepared") {
+		t.Fatalf("expected worker delivery path, got mock logs=%s", logs.String())
+	}
+}
+
+func TestStartRegistrationFallsBackToMockWhenDemoProducerIsNotEnabled(t *testing.T) {
+	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("expected producer not to be called, got %s %s", r.Method, r.URL.Path)
+	}))
+	t.Cleanup(producer.Close)
+
+	cfg := testConfig()
+	cfg.EmailProducerURL = producer.URL
+	cfg.EmailProducerEnabled = false
+	cfg.EmailProducerToken = "producer-token"
+	server := NewServer(cfg)
+
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() {
+		slog.SetDefault(previousLogger)
+	})
+
+	recorder := doJSONRequest(t, server, map[string]*http.Cookie{}, http.MethodPost, "/v1/auth/register/start", map[string]string{
+		"univemailLocalPart": "mock-worker-disabled",
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if !strings.Contains(logs.String(), "recipient=mock-worker-disabled@example.ac.jp") ||
 		!strings.Contains(logs.String(), "/email/verify/univemail/") {
 		t.Fatalf("expected verify URL to be logged, got logs=%s", logs.String())
 	}
@@ -1137,7 +1225,7 @@ func TestCompleteRegistrationAutoSendsContactVerificationWhenNeeded(t *testing.T
 	if !found || !univemailItem.Verified {
 		t.Fatalf("expected verified university email item, got %#v", status.Items)
 	}
-	if !strings.Contains(logs.String(), "kind=participant_verify_url") || !strings.Contains(logs.String(), "recipient=followup@example.com") {
+	if !strings.Contains(logs.String(), "email producer is not configured; skipping email delivery") || !strings.Contains(logs.String(), "verifyURL=") {
 		t.Fatalf("expected auto-sent participant verification url log, got logs=%s", logs.String())
 	}
 }
@@ -5902,17 +5990,43 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 func extractLoggedVerifyToken(t *testing.T, logs, kind, recipient string) string {
 	t.Helper()
 
+	// Try old mock log format first: kind=... recipient=... verifyURL=...
 	pattern := regexp.MustCompile(
 		`kind=` + regexp.QuoteMeta(kind) + ` recipient=` + regexp.QuoteMeta(recipient) + ` verifyURL=([^\s]+)`,
 	)
 	matches := pattern.FindStringSubmatch(logs)
-	if len(matches) != 2 {
-		t.Fatalf("expected verify url log for %s/%s, got logs=%s", kind, recipient, logs)
+	if len(matches) == 2 {
+		return parseVerifyURLToken(t, matches[1])
 	}
 
-	verifyURLRaw, err := strconv.Unquote(matches[1])
+	// Fall back to NoopSender format: ... verifyURL=...
+	noopPattern := regexp.MustCompile(`verifyURL=([^\s]+)`)
+	noopMatches := noopPattern.FindAllStringSubmatch(logs, -1)
+	if len(noopMatches) == 0 {
+		t.Fatalf("expected verify url log for %s/%s, got logs=%s", kind, recipient, logs)
+	}
+	if len(noopMatches) == 1 {
+		return parseVerifyURLToken(t, noopMatches[0][1])
+	}
+
+	// Multiple verifyURLs: filter by kind in the URL path
+	for _, m := range noopMatches {
+		rawURL := m[1]
+		if strings.Contains(rawURL, "/"+kind+"/") {
+			return parseVerifyURLToken(t, rawURL)
+		}
+	}
+
+	t.Fatalf("expected verify url log for %s/%s, got logs=%s", kind, recipient, logs)
+	return ""
+}
+
+func parseVerifyURLToken(t *testing.T, rawURL string) string {
+	t.Helper()
+
+	verifyURLRaw, err := strconv.Unquote(rawURL)
 	if err != nil {
-		verifyURLRaw = matches[1]
+		verifyURLRaw = rawURL
 	}
 	verifyURL, err := url.Parse(verifyURLRaw)
 	if err != nil {

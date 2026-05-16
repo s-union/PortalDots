@@ -17,31 +17,44 @@ run = "pnpm run dev -- --host 127.0.0.1"
 
 [tasks.frontend-check]
 description = "Run frontend static checks"
-run = "nr ci:check"
+run = "pnpm run ci:check"
 
 [tasks.frontend-format]
 description = "Run frontend formatter"
-run = "nr format"
+run = "pnpm run format"
 
 [tasks.frontend-generate]
 description = "Run openapi-typescript"
 dir = "packages/api-client"
-run = "nr codegen:api"
+run = "pnpm run codegen:api"
 
 [tasks.email-producer-dev]
 description = "Start the email producer Worker dev server"
 dir = "packages/email-producer"
-run = "nr dev"
+run = "pnpm run dev"
+
+[tasks.email-workers-dev]
+description = "Start email producer and consumer Workers in one local Queue dev session"
+dir = "packages/email-producer"
+run = "pnpm run dev:local-stack"
 
 [tasks.email-consumer-dev-high]
 description = "Start the email consumer Worker (high priority) dev server"
 dir = "packages/email-consumer"
-run = "nr dev:high"
+run = "pnpm run dev:high"
 
 [tasks.email-consumer-dev-normal]
 description = "Start the email consumer Worker (normal priority) dev server"
 dir = "packages/email-consumer"
-run = "nr dev:normal"
+run = "pnpm run dev:normal"
+
+[tasks.dev]
+description = "Reset local db, then start backend and frontend with mock email delivery"
+run = "go run ./scripts/dev.go"
+
+[tasks."dev:worker"]
+description = "Reset local db, then start backend, frontend, and local email Workers"
+run = "go run ./scripts/dev.go worker"
 
 [tasks.backend-dev]
 description = "Start the new Go API"
@@ -107,19 +120,19 @@ env = { _.file = ".env" }
 [tasks."email-producer-check"]
 description = "Run static checks for the email producer Worker"
 dir = "packages/email-producer"
-run = "nr ci:check"
+run = "pnpm run ci:check"
 
 [tasks."email-producer-test"]
 description = "Run tests for the email producer Worker"
 dir = "packages/email-producer"
-run = "nr test"
+run = "pnpm run test"
 
 [tasks."email-consumer-check"]
 description = "Run static checks for the email consumer Worker"
 dir = "packages/email-consumer"
-run = "nr ci:check"
+run = "pnpm run ci:check"
 
 [tasks."email-consumer-test"]
 description = "Run tests for the email consumer Worker"
 dir = "packages/email-consumer"
-run = "nr test"
+run = "pnpm run test"

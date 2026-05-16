@@ -68,13 +68,6 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		next.StaffVerifyExpires = time.Now().UTC().Add(staffVerifyTTL)
 	})
 
-	if h.allowDangerously {
-		logMockVerificationCode("staff_verify_code", currentSession.User.DisplayName, verifyCode)
-		return c.JSON(http.StatusOK, staffVerifyRequestResponse{
-			Message:    "認証コードを送信しました。",
-			VerifyCode: verifyCode,
-		})
-	}
 	managedUser, err := h.users.Find(currentSession.User.ID)
 	if err != nil {
 		return internalError(c)
@@ -84,9 +77,13 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		return internalError(c)
 	}
 
-	return c.JSON(http.StatusOK, staffVerifyRequestResponse{
+	response := staffVerifyRequestResponse{
 		Message: "認証コードを送信しました。",
-	})
+	}
+	if h.allowDangerously {
+		response.VerifyCode = verifyCode
+	}
+	return c.JSON(http.StatusOK, response)
 }
 
 func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {

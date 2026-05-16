@@ -51,6 +51,7 @@ type Config struct {
 	Version                   string
 	EmailFrom                 string
 	EmailProducerURL          string
+	EmailProducerEnabled      bool
 	EmailProducerToken        string
 	RateLimitPerMinute        int
 	MaintenanceMode           bool
@@ -422,8 +423,9 @@ func FromEnv() Config {
 		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 53),
 		RegistrationVerifyTTL:     time.Duration(getenvInt("PORTAL_REGISTRATION_VERIFY_TTL_MINUTES", 60)) * time.Minute,
 		Version:                   getenv("PORTAL_VERSION", ""),
-		EmailFrom:                 getenv("PORTAL_SMTP_FROM", ""),
+		EmailFrom:                 getenv("PORTAL_EMAIL_FROM", getenv("PORTAL_SMTP_FROM", "")),
 		EmailProducerURL:          getenv("PORTAL_EMAIL_PRODUCER_URL", ""),
+		EmailProducerEnabled:      getenvBool("PORTAL_EMAIL_PRODUCER_ENABLED", false),
 		EmailProducerToken:        getenv("PORTAL_EMAIL_PRODUCER_TOKEN", ""),
 		RateLimitPerMinute:        getenvInt("PORTAL_RATE_LIMIT_PER_MINUTE", 60),
 		MaintenanceMode:           getenv("PORTAL_MAINTENANCE_MODE", "") == "true",

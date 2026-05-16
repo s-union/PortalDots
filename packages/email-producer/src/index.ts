@@ -85,6 +85,14 @@ app.post('/enqueue', async (c) => {
     })
   }
 
+  console.info('Email job queued', {
+    jobId: body.jobId,
+    template: body.template,
+    priority,
+    messageCount: chunks.length,
+    recipientsCount: recipients.length
+  })
+
   return c.json({
     success: true,
     jobId: body.jobId,

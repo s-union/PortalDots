@@ -60,27 +60,28 @@ func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) 
 // authHandlers handles authentication, session, and contact endpoints.
 type authHandlers struct {
 	sharedDeps
-	activities                activitylog.Repository
-	authenticator             auth.Authenticator
-	passwordChanger           auth.PasswordChanger
-	passwordResetter          auth.PasswordResetter
-	registrationAuth          auth.RegistrationAuthenticator
-	circles                   circle.Catalog
-	contactCategories         contactcategory.Repository
-	mailHistory               mailhistory.Repository
-	pendingRegistrations      pendingregistration.Repository
-	passwordResetTokens       *passwordResetTokenStore
-	authVerificationTokens    *authVerificationTokenStore
-	emailSender               cloudflareemail.Sender
-	portalUnivemailDomainPart string
-	registrationVerifyTTL     time.Duration
-	loginAttempts             *loginAttemptTracker
-	appURL                    string
-	appName                   string
-	from                      string
-	adminName                 string
-	contactEmail              string
-	users                     useradmin.Repository
+	activities                 activitylog.Repository
+	authenticator              auth.Authenticator
+	passwordChanger            auth.PasswordChanger
+	passwordResetter           auth.PasswordResetter
+	registrationAuth           auth.RegistrationAuthenticator
+	circles                    circle.Catalog
+	contactCategories          contactcategory.Repository
+	mailHistory                mailhistory.Repository
+	pendingRegistrations       pendingregistration.Repository
+	passwordResetTokens        *passwordResetTokenStore
+	authVerificationTokens     *authVerificationTokenStore
+	emailSender                cloudflareemail.Sender
+	mockRegistrationVerifyMail bool
+	portalUnivemailDomainPart  string
+	registrationVerifyTTL      time.Duration
+	loginAttempts              *loginAttemptTracker
+	appURL                     string
+	appName                    string
+	from                       string
+	adminName                  string
+	contactEmail               string
+	users                      useradmin.Repository
 }
 
 // staffVerifyHandlers handles staff verification endpoints.
@@ -315,35 +316,37 @@ func NewServerWithDependencies(
 		passwordResetter = pr
 	}
 
+	useEmailProducer := cfg.EmailProducerURL != "" && (!cfg.AllowDangerously || cfg.EmailProducerEnabled)
 	var emailSender cloudflareemail.Sender = cloudflareemail.NewNoopSender()
-	if cfg.EmailProducerURL != "" {
+	if useEmailProducer {
 		emailSender = cloudflareemail.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
 	}
 	emailSender = mailhistory.NewRecordingSender(mailHistory, emailSender)
 
 	authH := &authHandlers{
-		sharedDeps:                shared,
-		activities:                activities,
-		authenticator:             authenticator,
-		passwordChanger:           passwordChanger,
-		passwordResetter:          passwordResetter,
-		registrationAuth:          registrationAuth,
-		circles:                   circles,
-		contactCategories:         contactCategories,
-		mailHistory:               mailHistory,
-		pendingRegistrations:      pendingRegistrations,
-		passwordResetTokens:       newPasswordResetTokenStore(),
-		authVerificationTokens:    newAuthVerificationTokenStore(),
-		emailSender:               emailSender,
-		portalUnivemailDomainPart: cfg.PortalUnivemailDomainPart,
-		registrationVerifyTTL:     cfg.RegistrationVerifyTTL,
-		loginAttempts:             newLoginAttemptTracker(5, 5*time.Minute),
-		appURL:                    cfg.AppURL,
-		appName:                   cfg.AppName,
-		from:                      cfg.EmailFrom,
-		adminName:                 cfg.PortalAdminName,
-		contactEmail:              cfg.PortalContactEmail,
-		users:                     users,
+		sharedDeps:                 shared,
+		activities:                 activities,
+		authenticator:              authenticator,
+		passwordChanger:            passwordChanger,
+		passwordResetter:           passwordResetter,
+		registrationAuth:           registrationAuth,
+		circles:                    circles,
+		contactCategories:          contactCategories,
+		mailHistory:                mailHistory,
+		pendingRegistrations:       pendingRegistrations,
+		passwordResetTokens:        newPasswordResetTokenStore(),
+		authVerificationTokens:     newAuthVerificationTokenStore(),
+		emailSender:                emailSender,
+		mockRegistrationVerifyMail: cfg.AllowDangerously && !useEmailProducer,
+		portalUnivemailDomainPart:  cfg.PortalUnivemailDomainPart,
+		registrationVerifyTTL:      cfg.RegistrationVerifyTTL,
+		loginAttempts:              newLoginAttemptTracker(5, 5*time.Minute),
+		appURL:                     cfg.AppURL,
+		appName:                    cfg.AppName,
+		from:                       cfg.EmailFrom,
+		adminName:                  cfg.PortalAdminName,
+		contactEmail:               cfg.PortalContactEmail,
+		users:                      users,
 	}
 
 	publicHomeH := &publicHomeHandlers{

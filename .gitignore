@@ -38,6 +38,8 @@ coverage.xml
 .env.backup
 .env.production
 .env.local
+.dev.vars*
+!.dev.vars.example
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
@@ -56,3 +58,6 @@ pnpm-debug.log
 /backend/internal/platform/postgres/db/
 /frontend/typed-router.d.ts
 *.tsbuildinfo
+
+# Wrangler build artifacts
+.wrangler/

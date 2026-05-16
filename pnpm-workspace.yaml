@@ -1,3 +1,13 @@
 packages:
   - frontend
   - packages/*
+allowBuilds:
+  '@parcel/watcher': set this to true or false
+  core-js-pure: set this to true or false
+  esbuild: set this to true or false
+  msw: set this to true or false
+  postinstall-postinstall: set this to true or false
+  purifycss-webpack: set this to true or false
+  sharp: set this to true or false
+  vue-demi: set this to true or false
+  workerd: set this to true or false

@@ -91,6 +91,7 @@ func (h *authHandlers) enqueueParticipantVerifyLinkMail(
 			"appURL":       h.appURL,
 			"subject":      subject,
 			"body":         body,
+			"verifyURL":    verifyURL,
 			"adminName":    h.adminName,
 			"contactEmail": h.contactEmail,
 			"preview":      subject,

@@ -43,6 +43,7 @@ func (NoopSender) Enqueue(_ context.Context, job EmailJob) error {
 		"job_id", job.JobId,
 		"template", job.Template,
 		"recipients", len(job.To),
+		"verifyURL", job.Variables["verifyURL"],
 	)
 	return nil
 }
