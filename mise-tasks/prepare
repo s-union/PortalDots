@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#MISE description="Install dependencies and regenerate assets needed before startup"
+#MISE description="Install dependencies, set up git hooks, and initialize .env"
 
+[ -f .env ] || cp .env.example .env
 mise run frontend-install && \
-mise run generate && \
-mise run frontend:build
+prek install

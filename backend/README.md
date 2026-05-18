@@ -61,7 +61,7 @@ For design rationale behind these package boundaries, see [docs/backend.md](../d
 
 ## Configuration
 
-Copy `.env.example` to `backend/.env` and adjust:
+Copy `.env.example` to `.env` at the repository root and adjust:
 
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
@@ -84,7 +84,7 @@ Frontend-facing variables (read by Vite proxy):
 ## Commands
 
 ```bash
-# Start with hot reload (requires PORTAL_DATABASE_URL in backend/.env)
+# Start with hot reload (requires PORTAL_DATABASE_URL in .env)
 mise run backend-dev
 
 # Run all migrations

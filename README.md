@@ -1,27 +1,14 @@
-<h1>
-    <picture>
-        <source srcset="https://raw.githubusercontent.com/portaldots/PortalDots/5.x/resources/img/portalDotsLogoLight.svg" media="(prefers-color-scheme: light)">
-        <source srcset="https://raw.githubusercontent.com/portaldots/PortalDots/5.x/resources/img/portalDotsLogoDark.svg" media="(prefers-color-scheme: dark)">
-        <img src="https://raw.githubusercontent.com/portaldots/PortalDots/5.x/resources/img/portalDotsLogoLight.svg" alt="PortalDots" width="245" height="40">
-    </picture>
-</h1>
+# PortalDots
 
 Open-source web system for communication between university festival committees and participating groups.
 
-<p>
-    <a href="https://codecov.io/gh/portaldots/PortalDots">
-        <img src="https://codecov.io/gh/portaldots/PortalDots/branch/5.x/graph/badge.svg" />
-    </a>
-    <a href="https://opensource.org/licenses/MIT">
-        <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" />
-    </a>
-</p>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What is PortalDots?
 
 PortalDots is a web system that supports communication between festival executive committees and participating group representatives. It handles participant registration, form submissions, document distribution, and bulk email delivery — all in one place.
 
-Developed by a volunteer team with university festival committee experience. Free and open source under the [MIT License](LICENSE).
+Developed by s-union, department of information systems. Free and open source under the [MIT License](LICENSE).
 
 ## Stack
 
@@ -66,15 +53,10 @@ cd PortalDots
 # 2. Install all managed tools (Go, Node.js, sqlc, air, …)
 mise install
 
-# 3. Install Node.js packages
-pnpm install
+# 3. Install Node.js packages, set up git hooks, and initialize .env
+mise run prepare
 
-# 4. Configure backend environment
-cp .env.example backend/.env
-# Edit backend/.env as needed (see backend/README.md for all variables)
-
-# 5. Start the dev stack
-#    Resets the local DB, runs migrations + seed, then starts backend and frontend
+# 4. Start the dev stack
 mise run dev
 ```
 
