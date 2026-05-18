@@ -1,0 +1,34 @@
+{
+    "name": "@portaldots/api-client",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "typecheck": "tsgo --noEmit",
+        "typecheck:tsc": "tsc --noEmit",
+        "lint": "oxlint --type-aware .",
+        "format": "oxfmt .",
+        "format:check": "oxfmt --check .",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check",
+        "codegen:api": "openapi-typescript ../../backend/api/openapi.yaml --output src/generated/schema.d.ts && oxfmt src/generated/schema.d.ts"
+    },
+    "dependencies": {
+        "openapi-fetch": "^0.17.0"
+    },
+    "devDependencies": {
+        "@tanstack/vue-query": "^5.92.9",
+        "@typescript/native-preview": "7.0.0-dev.20260314.1",
+        "openapi-typescript": "^7.13.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.1.0",
+        "vue": "^3.5.34"
+    },
+    "peerDependencies": {
+        "@tanstack/vue-query": "^5.0.0",
+        "vue": "^3.5.0"
+    }
+}

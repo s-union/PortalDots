@@ -1,0 +1,79 @@
+package activitylog
+
+import (
+	"context"
+	"errors"
+	"sync"
+	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
+)
+
+var ErrNotFound = errors.New("activity log not found")
+
+type Entry struct {
+	ID          string
+	ActorUserID string
+	Action      string
+	TargetType  string
+	TargetID    string
+	CircleID    string
+	Summary     string
+	CreatedAt   string
+}
+
+type Repository interface {
+	List(ctx context.Context) ([]Entry, error)
+	Record(ctx context.Context, actorUserID, action, targetType, targetID, circleID, summary string) error
+}
+
+type MemoryRepository struct {
+	mu      sync.RWMutex
+	entries []Entry
+}
+
+func NewMemoryRepository() *MemoryRepository {
+	return &MemoryRepository{
+		entries: []Entry{},
+	}
+}
+
+func (r *MemoryRepository) List(_ context.Context) ([]Entry, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	entries := make([]Entry, 0, len(r.entries))
+	for index := len(r.entries) - 1; index >= 0; index-- {
+		entries = append(entries, r.entries[index])
+	}
+
+	return entries, nil
+}
+
+func (r *MemoryRepository) Record(
+	_ context.Context,
+	actorUserID string,
+	action string,
+	targetType string,
+	targetID string,
+	circleID string,
+	summary string,
+) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	entry := Entry{
+		ID:          uuidv7.MustString(),
+		ActorUserID: actorUserID,
+		Action:      action,
+		TargetType:  targetType,
+		TargetID:    targetID,
+		CircleID:    circleID,
+		Summary:     summary,
+		CreatedAt:   time.Now().UTC().Format(time.RFC3339),
+	}
+
+	r.entries = append(r.entries, entry)
+
+	return nil
+}

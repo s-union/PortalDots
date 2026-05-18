@@ -1,0 +1,53 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "vue"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "style": "warn"
+  },
+  "rules": {
+    "no-console": "warn",
+    "new-cap": ["warn", { "capIsNewExceptions": ["VueRouter"] }],
+
+    "sort-keys": "off",
+    "func-style": "off",
+    "sort-imports": "off",
+    "no-magic-numbers": "off",
+    "no-ternary": "off",
+    "no-nested-ternary": "off",
+    "max-statements": "off",
+    "prefer-destructuring": "off",
+    "id-length": "off",
+    "no-continue": "off",
+    "max-params": "off",
+    "arrow-body-style": "off"
+  },
+  "settings": {
+    "vitest": {
+      "typecheck": false
+    }
+  },
+  "env": {
+    "builtin": true,
+    "browser": true,
+    "es2022": true
+  },
+  "globals": {},
+  "ignorePatterns": ["dist/**", "storybook-static/**"],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.spec.ts"],
+      "rules": {
+        "consistent-type-imports": "off",
+        "no-unsafe-type-assertion": "off"
+      }
+    },
+    {
+      "files": ["**/*.vue"],
+      "rules": {
+        "consistent-type-imports": "off"
+      }
+    }
+  ]
+}

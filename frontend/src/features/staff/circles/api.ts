@@ -1,0 +1,635 @@
+import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import type { z } from 'zod'
+import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
+import {
+  parseWithSchema,
+  parseArrayWithSchema,
+  staffCircleMemberSchema,
+  staffCircleMailFormSchema,
+  staffCircleSchema,
+  staffManagedCircleSchema
+} from '@/lib/api/schema'
+import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
+import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import {
+  buildStaffListRequestParams,
+  resolveStaffListQueryParams,
+  type StaffListQueryParamsInput
+} from '@/lib/staffListQuery'
+import { fetchSessionBootstrap } from '@/features/session/api'
+import { useSessionStore } from '@/features/session/store'
+
+export type StaffCircle = z.infer<typeof staffCircleSchema>
+export type StaffManagedCircle = z.infer<typeof staffManagedCircleSchema>
+export type StaffCircleMailForm = z.infer<typeof staffCircleMailFormSchema>
+export type StaffCircleMailRecipient = StaffCircleMailForm['recipients'][number]
+export type StaffCircleMember = z.infer<typeof staffCircleMemberSchema>
+
+export interface MutateStaffCirclePayload {
+  name: string
+  nameYomi: string
+  groupName: string
+  groupNameYomi: string
+  participationTypeId: string
+  notes: string
+  status: 'pending' | 'approved' | 'rejected'
+  statusReason: string
+  placeIds: string[]
+}
+
+type UpdateStaffCirclePayload = MutateStaffCirclePayload & {
+  circleId: string
+}
+
+interface SendStaffCircleMailPayload {
+  circleId: string
+  recipient: 'all' | 'leader'
+  subject: string
+  body: string
+  ccToStaff: boolean
+}
+
+interface AddStaffCircleMemberPayload {
+  circleId: string
+  loginId: string
+}
+
+interface StaffCirclesPagination {
+  page: number
+  pageSize: number
+  query?: string
+}
+
+export async function fetchStaffCircles(pagination: StaffCirclesPagination, params?: StaffListQueryParamsInput) {
+  return $api.queryData(
+    'get',
+    '/staff/circles',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        query: {
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          ...resolveStaffListQueryParams({ ...toValue(params), query: pagination.query ?? toValue(params)?.query })
+        }
+      }
+    },
+    (value) => parsePaginatedResult(value, parseStaffCircle, 'staff circles'),
+    {
+      errorMessage: 'Failed to fetch staff circles'
+    }
+  )
+}
+
+export async function fetchAllStaffCircles(params?: StaffListQueryParamsInput) {
+  return $api.queryData(
+    'get',
+    '/staff/circles/all',
+    {
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
+    },
+    parseStaffCircles,
+    {
+      errorMessage: 'Failed to fetch all staff circles'
+    }
+  )
+}
+
+export async function fetchManagedStaffCircles() {
+  return $api.queryData(
+    'get',
+    '/staff/circles/managed',
+    {
+      headers: createJsonHeaders()
+    },
+    parseManagedStaffCircles,
+    {
+      errorMessage: 'Failed to fetch managed staff circles'
+    }
+  )
+}
+
+export async function fetchStaffCircle(circleId: string) {
+  return $api.queryData(
+    'get',
+    '/staff/circles/{circleID}',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: circleId
+        }
+      }
+    },
+    parseStaffCircle,
+    {
+      errorMessage: 'Failed to fetch staff circle'
+    }
+  )
+}
+
+export async function fetchStaffCircleMailForm(circleId: string) {
+  return $api.queryData(
+    'get',
+    '/staff/circles/{circleID}/email',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: circleId
+        }
+      }
+    },
+    parseStaffCircleMailForm,
+    {
+      errorMessage: 'Failed to fetch staff circle mail form'
+    }
+  )
+}
+
+export async function fetchStaffCircleMembers(circleId: string) {
+  return $api.queryData(
+    'get',
+    '/staff/circles/{circleID}/members',
+    {
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: circleId
+        }
+      }
+    },
+    parseStaffCircleMembers,
+    {
+      errorMessage: 'Failed to fetch staff circle members'
+    }
+  )
+}
+
+export async function createStaffCircle(payload: MutateStaffCirclePayload, csrfToken: string) {
+  return $api.mutationData(
+    'post',
+    '/staff/circles',
+    {
+      headers: createJsonHeaders(csrfToken),
+      body: payload
+    },
+    parseStaffCircle,
+    {
+      errorMessage: 'Failed to create staff circle',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'staff circle')
+      }
+    }
+  )
+}
+
+export async function updateStaffCircle(payload: UpdateStaffCirclePayload, csrfToken: string) {
+  return $api.mutationData(
+    'put',
+    '/staff/circles/{circleID}',
+    {
+      headers: createJsonHeaders(csrfToken),
+      params: {
+        path: {
+          circleID: payload.circleId
+        }
+      },
+      body: {
+        name: payload.name,
+        nameYomi: payload.nameYomi,
+        groupName: payload.groupName,
+        groupNameYomi: payload.groupNameYomi,
+        participationTypeId: payload.participationTypeId,
+        notes: payload.notes,
+        status: payload.status,
+        statusReason: payload.statusReason,
+        placeIds: payload.placeIds
+      }
+    },
+    parseStaffCircle,
+    {
+      errorMessage: 'Failed to update staff circle',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'staff circle')
+      }
+    }
+  )
+}
+
+export async function deleteStaffCircle(circleId: string, csrfToken: string) {
+  await $api.noContentMutation(
+    'delete',
+    '/staff/circles/{circleID}',
+    {
+      headers: createJsonHeaders(csrfToken),
+      params: {
+        path: {
+          circleID: circleId
+        }
+      }
+    },
+    {
+      errorMessage: 'Failed to delete staff circle'
+    }
+  )
+}
+
+export async function sendStaffCircleMail(payload: SendStaffCircleMailPayload, csrfToken: string) {
+  await $api.noContentMutation(
+    'post',
+    '/staff/circles/{circleID}/email',
+    {
+      headers: createJsonHeaders(csrfToken),
+      params: {
+        path: {
+          circleID: payload.circleId
+        }
+      },
+      body: {
+        recipient: payload.recipient,
+        subject: payload.subject,
+        body: payload.body,
+        ccToStaff: payload.ccToStaff
+      } as { recipient: 'all' | 'leader'; subject: string; body: string; ccToStaff: boolean }
+    },
+    {
+      errorMessage: 'Failed to queue staff circle mail',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'staff circle mail')
+      }
+    }
+  )
+}
+
+export async function addStaffCircleMember(payload: AddStaffCircleMemberPayload, csrfToken: string) {
+  await $api.noContentMutation(
+    'post',
+    '/staff/circles/{circleID}/members',
+    {
+      headers: createJsonHeaders(csrfToken),
+      params: {
+        path: {
+          circleID: payload.circleId
+        }
+      },
+      body: {
+        loginId: payload.loginId
+      }
+    },
+    {
+      errorMessage: 'Failed to add staff circle member',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'staff circle member')
+      }
+    }
+  )
+}
+
+export async function deleteStaffCircleMember(circleId: string, userId: string, csrfToken: string) {
+  await $api.noContentMutation(
+    'delete',
+    '/staff/circles/{circleID}/members/{userID}',
+    {
+      headers: createJsonHeaders(csrfToken),
+      params: {
+        path: {
+          circleID: circleId,
+          userID: userId
+        }
+      }
+    },
+    {
+      errorMessage: 'Failed to delete staff circle member',
+      errorParsers: {
+        422: (error) => parseValidationError(error, 'staff circle member')
+      }
+    }
+  )
+}
+
+export function useStaffCirclesQuery(
+  enabled: MaybeRefOrGetter<boolean>,
+  pagination: MaybeRefOrGetter<StaffCirclesPagination>,
+  params?: StaffListQueryParamsInput
+) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        query: {
+          page: toValue(pagination).page,
+          pageSize: toValue(pagination).pageSize,
+          ...resolveStaffListQueryParams({
+            ...toValue(params),
+            query: toValue(pagination).query ?? toValue(params)?.query
+          })
+        }
+      }
+    }),
+    (value) => parsePaginatedResult(value, parseStaffCircle, 'staff circles'),
+    {
+      queryKey: computed(() => ['staff', 'circles', toValue(pagination), toValue(params)]),
+      enabled: computed(() => toValue(enabled)),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch staff circles'
+    }
+  )
+}
+
+export function useAllStaffCirclesQuery(enabled: MaybeRefOrGetter<boolean>, params?: StaffListQueryParamsInput) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles/all',
+    () => ({
+      headers: createJsonHeaders(),
+      ...buildStaffListRequestParams(params)
+    }),
+    parseStaffCircles,
+    {
+      queryKey: computed(() => ['staff', 'circles', 'all', toValue(params)]),
+      enabled: computed(() => toValue(enabled)),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch all staff circles'
+    }
+  )
+}
+
+export function useManagedStaffCirclesQuery(enabled: MaybeRefOrGetter<boolean>) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles/managed',
+    {
+      headers: createJsonHeaders()
+    },
+    parseManagedStaffCircles,
+    {
+      queryKey: ['staff', 'circles', 'managed'],
+      enabled: computed(() => toValue(enabled)),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch managed staff circles'
+    }
+  )
+}
+
+export function useStaffCircleDetailQuery(circleId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles/{circleID}',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: toValue(circleId)
+        }
+      }
+    }),
+    parseStaffCircle,
+    {
+      queryKey: computed(() => ['staff', 'circles', 'detail', toValue(circleId)]),
+      enabled: computed(() => toValue(enabled) && toValue(circleId).trim().length > 0),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch staff circle'
+    }
+  )
+}
+
+export function useStaffCircleMailFormQuery(circleId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles/{circleID}/email',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: toValue(circleId)
+        }
+      }
+    }),
+    parseStaffCircleMailForm,
+    {
+      queryKey: computed(() => ['staff', 'circles', 'mail', toValue(circleId)]),
+      enabled: computed(() => toValue(enabled) && toValue(circleId).trim().length > 0),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch staff circle mail form'
+    }
+  )
+}
+
+export function useStaffCircleMembersQuery(circleId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
+  return $api.useQueryData(
+    'get',
+    '/staff/circles/{circleID}/members',
+    () => ({
+      headers: createJsonHeaders(),
+      params: {
+        path: {
+          circleID: toValue(circleId)
+        }
+      }
+    }),
+    parseStaffCircleMembers,
+    {
+      queryKey: computed(() => ['staff', 'circles', 'members', toValue(circleId)]),
+      enabled: computed(() => toValue(enabled) && toValue(circleId).trim().length > 0),
+      retry: false
+    },
+    {
+      errorMessage: 'Failed to fetch staff circle members'
+    }
+  )
+}
+
+export function useCreateStaffCircleMutation() {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (payload: MutateStaffCirclePayload) => createStaffCircle(payload, sessionStore.csrfToken),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'managed'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'all'] }),
+        queryClient.invalidateQueries({ queryKey: ['circles', 'selectable'] })
+      ])
+    }
+  })
+}
+
+export function useUpdateStaffCircleMutation() {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (payload: UpdateStaffCirclePayload) => updateStaffCircle(payload, sessionStore.csrfToken),
+    onSuccess: async (updatedCircle) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'managed'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'detail', updatedCircle.id]
+        }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'all'] }),
+        queryClient.invalidateQueries({ queryKey: ['circles', 'selectable'] }),
+        queryClient.invalidateQueries({ queryKey: ['session', 'bootstrap'] })
+      ])
+
+      const session = await fetchSessionBootstrap()
+      sessionStore.hydrate(session)
+      queryClient.setQueryData(['session', 'bootstrap'], session)
+    }
+  })
+}
+
+export function useDeleteStaffCircleMutation(circleId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async () => deleteStaffCircle(toValue(circleId), sessionStore.csrfToken),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'managed'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'detail', toValue(circleId)]
+        }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'circles', 'all'] }),
+        queryClient.invalidateQueries({ queryKey: ['circles', 'selectable'] })
+      ])
+    }
+  })
+}
+
+export function useSendStaffCircleMailMutation(circleId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (payload: Omit<SendStaffCircleMailPayload, 'circleId'>) =>
+      sendStaffCircleMail({ ...payload, circleId: toValue(circleId) }, sessionStore.csrfToken),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'mail', toValue(circleId)]
+        }),
+        queryClient.invalidateQueries({ queryKey: ['staff', 'mails'] })
+      ])
+    }
+  })
+}
+
+export function useAddStaffCircleMemberMutation(circleId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (loginId: string) =>
+      addStaffCircleMember({ circleId: toValue(circleId), loginId }, sessionStore.csrfToken),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'members', toValue(circleId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'mail', toValue(circleId)]
+        })
+      ])
+    }
+  })
+}
+
+export function useDeleteStaffCircleMemberMutation(circleId: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const sessionStore = useSessionStore()
+
+  return useMutation({
+    mutationFn: async (userId: string) => deleteStaffCircleMember(toValue(circleId), userId, sessionStore.csrfToken),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'members', toValue(circleId)]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['staff', 'circles', 'mail', toValue(circleId)]
+        })
+      ])
+    }
+  })
+}
+
+export function useStaffCircleForm() {
+  return ref<MutateStaffCirclePayload>({
+    name: '',
+    nameYomi: '',
+    groupName: '',
+    groupNameYomi: '',
+    participationTypeId: '',
+    notes: '',
+    status: 'pending',
+    statusReason: '',
+    placeIds: []
+  })
+}
+
+export function useStaffCircleMailForm() {
+  return ref<{ recipient: 'all' | 'leader'; subject: string; body: string; ccToStaff: boolean }>({
+    recipient: 'all',
+    subject: '',
+    body: '',
+    ccToStaff: false
+  })
+}
+
+export function extractStaffCircleValidationMessage(error: unknown) {
+  return extractValidationMessage(error, '企画の保存に失敗しました。')
+}
+
+export function extractStaffCircleMailValidationMessage(error: unknown) {
+  return extractValidationMessage(error, '企画向けメールの登録に失敗しました。')
+}
+
+export function extractStaffCircleMemberValidationMessage(error: unknown) {
+  return extractValidationMessage(error, '企画所属者の更新に失敗しました。')
+}
+
+export function buildStaffCirclesExportUrl() {
+  return buildApiUrl('/staff/circles/export')
+}
+
+function parseStaffCircles(value: unknown): StaffCircle[] {
+  return parseArrayWithSchema(staffCircleSchema, value, 'staff circles')
+}
+
+function parseManagedStaffCircles(value: unknown): StaffManagedCircle[] {
+  return parseArrayWithSchema(staffManagedCircleSchema, value, 'managed staff circles')
+}
+
+function parseStaffCircle(value: unknown): StaffCircle {
+  return parseWithSchema(staffCircleSchema, value, 'staff circle')
+}
+
+function parseStaffCircleMailForm(value: unknown): StaffCircleMailForm {
+  return parseWithSchema(staffCircleMailFormSchema, value, 'staff circle mail form')
+}
+
+function parseStaffCircleMembers(value: unknown): StaffCircleMember[] {
+  return parseArrayWithSchema(staffCircleMemberSchema, value, 'staff circle members')
+}
+
+export type StaffCirclePage = PaginatedResult<StaffCircle>

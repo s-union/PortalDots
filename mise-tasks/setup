@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="First-time setup: install tools, dependencies, init DB"
+
+mise install && \
+mise run prepare && \
+mise run db-up && \
+mise run db:wait && \
+mise run backend-migrate && \
+mise run backend-seed

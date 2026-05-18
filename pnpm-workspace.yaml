@@ -1,0 +1,9 @@
+packages:
+  - frontend
+  - packages/*
+allowBuilds:
+  esbuild: true
+  msw: true
+  sharp: true
+  vue-demi: true
+  workerd: true

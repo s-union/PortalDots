@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="frontend"
+#MISE description="Run Playwright E2E tests"
+
+pnpm run test:e2e

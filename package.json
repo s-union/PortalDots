@@ -3,72 +3,21 @@
     "name": "portaldots",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/portal-dots/PortalDots.git"
+        "url": "git+https://github.com/s-union/PortalDots.git"
     },
     "author": "Soji Takahashi (SofPyon)",
     "license": "MIT License",
     "bugs": {
-        "url": "https://github.com/portal-dots/PortalDots/issues"
+        "url": "https://github.com/s-union/PortalDots/issues"
     },
-    "homepage": "https://github.com/portal-dots/PortalDots#readme",
+    "homepage": "https://github.com/s-union/PortalDots#readme",
     "scripts": {
-        "docker": "./vendor/bin/sail up -d",
-        "docker-shell": "./vendor/bin/sail shell",
-        "docker-stop": "./vendor/bin/sail stop",
-        "sail-test": "./vendor/bin/sail test",
-        "migrate": "./vendor/bin/sail artisan migrate",
-        "migrate:status": "./vendor/bin/sail artisan migrate:status",
-        "migrate:rollback": "./vendor/bin/sail artisan migrate:rollback",
-        "migrate:refresh": "./vendor/bin/sail artisan migrate:refresh",
-        "dev": "vite",
-        "build": "vite build",
-        "eslint-check": "eslint --ext js,vue ./resources",
-        "postinstall": "patch-package"
+        "ci:check": "pnpm -C frontend run ci:check",
+        "format": "pnpm -C frontend run format"
     },
     "devDependencies": {
-        "@vitejs/plugin-vue": "^4.6.2",
-        "@vue/compiler-sfc": "^3.2.45",
-        "blade-formatter": "^1.38.6",
-        "cross-env": "^7.0",
-        "eslint": "^8.49.0",
-        "eslint-config-airbnb-base": "^15.0.0",
-        "eslint-config-prettier": "^9.0.0",
-        "eslint-plugin-import": "^2.29.1",
-        "eslint-plugin-prettier": "^4.2.1",
-        "eslint-plugin-vue": "^9.19.2",
-        "jquery": "^3.7",
-        "laravel-vite-plugin": "^0.8.1",
-        "lodash": "^4.17.21",
-        "popper.js": "^1.12",
-        "postcss": "^8.4",
-        "postcss-html": "^1.5.0",
-        "purify-css": "^1.2.5",
-        "purifycss-webpack": "^0.7.0",
-        "resolve-url-loader": "^5.0.0",
-        "sass": "^1.70.0",
-        "sass-loader": "^13.3.2",
-        "sass-resources-loader": "^2.2.5",
-        "shx": "^0.3.4",
-        "vite": "^4.5.2",
-        "vue-loader": "^17.4.2"
-    },
-    "dependencies": {
-        "@fortawesome/fontawesome-free": "^6.5.1",
-        "@headlessui/vue": "^1.7.16",
-        "@sipec/vue3-tags-input": "^3.0.4",
-        "@vavt/md-editor-extension": "^3.0.0",
-        "axios": "^1.6",
-        "bootstrap": "^4.6.2",
-        "color-convert": "^2.0.1",
-        "floating-vue": "^2.0.0-beta.24",
-        "marked": "^7.0.5",
-        "md-editor-v3": "^4.10.0",
-        "patch-package": "^8.0.0",
-        "postinstall-postinstall": "^2.1.0",
-        "turbolinks": "^5.2.0",
-        "vue": "^3.3.11",
-        "vue-global-events": "^3.0.0",
-        "vuedraggable": "^4.1.0",
-        "vuex": "^4.1.0"
+        "oxfmt": "^0.46.0",
+        "oxlint": "^1.65.0",
+        "oxlint-tsgolint": "^0.21.1"
     }
 }

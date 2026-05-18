@@ -1,0 +1,213 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
+import StaffDashboardPage from '../../index.vue'
+import StaffDocumentDetailPage from './edit.vue'
+import StaffDocumentsIndexPage from '../index.vue'
+import StaffVerifyPage from '../../verify.vue'
+
+function createQueryPlugin() {
+  return [
+    VueQueryPlugin,
+    {
+      queryClient: new QueryClient({
+        defaultOptions: {
+          queries: { retry: false }
+        }
+      })
+    }
+  ]
+}
+
+const documentFixture = {
+  circle: { id: 'circle-b', name: 'デモ企画B' },
+  id: 'document-circle-b-1',
+  name: '展示ガイド',
+  description: 'Bブロック向けの展示ガイドです。',
+  notes: '展示班の責任者に共有済みです。',
+  isImportant: true,
+  filename: 'b-exhibition-guide.txt',
+  extension: 'TXT',
+  mimeType: 'text/plain',
+  sizeBytes: 1024,
+  isPublic: true,
+  viewableTags: [],
+  createdAt: '2026-03-03T09:00:00Z',
+  updatedAt: '2026-03-05T09:00:00Z',
+  downloadUrl: '/v1/staff/documents/document-circle-b-1'
+}
+
+const tagsFixture = [
+  { id: 'tag-1', name: 'タグA', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'tag-2', name: 'タグB', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
+]
+
+describe('StaffDocumentDetailPage', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  function expectInputValue(wrapper: ReturnType<typeof mount>, selector: string, expected: string) {
+    const element = wrapper.get(selector).element
+    if (!(element instanceof HTMLInputElement)) {
+      throw new Error(`Expected HTMLInputElement for ${selector}`)
+    }
+    expect(element.value).toBe(expected)
+  }
+
+  function expectTextareaValue(wrapper: ReturnType<typeof mount>, selector: string, expected: string) {
+    const element = wrapper.get(selector).element
+    if (!(element instanceof HTMLTextAreaElement)) {
+      throw new Error(`Expected HTMLTextAreaElement for ${selector}`)
+    }
+    expect(element.value).toBe(expected)
+  }
+
+  it('updates and deletes a staff document', async () => {
+    let deleted = false
+
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json(tagsFixture)),
+      http.get('/v1/staff/documents/document-circle-b-1/edit', () => HttpResponse.json(documentFixture)),
+      http.put('/v1/staff/documents/document-circle-b-1', () =>
+        HttpResponse.json({
+          ...documentFixture,
+          name: '展示ガイド改訂版',
+          description: '更新版です。',
+          notes: '旧版は破棄してください。',
+          isImportant: false,
+          isPublic: false,
+          updatedAt: '2026-03-06T09:00:00Z'
+        })
+      ),
+      http.delete('/v1/staff/documents/document-circle-b-1', () => {
+        deleted = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const confirmMock = vi.fn(() => true)
+    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/login', component: { template: '<div>login</div>' } },
+        { path: '/', component: { template: '<div>home</div>' } },
+        { path: '/circles/select', component: { template: '<div>circles</div>' } },
+        { path: '/staff', component: StaffDashboardPage },
+        { path: '/staff/verify', component: StaffVerifyPage },
+        { path: '/staff/documents', component: StaffDocumentsIndexPage },
+        { path: '/staff/documents/:documentId/edit', component: StaffDocumentDetailPage }
+      ]
+    })
+    await router.push('/staff/documents/document-circle-b-1/edit')
+    await router.isReady()
+
+    const wrapper = mount(StaffDocumentDetailPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    expectInputValue(wrapper, 'input[name="name"]', '展示ガイド')
+    expectTextareaValue(wrapper, 'textarea[name="notes"]', '展示班の責任者に共有済みです。')
+
+    await wrapper.get('input[name="name"]').setValue('展示ガイド改訂版')
+    await wrapper.get('textarea[name="description"]').setValue('更新版です。')
+    await wrapper.get('textarea[name="notes"]').setValue('旧版は破棄してください。')
+    await wrapper.get('input[name="isImportant"]').setValue(false)
+    await wrapper.get('input[name="isPublic"]').setValue(false)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('配布資料を更新しました。')
+
+    const deleteButton = wrapper.findAll('button').find((btn) => btn.text().includes('削除'))
+    expect(deleteButton).toBeTruthy()
+    await deleteButton!.trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledWith('配布資料「展示ガイド」を削除しますか？')
+    expect(deleted).toBe(true)
+    expect(router.currentRoute.value.fullPath).toBe('/staff/documents')
+  })
+
+  it('does not delete a staff document when confirmation is cancelled', async () => {
+    let deleted = false
+
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json(tagsFixture)),
+      http.get('/v1/staff/documents/document-circle-b-1/edit', () => HttpResponse.json(documentFixture)),
+      http.delete('/v1/staff/documents/document-circle-b-1', () => {
+        deleted = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const confirmMock = vi.fn(() => false)
+    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/login', component: { template: '<div>login</div>' } },
+        { path: '/', component: { template: '<div>home</div>' } },
+        { path: '/circles/select', component: { template: '<div>circles</div>' } },
+        { path: '/staff', component: StaffDashboardPage },
+        { path: '/staff/verify', component: StaffVerifyPage },
+        { path: '/staff/documents', component: StaffDocumentsIndexPage },
+        { path: '/staff/documents/:documentId/edit', component: StaffDocumentDetailPage }
+      ]
+    })
+    await router.push('/staff/documents/document-circle-b-1/edit')
+    await router.isReady()
+
+    const wrapper = mount(StaffDocumentDetailPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const deleteButton = wrapper.findAll('button').find((btn) => btn.text().includes('削除'))
+    expect(deleteButton).toBeTruthy()
+    await deleteButton!.trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledWith('配布資料「展示ガイド」を削除しますか？')
+    expect(deleted).toBe(false)
+    expect(router.currentRoute.value.fullPath).toBe('/staff/documents/document-circle-b-1/edit')
+  })
+})

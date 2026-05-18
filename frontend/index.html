@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja" data-theme="system">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      ;(() => {
+        const themes = ['system', 'light', 'dark']
+        const storageKey = 'ui_theme'
+        const readCookieTheme = () => {
+          const matched = document.cookie
+            .split(';')
+            .map((part) => part.trim())
+            .find((part) => part.startsWith(`${storageKey}=`))
+
+          if (!matched) {
+            return null
+          }
+
+          const theme = decodeURIComponent(matched.slice(`${storageKey}=`.length))
+          return themes.includes(theme) ? theme : null
+        }
+
+        let theme = 'system'
+
+        try {
+          const storedTheme = window.localStorage.getItem(storageKey)
+          if (storedTheme && themes.includes(storedTheme)) {
+            theme = storedTheme
+          }
+        } catch {}
+
+        if (theme === 'system') {
+          theme = readCookieTheme() ?? theme
+        }
+
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
+    <title>PortalDots</title>
+  </head>
+  <body>
+    <div id="v2-app" class="app"></div>
+    <script type="module" src="/src/app/main.ts"></script>
+  </body>
+</html>

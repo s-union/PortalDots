@@ -19,6 +19,12 @@ coverage.xml
 # From Laravel
 #-------------------------
 /node_modules
+/frontend/node_modules
+/frontend/dist
+/packages/*/node_modules
+/packages/*/dist
+/playwright-report
+/test-results
 /public/build
 /public/hot
 /public/storage
@@ -31,9 +37,27 @@ coverage.xml
 .env
 .env.backup
 .env.production
+.env.local
+.dev.vars*
+!.dev.vars.example
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
 auth.json
 npm-debug.log
 yarn-error.log
+pnpm-debug.log
+/frontend/.env
+/backend/.env
+/backend/tmp
+
+# Generated files (do not edit manually)
+/packages/api-client/src/generated/
+/backend/internal/shared/mailrender/generated/
+/generated/
+/backend/internal/platform/postgres/db/
+/frontend/typed-router.d.ts
+*.tsbuildinfo
+
+# Wrangler build artifacts
+.wrangler/

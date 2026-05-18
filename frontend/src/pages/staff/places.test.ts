@@ -1,0 +1,300 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
+import StaffPlacesPage from './places.vue'
+
+function createQueryPlugin() {
+  return [
+    VueQueryPlugin,
+    {
+      queryClient: new QueryClient({
+        defaultOptions: {
+          queries: { retry: false }
+        }
+      })
+    }
+  ]
+}
+
+describe('StaffPlacesPage', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('lists, creates, updates, and deletes places', async () => {
+    const places = [
+      {
+        id: 'place-2',
+        name: '中庭',
+        type: 2,
+        notes: '屋外',
+        createdAt: '2021-06-07T22:19:50+09:00',
+        updatedAt: '2021-06-07T22:19:50+09:00'
+      },
+      {
+        id: 'place-1',
+        name: '1号館',
+        type: 1,
+        notes: '屋内',
+        createdAt: '2021-06-07T22:19:45+09:00',
+        updatedAt: '2021-06-07T22:19:45+09:00'
+      }
+    ]
+
+    server.use(
+      http.get('/v1/staff/places', () => HttpResponse.json(places)),
+      http.post('/v1/staff/places', () => {
+        places.push({
+          id: 'place-3',
+          name: '体育館',
+          type: 3,
+          notes: '特殊',
+          createdAt: '2021-06-07T22:19:55+09:00',
+          updatedAt: '2021-06-07T22:19:55+09:00'
+        })
+        return HttpResponse.json(places[2], { status: 201 })
+      }),
+      http.put('/v1/staff/places/place-1', () => {
+        places[1] = {
+          id: 'place-1',
+          name: '更新後 1号館',
+          type: 1,
+          notes: '更新',
+          createdAt: '2021-06-07T22:19:45+09:00',
+          updatedAt: '2021-06-07T22:20:01+09:00'
+        }
+        return HttpResponse.json(places[1])
+      }),
+      http.delete('/v1/staff/places/place-2', () => {
+        places.splice(0, 1)
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/places', component: StaffPlacesPage }
+      ]
+    })
+    await router.push('/staff/places')
+    await router.isReady()
+
+    const confirmMock = vi.fn(() => true)
+    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
+
+    const wrapper = mount(StaffPlacesPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(wrapper.get('a[href$="/v1/staff/places/export"]').text()).toContain('CSVで出力(場所別企画一覧)')
+    expect(wrapper.text()).toContain('1号館')
+    expect(wrapper.text()).toContain('中庭')
+    expect(wrapper.text()).toContain('場所ID')
+    expect(wrapper.text().indexOf('1号館')).toBeLessThan(wrapper.text().indexOf('中庭'))
+
+    const createButton = wrapper.findAll('button[type="button"]').find((button) => button.text().includes('新規場所'))
+    if (!createButton) {
+      throw new Error('create button not found')
+    }
+    await createButton.trigger('click')
+    await flushPromises()
+
+    const createNameInput = document.body.querySelector('input[name="name"]')
+    if (!(createNameInput instanceof HTMLInputElement)) {
+      throw new Error('create name input not found')
+    }
+    createNameInput.value = '体育館'
+    createNameInput.dispatchEvent(new Event('input'))
+
+    const createTypeSelect = document.body.querySelector('select[name="type"]')
+    if (!(createTypeSelect instanceof HTMLSelectElement)) {
+      throw new Error('create type select not found')
+    }
+    createTypeSelect.value = '3'
+    createTypeSelect.dispatchEvent(new Event('change'))
+
+    const createNotesTextarea = document.body.querySelector('textarea[name="notes"]')
+    if (!(createNotesTextarea instanceof HTMLTextAreaElement)) {
+      throw new Error('create notes textarea not found')
+    }
+    createNotesTextarea.value = '特殊'
+    createNotesTextarea.dispatchEvent(new Event('input'))
+
+    const createSubmitButton = document.body.querySelector('button[type="submit"]')
+    if (!(createSubmitButton instanceof HTMLButtonElement)) {
+      throw new Error('create submit button not found')
+    }
+    createSubmitButton.click()
+    await flushPromises()
+    expect(wrapper.text()).toContain('体育館')
+
+    await wrapper.find('button[title="編集"]').trigger('click')
+    await flushPromises()
+
+    const editNameInput = document.body.querySelector('input[name="name"]')
+    if (!(editNameInput instanceof HTMLInputElement)) {
+      throw new Error('edit name input not found')
+    }
+    editNameInput.value = '更新後 1号館'
+    editNameInput.dispatchEvent(new Event('input'))
+
+    const editNotesTextarea = document.body.querySelector('textarea[name="notes"]')
+    if (!(editNotesTextarea instanceof HTMLTextAreaElement)) {
+      throw new Error('edit notes textarea not found')
+    }
+    editNotesTextarea.value = '更新'
+    editNotesTextarea.dispatchEvent(new Event('input'))
+
+    const saveButton = document.body.querySelector('button[type="submit"]')
+    if (!(saveButton instanceof HTMLButtonElement)) {
+      throw new Error('save button not found')
+    }
+    saveButton.click()
+    await flushPromises()
+    expect(wrapper.text()).toContain('更新後 1号館')
+
+    await wrapper.findAll('button[title="削除"]')[1]?.trigger('click')
+    await flushPromises()
+    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('場所「中庭」を削除しますか？'))
+    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('企画自体は削除されません'))
+    expect(wrapper.text()).not.toContain('中庭')
+  })
+
+  it('does not delete when place deletion is cancelled', async () => {
+    server.use(
+      http.get('/v1/staff/places', () =>
+        HttpResponse.json([
+          {
+            id: 'place-1',
+            name: '1号館',
+            type: 1,
+            notes: '屋内',
+            createdAt: '2021-06-07T22:19:45+09:00',
+            updatedAt: '2021-06-07T22:19:45+09:00'
+          },
+          {
+            id: 'place-2',
+            name: '中庭',
+            type: 2,
+            notes: '屋外',
+            createdAt: '2021-06-07T22:19:50+09:00',
+            updatedAt: '2021-06-07T22:19:50+09:00'
+          }
+        ])
+      )
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/places', component: StaffPlacesPage }
+      ]
+    })
+    await router.push('/staff/places')
+    await router.isReady()
+
+    const confirmMock = vi.fn(() => false)
+    vi.spyOn(window, 'confirm').mockImplementation(confirmMock)
+
+    let deleteWasCalled = false
+    server.use(
+      http.delete('/v1/staff/places/place-2', () => {
+        deleteWasCalled = true
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+
+    const wrapper = mount(StaffPlacesPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    await wrapper.findAll('button[title="編集"]')[1]?.trigger('click')
+    await flushPromises()
+    await wrapper.findAll('button[title="削除"]')[1]?.trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('場所「中庭」を削除しますか？'))
+    expect(deleteWasCalled).toBe(false)
+    expect(wrapper.text()).toContain('中庭')
+  })
+
+  it('loads places without current circle', async () => {
+    let placesWasCalled = false
+    server.use(
+      http.get('/v1/staff/places', () => {
+        placesWasCalled = true
+        return HttpResponse.json([
+          {
+            id: 'place-1',
+            name: '1号館',
+            type: 1,
+            notes: '屋内',
+            createdAt: '2021-06-07T22:19:45+09:00',
+            updatedAt: '2021-06-07T22:19:45+09:00'
+          }
+        ])
+      })
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/places', component: StaffPlacesPage }
+      ]
+    })
+    await router.push('/staff/places')
+    await router.isReady()
+
+    const wrapper = mount(StaffPlacesPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(placesWasCalled).toBe(true)
+    expect(wrapper.text()).toContain('1号館')
+  })
+})

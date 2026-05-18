@@ -1,0 +1,209 @@
+<script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
+definePage({
+  path: '/staff/circles/participation_types',
+  meta: staffPageMeta('circles.participationTypes')
+})
+
+import { computed, ref } from 'vue'
+import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
+import PageLayout from '@/components/layouts/PageLayout.vue'
+import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
+import {
+  extractStaffParticipationTypeValidationMessage,
+  useCreateStaffParticipationTypeMutation,
+  useStaffParticipationTypeForm,
+  useStaffParticipationTypesQuery
+} from '@/features/staff/participation-types/api'
+import { useSessionStore } from '@/features/session/store'
+import { useFormValidation, staffParticipationTypeFormSchema } from '@/lib/form-validation'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormError from '@/components/ui/FormError.vue'
+import FormField from '@/components/ui/FormField.vue'
+import CheckboxField from '@/components/ui/CheckboxField.vue'
+
+const sessionStore = useSessionStore()
+const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
+const participationTypesQuery = useStaffParticipationTypesQuery(
+  computed(() => staffStatusQuery.data.value?.authorized === true)
+)
+const tagsQuery = useStaffTagsQuery(computed(() => staffStatusQuery.data.value?.authorized === true))
+const createMutation = useCreateStaffParticipationTypeMutation()
+const form = useStaffParticipationTypeForm()
+const errorMessage = ref('')
+const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+
+const { getFieldError, validateAll, markTouched } = useFormValidation({
+  schema: staffParticipationTypeFormSchema,
+  form
+})
+
+function handleOpenAtInput(event: Event) {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement)) {
+    return
+  }
+  form.value.openAt = parseDateTimeLocalValue(target.value)
+  markTouched('openAt')
+}
+
+function handleCloseAtInput(event: Event) {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement)) {
+    return
+  }
+  form.value.closeAt = parseDateTimeLocalValue(target.value)
+  markTouched('closeAt')
+}
+
+async function handleCreate() {
+  errorMessage.value = ''
+
+  if (!validateAll()) {
+    return
+  }
+
+  try {
+    await createMutation.mutateAsync({
+      ...form.value,
+      openAt: parseDateTimeLocalValue(form.value.openAt),
+      closeAt: parseDateTimeLocalValue(form.value.closeAt)
+    })
+    form.value = useStaffParticipationTypeForm().value
+  } catch (error) {
+    errorMessage.value = extractStaffParticipationTypeValidationMessage(error)
+  }
+}
+</script>
+
+<template>
+  <PageLayout>
+    <p class="text-sm font-semibold text-body">参加種別管理</p>
+
+    <SurfaceCard>
+      <SurfaceHeader>
+        <template #title>参加種別一覧</template>
+      </SurfaceHeader>
+      <div v-if="participationTypesQuery.isPending.value" class="px-6 py-5 text-sm text-muted">読み込み中...</div>
+      <div v-else-if="(participationTypesQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-sm text-muted">
+        参加種別はまだありません。
+      </div>
+      <div v-else class="divide-y divide-border">
+        <RouterLink
+          v-for="participationType in participationTypesQuery.data.value"
+          :key="participationType.id"
+          :to="`/staff/circles/participation_types/${participationType.id}`"
+          class="block px-6 py-5 transition hover:bg-surface-light"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-medium text-body">{{ participationType.name }}</h3>
+              <p class="mt-1 text-sm text-muted">{{ participationType.description }}</p>
+            </div>
+            <StatusBadge tone="primary">
+              {{ participationType.usersCountMin }} - {{ participationType.usersCountMax }} 人
+            </StatusBadge>
+          </div>
+        </RouterLink>
+      </div>
+    </SurfaceCard>
+
+    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreate">
+      <h2 class="text-lg font-semibold text-body">参加種別を新規作成</h2>
+      <div class="mt-4 grid gap-4">
+        <FormField label="参加種別名" :error="getFieldError('name')">
+          <input
+            v-model="form.name"
+            name="name"
+            type="text"
+            :class="{ 'border-danger': getFieldError('name') }"
+            @blur="markTouched('name')"
+            @input="markTouched('name')"
+          />
+        </FormField>
+        <FormField label="説明">
+          <textarea v-model="form.description" class="min-h-24" name="description" />
+        </FormField>
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormField label="最低人数" :error="getFieldError('usersCountMin')">
+            <input
+              v-model.number="form.usersCountMin"
+              min="1"
+              name="usersCountMin"
+              type="number"
+              :class="{ 'border-danger': getFieldError('usersCountMin') }"
+              @blur="markTouched('usersCountMin')"
+              @input="markTouched('usersCountMin')"
+            />
+          </FormField>
+          <FormField label="最大人数" :error="getFieldError('usersCountMax')">
+            <input
+              v-model.number="form.usersCountMax"
+              min="1"
+              name="usersCountMax"
+              type="number"
+              :class="{ 'border-danger': getFieldError('usersCountMax') }"
+              @blur="markTouched('usersCountMax')"
+              @input="markTouched('usersCountMax')"
+            />
+          </FormField>
+        </div>
+        <FormField label="付与タグ">
+          <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
+        </FormField>
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormField label="受付開始日時" :error="getFieldError('openAt')">
+            <input
+              :value="formatDateTimeLocalValue(form.openAt)"
+              name="openAt"
+              type="datetime-local"
+              :class="{ 'border-danger': getFieldError('openAt') }"
+              @input="handleOpenAtInput"
+              @blur="markTouched('openAt')"
+            />
+          </FormField>
+          <FormField label="受付終了日時" :error="getFieldError('closeAt')">
+            <input
+              :value="formatDateTimeLocalValue(form.closeAt)"
+              name="closeAt"
+              type="datetime-local"
+              :class="{ 'border-danger': getFieldError('closeAt') }"
+              @input="handleCloseAtInput"
+              @blur="markTouched('closeAt')"
+            />
+          </FormField>
+        </div>
+        <FormField label="参加登録前に表示する内容">
+          <MarkdownEditorField v-model="form.formDescription" min-height-class="min-h-24" name="formDescription" />
+        </FormField>
+        <FormField label="提出後メッセージ">
+          <MarkdownEditorField
+            v-model="form.formConfirmationMessage"
+            min-height-class="min-h-24"
+            name="formConfirmationMessage"
+          />
+        </FormField>
+        <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" name="isPublic" />
+        <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
+      </div>
+      <div class="mt-5">
+        <BaseButton
+          variant="primary"
+          size="wide"
+          weight="bold"
+          type="submit"
+          :disabled="createMutation.isPending.value"
+        >
+          {{ createMutation.isPending.value ? '作成中...' : '保存' }}
+        </BaseButton>
+      </div>
+    </form>
+  </PageLayout>
+</template>

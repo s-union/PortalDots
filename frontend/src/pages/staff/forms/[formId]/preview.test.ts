@@ -1,0 +1,145 @@
+import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { createPinia, setActivePinia } from 'pinia'
+import { useSessionStore } from '@/features/session/store'
+import { http, HttpResponse } from 'msw'
+import { server } from '@/test/server'
+import StaffFormPreviewPage from './preview.vue'
+
+describe('StaffFormPreviewPage', () => {
+  it('renders the interactive staff form preview without submitting even when answerableTags is null', async () => {
+    server.use(
+      http.get('/v1/public/config', () => HttpResponse.json({ isDemo: true, appName: 'PortalDots' })),
+      http.get('/v1/staff/forms/form-circle-b-1/preview', () =>
+        HttpResponse.json({
+          id: 'form-circle-b-1',
+          name: '展示チェックフォーム',
+          description: '展示レイアウトと機材使用申請を提出してください。',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: null,
+          confirmationMessage: '回答ありがとうございました。',
+          isPublic: true,
+          isOpen: false,
+          questions: [
+            {
+              id: 'heading-1',
+              name: '基本情報',
+              description: '最初に確認事項を読んでください。',
+              type: 'heading',
+              isRequired: false,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: [],
+              priority: 1,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            },
+            {
+              id: 'question-1',
+              name: '責任者名',
+              description: '当日の責任者を入力してください',
+              type: 'text',
+              isRequired: true,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: [],
+              priority: 2,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            },
+            {
+              id: 'question-2',
+              name: '参加日',
+              description: '参加日を選んでください',
+              type: 'radio',
+              isRequired: true,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: ['1日目', '2日目'],
+              priority: 3,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            },
+            {
+              id: 'question-3',
+              name: '配置図',
+              description: 'PDF を提出してください',
+              type: 'upload',
+              isRequired: false,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: 'application/pdf',
+              options: [],
+              priority: 4,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            }
+          ]
+        })
+      )
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/forms/:formId/edit', component: { template: '<div>edit</div>' } },
+        { path: '/staff/forms/:formId/preview', component: StaffFormPreviewPage }
+      ]
+    })
+    await router.push('/staff/forms/form-circle-b-1/preview')
+    await router.isReady()
+
+    const wrapper = mount(StaffFormPreviewPage, {
+      global: {
+        plugins: [
+          pinia,
+          router,
+          [
+            VueQueryPlugin,
+            {
+              queryClient: new QueryClient({
+                defaultOptions: { queries: { retry: false } }
+              })
+            }
+          ]
+        ]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('プレビュー')
+    expect(wrapper.text()).toContain('このフォームから実際に送信することはできません。')
+    expect(wrapper.text()).toContain('展示チェックフォーム')
+    expect(wrapper.text()).toContain('受付期間外です')
+    expect(wrapper.text()).toContain('基本情報')
+    expect(wrapper.text()).toContain('責任者名')
+    expect(wrapper.text()).toContain('1日目')
+    expect(wrapper.text()).toContain('ファイル選択欄が表示されます。')
+    expect(document.title).toBe('展示チェックフォーム - プレビュー — PortalDots')
+    await wrapper.get('input[type="text"]').setValue('山田太郎')
+    await wrapper.get('input[type="radio"]').setValue(true)
+    await wrapper.get('button[type="submit"]').trigger('submit')
+    await flushPromises()
+    expect(wrapper.text()).toContain('プレビューのため送信は行われません。')
+    expect(wrapper.text()).not.toContain('回答')
+    expect(wrapper.text()).not.toContain('設定')
+  })
+})

@@ -1,0 +1,28 @@
+{
+  "name": "@portaldots/email-consumer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:high": "wrangler dev --env high --port 8788 --inspector-port 9230 --persist-to .wrangler/state-high",
+    "dev:normal": "wrangler dev --env normal --port 8789 --inspector-port 9231 --persist-to .wrangler/state-normal",
+    "deploy:high": "wrangler deploy --env high",
+    "deploy:normal": "wrangler deploy --env normal",
+    "typecheck": "tsgo --noEmit",
+    "lint": "oxlint --type-aware .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "hono": "^4.12.14",
+    "hono-email": "^0.4.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260424.1",
+    "@typescript/native-preview": "7.0.0-dev.20260314.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5",
+    "wrangler": "^4.0.0"
+  }
+}

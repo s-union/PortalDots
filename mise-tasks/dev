@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Reset local db, then start backend and frontend dev servers"
+
+go run ./scripts/dev.go

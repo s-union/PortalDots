@@ -1,0 +1,517 @@
+<script setup lang="ts">
+import { staffPageMeta } from '@/lib/pageMeta'
+definePage({
+  path: '/staff/circles/participation_types/:typeId',
+  meta: staffPageMeta('circles.participationTypes')
+})
+
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { z } from 'zod'
+import IconActionButton from '@/components/ui/IconActionButton.vue'
+import DataCard from '@/components/layouts/DataCard.vue'
+import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
+import StaffFilterDrawer, {
+  type StaffFilterField,
+  type StaffFilterMode,
+  type StaffFilterQuery
+} from '@/components/staff/StaffFilterDrawer.vue'
+import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
+import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
+import AlertMessage from '@/components/ui/AlertMessage.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
+import { canAccessCircleMail, canDeleteCircles, canEditCircles } from '@/features/staff/access/capabilities'
+import { extractStaffCircleValidationMessage, useDeleteStaffCircleMutation } from '@/features/staff/circles/api'
+import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
+import {
+  buildStaffParticipationTypeCirclesExportUrl,
+  type StaffParticipationTypeCircle,
+  useAllStaffParticipationTypeCirclesQuery,
+  useStaffParticipationTypeDetailQuery
+} from '@/features/staff/participation-types/api'
+import { useSessionStore } from '@/features/session/store'
+import { buildStaffParticipationTypeTabs } from '@/lib/ui/tabStrip'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
+import { normalizeStaffFilterMode, normalizeStaffFilterOperator } from '@/lib/staffFilterSchema'
+
+const route = useRoute('/staff/circles/participation_types/[typeId]/')
+const router = useRouter()
+const typeId = computed(() => String(route.params.typeId ?? ''))
+const { enabled } = useAuthorizedStaffContext({ capability: 'circles.participationTypes' })
+const detailQuery = useStaffParticipationTypeDetailQuery(typeId, enabled)
+const sessionStore = useSessionStore()
+
+const circlesPage = ref(1)
+const circlesPageSize = ref(25)
+const circlesSortKey = ref<StaffParticipationTypeCirclesSortKey>('id')
+const circlesSortDirection = ref<'asc' | 'desc'>('asc')
+const deletingCircleId = ref('')
+const deleteCircleMutation = useDeleteStaffCircleMutation(computed(() => deletingCircleId.value))
+const errorMessage = ref('')
+const searchQuery = ref('')
+const isFilterOpen = ref(false)
+const nextFilterId = ref(1)
+const appliedFilterMode = ref<StaffFilterMode>('and')
+const appliedFilterQueries = ref<StaffFilterQuery[]>([])
+const draftFilterMode = ref<StaffFilterMode>('and')
+const draftFilterQueries = ref<StaffFilterQuery[]>([])
+const staffListParams = computed(() => ({
+  query: searchQuery.value,
+  queries: appliedFilterQueries.value,
+  mode: appliedFilterMode.value
+}))
+const allCirclesQuery = useAllStaffParticipationTypeCirclesQuery(typeId, enabled, staffListParams)
+
+const circlesExportUrl = computed(() => buildStaffParticipationTypeCirclesExportUrl(typeId.value))
+
+const uploadsUrl = computed(() => {
+  const formId = detailQuery.data.value?.form.id
+  if (!formId) {
+    return undefined
+  }
+  return `/staff/forms/${encodeURIComponent(formId)}/answers/uploads`
+})
+
+const participationTypeTabs = computed(() =>
+  buildStaffParticipationTypeTabs(typeId.value, 'circles', detailQuery.data.value?.form)
+)
+
+const canEdit = computed(() => canEditCircles(sessionStore.roles, sessionStore.permissions))
+const canDelete = computed(() => canDeleteCircles(sessionStore.roles, sessionStore.permissions))
+const canSendEmail = computed(() => canAccessCircleMail(sessionStore.roles, sessionStore.permissions))
+
+const circlesColumns: StaffDataGridColumn[] = [
+  { key: 'name', label: '企画名', sortable: true },
+  { key: 'groupName', label: '企画グループ名', sortable: true },
+  { key: 'status', label: '受理状況', sortable: true },
+  { key: 'places', label: '使用場所' }
+]
+
+const filterFields: StaffFilterField[] = [
+  { key: 'id', label: '企画ID', type: 'string' },
+  { key: 'name', label: '企画名', type: 'string' },
+  { key: 'groupName', label: '企画グループ名', type: 'string' },
+  { key: 'status', label: '受理状況', type: 'string' },
+  { key: 'places', label: '使用場所', type: 'string' }
+]
+
+const circlesSortKeys = ['id', 'name', 'groupName', 'status'] as const
+const circlesSortKeySchema = z.enum(circlesSortKeys)
+type StaffParticipationTypeCirclesSortKey = (typeof circlesSortKeys)[number]
+
+const circlesRows = computed(() => allCirclesQuery.data.value ?? [])
+
+const filteredRows = computed(() => {
+  return circlesRows.value
+})
+
+const sortedRows = computed(() => sortCirclesRows(filteredRows.value, circlesSortKey.value, circlesSortDirection.value))
+
+const pagedRows = computed(() => {
+  const start = (circlesPage.value - 1) * circlesPageSize.value
+  const end = start + circlesPageSize.value
+  return sortedRows.value.slice(start, end)
+})
+
+const circlesGridRows = computed<StaffDataGridRow[]>(() =>
+  pagedRows.value.map((circle) => ({
+    id: circle.id,
+    name: circle.name,
+    groupName: circle.groupName,
+    status: circle.status,
+    places: circle.places
+  }))
+)
+
+const filterActive = computed(() => searchQuery.value.trim().length > 0 || appliedFilterQueries.value.length > 0)
+
+watch(
+  () => [sortedRows.value.length, circlesPageSize.value] as const,
+  ([total, pageSize]) => {
+    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+    if (circlesPage.value > totalPages) {
+      circlesPage.value = totalPages
+    }
+  }
+)
+
+function handleCirclesSort(nextKey: string) {
+  if (!isStaffParticipationTypeCirclesSortKey(nextKey)) {
+    return
+  }
+
+  if (circlesSortKey.value === nextKey) {
+    circlesSortDirection.value = circlesSortDirection.value === 'asc' ? 'desc' : 'asc'
+    return
+  }
+
+  circlesSortKey.value = nextKey
+  circlesSortDirection.value = 'asc'
+}
+
+function handleCirclesFirstPage() {
+  circlesPage.value = 1
+}
+
+function handleCirclesPrevPage() {
+  circlesPage.value = Math.max(1, circlesPage.value - 1)
+}
+
+function handleCirclesNextPage() {
+  const totalPages = Math.max(1, Math.ceil(sortedRows.value.length / circlesPageSize.value))
+  circlesPage.value = Math.min(totalPages, circlesPage.value + 1)
+}
+
+function handleCirclesLastPage() {
+  circlesPage.value = Math.max(1, Math.ceil(sortedRows.value.length / circlesPageSize.value))
+}
+
+function handleCirclesPageSizeChange(nextSize: number) {
+  circlesPageSize.value = nextSize
+  circlesPage.value = 1
+}
+
+async function handleCirclesReload() {
+  if (typeof allCirclesQuery.refetch === 'function') {
+    await allCirclesQuery.refetch()
+  }
+}
+
+function handleSearch() {
+  circlesPage.value = 1
+}
+
+async function handleDeleteCircle(circleId: string, circleName: string) {
+  if (
+    typeof window !== 'undefined' &&
+    !window.confirm(
+      `企画「${circleName}」を削除しますか？\n\n• 「${circleName}」が送信した申請の回答はすべて削除されます。`
+    )
+  ) {
+    return
+  }
+
+  errorMessage.value = ''
+  deletingCircleId.value = circleId
+
+  try {
+    await deleteCircleMutation.mutateAsync()
+  } catch (error) {
+    errorMessage.value = extractStaffCircleValidationMessage(error)
+  } finally {
+    deletingCircleId.value = ''
+  }
+}
+
+function openFilter() {
+  draftFilterQueries.value = appliedFilterQueries.value.map((query) => ({ ...query }))
+  draftFilterMode.value = appliedFilterMode.value
+  syncNextFilterId()
+  isFilterOpen.value = true
+}
+
+function closeFilter() {
+  isFilterOpen.value = false
+}
+
+function handleAddFilter(keyName: string) {
+  if (!isStaffParticipationCircleFilterKey(keyName)) {
+    return
+  }
+
+  draftFilterQueries.value = [
+    ...draftFilterQueries.value,
+    {
+      id: nextFilterId.value++,
+      keyName,
+      operator: 'like',
+      value: ''
+    }
+  ]
+}
+
+function handleRemoveFilter(queryId: number) {
+  draftFilterQueries.value = draftFilterQueries.value.filter((query) => query.id !== queryId)
+}
+
+function handleUpdateFilter(queryId: number, patch: Partial<Omit<StaffFilterQuery, 'id'>>) {
+  draftFilterQueries.value = draftFilterQueries.value.map((query) => {
+    if (query.id !== queryId) {
+      return query
+    }
+
+    return {
+      ...query,
+      ...patch
+    }
+  })
+}
+
+function handleFilterModeUpdate(mode: StaffFilterMode) {
+  draftFilterMode.value = normalizeStaffFilterMode(mode)
+}
+
+function handleApplyFilters() {
+  appliedFilterQueries.value = draftFilterQueries.value
+    .filter((query) => isStaffParticipationCircleFilterKey(query.keyName))
+    .map((query) => ({
+      ...query,
+      operator: normalizeStaffFilterOperator(query.operator)
+    }))
+  appliedFilterMode.value = normalizeStaffFilterMode(draftFilterMode.value)
+  circlesPage.value = 1
+  closeFilter()
+}
+
+function handleClearFilters() {
+  appliedFilterQueries.value = []
+  draftFilterQueries.value = []
+  appliedFilterMode.value = 'and'
+  draftFilterMode.value = 'and'
+  circlesPage.value = 1
+  closeFilter()
+}
+
+function syncNextFilterId() {
+  const maxId = draftFilterQueries.value.reduce((max, query) => Math.max(max, query.id), 0)
+  nextFilterId.value = maxId + 1
+}
+
+function statusTone(status: string) {
+  if (status === 'approved') {
+    return 'success' as const
+  }
+  if (status === 'rejected') {
+    return 'danger' as const
+  }
+  return 'muted' as const
+}
+
+function navigateToCircleEdit(circleId: string) {
+  router.push(`/staff/circles/${encodeURIComponent(circleId)}`)
+}
+
+function navigateToCircleEmail(circleId: string) {
+  router.push(`/staff/circles/${encodeURIComponent(circleId)}/email`)
+}
+
+function statusLabel(status: string) {
+  if (status === 'approved') {
+    return '受理'
+  }
+  if (status === 'rejected') {
+    return '不受理'
+  }
+  return '審査中'
+}
+
+function isStaffParticipationTypeCirclesSortKey(value: string): value is StaffParticipationTypeCirclesSortKey {
+  return circlesSortKeySchema.safeParse(value).success
+}
+
+const circleFilterKeys = ['id', 'name', 'groupName', 'status', 'places'] as const
+const circleFilterKeySchema = z.enum(circleFilterKeys)
+
+function isStaffParticipationCircleFilterKey(value: string) {
+  return circleFilterKeySchema.safeParse(value).success
+}
+
+function sortCirclesRows(
+  rows: StaffParticipationTypeCircle[],
+  key: StaffParticipationTypeCirclesSortKey,
+  direction: 'asc' | 'desc'
+) {
+  const sorted = [...rows]
+  const order = direction === 'asc' ? 1 : -1
+
+  sorted.sort((left, right) => {
+    const leftValue = resolveCircleSortValue(left, key)
+    const rightValue = resolveCircleSortValue(right, key)
+
+    if (leftValue < rightValue) {
+      return -order
+    }
+    if (leftValue > rightValue) {
+      return order
+    }
+    return 0
+  })
+
+  return sorted
+}
+
+function resolveCircleSortValue(circle: StaffParticipationTypeCircle, key: StaffParticipationTypeCirclesSortKey) {
+  if (key === 'id') {
+    return circle.id.toLowerCase()
+  }
+  if (key === 'name') {
+    return circle.name.toLowerCase()
+  }
+  if (key === 'groupName') {
+    return circle.groupName.toLowerCase()
+  }
+  return circle.status.toLowerCase()
+}
+</script>
+
+<template>
+  <StaffSideWindowContainer :is-open="isFilterOpen">
+    <TabbedSettingsPage :tabs="participationTypeTabs">
+      <LoadingState v-if="detailQuery.isPending.value" />
+
+      <template v-else-if="detailQuery.data.value">
+        <DataCard
+          title="企画一覧"
+          :description="detailQuery.data.value.description || 'この参加種別に登録された企画を確認できます。'"
+          overflow-hidden
+        >
+          <template #actions>
+            <div class="flex flex-wrap gap-2">
+              <a
+                :href="circlesExportUrl"
+                class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-xs text-body transition hover:bg-surface-light"
+              >
+                <FaIcon name="file-csv" fixed-width />
+                CSVで出力
+              </a>
+              <RouterLink
+                v-if="uploadsUrl"
+                :to="uploadsUrl"
+                class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-xs text-body transition hover:bg-surface-light"
+              >
+                <FaIcon prefix="far" name="file-archive" fixed-width />
+                ファイルを一括ダウンロード
+              </RouterLink>
+            </div>
+          </template>
+
+          <StaffDataGrid
+            :rows="circlesGridRows"
+            :columns="circlesColumns"
+            :page="circlesPage"
+            :page-size="circlesPageSize"
+            :total="sortedRows.length"
+            :loading="allCirclesQuery.isPending.value"
+            :sort-key="circlesSortKey"
+            :sort-direction="circlesSortDirection"
+            :show-filter-button="true"
+            :filter-active="filterActive"
+            :per-page-options="[10, 25, 50, 100, 250, 500]"
+            empty-message="この参加種別に紐づく企画はありません。"
+            table-label="staff participation type circles"
+            @first="handleCirclesFirstPage"
+            @prev="handleCirclesPrevPage"
+            @next="handleCirclesNextPage"
+            @last="handleCirclesLastPage"
+            @reload="handleCirclesReload"
+            @sort="handleCirclesSort"
+            @filter="openFilter"
+            @update:page-size="handleCirclesPageSizeChange"
+          >
+            <template #toolbar>
+              <div class="flex flex-wrap items-center gap-3">
+                <form class="flex items-center gap-2" @submit.prevent="handleSearch">
+                  <input
+                    v-model="searchQuery"
+                    type="search"
+                    placeholder="企画名・団体名・使用場所で絞り込み"
+                    class="rounded border border-border bg-surface px-3 py-2 text-sm text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    type="submit"
+                    class="inline-flex items-center gap-1 rounded border border-border bg-surface px-3 py-2 text-sm text-body transition hover:bg-surface-light"
+                  >
+                    <FaIcon name="search" fixed-width />
+                    絞り込み
+                  </button>
+                </form>
+                <p class="text-sm text-muted">
+                  現在のページ件数: {{ pagedRows.length }} / 絞り込み後: {{ sortedRows.length }} / 全企画:
+                  {{ circlesRows.length }}
+                </p>
+              </div>
+            </template>
+
+            <template #actions="{ row }">
+              <div class="flex items-center gap-2">
+                <IconActionButton
+                  v-if="canEdit"
+                  variant="surface"
+                  title="編集"
+                  @click="navigateToCircleEdit(String(row.id))"
+                >
+                  <FaIcon name="pencil-alt" fixed-width />
+                </IconActionButton>
+                <IconActionButton
+                  v-if="canSendEmail"
+                  variant="surface"
+                  title="メール送信"
+                  @click="navigateToCircleEmail(String(row.id))"
+                >
+                  <FaIcon prefix="far" name="envelope" fixed-width />
+                </IconActionButton>
+                <IconActionButton
+                  v-if="canDelete"
+                  variant="danger"
+                  title="削除"
+                  :disabled="deleteCircleMutation.isPending.value"
+                  @click="handleDeleteCircle(String(row.id), String(row.name))"
+                >
+                  <FaIcon name="trash" fixed-width />
+                </IconActionButton>
+              </div>
+            </template>
+
+            <template #cell-name="{ row, value }">
+              <RouterLink
+                :to="`/staff/circles/${encodeURIComponent(String(row.id))}`"
+                class="font-medium text-primary hover:underline"
+              >
+                {{ String(value) }}
+              </RouterLink>
+            </template>
+
+            <template #cell-status="{ value }">
+              <StatusBadge :tone="statusTone(String(value))" size="sm">
+                {{ statusLabel(String(value)) }}
+              </StatusBadge>
+            </template>
+
+            <template #cell-places="{ value }">
+              <div class="flex flex-wrap gap-1">
+                <StatusBadge v-for="place in value as string[]" :key="place" tone="muted" size="sm">
+                  {{ place }}
+                </StatusBadge>
+                <span v-if="Array.isArray(value) && value.length === 0" class="text-muted">-</span>
+              </div>
+            </template>
+          </StaffDataGrid>
+        </DataCard>
+
+        <AlertMessage v-if="errorMessage" tone="danger">
+          {{ errorMessage }}
+        </AlertMessage>
+      </template>
+
+      <ErrorState v-else message="参加種別を取得できませんでした。" />
+    </TabbedSettingsPage>
+  </StaffSideWindowContainer>
+
+  <StaffSideWindow :is-open="isFilterOpen" title="絞り込み" @click-close="closeFilter">
+    <StaffFilterDrawer
+      :fields="filterFields"
+      :queries="draftFilterQueries"
+      :mode="draftFilterMode"
+      :loading="allCirclesQuery.isPending.value"
+      @add="handleAddFilter"
+      @remove="handleRemoveFilter"
+      @update-query="handleUpdateFilter"
+      @update-mode="handleFilterModeUpdate"
+      @apply="handleApplyFilters"
+      @clear="handleClearFilters"
+    />
+  </StaffSideWindow>
+</template>
