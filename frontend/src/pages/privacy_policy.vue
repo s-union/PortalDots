@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import privacyPolicyMarkdown from '../../../resources/md/privacy_policy.md?raw'
+import privacyPolicyMarkdown from './privacy_policy.md?raw'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
