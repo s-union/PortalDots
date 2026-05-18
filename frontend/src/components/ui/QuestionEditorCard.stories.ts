@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import QuestionEditorCard from './QuestionEditorCard.vue'
+import FaIcon from './FaIcon.vue'
 import IconActionButton from './IconActionButton.vue'
+import QuestionEditorCard from './QuestionEditorCard.vue'
 
 const meta = {
   title: 'UI/Forms/QuestionEditorCard',
@@ -39,16 +40,16 @@ export const WithActions: Story = {
     meta: 'radio'
   },
   render: (args) => ({
-    components: { QuestionEditorCard, IconActionButton },
+    components: { FaIcon, QuestionEditorCard, IconActionButton },
     setup() {
       return { args }
     },
     template: `
       <QuestionEditorCard v-bind="args">
         <template #actions>
-          <IconActionButton title="上へ移動"><i class="fas fa-arrow-up" aria-hidden="true" /></IconActionButton>
-          <IconActionButton title="下へ移動"><i class="fas fa-arrow-down" aria-hidden="true" /></IconActionButton>
-          <IconActionButton variant="subtleDanger" title="削除"><i class="fas fa-trash" aria-hidden="true" /></IconActionButton>
+          <IconActionButton title="上へ移動"><FaIcon name="arrow-up" /></IconActionButton>
+          <IconActionButton title="下へ移動"><FaIcon name="arrow-down" /></IconActionButton>
+          <IconActionButton variant="subtleDanger" title="削除"><FaIcon name="trash" /></IconActionButton>
         </template>
         <div class="text-sm text-muted">この質問の設定はここに表示されます。</div>
       </QuestionEditorCard>

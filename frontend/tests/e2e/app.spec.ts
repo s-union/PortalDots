@@ -367,58 +367,6 @@ test.beforeEach(async ({ page }) => {
     })
   })
 
-  await page.route('**/v1/forms/0195ec00-0014-7000-8000-000000000001/answer', async (route) => {
-    if (route.request().method() === 'PUT') {
-      const payload = parseJsonObject(route.request().postData())
-      formAnswerBody = typeof payload.body === 'string' ? payload.body : ''
-      if (formAnswerBody.trim() === '') {
-        await route.fulfill({
-          status: 422,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            message: 'validation_error',
-            errors: {
-              body: ['回答を入力してください']
-            }
-          })
-        })
-        return
-      }
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          answer: {
-            id: 'answer-1',
-            body: formAnswerBody,
-            updatedAt: '2026-03-06T12:00:00Z',
-            details: {},
-            uploads: []
-          }
-        })
-      })
-      return
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        answer:
-          formAnswerBody === ''
-            ? null
-            : {
-                id: 'answer-1',
-                body: formAnswerBody,
-                updatedAt: '2026-03-06T12:00:00Z',
-                details: {},
-                uploads: []
-              }
-      })
-    })
-  })
-
   await page.route('**/v1/forms**', async (route) => {
     const requestUrl = new URL(route.request().url())
     if (requestUrl.pathname.endsWith('/0195ec00-0014-7000-8000-000000000001/answer')) {

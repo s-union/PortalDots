@@ -8,6 +8,7 @@ definePage({
 import { computed } from 'vue'
 import HomeModeTabs from '@/components/navigation/HomeModeTabs.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import {
   canManageCircles,
   canManageParticipationTypes,
@@ -170,7 +171,7 @@ const visibleStaffCards = computed(() => staffCards.value.filter((card) => card.
             <span
               class="mb-4 flex h-12 w-12 items-center justify-center rounded-[0.45rem] bg-primary-light text-[1.75rem] leading-none text-primary"
             >
-              <i :class="card.iconClass" aria-hidden="true" />
+              <FaIcon :icon-class="card.iconClass" />
             </span>
             <p class="flex flex-wrap items-center justify-center gap-2 text-[1.1rem] font-bold">
               <span>{{ card.title }}</span>

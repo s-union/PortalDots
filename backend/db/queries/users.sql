@@ -326,7 +326,7 @@ LEFT JOIN user_login_ids ON user_login_ids.user_id = users.id
 LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
-WHERE circle_user.circle_id = ANY($1::text[])
+WHERE circle_user.circle_id::text = ANY($1::text[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified
@@ -367,7 +367,7 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.is_verified = true
-  AND circle_user.circle_id = ANY($1::text[])
+  AND circle_user.circle_id::text = ANY($1::text[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified
@@ -409,7 +409,7 @@ LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE users.is_verified = true
   AND circle_user.is_leader = true
-  AND circle_user.circle_id = ANY($1::text[])
+  AND circle_user.circle_id::text = ANY($1::text[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified
@@ -450,7 +450,7 @@ LEFT JOIN user_roles ON user_roles.user_id = users.id
 LEFT JOIN user_permissions ON user_permissions.user_id = users.id
 JOIN circle_user ON circle_user.user_id = users.id
 WHERE circle_user.is_leader = true
-  AND circle_user.circle_id = ANY($1::text[])
+  AND circle_user.circle_id::text = ANY($1::text[])
 GROUP BY users.id, users.last_name, users.last_name_reading, users.first_name, users.first_name_reading,
          users.display_name, users.contact_email, users.phone_number, users.is_verified, users.is_email_verified,
          users.is_univemail_verified

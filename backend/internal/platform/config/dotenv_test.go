@@ -35,7 +35,7 @@ func TestLoadDotEnvLoadsMissingVariables(t *testing.T) {
 	}
 }
 
-func TestLoadDotEnvOverridesExistingVariables(t *testing.T) {
+func TestLoadDotEnvDoesNotOverrideExistingVariables(t *testing.T) {
 	key := "PORTAL_AUTH_PASSWORD_OVERRIDE_TEST"
 	t.Setenv(key, "shell-value")
 
@@ -48,8 +48,8 @@ func TestLoadDotEnvOverridesExistingVariables(t *testing.T) {
 		t.Fatalf("load .env: %v", err)
 	}
 
-	if got := os.Getenv(key); got != "file-value" {
-		t.Fatalf("expected dotenv value to win, got %q", got)
+	if got := os.Getenv(key); got != "shell-value" {
+		t.Fatalf("expected shell value to win, got %q", got)
 	}
 }
 

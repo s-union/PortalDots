@@ -1,4 +1,4 @@
-import { config, dom, library } from '@fortawesome/fontawesome-svg-core'
+import { config, library } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import {
   faAngleDoubleLeft,
@@ -139,6 +139,5 @@ export function initializeFontAwesome() {
     faUsers
   )
 
-  dom.watch()
   isInitialized = true
 }

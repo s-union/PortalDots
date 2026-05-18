@@ -7,22 +7,58 @@ const {
   prefix = 'fas',
   fixedWidth = false,
   pulse = false,
-  className = ''
+  className = '',
+  iconClass = ''
 } = defineProps<{
-  name: IconName
+  name?: IconName
   prefix?: IconPrefix
   fixedWidth?: boolean
   pulse?: boolean
   className?: string
+  iconClass?: string
 }>()
 
+const parsedIconClass = computed(() => {
+  const classes = iconClass.split(/\s+/).filter(Boolean)
+  const classPrefix = classes.find((item) => item === 'fas' || item === 'far')
+  const iconClassName = classes.find((item) => item.startsWith('fa-') && item !== 'fa-fw' && item !== 'fa-pulse')
+  const iconName = iconClassName?.replace(/^fa-/, '')
+
+  if (!classPrefix || !iconName) {
+    return null
+  }
+
+  return {
+    prefix: classPrefix,
+    iconName,
+    fixedWidth: classes.includes('fa-fw'),
+    pulse: classes.includes('fa-pulse'),
+    extraClasses: classes.filter(
+      (item) => item !== classPrefix && item !== iconClassName && item !== 'fa-fw' && item !== 'fa-pulse'
+    )
+  }
+})
+
 const svgHtml = computed(() => {
-  const definition = findIconDefinition({ prefix, iconName: name })
+  const iconPrefix = parsedIconClass.value?.prefix ?? prefix
+  const iconName = parsedIconClass.value?.iconName ?? name
+  if (!iconName) {
+    return ''
+  }
+
+  const definition = findIconDefinition({ prefix: iconPrefix, iconName: iconName as IconName })
   if (!definition) {
     return ''
   }
 
-  const classes = [fixedWidth ? 'fa-fw' : '', pulse ? 'fa-pulse' : '', className].filter(Boolean).join(' ')
+  const classes = [
+    fixedWidth || parsedIconClass.value?.fixedWidth ? 'fa-fw' : '',
+    pulse || parsedIconClass.value?.pulse ? 'fa-pulse' : '',
+    ...(parsedIconClass.value?.extraClasses ?? []),
+    className
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return icon(definition, {
     classes: classes.split(/\s+/).filter(Boolean),

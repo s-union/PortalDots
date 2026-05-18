@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { cn } from '@/lib/ui/cn'
 import { formControlVariants } from '@/lib/ui/variants'
 
@@ -129,7 +130,7 @@ const toolbarActions: ToolbarAction[] = [
         :title="action.label"
         @click="(action.action(), focusTextarea())"
       >
-        <i :class="action.iconClass" aria-hidden="true" />
+        <FaIcon :icon-class="action.iconClass" />
       </button>
 
       <span class="mx-1 h-4 w-px bg-border" />
@@ -140,7 +141,7 @@ const toolbarActions: ToolbarAction[] = [
         :class="previewVisible && 'bg-primary-light text-primary hover:bg-primary-light hover:text-primary'"
         @click="togglePreview"
       >
-        <i class="fas fa-eye" aria-hidden="true" />
+        <FaIcon name="eye" />
         プレビュー
       </button>
 
@@ -150,7 +151,7 @@ const toolbarActions: ToolbarAction[] = [
         rel="noopener noreferrer"
         target="_blank"
       >
-        <i class="fas fa-question-circle" aria-hidden="true" />
+        <FaIcon name="question-circle" />
         Markdown ガイド
       </a>
     </div>
@@ -178,7 +179,7 @@ const toolbarActions: ToolbarAction[] = [
         <div class="mb-2 flex items-center justify-between">
           <span class="text-xs font-semibold text-muted">プレビュー</span>
           <button type="button" class="text-xs text-muted transition hover:text-body" @click="togglePreview">
-            <i class="fas fa-times mr-1" aria-hidden="true" />
+            <FaIcon name="times" class-name="mr-1" />
             閉じる
           </button>
         </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { bottomTabLabelVariants, bottomTabLinkVariants } from '@/lib/ui/variants'
 
 const { to, label, iconClass, active, showNotifier } = defineProps<{
@@ -12,9 +13,9 @@ const { to, label, iconClass, active, showNotifier } = defineProps<{
 
 <template>
   <RouterLink :to="to" :class="bottomTabLinkVariants({ active })">
-    <i v-if="iconClass" :class="[iconClass, 'mb-2 block text-[1.4rem] leading-none']" aria-hidden="true" />
+    <FaIcon v-if="iconClass" :icon-class="iconClass" class-name="mb-2 block text-[1.4rem] leading-none" />
     <span :class="[bottomTabLabelVariants({ active }), 'inline-flex items-center gap-1']">
-      <i v-if="showNotifier" class="fas fa-circle scale-[0.75] text-primary" aria-hidden="true" />
+      <FaIcon v-if="showNotifier" name="circle" class-name="scale-[0.75] text-primary" />
       {{ label }}
     </span>
   </RouterLink>

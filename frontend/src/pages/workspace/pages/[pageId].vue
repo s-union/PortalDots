@@ -17,6 +17,7 @@ import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePageDetailQuery } from '@/features/pages/api'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 
@@ -60,8 +61,8 @@ const pageQuery = usePageDetailQuery(pageId)
             new-tab
           >
             <template #title>
-              <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
-              <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+              <FaIcon v-if="document.isImportant" name="exclamation-circle" fixed-width class-name="text-danger" />
+              <FaIcon v-else name="file-alt" prefix="far" fixed-width class-name="text-muted" />
               {{ document.name }}
             </template>
             <template #meta>

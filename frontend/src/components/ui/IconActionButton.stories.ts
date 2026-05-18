@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 // Import { within, userEvent, expect } from 'storybook/test'
+import FaIcon from './FaIcon.vue'
 import IconActionButton from './IconActionButton.vue'
 
 const meta = {
@@ -34,11 +35,11 @@ export const Ghost: Story = {
     title: '編集'
   },
   render: (args) => ({
-    components: { IconActionButton },
+    components: { FaIcon, IconActionButton },
     setup() {
       return { args }
     },
-    template: `<IconActionButton v-bind="args"><i class="fas fa-edit" aria-hidden="true" /></IconActionButton>`
+    template: `<IconActionButton v-bind="args"><FaIcon name="edit" /></IconActionButton>`
   })
 }
 
@@ -49,11 +50,11 @@ export const Surface: Story = {
     title: '詳細'
   },
   render: (args) => ({
-    components: { IconActionButton },
+    components: { FaIcon, IconActionButton },
     setup() {
       return { args }
     },
-    template: `<IconActionButton v-bind="args"><i class="fas fa-info-circle" aria-hidden="true" /></IconActionButton>`
+    template: `<IconActionButton v-bind="args"><FaIcon name="info-circle" /></IconActionButton>`
   })
 }
 
@@ -64,11 +65,11 @@ export const Danger: Story = {
     title: '削除'
   },
   render: (args) => ({
-    components: { IconActionButton },
+    components: { FaIcon, IconActionButton },
     setup() {
       return { args }
     },
-    template: `<IconActionButton v-bind="args"><i class="fas fa-trash" aria-hidden="true" /></IconActionButton>`
+    template: `<IconActionButton v-bind="args"><FaIcon name="trash" /></IconActionButton>`
   })
 }
 
@@ -79,11 +80,11 @@ export const SubtleDanger: Story = {
     title: '削除'
   },
   render: (args) => ({
-    components: { IconActionButton },
+    components: { FaIcon, IconActionButton },
     setup() {
       return { args }
     },
-    template: `<IconActionButton v-bind="args"><i class="fas fa-times" aria-hidden="true" /></IconActionButton>`
+    template: `<IconActionButton v-bind="args"><FaIcon name="times" /></IconActionButton>`
   })
 }
 
@@ -94,11 +95,11 @@ export const WithClickInteraction: Story = {
     title: 'クリックしてください'
   },
   render: (args) => ({
-    components: { IconActionButton },
+    components: { FaIcon, IconActionButton },
     setup() {
       return { args }
     },
-    template: `<IconActionButton v-bind="args"><i class="fas fa-check" aria-hidden="true" /></IconActionButton>`
+    template: `<IconActionButton v-bind="args"><FaIcon name="check" /></IconActionButton>`
   }),
   play: async () => {
     // Interaction test は今回のプロジェクトでは使用しないため無効化

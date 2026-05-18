@@ -124,12 +124,11 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 	}
 
 	verifyURL := buildRegistrationVerifyURL(h.appURL, pendingValue.ID, token)
+	if err := h.enqueueRegistrationVerifyMail(c.Request().Context(), univemail, verifyURL); err != nil {
+		return internalError(c)
+	}
 	if h.mockRegistrationVerifyMail {
 		logMockRegistrationVerifyURL(univemail, verifyURL)
-	} else {
-		if err := h.enqueueRegistrationVerifyMail(c.Request().Context(), univemail, verifyURL); err != nil {
-			return internalError(c)
-		}
 	}
 
 	return c.JSON(http.StatusOK, messageResponse{

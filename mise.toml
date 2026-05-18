@@ -50,10 +50,12 @@ run = "pnpm run dev:normal"
 
 [tasks.dev]
 description = "Reset local db, then start backend and frontend with mock email delivery"
+dir = "backend"
 run = "go run ./scripts/dev.go"
 
 [tasks."dev:worker"]
 description = "Reset local db, then start backend, frontend, and local email Workers"
+dir = "backend"
 run = "go run ./scripts/dev.go worker"
 
 [tasks.backend-dev]
@@ -116,6 +118,11 @@ description = "Run the sqlc smoke command against PORTAL_DATABASE_URL"
 dir = "backend"
 run = "go run ./scripts/sqlc-smoke/main.go"
 env = { _.file = ".env" }
+
+[tasks."e2e:worker"]
+description = "Run e2e integration tests against the real dev:worker stack"
+dir = "frontend"
+run = "pnpm exec playwright test --config=playwright.integration.config.ts --workers=1"
 
 [tasks."email-producer-check"]
 description = "Run static checks for the email producer Worker"

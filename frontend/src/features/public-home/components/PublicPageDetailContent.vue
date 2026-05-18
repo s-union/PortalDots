@@ -3,6 +3,7 @@ import { toValue, type MaybeRefOrGetter } from 'vue'
 import { RouterLink } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
@@ -53,8 +54,8 @@ const page = pageQuery.data
           new-tab
         >
           <template #title>
-            <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
-            <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+            <FaIcon v-if="document.isImportant" name="exclamation-circle" fixed-width class-name="text-danger" />
+            <FaIcon v-else name="file-alt" prefix="far" fixed-width class-name="text-muted" />
             {{ document.name }}
           </template>
           <template #meta>

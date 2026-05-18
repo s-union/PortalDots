@@ -9,6 +9,7 @@ definePage({
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageLayout from '@/components/layouts/PageLayout.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
@@ -81,8 +82,8 @@ async function movePage(nextPage: number) {
           new-tab
         >
           <template #title>
-            <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
-            <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+            <FaIcon v-if="document.isImportant" name="exclamation-circle" fixed-width class-name="text-danger" />
+            <FaIcon v-else name="file-alt" prefix="far" fixed-width class-name="text-muted" />
             {{ document.name }}
           </template>
           <template v-if="document.isNew" #suffix>

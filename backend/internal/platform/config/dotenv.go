@@ -18,5 +18,5 @@ func LoadDotEnv(path string) error {
 		return err
 	}
 
-	return godotenv.Overload(path)
+	return godotenv.Load(path)
 }

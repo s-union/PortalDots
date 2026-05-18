@@ -22,6 +22,7 @@ import {
 } from '@/features/circles/statusDisplay'
 import { useAuthVerificationStatusQuery } from '@/features/auth/api'
 import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'
 
@@ -175,8 +176,8 @@ const circleStatusItems = computed(() => {
               rel="noreferrer"
               target="_blank"
             >
-              <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
-              <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+              <FaIcon v-if="document.isImportant" name="exclamation-circle" fixed-width class-name="text-danger" />
+              <FaIcon v-else name="file-alt" prefix="far" fixed-width class-name="text-muted" />
               <span>{{ document.name }}</span>
               <span class="text-xs text-muted">
                 ({{ document.extension || 'FILE' }} • {{ formatFileSize(document.sizeBytes) }})
@@ -321,8 +322,8 @@ const circleStatusItems = computed(() => {
             new-tab
           >
             <template #title>
-              <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
-              <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+              <FaIcon v-if="document.isImportant" name="exclamation-circle" fixed-width class-name="text-danger" />
+              <FaIcon v-else name="file-alt" prefix="far" fixed-width class-name="text-muted" />
               {{ document.name }}
             </template>
             <template v-if="document.isNew" #suffix>

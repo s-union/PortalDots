@@ -2,6 +2,7 @@
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import FaIcon from '@/components/ui/FaIcon.vue'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useSuspensePublicDocumentsQuery } from '@/features/public-home/api'
@@ -28,8 +29,8 @@ const documents = documentsQuery.data
         :to="`/public/documents/${encodeURIComponent(document.id)}`"
       >
         <template #title>
-          <i v-if="document.isImportant" class="fas fa-exclamation-circle fa-fw text-danger" aria-hidden="true" />
-          <i v-else class="far fa-file-alt fa-fw text-muted" aria-hidden="true" />
+          <FaIcon v-if="document.isImportant" name="exclamation-circle" fixed-width class-name="text-danger" />
+          <FaIcon v-else name="file-alt" prefix="far" fixed-width class-name="text-muted" />
           {{ document.name }}
         </template>
         <template v-if="document.isNew" #suffix>
