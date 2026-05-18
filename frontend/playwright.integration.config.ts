@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
+if (process.env.FORCE_COLOR) {
+  delete process.env.NO_COLOR
+}
+
 export default defineConfig({
   testDir: './tests/e2e/integration',
   workers: 1,
@@ -12,11 +16,5 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] }
     }
-  ],
-  webServer: {
-    command: 'echo "Using existing dev:worker services"',
-    port: 5173,
-    reuseExistingServer: true,
-    timeout: 5000
-  }
+  ]
 })

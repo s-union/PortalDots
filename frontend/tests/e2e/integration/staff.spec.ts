@@ -1,22 +1,20 @@
 import { test, expect } from '@playwright/test'
-import { loginFromApi, DEMO_ADMIN, DEMO_STAFF } from './utils'
+import { loginFromApi, loginAsStaff, verifyStaffFromUi, DEMO_ADMIN, DEMO_STAFF } from './utils'
 
-test('admin can access staff dashboard', async ({ page }) => {
+test('admin can access staff dashboard after staff verification', async ({ page }) => {
   await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
-  await page.goto('/staff')
-  await page.waitForURL('**/staff')
+  await verifyStaffFromUi(page)
   await expect(page.locator('text=スタッフ').first()).toBeVisible({ timeout: 15000 })
 })
 
-test('staff user with content manager role can access staff dashboard', async ({ page }) => {
+test('staff user with content manager role can access staff dashboard after verification', async ({ page }) => {
   await loginFromApi(page, DEMO_STAFF.loginId, DEMO_STAFF.password)
-  await page.goto('/staff')
-  await page.waitForURL('**/staff')
+  await verifyStaffFromUi(page)
   await expect(page.locator('text=スタッフ').first()).toBeVisible({ timeout: 15000 })
 })
 
 test('admin can create a public page', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/pages')
   await page.waitForURL('**/staff/pages')
 
@@ -40,7 +38,7 @@ test('admin can create a public page', async ({ page }) => {
 })
 
 test('admin can view staff pages list', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/pages')
   await page.waitForURL('**/staff/pages')
 
@@ -54,7 +52,7 @@ test('admin can view staff pages list', async ({ page }) => {
 })
 
 test('admin can view staff circles list and navigate to circle edit', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/circles/all')
   await page.waitForURL('**/staff/circles/all')
 
@@ -70,7 +68,7 @@ test('admin can view staff circles list and navigate to circle edit', async ({ p
 })
 
 test('admin can view staff tags', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/tags')
   await page.waitForURL('**/staff/tags')
   await expect(page.locator('text=模擬店').first()).toBeVisible({ timeout: 15000 })
@@ -78,7 +76,7 @@ test('admin can view staff tags', async ({ page }) => {
 })
 
 test('admin can view staff places', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/places')
   await page.waitForURL('**/staff/places')
   await expect(page.locator('text=1号館 101').first()).toBeVisible({ timeout: 15000 })
@@ -86,7 +84,7 @@ test('admin can view staff places', async ({ page }) => {
 })
 
 test('admin can view staff contact categories', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/contact-categories')
   await page.waitForURL('**/staff/contact-categories')
   await expect(page.locator('text=公式ウェブサイト掲載内容に関すること').first()).toBeVisible({ timeout: 15000 })
@@ -94,17 +92,19 @@ test('admin can view staff contact categories', async ({ page }) => {
 })
 
 test('admin can view staff forms list', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/forms')
   await page.waitForURL('**/staff/forms')
   await expect(page.locator('text=申請管理').first()).toBeVisible({ timeout: 15000 })
-  await expect(page.locator('text=展示チェックフォーム').first()).toBeVisible({ timeout: 15000 })
-  await expect(page.locator('text=搬入確認フォーム').first()).toBeVisible({ timeout: 15000 })
-  await expect(page.locator('text=非公開フォーム').first()).toBeVisible({ timeout: 15000 })
+  for (const formName of ['展示チェックフォーム', '搬入確認フォーム', '非公開フォーム']) {
+    await page.getByPlaceholder('フォームID・フォーム名・説明で絞り込み').fill(formName)
+    await page.locator('form').getByRole('button', { name: '絞り込み' }).click()
+    await expect(page.locator(`text=${formName}`).first()).toBeVisible({ timeout: 15000 })
+  }
 })
 
 test('admin can view staff users list', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/users')
   await page.waitForURL('**/staff/users')
   // ユーザーの表示名は姓・名が別セルのため学籍番号で確認する
@@ -114,7 +114,7 @@ test('admin can view staff users list', async ({ page }) => {
 })
 
 test('admin can view staff participation types', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/participation-types')
   await page.waitForURL('**/staff/participation-types')
   await expect(page.locator('text=模擬店').first()).toBeVisible({ timeout: 15000 })
@@ -122,14 +122,14 @@ test('admin can view staff participation types', async ({ page }) => {
 })
 
 test('admin can view staff activity logs', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/activity-logs')
   await page.waitForURL('**/staff/activity-logs')
   await expect(page.locator('text=アクティビティログ').first()).toBeVisible({ timeout: 15000 })
 })
 
 test('admin can view staff exports page', async ({ page }) => {
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   await page.goto('/staff/exports')
   await page.waitForURL('**/staff/exports')
   await expect(page.locator('text=CSV / ZIP 出力').first()).toBeVisible({ timeout: 15000 })

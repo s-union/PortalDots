@@ -506,6 +506,18 @@ func TestRequireStaffMode(t *testing.T) {
 				hasStaffAccess: func(_ []string, _ []string) bool { return true },
 				wantStatus:     http.StatusForbidden,
 			},
+			{
+				name: "AllowDangerously does not bypass staff authorization",
+				cfg: SessionMiddlewareConfig{
+					SessionCookieName: "session",
+					AllowDangerously:  true,
+					Sessions: stubSessionAccess{sessions: map[string]session.Session{
+						"session-1": baseSession,
+					}},
+				},
+				hasStaffAccess: func(_ []string, _ []string) bool { return true },
+				wantStatus:     http.StatusForbidden,
+			},
 		}
 
 		for _, tc := range testCases {
@@ -533,7 +545,7 @@ func TestRequireStaffMode(t *testing.T) {
 		}
 	})
 
-	t.Run("allows authorized staff and insecure defaults", func(t *testing.T) {
+	t.Run("allows authorized staff", func(t *testing.T) {
 		t.Parallel()
 
 		testCases := []SessionMiddlewareConfig{
@@ -544,13 +556,6 @@ func TestRequireStaffMode(t *testing.T) {
 						User:            baseSession.User,
 						StaffAuthorized: true,
 					},
-				}},
-			},
-			{
-				SessionCookieName: "session",
-				AllowDangerously:  true,
-				Sessions: stubSessionAccess{sessions: map[string]session.Session{
-					"session-1": baseSession,
 				}},
 			},
 		}

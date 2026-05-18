@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"slices"
@@ -109,7 +110,7 @@ func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
 	}
 
 	var request updateStaffPermissionsRequest
-	if err := c.Bind(&request); err != nil {
+	if err := json.NewDecoder(c.Request().Body).Decode(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 

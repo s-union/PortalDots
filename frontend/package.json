@@ -15,7 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:storybook": "vitest run --project=storybook",
-    "test:e2e": "playwright test",
+    "test:e2e": "unset NO_COLOR; playwright test",
     "ci:check": "$npm_execpath run typecheck && $npm_execpath run lint && $npm_execpath run format:check",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

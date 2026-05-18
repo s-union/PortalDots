@@ -3,7 +3,12 @@ import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { expect, request as playwrightRequest, type Page } from '@playwright/test'
 
-export const DEMO_CIRCLE = { loginId: 'DEMO-CIRCLE', password: 'demo-circle', displayName: 'デモ 企画者' }
+export const DEMO_CIRCLE = {
+  loginId: 'DEMO-CIRCLE',
+  password: 'demo-circle',
+  displayName: 'デモ 企画者',
+  userId: 'CMg49o6YRtmKUppmRmoiY'
+}
 export const DEMO_CIRCLE_SUB = { loginId: 'DEMO-CIRCLE-SUB', password: 'demo-circle-sub', displayName: 'デモ 副企画者' }
 export const DEMO_ADMIN = { loginId: 'DEMO-ADMIN', password: 'demo-admin', displayName: 'デモ 管理者' }
 export const DEMO_STAFF = { loginId: 'DEMO-STAFF', password: 'demo-staff', displayName: 'デモ スタッフ' }
@@ -14,6 +19,103 @@ export const CIRCLE_B = 'デモ企画B'
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://127.0.0.1:8080'
 
+interface StaffCircle {
+  id: string
+  name: string
+  nameYomi: string
+  groupName: string
+  groupNameYomi: string
+  participationTypeId: string
+  notes: string
+  status: string
+  statusReason: string
+  places: string[]
+}
+
+interface MailEntry {
+  subject: string
+  body: string
+  recipients: string[]
+  createdAt: string
+}
+
+function getStringField(value: unknown, key: string, label: string): string {
+  if (typeof value === 'object' && value !== null && key in value && typeof value[key] === 'string') {
+    return value[key]
+  }
+  throw new Error(`Invalid ${label} response: missing ${key}`)
+}
+
+function getOptionalStringField(value: unknown, key: string): string | undefined {
+  if (typeof value === 'object' && value !== null && key in value) {
+    const field = value[key]
+    return typeof field === 'string' ? field : undefined
+  }
+  return undefined
+}
+
+function hasSessionUser(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && 'user' in value && value.user !== null
+}
+
+function isStaffCircle(value: unknown): value is StaffCircle {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    typeof value.id === 'string' &&
+    'name' in value &&
+    typeof value.name === 'string' &&
+    'nameYomi' in value &&
+    typeof value.nameYomi === 'string' &&
+    'groupName' in value &&
+    typeof value.groupName === 'string' &&
+    'groupNameYomi' in value &&
+    typeof value.groupNameYomi === 'string' &&
+    'participationTypeId' in value &&
+    typeof value.participationTypeId === 'string' &&
+    'notes' in value &&
+    typeof value.notes === 'string' &&
+    'status' in value &&
+    typeof value.status === 'string' &&
+    'statusReason' in value &&
+    typeof value.statusReason === 'string' &&
+    'places' in value &&
+    Array.isArray(value.places) &&
+    value.places.every((place) => typeof place === 'string')
+  )
+}
+
+function isMailEntry(value: unknown): value is MailEntry {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'subject' in value &&
+    typeof value.subject === 'string' &&
+    'body' in value &&
+    typeof value.body === 'string' &&
+    'recipients' in value &&
+    Array.isArray(value.recipients) &&
+    value.recipients.every((recipient) => typeof recipient === 'string') &&
+    'createdAt' in value &&
+    typeof value.createdAt === 'string'
+  )
+}
+
+function parseStaffCircles(value: unknown): StaffCircle[] {
+  if (!Array.isArray(value) || !value.every(isStaffCircle)) {
+    throw new Error('Invalid staff circles response')
+  }
+  return value
+}
+
+function parseMailEntries(value: unknown): MailEntry[] {
+  if (!Array.isArray(value) || !value.every(isMailEntry)) {
+    throw new Error('Invalid staff mails response')
+  }
+  return value
+}
+
 export async function loginFromApi(page: Page, loginId: string, password: string) {
   const response = await page.request.post(`${API_BASE_URL}/v1/auth/login`, {
     data: { loginId, password },
@@ -22,8 +124,16 @@ export async function loginFromApi(page: Page, loginId: string, password: string
   if (response.status() !== 204) {
     throw new Error(`Login failed: ${response.status()} ${await response.text()}`)
   }
+  const bootstrapResponse = await page.request.get(`${API_BASE_URL}/v1/session/bootstrap`)
+  if (bootstrapResponse.status() !== 200) {
+    throw new Error(`Fetch session failed: ${bootstrapResponse.status()} ${await bootstrapResponse.text()}`)
+  }
+  const bootstrap: unknown = await bootstrapResponse.json()
+  if (!hasSessionUser(bootstrap)) {
+    throw new Error(`Login failed: session user is empty for ${loginId}`)
+  }
   await page.goto('/')
-  await expect(page.locator('button:has-text("ログアウト")')).toBeVisible({ timeout: 15000 })
+  await page.waitForLoadState('networkidle')
 }
 
 export async function selectCircle(page: Page, circleName: string) {
@@ -84,6 +194,67 @@ export async function setCurrentCircleFromApi(page: Page, circleName: string) {
   }
 }
 
+/**
+ * Performs the staff two-factor verification flow via the UI.
+ * Requires allowDangerously mode: the verify/request response must include verifyCode.
+ */
+export async function verifyStaffFromUi(page: Page): Promise<void> {
+  await page.goto('/staff/verify')
+  await page.waitForURL('**/staff/verify')
+  await page.getByRole('button', { name: '認証コードを再送する' }).waitFor({ state: 'visible', timeout: 10000 })
+
+  const [requestResp] = await Promise.all([
+    page.waitForResponse((resp) => resp.url().includes('/staff/verify/request') && resp.request().method() === 'POST', {
+      timeout: 15000
+    }),
+    page.getByRole('button', { name: '認証コードを再送する' }).click()
+  ])
+  const body: unknown = await requestResp.json()
+  const verifyCode = getOptionalStringField(body, 'verifyCode')
+  if (!verifyCode) {
+    throw new Error('verifyCode not found in response. Is allowDangerously mode enabled?')
+  }
+
+  await page.locator('input[name="verifyCode"]').fill(verifyCode)
+  await page.getByRole('button', { name: 'ログイン' }).click()
+  await page.waitForURL('**/staff')
+}
+
+/**
+ * Updates a user's staff permissions using an independent API context
+ * so the browser session is not affected.
+ */
+export async function updateStaffPermissionsFromApi(targetUserId: string, permissions: string[]): Promise<void> {
+  const ctx = await playwrightRequest.newContext({ baseURL: API_BASE_URL })
+  try {
+    await ctx.post('/v1/auth/login', {
+      data: { loginId: DEMO_ADMIN.loginId, password: DEMO_ADMIN.password },
+      headers: { 'Content-Type': 'application/json' }
+    })
+    await verifyStaffInApiContext(ctx)
+
+    const bootstrapResp = await ctx.get('/v1/session/bootstrap')
+    const bootstrap: unknown = await bootstrapResp.json()
+    const csrfToken = getStringField(bootstrap, 'csrfToken', 'session bootstrap')
+
+    const resp = await ctx.put(`/v1/staff/permissions/${targetUserId}`, {
+      data: { permissions },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }
+    })
+    if (resp.status() !== 200) {
+      throw new Error(`Failed to update staff permissions: ${resp.status()} ${await resp.text()}`)
+    }
+  } finally {
+    await ctx.dispose()
+  }
+}
+
+/** Logs in as a staff user and completes the two-factor verification flow. */
+export async function loginAsStaff(page: Page, loginId: string, password: string): Promise<void> {
+  await loginFromApi(page, loginId, password)
+  await verifyStaffFromUi(page)
+}
+
 export async function loginFromUi(page: Page, loginId: string, password: string) {
   await page.goto('/login')
   await page.waitForURL('/login')
@@ -93,17 +264,36 @@ export async function loginFromUi(page: Page, loginId: string, password: string)
   await expect(page.locator('button:has-text("ログアウト")')).toBeVisible({ timeout: 15000 })
 }
 
-type StaffCircle = {
-  id: string
-  name: string
-  nameYomi: string
-  groupName: string
-  groupNameYomi: string
-  participationTypeId: string
-  notes: string
-  status: string
-  statusReason: string
-  places: string[]
+/**
+ * Performs staff two-factor verification using an existing API context.
+ * Requires allowDangerously mode: the verify/request response must include verifyCode.
+ */
+async function verifyStaffInApiContext(ctx: Awaited<ReturnType<typeof playwrightRequest.newContext>>): Promise<void> {
+  const bootstrapResp = await ctx.get('/v1/session/bootstrap')
+  if (bootstrapResp.status() !== 200) {
+    throw new Error(`Fetch session failed: ${bootstrapResp.status()} ${await bootstrapResp.text()}`)
+  }
+  const bootstrap: unknown = await bootstrapResp.json()
+  const csrfToken = getStringField(bootstrap, 'csrfToken', 'session bootstrap')
+
+  const verifyRequestResp = await ctx.post('/v1/staff/verify/request', {
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }
+  })
+  if (verifyRequestResp.status() !== 200) {
+    throw new Error(
+      `Staff verification request failed: ${verifyRequestResp.status()} ${await verifyRequestResp.text()}`
+    )
+  }
+  const verifyBody: unknown = await verifyRequestResp.json()
+  const verifyCode = getOptionalStringField(verifyBody, 'verifyCode')
+  if (!verifyCode) {
+    throw new Error('verifyCode not found in response. Is allowDangerously mode enabled?')
+  }
+
+  await ctx.post('/v1/staff/verify/confirm', {
+    data: { verifyCode },
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }
+  })
 }
 
 /**
@@ -117,19 +307,21 @@ export async function approveCircleFromApi(circleName: string): Promise<void> {
       data: { loginId: DEMO_ADMIN.loginId, password: DEMO_ADMIN.password },
       headers: { 'Content-Type': 'application/json' }
     })
+    await verifyStaffInApiContext(ctx)
 
     const circlesResp = await ctx.get('/v1/staff/circles/all')
     if (circlesResp.status() !== 200) {
       throw new Error(`Fetch staff circles failed: ${circlesResp.status()} ${await circlesResp.text()}`)
     }
-    const circles = (await circlesResp.json()) as StaffCircle[]
+    const circles = parseStaffCircles(await circlesResp.json())
     const circle = circles.find((c) => c.name === circleName)
     if (!circle) {
       throw new Error(`Circle not found: ${circleName}`)
     }
 
     const bootstrapResp = await ctx.get('/v1/session/bootstrap')
-    const bootstrap = (await bootstrapResp.json()) as { csrfToken: string }
+    const bootstrap: unknown = await bootstrapResp.json()
+    const csrfToken = getStringField(bootstrap, 'csrfToken', 'session bootstrap')
 
     const resp = await ctx.put(`/v1/staff/circles/${circle.id}`, {
       data: {
@@ -143,7 +335,7 @@ export async function approveCircleFromApi(circleName: string): Promise<void> {
         statusReason: '',
         placeIds: []
       },
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': bootstrap.csrfToken }
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }
     })
     if (resp.status() !== 200) {
       throw new Error(`Approve circle failed: ${resp.status()} ${await resp.text()}`)
@@ -152,8 +344,6 @@ export async function approveCircleFromApi(circleName: string): Promise<void> {
     await ctx.dispose()
   }
 }
-
-type MailEntry = { subject: string; body: string; recipients: string[]; createdAt: string }
 
 /**
  * Fetches recorded mail history as admin using an independent API context
@@ -170,7 +360,7 @@ export async function fetchMailsAsAdmin(): Promise<MailEntry[]> {
     if (resp.status() !== 200) {
       throw new Error(`Failed to fetch mails: ${resp.status()} ${await resp.text()}`)
     }
-    return (await resp.json()) as MailEntry[]
+    return parseMailEntries(await resp.json())
   } finally {
     await ctx.dispose()
   }
@@ -188,7 +378,9 @@ export async function waitForMail(
   while (Date.now() < deadline) {
     const mails = await fetchMailsAsAdmin()
     const found = mails.find(predicate)
-    if (found) return found
+    if (found) {
+      return found
+    }
     await new Promise((resolve) => setTimeout(resolve, intervalMs))
   }
   throw new Error('Timed out waiting for matching mail in history')
@@ -196,8 +388,10 @@ export async function waitForMail(
 
 /** Extracts the first http(s) URL found in a mail body. */
 export function extractUrlFromBody(body: string): string {
-  const match = body.match(/https?:\/\/\S+/)
-  if (!match) throw new Error(`No URL found in mail body:\n${body}`)
+  const match = /https?:\/\/\S+/.exec(body)
+  if (!match) {
+    throw new Error(`No URL found in mail body:\n${body}`)
+  }
   return match[0]
 }
 
@@ -209,7 +403,7 @@ function findMiniflareEmailTextDirs(): string[] {
     })
     return result.trim().split('\n').filter(Boolean)
   } catch (err: unknown) {
-    // find exits non-zero when it hits permission-denied dirs, but still writes matches to stdout
+    // Find exits non-zero when it hits permission-denied dirs, but still writes matches to stdout.
     if (err && typeof err === 'object' && 'stdout' in err && typeof err.stdout === 'string') {
       return err.stdout.trim().split('\n').filter(Boolean)
     }
@@ -225,7 +419,7 @@ function listEmailFiles(dirs: string[]): Set<string> {
         files.add(join(dir, name))
       }
     } catch {
-      // ignore — directory may not exist yet
+      // Ignore missing directories created after the snapshot.
     }
   }
   return files
@@ -252,12 +446,16 @@ export async function waitForMiniflareEmail(
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     for (const filePath of listEmailFiles(dirs)) {
-      if (before.has(filePath)) continue
+      if (before.has(filePath)) {
+        continue
+      }
       try {
         const content = readFileSync(filePath, 'utf8')
-        if (predicate(content)) return content
+        if (predicate(content)) {
+          return content
+        }
       } catch {
-        // file may have been deleted between listing and reading
+        // The file may have been deleted between listing and reading.
       }
     }
     await new Promise((resolve) => setTimeout(resolve, intervalMs))

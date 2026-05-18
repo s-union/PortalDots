@@ -254,12 +254,16 @@ func NewServerWithDependencies(
 	if origin, err := cfg.AppOrigin(); err == nil {
 		allowedOrigin = origin
 	}
+	rateLimitConfig := middlewares.RateLimitConfig{
+		Rate:  rate.Limit(cfg.RateLimitPerMinute) / rate.Limit(60),
+		Burst: cfg.RateLimitPerMinute,
+	}
+	if cfg.AllowDangerously {
+		rateLimitConfig = middlewares.RateLimitConfig{}
+	}
 	middlewares.Setup(e, middlewares.SetupConfig{
-		AllowedOrigins: []string{allowedOrigin},
-		RateLimit: middlewares.RateLimitConfig{
-			Rate:  rate.Limit(cfg.RateLimitPerMinute) / rate.Limit(60),
-			Burst: cfg.RateLimitPerMinute,
-		},
+		AllowedOrigins:  []string{allowedOrigin},
+		RateLimit:       rateLimitConfig,
 		MaintenanceMode: cfg.MaintenanceMode,
 	})
 

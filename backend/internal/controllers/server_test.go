@@ -3632,7 +3632,7 @@ func TestStaffPagesRequireVerification(t *testing.T) {
 	}
 }
 
-func TestStaffRoutesBypassVerificationInInsecureDefaults(t *testing.T) {
+func TestStaffRoutesRequireVerificationEvenInInsecureDefaults(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testStaffConfig())
@@ -3640,6 +3640,7 @@ func TestStaffRoutesBypassVerificationInInsecureDefaults(t *testing.T) {
 
 	loginAsStaff(t, server, cookies)
 
+	// Without completing staff verification, status should show allowed but not authorized.
 	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/status", nil)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3649,9 +3650,18 @@ func TestStaffRoutesBypassVerificationInInsecureDefaults(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &statusResponse); err != nil {
 		t.Fatalf("unmarshal staff status: %v", err)
 	}
-	if !statusResponse.Allowed || !statusResponse.Authorized {
-		t.Fatalf("expected staff status to be authorized in insecure defaults, got %#v", statusResponse)
+	if !statusResponse.Allowed || statusResponse.Authorized {
+		t.Fatalf("expected allowed=true, authorized=false before verification, got %#v", statusResponse)
 	}
+
+	// Staff API routes must be forbidden without verification.
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users", nil)
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+	}
+
+	// After completing verification, access is granted.
+	authorizeStaff(t, server, cookies)
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users", nil)
 	if recorder.Code != http.StatusOK {
@@ -5997,6 +6007,21 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 	}
 	if strings.TrimSpace(response.Message) == "" {
 		t.Fatalf("expected non-empty staff verify response, got %#v", response)
+	}
+
+	// In AllowDangerously mode verifyCode is included in the response so we can
+	// complete the full flow here. In strict mode (AllowDangerously=false) the
+	// caller is responsible for calling verify/confirm with the known static code.
+	if strings.TrimSpace(response.VerifyCode) == "" {
+		return
+	}
+
+	csrf = map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
+	confirmRecorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
+		"verifyCode": response.VerifyCode,
+	}, csrf)
+	if confirmRecorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, confirmRecorder.Code, confirmRecorder.Body.String())
 	}
 }
 

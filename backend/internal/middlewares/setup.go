@@ -146,7 +146,7 @@ func RequireStaffMode(cfg SessionMiddlewareConfig, hasStaffAccess func([]string,
 					"message": "staff_forbidden",
 				})
 			}
-			if !cfg.AllowDangerously && !currentSession.StaffAuthorized {
+			if !currentSession.StaffAuthorized {
 				return c.JSON(http.StatusForbidden, map[string]string{
 					"message": "staff_forbidden",
 				})
