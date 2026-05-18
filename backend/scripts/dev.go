@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -21,6 +22,11 @@ var running []*proc
 
 func main() {
 	useWorkers := len(os.Args) > 1 && os.Args[1] == "worker"
+	if useWorkers {
+		setDefaultEnv("PORTAL_EMAIL_PRODUCER_ENABLED", "true")
+		setDefaultEnv("PORTAL_EMAIL_PRODUCER_URL", "http://localhost:8787")
+		setDefaultEnv("PORTAL_EMAIL_PRODUCER_TOKEN", "dev-token")
+	}
 
 	projectDir, err := findProjectRoot()
 	if err != nil {
@@ -30,6 +36,8 @@ func main() {
 	backendDir := filepath.Join(projectDir, "backend")
 	frontendDir := filepath.Join(projectDir, "frontend")
 	emailProducerDir := filepath.Join(projectDir, "packages", "email-producer")
+
+	loadDotEnv(filepath.Join(projectDir, ".env"))
 
 	composeFile := filepath.Join(projectDir, "docker-compose.postgres.yml")
 
@@ -74,6 +82,35 @@ func main() {
 	log.Println("\nShutting down...")
 	cleanup()
 	log.Println("Done.")
+}
+
+func setDefaultEnv(key string, value string) {
+	if strings.TrimSpace(os.Getenv(key)) == "" {
+		os.Setenv(key, value)
+	}
+}
+
+// loadDotEnv reads KEY=VALUE pairs from path and sets them via setDefaultEnv
+// so that existing shell environment variables take precedence.
+func loadDotEnv(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return // .env is optional
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		setDefaultEnv(strings.TrimSpace(key), strings.TrimSpace(value))
+	}
 }
 
 func findProjectRoot() (string, error) {

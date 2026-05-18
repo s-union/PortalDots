@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import {
   loginFromApi,
+  loginAsStaff,
   setCurrentCircleFromApi,
   snapshotEmailFiles,
   waitForMiniflareEmail,
@@ -12,6 +13,24 @@ import {
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://127.0.0.1:8080'
 
+function getStringField(value: unknown, key: string, label: string): string {
+  if (typeof value === 'object' && value !== null && key in value && typeof value[key] === 'string') {
+    return value[key]
+  }
+  throw new Error(`Invalid ${label} response: missing ${key}`)
+}
+
+function getFirstCircleId(value: unknown): string {
+  if (!Array.isArray(value)) {
+    throw new Error('Invalid staff circles response')
+  }
+  const first = value[0]
+  if (typeof first === 'object' && first !== null && 'id' in first && typeof first.id === 'string') {
+    return first.id
+  }
+  throw new Error('Invalid staff circles response: missing first circle id')
+}
+
 test.beforeEach(async ({ page }) => {
   await page.context().clearCookies()
 })
@@ -20,7 +39,7 @@ test('new user registration sends verify email and completing verification regis
   const localPart = `e2e-reg-${Date.now()}`
   const emailsBefore = snapshotEmailFiles()
 
-  // Submit the university email local part on the register page
+  // Submit the university email local part on the register page.
   await page.goto('/register')
   await page.waitForURL('/register')
   await page.locator('input[name="univemailLocalPart"]').fill(localPart)
@@ -31,7 +50,7 @@ test('new user registration sends verify email and completing verification regis
 
   // Wait for the verification email to appear in miniflare's output files.
   // The recipient address contains localPart but the rendered text body does not,
-  // so match only on the verify URL path which is unique per request.
+  // So match only on the verify URL path which is unique per request.
   const verifyContent = await waitForMiniflareEmail((c) => c.includes('/email/verify/univemail/'), {
     timeoutMs: 15000,
     before: emailsBefore
@@ -39,14 +58,14 @@ test('new user registration sends verify email and completing verification regis
   const verifyURL = extractUrlFromBody(verifyContent)
   expect(verifyURL).toContain('/email/verify/univemail/')
 
-  // Navigate to the verify URL — browser is still unauthenticated
+  // Navigate to the verify URL while the browser is still unauthenticated.
   await page.goto(verifyURL)
   await page.waitForURL(/\/email\/verify\/univemail\//)
 
-  // The page confirms the university email address
+  // The page confirms the university email address.
   await expect(page.locator(`text=${localPart}`).first()).toBeVisible({ timeout: 10000 })
 
-  // Complete the registration form
+  // Complete the registration form.
   await page.locator('input[name="name"]').fill('テスト 太郎')
   await page.locator('input[name="nameYomi"]').fill('てすと たろう')
   await page.locator('input[name="phoneNumber"]').fill('090-0000-9999')
@@ -54,10 +73,10 @@ test('new user registration sends verify email and completing verification regis
   await page.locator('input[name="passwordConfirmation"]').fill('E2etest1')
   await page.getByRole('button', { name: '本登録を完了する' }).click()
 
-  // After completion the app redirects to the email verification status page (not the verify/type/id path)
+  // After completion the app redirects to the email verification status page.
   await page.waitForURL((url) => url.pathname === '/email/verify', { timeout: 10000 })
 
-  // The newly registered user should be able to log in
+  // The newly registered user should be able to log in.
   await page.context().clearCookies()
   const loginResp = await page.request.post(`${API_BASE_URL}/v1/auth/login`, {
     data: { loginId: localPart, password: 'E2etest1' },
@@ -70,14 +89,14 @@ test('password reset sends email and navigating the reset link allows setting a 
   const newPassword = 'Demo-new1'
   const emailsBefore = snapshotEmailFiles()
 
-  // Request a password reset for the demo circle user
+  // Request a password reset for the demo circle user.
   await page.goto('/password/reset')
   await page.waitForURL('/password/reset')
   await page.locator('input[name="loginId"]').fill(DEMO_CIRCLE.loginId)
   await page.getByRole('button', { name: '再設定のためのメールを送信' }).click()
   await expect(page.locator('text=再設定URLを送信しました').first()).toBeVisible({ timeout: 10000 })
 
-  // Wait for the password reset email in miniflare's output files
+  // Wait for the password reset email in miniflare's output files.
   const resetContent = await waitForMiniflareEmail((c) => c.includes('/password/reset/'), {
     timeoutMs: 15000,
     before: emailsBefore
@@ -85,26 +104,26 @@ test('password reset sends email and navigating the reset link allows setting a 
   const resetURL = extractUrlFromBody(resetContent)
   expect(resetURL).toContain('/password/reset/')
 
-  // Navigate to the reset URL — browser is still unauthenticated
+  // Navigate to the reset URL while the browser is still unauthenticated.
   await page.goto(resetURL)
   await page.waitForURL(/\/password\/reset\//)
 
-  // Wait for the new password form to appear
+  // Wait for the new password form to appear.
   await expect(page.locator('input[name="password"]')).toBeVisible({ timeout: 10000 })
 
-  // Set a new password
+  // Set a new password.
   await page.locator('input[name="password"]').fill(newPassword)
   await page.locator('input[name="passwordConfirmation"]').fill(newPassword)
   await page.getByRole('button', { name: '新しいパスワードを設定' }).click()
 
-  // Confirm success
+  // Confirm success.
   await expect(page.locator('text=パスワードを再設定しました').first()).toBeVisible({ timeout: 10000 })
 
-  // Restore the original password so subsequent tests are not broken
+  // Restore the original password so subsequent tests are not broken.
   await page.context().clearCookies()
   await loginFromApi(page, DEMO_CIRCLE.loginId, newPassword)
   const bootstrap = await page.request.get(`${API_BASE_URL}/v1/session/bootstrap`)
-  const { csrfToken } = (await bootstrap.json()) as { csrfToken: string }
+  const csrfToken = getStringField(await bootstrap.json(), 'csrfToken', 'session bootstrap')
   await page.request.put(`${API_BASE_URL}/v1/session/password`, {
     data: {
       currentPassword: newPassword,
@@ -116,7 +135,7 @@ test('password reset sends email and navigating the reset link allows setting a 
 })
 
 test('submitting a contact form sends a confirmation email to the circle members', async ({ page }) => {
-  test.setTimeout(120000) // normal-priority queue has 30s batch timeout
+  test.setTimeout(120000) // Normal-priority queue has 30s batch timeout.
   await loginFromApi(page, DEMO_CIRCLE.loginId, DEMO_CIRCLE.password)
   await setCurrentCircleFromApi(page, CIRCLE_B)
 
@@ -126,7 +145,7 @@ test('submitting a contact form sends a confirmation email to the circle members
   await page.waitForURL('**/workspace/contact')
   await expect(page.locator('text=お問い合わせ').first()).toBeVisible({ timeout: 15000 })
 
-  // Fill in the contact form (subject is auto-set from the category name)
+  // Fill in the contact form; subject is auto-set from the category name.
   await page.getByLabel('お問い合わせ項目').selectOption({ label: '公式ウェブサイト掲載内容に関すること' })
   const uniqueBody = `メール送信E2Eテスト ${Date.now()}`
   await page.locator('textarea[name="body"]').fill(uniqueBody)
@@ -138,15 +157,15 @@ test('submitting a contact form sends a confirmation email to the circle members
   expect(contactResponse.status()).toBe(201)
   await expect(page.locator('text=に問い合わせを送信しました').first()).toBeVisible({ timeout: 10000 })
 
-  // Contact emails use normal-priority queue (max_batch_timeout: 30s) — wait up to 60s.
-  // The submitter should receive a confirmation email
+  // Contact emails use normal-priority queue (max_batch_timeout: 30s), so wait up to 60s.
+  // The submitter should receive a confirmation email.
   const confirmContent = await waitForMiniflareEmail(
     (c) => c.includes('お問い合わせを受け付けました') && c.includes(uniqueBody),
     { timeoutMs: 60000, before: emailsBefore }
   )
   expect(confirmContent).toContain('公式ウェブサイト掲載内容に関すること')
 
-  // The staff contact category handler also receives a notification (use same snapshot)
+  // The staff contact category handler also receives a notification using the same snapshot.
   const staffContent = await waitForMiniflareEmail(
     (c) =>
       c.includes('公式ウェブサイト掲載内容に関すること') &&
@@ -158,19 +177,18 @@ test('submitting a contact form sends a confirmation email to the circle members
 })
 
 test('admin staff mail queue records sent emails accessible via API', async ({ page }) => {
-  test.setTimeout(120000) // normal-priority queue has 30s batch timeout
-  await loginFromApi(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
+  test.setTimeout(120000) // Normal-priority queue has 30s batch timeout.
+  await loginAsStaff(page, DEMO_ADMIN.loginId, DEMO_ADMIN.password)
   const emailsBefore = snapshotEmailFiles()
 
   const bootstrap = await page.request.get(`${API_BASE_URL}/v1/session/bootstrap`)
-  const { csrfToken } = (await bootstrap.json()) as { csrfToken: string }
+  const csrfToken = getStringField(await bootstrap.json(), 'csrfToken', 'session bootstrap')
 
   const circlesResp = await page.request.get(`${API_BASE_URL}/v1/staff/circles/all`)
-  const circlesData = (await circlesResp.json()) as { id: string }[]
-  const circleId = circlesData[0]?.id
+  const circleId = getFirstCircleId(await circlesResp.json())
   expect(circleId).toBeTruthy()
 
-  // Enqueue a staff mail via the API
+  // Enqueue a staff mail via the API.
   const subject = `E2E スタッフメール ${Date.now()}`
   const mailResp = await page.request.post(`${API_BASE_URL}/v1/staff/mails`, {
     data: {
@@ -183,7 +201,7 @@ test('admin staff mail queue records sent emails accessible via API', async ({ p
   })
   expect(mailResp.status()).toBe(201)
 
-  // Staff mails use normal-priority queue (max_batch_timeout: 30s) — wait up to 60s.
+  // Staff mails use normal-priority queue (max_batch_timeout: 30s), so wait up to 60s.
   const sentContent = await waitForMiniflareEmail((c) => c.includes('スタッフから送信したテストメールです'), {
     timeoutMs: 60000,
     before: emailsBefore
