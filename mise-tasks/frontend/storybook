@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#MISE dir="frontend"
 #MISE description="Start Storybook dev server"
 
-nr storybook
+pnpm run storybook

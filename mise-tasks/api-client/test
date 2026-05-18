@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#MISE dir="packages/api-client"
 #MISE description="Run api-client tests"
 
-nr test
+pnpm run test
