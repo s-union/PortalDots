@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import type { StaffFormDetail } from '@/features/staff/forms/api'
 
-vi.mock('@/features/staff/forms/api', async () => {
-  const actual = await vi.importActual<typeof import('@/features/staff/forms/api')>('@/features/staff/forms/api')
+vi.mock('@/features/staff/forms/urls', async () => {
+  const actual = await vi.importActual<typeof import('@/features/staff/forms/urls')>('@/features/staff/forms/urls')
   return {
     ...actual,
     buildStaffFormUploadDownloadUrl: (formId: string, uploadId: string) => `/download/${formId}/${uploadId}`

@@ -1,6 +1,7 @@
 package page
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"sync"
@@ -24,23 +25,23 @@ type Page struct {
 }
 
 type Repository interface {
-	ListGuest(query string) []Page
-	CountGuest(query string) int
-	ListGuestPaginated(query string, limit, offset int) []Page
-	ListForCircle(circleTags []string, query string) []Page
-	CountForCircle(circleTags []string, query string) int
-	ListForCirclePaginated(circleTags []string, query string, limit, offset int) []Page
-	ListForStaff(query string) []Page
-	FindGuest(pageID string) (Page, bool)
-	FindForCircle(circleTags []string, pageID string) (Page, bool)
-	FindForStaff(pageID string) (Page, bool)
-	Create(title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) Page
-	Update(pageID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) (Page, bool)
-	SetPinned(pageID string, isPinned bool) (Page, bool)
-	Delete(pageID string) bool
-	ListReadPageIDs(userID string, pageIDs []string) []string
-	MarkRead(pageID, userID string) error
-	SupportsPagination() bool
+	ListGuest(ctx context.Context, query string) []Page
+	CountGuest(ctx context.Context, query string) int
+	ListGuestPaginated(ctx context.Context, query string, limit, offset int) []Page
+	ListForCircle(ctx context.Context, circleTags []string, query string) []Page
+	CountForCircle(ctx context.Context, circleTags []string, query string) int
+	ListForCirclePaginated(ctx context.Context, circleTags []string, query string, limit, offset int) []Page
+	ListForStaff(ctx context.Context, query string) []Page
+	FindGuest(ctx context.Context, pageID string) (Page, bool)
+	FindForCircle(ctx context.Context, circleTags []string, pageID string) (Page, bool)
+	FindForStaff(ctx context.Context, pageID string) (Page, bool)
+	Create(ctx context.Context, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) Page
+	Update(ctx context.Context, pageID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) (Page, bool)
+	SetPinned(ctx context.Context, pageID string, isPinned bool) (Page, bool)
+	Delete(ctx context.Context, pageID string) bool
+	ListReadPageIDs(ctx context.Context, userID string, pageIDs []string) []string
+	MarkRead(ctx context.Context, pageID, userID string) error
+	SupportsPagination(ctx context.Context) bool
 }
 
 type StaticRepository struct {
@@ -74,31 +75,31 @@ func NewStaticRepository(cfg []config.Page) *StaticRepository {
 	}
 }
 
-func (r *StaticRepository) ListGuest(query string) []Page {
+func (r *StaticRepository) ListGuest(_ context.Context, query string) []Page {
 	return r.listPages(query, []string{}, true)
 }
 
-func (r *StaticRepository) CountGuest(query string) int {
-	return len(r.ListGuest(query))
+func (r *StaticRepository) CountGuest(_ context.Context, query string) int {
+	return len(r.listPages(query, []string{}, true))
 }
 
-func (r *StaticRepository) ListGuestPaginated(query string, limit, offset int) []Page {
-	return paginateStaticPages(r.ListGuest(query), limit, offset)
+func (r *StaticRepository) ListGuestPaginated(_ context.Context, query string, limit, offset int) []Page {
+	return paginateStaticPages(r.listPages(query, []string{}, true), limit, offset)
 }
 
-func (r *StaticRepository) ListForCircle(circleTags []string, query string) []Page {
+func (r *StaticRepository) ListForCircle(_ context.Context, circleTags []string, query string) []Page {
 	return r.listPages(query, circleTags, false)
 }
 
-func (r *StaticRepository) CountForCircle(circleTags []string, query string) int {
-	return len(r.ListForCircle(circleTags, query))
+func (r *StaticRepository) CountForCircle(_ context.Context, circleTags []string, query string) int {
+	return len(r.listPages(query, circleTags, false))
 }
 
-func (r *StaticRepository) ListForCirclePaginated(circleTags []string, query string, limit, offset int) []Page {
-	return paginateStaticPages(r.ListForCircle(circleTags, query), limit, offset)
+func (r *StaticRepository) ListForCirclePaginated(_ context.Context, circleTags []string, query string, limit, offset int) []Page {
+	return paginateStaticPages(r.listPages(query, circleTags, false), limit, offset)
 }
 
-func (r *StaticRepository) ListForStaff(query string) []Page {
+func (r *StaticRepository) ListForStaff(_ context.Context, query string) []Page {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -115,19 +116,19 @@ func (r *StaticRepository) ListForStaff(query string) []Page {
 	return filtered
 }
 
-func (r *StaticRepository) SupportsPagination() bool {
+func (r *StaticRepository) SupportsPagination(_ context.Context) bool {
 	return false
 }
 
-func (r *StaticRepository) FindGuest(pageID string) (Page, bool) {
+func (r *StaticRepository) FindGuest(_ context.Context, pageID string) (Page, bool) {
 	return r.findPage(pageID, []string{}, true)
 }
 
-func (r *StaticRepository) FindForCircle(circleTags []string, pageID string) (Page, bool) {
+func (r *StaticRepository) FindForCircle(_ context.Context, circleTags []string, pageID string) (Page, bool) {
 	return r.findPage(pageID, circleTags, false)
 }
 
-func (r *StaticRepository) FindForStaff(pageID string) (Page, bool) {
+func (r *StaticRepository) FindForStaff(_ context.Context, pageID string) (Page, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -141,6 +142,7 @@ func (r *StaticRepository) FindForStaff(pageID string) (Page, bool) {
 }
 
 func (r *StaticRepository) Create(
+	_ context.Context,
 	title,
 	body,
 	notes string,
@@ -172,6 +174,7 @@ func (r *StaticRepository) Create(
 }
 
 func (r *StaticRepository) Update(
+	_ context.Context,
 	pageID,
 	title,
 	body,
@@ -204,7 +207,7 @@ func (r *StaticRepository) Update(
 	return Page{}, false
 }
 
-func (r *StaticRepository) SetPinned(pageID string, isPinned bool) (Page, bool) {
+func (r *StaticRepository) SetPinned(_ context.Context, pageID string, isPinned bool) (Page, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -220,7 +223,7 @@ func (r *StaticRepository) SetPinned(pageID string, isPinned bool) (Page, bool) 
 	return Page{}, false
 }
 
-func (r *StaticRepository) Delete(pageID string) bool {
+func (r *StaticRepository) Delete(_ context.Context, pageID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -237,7 +240,7 @@ func (r *StaticRepository) Delete(pageID string) bool {
 	return false
 }
 
-func (r *StaticRepository) ListReadPageIDs(userID string, pageIDs []string) []string {
+func (r *StaticRepository) ListReadPageIDs(_ context.Context, userID string, pageIDs []string) []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -253,7 +256,7 @@ func (r *StaticRepository) ListReadPageIDs(userID string, pageIDs []string) []st
 	return readPageIDs
 }
 
-func (r *StaticRepository) MarkRead(pageID, userID string) error {
+func (r *StaticRepository) MarkRead(_ context.Context, pageID, userID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

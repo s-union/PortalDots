@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 #MISE description="Run frontend vitest"
 
-nr test
+pnpm -C frontend run test

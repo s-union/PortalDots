@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"sort"
@@ -50,7 +51,7 @@ func (h *workspaceHandlers) listForms(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	forms, err := h.listAccessibleWorkspaceForms(currentCircle, c.QueryParam("status"), c.QueryParam("query"))
+	forms, err := h.listAccessibleWorkspaceForms(c.Request().Context(), currentCircle, c.QueryParam("status"), c.QueryParam("query"))
 	if err != nil {
 		return internalError(c)
 	}
@@ -59,7 +60,7 @@ func (h *workspaceHandlers) listForms(c echo.Context) error {
 
 	response := make([]formSummaryResponse, 0, len(forms))
 	for _, form := range paginated.Items {
-		response = append(response, h.buildWorkspaceFormSummaryResponse(form, currentSession.CurrentCircleID))
+		response = append(response, h.buildWorkspaceFormSummaryResponse(c.Request().Context(), form, currentSession.CurrentCircleID))
 	}
 
 	return c.JSON(http.StatusOK, models.PaginatedResponse[formSummaryResponse]{
@@ -76,19 +77,19 @@ func (h *workspaceHandlers) getForm(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	form, found := h.findAccessibleWorkspaceForm(c.Param("formID"), currentCircle)
+	form, found := h.findAccessibleWorkspaceForm(c.Request().Context(), c.Param("formID"), currentCircle)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
-	questions, err := h.formQuestions.List(form.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), form.ID)
 	if err != nil {
 		return internalError(c)
 	}
 
 	return c.JSON(
 		http.StatusOK,
-		h.buildWorkspaceFormDetailResponse(
+		h.buildWorkspaceFormDetailResponse(c.Request().Context(),
 			form,
 			currentSession.CurrentCircleID,
 			currentCircle,
@@ -114,17 +115,17 @@ func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (se
 	return currentSession, currentCircle, http.StatusOK, true
 }
 
-func (h *workspaceHandlers) listAccessibleWorkspaceForms(currentCircle circle.Circle, status string, query string) ([]backendform.Form, error) {
+func (h *workspaceHandlers) listAccessibleWorkspaceForms(ctx context.Context, currentCircle circle.Circle, status string, query string) ([]backendform.Form, error) {
 	formsByID := make(map[string]backendform.Form)
 	normalizedQuery := normalizeWorkspaceFormQuery(query)
 	for _, formValue := range h.forms.ListByCircleForStaff(currentCircle.ID) {
-		if !h.canAccessWorkspaceForm(currentCircle, formValue) || !matchesWorkspaceFormStatus(formValue, status) || !matchesWorkspaceFormQuery(formValue, normalizedQuery) {
+		if !h.canAccessWorkspaceForm(ctx, currentCircle, formValue) || !matchesWorkspaceFormStatus(formValue, status) || !matchesWorkspaceFormQuery(formValue, normalizedQuery) {
 			continue
 		}
 		formsByID[formValue.ID] = formValue
 	}
 	for _, formValue := range h.forms.ListByCircleForStaff("") {
-		if !h.canAccessWorkspaceForm(currentCircle, formValue) || !matchesWorkspaceFormStatus(formValue, status) || !matchesWorkspaceFormQuery(formValue, normalizedQuery) {
+		if !h.canAccessWorkspaceForm(ctx, currentCircle, formValue) || !matchesWorkspaceFormStatus(formValue, status) || !matchesWorkspaceFormQuery(formValue, normalizedQuery) {
 			continue
 		}
 		formsByID[formValue.ID] = formValue
@@ -174,31 +175,31 @@ func matchesWorkspaceFormStatus(formValue backendform.Form, status string) bool 
 	}
 }
 
-func (h *workspaceHandlers) findAccessibleWorkspaceForm(formID string, currentCircle circle.Circle) (backendform.Form, bool) {
-	if formValue, found := h.forms.FindByCircleForStaff(currentCircle.ID, formID); found && h.canAccessWorkspaceForm(currentCircle, formValue) {
+func (h *workspaceHandlers) findAccessibleWorkspaceForm(ctx context.Context, formID string, currentCircle circle.Circle) (backendform.Form, bool) {
+	if formValue, found := h.forms.FindByCircleForStaff(currentCircle.ID, formID); found && h.canAccessWorkspaceForm(ctx, currentCircle, formValue) {
 		return formValue, true
 	}
 
 	formValue, found := h.forms.FindByCircleForStaff("", formID)
-	if !found || !h.canAccessWorkspaceForm(currentCircle, formValue) {
+	if !found || !h.canAccessWorkspaceForm(ctx, currentCircle, formValue) {
 		return backendform.Form{}, false
 	}
 
 	return formValue, true
 }
 
-func (h *workspaceHandlers) canAccessWorkspaceForm(currentCircle circle.Circle, formValue backendform.Form) bool {
+func (h *workspaceHandlers) canAccessWorkspaceForm(ctx context.Context, currentCircle circle.Circle, formValue backendform.Form) bool {
 	if formValue.CircleID != "" && formValue.CircleID != currentCircle.ID {
 		return false
 	}
-	if !formValue.IsPublic || h.isWorkspaceParticipationForm(formValue.ID) {
+	if !formValue.IsPublic || h.isWorkspaceParticipationForm(ctx, formValue.ID) {
 		return false
 	}
 	if len(formValue.AnswerableTags) == 0 {
 		return true
 	}
 
-	for _, circleTag := range effectiveCircleTags(currentCircle, h.participationTypes) {
+	for _, circleTag := range effectiveCircleTags(ctx, currentCircle, h.participationTypes) {
 		if slices.Contains(formValue.AnswerableTags, circleTag) {
 			return true
 		}
@@ -207,13 +208,13 @@ func (h *workspaceHandlers) canAccessWorkspaceForm(currentCircle circle.Circle, 
 	return false
 }
 
-func (h *workspaceHandlers) isWorkspaceParticipationForm(formID string) bool {
-	_, err := h.participationTypes.FindByFormID(formID)
+func (h *workspaceHandlers) isWorkspaceParticipationForm(ctx context.Context, formID string) bool {
+	_, err := h.participationTypes.FindByFormID(ctx, formID)
 	return err == nil
 }
 
-func (h *workspaceHandlers) buildWorkspaceFormSummaryResponse(formValue backendform.Form, currentCircleID string) formSummaryResponse {
-	_, answered := h.answers.Get(formValue.ID, currentCircleID)
+func (h *workspaceHandlers) buildWorkspaceFormSummaryResponse(ctx context.Context, formValue backendform.Form, currentCircleID string) formSummaryResponse {
+	_, answered := h.answers.Get(ctx, formValue.ID, currentCircleID)
 
 	return formSummaryResponse{
 		ID:                  formValue.ID,
@@ -231,12 +232,13 @@ func (h *workspaceHandlers) buildWorkspaceFormSummaryResponse(formValue backendf
 }
 
 func (h *workspaceHandlers) buildWorkspaceFormDetailResponse(
+	ctx context.Context,
 	formValue backendform.Form,
 	currentCircleID string,
 	currentCircle circle.Circle,
 	questions []staffFormQuestion,
 ) formDetailResponse {
-	_, answered := h.answers.Get(formValue.ID, currentCircleID)
+	_, answered := h.answers.Get(ctx, formValue.ID, currentCircleID)
 
 	return formDetailResponse{
 		ID:                  formValue.ID,

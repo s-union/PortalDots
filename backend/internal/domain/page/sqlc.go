@@ -15,8 +15,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) ListGuest(query string) []Page {
-	rows, err := r.queries.ListGuestPages(context.Background(), query)
+func (r *SQLCRepository) ListGuest(ctx context.Context, query string) []Page {
+	rows, err := r.queries.ListGuestPages(ctx, query)
 	if err != nil {
 		return nil
 	}
@@ -29,16 +29,16 @@ func (r *SQLCRepository) ListGuest(query string) []Page {
 	return pages
 }
 
-func (r *SQLCRepository) CountGuest(query string) int {
-	total, err := r.queries.CountGuestPages(context.Background(), query)
+func (r *SQLCRepository) CountGuest(ctx context.Context, query string) int {
+	total, err := r.queries.CountGuestPages(ctx, query)
 	if err != nil {
 		return 0
 	}
 	return int(total)
 }
 
-func (r *SQLCRepository) ListGuestPaginated(query string, limit, offset int) []Page {
-	rows, err := r.queries.ListGuestPagesPaginated(context.Background(), dbgen.ListGuestPagesPaginatedParams{
+func (r *SQLCRepository) ListGuestPaginated(ctx context.Context, query string, limit, offset int) []Page {
+	rows, err := r.queries.ListGuestPagesPaginated(ctx, dbgen.ListGuestPagesPaginatedParams{
 		Column1: query,
 		Limit:   int32(limit),
 		Offset:  int32(offset),
@@ -55,8 +55,8 @@ func (r *SQLCRepository) ListGuestPaginated(query string, limit, offset int) []P
 	return pages
 }
 
-func (r *SQLCRepository) ListForCircle(circleTags []string, query string) []Page {
-	rows, err := r.queries.ListPagesForCircle(context.Background(), dbgen.ListPagesForCircleParams{
+func (r *SQLCRepository) ListForCircle(ctx context.Context, circleTags []string, query string) []Page {
+	rows, err := r.queries.ListPagesForCircle(ctx, dbgen.ListPagesForCircleParams{
 		Column1: circleTags,
 		Column2: query,
 	})
@@ -72,8 +72,8 @@ func (r *SQLCRepository) ListForCircle(circleTags []string, query string) []Page
 	return pages
 }
 
-func (r *SQLCRepository) CountForCircle(circleTags []string, query string) int {
-	total, err := r.queries.CountPagesForCircle(context.Background(), dbgen.CountPagesForCircleParams{
+func (r *SQLCRepository) CountForCircle(ctx context.Context, circleTags []string, query string) int {
+	total, err := r.queries.CountPagesForCircle(ctx, dbgen.CountPagesForCircleParams{
 		Column1: circleTags,
 		Column2: query,
 	})
@@ -83,8 +83,8 @@ func (r *SQLCRepository) CountForCircle(circleTags []string, query string) int {
 	return int(total)
 }
 
-func (r *SQLCRepository) ListForCirclePaginated(circleTags []string, query string, limit, offset int) []Page {
-	rows, err := r.queries.ListPagesForCirclePaginated(context.Background(), dbgen.ListPagesForCirclePaginatedParams{
+func (r *SQLCRepository) ListForCirclePaginated(ctx context.Context, circleTags []string, query string, limit, offset int) []Page {
+	rows, err := r.queries.ListPagesForCirclePaginated(ctx, dbgen.ListPagesForCirclePaginatedParams{
 		Column1: circleTags,
 		Column2: query,
 		Limit:   int32(limit),
@@ -102,8 +102,8 @@ func (r *SQLCRepository) ListForCirclePaginated(circleTags []string, query strin
 	return pages
 }
 
-func (r *SQLCRepository) ListForStaff(query string) []Page {
-	rows, err := r.queries.ListStaffPages(context.Background(), query)
+func (r *SQLCRepository) ListForStaff(ctx context.Context, query string) []Page {
+	rows, err := r.queries.ListStaffPages(ctx, query)
 	if err != nil {
 		return nil
 	}
@@ -116,12 +116,12 @@ func (r *SQLCRepository) ListForStaff(query string) []Page {
 	return pages
 }
 
-func (r *SQLCRepository) SupportsPagination() bool {
+func (r *SQLCRepository) SupportsPagination(_ context.Context) bool {
 	return true
 }
 
-func (r *SQLCRepository) FindGuest(pageID string) (Page, bool) {
-	row, err := r.queries.GetGuestPageByID(context.Background(), pageID)
+func (r *SQLCRepository) FindGuest(ctx context.Context, pageID string) (Page, bool) {
+	row, err := r.queries.GetGuestPageByID(ctx, pageID)
 	if err != nil {
 		return Page{}, false
 	}
@@ -129,8 +129,8 @@ func (r *SQLCRepository) FindGuest(pageID string) (Page, bool) {
 	return mapGuestPageDetail(row), true
 }
 
-func (r *SQLCRepository) FindForCircle(circleTags []string, pageID string) (Page, bool) {
-	row, err := r.queries.GetPageByIDForCircle(context.Background(), dbgen.GetPageByIDForCircleParams{
+func (r *SQLCRepository) FindForCircle(ctx context.Context, circleTags []string, pageID string) (Page, bool) {
+	row, err := r.queries.GetPageByIDForCircle(ctx, dbgen.GetPageByIDForCircleParams{
 		Column1: circleTags,
 		ID:      pageID,
 	})
@@ -141,8 +141,8 @@ func (r *SQLCRepository) FindForCircle(circleTags []string, pageID string) (Page
 	return mapCirclePageDetail(row), true
 }
 
-func (r *SQLCRepository) FindForStaff(pageID string) (Page, bool) {
-	row, err := r.queries.GetStaffPageByID(context.Background(), pageID)
+func (r *SQLCRepository) FindForStaff(ctx context.Context, pageID string) (Page, bool) {
+	row, err := r.queries.GetStaffPageByID(ctx, pageID)
 	if err != nil {
 		return Page{}, false
 	}
@@ -151,6 +151,7 @@ func (r *SQLCRepository) FindForStaff(pageID string) (Page, bool) {
 }
 
 func (r *SQLCRepository) Create(
+	ctx context.Context,
 	title,
 	body,
 	notes string,
@@ -159,7 +160,7 @@ func (r *SQLCRepository) Create(
 	viewableTags []string,
 	documentIDs []string,
 ) Page {
-	row, err := r.queries.CreatePage(context.Background(), dbgen.CreatePageParams{
+	row, err := r.queries.CreatePage(ctx, dbgen.CreatePageParams{
 		Title:        title,
 		Body:         body,
 		Notes:        notes,
@@ -176,6 +177,7 @@ func (r *SQLCRepository) Create(
 }
 
 func (r *SQLCRepository) Update(
+	ctx context.Context,
 	pageID,
 	title,
 	body,
@@ -185,7 +187,7 @@ func (r *SQLCRepository) Update(
 	viewableTags []string,
 	documentIDs []string,
 ) (Page, bool) {
-	row, err := r.queries.UpdatePage(context.Background(), dbgen.UpdatePageParams{
+	row, err := r.queries.UpdatePage(ctx, dbgen.UpdatePageParams{
 		ID:           pageID,
 		Title:        title,
 		Body:         body,
@@ -198,15 +200,15 @@ func (r *SQLCRepository) Update(
 	if err != nil {
 		return Page{}, false
 	}
-	if err := r.queries.DeletePageReads(context.Background(), pageID); err != nil {
+	if err := r.queries.DeletePageReads(ctx, pageID); err != nil {
 		return Page{}, false
 	}
 
 	return mapUpdatedPage(row), true
 }
 
-func (r *SQLCRepository) SetPinned(pageID string, isPinned bool) (Page, bool) {
-	row, err := r.queries.PatchPagePin(context.Background(), dbgen.PatchPagePinParams{
+func (r *SQLCRepository) SetPinned(ctx context.Context, pageID string, isPinned bool) (Page, bool) {
+	row, err := r.queries.PatchPagePin(ctx, dbgen.PatchPagePinParams{
 		ID:       pageID,
 		IsPinned: isPinned,
 	})
@@ -217,8 +219,8 @@ func (r *SQLCRepository) SetPinned(pageID string, isPinned bool) (Page, bool) {
 	return mapPinnedPage(row), true
 }
 
-func (r *SQLCRepository) Delete(pageID string) bool {
-	rows, err := r.queries.DeletePage(context.Background(), pageID)
+func (r *SQLCRepository) Delete(ctx context.Context, pageID string) bool {
+	rows, err := r.queries.DeletePage(ctx, pageID)
 	if err != nil {
 		return false
 	}
@@ -226,12 +228,12 @@ func (r *SQLCRepository) Delete(pageID string) bool {
 	return rows > 0
 }
 
-func (r *SQLCRepository) ListReadPageIDs(userID string, pageIDs []string) []string {
+func (r *SQLCRepository) ListReadPageIDs(ctx context.Context, userID string, pageIDs []string) []string {
 	if len(pageIDs) == 0 {
 		return []string{}
 	}
 
-	rows, err := r.queries.ListReadPageIDsByUser(context.Background(), dbgen.ListReadPageIDsByUserParams{
+	rows, err := r.queries.ListReadPageIDsByUser(ctx, dbgen.ListReadPageIDsByUserParams{
 		UserID:  userID,
 		Column2: pageIDs,
 	})
@@ -242,8 +244,8 @@ func (r *SQLCRepository) ListReadPageIDs(userID string, pageIDs []string) []stri
 	return rows
 }
 
-func (r *SQLCRepository) MarkRead(pageID, userID string) error {
-	_ = r.queries.UpsertPageRead(context.Background(), dbgen.UpsertPageReadParams{
+func (r *SQLCRepository) MarkRead(ctx context.Context, pageID, userID string) error {
+	_ = r.queries.UpsertPageRead(ctx, dbgen.UpsertPageReadParams{
 		PageID: pageID,
 		UserID: userID,
 	})

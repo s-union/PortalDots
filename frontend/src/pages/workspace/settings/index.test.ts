@@ -85,7 +85,7 @@ describe('UserSettingsPage', () => {
     const sessionStore = useSessionStore()
     sessionStore.hydrate({
       csrfToken: 'csrf-token',
-      currentCircle: { id: 'circle-a', name: 'デモ企画A' },
+      currentCircle: null,
       featureFlags: [],
       roles: ['participant'],
       user: {
@@ -124,9 +124,11 @@ describe('UserSettingsPage', () => {
     await wrapper.find('button[type="button"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('プロフィールを更新しました。')
-    expect(sessionStore.user?.displayName).toBe('Updated Demo User')
-    expect(sessionStore.user?.contactEmail).toBe('updated@example.com')
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('プロフィールを更新しました。')
+      expect(sessionStore.user?.displayName).toBe('Updated Demo User')
+      expect(sessionStore.user?.contactEmail).toBe('updated@example.com')
+    })
   })
 
   it('updates the password', async () => {

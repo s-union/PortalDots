@@ -1,9 +1,9 @@
 package controllers
 
 import (
+	"context"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
@@ -113,12 +113,12 @@ func normalizeRequestedLoginIDs(input []string) []string {
 	return normalized
 }
 
-func updateStaffUserSession(sessionID string, currentSession session.Session, updatedUser useradmin.User, store session.Store) {
+func updateStaffUserSession(ctx context.Context, sessionID string, currentSession session.Session, updatedUser useradmin.User, store session.Store) {
 	if currentSession.User == nil || currentSession.User.ID != updatedUser.ID {
 		return
 	}
 
-	store.Update(sessionID, func(next *session.Session) {
+	store.Update(ctx, sessionID, func(next *session.Session) {
 		if next.User == nil {
 			return
 		}
@@ -128,13 +128,13 @@ func updateStaffUserSession(sessionID string, currentSession session.Session, up
 	})
 }
 
-func updateOrInvalidateStaffUserSession(sessionID string, currentSession session.Session, updatedUser useradmin.User, store session.Store) {
+func updateOrInvalidateStaffUserSession(ctx context.Context, sessionID string, currentSession session.Session, updatedUser useradmin.User, store session.Store) {
 	if currentSession.User != nil && currentSession.User.ID == updatedUser.ID {
-		updateStaffUserSession(sessionID, currentSession, updatedUser, store)
+		updateStaffUserSession(ctx, sessionID, currentSession, updatedUser, store)
 		return
 	}
 
-	_ = store.DeleteByUserID(updatedUser.ID)
+	_ = store.DeleteByUserID(ctx, updatedUser.ID)
 }
 
 func mapStaffUser(userValue useradmin.User) staffUserSummaryResponse {
@@ -155,21 +155,4 @@ func mapStaffUser(userValue useradmin.User) staffUserSummaryResponse {
 		CreatedAt:        formatStaffUserTimestamp(userValue.CreatedAt),
 		UpdatedAt:        formatStaffUserTimestamp(userValue.UpdatedAt),
 	}
-}
-
-func deriveStaffUserUnivemail(loginIDs []string, contactEmail string) string {
-	for _, loginID := range loginIDs {
-		trimmed := strings.TrimSpace(loginID)
-		if strings.Contains(trimmed, "@") {
-			return trimmed
-		}
-	}
-	return strings.TrimSpace(contactEmail)
-}
-
-func formatStaffUserTimestamp(value time.Time) string {
-	if value.IsZero() {
-		return ""
-	}
-	return value.UTC().Format(time.RFC3339)
 }

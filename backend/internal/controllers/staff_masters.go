@@ -242,7 +242,7 @@ func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
 		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
 	}
 
-	items, err := h.places.List()
+	items, err := h.places.List(context.Background())
 	if err != nil {
 		return internalError(c)
 	}
@@ -317,7 +317,7 @@ func (h *staffMastersHandlers) downloadStaffPlacesCSV(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	places, err := h.places.List()
+	places, err := h.places.List(context.Background())
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
@@ -352,7 +352,7 @@ func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 	if !valid {
 		return validationError(c, map[string][]string{"request": {"場所情報が不正です"}})
 	}
-	existingPlaces, err := h.places.List()
+	existingPlaces, err := h.places.List(context.Background())
 	if err != nil {
 		return internalError(c)
 	}
@@ -362,7 +362,7 @@ func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 		}
 	}
 
-	created, err := h.places.Create(request.Name, request.Type, request.Notes)
+	created, err := h.places.Create(context.Background(), request.Name, request.Type, request.Notes)
 	if err != nil {
 		return internalError(c)
 	}
@@ -381,7 +381,7 @@ func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
 		return validationError(c, map[string][]string{"request": {"場所情報が不正です"}})
 	}
 	placeID := c.Param("placeID")
-	existingPlaces, err := h.places.List()
+	existingPlaces, err := h.places.List(context.Background())
 	if err != nil {
 		return internalError(c)
 	}
@@ -391,7 +391,7 @@ func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
 		}
 	}
 
-	updated, err := h.places.Update(placeID, request.Name, request.Type, request.Notes)
+	updated, err := h.places.Update(context.Background(), placeID, request.Name, request.Type, request.Notes)
 	if errors.Is(err, place.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "place_not_found")
 	}
@@ -409,7 +409,7 @@ func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	if err := h.places.Delete(c.Param("placeID")); errors.Is(err, place.ErrNotFound) {
+	if err := h.places.Delete(context.Background(), c.Param("placeID")); errors.Is(err, place.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "place_not_found")
 	} else if err != nil {
 		return internalError(c)
@@ -427,7 +427,7 @@ func (h *staffMastersHandlers) listStaffContactCategories(c echo.Context) error 
 		return statusError(c, status)
 	}
 
-	items, err := h.contactCategories.List()
+	items, err := h.contactCategories.List(context.Background())
 	if err != nil {
 		return internalError(c)
 	}
@@ -450,7 +450,7 @@ func (h *staffMastersHandlers) createStaffContactCategory(c echo.Context) error 
 		return validationError(c, validationErrors)
 	}
 
-	created, err := h.contactCategories.Create(request.Name, request.Email)
+	created, err := h.contactCategories.Create(context.Background(), request.Name, request.Email)
 	if err != nil {
 		return internalError(c)
 	}
@@ -473,7 +473,7 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 		return validationError(c, validationErrors)
 	}
 
-	old, err := h.contactCategories.Find(c.Param("categoryID"))
+	old, err := h.contactCategories.Find(context.Background(), c.Param("categoryID"))
 	if errors.Is(err, contactcategory.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
 	}
@@ -481,7 +481,7 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 		return internalError(c)
 	}
 
-	updated, err := h.contactCategories.Update(c.Param("categoryID"), request.Name, request.Email)
+	updated, err := h.contactCategories.Update(context.Background(), c.Param("categoryID"), request.Name, request.Email)
 	if errors.Is(err, contactcategory.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
 	}
@@ -504,7 +504,7 @@ func (h *staffMastersHandlers) deleteStaffContactCategory(c echo.Context) error 
 		return statusError(c, status)
 	}
 
-	if err := h.contactCategories.Delete(c.Param("categoryID")); errors.Is(err, contactcategory.ErrNotFound) {
+	if err := h.contactCategories.Delete(context.Background(), c.Param("categoryID")); errors.Is(err, contactcategory.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "contact_category_not_found")
 	} else if err != nil {
 		return internalError(c)
@@ -699,27 +699,27 @@ func (h *staffMastersHandlers) enqueueContactCategoryAssignedMail(
 設定の詳細
 - 項目名 : %s
 - メールアドレス : %s`,
-		h.appName,
+		h.email.AppName,
 		category.Name,
 		category.Email,
 	))
 
 	jobID := "contact-category-" + uuidv7.MustString()
-	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
 		Priority: cloudflareemail.PriorityNormal,
-		From:     h.from,
+		From:     h.email.From,
 		To:       recipients,
 		Subject:  subject,
 		Body:     body,
 		Variables: map[string]string{
 			"subject":      subject,
 			"body":         body,
-			"appName":      h.appName,
-			"appURL":       h.appURL,
-			"adminName":    h.adminName,
-			"contactEmail": h.contactEmail,
+			"appName":      h.email.AppName,
+			"appURL":       h.email.AppURL,
+			"adminName":    h.email.AdminName,
+			"contactEmail": h.email.ContactEmail,
 			"preview":      subject,
 		},
 	}); err != nil {

@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"crypto/subtle"
 	"net/http"
 
@@ -80,7 +81,7 @@ func VerifyCSRF(cfg SessionMiddlewareConfig) echo.MiddlewareFunc {
 			if err != nil || cookie.Value == "" {
 				return next(c)
 			}
-			currentSession, ok := cfg.Sessions.Get(cookie.Value)
+			currentSession, ok := cfg.Sessions.Get(c.Request().Context(), cookie.Value)
 			if !ok {
 				return next(c)
 			}
@@ -103,7 +104,7 @@ const sessionIDContextKey = "httpapi.session_id"
 
 // SessionAccess provides minimal session operations required by route middlewares.
 type SessionAccess interface {
-	Get(id string) (session.Session, bool)
+	Get(ctx context.Context, id string) (session.Session, bool)
 }
 
 // SessionMiddlewareConfig configures session-aware middlewares.
@@ -180,7 +181,7 @@ func getSessionFromCookie(c echo.Context, cfg SessionMiddlewareConfig) (string, 
 	if err != nil || cookie.Value == "" {
 		return "", session.Session{}, false
 	}
-	currentSession, ok := cfg.Sessions.Get(cookie.Value)
+	currentSession, ok := cfg.Sessions.Get(c.Request().Context(), cookie.Value)
 	if !ok {
 		return "", session.Session{}, false
 	}

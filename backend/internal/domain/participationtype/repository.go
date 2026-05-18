@@ -1,6 +1,7 @@
 package participationtype
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"sync"
@@ -22,12 +23,12 @@ type ParticipationType struct {
 }
 
 type Repository interface {
-	List() ([]ParticipationType, error)
-	Find(typeID string) (ParticipationType, error)
-	FindByFormID(formID string) (ParticipationType, error)
-	Create(name, description string, usersCountMin, usersCountMax int32, tags []string, formID string) (ParticipationType, error)
-	Update(typeID, name, description string, usersCountMin, usersCountMax int32, tags []string) (ParticipationType, error)
-	Delete(typeID string) error
+	List(ctx context.Context) ([]ParticipationType, error)
+	Find(ctx context.Context, typeID string) (ParticipationType, error)
+	FindByFormID(ctx context.Context, formID string) (ParticipationType, error)
+	Create(ctx context.Context, name, description string, usersCountMin, usersCountMax int32, tags []string, formID string) (ParticipationType, error)
+	Update(ctx context.Context, typeID, name, description string, usersCountMin, usersCountMax int32, tags []string) (ParticipationType, error)
+	Delete(ctx context.Context, typeID string) error
 }
 
 type MemoryRepository struct {
@@ -53,7 +54,7 @@ func NewMemoryRepository(cfg []config.ParticipationType) *MemoryRepository {
 	return &MemoryRepository{items: items, nextID: len(items) + 1}
 }
 
-func (r *MemoryRepository) List() ([]ParticipationType, error) {
+func (r *MemoryRepository) List(_ context.Context) ([]ParticipationType, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -64,7 +65,7 @@ func (r *MemoryRepository) List() ([]ParticipationType, error) {
 	return items, nil
 }
 
-func (r *MemoryRepository) Find(typeID string) (ParticipationType, error) {
+func (r *MemoryRepository) Find(_ context.Context, typeID string) (ParticipationType, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -77,7 +78,7 @@ func (r *MemoryRepository) Find(typeID string) (ParticipationType, error) {
 	return ParticipationType{}, ErrNotFound
 }
 
-func (r *MemoryRepository) FindByFormID(formID string) (ParticipationType, error) {
+func (r *MemoryRepository) FindByFormID(_ context.Context, formID string) (ParticipationType, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -90,7 +91,7 @@ func (r *MemoryRepository) FindByFormID(formID string) (ParticipationType, error
 	return ParticipationType{}, ErrNotFound
 }
 
-func (r *MemoryRepository) Create(name, description string, usersCountMin, usersCountMax int32, tags []string, formID string) (ParticipationType, error) {
+func (r *MemoryRepository) Create(_ context.Context, name, description string, usersCountMin, usersCountMax int32, tags []string, formID string) (ParticipationType, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -108,7 +109,7 @@ func (r *MemoryRepository) Create(name, description string, usersCountMin, users
 	return cloneParticipationType(item), nil
 }
 
-func (r *MemoryRepository) Update(typeID, name, description string, usersCountMin, usersCountMax int32, tags []string) (ParticipationType, error) {
+func (r *MemoryRepository) Update(_ context.Context, typeID, name, description string, usersCountMin, usersCountMax int32, tags []string) (ParticipationType, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -127,7 +128,7 @@ func (r *MemoryRepository) Update(typeID, name, description string, usersCountMi
 	return ParticipationType{}, ErrNotFound
 }
 
-func (r *MemoryRepository) Delete(typeID string) error {
+func (r *MemoryRepository) Delete(_ context.Context, typeID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

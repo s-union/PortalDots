@@ -58,7 +58,7 @@ func (h *staffCircleHandlers) listStaffParticipationTypes(c echo.Context) error 
 		return statusError(c, status)
 	}
 
-	items, err := h.participationTypes.List()
+	items, err := h.participationTypes.List(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -81,7 +81,7 @@ func (h *staffCircleHandlers) getStaffParticipationType(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	item, err := h.participationTypes.Find(c.Param("typeID"))
+	item, err := h.participationTypes.Find(c.Request().Context(), c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
@@ -107,7 +107,7 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c echo.Context) 
 		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
 	}
 
-	participationType, err := h.participationTypes.Find(c.Param("typeID"))
+	participationType, err := h.participationTypes.Find(c.Request().Context(), c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
@@ -144,7 +144,7 @@ func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c echo.Co
 		return statusError(c, status)
 	}
 
-	participationType, err := h.participationTypes.Find(c.Param("typeID"))
+	participationType, err := h.participationTypes.Find(c.Request().Context(), c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
@@ -218,7 +218,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error
 		return internalError(c)
 	}
 
-	item, err := h.participationTypes.Create(
+	item, err := h.participationTypes.Create(c.Request().Context(),
 		request.Name,
 		request.Description,
 		request.UsersCountMin,
@@ -250,7 +250,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error
 		return statusError(c, status)
 	}
 
-	item, err := h.participationTypes.Find(c.Param("typeID"))
+	item, err := h.participationTypes.Find(c.Request().Context(), c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
@@ -278,7 +278,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
-	updatedType, err := h.participationTypes.Update(
+	updatedType, err := h.participationTypes.Update(c.Request().Context(),
 		item.ID,
 		request.Name,
 		request.Description,
@@ -313,7 +313,7 @@ func (h *staffCircleHandlers) deleteStaffParticipationType(c echo.Context) error
 		return statusError(c, status)
 	}
 
-	item, err := h.participationTypes.Find(c.Param("typeID"))
+	item, err := h.participationTypes.Find(c.Request().Context(), c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
@@ -321,7 +321,7 @@ func (h *staffCircleHandlers) deleteStaffParticipationType(c echo.Context) error
 		return internalError(c)
 	}
 
-	if err := h.participationTypes.Delete(item.ID); errors.Is(err, participationtype.ErrNotFound) {
+	if err := h.participationTypes.Delete(c.Request().Context(), item.ID); errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	} else if err != nil {
 		return internalError(c)

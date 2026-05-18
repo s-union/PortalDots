@@ -298,7 +298,7 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	participationType, err := h.participationTypes.Find(request.ParticipationTypeID)
+	participationType, err := h.participationTypes.Find(c.Request().Context(), request.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return validationError(c, map[string][]string{
 			"participationTypeId": {"参加種別を選択してください"},
@@ -356,7 +356,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	participationType, err := h.participationTypes.Find(request.ParticipationTypeID)
+	participationType, err := h.participationTypes.Find(c.Request().Context(), request.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return validationError(c, map[string][]string{
 			"participationTypeId": {"参加種別を選択してください"},
@@ -426,7 +426,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		if subject != "" {
 			jobID, queued, err := enqueueCircleNotificationMail(
 				c.Request().Context(),
-				h.emailSender,
+				h.email.EmailSender,
 				h.users,
 				members,
 				updated.ID,
@@ -435,11 +435,11 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 				h.allowDangerously,
 				subject,
 				body,
-				h.from,
-				h.appName,
-				h.appURL,
-				h.adminName,
-				h.contactEmail,
+				h.email.From,
+				h.email.AppName,
+				h.email.AppURL,
+				h.email.AdminName,
+				h.email.ContactEmail,
 			)
 			if err != nil {
 				return internalError(c)
@@ -703,21 +703,21 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 	}
 
 	jobID := fmt.Sprintf("circle-%d", time.Now().UnixNano())
-	if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
 		Priority: cloudflareemail.PriorityNormal,
-		From:     h.from,
+		From:     h.email.From,
 		To:       recipientEmails,
 		Subject:  request.Subject,
 		Body:     request.Body,
 		Variables: map[string]string{
-			"appName":      h.appName,
-			"appURL":       h.appURL,
+			"appName":      h.email.AppName,
+			"appURL":       h.email.AppURL,
 			"subject":      request.Subject,
 			"body":         request.Body,
-			"adminName":    h.adminName,
-			"contactEmail": h.contactEmail,
+			"adminName":    h.email.AdminName,
+			"contactEmail": h.email.ContactEmail,
 			"preview":      request.Subject,
 		},
 	}); err != nil {
@@ -726,24 +726,24 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
 	logQueuedMail("staff_circle", jobID, circleValue.ID, currentSession.User.ID, request.Subject, request.Body, recipientEmails, h.allowDangerously)
 
 	if request.CcToStaff {
-		staffRecipients := normalizeRecipients([]string{h.contactEmail})
+		staffRecipients := normalizeRecipients([]string{h.email.ContactEmail})
 		if len(staffRecipients) > 0 {
 			staffCopyJobID := fmt.Sprintf("circle-staff-copy-%d", time.Now().UnixNano())
-			if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+			if err := h.email.EmailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
 				JobId:    staffCopyJobID,
 				Template: "markdown-notice",
 				Priority: cloudflareemail.PriorityNormal,
-				From:     h.from,
+				From:     h.email.From,
 				To:       staffRecipients,
 				Subject:  "[スタッフ控え] " + request.Subject,
 				Body:     request.Body,
 				Variables: map[string]string{
-					"appName":      h.appName,
-					"appURL":       h.appURL,
+					"appName":      h.email.AppName,
+					"appURL":       h.email.AppURL,
 					"subject":      "[スタッフ控え] " + request.Subject,
 					"body":         request.Body,
-					"adminName":    h.adminName,
-					"contactEmail": h.contactEmail,
+					"adminName":    h.email.AdminName,
+					"contactEmail": h.email.ContactEmail,
 					"preview":      request.Subject,
 				},
 			}); err != nil {

@@ -62,7 +62,7 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		verifyCode = generatedCode
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.StaffAuthorized = false
 		next.StaffVerifyCode = verifyCode
 		next.StaffVerifyExpires = time.Now().UTC().Add(staffVerifyTTL)
@@ -113,7 +113,7 @@ func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {
 		})
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.StaffAuthorized = true
 		next.StaffVerifyCode = ""
 		next.StaffVerifyExpires = time.Time{}

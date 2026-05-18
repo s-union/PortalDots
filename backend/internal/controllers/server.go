@@ -49,7 +49,7 @@ func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) 
 		return "", session.Session{}, false
 	}
 
-	currentSession, ok := s.sessions.Get(cookie.Value)
+	currentSession, ok := s.sessions.Get(c.Request().Context(), cookie.Value)
 	if !ok {
 		return "", session.Session{}, false
 	}
@@ -75,7 +75,7 @@ type authHandlers struct {
 	mockRegistrationVerifyMail bool
 	portalUnivemailDomainPart  string
 	registrationVerifyTTL      time.Duration
-	loginAttempts              *loginAttemptTracker
+	loginAttempts              *middlewares.LoginAttemptTracker
 	appURL                     string
 	appName                    string
 	from                       string
@@ -111,12 +111,7 @@ type staffCircleHandlers struct {
 	forms              form.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
-	emailSender        cloudflareemail.Sender
-	from               string
-	adminName          string
-	contactEmail       string
-	appName            string
-	appURL             string
+	email              EmailContext
 }
 
 // staffFormHandlers handles staff form and form answer endpoints.
@@ -129,12 +124,7 @@ type staffFormHandlers struct {
 	formQuestions      formquestion.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
-	emailSender        cloudflareemail.Sender
-	from               string
-	adminName          string
-	contactEmail       string
-	appName            string
-	appURL             string
+	email              EmailContext
 }
 
 // staffPageHandlers handles staff page endpoints.
@@ -147,12 +137,7 @@ type staffPageHandlers struct {
 	participationTypes participationtype.Repository
 	tags               tag.Repository
 	users              useradmin.Repository
-	emailSender        cloudflareemail.Sender
-	from               string
-	adminName          string
-	contactEmail       string
-	appName            string
-	appURL             string
+	email              EmailContext
 }
 
 // staffDocumentHandlers handles staff document endpoints.
@@ -172,12 +157,7 @@ type staffMastersHandlers struct {
 	contactCategories contactcategory.Repository
 	places            place.Repository
 	tags              tag.Repository
-	appName           string
-	emailSender       cloudflareemail.Sender
-	from              string
-	adminName         string
-	contactEmail      string
-	appURL            string
+	email             EmailContext
 }
 
 // staffPermissionHandlers handles staff permission endpoints.
@@ -190,20 +170,15 @@ type staffPermissionHandlers struct {
 // staffAdminHandlers handles staff admin endpoints (mails, exports, activity logs).
 type staffAdminHandlers struct {
 	sharedDeps
-	activities   activitylog.Repository
-	answers      answer.Repository
-	circles      circle.Catalog
-	documents    document.Repository
-	forms        form.Repository
-	pages        page.Repository
-	emailSender  cloudflareemail.Sender
-	mailHistory  mailhistory.Repository
-	version      string
-	from         string
-	adminName    string
-	contactEmail string
-	appName      string
-	appURL       string
+	activities  activitylog.Repository
+	answers     answer.Repository
+	circles     circle.Catalog
+	documents   document.Repository
+	forms       form.Repository
+	pages       page.Repository
+	mailHistory mailhistory.Repository
+	version     string
+	email       EmailContext
 }
 
 // workspaceHandlers handles participant-facing workspace endpoints.
@@ -219,12 +194,7 @@ type workspaceHandlers struct {
 	pages              page.Repository
 	participationTypes participationtype.Repository
 	users              useradmin.Repository
-	emailSender        cloudflareemail.Sender
-	from               string
-	appName            string
-	appURL             string
-	adminName          string
-	contactEmail       string
+	email              EmailContext
 }
 
 func NewServer(cfg config.Config) *echo.Echo {
@@ -340,7 +310,7 @@ func NewServerWithDependencies(
 		mockRegistrationVerifyMail: cfg.AllowDangerously && !useEmailProducer,
 		portalUnivemailDomainPart:  cfg.PortalUnivemailDomainPart,
 		registrationVerifyTTL:      cfg.RegistrationVerifyTTL,
-		loginAttempts:              newLoginAttemptTracker(5, 5*time.Minute),
+		loginAttempts:              middlewares.NewLoginAttemptTracker(5, 5*time.Minute),
 		appURL:                     cfg.AppURL,
 		appName:                    cfg.AppName,
 		from:                       cfg.EmailFrom,
@@ -391,12 +361,14 @@ func NewServerWithDependencies(
 		forms:              forms,
 		participationTypes: participationTypes,
 		users:              users,
-		emailSender:        emailSender,
-		from:               cfg.EmailFrom,
-		adminName:          cfg.PortalAdminName,
-		contactEmail:       cfg.PortalContactEmail,
-		appName:            cfg.AppName,
-		appURL:             cfg.AppURL,
+		email: EmailContext{
+			EmailSender:  emailSender,
+			From:         cfg.EmailFrom,
+			AdminName:    cfg.PortalAdminName,
+			ContactEmail: cfg.PortalContactEmail,
+			AppName:      cfg.AppName,
+			AppURL:       cfg.AppURL,
+		},
 	}
 
 	staffFormH := &staffFormHandlers{
@@ -408,12 +380,14 @@ func NewServerWithDependencies(
 		formQuestions:      formQuestions,
 		participationTypes: participationTypes,
 		users:              users,
-		emailSender:        emailSender,
-		from:               cfg.EmailFrom,
-		adminName:          cfg.PortalAdminName,
-		contactEmail:       cfg.PortalContactEmail,
-		appName:            cfg.AppName,
-		appURL:             cfg.AppURL,
+		email: EmailContext{
+			EmailSender:  emailSender,
+			From:         cfg.EmailFrom,
+			AdminName:    cfg.PortalAdminName,
+			ContactEmail: cfg.PortalContactEmail,
+			AppName:      cfg.AppName,
+			AppURL:       cfg.AppURL,
+		},
 	}
 
 	staffPageH := &staffPageHandlers{
@@ -425,12 +399,14 @@ func NewServerWithDependencies(
 		participationTypes: participationTypes,
 		tags:               tags,
 		users:              users,
-		emailSender:        emailSender,
-		from:               cfg.EmailFrom,
-		adminName:          cfg.PortalAdminName,
-		contactEmail:       cfg.PortalContactEmail,
-		appName:            cfg.AppName,
-		appURL:             cfg.AppURL,
+		email: EmailContext{
+			EmailSender:  emailSender,
+			From:         cfg.EmailFrom,
+			AdminName:    cfg.PortalAdminName,
+			ContactEmail: cfg.PortalContactEmail,
+			AppName:      cfg.AppName,
+			AppURL:       cfg.AppURL,
+		},
 	}
 
 	staffDocumentH := &staffDocumentHandlers{
@@ -448,12 +424,14 @@ func NewServerWithDependencies(
 		contactCategories: contactCategories,
 		places:            places,
 		tags:              tags,
-		appName:           cfg.AppName,
-		emailSender:       emailSender,
-		from:              cfg.EmailFrom,
-		adminName:         cfg.PortalAdminName,
-		contactEmail:      cfg.PortalContactEmail,
-		appURL:            cfg.AppURL,
+		email: EmailContext{
+			EmailSender:  emailSender,
+			From:         cfg.EmailFrom,
+			AdminName:    cfg.PortalAdminName,
+			ContactEmail: cfg.PortalContactEmail,
+			AppName:      cfg.AppName,
+			AppURL:       cfg.AppURL,
+		},
 	}
 
 	staffPermissionH := &staffPermissionHandlers{
@@ -463,21 +441,23 @@ func NewServerWithDependencies(
 	}
 
 	staffAdminH := &staffAdminHandlers{
-		sharedDeps:   shared,
-		activities:   activities,
-		answers:      answers,
-		circles:      circles,
-		documents:    documents,
-		forms:        forms,
-		pages:        pages,
-		emailSender:  emailSender,
-		mailHistory:  mailHistory,
-		version:      cfg.Version,
-		from:         cfg.EmailFrom,
-		adminName:    cfg.PortalAdminName,
-		contactEmail: cfg.PortalContactEmail,
-		appName:      cfg.AppName,
-		appURL:       cfg.AppURL,
+		sharedDeps:  shared,
+		activities:  activities,
+		answers:     answers,
+		circles:     circles,
+		documents:   documents,
+		forms:       forms,
+		pages:       pages,
+		mailHistory: mailHistory,
+		version:     cfg.Version,
+		email: EmailContext{
+			EmailSender:  emailSender,
+			From:         cfg.EmailFrom,
+			AdminName:    cfg.PortalAdminName,
+			ContactEmail: cfg.PortalContactEmail,
+			AppName:      cfg.AppName,
+			AppURL:       cfg.AppURL,
+		},
 	}
 
 	workspaceH := &workspaceHandlers{
@@ -492,12 +472,14 @@ func NewServerWithDependencies(
 		pages:              pages,
 		participationTypes: participationTypes,
 		users:              users,
-		emailSender:        emailSender,
-		from:               cfg.EmailFrom,
-		appName:            cfg.AppName,
-		appURL:             cfg.AppURL,
-		adminName:          cfg.PortalAdminName,
-		contactEmail:       cfg.PortalContactEmail,
+		email: EmailContext{
+			EmailSender:  emailSender,
+			From:         cfg.EmailFrom,
+			AdminName:    cfg.PortalAdminName,
+			ContactEmail: cfg.PortalContactEmail,
+			AppName:      cfg.AppName,
+			AppURL:       cfg.AppURL,
+		},
 	}
 
 	e.GET("/healthz", func(c echo.Context) error {

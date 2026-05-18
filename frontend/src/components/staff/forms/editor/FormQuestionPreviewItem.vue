@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch, type Component } from 'vue'
 import type { StaffFormQuestion } from '@/features/staff/forms/api'
 import { getQuestionTypeMeta } from '@/features/staff/forms/editor/useQuestionTypeMeta'
 import { inputValue, textareaValue } from '@/lib/dom'
+import { normalizeOptions } from '@/lib/parseOptions'
+import PreviewHeading from './previews/PreviewHeading.vue'
+import PreviewText from './previews/PreviewText.vue'
+import PreviewTextarea from './previews/PreviewTextarea.vue'
+import PreviewRadio from './previews/PreviewRadio.vue'
+import PreviewSelect from './previews/PreviewSelect.vue'
+import PreviewCheckbox from './previews/PreviewCheckbox.vue'
+import PreviewUpload from './previews/PreviewUpload.vue'
 
 const {
   question: _question,
@@ -44,17 +52,6 @@ function update<K extends keyof StaffFormQuestion>(field: K, value: StaffFormQue
 }
 
 const optionsDraft = ref('')
-
-function normalizeOptions(raw: string) {
-  return [
-    ...new Set(
-      raw
-        .split('\n')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0)
-    )
-  ]
-}
 
 function updateOptions(raw: string) {
   optionsDraft.value = raw
@@ -158,6 +155,52 @@ const numberMaxLabel = computed(() => {
   return null
 })
 
+const previewComponent = computed<Component>(() => {
+  switch (edit.type) {
+    case 'heading':
+      return PreviewHeading
+    case 'text':
+    case 'number':
+      return PreviewText
+    case 'textarea':
+      return PreviewTextarea
+    case 'radio':
+      return PreviewRadio
+    case 'select':
+      return PreviewSelect
+    case 'checkbox':
+      return PreviewCheckbox
+    case 'upload':
+      return PreviewUpload
+    default:
+      return PreviewText
+  }
+})
+
+const previewProps = computed<Record<string, unknown>>(() => {
+  const base = {
+    name: edit.name,
+    description: edit.description
+  }
+  switch (edit.type) {
+    case 'heading':
+      return base
+    case 'text':
+    case 'number':
+      return { ...base, isRequired: edit.isRequired, type: edit.type }
+    case 'textarea':
+      return { ...base, isRequired: edit.isRequired }
+    case 'radio':
+    case 'select':
+    case 'checkbox':
+      return { ...base, isRequired: edit.isRequired, options: parsedOptions.value }
+    case 'upload':
+      return { ...base, isRequired: edit.isRequired, allowedTypes: edit.allowedTypes }
+    default:
+      return { ...base, isRequired: edit.isRequired, type: 'text' as const }
+  }
+})
+
 const inputClass =
   'w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-body outline-none transition focus:border-primary focus:focus-ring-primary'
 </script>
@@ -205,93 +248,7 @@ const inputClass =
       </div>
 
       <div class="pointer-events-none select-none">
-        <template v-if="edit.type === 'heading'">
-          <h2 class="text-2xl font-bold text-body">{{ edit.name || '(無題のセクション見出し)' }}</h2>
-          <p v-if="edit.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
-            {{ edit.description }}
-          </p>
-        </template>
-
-        <template v-else>
-          <div class="mb-2 flex items-center gap-2">
-            <span class="font-medium text-body">{{ edit.name || '(無題の設問)' }}</span>
-            <span v-if="edit.isRequired" class="rounded bg-danger px-1.5 py-0.5 text-xs font-bold text-white">
-              必須
-            </span>
-          </div>
-          <p v-if="edit.description" class="mb-2 whitespace-pre-wrap text-sm leading-7 text-muted">
-            {{ edit.description }}
-          </p>
-        </template>
-
-        <input
-          v-if="edit.type === 'text'"
-          class="w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
-          type="text"
-          placeholder="一行入力"
-          disabled
-          readonly
-          tabindex="-1"
-        />
-        <input
-          v-else-if="edit.type === 'number'"
-          class="w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
-          type="number"
-          placeholder="整数入力"
-          disabled
-          readonly
-          tabindex="-1"
-        />
-        <textarea
-          v-else-if="edit.type === 'textarea'"
-          class="min-h-28 w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
-          placeholder="複数行入力"
-          disabled
-          readonly
-          rows="3"
-          tabindex="-1"
-        />
-        <template v-else-if="edit.type === 'radio'">
-          <div v-if="parsedOptions.length > 0" class="grid gap-2">
-            <label v-for="option in parsedOptions" :key="option" class="flex items-center gap-3 text-sm text-body">
-              <input disabled type="radio" tabindex="-1" />
-              <span>{{ option }}</span>
-            </label>
-          </div>
-          <div v-else class="empty-option">
-            <p class="font-semibold text-body">選択肢がありません。</p>
-            <p class="mt-1 text-sm text-muted">選択肢を1つ以上入力してください。</p>
-          </div>
-        </template>
-        <template v-else-if="edit.type === 'select'">
-          <select
-            class="w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
-            disabled
-            tabindex="-1"
-          >
-            <option v-if="parsedOptions.length === 0">（選択肢なし）</option>
-            <option v-for="option in parsedOptions" :key="option" :value="option">{{ option }}</option>
-          </select>
-        </template>
-        <template v-else-if="edit.type === 'checkbox'">
-          <div v-if="parsedOptions.length > 0" class="grid gap-2">
-            <label v-for="option in parsedOptions" :key="option" class="flex items-center gap-3 text-sm text-body">
-              <input disabled type="checkbox" tabindex="-1" />
-              <span>{{ option }}</span>
-            </label>
-          </div>
-          <div v-else class="empty-option">
-            <p class="font-semibold text-body">選択肢がありません。</p>
-            <p class="mt-1 text-sm text-muted">選択肢を1つ以上入力してください。</p>
-          </div>
-        </template>
-        <div
-          v-else-if="edit.type === 'upload'"
-          class="rounded border border-dashed border-border bg-form-control px-4 py-5 text-sm text-muted"
-        >
-          ファイルを選択
-          <span v-if="edit.allowedTypes" class="ml-2 text-xs">（{{ edit.allowedTypes }}）</span>
-        </div>
+        <component :is="previewComponent" v-bind="previewProps" />
       </div>
     </div>
 

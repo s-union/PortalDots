@@ -28,12 +28,12 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 		circleMap[currentCircle.ID] = mapStaffAnswerCircle(currentCircle)
 	}
 
-	answerValues := h.answers.ListByForm(formValue.ID)
+	answerValues := h.answers.ListByForm(c.Request().Context(), formValue.ID)
 	answerCircles := map[string]struct{}{}
 	answerResponse := make([]staffManagedFormAnswerSummaryResponse, 0, len(answerValues))
 	for _, currentAnswer := range answerValues {
 		answerCircles[currentAnswer.CircleID] = struct{}{}
-		item := mapStaffManagedFormAnswerSummary(currentAnswer, circleMap[currentAnswer.CircleID], h.answers.ListUploadsByAnswer(currentAnswer.ID))
+		item := mapStaffManagedFormAnswerSummary(currentAnswer, circleMap[currentAnswer.CircleID], h.answers.ListUploadsByAnswer(c.Request().Context(), currentAnswer.ID))
 		if !matchesStaffFormAnswerSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffFormAnswerFilterResolver(item), filterQueries, filterMode) {
 			continue
 		}
@@ -93,7 +93,7 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
@@ -103,16 +103,16 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
 
-	siblings := h.answers.ListByFormAndCircle(formValue.ID, answerValue.CircleID)
+	siblings := h.answers.ListByFormAndCircle(c.Request().Context(), formValue.ID, answerValue.CircleID)
 	siblingResponse := make([]staffManagedFormAnswerSummaryResponse, 0, len(siblings))
 	for _, sibling := range siblings {
-		siblingResponse = append(siblingResponse, mapStaffManagedFormAnswerSummary(sibling, mapStaffAnswerCircle(currentCircle), h.answers.ListUploadsByAnswer(sibling.ID)))
+		siblingResponse = append(siblingResponse, mapStaffManagedFormAnswerSummary(sibling, mapStaffAnswerCircle(currentCircle), h.answers.ListUploadsByAnswer(c.Request().Context(), sibling.ID)))
 	}
 
 	return c.JSON(http.StatusOK, staffManagedFormAnswerDetailResponse{
 		Form:           h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentFormCircle), mapStaffFormQuestions(questions), nil),
 		Circle:         mapStaffAnswerCircle(currentCircle),
-		Answer:         buildStaffFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(answerValue.ID)),
+		Answer:         buildStaffFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(c.Request().Context(), answerValue.ID)),
 		SiblingAnswers: siblingResponse,
 	})
 }
@@ -145,7 +145,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	existingAnswers := h.answers.ListByFormAndCircle(formValue.ID, request.CircleID)
+	existingAnswers := h.answers.ListByFormAndCircle(c.Request().Context(), formValue.ID, request.CircleID)
 	if formValue.MaxAnswers > 0 && int32(len(existingAnswers)) >= formValue.MaxAnswers {
 		if formValue.MaxAnswers == 1 && len(existingAnswers) == 1 {
 			return c.JSON(http.StatusConflict, existingStaffFormAnswerResponse{
@@ -168,7 +168,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 		body = buildAnswerSummary(questions, normalizedDetails, nil)
 	}
 
-	created := h.answers.Create(formValue.ID, request.CircleID, body, normalizedDetails)
+	created := h.answers.Create(c.Request().Context(), formValue.ID, request.CircleID, body, normalizedDetails)
 	if h.shouldNotifyStaffFormAnswer(formValue.ID, formValue.IsPublic) {
 		h.enqueueStaffFormAnswerMail(c.Request().Context(), currentSession.User.ID, formValue, created)
 	}
@@ -194,7 +194,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
@@ -206,7 +206,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 		})
 	}
 
-	uploads := h.answers.ListUploadsByAnswer(answerValue.ID)
+	uploads := h.answers.ListUploadsByAnswer(c.Request().Context(), answerValue.ID)
 	normalizedDetails, fieldErrors := normalizeAnswerDetails(request.Details, questions, uploads)
 	if len(fieldErrors) > 0 {
 		return validationError(c, fieldErrors)
@@ -217,7 +217,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 		body = buildAnswerSummary(questions, normalizedDetails, uploads)
 	}
 
-	updated, ok := h.answers.Update(answerValue.ID, body, normalizedDetails)
+	updated, ok := h.answers.Update(c.Request().Context(), answerValue.ID, body, normalizedDetails)
 	if !ok {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
@@ -245,12 +245,12 @@ func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
-	if !h.answers.Delete(answerValue.ID) {
+	if !h.answers.Delete(c.Request().Context(), answerValue.ID) {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
@@ -274,7 +274,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
@@ -334,7 +334,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 
 	mimeType := http.DetectContentType(content)
 
-	upload, ok := h.answers.AddUploadToAnswer(answerValue.ID, questionID, filename, mimeType, content)
+	upload, ok := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
 	if !ok {
 		return errorJSON(c, http.StatusInternalServerError, "upload_failed")
 	}
@@ -359,12 +359,12 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c echo.Context) error 
 		return statusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != formValue.ID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
-	upload, found := h.answers.FindUploadByAnswerAndQuestion(answerValue.ID, c.Param("questionID"))
+	upload, found := h.answers.FindUploadByAnswerAndQuestion(c.Request().Context(), answerValue.ID, c.Param("questionID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
@@ -385,7 +385,7 @@ func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c echo.Context) erro
 	}
 
 	answered := map[string]struct{}{}
-	for _, currentAnswer := range h.answers.ListByForm(formValue.ID) {
+	for _, currentAnswer := range h.answers.ListByForm(c.Request().Context(), formValue.ID) {
 		answered[currentAnswer.CircleID] = struct{}{}
 	}
 

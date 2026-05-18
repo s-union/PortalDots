@@ -14,8 +14,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) List() ([]Category, error) {
-	rows, err := r.queries.ListContactCategories(context.Background())
+func (r *SQLCRepository) List(ctx context.Context) ([]Category, error) {
+	rows, err := r.queries.ListContactCategories(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +32,8 @@ func (r *SQLCRepository) List() ([]Category, error) {
 	return categories, nil
 }
 
-func (r *SQLCRepository) Find(id string) (Category, error) {
-	items, err := r.List()
+func (r *SQLCRepository) Find(ctx context.Context, id string) (Category, error) {
+	items, err := r.List(ctx)
 	if err != nil {
 		return Category{}, err
 	}
@@ -45,8 +45,8 @@ func (r *SQLCRepository) Find(id string) (Category, error) {
 	return Category{}, ErrNotFound
 }
 
-func (r *SQLCRepository) Create(name, email string) (Category, error) {
-	row, err := r.queries.CreateContactCategory(context.Background(), dbgen.CreateContactCategoryParams{
+func (r *SQLCRepository) Create(ctx context.Context, name, email string) (Category, error) {
+	row, err := r.queries.CreateContactCategory(ctx, dbgen.CreateContactCategoryParams{
 		Name:  name,
 		Email: email,
 	})
@@ -61,8 +61,8 @@ func (r *SQLCRepository) Create(name, email string) (Category, error) {
 	}, nil
 }
 
-func (r *SQLCRepository) Update(id, name, email string) (Category, error) {
-	row, err := r.queries.UpdateContactCategory(context.Background(), dbgen.UpdateContactCategoryParams{
+func (r *SQLCRepository) Update(ctx context.Context, id, name, email string) (Category, error) {
+	row, err := r.queries.UpdateContactCategory(ctx, dbgen.UpdateContactCategoryParams{
 		ID:    id,
 		Name:  name,
 		Email: email,
@@ -78,8 +78,8 @@ func (r *SQLCRepository) Update(id, name, email string) (Category, error) {
 	}, nil
 }
 
-func (r *SQLCRepository) Delete(id string) error {
-	rows, err := r.queries.DeleteContactCategory(context.Background(), id)
+func (r *SQLCRepository) Delete(ctx context.Context, id string) error {
+	rows, err := r.queries.DeleteContactCategory(ctx, id)
 	if err != nil {
 		return err
 	}

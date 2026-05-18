@@ -101,21 +101,21 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 	}
 
 	jobID := fmt.Sprintf("staff-%d", time.Now().UnixNano())
-	if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
 		Priority: cloudflareemail.PriorityNormal,
-		From:     h.from,
+		From:     h.email.From,
 		To:       recipients,
 		Subject:  request.Subject,
 		Body:     request.Body,
 		Variables: map[string]string{
-			"appName":      h.appName,
-			"appURL":       h.appURL,
+			"appName":      h.email.AppName,
+			"appURL":       h.email.AppURL,
 			"subject":      request.Subject,
 			"body":         request.Body,
-			"adminName":    h.adminName,
-			"contactEmail": h.contactEmail,
+			"adminName":    h.email.AdminName,
+			"contactEmail": h.email.ContactEmail,
 			"preview":      request.Subject,
 		},
 	}); err != nil {

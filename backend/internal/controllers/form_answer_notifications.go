@@ -24,21 +24,21 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 			body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 		}
 
-		_ = h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		_ = h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
 			JobId:    "form-answer-" + uuidv7.MustString(),
 			Template: "markdown-notice",
 			Priority: cloudflareemail.PriorityNormal,
-			From:     h.from,
+			From:     h.email.From,
 			To:       memberRecipients,
 			Subject:  subject,
 			Body:     body,
 			Variables: map[string]string{
 				"subject":      subject,
 				"body":         body,
-				"appName":      h.appName,
-				"appURL":       h.appURL,
-				"adminName":    h.adminName,
-				"contactEmail": h.contactEmail,
+				"appName":      h.email.AppName,
+				"appURL":       h.email.AppURL,
+				"adminName":    h.email.AdminName,
+				"contactEmail": h.email.ContactEmail,
 				"preview":      subject,
 			},
 		})
@@ -55,21 +55,21 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 					body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 				}
 
-				_ = h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+				_ = h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
 					JobId:    "form-answer-staff-copy-" + uuidv7.MustString(),
 					Template: "markdown-notice",
 					Priority: cloudflareemail.PriorityNormal,
-					From:     h.from,
+					From:     h.email.From,
 					To:       staffRecipients,
 					Subject:  subject,
 					Body:     body,
 					Variables: map[string]string{
 						"subject":      subject,
 						"body":         body,
-						"appName":      h.appName,
-						"appURL":       h.appURL,
-						"adminName":    h.adminName,
-						"contactEmail": h.contactEmail,
+						"appName":      h.email.AppName,
+						"appURL":       h.email.AppURL,
+						"adminName":    h.email.AdminName,
+						"contactEmail": h.email.ContactEmail,
 						"preview":      subject,
 					},
 				})

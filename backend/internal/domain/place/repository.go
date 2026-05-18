@@ -1,6 +1,7 @@
 package place
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -23,10 +24,10 @@ type Place struct {
 }
 
 type Repository interface {
-	List() ([]Place, error)
-	Create(name string, placeType int32, notes string) (Place, error)
-	Update(id, name string, placeType int32, notes string) (Place, error)
-	Delete(id string) error
+	List(ctx context.Context) ([]Place, error)
+	Create(ctx context.Context, name string, placeType int32, notes string) (Place, error)
+	Update(ctx context.Context, id, name string, placeType int32, notes string) (Place, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type MemoryRepository struct {
@@ -55,14 +56,14 @@ func NewMemoryRepository(cfg []config.Place) *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) List() ([]Place, error) {
+func (r *MemoryRepository) List(_ context.Context) ([]Place, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	return slices.Clone(r.items), nil
 }
 
-func (r *MemoryRepository) Create(name string, placeType int32, notes string) (Place, error) {
+func (r *MemoryRepository) Create(_ context.Context, name string, placeType int32, notes string) (Place, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -84,7 +85,7 @@ func (r *MemoryRepository) Create(name string, placeType int32, notes string) (P
 	return created, nil
 }
 
-func (r *MemoryRepository) Update(id, name string, placeType int32, notes string) (Place, error) {
+func (r *MemoryRepository) Update(_ context.Context, id, name string, placeType int32, notes string) (Place, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -108,7 +109,7 @@ func (r *MemoryRepository) Update(id, name string, placeType int32, notes string
 	return Place{}, ErrNotFound
 }
 
-func (r *MemoryRepository) Delete(id string) error {
+func (r *MemoryRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

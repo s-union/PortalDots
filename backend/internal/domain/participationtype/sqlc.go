@@ -16,8 +16,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) List() ([]ParticipationType, error) {
-	rows, err := r.queries.ListParticipationTypes(context.Background())
+func (r *SQLCRepository) List(ctx context.Context) ([]ParticipationType, error) {
+	rows, err := r.queries.ListParticipationTypes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -29,8 +29,8 @@ func (r *SQLCRepository) List() ([]ParticipationType, error) {
 	return items, nil
 }
 
-func (r *SQLCRepository) Find(typeID string) (ParticipationType, error) {
-	row, err := r.queries.GetParticipationTypeByID(context.Background(), typeID)
+func (r *SQLCRepository) Find(ctx context.Context, typeID string) (ParticipationType, error) {
+	row, err := r.queries.GetParticipationTypeByID(ctx, typeID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ParticipationType{}, ErrNotFound
@@ -40,8 +40,8 @@ func (r *SQLCRepository) Find(typeID string) (ParticipationType, error) {
 	return mapParticipationTypeRow(row), nil
 }
 
-func (r *SQLCRepository) FindByFormID(formID string) (ParticipationType, error) {
-	row, err := r.queries.GetParticipationTypeByFormID(context.Background(), formID)
+func (r *SQLCRepository) FindByFormID(ctx context.Context, formID string) (ParticipationType, error) {
+	row, err := r.queries.GetParticipationTypeByFormID(ctx, formID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ParticipationType{}, ErrNotFound
@@ -51,8 +51,8 @@ func (r *SQLCRepository) FindByFormID(formID string) (ParticipationType, error) 
 	return mapParticipationTypeRow(row), nil
 }
 
-func (r *SQLCRepository) Create(name, description string, usersCountMin, usersCountMax int32, tags []string, formID string) (ParticipationType, error) {
-	row, err := r.queries.CreateParticipationType(context.Background(), dbgen.CreateParticipationTypeParams{
+func (r *SQLCRepository) Create(ctx context.Context, name, description string, usersCountMin, usersCountMax int32, tags []string, formID string) (ParticipationType, error) {
+	row, err := r.queries.CreateParticipationType(ctx, dbgen.CreateParticipationTypeParams{
 		Name:          name,
 		Description:   description,
 		UsersCountMin: usersCountMin,
@@ -66,8 +66,8 @@ func (r *SQLCRepository) Create(name, description string, usersCountMin, usersCo
 	return mapParticipationTypeRow(row), nil
 }
 
-func (r *SQLCRepository) Update(typeID, name, description string, usersCountMin, usersCountMax int32, tags []string) (ParticipationType, error) {
-	row, err := r.queries.UpdateParticipationType(context.Background(), dbgen.UpdateParticipationTypeParams{
+func (r *SQLCRepository) Update(ctx context.Context, typeID, name, description string, usersCountMin, usersCountMax int32, tags []string) (ParticipationType, error) {
+	row, err := r.queries.UpdateParticipationType(ctx, dbgen.UpdateParticipationTypeParams{
 		ID:            typeID,
 		Name:          name,
 		Description:   description,
@@ -84,8 +84,8 @@ func (r *SQLCRepository) Update(typeID, name, description string, usersCountMin,
 	return mapParticipationTypeRow(row), nil
 }
 
-func (r *SQLCRepository) Delete(typeID string) error {
-	rows, err := r.queries.DeleteParticipationType(context.Background(), typeID)
+func (r *SQLCRepository) Delete(ctx context.Context, typeID string) error {
+	rows, err := r.queries.DeleteParticipationType(ctx, typeID)
 	if err != nil {
 		return err
 	}

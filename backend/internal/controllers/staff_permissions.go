@@ -136,7 +136,7 @@ func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	updateOrInvalidateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
+	updateOrInvalidateStaffUserSession(c.Request().Context(), sessionID, currentSession, updatedUser, h.sessions)
 
 	actorUserID := ""
 	if currentSession.User != nil {

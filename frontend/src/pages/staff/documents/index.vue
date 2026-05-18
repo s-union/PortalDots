@@ -34,6 +34,7 @@ import {
 import { useSessionStore } from '@/features/session/store'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
+import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import { compareString } from '@/lib/compareString'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import YesNo from '@/components/ui/YesNo.vue'
@@ -89,9 +90,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'notes', label: 'スタッフ用メモ', type: 'string' }
 ]
 
-function isFilterKey(key: string) {
-  return filterFields.some((f) => f.key === key)
-}
+const isFilterKey = createIsFilterKey(filterFields)
 
 const orderedDocuments = computed(() =>
   [...(documentsQuery.data.value ?? [])]
@@ -107,7 +106,7 @@ const documentOrderMap = computed(() => {
   return order
 })
 
-const rawRows = computed<Record<string, unknown>[]>(() =>
+const rawRows = computed<StaffDataGridRow[]>(() =>
   orderedDocuments.value.map((document) => ({
     id: document.id,
     documentNumber: String(documentOrderMap.value.get(document.id) ?? 0),
@@ -124,7 +123,7 @@ const rawRows = computed<Record<string, unknown>[]>(() =>
   }))
 )
 
-function resolveSortValue(row: Record<string, unknown>, key: StaffDocumentSortKey) {
+function resolveSortValue(row: StaffDataGridRow, key: StaffDocumentSortKey) {
   if (key === 'documentNumber') {
     return String(row.documentNumber ?? '0').padStart(10, '0')
   }
@@ -140,14 +139,16 @@ function resolveSortValue(row: Record<string, unknown>, key: StaffDocumentSortKe
   return String(row[key] ?? '').toLowerCase()
 }
 
-function matchesSearch(row: Record<string, unknown>, search: string) {
-  const haystack = [row.id, row.name, row.description, row.extension, row.notes, row.documentNumber]
-    .join(' ')
-    .toLowerCase()
-  return haystack.includes(search)
-}
+const matchesSearch = createMatchesSearch<StaffDataGridRow>([
+  'id',
+  'name',
+  'description',
+  'extension',
+  'notes',
+  'documentNumber'
+])
 
-function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
+function matchesFilterQuery(row: StaffDataGridRow, query: StaffFilterQuery) {
   if (query.keyName === 'isPublic' || query.keyName === 'isImportant') {
     const expected = query.value.trim() === 'true' || query.value.trim() === '1'
     if (query.operator === '=') {
@@ -159,19 +160,7 @@ function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: stri
     return true
   }
 
-  const left = String(row[query.keyName] ?? '').toLowerCase()
-  const right = query.value.trim().toLowerCase()
-
-  if (query.operator === '=') {
-    return left === right
-  }
-  if (query.operator === '!=') {
-    return left !== right
-  }
-  if (query.operator === 'not like') {
-    return right === '' ? true : !left.includes(right)
-  }
-  return right === '' ? true : left.includes(right)
+  return matchesFilterQueryCore(String(row[query.keyName] ?? ''), query)
 }
 
 const {
@@ -252,7 +241,7 @@ async function handleReload() {
     <PageLayout fullWidth>
       <DataCard overflow-hidden>
         <StaffDataGrid
-          :rows="pagedRows as StaffDataGridRow[]"
+          :rows="pagedRows"
           :columns="columns"
           :page="pagination.page.value"
           :page-size="pagination.pageSize.value"

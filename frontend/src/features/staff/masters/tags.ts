@@ -1,10 +1,9 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffTagSchema } from '@/lib/api/schema'
-import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
-import { useSessionStore } from '@/features/session/store'
+import { useStaffMasterMutation } from './shared'
 
 export interface StaffTag {
   id: string
@@ -99,46 +98,17 @@ export function useStaffTagsQuery(enabled: MaybeRefOrGetter<boolean>, params?: S
   )
 }
 
-export function useCreateStaffTagMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-  return useMutation({
-    mutationFn: async (name: string) => createStaffTag(name, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['staff', 'tags'] })
-    }
-  })
-}
+export const useCreateStaffTagMutation = () =>
+  useStaffMasterMutation((name: string, csrfToken: string) => createStaffTag(name, csrfToken), ['staff', 'tags'])
 
-export function useUpdateStaffTagMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-  return useMutation({
-    mutationFn: async (payload: StaffTag) => updateStaffTag(payload.id, payload.name, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['staff', 'tags'] })
-    }
-  })
-}
+export const useUpdateStaffTagMutation = () =>
+  useStaffMasterMutation(
+    (payload: StaffTag, csrfToken: string) => updateStaffTag(payload.id, payload.name, csrfToken),
+    ['staff', 'tags']
+  )
 
-export function useDeleteStaffTagMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-  return useMutation({
-    mutationFn: async (tagId: string) => deleteStaffTag(tagId, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['staff', 'tags'] })
-    }
-  })
-}
-
-export function extractStaffTagValidationMessage(error: unknown) {
-  return extractValidationMessage(error, 'タグの保存に失敗しました。')
-}
-
-export function buildDeleteStaffTagConfirmMessage(tagName: string) {
-  return `本当に「${tagName}」タグを削除しますか？\n\n• 企画に紐付いている「${tagName}」タグは解除されます。企画自体は削除されません\n• お知らせの閲覧タグから「${tagName}」が外れ、このタグだけを指定していたお知らせは全ユーザー公開になります\n• 申請フォームの回答可能タグから「${tagName}」が外れ、このタグだけを指定していたフォームは全企画が回答可能になります`
-}
+export const useDeleteStaffTagMutation = () =>
+  useStaffMasterMutation((tagId: string, csrfToken: string) => deleteStaffTag(tagId, csrfToken), ['staff', 'tags'])
 
 function parseStaffTags(value: unknown): StaffTag[] {
   return parseArrayWithSchema(staffTagSchema, value, 'staff tags')

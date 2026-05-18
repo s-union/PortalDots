@@ -28,7 +28,6 @@ describe('StaffDocumentCreatePage', () => {
 
   it('creates a staff document and resets form', async () => {
     let postReceived = false
-    let receivedCircleId = ''
     let receivedName = ''
 
     server.use(
@@ -37,13 +36,10 @@ describe('StaffDocumentCreatePage', () => {
           { id: 'tag-1', name: 'タグA', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
         ])
       ),
-      http.get('/v1/staff/circles/managed', () => HttpResponse.json([{ id: 'circle-b', name: 'デモ企画B' }])),
       http.post('/v1/staff/documents', async ({ request }) => {
         postReceived = true
         const rawBody = await request.text()
-        const circleIdMatch = /name="circleId"\r?\n\r?\n([^\r\n]+)/.exec(rawBody)
         const nameMatch = /name="name"\r?\n\r?\n([^\r\n]+)/.exec(rawBody)
-        receivedCircleId = circleIdMatch?.[1] ?? ''
         receivedName = nameMatch?.[1] ?? ''
         return HttpResponse.json(
           {
@@ -99,7 +95,6 @@ describe('StaffDocumentCreatePage', () => {
     })
     await flushPromises()
 
-    await wrapper.get('select[name="circleId"]').setValue('circle-b')
     await wrapper.get('input[name="name"]').setValue('設営チェックシート')
     await wrapper.get('textarea[name="description"]').setValue('当日の確認事項です。')
     await wrapper.get('textarea[name="notes"]').setValue('設営責任者に配布します。')
@@ -114,15 +109,8 @@ describe('StaffDocumentCreatePage', () => {
     await flushPromises()
 
     expect(postReceived).toBe(true)
-    expect(receivedCircleId).toBe('circle-b')
     expect(receivedName).toBe('設営チェックシート')
     expect(wrapper.text()).toContain('配布資料を作成しました。')
-
-    const circleSelect = wrapper.get('select[name="circleId"]').element
-    if (!(circleSelect instanceof HTMLSelectElement)) {
-      throw new Error('circleId select was not HTMLSelectElement')
-    }
-    expect(circleSelect.value).toBe('')
     expect(wrapper.get('input[name="name"]').element).toHaveProperty('value', '')
   })
 })

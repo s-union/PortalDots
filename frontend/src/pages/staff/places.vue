@@ -23,15 +23,16 @@ import { resolveRowId } from '@/lib/dataGridHelpers'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
+import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import { useOrderedItems } from '@/lib/useStaffDataTable'
 import { canDeletePlaces } from '@/features/staff/access/capabilities'
 import {
   buildDeleteStaffPlaceConfirmMessage,
-  buildStaffPlacesExportUrl,
   deleteStaffPlace,
-  placeTypeLabel,
   useStaffPlacesQuery
 } from '@/features/staff/masters/places'
+import { placeTypeLabel } from '@/features/staff/masters/labels'
+import { buildStaffPlacesExportUrl } from '@/features/staff/masters/urls'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import FaIcon from '@/components/ui/FaIcon.vue'
@@ -73,9 +74,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'updatedAt', label: '更新日時', type: 'string' }
 ]
 
-function isFilterKey(key: string) {
-  return filterFields.some((f) => f.key === key)
-}
+const isFilterKey = createIsFilterKey(filterFields)
 
 const columns: StaffDataGridColumn[] = [
   { key: 'placeNumber', label: '場所ID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
@@ -90,7 +89,7 @@ const { orderedItems: orderedPlaces, orderMap: placeOrderMap } = useOrderedItems
   computed(() => placesQuery.data.value ?? [])
 )
 
-const rawRows = computed<Record<string, unknown>[]>(() =>
+const rawRows = computed<StaffDataGridRow[]>(() =>
   orderedPlaces.value.map((place) => ({
     id: place.id,
     placeNumber: String(placeOrderMap.value.get(place.id) ?? 0),
@@ -102,32 +101,17 @@ const rawRows = computed<Record<string, unknown>[]>(() =>
   }))
 )
 
-function resolveSortValue(row: Record<string, unknown>, key: StaffPlaceSortKey) {
+function resolveSortValue(row: StaffDataGridRow, key: StaffPlaceSortKey) {
   if (key === 'placeNumber') {
     return String(row.placeNumber ?? '0').padStart(10, '0')
   }
   return String(row[key] ?? '').toLowerCase()
 }
 
-function matchesSearch(row: Record<string, unknown>, search: string) {
-  const haystack = [row.id, row.name, row.typeLabel, row.notes, row.placeNumber].join(' ').toLowerCase()
-  return haystack.includes(search)
-}
+const matchesSearch = createMatchesSearch<StaffDataGridRow>(['id', 'name', 'typeLabel', 'notes', 'placeNumber'])
 
-function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
-  const left = String(row[query.keyName] ?? '').toLowerCase()
-  const right = query.value.trim().toLowerCase()
-
-  if (query.operator === '=') {
-    return left === right
-  }
-  if (query.operator === '!=') {
-    return left !== right
-  }
-  if (query.operator === 'not like') {
-    return right === '' ? true : !left.includes(right)
-  }
-  return right === '' ? true : left.includes(right)
+function matchesFilterQuery(row: StaffDataGridRow, query: StaffFilterQuery) {
+  return matchesFilterQueryCore(String(row[query.keyName] ?? ''), query)
 }
 
 const {
@@ -226,7 +210,7 @@ async function handleReload() {
     <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
       <DataCard>
         <StaffDataGrid
-          :rows="pagedRows as StaffDataGridRow[]"
+          :rows="pagedRows"
           :columns="columns"
           :page="pagination.page.value"
           :page-size="pagination.pageSize.value"

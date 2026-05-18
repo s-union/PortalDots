@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -54,7 +55,7 @@ func (h *authHandlers) sessionBootstrap(c echo.Context) error {
 
 	managedUser, err := h.users.Find(currentSession.User.ID)
 	if errors.Is(err, useradmin.ErrNotFound) {
-		_ = h.sessions.Delete(sessionID)
+		_ = h.sessions.Delete(c.Request().Context(), sessionID)
 		return c.JSON(http.StatusOK, sessionBootstrapResponse{
 			CSRFToken:     "",
 			CurrentCircle: nil,
@@ -70,7 +71,7 @@ func (h *authHandlers) sessionBootstrap(c echo.Context) error {
 		})
 	}
 
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
+	selectedCircle, err := resolveCurrentCircle(c.Request().Context(), sessionID, currentSession, h.circles, h.sessions)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"message": "internal_error",
@@ -111,7 +112,7 @@ func canCreateCircleRegistration(userValue useradmin.User) bool {
 	return len(userValue.LeaderCircleIDs) > 0
 }
 
-func resolveCurrentCircle(sessionID string, currentSession session.Session, circles circle.Catalog, store session.Store) (*circleInfo, error) {
+func resolveCurrentCircle(ctx context.Context, sessionID string, currentSession session.Session, circles circle.Catalog, store session.Store) (*circleInfo, error) {
 	if currentSession.User == nil {
 		return nil, nil
 	}
@@ -123,7 +124,7 @@ func resolveCurrentCircle(sessionID string, currentSession session.Session, circ
 	if len(selectable) == 1 {
 		onlyCircle := selectable[0]
 		if currentSession.CurrentCircleID != onlyCircle.ID {
-			store.Update(sessionID, func(next *session.Session) {
+			store.Update(ctx, sessionID, func(next *session.Session) {
 				next.CurrentCircleID = onlyCircle.ID
 			})
 		}
@@ -139,7 +140,7 @@ func resolveCurrentCircle(sessionID string, currentSession session.Session, circ
 
 	selectedCircle, err := circles.FindSelectable(currentSession.User, currentSession.CurrentCircleID)
 	if errors.Is(err, circle.ErrNotFound) {
-		store.Update(sessionID, func(next *session.Session) {
+		store.Update(ctx, sessionID, func(next *session.Session) {
 			next.CurrentCircleID = ""
 		})
 		return nil, nil

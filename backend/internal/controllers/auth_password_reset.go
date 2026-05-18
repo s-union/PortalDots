@@ -171,7 +171,7 @@ func (h *authHandlers) completePasswordReset(c echo.Context) error {
 	}
 
 	h.passwordResetTokens.Delete(request.UserID)
-	_ = h.sessions.DeleteByUserID(request.UserID)
+	_ = h.sessions.DeleteByUserID(c.Request().Context(), request.UserID)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,

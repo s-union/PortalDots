@@ -30,6 +30,7 @@ import {
 import { useSessionStore } from '@/features/session/store'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
+import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -67,9 +68,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'updatedAt', label: '更新日時', type: 'string' }
 ]
 
-function isFilterKey(key: string) {
-  return filterFields.some((f) => f.key === key)
-}
+const isFilterKey = createIsFilterKey(filterFields)
 
 const columns: StaffDataGridColumn[] = [
   { key: 'pageNumber', label: 'お知らせID', sortable: false, cellClass: 'font-medium text-body' },
@@ -92,7 +91,7 @@ const isBusy = computed(
     deletePageMutation.isPending.value
 )
 
-const rawRows = computed<Record<string, unknown>[]>(() =>
+const rawRows = computed<StaffDataGridRow[]>(() =>
   (pagesQuery.data.value ?? []).map((page, index) => ({
     id: page.id,
     pageNumber: String(index + 1),
@@ -108,7 +107,7 @@ const rawRows = computed<Record<string, unknown>[]>(() =>
   }))
 )
 
-function resolveSortValue(row: Record<string, unknown>, key: StaffPageSortKey) {
+function resolveSortValue(row: StaffDataGridRow, key: StaffPageSortKey) {
   if (key === 'isPinned') {
     return row.isPinned ? '1' : '0'
   }
@@ -118,12 +117,9 @@ function resolveSortValue(row: Record<string, unknown>, key: StaffPageSortKey) {
   return String(row[key] ?? '').toLowerCase()
 }
 
-function matchesSearch(row: Record<string, unknown>, search: string) {
-  const haystack = [row.id, row.title, row.body, row.notes, row.pageNumber].join(' ').toLowerCase()
-  return haystack.includes(search)
-}
+const matchesSearch = createMatchesSearch<StaffDataGridRow>(['id', 'title', 'body', 'notes', 'pageNumber'])
 
-function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
+function matchesFilterQuery(row: StaffDataGridRow, query: StaffFilterQuery) {
   if (query.keyName === 'isPinned' || query.keyName === 'isPublic') {
     const expected = query.value.trim() === 'true' || query.value.trim() === '1'
     if (query.operator === '=') {
@@ -135,19 +131,7 @@ function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: stri
     return true
   }
 
-  const left = String(row[query.keyName] ?? '').toLowerCase()
-  const right = query.value.trim().toLowerCase()
-
-  if (query.operator === '=') {
-    return left === right
-  }
-  if (query.operator === '!=') {
-    return left !== right
-  }
-  if (query.operator === 'not like') {
-    return right === '' ? true : !left.includes(right)
-  }
-  return right === '' ? true : left.includes(right)
+  return matchesFilterQueryCore(String(row[query.keyName] ?? ''), query)
 }
 
 const {
@@ -212,7 +196,7 @@ async function handleReload() {
     <PageLayout fullWidth>
       <DataCard overflow-hidden>
         <StaffDataGrid
-          :rows="pagedRows as StaffDataGridRow[]"
+          :rows="pagedRows"
           :columns="columns"
           :page="pagination.page.value"
           :page-size="pagination.pageSize.value"

@@ -135,7 +135,7 @@ func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 		return internalError(c)
 	}
 
-	updateOrInvalidateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
+	updateOrInvalidateStaffUserSession(c.Request().Context(), sessionID, currentSession, updatedUser, h.sessions)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
@@ -203,7 +203,7 @@ func (h *staffUserHandlers) updateStaffUserRoles(c echo.Context) error {
 		return internalError(c)
 	}
 
-	updateOrInvalidateStaffUserSession(sessionID, currentSession, updatedUser, h.sessions)
+	updateOrInvalidateStaffUserSession(c.Request().Context(), sessionID, currentSession, updatedUser, h.sessions)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,

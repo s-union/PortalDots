@@ -1,10 +1,9 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffPlaceSchema } from '@/lib/api/schema'
-import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
-import { useSessionStore } from '@/features/session/store'
+import { useStaffMasterMutation } from './shared'
 
 export interface StaffPlace {
   id: string
@@ -111,62 +110,26 @@ export function useStaffPlacesQuery(enabled: MaybeRefOrGetter<boolean>, params?:
   )
 }
 
-export function useCreateStaffPlaceMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-  return useMutation({
-    mutationFn: async (payload: StaffPlaceFormInput) => createStaffPlace(payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['staff', 'places'] })
-    }
-  })
-}
+export const useCreateStaffPlaceMutation = () =>
+  useStaffMasterMutation(
+    (payload: StaffPlaceFormInput, csrfToken: string) => createStaffPlace(payload, csrfToken),
+    ['staff', 'places']
+  )
 
-export function useUpdateStaffPlaceMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-  return useMutation({
-    mutationFn: async (payload: StaffPlace) => updateStaffPlace(payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['staff', 'places'] })
-    }
-  })
-}
+export const useUpdateStaffPlaceMutation = () =>
+  useStaffMasterMutation(
+    (payload: StaffPlace, csrfToken: string) => updateStaffPlace(payload, csrfToken),
+    ['staff', 'places']
+  )
 
-export function useDeleteStaffPlaceMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-  return useMutation({
-    mutationFn: async (placeId: string) => deleteStaffPlace(placeId, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['staff', 'places'] })
-    }
-  })
-}
-
-export function extractStaffPlaceValidationMessage(error: unknown) {
-  return extractValidationMessage(error, '場所の保存に失敗しました。')
-}
+export const useDeleteStaffPlaceMutation = () =>
+  useStaffMasterMutation(
+    (placeId: string, csrfToken: string) => deleteStaffPlace(placeId, csrfToken),
+    ['staff', 'places']
+  )
 
 export function buildDeleteStaffPlaceConfirmMessage(placeName: string) {
   return `場所「${placeName}」を削除しますか？\n\n• 企画の使用場所として「${placeName}」が設定されている場合、その設定は解除されます。企画自体は削除されません`
-}
-
-export function placeTypeLabel(placeType: number) {
-  switch (placeType) {
-    case 1:
-      return '屋内'
-    case 2:
-      return '屋外'
-    case 3:
-      return '特殊場所'
-    default:
-      return String(placeType)
-  }
-}
-
-export function buildStaffPlacesExportUrl() {
-  return buildApiUrl('/staff/places/export')
 }
 
 function parseStaffPlaces(value: unknown): StaffPlace[] {

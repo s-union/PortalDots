@@ -1,6 +1,7 @@
 package pendingregistration
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"sync"
@@ -27,11 +28,11 @@ func (p PendingRegistration) IsVerified() bool {
 }
 
 type Repository interface {
-	Save(univemail, studentID, tokenHash string, expiresAt time.Time) (PendingRegistration, error)
-	Find(id string) (PendingRegistration, error)
-	Delete(id string) error
-	DeleteExpired(now time.Time) error
-	MarkVerified(id string, verifiedAt time.Time) (PendingRegistration, error)
+	Save(ctx context.Context, univemail, studentID, tokenHash string, expiresAt time.Time) (PendingRegistration, error)
+	Find(ctx context.Context, id string) (PendingRegistration, error)
+	Delete(ctx context.Context, id string) error
+	DeleteExpired(ctx context.Context, now time.Time) error
+	MarkVerified(ctx context.Context, id string, verifiedAt time.Time) (PendingRegistration, error)
 }
 
 type MemoryRepository struct {
@@ -47,7 +48,7 @@ func NewMemoryRepository() *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) Save(univemail, studentID, tokenHash string, expiresAt time.Time) (PendingRegistration, error) {
+func (r *MemoryRepository) Save(ctx context.Context, univemail, studentID, tokenHash string, expiresAt time.Time) (PendingRegistration, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -82,7 +83,7 @@ func (r *MemoryRepository) Save(univemail, studentID, tokenHash string, expiresA
 	return clonePendingRegistration(created), nil
 }
 
-func (r *MemoryRepository) Find(id string) (PendingRegistration, error) {
+func (r *MemoryRepository) Find(ctx context.Context, id string) (PendingRegistration, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -97,7 +98,7 @@ func (r *MemoryRepository) Find(id string) (PendingRegistration, error) {
 	return PendingRegistration{}, ErrNotFound
 }
 
-func (r *MemoryRepository) Delete(id string) error {
+func (r *MemoryRepository) Delete(ctx context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -112,7 +113,7 @@ func (r *MemoryRepository) Delete(id string) error {
 	return ErrNotFound
 }
 
-func (r *MemoryRepository) DeleteExpired(now time.Time) error {
+func (r *MemoryRepository) DeleteExpired(ctx context.Context, now time.Time) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -120,7 +121,7 @@ func (r *MemoryRepository) DeleteExpired(now time.Time) error {
 	return nil
 }
 
-func (r *MemoryRepository) MarkVerified(id string, verifiedAt time.Time) (PendingRegistration, error) {
+func (r *MemoryRepository) MarkVerified(ctx context.Context, id string, verifiedAt time.Time) (PendingRegistration, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

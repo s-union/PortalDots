@@ -24,10 +24,12 @@ import { formatDateTimeTable } from '@/lib/format/datetime'
 import { buildApiUrl } from '@/lib/api/client'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
+import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import { useOrderedItems } from '@/lib/useStaffDataTable'
 import { canDeleteTags } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
-import { buildDeleteStaffTagConfirmMessage, deleteStaffTag, useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { deleteStaffTag, useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { buildDeleteStaffTagConfirmMessage } from '@/features/staff/masters/messages'
 import { useSessionStore } from '@/features/session/store'
 import FaIcon from '@/components/ui/FaIcon.vue'
 
@@ -66,9 +68,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'updatedAt', label: '更新日時', type: 'string' }
 ]
 
-function isFilterKey(key: string) {
-  return filterFields.some((f) => f.key === key)
-}
+const isFilterKey = createIsFilterKey(filterFields)
 
 const columns: StaffDataGridColumn[] = [
   { key: 'tagNumber', label: 'タグID', sortable: true, align: 'right', cellClass: 'font-medium text-body' },
@@ -79,7 +79,7 @@ const columns: StaffDataGridColumn[] = [
 
 const { orderedItems: orderedTags, orderMap: tagOrderMap } = useOrderedItems(computed(() => tagsQuery.data.value ?? []))
 
-const rawRows = computed<Record<string, unknown>[]>(() =>
+const rawRows = computed<StaffDataGridRow[]>(() =>
   orderedTags.value.map((tag) => ({
     id: tag.id,
     tagNumber: String(tagOrderMap.value.get(tag.id) ?? 0),
@@ -89,32 +89,17 @@ const rawRows = computed<Record<string, unknown>[]>(() =>
   }))
 )
 
-function resolveSortValue(row: Record<string, unknown>, key: StaffTagSortKey) {
+function resolveSortValue(row: StaffDataGridRow, key: StaffTagSortKey) {
   if (key === 'tagNumber') {
     return String(row.tagNumber ?? '0').padStart(10, '0')
   }
   return String(row[key] ?? '').toLowerCase()
 }
 
-function matchesSearch(row: Record<string, unknown>, search: string) {
-  const haystack = [row.id, row.name, row.tagNumber].join(' ').toLowerCase()
-  return haystack.includes(search)
-}
+const matchesSearch = createMatchesSearch<StaffDataGridRow>(['id', 'name', 'tagNumber'])
 
-function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
-  const left = String(row[query.keyName] ?? '').toLowerCase()
-  const right = query.value.trim().toLowerCase()
-
-  if (query.operator === '=') {
-    return left === right
-  }
-  if (query.operator === '!=') {
-    return left !== right
-  }
-  if (query.operator === 'not like') {
-    return right === '' ? true : !left.includes(right)
-  }
-  return right === '' ? true : left.includes(right)
+function matchesFilterQuery(row: StaffDataGridRow, query: StaffFilterQuery) {
+  return matchesFilterQueryCore(String(row[query.keyName] ?? ''), query)
 }
 
 const {
@@ -213,7 +198,7 @@ async function handleReload() {
     <StaffSideWindowContainer :is-open="isEditorOpen || isFilterOpen">
       <DataCard>
         <StaffDataGrid
-          :rows="pagedRows as StaffDataGridRow[]"
+          :rows="pagedRows"
           :columns="columns"
           :page="pagination.page.value"
           :page-size="pagination.pageSize.value"

@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -21,12 +22,12 @@ type Session struct {
 }
 
 type Store interface {
-	Create(user *auth.User) (string, Session, error)
-	Get(id string) (Session, bool)
-	Delete(id string) error
-	DeleteByUserID(userID string) error
-	DeleteOtherSessionsByUserID(userID string, currentSessionID string) error
-	Update(id string, update func(*Session)) bool
+	Create(ctx context.Context, user *auth.User) (string, Session, error)
+	Get(ctx context.Context, id string) (Session, bool)
+	Delete(ctx context.Context, id string) error
+	DeleteByUserID(ctx context.Context, userID string) error
+	DeleteOtherSessionsByUserID(ctx context.Context, userID string, currentSessionID string) error
+	Update(ctx context.Context, id string, update func(*Session)) bool
 }
 
 type memorySessionEntry struct {
@@ -49,7 +50,7 @@ func NewMemoryStore(ttl time.Duration) *MemoryStore {
 	}
 }
 
-func (s *MemoryStore) Create(user *auth.User) (string, Session, error) {
+func (s *MemoryStore) Create(ctx context.Context, user *auth.User) (string, Session, error) {
 	if user == nil {
 		return "", Session{}, errors.New("session: cannot create session with nil user")
 	}
@@ -83,7 +84,7 @@ func (s *MemoryStore) Create(user *auth.User) (string, Session, error) {
 	return id, session, nil
 }
 
-func (s *MemoryStore) Get(id string) (Session, bool) {
+func (s *MemoryStore) Get(ctx context.Context, id string) (Session, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -117,14 +118,14 @@ func (s *MemoryStore) Get(id string) (Session, bool) {
 	return cloned, true
 }
 
-func (s *MemoryStore) Delete(id string) error {
+func (s *MemoryStore) Delete(ctx context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.sessions, id)
 	return nil
 }
 
-func (s *MemoryStore) DeleteByUserID(userID string) error {
+func (s *MemoryStore) DeleteByUserID(ctx context.Context, userID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -137,7 +138,7 @@ func (s *MemoryStore) DeleteByUserID(userID string) error {
 	return nil
 }
 
-func (s *MemoryStore) DeleteOtherSessionsByUserID(userID string, currentSessionID string) error {
+func (s *MemoryStore) DeleteOtherSessionsByUserID(ctx context.Context, userID string, currentSessionID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -153,7 +154,7 @@ func (s *MemoryStore) DeleteOtherSessionsByUserID(userID string, currentSessionI
 	return nil
 }
 
-func (s *MemoryStore) Update(id string, update func(*Session)) bool {
+func (s *MemoryStore) Update(ctx context.Context, id string, update func(*Session)) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

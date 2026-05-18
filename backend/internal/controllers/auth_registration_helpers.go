@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -168,24 +169,6 @@ func deriveStudentID(userValue useradmin.User, domainPart string) string {
 	return ""
 }
 
-func normalizeRegistrationLocalPart(value string) string {
-	normalized := strings.ToLower(strings.TrimSpace(value))
-	normalized = strings.TrimPrefix(normalized, "@")
-	if strings.Contains(normalized, "@") {
-		return ""
-	}
-	return normalized
-}
-
-func deriveRegistrationUnivemail(localPart, domainPart string) string {
-	normalizedLocalPart := normalizeRegistrationLocalPart(localPart)
-	normalizedDomain := strings.ToLower(strings.TrimSpace(domainPart))
-	if normalizedLocalPart == "" || normalizedDomain == "" {
-		return ""
-	}
-	return normalizedLocalPart + "@" + normalizedDomain
-}
-
 func buildRegistrationVerifyURL(appURL, pendingRegistrationID, token string) string {
 	base := strings.TrimRight(strings.TrimSpace(appURL), "/")
 	return fmt.Sprintf(
@@ -240,14 +223,14 @@ func pendingRegistrationTokenMatches(pendingValue pendingregistration.PendingReg
 	) == 1
 }
 
-func (h *authHandlers) loadAndValidatePendingRegistration(pendingRegistrationID, token string) (pendingregistration.PendingRegistration, error) {
+func (h *authHandlers) loadAndValidatePendingRegistration(ctx context.Context, pendingRegistrationID, token string) (pendingregistration.PendingRegistration, error) {
 	normalizedID := strings.TrimSpace(pendingRegistrationID)
 	normalizedToken := strings.TrimSpace(token)
 	if normalizedID == "" || normalizedToken == "" {
 		return pendingregistration.PendingRegistration{}, errInvalidRegistrationToken
 	}
 
-	pendingValue, err := h.pendingRegistrations.Find(normalizedID)
+	pendingValue, err := h.pendingRegistrations.Find(ctx, normalizedID)
 	if err != nil {
 		if errors.Is(err, pendingregistration.ErrNotFound) {
 			return pendingregistration.PendingRegistration{}, errInvalidRegistrationToken

@@ -14,7 +14,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
-import { useCurrentCircleDetailQuery, useSubmitCircleMutation } from '@/features/circles/api'
+import { useCurrentCircleDetailQuery, useSubmitCircleMutation } from '@/features/circles/queries'
 import { extractValidationMessage } from '@/lib/api/validation'
 import { buttonVariants } from '@/lib/ui/variants'
 

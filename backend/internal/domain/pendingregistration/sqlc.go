@@ -18,8 +18,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) Save(univemail, studentID, tokenHash string, expiresAt time.Time) (PendingRegistration, error) {
-	ctx := context.Background()
+func (r *SQLCRepository) Save(ctx context.Context, univemail, studentID, tokenHash string, expiresAt time.Time) (PendingRegistration, error) {
+
 	if _, err := r.queries.DeleteExpiredPendingRegistrations(ctx, pgutil.Timestamptz(time.Now().UTC())); err != nil {
 		return PendingRegistration{}, err
 	}
@@ -55,12 +55,12 @@ func (r *SQLCRepository) Save(univemail, studentID, tokenHash string, expiresAt 
 	return mapPendingRegistration(updated), nil
 }
 
-func (r *SQLCRepository) Find(id string) (PendingRegistration, error) {
-	if _, err := r.queries.DeleteExpiredPendingRegistrations(context.Background(), pgutil.Timestamptz(time.Now().UTC())); err != nil {
+func (r *SQLCRepository) Find(ctx context.Context, id string) (PendingRegistration, error) {
+	if _, err := r.queries.DeleteExpiredPendingRegistrations(ctx, pgutil.Timestamptz(time.Now().UTC())); err != nil {
 		return PendingRegistration{}, err
 	}
 
-	row, err := r.queries.GetPendingRegistrationByID(context.Background(), id)
+	row, err := r.queries.GetPendingRegistrationByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return PendingRegistration{}, ErrNotFound
@@ -71,8 +71,8 @@ func (r *SQLCRepository) Find(id string) (PendingRegistration, error) {
 	return mapPendingRegistration(row), nil
 }
 
-func (r *SQLCRepository) Delete(id string) error {
-	rows, err := r.queries.DeletePendingRegistration(context.Background(), id)
+func (r *SQLCRepository) Delete(ctx context.Context, id string) error {
+	rows, err := r.queries.DeletePendingRegistration(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -82,13 +82,13 @@ func (r *SQLCRepository) Delete(id string) error {
 	return nil
 }
 
-func (r *SQLCRepository) DeleteExpired(now time.Time) error {
-	_, err := r.queries.DeleteExpiredPendingRegistrations(context.Background(), pgutil.Timestamptz(now.UTC()))
+func (r *SQLCRepository) DeleteExpired(ctx context.Context, now time.Time) error {
+	_, err := r.queries.DeleteExpiredPendingRegistrations(ctx, pgutil.Timestamptz(now.UTC()))
 	return err
 }
 
-func (r *SQLCRepository) MarkVerified(id string, verifiedAt time.Time) (PendingRegistration, error) {
-	row, err := r.queries.MarkPendingRegistrationVerified(context.Background(), dbgen.MarkPendingRegistrationVerifiedParams{
+func (r *SQLCRepository) MarkVerified(ctx context.Context, id string, verifiedAt time.Time) (PendingRegistration, error) {
+	row, err := r.queries.MarkPendingRegistrationVerified(ctx, dbgen.MarkPendingRegistrationVerifiedParams{
 		ID:         id,
 		VerifiedAt: pgutil.Timestamptz(verifiedAt.UTC()),
 	})

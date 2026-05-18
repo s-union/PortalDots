@@ -22,7 +22,7 @@ import {
   useCircleMembersQuery,
   useRemoveMemberMutation,
   useRegenerateInvitationTokenMutation
-} from '@/features/circles/api'
+} from '@/features/circles/queries'
 import { useSessionStore } from '@/features/session/store'
 import { buttonVariants } from '@/lib/ui/variants'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'

@@ -1,7 +1,4 @@
-import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import type { z } from 'zod'
-import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, $api } from '@/lib/api/client'
 import {
   formQuestionSchema,
   parseWithSchema,
@@ -10,11 +7,9 @@ import {
   staffFormPreviewSchema,
   staffFormSummarySchema
 } from '@/lib/api/schema'
-import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
-import { nowPlusOneHourISO, plusDaysEndOfDayISO } from '@/lib/format/datetime'
-import { parseTagString, formatTags } from '@/lib/tags'
+import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
-import { useSessionStore } from '@/features/session/store'
+import type { z } from 'zod'
 
 export type StaffFormSummary = z.infer<typeof staffFormSummarySchema>
 export type StaffFormDetail = z.infer<typeof staffFormDetailSchema>
@@ -33,7 +28,7 @@ export const allowedQuestionTypes = [
   'upload'
 ] as const
 
-interface CreateStaffFormPayload {
+export interface CreateStaffFormPayload {
   circleId?: string
   name: string
   description: string
@@ -45,11 +40,11 @@ interface CreateStaffFormPayload {
   isPublic: boolean
 }
 
-interface CreateStaffFormQuestionPayload {
+export interface CreateStaffFormQuestionPayload {
   type: string
 }
 
-interface UpdateStaffFormQuestionPayload {
+export interface UpdateStaffFormQuestionPayload {
   id: string
   name: string
   description: string
@@ -298,283 +293,22 @@ export async function deleteStaffForm(formId: string, csrfToken: string) {
   )
 }
 
-export function useStaffFormsQuery(enabled: MaybeRefOrGetter<boolean>, params?: StaffListQueryParamsInput) {
-  return $api.useQueryData(
-    'get',
-    '/staff/forms',
-    () => ({
-      headers: createJsonHeaders(),
-      ...buildStaffListRequestParams(params)
-    }),
-    parseStaffForms,
-    {
-      queryKey: computed(() => ['staff', 'forms', toValue(params)]),
-      enabled: computed(() => toValue(enabled)),
-      retry: false
-    },
-    {
-      errorMessage: 'Failed to fetch staff forms'
-    }
-  )
-}
-
-export function useStaffFormDetailQuery(formId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
-  return $api.useQueryData(
-    'get',
-    '/staff/forms/{formID}',
-    () => ({
-      headers: createJsonHeaders(),
-      params: {
-        path: {
-          formID: toValue(formId)
-        }
-      }
-    }),
-    parseStaffFormDetail,
-    {
-      queryKey: computed(() => ['staff', 'forms', 'detail', toValue(formId)]),
-      enabled: computed(() => toValue(enabled) && toValue(formId).trim().length > 0),
-      retry: false
-    },
-    {
-      errorMessage: 'Failed to fetch staff form'
-    }
-  )
-}
-
-export function useStaffFormPreviewQuery(formId: MaybeRefOrGetter<string>, enabled: MaybeRefOrGetter<boolean>) {
-  return $api.useQueryData(
-    'get',
-    '/staff/forms/{formID}/preview',
-    () => ({
-      headers: createJsonHeaders(),
-      params: {
-        path: {
-          formID: toValue(formId)
-        }
-      }
-    }),
-    parseStaffFormPreview,
-    {
-      queryKey: computed(() => ['staff', 'forms', 'preview', toValue(formId)]),
-      enabled: computed(() => toValue(enabled) && toValue(formId).trim().length > 0),
-      retry: false
-    },
-    {
-      errorMessage: 'Failed to fetch staff form preview'
-    }
-  )
-}
-
-export function useCreateStaffFormMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (payload: CreateStaffFormPayload) => createStaffForm(payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'forms']
-      })
-    }
-  })
-}
-
-export function useUpdateStaffFormMutation(formId: MaybeRefOrGetter<string>) {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (payload: CreateStaffFormPayload) =>
-      updateStaffForm(toValue(formId), payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms']
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
-        })
-      ])
-    }
-  })
-}
-
-export function useCreateStaffFormQuestionMutation(formId: MaybeRefOrGetter<string>) {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (payload: CreateStaffFormQuestionPayload) =>
-      createStaffFormQuestion(toValue(formId), payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
-        })
-      ])
-    }
-  })
-}
-
-export function useUpdateStaffFormQuestionMutation(formId: MaybeRefOrGetter<string>) {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (payload: UpdateStaffFormQuestionPayload) =>
-      updateStaffFormQuestion(toValue(formId), payload, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
-        })
-      ])
-    }
-  })
-}
-
-export function useDeleteStaffFormQuestionMutation(formId: MaybeRefOrGetter<string>) {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (questionId: string) =>
-      deleteStaffFormQuestion(toValue(formId), questionId, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
-        })
-      ])
-    }
-  })
-}
-
-export function useReorderStaffFormQuestionsMutation(formId: MaybeRefOrGetter<string>) {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (questionIds: string[]) =>
-      reorderStaffFormQuestions(toValue(formId), questionIds, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'detail', toValue(formId)]
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['staff', 'forms', 'preview', toValue(formId)]
-        })
-      ])
-    }
-  })
-}
-
-export function useCopyStaffFormMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (formId: string) => copyStaffForm(formId, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'forms']
-      })
-    }
-  })
-}
-
-export function useDeleteStaffFormMutation() {
-  const queryClient = useQueryClient()
-  const sessionStore = useSessionStore()
-
-  return useMutation({
-    mutationFn: async (formId: string) => deleteStaffForm(formId, sessionStore.csrfToken),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['staff', 'forms']
-      })
-    }
-  })
-}
-
-export function useStaffFormForm() {
-  return ref<CreateStaffFormPayload>(createDefaultStaffFormPayload())
-}
-
-export function extractStaffFormValidationMessage(error: unknown) {
-  return extractValidationMessage(error, 'フォームの作成に失敗しました。')
-}
-
-function parseStaffForms(value: unknown): StaffFormSummary[] {
+export function parseStaffForms(value: unknown): StaffFormSummary[] {
   return parseArrayWithSchema(staffFormSummarySchema, value, 'staff forms')
 }
 
-export function createDefaultStaffFormPayload(): CreateStaffFormPayload {
-  const openAtISO = nowPlusOneHourISO()
-  const closeAtISO = plusDaysEndOfDayISO(openAtISO, 14)
-
-  return {
-    name: '',
-    description: '',
-    openAt: openAtISO,
-    closeAt: closeAtISO,
-    maxAnswers: 1,
-    answerableTags: [],
-    confirmationMessage: '',
-    isPublic: false
-  }
-}
-
-export function parseStaffFormTags(value: string) {
-  return parseTagString(value)
-}
-
-export function formatStaffFormTags(tags: string[]) {
-  return formatTags(tags)
-}
-
-export function buildCopyStaffFormConfirmMessage(formName: string) {
-  return `フォーム「${formName}」を複製しますか？\n\n• 設問は全て複製されます\n• 「${formName}のコピー」という名前のフォームが作成されます\n• 「${formName}のコピー」は非公開です。後から必要に応じて設定を変更してください`
-}
-
-export function buildDeleteStaffFormConfirmMessage(formName: string) {
-  return `フォーム「${formName}」を削除しますか？\n\n• 設問、回答は全て削除されます`
-}
-
-function parseStaffFormSummary(value: unknown): StaffFormSummary {
+export function parseStaffFormSummary(value: unknown): StaffFormSummary {
   return parseWithSchema(staffFormSummarySchema, value, 'staff form')
 }
 
-function parseStaffFormDetail(value: unknown): StaffFormDetail {
+export function parseStaffFormDetail(value: unknown): StaffFormDetail {
   return parseWithSchema(staffFormDetailSchema, value, 'staff form detail')
 }
 
-function parseStaffFormPreview(value: unknown): StaffFormPreview {
+export function parseStaffFormPreview(value: unknown): StaffFormPreview {
   return parseWithSchema(staffFormPreviewSchema, value, 'staff form preview')
 }
 
-function parseStaffFormQuestion(value: unknown): StaffFormQuestion {
+export function parseStaffFormQuestion(value: unknown): StaffFormQuestion {
   return parseWithSchema(formQuestionSchema, value, 'staff form question')
-}
-
-export function buildStaffFormUploadDownloadUrl(formId: string, uploadId: string) {
-  return buildApiUrl(`/staff/forms/${encodeURIComponent(formId)}/uploads/${encodeURIComponent(uploadId)}/file`)
-}
-
-export function buildStaffFormsExportUrl() {
-  return buildApiUrl('/staff/forms/export')
 }

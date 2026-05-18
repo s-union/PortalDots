@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -17,14 +18,14 @@ func TestMemoryStoreExpiresSessions(t *testing.T) {
 		return now
 	}
 
-	sessionID, _, err := store.Create(&auth.User{ID: "user-1"})
+	sessionID, _, err := store.Create(context.Background(), &auth.User{ID: "user-1"})
 	if err != nil {
 		t.Fatalf("expected Create to succeed, got %v", err)
 	}
 
 	now = now.Add(2 * time.Hour)
 
-	if _, ok := store.Get(sessionID); ok {
+	if _, ok := store.Get(context.Background(), sessionID); ok {
 		t.Fatal("expected expired session to be removed")
 	}
 }
@@ -33,7 +34,7 @@ func TestMemoryStoreClonesStoredSessions(t *testing.T) {
 	t.Parallel()
 
 	store := NewMemoryStore(time.Hour)
-	sessionID, _, err := store.Create(&auth.User{
+	sessionID, _, err := store.Create(context.Background(), &auth.User{
 		ID:          "user-1",
 		DisplayName: "User One",
 		Roles:       []string{"participant"},
@@ -43,14 +44,14 @@ func TestMemoryStoreClonesStoredSessions(t *testing.T) {
 		t.Fatalf("expected Create to succeed, got %v", err)
 	}
 
-	stored, ok := store.Get(sessionID)
+	stored, ok := store.Get(context.Background(), sessionID)
 	if !ok {
 		t.Fatal("expected session to exist")
 	}
 	stored.User.Roles[0] = "admin"
 	stored.User.Permissions[0] = "forms:edit"
 
-	again, ok := store.Get(sessionID)
+	again, ok := store.Get(context.Background(), sessionID)
 	if !ok {
 		t.Fatal("expected session to still exist")
 	}
@@ -69,29 +70,29 @@ func TestMemoryStoreDeleteAndDeleteByUserID(t *testing.T) {
 	user1 := &auth.User{ID: "user-1"}
 	user2 := &auth.User{ID: "user-2"}
 
-	session1, _, err := store.Create(user1)
+	session1, _, err := store.Create(context.Background(), user1)
 	if err != nil {
 		t.Fatalf("expected first session to be created, got %v", err)
 	}
-	session2, _, err := store.Create(user1)
+	session2, _, err := store.Create(context.Background(), user1)
 	if err != nil {
 		t.Fatalf("expected second session to be created, got %v", err)
 	}
-	session3, _, err := store.Create(user2)
+	session3, _, err := store.Create(context.Background(), user2)
 	if err != nil {
 		t.Fatalf("expected third session to be created, got %v", err)
 	}
 
-	_ = store.Delete(session1)
-	if _, ok := store.Get(session1); ok {
+	_ = store.Delete(context.Background(), session1)
+	if _, ok := store.Get(context.Background(), session1); ok {
 		t.Fatal("expected deleted session to be removed")
 	}
 
-	_ = store.DeleteByUserID("user-1")
-	if _, ok := store.Get(session2); ok {
+	_ = store.DeleteByUserID(context.Background(), "user-1")
+	if _, ok := store.Get(context.Background(), session2); ok {
 		t.Fatal("expected user-1 session to be removed")
 	}
-	if _, ok := store.Get(session3); !ok {
+	if _, ok := store.Get(context.Background(), session3); !ok {
 		t.Fatal("expected user-2 session to remain")
 	}
 }
@@ -105,12 +106,12 @@ func TestMemoryStoreUpdate(t *testing.T) {
 		return now
 	}
 
-	sessionID, _, err := store.Create(&auth.User{ID: "user-1"})
+	sessionID, _, err := store.Create(context.Background(), &auth.User{ID: "user-1"})
 	if err != nil {
 		t.Fatalf("expected session to be created, got %v", err)
 	}
 
-	updated := store.Update(sessionID, func(current *Session) {
+	updated := store.Update(context.Background(), sessionID, func(current *Session) {
 		current.StaffAuthorized = true
 		current.CurrentCircleID = "circle-1"
 	})
@@ -118,7 +119,7 @@ func TestMemoryStoreUpdate(t *testing.T) {
 		t.Fatal("expected update to succeed")
 	}
 
-	current, ok := store.Get(sessionID)
+	current, ok := store.Get(context.Background(), sessionID)
 	if !ok {
 		t.Fatal("expected updated session to exist")
 	}
@@ -126,15 +127,15 @@ func TestMemoryStoreUpdate(t *testing.T) {
 		t.Fatalf("unexpected updated session: %#v", current)
 	}
 
-	if store.Update("missing", func(current *Session) {}) {
+	if store.Update(context.Background(), "missing", func(current *Session) {}) {
 		t.Fatal("expected missing session update to fail")
 	}
 
 	now = now.Add(2 * time.Hour)
-	if store.Update(sessionID, func(current *Session) {}) {
+	if store.Update(context.Background(), sessionID, func(current *Session) {}) {
 		t.Fatal("expected expired session update to fail")
 	}
-	if _, ok := store.Get(sessionID); ok {
+	if _, ok := store.Get(context.Background(), sessionID); ok {
 		t.Fatal("expected expired session to be removed")
 	}
 }

@@ -188,7 +188,7 @@ func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
-	questions, err := h.formQuestions.List(form.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), form.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -304,7 +304,7 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
-	questions, err := h.formQuestions.List(formValue.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), formValue.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -326,7 +326,7 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
 	}
 
-	sourceQuestions, err := h.formQuestions.List(source.ID)
+	sourceQuestions, err := h.formQuestions.List(c.Request().Context(), source.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -348,7 +348,7 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 	}
 
 	for _, sourceQuestion := range sourceQuestions {
-		created, err := h.formQuestions.Create(copied.ID, sourceQuestion.Type)
+		created, err := h.formQuestions.Create(c.Request().Context(), copied.ID, sourceQuestion.Type)
 		if err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
@@ -360,17 +360,17 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 		created.AllowedTypes = sourceQuestion.AllowedTypes
 		created.Options = slices.Clone(sourceQuestion.Options)
 		created.Priority = sourceQuestion.Priority
-		if _, err := h.formQuestions.Update(created); err != nil {
+		if _, err := h.formQuestions.Update(c.Request().Context(), created); err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
 	}
 
 	if len(sourceQuestions) > 0 {
-		orderedQuestionIDs, err := questionIDsByPriority(h.formQuestions.List(copied.ID))
+		orderedQuestionIDs, err := questionIDsByPriority(h.formQuestions.List(c.Request().Context(), copied.ID))
 		if err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
-		if err := h.formQuestions.ReplaceOrder(copied.ID, orderedQuestionIDs); err != nil {
+		if err := h.formQuestions.ReplaceOrder(c.Request().Context(), copied.ID, orderedQuestionIDs); err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "copy_failed")
 		}
 	}
@@ -469,12 +469,12 @@ func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
-	for _, currentAnswer := range h.answers.ListByForm(formValue.ID) {
-		for _, listedUpload := range h.answers.ListUploadsByAnswer(currentAnswer.ID) {
+	for _, currentAnswer := range h.answers.ListByForm(c.Request().Context(), formValue.ID) {
+		for _, listedUpload := range h.answers.ListUploadsByAnswer(c.Request().Context(), currentAnswer.ID) {
 			if listedUpload.ID != c.Param("uploadID") {
 				continue
 			}
-			upload, found := h.answers.FindUpload(formValue.ID, currentAnswer.CircleID, listedUpload.ID)
+			upload, found := h.answers.FindUpload(c.Request().Context(), formValue.ID, currentAnswer.CircleID, listedUpload.ID)
 			if !found {
 				return errorJSON(c, http.StatusNotFound, "upload_not_found")
 			}
@@ -521,7 +521,7 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 		})
 	}
 
-	created, err := h.formQuestions.Create(formValue.ID, request.Type)
+	created, err := h.formQuestions.Create(c.Request().Context(), formValue.ID, request.Type)
 	if err != nil {
 		return internalError(c)
 	}
@@ -567,7 +567,7 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	updated, err := h.formQuestions.Update(formquestion.Question{
+	updated, err := h.formQuestions.Update(c.Request().Context(), formquestion.Question{
 		ID:           c.Param("questionID"),
 		FormID:       formValue.ID,
 		Name:         request.Name,
@@ -612,7 +612,7 @@ func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
 	}
 
-	if err := h.formQuestions.Delete(formValue.ID, c.Param("questionID")); errors.Is(err, formquestion.ErrNotFound) {
+	if err := h.formQuestions.Delete(c.Request().Context(), formValue.ID, c.Param("questionID")); errors.Is(err, formquestion.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "question_not_found")
 	} else if err != nil {
 		return internalError(c)
@@ -656,7 +656,7 @@ func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
 		request.QuestionIDs[index] = strings.TrimSpace(request.QuestionIDs[index])
 	}
 
-	if err := h.formQuestions.ReplaceOrder(formValue.ID, request.QuestionIDs); errors.Is(err, formquestion.ErrNotFound) {
+	if err := h.formQuestions.ReplaceOrder(c.Request().Context(), formValue.ID, request.QuestionIDs); errors.Is(err, formquestion.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "question_not_found")
 	} else if err != nil {
 		return internalError(c)

@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, ref, watch, watchEffect, type MaybeRefOrGetter, toValue } from 'vue'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useSessionStore } from '@/features/session/store'
+import { type StaffFormQuestion } from '@/features/staff/forms/api'
 import {
   extractStaffFormValidationMessage,
   useCreateStaffFormQuestionMutation,
@@ -8,9 +9,8 @@ import {
   useReorderStaffFormQuestionsMutation,
   useStaffFormDetailQuery,
   useUpdateStaffFormMutation,
-  useUpdateStaffFormQuestionMutation,
-  type StaffFormQuestion
-} from '@/features/staff/forms/api'
+  useUpdateStaffFormQuestionMutation
+} from '@/features/staff/forms/queries'
 import type { AllowedQuestionType } from '@/features/staff/forms/editor/useQuestionTypeMeta'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'

@@ -1,6 +1,7 @@
 package answer
 
 import (
+	"context"
 	"slices"
 	"sync"
 	"time"
@@ -32,21 +33,21 @@ type Upload struct {
 }
 
 type Repository interface {
-	Get(formID, circleID string) (Answer, bool)
-	Find(answerID string) (Answer, bool)
-	ListByCircle(circleID string) []Answer
-	ListByForm(formID string) []Answer
-	ListByFormAndCircle(formID, circleID string) []Answer
-	Upsert(formID, circleID, body string, details map[string][]string) Answer
-	Create(formID, circleID, body string, details map[string][]string) Answer
-	Update(answerID, body string, details map[string][]string) (Answer, bool)
-	Delete(answerID string) bool
-	ListUploads(formID, circleID string) []Upload
-	ListUploadsByAnswer(answerID string) []Upload
-	FindUpload(formID, circleID, uploadID string) (Upload, bool)
-	FindUploadByAnswerAndQuestion(answerID, questionID string) (Upload, bool)
-	AddUpload(formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool)
-	AddUploadToAnswer(answerID, questionID, filename, mimeType string, content []byte) (Upload, bool)
+	Get(ctx context.Context, formID, circleID string) (Answer, bool)
+	Find(ctx context.Context, answerID string) (Answer, bool)
+	ListByCircle(ctx context.Context, circleID string) []Answer
+	ListByForm(ctx context.Context, formID string) []Answer
+	ListByFormAndCircle(ctx context.Context, formID, circleID string) []Answer
+	Upsert(ctx context.Context, formID, circleID, body string, details map[string][]string) Answer
+	Create(ctx context.Context, formID, circleID, body string, details map[string][]string) Answer
+	Update(ctx context.Context, answerID, body string, details map[string][]string) (Answer, bool)
+	Delete(ctx context.Context, answerID string) bool
+	ListUploads(ctx context.Context, formID, circleID string) []Upload
+	ListUploadsByAnswer(ctx context.Context, answerID string) []Upload
+	FindUpload(ctx context.Context, formID, circleID, uploadID string) (Upload, bool)
+	FindUploadByAnswerAndQuestion(ctx context.Context, answerID, questionID string) (Upload, bool)
+	AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool)
+	AddUploadToAnswer(ctx context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool)
 }
 
 type MemoryRepository struct {
@@ -70,7 +71,7 @@ func NewMemoryRepository() *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) Get(formID, circleID string) (Answer, bool) {
+func (r *MemoryRepository) Get(_ context.Context, formID, circleID string) (Answer, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -82,7 +83,7 @@ func (r *MemoryRepository) Get(formID, circleID string) (Answer, bool) {
 	return r.cloneAnswerLocked(answerID), true
 }
 
-func (r *MemoryRepository) Find(answerID string) (Answer, bool) {
+func (r *MemoryRepository) Find(_ context.Context, answerID string) (Answer, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -93,7 +94,7 @@ func (r *MemoryRepository) Find(answerID string) (Answer, bool) {
 	return r.cloneAnswerLocked(answerID), true
 }
 
-func (r *MemoryRepository) ListByCircle(circleID string) []Answer {
+func (r *MemoryRepository) ListByCircle(_ context.Context, circleID string) []Answer {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -108,7 +109,7 @@ func (r *MemoryRepository) ListByCircle(circleID string) []Answer {
 	return answers
 }
 
-func (r *MemoryRepository) ListByForm(formID string) []Answer {
+func (r *MemoryRepository) ListByForm(_ context.Context, formID string) []Answer {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -123,7 +124,7 @@ func (r *MemoryRepository) ListByForm(formID string) []Answer {
 	return answers
 }
 
-func (r *MemoryRepository) ListByFormAndCircle(formID, circleID string) []Answer {
+func (r *MemoryRepository) ListByFormAndCircle(_ context.Context, formID, circleID string) []Answer {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -140,7 +141,7 @@ func (r *MemoryRepository) ListByFormAndCircle(formID, circleID string) []Answer
 	return answers
 }
 
-func (r *MemoryRepository) Upsert(formID, circleID, body string, details map[string][]string) Answer {
+func (r *MemoryRepository) Upsert(_ context.Context, formID, circleID, body string, details map[string][]string) Answer {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -156,21 +157,21 @@ func (r *MemoryRepository) Upsert(formID, circleID, body string, details map[str
 	return answer
 }
 
-func (r *MemoryRepository) Create(formID, circleID, body string, details map[string][]string) Answer {
+func (r *MemoryRepository) Create(_ context.Context, formID, circleID, body string, details map[string][]string) Answer {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	return r.createLocked(formID, circleID, body, details)
 }
 
-func (r *MemoryRepository) Update(answerID, body string, details map[string][]string) (Answer, bool) {
+func (r *MemoryRepository) Update(_ context.Context, answerID, body string, details map[string][]string) (Answer, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	return r.updateLocked(answerID, body, details)
 }
 
-func (r *MemoryRepository) Delete(answerID string) bool {
+func (r *MemoryRepository) Delete(_ context.Context, answerID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -200,7 +201,7 @@ func (r *MemoryRepository) Delete(answerID string) bool {
 	return true
 }
 
-func (r *MemoryRepository) ListUploads(formID, circleID string) []Upload {
+func (r *MemoryRepository) ListUploads(_ context.Context, formID, circleID string) []Upload {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -212,14 +213,14 @@ func (r *MemoryRepository) ListUploads(formID, circleID string) []Upload {
 	return cloneUploads(r.uploads[answerID], false)
 }
 
-func (r *MemoryRepository) ListUploadsByAnswer(answerID string) []Upload {
+func (r *MemoryRepository) ListUploadsByAnswer(_ context.Context, answerID string) []Upload {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	return cloneUploads(r.uploads[answerID], false)
 }
 
-func (r *MemoryRepository) FindUpload(formID, circleID, uploadID string) (Upload, bool) {
+func (r *MemoryRepository) FindUpload(_ context.Context, formID, circleID, uploadID string) (Upload, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -234,7 +235,7 @@ func (r *MemoryRepository) FindUpload(formID, circleID, uploadID string) (Upload
 	return Upload{}, false
 }
 
-func (r *MemoryRepository) FindUploadByAnswerAndQuestion(answerID, questionID string) (Upload, bool) {
+func (r *MemoryRepository) FindUploadByAnswerAndQuestion(_ context.Context, answerID, questionID string) (Upload, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -247,7 +248,7 @@ func (r *MemoryRepository) FindUploadByAnswerAndQuestion(answerID, questionID st
 	return Upload{}, false
 }
 
-func (r *MemoryRepository) AddUpload(formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+func (r *MemoryRepository) AddUpload(_ context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -260,7 +261,7 @@ func (r *MemoryRepository) AddUpload(formID, circleID, questionID, filename, mim
 	return r.addUploadLocked(answerID, questionID, filename, mimeType, content)
 }
 
-func (r *MemoryRepository) AddUploadToAnswer(answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+func (r *MemoryRepository) AddUploadToAnswer(_ context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

@@ -48,7 +48,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 		rows[0] = append(rows[0], question.Name)
 	}
 
-	for _, currentAnswer := range h.answers.ListByForm(formValue.ID) {
+	for _, currentAnswer := range h.answers.ListByForm(c.Request().Context(), formValue.ID) {
 		currentCircle := circleMap[currentAnswer.CircleID]
 		row := []string{
 			currentAnswer.ID,
@@ -58,7 +58,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 			currentCircle.GroupName,
 			"",
 		}
-		uploads := h.answers.ListUploadsByAnswer(currentAnswer.ID)
+		uploads := h.answers.ListUploadsByAnswer(c.Request().Context(), currentAnswer.ID)
 		for _, question := range questions {
 			if question.Type == "heading" {
 				continue
@@ -101,12 +101,12 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) er
 
 	archive := zip.NewWriter(tempFile)
 	created := 0
-	for _, currentAnswer := range h.answers.ListByForm(formValue.ID) {
-		for _, upload := range h.answers.ListUploadsByAnswer(currentAnswer.ID) {
+	for _, currentAnswer := range h.answers.ListByForm(c.Request().Context(), formValue.ID) {
+		for _, upload := range h.answers.ListUploadsByAnswer(c.Request().Context(), currentAnswer.ID) {
 			if _, ok := uploadQuestions[upload.QuestionID]; !ok {
 				continue
 			}
-			fileUpload, found := h.answers.FindUploadByAnswerAndQuestion(currentAnswer.ID, upload.QuestionID)
+			fileUpload, found := h.answers.FindUploadByAnswerAndQuestion(c.Request().Context(), currentAnswer.ID, upload.QuestionID)
 			if !found {
 				continue
 			}
@@ -200,21 +200,21 @@ func (h *staffFormHandlers) enqueueStaffFormAnswerMail(ctx context.Context, crea
 	}
 
 	jobID := "staff-form-answer-" + uuidv7.MustString()
-	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
 		Priority: cloudflareemail.PriorityNormal,
-		From:     h.from,
+		From:     h.email.From,
 		To:       recipients,
 		Subject:  subject,
 		Body:     body,
 		Variables: map[string]string{
 			"subject":      subject,
 			"body":         body,
-			"appName":      h.appName,
-			"appURL":       h.appURL,
-			"adminName":    h.adminName,
-			"contactEmail": h.contactEmail,
+			"appName":      h.email.AppName,
+			"appURL":       h.email.AppURL,
+			"adminName":    h.email.AdminName,
+			"contactEmail": h.email.ContactEmail,
 			"preview":      subject,
 		},
 	}); err != nil {

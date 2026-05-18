@@ -29,6 +29,7 @@ import {
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
+import { createIsFilterKey, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -68,9 +69,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'updatedAt', label: '更新日時', type: 'string' }
 ]
 
-function isFilterKey(key: string) {
-  return filterFields.some((f) => f.key === key)
-}
+const isFilterKey = createIsFilterKey(filterFields)
 
 const columns = computed<StaffDataGridColumn[]>(() => [
   { key: 'circle', label: '提出した企画', sortable: false },
@@ -78,7 +77,7 @@ const columns = computed<StaffDataGridColumn[]>(() => [
   { key: 'updatedAt', label: '更新日時', sortable: true }
 ])
 
-const rawAnswers = computed<Record<string, unknown>[]>(() =>
+const rawAnswers = computed<StaffDataGridRow[]>(() =>
   (answersQuery.data.value?.answers ?? []).map((answer) => ({
     id: answer.id,
     circle: answer.circle?.name ?? '',
@@ -88,29 +87,17 @@ const rawAnswers = computed<Record<string, unknown>[]>(() =>
   }))
 )
 
-function resolveSortValue(row: Record<string, unknown>, key: AnswersSortKey) {
+function resolveSortValue(row: StaffDataGridRow, key: AnswersSortKey) {
   return String(row[key] ?? '').toLowerCase()
 }
 
-function matchesSearch(row: Record<string, unknown>, search: string) {
+function matchesSearch(row: StaffDataGridRow, search: string) {
   const haystack = `${String(row.circle ?? '')} ${String(row.groupName ?? '')}`
   return haystack.toLowerCase().includes(search)
 }
 
-function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
-  const left = String(row[query.keyName] ?? '').toLowerCase()
-  const right = query.value.trim().toLowerCase()
-
-  if (query.operator === '=') {
-    return left === right
-  }
-  if (query.operator === '!=') {
-    return left !== right
-  }
-  if (query.operator === 'not like') {
-    return right === '' ? true : !left.includes(right)
-  }
-  return right === '' ? true : left.includes(right)
+function matchesFilterQuery(row: StaffDataGridRow, query: StaffFilterQuery) {
+  return matchesFilterQueryCore(String(row[query.keyName] ?? ''), query)
 }
 
 const {
@@ -217,7 +204,7 @@ async function handleDelete(answerId: string, groupName: string) {
 
         <SurfaceCard>
           <StaffDataGrid
-            :rows="pagedRows as StaffDataGridRow[]"
+            :rows="pagedRows"
             :columns="columns"
             :page="pagination.page.value"
             :page-size="pagination.pageSize.value"

@@ -15,8 +15,8 @@ func NewSQLCRepository(queries *dbgen.Queries) *SQLCRepository {
 	return &SQLCRepository{queries: queries}
 }
 
-func (r *SQLCRepository) List() ([]Place, error) {
-	rows, err := r.queries.ListPlaces(context.Background())
+func (r *SQLCRepository) List(ctx context.Context) ([]Place, error) {
+	rows, err := r.queries.ListPlaces(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -36,8 +36,8 @@ func (r *SQLCRepository) List() ([]Place, error) {
 	return places, nil
 }
 
-func (r *SQLCRepository) Create(name string, placeType int32, notes string) (Place, error) {
-	row, err := r.queries.CreatePlace(context.Background(), dbgen.CreatePlaceParams{
+func (r *SQLCRepository) Create(ctx context.Context, name string, placeType int32, notes string) (Place, error) {
+	row, err := r.queries.CreatePlace(ctx, dbgen.CreatePlaceParams{
 		Name:  name,
 		Type:  placeType,
 		Notes: notes,
@@ -56,8 +56,8 @@ func (r *SQLCRepository) Create(name string, placeType int32, notes string) (Pla
 	}, nil
 }
 
-func (r *SQLCRepository) Update(id, name string, placeType int32, notes string) (Place, error) {
-	row, err := r.queries.UpdatePlace(context.Background(), dbgen.UpdatePlaceParams{
+func (r *SQLCRepository) Update(ctx context.Context, id, name string, placeType int32, notes string) (Place, error) {
+	row, err := r.queries.UpdatePlace(ctx, dbgen.UpdatePlaceParams{
 		ID:    id,
 		Name:  name,
 		Type:  placeType,
@@ -77,8 +77,8 @@ func (r *SQLCRepository) Update(id, name string, placeType int32, notes string) 
 	}, nil
 }
 
-func (r *SQLCRepository) Delete(id string) error {
-	rows, err := r.queries.DeletePlace(context.Background(), id)
+func (r *SQLCRepository) Delete(ctx context.Context, id string) error {
+	rows, err := r.queries.DeletePlace(ctx, id)
 	if err != nil {
 		return err
 	}

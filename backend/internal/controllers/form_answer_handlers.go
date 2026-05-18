@@ -15,7 +15,7 @@ func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	answerValue, found := h.answers.Get(currentForm.ID, currentSession.CurrentCircleID)
+	answerValue, found := h.answers.Get(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID)
 	if !found {
 		return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
 			Answer: nil,
@@ -23,7 +23,7 @@ func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
-		Answer: buildFormAnswerResponse(answerValue, h.answers.ListUploads(currentForm.ID, currentSession.CurrentCircleID)),
+		Answer: buildFormAnswerResponse(answerValue, h.answers.ListUploads(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID)),
 	})
 }
 
@@ -33,10 +33,10 @@ func (h *workspaceHandlers) listFormAnswers(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	answers := h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)
+	answers := h.answers.ListByFormAndCircle(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID)
 	response := make([]formAnswerResponse, 0, len(answers))
 	for _, answerValue := range answers {
-		mapped := buildFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(answerValue.ID))
+		mapped := buildFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(c.Request().Context(), answerValue.ID))
 		if mapped == nil {
 			continue
 		}
@@ -54,13 +54,13 @@ func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
-		Answer: buildFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(answerValue.ID)),
+		Answer: buildFormAnswerResponse(answerValue, h.answers.ListUploadsByAnswer(c.Request().Context(), answerValue.ID)),
 	})
 }
 
@@ -70,14 +70,14 @@ func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	existingAnswers := h.answers.ListByFormAndCircle(currentForm.ID, currentSession.CurrentCircleID)
+	existingAnswers := h.answers.ListByFormAndCircle(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID)
 	if currentForm.MaxAnswers > 0 && int32(len(existingAnswers)) >= currentForm.MaxAnswers {
 		return validationError(c, map[string][]string{
 			"answer": {"max_answers_exceeded"},
 		})
 	}
 
-	created := h.answers.Create(currentForm.ID, currentSession.CurrentCircleID, "", map[string][]string{})
+	created := h.answers.Create(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, "", map[string][]string{})
 	return c.JSON(http.StatusCreated, formAnswerEnvelopeResponse{
 		Answer: buildFormAnswerResponse(created, nil),
 	})
@@ -94,13 +94,13 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
-	questions, err := h.formQuestions.List(currentForm.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), currentForm.ID)
 	if err != nil {
 		return internalError(c)
 	}
 	questions = filterWorkspaceFormQuestions(questions)
 
-	existingUploads := h.answers.ListUploads(currentForm.ID, currentSession.CurrentCircleID)
+	existingUploads := h.answers.ListUploads(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID)
 	trimmedBody := strings.TrimSpace(request.Body)
 	if len(questions) == 0 {
 		if trimmedBody == "" {
@@ -109,7 +109,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 			})
 		}
 
-		answerValue := h.answers.Upsert(currentForm.ID, currentSession.CurrentCircleID, trimmedBody, map[string][]string{})
+		answerValue := h.answers.Upsert(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, trimmedBody, map[string][]string{})
 		h.enqueueWorkspaceFormAnswerMail(c.Request().Context(), currentSession.User.ID, currentForm, answerValue)
 		return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
 			Answer: buildFormAnswerResponse(answerValue, existingUploads),
@@ -122,10 +122,10 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 	}
 
 	summaryBody := buildAnswerSummary(questions, normalizedDetails, existingUploads)
-	answerValue := h.answers.Upsert(currentForm.ID, currentSession.CurrentCircleID, summaryBody, normalizedDetails)
+	answerValue := h.answers.Upsert(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, summaryBody, normalizedDetails)
 	h.enqueueWorkspaceFormAnswerMail(c.Request().Context(), currentSession.User.ID, currentForm, answerValue)
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
-		Answer: buildFormAnswerResponse(answerValue, h.answers.ListUploads(currentForm.ID, currentSession.CurrentCircleID)),
+		Answer: buildFormAnswerResponse(answerValue, h.answers.ListUploads(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID)),
 	})
 }
 
@@ -135,7 +135,7 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
@@ -145,13 +145,13 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
-	questions, err := h.formQuestions.List(currentForm.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), currentForm.ID)
 	if err != nil {
 		return internalError(c)
 	}
 	questions = filterWorkspaceFormQuestions(questions)
 
-	existingUploads := h.answers.ListUploadsByAnswer(answerValue.ID)
+	existingUploads := h.answers.ListUploadsByAnswer(c.Request().Context(), answerValue.ID)
 	trimmedBody := strings.TrimSpace(request.Body)
 	if len(questions) == 0 {
 		if trimmedBody == "" {
@@ -160,7 +160,7 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 			})
 		}
 
-		updatedAnswer, updated := h.answers.Update(answerValue.ID, trimmedBody, map[string][]string{})
+		updatedAnswer, updated := h.answers.Update(c.Request().Context(), answerValue.ID, trimmedBody, map[string][]string{})
 		if !updated {
 			return errorJSON(c, http.StatusNotFound, "answer_not_found")
 		}
@@ -177,14 +177,14 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 	}
 
 	summaryBody := buildAnswerSummary(questions, normalizedDetails, existingUploads)
-	updatedAnswer, updated := h.answers.Update(answerValue.ID, summaryBody, normalizedDetails)
+	updatedAnswer, updated := h.answers.Update(c.Request().Context(), answerValue.ID, summaryBody, normalizedDetails)
 	if !updated {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 	h.enqueueWorkspaceFormAnswerMail(c.Request().Context(), currentSession.User.ID, currentForm, updatedAnswer)
 
 	return c.JSON(http.StatusOK, formAnswerEnvelopeResponse{
-		Answer: buildFormAnswerResponse(updatedAnswer, h.answers.ListUploadsByAnswer(answerValue.ID)),
+		Answer: buildFormAnswerResponse(updatedAnswer, h.answers.ListUploadsByAnswer(c.Request().Context(), answerValue.ID)),
 	})
 }
 
@@ -194,7 +194,7 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	questions, err := h.formQuestions.List(currentForm.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), currentForm.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -257,7 +257,7 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 
 	mimeType := http.DetectContentType(content)
 
-	upload, created := h.answers.AddUpload(currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
+	upload, created := h.answers.AddUpload(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
 	if !created {
 		return internalError(c)
 	}
@@ -271,12 +271,12 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
-	questions, err := h.formQuestions.List(currentForm.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), currentForm.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -339,7 +339,7 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 
 	mimeType := http.DetectContentType(content)
 
-	upload, created := h.answers.AddUploadToAnswer(answerValue.ID, questionID, filename, mimeType, content)
+	upload, created := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
 	if !created {
 		return internalError(c)
 	}
@@ -353,7 +353,7 @@ func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	upload, found := h.answers.FindUpload(currentForm.ID, currentSession.CurrentCircleID, c.Param("uploadID"))
+	upload, found := h.answers.FindUpload(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, c.Param("uploadID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}
@@ -368,12 +368,12 @@ func (h *workspaceHandlers) downloadFormAnswerFileByID(c echo.Context) error {
 		return workspaceFormStatusError(c, status)
 	}
 
-	answerValue, found := h.answers.Find(c.Param("answerID"))
+	answerValue, found := h.answers.Find(c.Request().Context(), c.Param("answerID"))
 	if !found || answerValue.FormID != currentForm.ID || answerValue.CircleID != currentSession.CurrentCircleID {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
-	upload, found := h.answers.FindUploadByAnswerAndQuestion(answerValue.ID, c.Param("questionID"))
+	upload, found := h.answers.FindUploadByAnswerAndQuestion(c.Request().Context(), answerValue.ID, c.Param("questionID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "upload_not_found")
 	}

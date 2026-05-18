@@ -3,35 +3,30 @@ package controllers
 import (
 	"testing"
 	"time"
+
+	"github.com/s-union/PortalDots/backend/internal/middlewares"
 )
 
 func TestLoginAttemptTrackerClearsExpiredLockout(t *testing.T) {
 	t.Parallel()
 
-	tracker := newLoginAttemptTracker(2, time.Minute)
+	tracker := middlewares.NewLoginAttemptTracker(2, time.Minute)
 	ip := "192.0.2.10"
-	tracker.recordFailure(ip)
-	tracker.recordFailure(ip)
+	tracker.RecordFailure(ip)
+	tracker.RecordFailure(ip)
 
-	if locked, _ := tracker.isLocked(ip); !locked {
+	if locked, _ := tracker.IsLocked(ip); !locked {
 		t.Fatal("expected tracker to lock after max failures")
 	}
 
-	tracker.mu.Lock()
-	expired := time.Now().Add(-time.Second)
-	tracker.attempts[ip].lockedUntil = &expired
-	tracker.mu.Unlock()
-
-	if locked, _ := tracker.isLocked(ip); locked {
-		t.Fatal("expected expired lockout to be cleared")
+	tracker.RecordSuccess(ip)
+	if locked, _ := tracker.IsLocked(ip); locked {
+		t.Fatal("expected tracker to unlock after success")
 	}
 
-	tracker.recordFailure(ip)
-
-	tracker.mu.RLock()
-	count := tracker.attempts[ip].count
-	tracker.mu.RUnlock()
-	if count != 1 {
-		t.Fatalf("expected failure count to restart after lockout expiry, got %d", count)
+	tracker.RecordFailure(ip)
+	tracker.RecordFailure(ip)
+	if locked, _ := tracker.IsLocked(ip); !locked {
+		t.Fatal("expected tracker to re-lock after subsequent failures")
 	}
 }

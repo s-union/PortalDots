@@ -3,6 +3,7 @@ package controllers
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"net/http"
@@ -63,7 +64,7 @@ func (h *staffAdminHandlers) buildStaffSummaryCSV() ([]byte, error) {
 		"detail",
 	}}
 
-	for _, currentPage := range h.pages.ListForStaff("") {
+	for _, currentPage := range h.pages.ListForStaff(context.Background(), "") {
 		rows = append(rows, []string{
 			"page",
 			"",
@@ -100,7 +101,7 @@ func (h *staffAdminHandlers) buildStaffSummaryCSV() ([]byte, error) {
 				currentForm.CloseAt,
 			})
 		}
-		for _, currentAnswer := range h.answers.ListByCircle(currentCircle.ID) {
+		for _, currentAnswer := range h.answers.ListByCircle(context.Background(), currentCircle.ID) {
 			rows = append(rows, []string{
 				"answer",
 				currentCircle.ID,
@@ -123,14 +124,14 @@ func (h *staffAdminHandlers) buildStaffBundleZIP() ([]byte, error) {
 		return nil, err
 	}
 	circleNames := make(map[string]string, len(circles))
-	pages := h.pages.ListForStaff("")
+	pages := h.pages.ListForStaff(context.Background(), "")
 	documents := h.documents.ListForStaff()
 	forms := make([]form.Form, 0)
 	answers := make([]answer.Answer, 0)
 	for _, currentCircle := range circles {
 		circleNames[currentCircle.ID] = currentCircle.Name
 		forms = append(forms, h.forms.ListByCircleForStaff(currentCircle.ID)...)
-		answers = append(answers, h.answers.ListByCircle(currentCircle.ID)...)
+		answers = append(answers, h.answers.ListByCircle(context.Background(), currentCircle.ID)...)
 	}
 
 	var buffer bytes.Buffer

@@ -53,7 +53,7 @@ func (h *staffPageHandlers) listStaffPages(c echo.Context) error {
 		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
 	}
 
-	pages := h.pages.ListForStaff(c.QueryParam("query"))
+	pages := h.pages.ListForStaff(c.Request().Context(), c.QueryParam("query"))
 	response := make([]staffPageSummaryResponse, 0, len(pages))
 	for _, currentPage := range pages {
 		item := mapStaffPageSummary(currentPage, h.pageDocuments(currentPage.DocumentIDs, true))
@@ -108,7 +108,7 @@ func (h *staffPageHandlers) getStaffPage(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	pageValue, found := h.pages.FindForStaff(c.Param("pageID"))
+	pageValue, found := h.pages.FindForStaff(c.Request().Context(), c.Param("pageID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
@@ -135,7 +135,7 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 		return validationError(c, documentErrors)
 	}
 
-	created := h.pages.Create(
+	created := h.pages.Create(c.Request().Context(),
 		request.Title,
 		request.Body,
 		request.Notes,
@@ -166,7 +166,7 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	pageValue, found := h.pages.FindForStaff(c.Param("pageID"))
+	pageValue, found := h.pages.FindForStaff(c.Request().Context(), c.Param("pageID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
@@ -182,7 +182,7 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 		return validationError(c, documentErrors)
 	}
 
-	updated, found := h.pages.Update(
+	updated, found := h.pages.Update(c.Request().Context(),
 		c.Param("pageID"),
 		request.Title,
 		request.Body,
@@ -220,12 +220,12 @@ func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
 	}
 
 	pageID := c.Param("pageID")
-	currentPage, found := h.pages.FindForStaff(pageID)
+	currentPage, found := h.pages.FindForStaff(c.Request().Context(), pageID)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
-	if deleted := h.pages.Delete(pageID); !deleted {
+	if deleted := h.pages.Delete(c.Request().Context(), pageID); !deleted {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
@@ -249,7 +249,7 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	currentPage, found := h.pages.FindForStaff(c.Param("pageID"))
+	currentPage, found := h.pages.FindForStaff(c.Request().Context(), c.Param("pageID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
@@ -259,7 +259,7 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
-	updated, found := h.pages.SetPinned(c.Param("pageID"), request.IsPinned)
+	updated, found := h.pages.SetPinned(c.Request().Context(), c.Param("pageID"), request.IsPinned)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
@@ -295,7 +295,7 @@ func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	pages := h.pages.ListForStaff("")
+	pages := h.pages.ListForStaff(c.Request().Context(), "")
 	csvBytes, err := writeCSV(append([][]string{
 		{"お知らせID", "タイトル", "閲覧可能なタグ", "本文", "固定", "公開", "スタッフ用メモ", "作成日時", "更新日時"},
 	}, staffPageRows(pages)...))
@@ -448,21 +448,21 @@ func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID
 	}
 
 	jobID := "staff-page-" + uuidv7.MustString()
-	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
 		Priority: cloudflareemail.PriorityNormal,
-		From:     h.from,
+		From:     h.email.From,
 		To:       recipients,
 		Subject:  currentPage.Title,
 		Body:     body,
 		Variables: map[string]string{
 			"subject":      currentPage.Title,
 			"body":         body,
-			"appName":      h.appName,
-			"appURL":       h.appURL,
-			"adminName":    h.adminName,
-			"contactEmail": h.contactEmail,
+			"appName":      h.email.AppName,
+			"appURL":       h.email.AppURL,
+			"adminName":    h.email.AdminName,
+			"contactEmail": h.email.ContactEmail,
 			"preview":      currentPage.Title,
 		},
 	}); err != nil {
@@ -490,7 +490,7 @@ func (h *staffPageHandlers) pageMailRecipients(viewableTags []string) []string {
 		}
 
 		for _, currentCircle := range circles {
-			if pageVisibleToCircleTags(viewableTags, effectiveCircleTags(currentCircle, h.participationTypes)) {
+			if pageVisibleToCircleTags(viewableTags, effectiveCircleTags(context.Background(), currentCircle, h.participationTypes)) {
 				circleIDs = append(circleIDs, currentCircle.ID)
 			}
 		}

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
@@ -52,6 +52,7 @@ describe('StaffDocumentsIndexPage', () => {
             mimeType: 'text/plain',
             sizeBytes: 128,
             isPublic: false,
+            viewableTags: [],
             createdAt: '2026-03-04T09:00:00Z',
             updatedAt: '2026-03-04T09:00:00Z',
             downloadUrl: '/v1/staff/documents/document-circle-b-private'
@@ -68,6 +69,7 @@ describe('StaffDocumentsIndexPage', () => {
             mimeType: 'text/plain',
             sizeBytes: 256,
             isPublic: true,
+            viewableTags: [],
             createdAt: '2026-03-03T09:00:00Z',
             updatedAt: '2026-03-03T09:00:00Z',
             downloadUrl: '/v1/staff/documents/document-circle-b-checklist'
@@ -113,7 +115,9 @@ describe('StaffDocumentsIndexPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('チェック事項')
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('チェック事項')
+    })
     expect(wrapper.text()).not.toContain('内部メモ')
     expect(wrapper.text()).toContain('配布資料ID')
     expect(wrapper.text()).toContain('サイズ(バイト)')

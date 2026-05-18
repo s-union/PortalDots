@@ -1,6 +1,7 @@
 package formquestion
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"sync"
@@ -39,11 +40,11 @@ type Question struct {
 }
 
 type Repository interface {
-	List(formID string) ([]Question, error)
-	Create(formID, questionType string) (Question, error)
-	Update(question Question) (Question, error)
-	Delete(formID, questionID string) error
-	ReplaceOrder(formID string, orderedQuestionIDs []string) error
+	List(ctx context.Context, formID string) ([]Question, error)
+	Create(ctx context.Context, formID, questionType string) (Question, error)
+	Update(ctx context.Context, question Question) (Question, error)
+	Delete(ctx context.Context, formID, questionID string) error
+	ReplaceOrder(ctx context.Context, formID string, orderedQuestionIDs []string) error
 }
 
 type MemoryRepository struct {
@@ -59,7 +60,7 @@ func NewMemoryRepository() *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) List(formID string) ([]Question, error) {
+func (r *MemoryRepository) List(ctx context.Context, formID string) ([]Question, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -71,7 +72,7 @@ func (r *MemoryRepository) List(formID string) ([]Question, error) {
 	return cloned, nil
 }
 
-func (r *MemoryRepository) Create(formID, questionType string) (Question, error) {
+func (r *MemoryRepository) Create(ctx context.Context, formID, questionType string) (Question, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -95,7 +96,7 @@ func (r *MemoryRepository) Create(formID, questionType string) (Question, error)
 	return cloneQuestion(question), nil
 }
 
-func (r *MemoryRepository) Update(question Question) (Question, error) {
+func (r *MemoryRepository) Update(ctx context.Context, question Question) (Question, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -114,7 +115,7 @@ func (r *MemoryRepository) Update(question Question) (Question, error) {
 	return Question{}, ErrNotFound
 }
 
-func (r *MemoryRepository) Delete(formID, questionID string) error {
+func (r *MemoryRepository) Delete(ctx context.Context, formID, questionID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -135,7 +136,7 @@ func (r *MemoryRepository) Delete(formID, questionID string) error {
 	return ErrNotFound
 }
 
-func (r *MemoryRepository) ReplaceOrder(formID string, orderedQuestionIDs []string) error {
+func (r *MemoryRepository) ReplaceOrder(ctx context.Context, formID string, orderedQuestionIDs []string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

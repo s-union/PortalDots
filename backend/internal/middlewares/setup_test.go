@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,7 @@ type stubSessionAccess struct {
 	sessions map[string]session.Session
 }
 
-func (s stubSessionAccess) Get(id string) (session.Session, bool) {
+func (s stubSessionAccess) Get(_ context.Context, id string) (session.Session, bool) {
 	current, ok := s.sessions[id]
 	return current, ok
 }

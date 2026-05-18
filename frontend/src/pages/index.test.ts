@@ -31,7 +31,7 @@ vi.mock('@/features/forms/api', () => ({
   useFormsQuery: formsApiMocks.useFormsQuery
 }))
 
-vi.mock('@/features/circles/api', () => ({
+vi.mock('@/features/circles/queries', () => ({
   useSelectableCirclesQuery: circlesApiMocks.useSelectableCirclesQuery,
   useCurrentCircleDetailQuery: circlesApiMocks.useCurrentCircleDetailQuery
 }))

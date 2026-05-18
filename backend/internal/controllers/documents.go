@@ -28,7 +28,7 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	documents := h.documents.ListPublic(effectiveCircleTags(currentCircle, h.participationTypes))
+	documents := h.documents.ListPublic(effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes))
 	docIDs := make([]string, len(documents))
 	for i, doc := range documents {
 		docIDs[i] = doc.ID
@@ -65,7 +65,7 @@ func (h *workspaceHandlers) getDocument(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	document, found := h.documents.FindPublic(c.Param("documentID"), effectiveCircleTags(currentCircle, h.participationTypes))
+	document, found := h.documents.FindPublic(c.Param("documentID"), effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}

@@ -32,8 +32,10 @@ func TestListStaffMailsReturnsEmptyWhenNoProducer(t *testing.T) {
 			sessions:            session.NewMemoryStore(time.Hour),
 		},
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
-		emailSender: cloudflareemail.NewNoopSender(),
 		mailHistory: mailhistory.NewMemoryRepository(),
+		email: EmailContext{
+			EmailSender: cloudflareemail.NewNoopSender(),
+		},
 	}
 
 	e := echo.New()
@@ -81,8 +83,10 @@ func TestListStaffMailsRejectsNonAdminStaff(t *testing.T) {
 			sessions:            session.NewMemoryStore(time.Hour),
 		},
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
-		emailSender: cloudflareemail.NewNoopSender(),
 		mailHistory: mailhistory.NewMemoryRepository(),
+		email: EmailContext{
+			EmailSender: cloudflareemail.NewNoopSender(),
+		},
 	}
 
 	e := echo.New()
@@ -123,8 +127,10 @@ func TestEnqueueStaffMailSucceedsWithNoopSenderWhenNoProducer(t *testing.T) {
 		},
 		activities:  activitylog.NewMemoryRepository(),
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
-		emailSender: cloudflareemail.NewNoopSender(),
 		mailHistory: mailhistory.NewMemoryRepository(),
+		email: EmailContext{
+			EmailSender: cloudflareemail.NewNoopSender(),
+		},
 	}
 
 	e := echo.New()
@@ -182,8 +188,10 @@ func TestEnqueueStaffMailRejectsNonAdminStaff(t *testing.T) {
 		},
 		activities:  activitylog.NewMemoryRepository(),
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
-		emailSender: cloudflareemail.NewNoopSender(),
 		mailHistory: mailhistory.NewMemoryRepository(),
+		email: EmailContext{
+			EmailSender: cloudflareemail.NewNoopSender(),
+		},
 	}
 
 	e := echo.New()

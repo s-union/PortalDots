@@ -46,18 +46,18 @@ func (h *workspaceHandlers) resolveCurrentForm(c echo.Context) (formDetailRespon
 		return formDetailResponse{}, session.Session{}, status, false
 	}
 
-	currentForm, found := h.findAccessibleWorkspaceForm(c.Param("formID"), currentCircle)
+	currentForm, found := h.findAccessibleWorkspaceForm(c.Request().Context(), c.Param("formID"), currentCircle)
 	if !found {
 		return formDetailResponse{}, session.Session{}, http.StatusNotFound, false
 	}
 
-	questions, err := h.formQuestions.List(currentForm.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), currentForm.ID)
 	if err != nil {
 		return formDetailResponse{}, session.Session{}, http.StatusInternalServerError, false
 	}
 	questions = filterWorkspaceFormQuestions(questions)
 
-	return h.buildWorkspaceFormDetailResponse(
+	return h.buildWorkspaceFormDetailResponse(c.Request().Context(),
 		currentForm,
 		currentSession.CurrentCircleID,
 		currentCircle,

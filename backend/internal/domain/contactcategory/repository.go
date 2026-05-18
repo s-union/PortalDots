@@ -1,6 +1,7 @@
 package contactcategory
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -19,11 +20,11 @@ type Category struct {
 }
 
 type Repository interface {
-	List() ([]Category, error)
-	Find(id string) (Category, error)
-	Create(name, email string) (Category, error)
-	Update(id, name, email string) (Category, error)
-	Delete(id string) error
+	List(ctx context.Context) ([]Category, error)
+	Find(ctx context.Context, id string) (Category, error)
+	Create(ctx context.Context, name, email string) (Category, error)
+	Update(ctx context.Context, id, name, email string) (Category, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type MemoryRepository struct {
@@ -49,14 +50,14 @@ func NewMemoryRepository(cfg []config.ContactCategory) *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) List() ([]Category, error) {
+func (r *MemoryRepository) List(_ context.Context) ([]Category, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	return slices.Clone(r.items), nil
 }
 
-func (r *MemoryRepository) Find(id string) (Category, error) {
+func (r *MemoryRepository) Find(_ context.Context, id string) (Category, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -68,7 +69,7 @@ func (r *MemoryRepository) Find(id string) (Category, error) {
 	return Category{}, ErrNotFound
 }
 
-func (r *MemoryRepository) Create(name, email string) (Category, error) {
+func (r *MemoryRepository) Create(_ context.Context, name, email string) (Category, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -86,7 +87,7 @@ func (r *MemoryRepository) Create(name, email string) (Category, error) {
 	return created, nil
 }
 
-func (r *MemoryRepository) Update(id, name, email string) (Category, error) {
+func (r *MemoryRepository) Update(_ context.Context, id, name, email string) (Category, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -108,7 +109,7 @@ func (r *MemoryRepository) Update(id, name, email string) (Category, error) {
 	return Category{}, ErrNotFound
 }
 
-func (r *MemoryRepository) Delete(id string) error {
+func (r *MemoryRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

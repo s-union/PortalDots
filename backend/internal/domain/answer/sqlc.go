@@ -21,8 +21,8 @@ func NewSQLCRepository(pool *pgxpool.Pool, queries *dbgen.Queries) *SQLCReposito
 	}
 }
 
-func (r *SQLCRepository) Get(formID, circleID string) (Answer, bool) {
-	row, err := r.queries.GetLatestAnswerByFormAndCircle(context.Background(), dbgen.GetLatestAnswerByFormAndCircleParams{
+func (r *SQLCRepository) Get(ctx context.Context, formID, circleID string) (Answer, bool) {
+	row, err := r.queries.GetLatestAnswerByFormAndCircle(ctx, dbgen.GetLatestAnswerByFormAndCircleParams{
 		FormID:   formID,
 		CircleID: circleID,
 	})
@@ -30,20 +30,20 @@ func (r *SQLCRepository) Get(formID, circleID string) (Answer, bool) {
 		return Answer{}, false
 	}
 
-	return r.loadAnswer(row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
+	return r.loadAnswer(ctx, row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
 }
 
-func (r *SQLCRepository) Find(answerID string) (Answer, bool) {
-	row, err := r.queries.GetAnswerByID(context.Background(), answerID)
+func (r *SQLCRepository) Find(ctx context.Context, answerID string) (Answer, bool) {
+	row, err := r.queries.GetAnswerByID(ctx, answerID)
 	if err != nil {
 		return Answer{}, false
 	}
 
-	return r.loadAnswer(row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
+	return r.loadAnswer(ctx, row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
 }
 
-func (r *SQLCRepository) ListByCircle(circleID string) []Answer {
-	rows, err := r.queries.ListAnswersByCircle(context.Background(), circleID)
+func (r *SQLCRepository) ListByCircle(ctx context.Context, circleID string) []Answer {
+	rows, err := r.queries.ListAnswersByCircle(ctx, circleID)
 	if err != nil {
 		return nil
 	}
@@ -52,11 +52,11 @@ func (r *SQLCRepository) ListByCircle(circleID string) []Answer {
 	for i, row := range rows {
 		answerRows[i] = dbgen.Answer{ID: row.ID, FormID: row.FormID, CircleID: row.CircleID, Body: row.Body, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
 	}
-	return r.loadAnswerRows(answerRows)
+	return r.loadAnswerRows(ctx, answerRows)
 }
 
-func (r *SQLCRepository) ListByForm(formID string) []Answer {
-	rows, err := r.queries.ListAnswersByForm(context.Background(), formID)
+func (r *SQLCRepository) ListByForm(ctx context.Context, formID string) []Answer {
+	rows, err := r.queries.ListAnswersByForm(ctx, formID)
 	if err != nil {
 		return nil
 	}
@@ -65,11 +65,11 @@ func (r *SQLCRepository) ListByForm(formID string) []Answer {
 	for i, row := range rows {
 		answerRows[i] = dbgen.Answer{ID: row.ID, FormID: row.FormID, CircleID: row.CircleID, Body: row.Body, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
 	}
-	return r.loadAnswerRows(answerRows)
+	return r.loadAnswerRows(ctx, answerRows)
 }
 
-func (r *SQLCRepository) ListByFormAndCircle(formID, circleID string) []Answer {
-	rows, err := r.queries.ListAnswersByFormAndCircle(context.Background(), dbgen.ListAnswersByFormAndCircleParams{
+func (r *SQLCRepository) ListByFormAndCircle(ctx context.Context, formID, circleID string) []Answer {
+	rows, err := r.queries.ListAnswersByFormAndCircle(ctx, dbgen.ListAnswersByFormAndCircleParams{
 		FormID:   formID,
 		CircleID: circleID,
 	})
@@ -81,24 +81,23 @@ func (r *SQLCRepository) ListByFormAndCircle(formID, circleID string) []Answer {
 	for i, row := range rows {
 		answerRows[i] = dbgen.Answer{ID: row.ID, FormID: row.FormID, CircleID: row.CircleID, Body: row.Body, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
 	}
-	return r.loadAnswerRows(answerRows)
+	return r.loadAnswerRows(ctx, answerRows)
 }
 
-func (r *SQLCRepository) Upsert(formID, circleID, body string, details map[string][]string) Answer {
-	currentAnswer, found := r.Get(formID, circleID)
+func (r *SQLCRepository) Upsert(ctx context.Context, formID, circleID, body string, details map[string][]string) Answer {
+	currentAnswer, found := r.Get(ctx, formID, circleID)
 	if !found {
-		return r.Create(formID, circleID, body, details)
+		return r.Create(ctx, formID, circleID, body, details)
 	}
 
-	updated, ok := r.Update(currentAnswer.ID, body, details)
+	updated, ok := r.Update(ctx, currentAnswer.ID, body, details)
 	if !ok {
 		return currentAnswer
 	}
 	return updated
 }
 
-func (r *SQLCRepository) Create(formID, circleID, body string, details map[string][]string) Answer {
-	ctx := context.Background()
+func (r *SQLCRepository) Create(ctx context.Context, formID, circleID, body string, details map[string][]string) Answer {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return Answer{}
@@ -134,8 +133,7 @@ func (r *SQLCRepository) Create(formID, circleID, body string, details map[strin
 	}
 }
 
-func (r *SQLCRepository) Update(answerID, body string, details map[string][]string) (Answer, bool) {
-	ctx := context.Background()
+func (r *SQLCRepository) Update(ctx context.Context, answerID, body string, details map[string][]string) (Answer, bool) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return Answer{}, false
@@ -170,8 +168,8 @@ func (r *SQLCRepository) Update(answerID, body string, details map[string][]stri
 	}, true
 }
 
-func (r *SQLCRepository) Delete(answerID string) bool {
-	deleted, err := r.queries.DeleteAnswerByID(context.Background(), answerID)
+func (r *SQLCRepository) Delete(ctx context.Context, answerID string) bool {
+	deleted, err := r.queries.DeleteAnswerByID(ctx, answerID)
 	if err != nil {
 		return false
 	}
@@ -179,17 +177,17 @@ func (r *SQLCRepository) Delete(answerID string) bool {
 	return deleted > 0
 }
 
-func (r *SQLCRepository) ListUploads(formID, circleID string) []Upload {
-	currentAnswer, found := r.Get(formID, circleID)
+func (r *SQLCRepository) ListUploads(ctx context.Context, formID, circleID string) []Upload {
+	currentAnswer, found := r.Get(ctx, formID, circleID)
 	if !found {
 		return nil
 	}
 
-	return r.ListUploadsByAnswer(currentAnswer.ID)
+	return r.ListUploadsByAnswer(ctx, currentAnswer.ID)
 }
 
-func (r *SQLCRepository) ListUploadsByAnswer(answerID string) []Upload {
-	rows, err := r.queries.ListAnswerUploadsByAnswerID(context.Background(), answerID)
+func (r *SQLCRepository) ListUploadsByAnswer(ctx context.Context, answerID string) []Upload {
+	rows, err := r.queries.ListAnswerUploadsByAnswerID(ctx, answerID)
 	if err != nil {
 		return nil
 	}
@@ -212,8 +210,8 @@ func (r *SQLCRepository) ListUploadsByAnswer(answerID string) []Upload {
 	return uploads
 }
 
-func (r *SQLCRepository) FindUpload(formID, circleID, uploadID string) (Upload, bool) {
-	row, err := r.queries.GetAnswerUploadFileByID(context.Background(), uploadID)
+func (r *SQLCRepository) FindUpload(ctx context.Context, formID, circleID, uploadID string) (Upload, bool) {
+	row, err := r.queries.GetAnswerUploadFileByID(ctx, uploadID)
 	if err != nil {
 		return Upload{}, false
 	}
@@ -224,8 +222,8 @@ func (r *SQLCRepository) FindUpload(formID, circleID, uploadID string) (Upload, 
 	return mapUploadFileByIDRow(row), true
 }
 
-func (r *SQLCRepository) FindUploadByAnswerAndQuestion(answerID, questionID string) (Upload, bool) {
-	row, err := r.queries.GetAnswerUploadFileByAnswerAndQuestion(context.Background(), dbgen.GetAnswerUploadFileByAnswerAndQuestionParams{
+func (r *SQLCRepository) FindUploadByAnswerAndQuestion(ctx context.Context, answerID, questionID string) (Upload, bool) {
+	row, err := r.queries.GetAnswerUploadFileByAnswerAndQuestion(ctx, dbgen.GetAnswerUploadFileByAnswerAndQuestionParams{
 		AnswerID:   answerID,
 		QuestionID: optionalString(questionID),
 	})
@@ -236,20 +234,19 @@ func (r *SQLCRepository) FindUploadByAnswerAndQuestion(answerID, questionID stri
 	return mapUploadFileByQuestionRow(row), true
 }
 
-func (r *SQLCRepository) AddUpload(formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
-	currentAnswer, found := r.Get(formID, circleID)
+func (r *SQLCRepository) AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+	currentAnswer, found := r.Get(ctx, formID, circleID)
 	if !found {
-		currentAnswer = r.Create(formID, circleID, "", map[string][]string{})
+		currentAnswer = r.Create(ctx, formID, circleID, "", map[string][]string{})
 		if currentAnswer.ID == "" {
 			return Upload{}, false
 		}
 	}
 
-	return r.AddUploadToAnswer(currentAnswer.ID, questionID, filename, mimeType, content)
+	return r.AddUploadToAnswer(ctx, currentAnswer.ID, questionID, filename, mimeType, content)
 }
 
-func (r *SQLCRepository) AddUploadToAnswer(answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
-	ctx := context.Background()
+func (r *SQLCRepository) AddUploadToAnswer(ctx context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return Upload{}, false
@@ -302,8 +299,8 @@ func (r *SQLCRepository) AddUploadToAnswer(answerID, questionID, filename, mimeT
 	}, true
 }
 
-func (r *SQLCRepository) loadAnswer(id, formID, circleID, body string, createdAt, updatedAt pgtype.Timestamptz) (Answer, bool) {
-	details, err := r.listDetails(id)
+func (r *SQLCRepository) loadAnswer(ctx context.Context, id, formID, circleID, body string, createdAt, updatedAt pgtype.Timestamptz) (Answer, bool) {
+	details, err := r.listDetails(ctx, id)
 	if err != nil {
 		return Answer{}, false
 	}
@@ -319,8 +316,8 @@ func (r *SQLCRepository) loadAnswer(id, formID, circleID, body string, createdAt
 	}, true
 }
 
-func (r *SQLCRepository) listDetails(answerID string) (map[string][]string, error) {
-	rows, err := r.queries.ListAnswerDetailsByAnswerID(context.Background(), answerID)
+func (r *SQLCRepository) listDetails(ctx context.Context, answerID string) (map[string][]string, error) {
+	rows, err := r.queries.ListAnswerDetailsByAnswerID(ctx, answerID)
 	if err != nil {
 		return nil, err
 	}
@@ -363,10 +360,10 @@ func persistAnswerDetails(
 	return true
 }
 
-func (r *SQLCRepository) loadAnswerRows(rows []dbgen.Answer) []Answer {
+func (r *SQLCRepository) loadAnswerRows(ctx context.Context, rows []dbgen.Answer) []Answer {
 	answers := make([]Answer, 0, len(rows))
 	for _, row := range rows {
-		a, ok := r.loadAnswer(row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
+		a, ok := r.loadAnswer(ctx, row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
 		if ok {
 			answers = append(answers, a)
 		}

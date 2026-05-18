@@ -16,15 +16,14 @@ import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
+import { buildCopyStaffFormConfirmMessage, buildDeleteStaffFormConfirmMessage } from '@/features/staff/forms/messages'
 import {
-  buildCopyStaffFormConfirmMessage,
-  buildDeleteStaffFormConfirmMessage,
   extractStaffFormValidationMessage,
   useCopyStaffFormMutation,
   useDeleteStaffFormMutation,
   useStaffFormDetailQuery,
   useUpdateStaffFormMutation
-} from '@/features/staff/forms/api'
+} from '@/features/staff/forms/queries'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'

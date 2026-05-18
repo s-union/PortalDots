@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
@@ -73,7 +74,7 @@ func (h *staffFormHandlers) staffFormContext(c echo.Context, allowed func(*auth.
 		return "", session.Session{}, backendform.Form{}, circle.Circle{}, nil, http.StatusBadRequest, false
 	}
 
-	questions, err := h.formQuestions.List(formValue.ID)
+	questions, err := h.formQuestions.List(c.Request().Context(), formValue.ID)
 	if err != nil {
 		return "", session.Session{}, backendform.Form{}, circle.Circle{}, nil, http.StatusInternalServerError, false
 	}
@@ -142,6 +143,6 @@ func mapStaffAnswerCircle(circleValue circle.Circle) staffAnswerCircleResponse {
 }
 
 func (h *staffFormHandlers) isParticipationForm(formID string) bool {
-	_, err := h.participationTypes.FindByFormID(formID)
+	_, err := h.participationTypes.FindByFormID(context.Background(), formID)
 	return err == nil
 }

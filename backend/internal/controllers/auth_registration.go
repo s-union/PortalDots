@@ -12,7 +12,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const participantVerifyTTL = 60 * time.Minute
@@ -78,9 +77,9 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
 
-	request.UnivemailLocalPart = normalizeRegistrationLocalPart(request.UnivemailLocalPart)
+	request.UnivemailLocalPart = pendingregistration.NormalizeLocalPart(request.UnivemailLocalPart)
 	studentID := request.UnivemailLocalPart
-	univemail := deriveRegistrationUnivemail(request.UnivemailLocalPart, h.portalUnivemailDomainPart)
+	univemail := pendingregistration.DeriveUnivemail(request.UnivemailLocalPart, h.portalUnivemailDomainPart)
 
 	validationErrors := map[string][]string{}
 	if request.UnivemailLocalPart == "" {
@@ -114,7 +113,7 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_registration_token")
 	}
 	tokenHash := hashRegistrationToken(token)
-	pendingValue, err := h.pendingRegistrations.Save(
+	pendingValue, err := h.pendingRegistrations.Save(c.Request().Context(),
 		univemail,
 		studentID,
 		tokenHash,
@@ -145,7 +144,7 @@ func (h *authHandlers) verifyRegistration(c echo.Context) error {
 	}
 	request.PendingRegistrationID = decodeMaybeExternalID(request.PendingRegistrationID)
 
-	pendingValue, err := h.loadAndValidatePendingRegistration(request.PendingRegistrationID, request.Token)
+	pendingValue, err := h.loadAndValidatePendingRegistration(c.Request().Context(), request.PendingRegistrationID, request.Token)
 	if err != nil {
 		if errors.Is(err, errInvalidRegistrationToken) {
 			return validationError(c, map[string][]string{
@@ -156,7 +155,7 @@ func (h *authHandlers) verifyRegistration(c echo.Context) error {
 	}
 
 	if !pendingValue.IsVerified() {
-		pendingValue, err = h.pendingRegistrations.MarkVerified(pendingValue.ID, time.Now().UTC())
+		pendingValue, err = h.pendingRegistrations.MarkVerified(c.Request().Context(), pendingValue.ID, time.Now().UTC())
 		if err != nil {
 			if errors.Is(err, pendingregistration.ErrNotFound) {
 				return validationError(c, map[string][]string{
@@ -182,7 +181,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	}
 	request.PendingRegistrationID = decodeMaybeExternalID(request.PendingRegistrationID)
 
-	pendingValue, err := h.loadAndValidatePendingRegistration(request.PendingRegistrationID, request.Token)
+	pendingValue, err := h.loadAndValidatePendingRegistration(c.Request().Context(), request.PendingRegistrationID, request.Token)
 	if err != nil {
 		if errors.Is(err, errInvalidRegistrationToken) {
 			return validationError(c, map[string][]string{
@@ -203,32 +202,41 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	request.PhoneNumber = strings.TrimSpace(request.PhoneNumber)
 	contactEmailMatchesUnivemail := strings.EqualFold(request.ContactEmail, pendingValue.Univemail)
 
-	lastName, firstName, normalizedName, ok := splitFullName(request.Name)
-	lastNameReading, firstNameReading, _, yomiOK := splitFullName(request.NameYomi)
+	lastName, firstName, normalizedName, _ := pendingregistration.SplitFullName(request.Name)
+	lastNameReading, firstNameReading, _, _ := pendingregistration.SplitFullName(request.NameYomi)
 	validationErrors := map[string][]string{}
-	if !ok {
-		validationErrors["name"] = []string{"姓と名の間にはスペースを入れてください"}
+
+	profile := pendingregistration.RegistrationProfile{
+		Name:                 request.Name,
+		NameYomi:             request.NameYomi,
+		LastName:             lastName,
+		LastNameReading:      lastNameReading,
+		FirstName:            firstName,
+		FirstNameReading:     firstNameReading,
+		DisplayName:          normalizedName,
+		ContactEmail:         request.ContactEmail,
+		PhoneNumber:          request.PhoneNumber,
+		Password:             request.Password,
+		PasswordConfirmation: request.PasswordConfirmation,
 	}
-	if !yomiOK {
-		validationErrors["nameYomi"] = []string{"姓と名の間にはスペースを入れてください"}
-	} else if !isValidYomi(lastNameReading) || !isValidYomi(firstNameReading) {
-		validationErrors["nameYomi"] = []string{"ひらがなで入力してください"}
+	profileResult := pendingregistration.ValidateRegistrationProfile(profile)
+	if profileResult.Name != nil {
+		validationErrors["name"] = profileResult.Name
 	}
-	if request.ContactEmail != "" && !isValidEmail(request.ContactEmail) {
-		validationErrors["contactEmail"] = []string{"連絡先メールアドレスを正しく入力してください"}
+	if profileResult.NameYomi != nil {
+		validationErrors["nameYomi"] = profileResult.NameYomi
 	}
-	if request.PhoneNumber == "" {
-		validationErrors["phoneNumber"] = []string{"連絡先電話番号を入力してください"}
-	} else if !isValidPhoneNumber(request.PhoneNumber) {
-		validationErrors["phoneNumber"] = []string{"電話番号の形式が正しくありません（例: 090-1234-5678）"}
+	if profileResult.ContactEmail != nil {
+		validationErrors["contactEmail"] = profileResult.ContactEmail
 	}
-	if len(request.Password) < 8 {
-		validationErrors["password"] = []string{"パスワードは8文字以上で入力してください"}
-	} else if !passwordHasLetterAndDigit(request.Password) {
-		validationErrors["password"] = []string{"パスワードには英字と数字の両方を含めてください"}
+	if profileResult.PhoneNumber != nil {
+		validationErrors["phoneNumber"] = profileResult.PhoneNumber
 	}
-	if request.Password != request.PasswordConfirmation {
-		validationErrors["passwordConfirmation"] = []string{"確認用パスワードが一致しません"}
+	if profileResult.Password != nil {
+		validationErrors["password"] = profileResult.Password
+	}
+	if profileResult.PasswordConfirmation != nil {
+		validationErrors["passwordConfirmation"] = profileResult.PasswordConfirmation
 	}
 	if _, err := h.users.FindByLoginID(pendingValue.StudentID); err == nil {
 		validationErrors["univemail"] = append(validationErrors["univemail"], "この大学メールアドレスはすでに登録されています")
@@ -245,7 +253,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	passwordHash, err := pendingregistration.HashPassword(request.Password)
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_hash_password")
 	}
@@ -289,7 +297,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 		}
 	}
 
-	if err := h.pendingRegistrations.Delete(pendingValue.ID); err != nil && !errors.Is(err, pendingregistration.ErrNotFound) {
+	if err := h.pendingRegistrations.Delete(c.Request().Context(), pendingValue.ID); err != nil && !errors.Is(err, pendingregistration.ErrNotFound) {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_finalize_registration")
 	}
 
@@ -491,7 +499,7 @@ func (h *authHandlers) issueRegisteredUserSession(c echo.Context, managedUser us
 		Permissions: slices.Clone(managedUser.Permissions),
 	}
 
-	sessionID, _, err := h.sessions.Create(sessionUser)
+	sessionID, _, err := h.sessions.Create(c.Request().Context(), sessionUser)
 	if err != nil {
 		return "", errorJSON(c, http.StatusInternalServerError, "failed_to_create_session")
 	}

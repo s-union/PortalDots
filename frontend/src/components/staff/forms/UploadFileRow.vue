@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { buildStaffFormUploadDownloadUrl, type StaffFormUpload } from '@/features/staff/forms/api'
+import { type StaffFormUpload } from '@/features/staff/forms/api'
+import { buildStaffFormUploadDownloadUrl } from '@/features/staff/forms/urls'
 import { formatDateTime } from '@/lib/format/datetime'
 
 const {

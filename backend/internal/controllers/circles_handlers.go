@@ -52,7 +52,7 @@ func (h *workspaceHandlers) listParticipationTypes(c echo.Context) error {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
 
-	items, err := h.participationTypes.List()
+	items, err := h.participationTypes.List(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -86,7 +86,7 @@ func (h *workspaceHandlers) getParticipationTypeRegistrationForm(c echo.Context)
 		return internalError(c)
 	}
 
-	pt, formValue, questions, err := h.resolveParticipationRegistrationForm(c.Param("typeID"))
+	pt, formValue, questions, err := h.resolveParticipationRegistrationForm(c.Request().Context(), c.Param("typeID"))
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "participation_type_not_found")
 	}
@@ -148,7 +148,7 @@ func (h *workspaceHandlers) setCurrentCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.CurrentCircleID = selectedCircle.ID
 	})
 
@@ -195,7 +195,7 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 
-	pt, formValue, questions, err := h.resolveParticipationRegistrationForm(req.ParticipationTypeID)
+	pt, formValue, questions, err := h.resolveParticipationRegistrationForm(c.Request().Context(), req.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return validationError(c, map[string][]string{"participationTypeId": {"参加種別が存在しません"}})
 	}
@@ -243,7 +243,7 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 	}
 
 	if len(questions) > 0 {
-		h.answers.Upsert(formValue.ID, created.ID, buildAnswerSummary(questions, normalizedDetails, nil), normalizedDetails)
+		h.answers.Upsert(c.Request().Context(), formValue.ID, created.ID, buildAnswerSummary(questions, normalizedDetails, nil), normalizedDetails)
 	}
 	if !canChangeGroupName && len(managedUser.LeaderCircleIDs) > 0 {
 		if err := h.copyExistingMembersToCircle(currentSession.User, managedUser.LeaderCircleIDs[0], created.ID); err != nil {
@@ -251,7 +251,7 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 		}
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.CurrentCircleID = created.ID
 	})
 
@@ -327,7 +327,7 @@ func (h *workspaceHandlers) authCurrentCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.ReauthorizedAt = time.Now()
 	})
 
@@ -358,7 +358,7 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
-	_, pt, formValue, questions, members, leaderDisplayName, isLeader, err := h.loadCurrentCircleRegistration(currentSession.User, currentSession.CurrentCircleID)
+	_, pt, formValue, questions, members, leaderDisplayName, isLeader, err := h.loadCurrentCircleRegistration(c.Request().Context(), currentSession.User, currentSession.CurrentCircleID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -388,7 +388,7 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 		req.GroupNameYomi = circleValue.GroupNameYomi
 	}
 
-	existingUploads := h.answers.ListUploads(formValue.ID, currentSession.CurrentCircleID)
+	existingUploads := h.answers.ListUploads(c.Request().Context(), formValue.ID, currentSession.CurrentCircleID)
 	normalizedDetails, detailErrors := normalizeAnswerDetails(req.Details, questions, existingUploads)
 	for key, messages := range detailErrors {
 		validationErrors[key] = messages
@@ -415,10 +415,10 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 	}
 
 	if len(questions) > 0 {
-		h.answers.Upsert(formValue.ID, updated.ID, buildAnswerSummary(questions, normalizedDetails, existingUploads), normalizedDetails)
+		h.answers.Upsert(c.Request().Context(), formValue.ID, updated.ID, buildAnswerSummary(questions, normalizedDetails, existingUploads), normalizedDetails)
 	}
 
-	return c.JSON(http.StatusOK, h.buildCircleRegistrationResponse(updated, pt, formValue, questions, members, leaderDisplayName, isLeader))
+	return c.JSON(http.StatusOK, h.buildCircleRegistrationResponse(c.Request().Context(), updated, pt, formValue, questions, members, leaderDisplayName, isLeader))
 }
 
 func (h *workspaceHandlers) deleteCurrentCircle(c echo.Context) error {
@@ -438,7 +438,7 @@ func (h *workspaceHandlers) deleteCurrentCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.CurrentCircleID = ""
 	})
 
@@ -465,7 +465,7 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 		})
 	}
 
-	circleValue, pt, formValue, questions, members, _, isLeader, err := h.loadCurrentCircleRegistration(currentSession.User, currentSession.CurrentCircleID)
+	circleValue, pt, formValue, questions, members, _, isLeader, err := h.loadCurrentCircleRegistration(c.Request().Context(), currentSession.User, currentSession.CurrentCircleID)
 	if errors.Is(err, circle.ErrNotFound) || errors.Is(err, circle.ErrForbidden) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
@@ -486,13 +486,13 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 	}
 	answerSummary := ""
 	if len(questions) > 0 {
-		currentAnswer, found := h.answers.Get(formValue.ID, currentSession.CurrentCircleID)
+		currentAnswer, found := h.answers.Get(c.Request().Context(), formValue.ID, currentSession.CurrentCircleID)
 		if !found {
 			return validationError(c, map[string][]string{
 				"answer": {"企画参加登録の設問に回答してください"},
 			})
 		}
-		uploads := h.answers.ListUploads(formValue.ID, currentSession.CurrentCircleID)
+		uploads := h.answers.ListUploads(c.Request().Context(), formValue.ID, currentSession.CurrentCircleID)
 		normalizedAnswerDetails, detailErrors := normalizeAnswerDetails(answerDetailsToAny(currentAnswer.Details), questions, uploads)
 		if len(detailErrors) > 0 {
 			return validationError(c, detailErrors)
@@ -537,7 +537,7 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 	body := buildCircleSubmittedMailBody(submitted, members, formValue.ConfirmationMessage, answerSummary)
 	if _, _, err := enqueueCircleNotificationMail(
 		c.Request().Context(),
-		h.emailSender,
+		h.email.EmailSender,
 		h.users,
 		members,
 		submitted.ID,
@@ -546,11 +546,11 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 		h.allowDangerously,
 		subject,
 		body,
-		h.from,
-		h.appName,
-		h.appURL,
-		h.adminName,
-		h.contactEmail,
+		h.email.From,
+		h.email.AppName,
+		h.email.AppURL,
+		h.email.AdminName,
+		h.email.ContactEmail,
 	); err != nil {
 		return internalError(c)
 	}
@@ -689,7 +689,7 @@ func (h *workspaceHandlers) getCircleByInvitationToken(c echo.Context) error {
 	if joinTarget.SubmittedAt != nil {
 		return errorJSON(c, http.StatusNotFound, "invalid_token")
 	}
-	pt, formValue, _, err := h.resolveParticipationRegistrationForm(joinTarget.ParticipationTypeID)
+	pt, formValue, _, err := h.resolveParticipationRegistrationForm(c.Request().Context(), joinTarget.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "invalid_token")
 	}
@@ -721,7 +721,7 @@ func (h *workspaceHandlers) joinCircleByToken(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	pt, formValue, _, err := h.resolveParticipationRegistrationForm(joinTarget.ParticipationTypeID)
+	pt, formValue, _, err := h.resolveParticipationRegistrationForm(c.Request().Context(), joinTarget.ParticipationTypeID)
 	if errors.Is(err, participationtype.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "invalid_token")
 	}
@@ -743,7 +743,7 @@ func (h *workspaceHandlers) joinCircleByToken(c echo.Context) error {
 		return internalError(c)
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.CurrentCircleID = joined.ID
 	})
 

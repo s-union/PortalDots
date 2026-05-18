@@ -93,7 +93,11 @@ describe('StaffTagsPage', () => {
     expect(wrapper.text().indexOf('飲食')).toBeLessThan(wrapper.text().indexOf('展示'))
     expect(wrapper.get('a[href$="/v1/staff/tags/export"]').text()).toContain('CSVで出力')
 
-    await wrapper.get('button[type="button"]').trigger('click')
+    const createButton = wrapper.findAll('button[type="button"]').find((button) => button.text().includes('新規タグ'))
+    if (!createButton) {
+      throw new Error('create button not found')
+    }
+    await createButton.trigger('click')
     await flushPromises()
 
     const createNameInput = document.body.querySelector('input[name="name"]')
@@ -102,14 +106,16 @@ describe('StaffTagsPage', () => {
     }
     createNameInput.value = '新規タグ'
     createNameInput.dispatchEvent(new Event('input'))
-    const createSubmitButton = document.body.querySelector('button[type="submit"]')
+    const createSubmitButton = createNameInput.closest('form')?.querySelector('button[type="submit"]')
     if (!(createSubmitButton instanceof HTMLButtonElement)) {
       throw new Error('create submit button not found')
     }
     createSubmitButton.click()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('新規タグ')
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('3新規タグ')
+    })
 
     await wrapper.find('button[title="編集"]').trigger('click')
     await flushPromises()
@@ -120,20 +126,24 @@ describe('StaffTagsPage', () => {
     }
     editNameInput.value = '更新タグ'
     editNameInput.dispatchEvent(new Event('input'))
-    const saveButton = document.body.querySelector('button[type="submit"]')
+    const saveButton = editNameInput.closest('form')?.querySelector('button[type="submit"]')
     if (!(saveButton instanceof HTMLButtonElement)) {
       throw new Error('save button not found')
     }
     saveButton.click()
     await flushPromises()
-    expect(wrapper.text()).toContain('更新タグ')
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('更新タグ')
+    })
 
     const deleteButton = wrapper.find('button[title="削除"]')
     await deleteButton.trigger('click')
     await flushPromises()
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('本当に「更新タグ」タグを削除しますか？'))
     expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('全ユーザー公開になります'))
-    expect(wrapper.text()).not.toContain('更新タグ')
+    await vi.waitFor(() => {
+      expect(wrapper.text()).not.toContain('更新タグ')
+    })
   })
 
   it('loads tags without current circle', async () => {

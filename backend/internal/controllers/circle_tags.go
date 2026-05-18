@@ -1,13 +1,14 @@
 package controllers
 
 import (
+	"context"
 	"strings"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 )
 
-func effectiveCircleTags(currentCircle circle.Circle, participationTypes participationtype.Repository) []string {
+func effectiveCircleTags(ctx context.Context, currentCircle circle.Circle, participationTypes participationtype.Repository) []string {
 	tags := make([]string, 0, len(currentCircle.Tags)+4)
 	seen := map[string]struct{}{}
 
@@ -32,7 +33,7 @@ func effectiveCircleTags(currentCircle circle.Circle, participationTypes partici
 		return tags
 	}
 
-	participationType, err := participationTypes.Find(currentCircle.ParticipationTypeID)
+	participationType, err := participationTypes.Find(ctx, currentCircle.ParticipationTypeID)
 	if err != nil {
 		return tags
 	}

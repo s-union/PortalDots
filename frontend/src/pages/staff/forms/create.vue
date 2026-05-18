@@ -17,11 +17,8 @@ import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
-import {
-  createDefaultStaffFormPayload,
-  extractStaffFormValidationMessage,
-  useCreateStaffFormMutation
-} from '@/features/staff/forms/api'
+import { createDefaultStaffFormPayload } from '@/features/staff/forms/utils'
+import { extractStaffFormValidationMessage, useCreateStaffFormMutation } from '@/features/staff/forms/queries'
 import { useFormValidation, staffFormSchema } from '@/lib/form-validation'
 import FormError from '@/components/ui/FormError.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'

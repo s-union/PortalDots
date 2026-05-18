@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -62,7 +63,7 @@ func (h *authHandlers) listContactHistory(c echo.Context) error {
 		return statusError(c, http.StatusUnauthorized)
 	}
 
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
+	selectedCircle, err := resolveCurrentCircle(c.Request().Context(), sessionID, currentSession, h.circles, h.sessions)
 	if err != nil {
 		return internalError(c)
 	}
@@ -118,7 +119,7 @@ func (h *authHandlers) listContactCategories(c echo.Context) error {
 		return statusError(c, http.StatusUnauthorized)
 	}
 
-	items, err := h.contactCategories.List()
+	items, err := h.contactCategories.List(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -140,7 +141,7 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		return statusError(c, http.StatusUnauthorized)
 	}
 
-	selectedCircle, err := resolveCurrentCircle(sessionID, currentSession, h.circles, h.sessions)
+	selectedCircle, err := resolveCurrentCircle(c.Request().Context(), sessionID, currentSession, h.circles, h.sessions)
 	if err != nil {
 		return internalError(c)
 	}
@@ -171,7 +172,7 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	category, err := findContactCategory(h.contactCategories, request.CategoryID)
+	category, err := findContactCategory(c.Request().Context(), h.contactCategories, request.CategoryID)
 	if errors.Is(err, contactcategory.ErrNotFound) {
 		return validationError(c, map[string][]string{"categoryId": {"存在しない問い合わせカテゴリです"}})
 	}
@@ -414,7 +415,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 			}
 		}
 
-		h.sessions.Update(sessionID, func(next *session.Session) {
+		h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 			if next.User == nil {
 				return
 			}
@@ -446,7 +447,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 		return internalError(c)
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		if next.User == nil {
 			return
 		}
@@ -514,13 +515,13 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 		return internalError(c)
 	}
 
-	_ = h.sessions.DeleteOtherSessionsByUserID(currentSession.User.ID, sessionID)
+	_ = h.sessions.DeleteOtherSessionsByUserID(c.Request().Context(), currentSession.User.ID, sessionID)
 
 	if err := h.enqueuePasswordChangedMail(c.Request().Context(), currentSession.User.ID, collectUserEmailRecipients(managedUser)); err != nil {
 		return internalError(c)
 	}
 
-	h.sessions.Update(sessionID, func(next *session.Session) {
+	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		if next.User == nil {
 			return
 		}
@@ -583,7 +584,7 @@ func (h *authHandlers) deleteAccount(c echo.Context) error {
 		return internalError(c)
 	}
 
-	_ = h.sessions.DeleteByUserID(currentUser.ID)
+	_ = h.sessions.DeleteByUserID(c.Request().Context(), currentUser.ID)
 	c.SetCookie(&http.Cookie{
 		Name:     h.sessionCookieName,
 		Value:    "",
@@ -597,8 +598,8 @@ func (h *authHandlers) deleteAccount(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func findContactCategory(repository contactcategory.Repository, categoryID string) (contactcategory.Category, error) {
-	items, err := repository.List()
+func findContactCategory(ctx context.Context, repository contactcategory.Repository, categoryID string) (contactcategory.Category, error) {
+	items, err := repository.List(ctx)
 	if err != nil {
 		return contactcategory.Category{}, err
 	}

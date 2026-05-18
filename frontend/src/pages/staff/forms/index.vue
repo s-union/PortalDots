@@ -22,19 +22,19 @@ import FaIcon from '@/components/ui/FaIcon.vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import { canEditForms, canReadFormAnswers } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { buildCopyStaffFormConfirmMessage, buildDeleteStaffFormConfirmMessage } from '@/features/staff/forms/messages'
+import { buildStaffFormsExportUrl } from '@/features/staff/forms/urls'
 import {
-  buildCopyStaffFormConfirmMessage,
-  buildDeleteStaffFormConfirmMessage,
-  buildStaffFormsExportUrl,
   extractStaffFormValidationMessage,
   useCopyStaffFormMutation,
   useDeleteStaffFormMutation,
   useStaffFormsQuery
-} from '@/features/staff/forms/api'
+} from '@/features/staff/forms/queries'
 import { useSessionStore } from '@/features/session/store'
 import { formatDateTimeTable } from '@/lib/format/datetime'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
+import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import { compareString } from '@/lib/compareString'
 import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -90,9 +90,7 @@ const filterFields: StaffFilterField[] = [
   { key: 'maxAnswers', label: '最大回答数', type: 'string' }
 ]
 
-function isFilterKey(key: string) {
-  return filterFields.some((f) => f.key === key)
-}
+const isFilterKey = createIsFilterKey(filterFields)
 
 const formOrderMap = computed(() => {
   const order = new Map<string, number>()
@@ -104,14 +102,14 @@ const formOrderMap = computed(() => {
   return order
 })
 
-const rawRows = computed<Record<string, unknown>[]>(() =>
+const rawRows = computed<StaffDataGridRow[]>(() =>
   (formsQuery.data.value ?? []).map((staffForm) => ({
     ...staffForm,
     formNumber: String(formOrderMap.value.get(staffForm.id) ?? 0)
   }))
 )
 
-function resolveSortValue(row: Record<string, unknown>, key: StaffFormSortKey) {
+function resolveSortValue(row: StaffDataGridRow, key: StaffFormSortKey) {
   if (key === 'formNumber') {
     return String(row.formNumber ?? '0').padStart(10, '0')
   }
@@ -124,16 +122,11 @@ function resolveSortValue(row: Record<string, unknown>, key: StaffFormSortKey) {
   return String(row[key] ?? '').toLowerCase()
 }
 
-function matchesSearch(row: Record<string, unknown>, search: string) {
-  const haystack = [row.id, row.name, row.description, row.formNumber].join(' ').toLowerCase()
-  return haystack.includes(search)
-}
+const matchesSearch = createMatchesSearch<StaffDataGridRow>(['id', 'name', 'description', 'formNumber'])
 
-function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: string; operator: string; value: string }) {
-  const left = String(row[query.keyName] ?? '').toLowerCase()
-  const right = query.value.trim().toLowerCase()
-
+function matchesFilterQuery(row: StaffDataGridRow, query: StaffFilterQuery) {
   if (query.keyName === 'isPublic') {
+    const right = query.value.trim().toLowerCase()
     const expected = right === 'true' || right === '1'
     if (query.operator === '=') {
       return row.isPublic === expected
@@ -143,16 +136,7 @@ function matchesFilterQuery(row: Record<string, unknown>, query: { keyName: stri
     }
   }
 
-  if (query.operator === '=') {
-    return left === right
-  }
-  if (query.operator === '!=') {
-    return left !== right
-  }
-  if (query.operator === 'not like') {
-    return right === '' ? true : !left.includes(right)
-  }
-  return right === '' ? true : left.includes(right)
+  return matchesFilterQueryCore(String(row[query.keyName] ?? ''), query)
 }
 
 const {
@@ -284,7 +268,7 @@ async function handleReload() {
         <AlertMessage v-if="errorMessage" class="mx-6 mt-4">{{ errorMessage }}</AlertMessage>
 
         <StaffDataGrid
-          :rows="pagedRows as StaffDataGridRow[]"
+          :rows="pagedRows"
           :columns="columns"
           :page="pagination.page.value"
           :page-size="pagination.pageSize.value"

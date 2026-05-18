@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"strings"
@@ -94,7 +95,7 @@ type publicHomeDocumentResponse struct {
 }
 
 func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
-	participationTypes, err := h.listPublicParticipationTypes()
+	participationTypes, err := h.listPublicParticipationTypes(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -107,9 +108,9 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 		PortalAdminName:    h.portalAdminName,
 		PortalContactEmail: h.portalContactEmail,
 		LoginMethods:       h.buildPublicHomeLoginMethods(),
-		PinnedPages:        h.collectPinnedPublicPages(circleTags),
+		PinnedPages:        h.collectPinnedPublicPages(c.Request().Context(), circleTags),
 		ParticipationTypes: participationTypes,
-		Pages:              h.collectPublicPages(circleTags, 5),
+		Pages:              h.collectPublicPages(c.Request().Context(), circleTags, 5),
 		Documents:          h.collectPublicDocuments(3),
 	})
 }
@@ -125,15 +126,15 @@ func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
 }
 
 func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
-	pages := h.pages.ListGuest(c.QueryParam("query"))
+	pages := h.pages.ListGuest(c.Request().Context(), c.QueryParam("query"))
 	pagination := readPagesPagination(c)
 	total := len(pages)
-	if h.pages.SupportsPagination() {
-		total = h.pages.CountGuest(c.QueryParam("query"))
+	if h.pages.SupportsPagination(c.Request().Context()) {
+		total = h.pages.CountGuest(c.Request().Context(), c.QueryParam("query"))
 		page, pageSize := models.NormalizePagination(pagination, total)
 		pagination.Page = page
 		pagination.PageSize = pageSize
-		pages = h.pages.ListGuestPaginated(c.QueryParam("query"), pageSize, (page-1)*pageSize)
+		pages = h.pages.ListGuestPaginated(c.Request().Context(), c.QueryParam("query"), pageSize, (page-1)*pageSize)
 	}
 
 	response := make([]pageSummaryResponse, 0, len(pages))
@@ -150,7 +151,7 @@ func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
 		})
 	}
 
-	if h.pages.SupportsPagination() {
+	if h.pages.SupportsPagination(c.Request().Context()) {
 		return c.JSON(http.StatusOK, models.PaginatedResponse[pageSummaryResponse]{
 			Items:    response,
 			Page:     pagination.Page,
@@ -163,7 +164,7 @@ func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
 }
 
 func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
-	pageValue, found := h.pages.FindGuest(c.Param("pageID"))
+	pageValue, found := h.pages.FindGuest(c.Request().Context(), c.Param("pageID"))
 	if found {
 		return c.JSON(http.StatusOK, pageDetailResponse{
 			ID:        pageValue.ID,
@@ -195,8 +196,8 @@ func (h *publicHomeHandlers) getPublicDocument(c echo.Context) error {
 	return errorJSON(c, http.StatusNotFound, "document_not_found")
 }
 
-func (h *publicHomeHandlers) listPublicParticipationTypes() ([]participationTypeResponse, error) {
-	items, err := h.participationTypes.List()
+func (h *publicHomeHandlers) listPublicParticipationTypes(ctx context.Context) ([]participationTypeResponse, error) {
+	items, err := h.participationTypes.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -217,10 +218,10 @@ func (h *publicHomeHandlers) listPublicParticipationTypes() ([]participationType
 	return response, nil
 }
 
-func (h *publicHomeHandlers) collectPublicPages(circleTags []string, limit int) []publicHomePageResponse {
-	visiblePages := h.pages.ListGuest("")
+func (h *publicHomeHandlers) collectPublicPages(ctx context.Context, circleTags []string, limit int) []publicHomePageResponse {
+	visiblePages := h.pages.ListGuest(ctx, "")
 	if len(circleTags) > 0 {
-		visiblePages = h.pages.ListForCircle(circleTags, "")
+		visiblePages = h.pages.ListForCircle(ctx, circleTags, "")
 	}
 
 	pages := make([]publicHomePageResponse, 0, len(visiblePages))
@@ -243,8 +244,8 @@ func (h *publicHomeHandlers) collectPublicPages(circleTags []string, limit int) 
 	return pages
 }
 
-func (h *publicHomeHandlers) collectPinnedPublicPages(circleTags []string) []publicPinnedPageResponse {
-	allPages := h.pages.ListForStaff("")
+func (h *publicHomeHandlers) collectPinnedPublicPages(ctx context.Context, circleTags []string) []publicPinnedPageResponse {
+	allPages := h.pages.ListForStaff(ctx, "")
 	pages := make([]publicPinnedPageResponse, 0, len(allPages))
 	for _, currentPage := range allPages {
 		if !currentPage.IsPinned || !currentPage.IsPublic {
@@ -290,7 +291,7 @@ func (h *publicHomeHandlers) currentPublicHomeCircleTags(c echo.Context) []strin
 		return nil
 	}
 
-	return effectiveCircleTags(currentCircle, h.participationTypes)
+	return effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes)
 }
 
 func (h *publicHomeHandlers) collectPublicDocuments(limit int) []publicHomeDocumentResponse {

@@ -22,8 +22,8 @@ func NewSQLCRepository(pool *pgxpool.Pool, queries *dbgen.Queries) *SQLCReposito
 	}
 }
 
-func (r *SQLCRepository) List(formID string) ([]Question, error) {
-	rows, err := r.queries.ListFormQuestionsByFormID(context.Background(), formID)
+func (r *SQLCRepository) List(ctx context.Context, formID string) ([]Question, error) {
+	rows, err := r.queries.ListFormQuestionsByFormID(ctx, formID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,13 +40,13 @@ func (r *SQLCRepository) List(formID string) ([]Question, error) {
 	return questions, nil
 }
 
-func (r *SQLCRepository) Create(formID, questionType string) (Question, error) {
-	count, err := r.queries.CountFormQuestionsByFormID(context.Background(), formID)
+func (r *SQLCRepository) Create(ctx context.Context, formID, questionType string) (Question, error) {
+	count, err := r.queries.CountFormQuestionsByFormID(ctx, formID)
 	if err != nil {
 		return Question{}, err
 	}
 
-	row, err := r.queries.CreateFormQuestion(context.Background(), dbgen.CreateFormQuestionParams{
+	row, err := r.queries.CreateFormQuestion(ctx, dbgen.CreateFormQuestionParams{
 		FormID:       formID,
 		Name:         "",
 		Description:  "",
@@ -65,13 +65,13 @@ func (r *SQLCRepository) Create(formID, questionType string) (Question, error) {
 	return mapCreateQuestionRow(row)
 }
 
-func (r *SQLCRepository) Update(question Question) (Question, error) {
+func (r *SQLCRepository) Update(ctx context.Context, question Question) (Question, error) {
 	options, err := json.Marshal(question.Options)
 	if err != nil {
 		return Question{}, err
 	}
 
-	row, err := r.queries.UpdateFormQuestion(context.Background(), dbgen.UpdateFormQuestionParams{
+	row, err := r.queries.UpdateFormQuestion(ctx, dbgen.UpdateFormQuestionParams{
 		ID:           question.ID,
 		Name:         question.Name,
 		Description:  question.Description,
@@ -90,8 +90,8 @@ func (r *SQLCRepository) Update(question Question) (Question, error) {
 	return mapUpdateQuestionRow(row)
 }
 
-func (r *SQLCRepository) Delete(formID, questionID string) error {
-	rows, err := r.queries.DeleteFormQuestion(context.Background(), questionID)
+func (r *SQLCRepository) Delete(ctx context.Context, formID, questionID string) error {
+	rows, err := r.queries.DeleteFormQuestion(ctx, questionID)
 	if err != nil {
 		return err
 	}
@@ -99,23 +99,23 @@ func (r *SQLCRepository) Delete(formID, questionID string) error {
 		return ErrNotFound
 	}
 
-	questions, err := r.List(formID)
+	questions, err := r.List(ctx, formID)
 	if err != nil {
 		return err
 	}
 
-	return r.ReplaceOrder(formID, extractQuestionIDs(questions))
+	return r.ReplaceOrder(ctx, formID, extractQuestionIDs(questions))
 }
 
-func (r *SQLCRepository) ReplaceOrder(formID string, orderedQuestionIDs []string) error {
-	tx, err := r.pool.Begin(context.Background())
+func (r *SQLCRepository) ReplaceOrder(ctx context.Context, formID string, orderedQuestionIDs []string) error {
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback(ctx)
 
 	queries := r.queries.WithTx(tx)
-	currentQuestions, err := queries.ListFormQuestionsByFormID(context.Background(), formID)
+	currentQuestions, err := queries.ListFormQuestionsByFormID(ctx, formID)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (r *SQLCRepository) ReplaceOrder(formID string, orderedQuestionIDs []string
 			return ErrNotFound
 		}
 
-		if _, err := queries.UpdateFormQuestion(context.Background(), dbgen.UpdateFormQuestionParams{
+		if _, err := queries.UpdateFormQuestion(ctx, dbgen.UpdateFormQuestionParams{
 			ID:           question.ID,
 			Name:         question.Name,
 			Description:  question.Description,
@@ -150,7 +150,7 @@ func (r *SQLCRepository) ReplaceOrder(formID string, orderedQuestionIDs []string
 		}
 	}
 
-	return tx.Commit(context.Background())
+	return tx.Commit(ctx)
 }
 
 func extractQuestionIDs(questions []Question) []string {
