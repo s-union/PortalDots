@@ -1,87 +1,124 @@
-# Backend Foundation
+# Backend
 
-This directory contains the Go backend for PortalDots.
+Go API server for PortalDots.
 
-## Structure
+## Stack
+
+- **Framework**: Echo v4
+- **Database**: PostgreSQL 18 (pgx/v5)
+- **Query generation**: sqlc
+- **Hot reload**: air
+- **Migrations**: goose-compatible SQL files under `db/migrations/`
+
+## Directory structure
 
 ```text
 backend/
-├── api/                    # OpenAPI contract
-├── cmd/                    # executable entrypoints
-├── db/                     # migrations and sqlc query sources
-└── internal/
-    ├── app/               # app-level jobs and workers
-    ├── controllers/       # HTTP handlers, routes, server composition
-    ├── http/              # new HTTP composition root and future feature-first API layout
-    ├── domain/            # business repositories and domain services
-    ├── middlewares/       # Echo middleware and request guards
-    ├── models/            # shared request/response transport models
-    └── platform/          # config, database wiring, postgres helpers
+├── api/                      # OpenAPI contract (openapi.yaml)
+├── db/
+│   ├── migrations/           # SQL migration files (goose format)
+│   └── queries/              # sqlc query sources (.sql)
+├── internal/
+│   ├── app/                  # process-level jobs and workers
+│   ├── controllers/          # Echo handlers and route registration
+│   ├── domain/               # feature-oriented business repositories and services
+│   ├── http/server/          # HTTP composition root (wires dependencies → Echo)
+│   ├── mailworker/           # local email delivery worker
+│   ├── middlewares/          # Echo middleware and request guards
+│   ├── models/               # shared HTTP transport models (errors, pagination)
+│   ├── platform/             # config loading, DB bootstrap, sqlc store wiring
+│   ├── shared/               # cross-cutting helpers
+│   └── testutil/             # test helpers
+├── scripts/
+│   ├── dev.go                # orchestrates local dev stack
+│   ├── migrate/main.go       # standalone migration runner
+│   ├── seed/main.go          # demo data seeder
+│   └── sqlc-smoke/main.go    # verifies generated sqlc queries compile
+├── .air.toml                 # air hot-reload config
+├── main.go                   # server entrypoint
+└── sqlc.yaml                 # sqlc configuration
 ```
 
-Rules of thumb:
+### Domain packages (`internal/domain/`)
 
-- `cmd/*`: only program startup and wiring for CLI / server processes.
-- `internal/domain`: feature-oriented business code such as `form`, `page`, `useradmin`.
-- `internal/platform`: infrastructure code such as config loading, SQLC store wiring, and generated PostgreSQL access.
-- `internal/controllers`: Echo handlers and request/response mapping.
-- `internal/http/server`: `cmd/api` から参照される新しい composition root。依存を `public/workspace/staff/shared` の関心ごとで束ねる。
-- `internal/middlewares`: Echo middleware setup.
-- `internal/models`: shared API transport models (errors/pagination, etc.)
+Each sub-package owns the repository interface and its implementation for one bounded context:
 
-人間向けの索引は [docs/backend-map.md](./docs/backend-map.md) を参照してください。
+`activitylog` · `answer` · `auth` · `booth` · `circle` · `contactcategory` · `document` · `form` · `formquestion` · `mailhistory` · `mailqueue` · `page` · `participationtype` · `pendingregistration` · `place` · `portalsetting` · `registrationmail` · `session` · `staffpermission` · `tag` · `useradmin`
 
-Current scope:
+### Backend map (concern → file)
 
-- Echo server skeleton
-- OpenAPI contract starter
-- sqlc configuration
-- sqlc generated package under `internal/platform/postgres/db`
-- optional sqlc smoke command under `cmd/sqlc-smoke`
-- `cmd/api` now wires sqlc-backed repositories and session storage for the production path
-- goose-compatible migration directory
-- login / logout / session bootstrap
-- staff verification request / status / confirm
-- staff current-circle pages list / create
-- staff current-circle documents list / upload / download
-- staff tags list / create / update / delete
-- staff places list / create / update / delete
-- staff contact categories list / create / update / delete
-- staff current-circle forms list / create / detail
-- staff current-circle forms update / question editor / per-question answer preview / upload download
-- staff circle list / create / detail / update
-- staff user list / detail / role update
-- staff activity log list
-- staff current-circle exports (`summary.csv`, `bundle.zip`)
-- staff mail queue list / enqueue
-- one-shot worker command to mark queued mail jobs as sent
-- circle selection context
-- current-circle pages list / detail / search
-- current-circle documents list / detail / download
-- current-circle forms list / detail / question-based answer save
-- current-circle per-question answer file upload / download
+| Concern | HTTP entry | Domain | SQL |
+| ------- | ---------- | ------ | --- |
+| Auth / Session | `controllers/auth*.go`, `session_bootstrap.go`, `staff_verify.go` | `domain/auth`, `domain/session`, `domain/pendingregistration` | `queries/users.sql`, `sessions.sql`, `pending_registrations.sql` |
+| Circles | `controllers/circles*.go` | `domain/circle`, `domain/participationtype` | `queries/circles.sql`, `participation_types.sql` |
+| Pages | `controllers/pages.go` | `domain/page`, `domain/document` | `queries/pages.sql`, `documents.sql` |
+| Forms & Answers | `controllers/forms.go`, `form_answer_*.go` | `domain/form`, `domain/formquestion`, `domain/answer` | `queries/forms.sql`, `form_questions.sql`, `answers.sql` |
+| Staff / Users | `controllers/staff_users*.go`, `staff_permissions.go` | `domain/useradmin`, `domain/staffpermission` | `queries/users.sql` |
+| Staff / Masters | `controllers/staff_masters.go` | `domain/tag`, `domain/place`, `domain/contactcategory` | `queries/tags.sql`, `places.sql`, `contact_categories.sql` |
+| Staff / Admin | `controllers/staff_activity_logs.go`, `staff_mails.go` | `domain/activitylog`, `domain/mailqueue` | `queries/activity_logs.sql` |
 
-Useful commands:
+For design rationale behind these package boundaries, see [docs/backend.md](../docs/backend.md).
 
-- `PORTAL_DATABASE_URL=postgres://... mise run backend-migrate`
-- `mise run backend-sqlc-generate`
-- `PORTAL_DATABASE_URL=postgres://... mise run backend-sqlc-smoke`
-- `PORTAL_DATABASE_URL=postgres://... PORTAL_STAFF_VERIFY_CODE=... go run ./cmd/api`
+## Configuration
 
-Local development notes:
+Copy `.env.example` to `backend/.env` and adjust:
 
-- Docker のローカル PostgreSQL は `postgres:18` 前提です。UUID 採番は `uuidv7()` を使います。
-- `mise run dev` は起動前に `docker compose -f docker-compose.postgres.yml down -v` を実行し、ローカル DB volume を毎回破棄してから migrate と demo seed を再作成します。
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `PORTAL_DATABASE_URL` | `postgres://portaldots:portaldots@127.0.0.1:55432/portaldots_rebuild?sslmode=disable` | PostgreSQL connection string |
+| `PORTAL_API_BIND` | `127.0.0.1:8080` | Bind address for the HTTP server |
+| `PORTAL_STAFF_VERIFY_CODE` | `654321` | Required staff verification code (must be non-default in production) |
+| `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE` | `true` | Skips staff verify step and re-seeds on every startup |
+| `PORTAL_SESSION_TTL_SECONDS` | `86400` | Session cookie lifetime (default 24 h) |
+| `PORTAL_EMAIL_PRODUCER_URL` | `http://localhost:8787` | Email producer Worker endpoint |
+| `PORTAL_EMAIL_PRODUCER_TOKEN` | `dev-token` | Auth token for the email producer |
+| `PORTAL_EMAIL_FROM` | — | From address for outbound mail |
 
-Behavior notes:
+Frontend-facing variables (read by Vite proxy):
 
-- `cmd/api` runs SQL migrations on startup before wiring repositories.
-- Seed data is inserted when the database is empty (`users` count is zero).
-- When `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true`, configured demo seed data is reapplied on every startup.
-- `cmd/api` requires an explicit non-default value for `PORTAL_STAFF_VERIFY_CODE` unless `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` is set.
-- Session cookies now use `PORTAL_SESSION_TTL_SECONDS` and default to 12 hours.
-- Staff verify email delivery is currently mocked. `POST /v1/staff/verify/request` returns the verification code only when `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true`; otherwise the configured staff verify code is required and is not exposed in the response.
-- When `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` (demo mode), staff endpoints treat staff users as already authorized without an extra verify step.
-- 現在の upload 保存先は PostgreSQL です。`answer_uploads` と `documents.content` にバイナリを直接保存しており、外部ストレージ連携はまだありません。
-- form answer は `answer_details` と `question_id 付き answer_uploads` で保持しています。設問が 0 件の既存フォームだけは後方互換のため `body` ベースでも保存できます。
-- staff form editor は設問の追加、更新、削除、並び替えまで実装済みです。participant / staff ともに設問ベースの回答表示に切り替わっています。
+| Variable | Default |
+| -------- | ------- |
+| `VITE_API_BASE_URL` | `/v1` |
+| `VITE_API_PROXY_TARGET` | `http://127.0.0.1:8080` |
+
+## Commands
+
+```bash
+# Start with hot reload (requires PORTAL_DATABASE_URL in backend/.env)
+mise run backend-dev
+
+# Run all migrations
+mise run backend-migrate
+
+# Insert demo data
+mise run backend-seed
+
+# Run tests
+mise run backend-test
+
+# Run tests with coverage
+mise run backend-cover
+
+# Static analysis (staticcheck)
+mise run backend-check
+
+# Format
+mise run backend-format
+
+# Regenerate sqlc Go code
+mise run backend-sqlc-generate
+
+# Smoke-test generated queries against a live DB
+mise run backend-sqlc-smoke
+```
+
+## Behavior notes
+
+- `main.go` runs SQL migrations on startup before accepting requests.
+- Seed data is inserted when the `users` table is empty.
+- `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` re-applies seed data on every startup and exposes the verify code in `POST /v1/staff/verify/request`.
+- `PORTAL_STAFF_VERIFY_CODE` must be set to a non-default value in production unless demo mode is enabled.
+- Uploaded files (form answers, documents) are stored as binary in PostgreSQL. No external object storage is wired yet.
+- Form answers are stored per-question in `answer_details` and `answer_uploads`. Forms with zero questions fall back to `body`-based storage for backwards compatibility.
+- UUID generation uses `uuidv7()` — requires PostgreSQL 18+.
+- The local PostgreSQL image is `postgres:18`.

@@ -208,7 +208,7 @@ func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
 	}
 	currentCircle := circle.Circle{}
 	if request.CircleID != "" {
-		foundCircle, err := h.circles.Find(request.CircleID)
+		foundCircle, err := h.circles.Find(c.Request().Context(), request.CircleID)
 		if err != nil {
 			return validationError(c, map[string][]string{"circleId": {"企画を選択してください"}})
 		}

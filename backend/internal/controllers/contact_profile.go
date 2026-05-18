@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -584,7 +585,9 @@ func (h *authHandlers) deleteAccount(c echo.Context) error {
 		return internalError(c)
 	}
 
-	_ = h.sessions.DeleteByUserID(c.Request().Context(), currentUser.ID)
+	if err := h.sessions.DeleteByUserID(c.Request().Context(), currentUser.ID); err != nil {
+		slog.ErrorContext(c.Request().Context(), "failed to delete sessions after account deletion", "userID", currentUser.ID, "error", err)
+	}
 	c.SetCookie(&http.Cookie{
 		Name:     h.sessionCookieName,
 		Value:    "",

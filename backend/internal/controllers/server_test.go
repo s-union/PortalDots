@@ -449,8 +449,15 @@ func TestPasswordResetFlow(t *testing.T) {
 	}
 
 	assertStaffMailsEmpty(t, server, staffCookies)
+
+	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
 	var queuedMails []staffMailResponse
-	return
+	if err := json.Unmarshal(recorder.Body.Bytes(), &queuedMails); err != nil {
+		t.Fatalf("unmarshal staff mails: %v", err)
+	}
 
 	resetURL := ""
 	for _, queued := range queuedMails {
@@ -460,7 +467,13 @@ func TestPasswordResetFlow(t *testing.T) {
 		if !slices.Contains(queued.Recipients, "circle-b-contact@example.com") {
 			continue
 		}
-		continue
+		for _, line := range strings.Split(queued.Body, "\n") {
+			line = strings.TrimSpace(line)
+			if strings.Contains(line, "/password/reset/") {
+				resetURL = line
+				break
+			}
+		}
 		break
 	}
 	if resetURL == "" {

@@ -19,7 +19,7 @@ func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
 		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
 	}
 
-	circles, err := h.circles.ListForStaff()
+	circles, err := h.circles.ListForStaff(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -98,7 +98,7 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "answer_not_found")
 	}
 
-	currentCircle, err := h.circles.Find(answerValue.CircleID)
+	currentCircle, err := h.circles.Find(c.Request().Context(), answerValue.CircleID)
 	if err != nil {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
@@ -136,7 +136,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 		validationErrors["circleId"] = []string{"circle_id_required"}
 	}
 
-	targetCircle, err := h.circles.Find(request.CircleID)
+	targetCircle, err := h.circles.Find(c.Request().Context(), request.CircleID)
 	if request.CircleID != "" && err != nil {
 		validationErrors["circleId"] = []string{"circle_not_found"}
 	}
@@ -379,7 +379,7 @@ func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c echo.Context) erro
 		return statusError(c, status)
 	}
 
-	circles, err := h.circles.ListForStaff()
+	circles, err := h.circles.ListForStaff(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}

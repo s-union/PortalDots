@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -61,19 +62,19 @@ func leaderSummary(members []circle.CircleMember, currentUserID string) (string,
 	return leaderDisplayName, isLeader
 }
 
-func (h *workspaceHandlers) defaultGroupForUser(userValue useradmin.User) (string, string, bool) {
+func (h *workspaceHandlers) defaultGroupForUser(ctx context.Context, userValue useradmin.User) (string, string, bool) {
 	if len(userValue.LeaderCircleIDs) == 0 {
 		return "", "", true
 	}
-	existingCircle, err := h.circles.Find(userValue.LeaderCircleIDs[0])
+	existingCircle, err := h.circles.Find(ctx, userValue.LeaderCircleIDs[0])
 	if err != nil {
 		return "", "", true
 	}
 	return existingCircle.GroupName, existingCircle.GroupNameYomi, false
 }
 
-func (h *workspaceHandlers) copyExistingMembersToCircle(requester *auth.User, sourceCircleID, destinationCircleID string) error {
-	members, err := h.circles.ListMembers(sourceCircleID)
+func (h *workspaceHandlers) copyExistingMembersToCircle(ctx context.Context, requester *auth.User, sourceCircleID, destinationCircleID string) error {
+	members, err := h.circles.ListMembers(ctx, sourceCircleID)
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func (h *workspaceHandlers) copyExistingMembersToCircle(requester *auth.User, so
 		if member.IsLeader {
 			continue
 		}
-		if err := h.circles.AddMember(requester, destinationCircleID, member.UserID, member.DisplayName, true); err != nil {
+		if err := h.circles.AddMember(ctx, requester, destinationCircleID, member.UserID, member.DisplayName, true); err != nil {
 			return err
 		}
 	}

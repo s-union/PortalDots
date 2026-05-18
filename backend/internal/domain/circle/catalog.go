@@ -1,6 +1,7 @@
 package circle
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -66,30 +67,30 @@ type UpdateCircleParams struct {
 }
 
 type Catalog interface {
-	ListSelectable(user *auth.User) ([]Circle, error)
-	FindSelectable(user *auth.User, circleID string) (Circle, error)
-	ListForStaff() ([]Circle, error)
-	Find(circleID string) (Circle, error)
-	Create(name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
-	Update(circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
-	UpdateTags(circleID string, tags []string) (Circle, error)
-	Delete(circleID string) error
+	ListSelectable(ctx context.Context, user *auth.User) ([]Circle, error)
+	FindSelectable(ctx context.Context, user *auth.User, circleID string) (Circle, error)
+	ListForStaff(ctx context.Context) ([]Circle, error)
+	Find(ctx context.Context, circleID string) (Circle, error)
+	Create(ctx context.Context, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
+	Update(ctx context.Context, circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error)
+	UpdateTags(ctx context.Context, circleID string, tags []string) (Circle, error)
+	Delete(ctx context.Context, circleID string) error
 
 	// Workspace user-facing methods
-	GetUserCircle(user *auth.User, circleID string) (Circle, error)
-	CreateForUser(user *auth.User, params CreateCircleParams) (Circle, error)
-	UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error)
-	DeleteForUser(user *auth.User, circleID string) error
-	Submit(user *auth.User, circleID string) (Circle, error)
-	SubmitByStaff(circleID string) error
-	ListMembers(circleID string) ([]CircleMember, error)
-	AddMemberAsStaff(circleID, targetUserID, targetDisplayName string) error
-	RemoveMemberAsStaff(circleID, targetUserID string) error
-	AddMember(requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error
-	RemoveMember(requester *auth.User, circleID, targetUserID string) error
-	RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error)
-	JoinByToken(user *auth.User, token string) (Circle, error)
-	FindByInvitationToken(token string) (Circle, error)
+	GetUserCircle(ctx context.Context, user *auth.User, circleID string) (Circle, error)
+	CreateForUser(ctx context.Context, user *auth.User, params CreateCircleParams) (Circle, error)
+	UpdateForUser(ctx context.Context, user *auth.User, circleID string, params UpdateCircleParams) (Circle, error)
+	DeleteForUser(ctx context.Context, user *auth.User, circleID string) error
+	Submit(ctx context.Context, user *auth.User, circleID string) (Circle, error)
+	SubmitByStaff(ctx context.Context, circleID string) error
+	ListMembers(ctx context.Context, circleID string) ([]CircleMember, error)
+	AddMemberAsStaff(ctx context.Context, circleID, targetUserID, targetDisplayName string) error
+	RemoveMemberAsStaff(ctx context.Context, circleID, targetUserID string) error
+	AddMember(ctx context.Context, requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error
+	RemoveMember(ctx context.Context, requester *auth.User, circleID, targetUserID string) error
+	RegenerateInvitationToken(ctx context.Context, user *auth.User, circleID string) (Circle, error)
+	JoinByToken(ctx context.Context, user *auth.User, token string) (Circle, error)
+	FindByInvitationToken(ctx context.Context, token string) (Circle, error)
 }
 
 type StaticCatalog struct {
@@ -146,7 +147,7 @@ func NewStaticCatalog(cfg []config.Circle, authUser config.AuthUser, users []con
 	}
 }
 
-func (c *StaticCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
+func (c *StaticCatalog) ListSelectable(_ context.Context, user *auth.User) ([]Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -168,7 +169,7 @@ func (c *StaticCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 	return selectable, nil
 }
 
-func (c *StaticCatalog) FindSelectable(user *auth.User, circleID string) (Circle, error) {
+func (c *StaticCatalog) FindSelectable(_ context.Context, user *auth.User, circleID string) (Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -185,18 +186,18 @@ func (c *StaticCatalog) FindSelectable(user *auth.User, circleID string) (Circle
 	return c.findCircleLocked(circleID)
 }
 
-func (c *StaticCatalog) ListForStaff() ([]Circle, error) {
+func (c *StaticCatalog) ListForStaff(_ context.Context) ([]Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	return cloneCircles(c.circles), nil
 }
 
-func (c *StaticCatalog) Find(circleID string) (Circle, error) {
-	return c.FindSelectable(nil, circleID)
+func (c *StaticCatalog) Find(ctx context.Context, circleID string) (Circle, error) {
+	return c.FindSelectable(ctx, nil, circleID)
 }
 
-func (c *StaticCatalog) Create(name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, _ string, placeIDs []string) (Circle, error) {
+func (c *StaticCatalog) Create(_ context.Context, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, _ string, placeIDs []string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -224,7 +225,7 @@ func (c *StaticCatalog) Create(name, nameYomi, groupName, groupNameYomi, partici
 	return cloneCircle(circle), nil
 }
 
-func (c *StaticCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, _ string, placeIDs []string) (Circle, error) {
+func (c *StaticCatalog) Update(_ context.Context, circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, _ string, placeIDs []string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -252,7 +253,7 @@ func (c *StaticCatalog) Update(circleID, name, nameYomi, groupName, groupNameYom
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) UpdateTags(circleID string, tags []string) (Circle, error) {
+func (c *StaticCatalog) UpdateTags(_ context.Context, circleID string, tags []string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -267,7 +268,7 @@ func (c *StaticCatalog) UpdateTags(circleID string, tags []string) (Circle, erro
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) Delete(circleID string) error {
+func (c *StaticCatalog) Delete(_ context.Context, circleID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -283,7 +284,7 @@ func (c *StaticCatalog) Delete(circleID string) error {
 	return ErrNotFound
 }
 
-func (c *StaticCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, error) {
+func (c *StaticCatalog) GetUserCircle(_ context.Context, user *auth.User, circleID string) (Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -297,7 +298,7 @@ func (c *StaticCatalog) GetUserCircle(user *auth.User, circleID string) (Circle,
 	return c.findCircleLocked(circleID)
 }
 
-func (c *StaticCatalog) CreateForUser(user *auth.User, params CreateCircleParams) (Circle, error) {
+func (c *StaticCatalog) CreateForUser(_ context.Context, user *auth.User, params CreateCircleParams) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -328,7 +329,7 @@ func (c *StaticCatalog) CreateForUser(user *auth.User, params CreateCircleParams
 	return cloneCircle(circle), nil
 }
 
-func (c *StaticCatalog) UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
+func (c *StaticCatalog) UpdateForUser(_ context.Context, user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if user == nil || !c.isCircleLeaderLocked(circleID, user.ID) {
@@ -351,7 +352,7 @@ func (c *StaticCatalog) UpdateForUser(user *auth.User, circleID string, params U
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) DeleteForUser(user *auth.User, circleID string) error {
+func (c *StaticCatalog) DeleteForUser(_ context.Context, user *auth.User, circleID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if user == nil || !c.isCircleLeaderLocked(circleID, user.ID) {
@@ -370,7 +371,7 @@ func (c *StaticCatalog) DeleteForUser(user *auth.User, circleID string) error {
 	return ErrNotFound
 }
 
-func (c *StaticCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
+func (c *StaticCatalog) Submit(_ context.Context, user *auth.User, circleID string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if user == nil || !c.isCircleLeaderLocked(circleID, user.ID) {
@@ -392,7 +393,7 @@ func (c *StaticCatalog) Submit(user *auth.User, circleID string) (Circle, error)
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) SubmitByStaff(circleID string) error {
+func (c *StaticCatalog) SubmitByStaff(_ context.Context, circleID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -411,7 +412,7 @@ func (c *StaticCatalog) SubmitByStaff(circleID string) error {
 	return ErrNotFound
 }
 
-func (c *StaticCatalog) ListMembers(circleID string) ([]CircleMember, error) {
+func (c *StaticCatalog) ListMembers(_ context.Context, circleID string) ([]CircleMember, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -436,7 +437,7 @@ func sortMembersForDisplay(members []CircleMember) {
 	})
 }
 
-func (c *StaticCatalog) AddMemberAsStaff(circleID, targetUserID, targetDisplayName string) error {
+func (c *StaticCatalog) AddMemberAsStaff(_ context.Context, circleID, targetUserID, targetDisplayName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -455,7 +456,7 @@ func (c *StaticCatalog) AddMemberAsStaff(circleID, targetUserID, targetDisplayNa
 	return nil
 }
 
-func (c *StaticCatalog) RemoveMemberAsStaff(circleID, targetUserID string) error {
+func (c *StaticCatalog) RemoveMemberAsStaff(_ context.Context, circleID, targetUserID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -472,7 +473,7 @@ func (c *StaticCatalog) RemoveMemberAsStaff(circleID, targetUserID string) error
 	return nil
 }
 
-func (c *StaticCatalog) AddMember(requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error {
+func (c *StaticCatalog) AddMember(_ context.Context, requester *auth.User, circleID, targetUserID, targetDisplayName string, verified bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -504,7 +505,7 @@ func (c *StaticCatalog) AddMember(requester *auth.User, circleID, targetUserID, 
 	return nil
 }
 
-func (c *StaticCatalog) RemoveMember(requester *auth.User, circleID, targetUserID string) error {
+func (c *StaticCatalog) RemoveMember(_ context.Context, requester *auth.User, circleID, targetUserID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -534,7 +535,7 @@ func (c *StaticCatalog) RemoveMember(requester *auth.User, circleID, targetUserI
 	return nil
 }
 
-func (c *StaticCatalog) RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error) {
+func (c *StaticCatalog) RegenerateInvitationToken(_ context.Context, user *auth.User, circleID string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -559,7 +560,7 @@ func (c *StaticCatalog) RegenerateInvitationToken(user *auth.User, circleID stri
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) JoinByToken(user *auth.User, token string) (Circle, error) {
+func (c *StaticCatalog) JoinByToken(_ context.Context, user *auth.User, token string) (Circle, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if user == nil {
@@ -585,7 +586,7 @@ func (c *StaticCatalog) JoinByToken(user *auth.User, token string) (Circle, erro
 	return Circle{}, ErrNotFound
 }
 
-func (c *StaticCatalog) FindByInvitationToken(token string) (Circle, error) {
+func (c *StaticCatalog) FindByInvitationToken(_ context.Context, token string) (Circle, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 

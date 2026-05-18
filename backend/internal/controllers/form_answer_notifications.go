@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
@@ -24,7 +25,7 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 			body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 		}
 
-		_ = h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
 			JobId:    "form-answer-" + uuidv7.MustString(),
 			Template: "markdown-notice",
 			Priority: cloudflareemail.PriorityNormal,
@@ -41,7 +42,9 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 				"contactEmail": h.email.ContactEmail,
 				"preview":      subject,
 			},
-		})
+		}); err != nil {
+			slog.WarnContext(ctx, "failed to enqueue form answer notification email", "error", err)
+		}
 	}
 
 	if formValue.CreatedByUserID != "" {
@@ -55,7 +58,7 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 					body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 				}
 
-				_ = h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+				if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
 					JobId:    "form-answer-staff-copy-" + uuidv7.MustString(),
 					Template: "markdown-notice",
 					Priority: cloudflareemail.PriorityNormal,
@@ -72,7 +75,9 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 						"contactEmail": h.email.ContactEmail,
 						"preview":      subject,
 					},
-				})
+				}); err != nil {
+					slog.WarnContext(ctx, "failed to enqueue form answer staff copy email", "error", err)
+				}
 			}
 		}
 	}

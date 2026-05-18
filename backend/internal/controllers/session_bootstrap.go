@@ -117,7 +117,7 @@ func resolveCurrentCircle(ctx context.Context, sessionID string, currentSession 
 		return nil, nil
 	}
 
-	selectable, err := circles.ListSelectable(currentSession.User)
+	selectable, err := circles.ListSelectable(ctx, currentSession.User)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func resolveCurrentCircle(ctx context.Context, sessionID string, currentSession 
 		return nil, nil
 	}
 
-	selectedCircle, err := circles.FindSelectable(currentSession.User, currentSession.CurrentCircleID)
+	selectedCircle, err := circles.FindSelectable(ctx, currentSession.User, currentSession.CurrentCircleID)
 	if errors.Is(err, circle.ErrNotFound) {
 		store.Update(ctx, sessionID, func(next *session.Session) {
 			next.CurrentCircleID = ""

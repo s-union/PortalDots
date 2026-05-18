@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"slices"
 	"strings"
 
@@ -77,11 +78,11 @@ func bindAndValidateStaffCircle(c echo.Context) (mutateStaffCircleRequest, map[s
 }
 
 func (h *staffCircleHandlers) loadStaffCircleMembers(circleID string) ([]staffCircleMemberResponse, error) {
-	if _, err := h.circles.Find(circleID); err != nil {
+	if _, err := h.circles.Find(context.Background(), circleID); err != nil {
 		return nil, err
 	}
 
-	members, err := h.circles.ListMembers(circleID)
+	members, err := h.circles.ListMembers(context.Background(), circleID)
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +109,12 @@ func (h *staffCircleHandlers) loadStaffCircleMembers(circleID string) ([]staffCi
 }
 
 func (h *staffCircleHandlers) loadStaffCircleMailRecipients(circleID string, leadersOnly bool) (circle.Circle, []staffCircleMailRecipient, error) {
-	circleValue, err := h.circles.Find(circleID)
+	circleValue, err := h.circles.Find(context.Background(), circleID)
 	if err != nil {
 		return circle.Circle{}, nil, err
 	}
 
-	members, err := h.circles.ListMembers(circleID)
+	members, err := h.circles.ListMembers(context.Background(), circleID)
 	if err != nil {
 		return circleValue, nil, err
 	}

@@ -427,7 +427,7 @@ func (h *staffPageHandlers) validateStaffPageDocumentIDs(documentIDs []string, e
 }
 
 func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID string, currentPage backendpage.Page) {
-	recipients := h.pageMailRecipients(currentPage.ViewableTags)
+	recipients := h.pageMailRecipients(ctx, currentPage.ViewableTags)
 	if len(recipients) == 0 {
 		return
 	}
@@ -481,16 +481,16 @@ func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID
 	)
 }
 
-func (h *staffPageHandlers) pageMailRecipients(viewableTags []string) []string {
+func (h *staffPageHandlers) pageMailRecipients(ctx context.Context, viewableTags []string) []string {
 	circleIDs := []string{}
 	if len(viewableTags) > 0 {
-		circles, err := h.circles.ListForStaff()
+		circles, err := h.circles.ListForStaff(ctx)
 		if err != nil {
 			return nil
 		}
 
 		for _, currentCircle := range circles {
-			if pageVisibleToCircleTags(viewableTags, effectiveCircleTags(context.Background(), currentCircle, h.participationTypes)) {
+			if pageVisibleToCircleTags(viewableTags, effectiveCircleTags(ctx, currentCircle, h.participationTypes)) {
 				circleIDs = append(circleIDs, currentCircle.ID)
 			}
 		}

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -132,7 +133,7 @@ func (h *staffFormHandlers) findManagedStaffForm(formID string, allowParticipati
 		return backendform.Form{}, circle.Circle{}, false
 	}
 	if formValue.CircleID != "" {
-		if currentCircle, err := h.circles.Find(formValue.CircleID); err == nil {
+		if currentCircle, err := h.circles.Find(context.Background(), formValue.CircleID); err == nil {
 			return formValue, currentCircle, true
 		}
 	}

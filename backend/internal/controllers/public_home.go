@@ -286,7 +286,7 @@ func (h *publicHomeHandlers) currentPublicHomeCircleTags(c echo.Context) []strin
 		return nil
 	}
 
-	currentCircle, err := h.circles.FindSelectable(currentSession.User, currentSession.CurrentCircleID)
+	currentCircle, err := h.circles.FindSelectable(c.Request().Context(), currentSession.User, currentSession.CurrentCircleID)
 	if err != nil {
 		return nil
 	}

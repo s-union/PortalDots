@@ -107,7 +107,7 @@ func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (se
 		return session.Session{}, circle.Circle{}, http.StatusConflict, false
 	}
 
-	currentCircle, err := h.circles.GetUserCircle(currentSession.User, currentSession.CurrentCircleID)
+	currentCircle, err := h.circles.GetUserCircle(c.Request().Context(), currentSession.User, currentSession.CurrentCircleID)
 	if err != nil {
 		return session.Session{}, circle.Circle{}, http.StatusNotFound, false
 	}

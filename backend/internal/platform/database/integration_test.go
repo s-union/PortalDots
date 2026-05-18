@@ -44,8 +44,8 @@ func TestListCirclePlaceNamesAndStaffCatalogWithPostgres(t *testing.T) {
 		t.Fatalf("unexpected second place row: %#v", rows[1])
 	}
 
-	catalog := circle.NewSQLCCatalog(store.Queries())
-	circles, err := catalog.ListForStaff()
+	catalog := circle.NewSQLCCatalog(store.Pool(), store.Queries())
+	circles, err := catalog.ListForStaff(ctx)
 	if err != nil {
 		t.Fatalf("list staff circles via sqlc catalog: %v", err)
 	}

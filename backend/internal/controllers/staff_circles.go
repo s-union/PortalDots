@@ -90,7 +90,7 @@ func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
 	}
 
-	circles, err := h.circles.ListForStaff()
+	circles, err := h.circles.ListForStaff(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -118,7 +118,7 @@ func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
 		return validationError(c, map[string][]string{"queries": {"絞り込み条件が正しくありません"}})
 	}
 
-	circles, err := h.circles.ListForStaff()
+	circles, err := h.circles.ListForStaff(c.Request().Context())
 	if err != nil {
 		return internalError(c)
 	}
@@ -233,7 +233,7 @@ func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	circles, err := h.circles.ListForStaff()
+	circles, err := h.circles.ListForStaff(c.Request().Context())
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
@@ -276,7 +276,7 @@ func (h *staffCircleHandlers) getStaffCircle(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	circleValue, err := h.circles.Find(c.Param("circleID"))
+	circleValue, err := h.circles.Find(c.Request().Context(), c.Param("circleID"))
 	if errors.Is(err, circle.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
@@ -309,6 +309,7 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 	}
 
 	created, err := h.circles.Create(
+		c.Request().Context(),
 		request.Name,
 		request.NameYomi,
 		request.GroupName,
@@ -326,7 +327,7 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 		return internalError(c)
 	}
 	if request.Status == "approved" {
-		if err := h.circles.SubmitByStaff(created.ID); err != nil {
+		if err := h.circles.SubmitByStaff(c.Request().Context(), created.ID); err != nil {
 			return internalError(c)
 		}
 	}
@@ -366,7 +367,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
-	beforeUpdate, err := h.circles.Find(circleID)
+	beforeUpdate, err := h.circles.Find(c.Request().Context(), circleID)
 	if errors.Is(err, circle.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
@@ -375,6 +376,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 	}
 
 	updated, err := h.circles.Update(
+		c.Request().Context(),
 		circleID,
 		request.Name,
 		request.NameYomi,
@@ -407,7 +409,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 		buildActivitySummary("staff が企画を更新しました", updated.Name),
 	)
 	if beforeUpdate.Status != updated.Status {
-		members, err := h.circles.ListMembers(updated.ID)
+		members, err := h.circles.ListMembers(c.Request().Context(), updated.ID)
 		if err != nil {
 			return internalError(c)
 		}
@@ -469,7 +471,7 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 	}
 
 	circleID := c.Param("circleID")
-	currentCircle, err := h.circles.Find(circleID)
+	currentCircle, err := h.circles.Find(c.Request().Context(), circleID)
 	if errors.Is(err, circle.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	}
@@ -477,7 +479,7 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 		return internalError(c)
 	}
 
-	if err := h.circles.Delete(circleID); errors.Is(err, circle.ErrNotFound) {
+	if err := h.circles.Delete(c.Request().Context(), circleID); errors.Is(err, circle.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	} else if err != nil {
 		return internalError(c)
@@ -524,7 +526,7 @@ func (h *staffCircleHandlers) addStaffCircleMember(c echo.Context) error {
 	}
 
 	circleID := c.Param("circleID")
-	if _, err := h.circles.Find(circleID); errors.Is(err, circle.ErrNotFound) {
+	if _, err := h.circles.Find(c.Request().Context(), circleID); errors.Is(err, circle.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	} else if err != nil {
 		return internalError(c)
@@ -558,7 +560,7 @@ func (h *staffCircleHandlers) addStaffCircleMember(c echo.Context) error {
 		})
 	}
 
-	if err := h.circles.AddMemberAsStaff(circleID, targetUser.ID, targetUser.DisplayName); errors.Is(err, circle.ErrAlreadyMember) {
+	if err := h.circles.AddMemberAsStaff(c.Request().Context(), circleID, targetUser.ID, targetUser.DisplayName); errors.Is(err, circle.ErrAlreadyMember) {
 		return validationError(c, map[string][]string{
 			"loginId": {"このユーザーは既に所属しています"},
 		})
@@ -591,7 +593,7 @@ func (h *staffCircleHandlers) deleteStaffCircleMember(c echo.Context) error {
 	if targetUserID == "" {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
 	}
-	if _, err := h.circles.Find(circleID); errors.Is(err, circle.ErrNotFound) {
+	if _, err := h.circles.Find(c.Request().Context(), circleID); errors.Is(err, circle.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "circle_not_found")
 	} else if err != nil {
 		return internalError(c)
@@ -605,7 +607,7 @@ func (h *staffCircleHandlers) deleteStaffCircleMember(c echo.Context) error {
 		return internalError(c)
 	}
 
-	if err := h.circles.RemoveMemberAsStaff(circleID, targetUserID); errors.Is(err, circle.ErrForbidden) {
+	if err := h.circles.RemoveMemberAsStaff(c.Request().Context(), circleID, targetUserID); errors.Is(err, circle.ErrForbidden) {
 		return validationError(c, map[string][]string{
 			"userId": {"責任者はこの画面から削除できません"},
 		})

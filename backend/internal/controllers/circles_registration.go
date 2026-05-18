@@ -74,7 +74,7 @@ func (h *workspaceHandlers) resolveParticipationRegistrationForm(ctx context.Con
 }
 
 func (h *workspaceHandlers) loadCurrentCircleRegistration(ctx context.Context, user *auth.User, circleID string) (circle.Circle, participationtype.ParticipationType, backendform.Form, []formquestion.Question, []circle.CircleMember, string, bool, error) {
-	circleValue, err := h.circles.GetUserCircle(user, circleID)
+	circleValue, err := h.circles.GetUserCircle(ctx, user, circleID)
 	if err != nil {
 		return circle.Circle{}, participationtype.ParticipationType{}, backendform.Form{}, nil, nil, "", false, err
 	}
@@ -82,7 +82,7 @@ func (h *workspaceHandlers) loadCurrentCircleRegistration(ctx context.Context, u
 	if err != nil {
 		return circle.Circle{}, participationtype.ParticipationType{}, backendform.Form{}, nil, nil, "", false, err
 	}
-	members, err := h.circles.ListMembers(circleID)
+	members, err := h.circles.ListMembers(ctx, circleID)
 	if err != nil {
 		return circle.Circle{}, participationtype.ParticipationType{}, backendform.Form{}, nil, nil, "", false, err
 	}

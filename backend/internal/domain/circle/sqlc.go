@@ -7,21 +7,23 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 )
 
 type SQLCCatalog struct {
+	pool    *pgxpool.Pool
 	queries *dbgen.Queries
 }
 
-func NewSQLCCatalog(queries *dbgen.Queries) *SQLCCatalog {
-	return &SQLCCatalog{queries: queries}
+func NewSQLCCatalog(pool *pgxpool.Pool, queries *dbgen.Queries) *SQLCCatalog {
+	return &SQLCCatalog{pool: pool, queries: queries}
 }
 
-func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
+func (c *SQLCCatalog) ListSelectable(ctx context.Context, user *auth.User) ([]Circle, error) {
 	if user == nil {
-		rows, err := c.queries.ListCircles(context.Background())
+		rows, err := c.queries.ListCircles(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +34,7 @@ func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 		return circles, nil
 	}
 
-	rows, err := c.queries.ListUserCircles(context.Background(), user.ID)
+	rows, err := c.queries.ListUserCircles(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,20 +64,20 @@ func (c *SQLCCatalog) ListSelectable(user *auth.User) ([]Circle, error) {
 	return circles, nil
 }
 
-func (c *SQLCCatalog) FindSelectable(user *auth.User, circleID string) (Circle, error) {
+func (c *SQLCCatalog) FindSelectable(ctx context.Context, user *auth.User, circleID string) (Circle, error) {
 	var (
 		circle Circle
 		err    error
 	)
 
 	if user == nil {
-		row, queryErr := c.queries.GetCircleByID(context.Background(), circleID)
+		row, queryErr := c.queries.GetCircleByID(ctx, circleID)
 		if queryErr == nil {
 			circle = circleFromGetByIDRow(row)
 		}
 		err = queryErr
 	} else {
-		row, queryErr := c.queries.GetUserCircle(context.Background(), dbgen.GetUserCircleParams{
+		row, queryErr := c.queries.GetUserCircle(ctx, dbgen.GetUserCircleParams{
 			ID:     circleID,
 			UserID: user.ID,
 		})
@@ -95,8 +97,8 @@ func (c *SQLCCatalog) FindSelectable(user *auth.User, circleID string) (Circle, 
 	return circle, nil
 }
 
-func (c *SQLCCatalog) ListForStaff() ([]Circle, error) {
-	rows, err := c.queries.ListCircles(context.Background())
+func (c *SQLCCatalog) ListForStaff(ctx context.Context) ([]Circle, error) {
+	rows, err := c.queries.ListCircles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +111,7 @@ func (c *SQLCCatalog) ListForStaff() ([]Circle, error) {
 	}
 
 	if len(ids) > 0 {
-		placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), ids)
+		placeRows, err := c.queries.ListCirclePlaceNames(ctx, ids)
 		if err != nil {
 			return nil, err
 		}
@@ -127,8 +129,8 @@ func (c *SQLCCatalog) ListForStaff() ([]Circle, error) {
 	return circles, nil
 }
 
-func (c *SQLCCatalog) Find(circleID string) (Circle, error) {
-	row, err := c.queries.GetCircleByID(context.Background(), circleID)
+func (c *SQLCCatalog) Find(ctx context.Context, circleID string) (Circle, error) {
+	row, err := c.queries.GetCircleByID(ctx, circleID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Circle{}, ErrNotFound
@@ -138,7 +140,7 @@ func (c *SQLCCatalog) Find(circleID string) (Circle, error) {
 
 	circle := circleFromGetByIDRow(row)
 
-	placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), []string{circleID})
+	placeRows, err := c.queries.ListCirclePlaceNames(ctx, []string{circleID})
 	if err != nil {
 		return Circle{}, err
 	}
@@ -151,12 +153,19 @@ func (c *SQLCCatalog) Find(circleID string) (Circle, error) {
 	return circle, nil
 }
 
-func (c *SQLCCatalog) Create(name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error) {
+func (c *SQLCCatalog) Create(ctx context.Context, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error) {
 	if status == "" {
 		status = "pending"
 	}
 
-	row, err := c.queries.CreateCircle(context.Background(), dbgen.CreateCircleParams{
+	tx, err := c.pool.Begin(ctx)
+	if err != nil {
+		return Circle{}, err
+	}
+	defer tx.Rollback(ctx)
+	queries := c.queries.WithTx(tx)
+
+	row, err := queries.CreateCircle(ctx, dbgen.CreateCircleParams{
 		Name:                  name,
 		GroupName:             groupName,
 		ParticipationTypeID:   optionalString(participationTypeID),
@@ -167,7 +176,7 @@ func (c *SQLCCatalog) Create(name, nameYomi, groupName, groupNameYomi, participa
 		return Circle{}, err
 	}
 
-	detailRow, err := c.queries.UpdateCircleDetails(context.Background(), dbgen.UpdateCircleDetailsParams{
+	detailRow, err := queries.UpdateCircleDetails(ctx, dbgen.UpdateCircleDetailsParams{
 		ID:            row.ID,
 		Name:          name,
 		NameYomi:      nameYomi,
@@ -179,7 +188,7 @@ func (c *SQLCCatalog) Create(name, nameYomi, groupName, groupNameYomi, participa
 		return Circle{}, err
 	}
 
-	statusRow, err := c.queries.SetCircleStatus(context.Background(), dbgen.SetCircleStatusParams{
+	statusRow, err := queries.SetCircleStatus(ctx, dbgen.SetCircleStatusParams{
 		ID:           detailRow.ID,
 		Status:       status,
 		StatusReason: statusReason,
@@ -189,11 +198,15 @@ func (c *SQLCCatalog) Create(name, nameYomi, groupName, groupNameYomi, participa
 		return Circle{}, err
 	}
 
-	if err := c.setCircleBooths(row.ID, placeIDs); err != nil {
+	if err := setCircleBooths(ctx, queries, row.ID, placeIDs); err != nil {
 		return Circle{}, err
 	}
 
-	placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), []string{row.ID})
+	if err := tx.Commit(ctx); err != nil {
+		return Circle{}, err
+	}
+
+	placeRows, err := c.queries.ListCirclePlaceNames(ctx, []string{row.ID})
 	if err != nil {
 		return Circle{}, err
 	}
@@ -205,12 +218,19 @@ func (c *SQLCCatalog) Create(name, nameYomi, groupName, groupNameYomi, participa
 	return circleFromSetStatusRow(statusRow, placeNames), nil
 }
 
-func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error) {
+func (c *SQLCCatalog) Update(ctx context.Context, circleID, name, nameYomi, groupName, groupNameYomi, participationTypeID, participationTypeName, notes string, tags []string, status, statusReason, setByUserID string, placeIDs []string) (Circle, error) {
 	if status == "" {
 		status = "pending"
 	}
 
-	_, err := c.queries.UpdateCircle(context.Background(), dbgen.UpdateCircleParams{
+	tx, err := c.pool.Begin(ctx)
+	if err != nil {
+		return Circle{}, err
+	}
+	defer tx.Rollback(ctx)
+	queries := c.queries.WithTx(tx)
+
+	_, err = queries.UpdateCircle(ctx, dbgen.UpdateCircleParams{
 		ID:                    circleID,
 		Name:                  name,
 		GroupName:             groupName,
@@ -225,7 +245,7 @@ func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi,
 		return Circle{}, err
 	}
 
-	detailRow, err := c.queries.UpdateCircleDetails(context.Background(), dbgen.UpdateCircleDetailsParams{
+	detailRow, err := queries.UpdateCircleDetails(ctx, dbgen.UpdateCircleDetailsParams{
 		ID:            circleID,
 		Name:          name,
 		NameYomi:      nameYomi,
@@ -240,7 +260,7 @@ func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi,
 		return Circle{}, err
 	}
 
-	statusRow, err := c.queries.SetCircleStatus(context.Background(), dbgen.SetCircleStatusParams{
+	statusRow, err := queries.SetCircleStatus(ctx, dbgen.SetCircleStatusParams{
 		ID:           detailRow.ID,
 		Status:       status,
 		StatusReason: statusReason,
@@ -250,12 +270,16 @@ func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi,
 		return Circle{}, err
 	}
 
-	if err := c.setCircleBooths(circleID, placeIDs); err != nil {
+	if err := setCircleBooths(ctx, queries, circleID, placeIDs); err != nil {
+		return Circle{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return Circle{}, err
 	}
 
 	// reload place names from DB since placeIDs are IDs, not names
-	placeRows, err := c.queries.ListCirclePlaceNames(context.Background(), []string{circleID})
+	placeRows, err := c.queries.ListCirclePlaceNames(ctx, []string{circleID})
 	if err != nil {
 		return Circle{}, err
 	}
@@ -267,13 +291,13 @@ func (c *SQLCCatalog) Update(circleID, name, nameYomi, groupName, groupNameYomi,
 	return circleFromSetStatusRow(statusRow, placeNames), nil
 }
 
-func (c *SQLCCatalog) UpdateTags(circleID string, tags []string) (Circle, error) {
-	current, err := c.Find(circleID)
+func (c *SQLCCatalog) UpdateTags(ctx context.Context, circleID string, tags []string) (Circle, error) {
+	current, err := c.Find(ctx, circleID)
 	if err != nil {
 		return Circle{}, err
 	}
 
-	row, err := c.queries.UpdateCircle(context.Background(), dbgen.UpdateCircleParams{
+	row, err := c.queries.UpdateCircle(ctx, dbgen.UpdateCircleParams{
 		ID:                    circleID,
 		Name:                  current.Name,
 		GroupName:             current.GroupName,
@@ -310,8 +334,8 @@ func (c *SQLCCatalog) UpdateTags(circleID string, tags []string) (Circle, error)
 	}, nil
 }
 
-func (c *SQLCCatalog) Delete(circleID string) error {
-	err := c.queries.DeleteCircle(context.Background(), circleID)
+func (c *SQLCCatalog) Delete(ctx context.Context, circleID string) error {
+	err := c.queries.DeleteCircle(ctx, circleID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotFound
@@ -322,8 +346,8 @@ func (c *SQLCCatalog) Delete(circleID string) error {
 	return nil
 }
 
-func (c *SQLCCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, error) {
-	row, err := c.queries.GetUserCircle(context.Background(), dbgen.GetUserCircleParams{
+func (c *SQLCCatalog) GetUserCircle(ctx context.Context, user *auth.User, circleID string) (Circle, error) {
+	row, err := c.queries.GetUserCircle(ctx, dbgen.GetUserCircleParams{
 		ID:     circleID,
 		UserID: user.ID,
 	})
@@ -356,8 +380,8 @@ func (c *SQLCCatalog) GetUserCircle(user *auth.User, circleID string) (Circle, e
 	}, nil
 }
 
-func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) (Circle, error) {
-	row, err := c.queries.CreateUserCircle(context.Background(), dbgen.CreateUserCircleParams{
+func (c *SQLCCatalog) CreateForUser(ctx context.Context, user *auth.User, params CreateCircleParams) (Circle, error) {
+	row, err := c.queries.CreateUserCircle(ctx, dbgen.CreateUserCircleParams{
 		Name:                  params.Name,
 		NameYomi:              params.NameYomi,
 		GroupName:             params.GroupName,
@@ -392,7 +416,7 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 		Places:                []string{},
 	}
 
-	if err := c.queries.CreateCircleUser(context.Background(), dbgen.CreateCircleUserParams{
+	if err := c.queries.CreateCircleUser(ctx, dbgen.CreateCircleUserParams{
 		CircleID: created.ID,
 		UserID:   user.ID,
 		IsLeader: true,
@@ -403,8 +427,8 @@ func (c *SQLCCatalog) CreateForUser(user *auth.User, params CreateCircleParams) 
 	return created, nil
 }
 
-func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
-	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+func (c *SQLCCatalog) UpdateForUser(ctx context.Context, user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
+	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,
 	})
@@ -415,7 +439,7 @@ func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params Upd
 		return Circle{}, ErrForbidden
 	}
 
-	row, err := c.queries.UpdateCircleDetails(context.Background(), dbgen.UpdateCircleDetailsParams{
+	row, err := c.queries.UpdateCircleDetails(ctx, dbgen.UpdateCircleDetailsParams{
 		ID:            circleID,
 		Name:          params.Name,
 		NameYomi:      params.NameYomi,
@@ -452,8 +476,8 @@ func (c *SQLCCatalog) UpdateForUser(user *auth.User, circleID string, params Upd
 	}, nil
 }
 
-func (c *SQLCCatalog) DeleteForUser(user *auth.User, circleID string) error {
-	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+func (c *SQLCCatalog) DeleteForUser(ctx context.Context, user *auth.User, circleID string) error {
+	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,
 	})
@@ -464,11 +488,11 @@ func (c *SQLCCatalog) DeleteForUser(user *auth.User, circleID string) error {
 		return ErrForbidden
 	}
 
-	return c.queries.DeleteCircle(context.Background(), circleID)
+	return c.queries.DeleteCircle(ctx, circleID)
 }
 
-func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
-	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+func (c *SQLCCatalog) Submit(ctx context.Context, user *auth.User, circleID string) (Circle, error) {
+	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,
 	})
@@ -478,7 +502,7 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 	if !isLeader {
 		return Circle{}, ErrForbidden
 	}
-	current, err := c.Find(circleID)
+	current, err := c.Find(ctx, circleID)
 	if err != nil {
 		return Circle{}, err
 	}
@@ -486,7 +510,7 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 		return Circle{}, ErrAlreadySubmitted
 	}
 
-	row, err := c.queries.SubmitCircle(context.Background(), circleID)
+	row, err := c.queries.SubmitCircle(ctx, circleID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Circle{}, ErrNotFound
@@ -516,16 +540,16 @@ func (c *SQLCCatalog) Submit(user *auth.User, circleID string) (Circle, error) {
 	}, nil
 }
 
-func (c *SQLCCatalog) SubmitByStaff(circleID string) error {
-	_, err := c.queries.SubmitCircle(context.Background(), circleID)
+func (c *SQLCCatalog) SubmitByStaff(ctx context.Context, circleID string) error {
+	_, err := c.queries.SubmitCircle(ctx, circleID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
 	return err
 }
 
-func (c *SQLCCatalog) ListMembers(circleID string) ([]CircleMember, error) {
-	rows, err := c.queries.ListCircleMembers(context.Background(), circleID)
+func (c *SQLCCatalog) ListMembers(ctx context.Context, circleID string) ([]CircleMember, error) {
+	rows, err := c.queries.ListCircleMembers(ctx, circleID)
 	if err != nil {
 		return nil, err
 	}
@@ -541,8 +565,8 @@ func (c *SQLCCatalog) ListMembers(circleID string) ([]CircleMember, error) {
 	return members, nil
 }
 
-func (c *SQLCCatalog) AddMemberAsStaff(circleID, targetUserID, _ string) error {
-	isMember, err := c.queries.IsCircleMember(context.Background(), dbgen.IsCircleMemberParams{
+func (c *SQLCCatalog) AddMemberAsStaff(ctx context.Context, circleID, targetUserID, _ string) error {
+	isMember, err := c.queries.IsCircleMember(ctx, dbgen.IsCircleMemberParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 	})
@@ -553,7 +577,7 @@ func (c *SQLCCatalog) AddMemberAsStaff(circleID, targetUserID, _ string) error {
 		return ErrAlreadyMember
 	}
 
-	if err := c.queries.CreateCircleUser(context.Background(), dbgen.CreateCircleUserParams{
+	if err := c.queries.CreateCircleUser(ctx, dbgen.CreateCircleUserParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 		IsLeader: false,
@@ -564,8 +588,8 @@ func (c *SQLCCatalog) AddMemberAsStaff(circleID, targetUserID, _ string) error {
 	return nil
 }
 
-func (c *SQLCCatalog) RemoveMemberAsStaff(circleID, targetUserID string) error {
-	targetIsLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+func (c *SQLCCatalog) RemoveMemberAsStaff(ctx context.Context, circleID, targetUserID string) error {
+	targetIsLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 	})
@@ -576,14 +600,14 @@ func (c *SQLCCatalog) RemoveMemberAsStaff(circleID, targetUserID string) error {
 		return ErrForbidden
 	}
 
-	return c.queries.RemoveCircleMember(context.Background(), dbgen.RemoveCircleMemberParams{
+	return c.queries.RemoveCircleMember(ctx, dbgen.RemoveCircleMemberParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 	})
 }
 
-func (c *SQLCCatalog) AddMember(requester *auth.User, circleID, targetUserID, _ string, verified bool) error {
-	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+func (c *SQLCCatalog) AddMember(ctx context.Context, requester *auth.User, circleID, targetUserID, _ string, verified bool) error {
+	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   requester.ID,
 	})
@@ -597,7 +621,7 @@ func (c *SQLCCatalog) AddMember(requester *auth.User, circleID, targetUserID, _ 
 		return ErrInviteeUnverified
 	}
 
-	isMember, err := c.queries.IsCircleMember(context.Background(), dbgen.IsCircleMemberParams{
+	isMember, err := c.queries.IsCircleMember(ctx, dbgen.IsCircleMemberParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 	})
@@ -608,7 +632,7 @@ func (c *SQLCCatalog) AddMember(requester *auth.User, circleID, targetUserID, _ 
 		return ErrAlreadyMember
 	}
 
-	if err := c.queries.CreateCircleUser(context.Background(), dbgen.CreateCircleUserParams{
+	if err := c.queries.CreateCircleUser(ctx, dbgen.CreateCircleUserParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 		IsLeader: false,
@@ -619,8 +643,8 @@ func (c *SQLCCatalog) AddMember(requester *auth.User, circleID, targetUserID, _ 
 	return nil
 }
 
-func (c *SQLCCatalog) RemoveMember(requester *auth.User, circleID, targetUserID string) error {
-	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+func (c *SQLCCatalog) RemoveMember(ctx context.Context, requester *auth.User, circleID, targetUserID string) error {
+	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   requester.ID,
 	})
@@ -633,7 +657,7 @@ func (c *SQLCCatalog) RemoveMember(requester *auth.User, circleID, targetUserID 
 		return ErrForbidden
 	}
 
-	targetIsLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+	targetIsLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 	})
@@ -644,14 +668,14 @@ func (c *SQLCCatalog) RemoveMember(requester *auth.User, circleID, targetUserID 
 		return ErrForbidden
 	}
 
-	return c.queries.RemoveCircleMember(context.Background(), dbgen.RemoveCircleMemberParams{
+	return c.queries.RemoveCircleMember(ctx, dbgen.RemoveCircleMemberParams{
 		CircleID: circleID,
 		UserID:   targetUserID,
 	})
 }
 
-func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string) (Circle, error) {
-	isLeader, err := c.queries.IsCircleLeader(context.Background(), dbgen.IsCircleLeaderParams{
+func (c *SQLCCatalog) RegenerateInvitationToken(ctx context.Context, user *auth.User, circleID string) (Circle, error) {
+	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,
 	})
@@ -662,7 +686,7 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 		return Circle{}, ErrForbidden
 	}
 
-	row, err := c.queries.UpdateCircleInvitationToken(context.Background(), circleID)
+	row, err := c.queries.UpdateCircleInvitationToken(ctx, circleID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Circle{}, ErrNotFound
@@ -692,8 +716,8 @@ func (c *SQLCCatalog) RegenerateInvitationToken(user *auth.User, circleID string
 	}, nil
 }
 
-func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error) {
-	row, err := c.queries.GetCircleByInvitationToken(context.Background(), nullableText(token))
+func (c *SQLCCatalog) JoinByToken(ctx context.Context, user *auth.User, token string) (Circle, error) {
+	row, err := c.queries.GetCircleByInvitationToken(ctx, nullableText(token))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Circle{}, ErrNotFound
@@ -701,7 +725,7 @@ func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error)
 		return Circle{}, err
 	}
 
-	isMember, err := c.queries.IsCircleMember(context.Background(), dbgen.IsCircleMemberParams{
+	isMember, err := c.queries.IsCircleMember(ctx, dbgen.IsCircleMemberParams{
 		CircleID: row.ID,
 		UserID:   user.ID,
 	})
@@ -712,7 +736,7 @@ func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error)
 		return Circle{}, ErrAlreadyMember
 	}
 
-	if err := c.queries.CreateCircleUser(context.Background(), dbgen.CreateCircleUserParams{
+	if err := c.queries.CreateCircleUser(ctx, dbgen.CreateCircleUserParams{
 		CircleID: row.ID,
 		UserID:   user.ID,
 		IsLeader: false,
@@ -742,8 +766,8 @@ func (c *SQLCCatalog) JoinByToken(user *auth.User, token string) (Circle, error)
 	}, nil
 }
 
-func (c *SQLCCatalog) FindByInvitationToken(token string) (Circle, error) {
-	row, err := c.queries.GetCircleByInvitationToken(context.Background(), nullableText(token))
+func (c *SQLCCatalog) FindByInvitationToken(ctx context.Context, token string) (Circle, error) {
+	row, err := c.queries.GetCircleByInvitationToken(ctx, nullableText(token))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Circle{}, ErrNotFound
@@ -773,12 +797,12 @@ func (c *SQLCCatalog) FindByInvitationToken(token string) (Circle, error) {
 	}, nil
 }
 
-func (c *SQLCCatalog) setCircleBooths(circleID string, placeIDs []string) error {
-	if err := c.queries.DeleteBoothsByCircle(context.Background(), circleID); err != nil {
+func setCircleBooths(ctx context.Context, queries *dbgen.Queries, circleID string, placeIDs []string) error {
+	if err := queries.DeleteBoothsByCircle(ctx, circleID); err != nil {
 		return err
 	}
 	for _, placeID := range placeIDs {
-		if err := c.queries.AddCircleBooth(context.Background(), dbgen.AddCircleBoothParams{
+		if err := queries.AddCircleBooth(ctx, dbgen.AddCircleBoothParams{
 			PlaceID:  placeID,
 			CircleID: circleID,
 		}); err != nil {

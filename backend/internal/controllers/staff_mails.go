@@ -93,7 +93,7 @@ func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
 		return validationError(c, errors)
 	}
 
-	_, err := h.circles.Find(request.CircleID)
+	_, err := h.circles.Find(c.Request().Context(), request.CircleID)
 	if err != nil {
 		return validationError(c, map[string][]string{
 			"circleId": {"企画を選択してください"},

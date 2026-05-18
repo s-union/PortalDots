@@ -1,6 +1,10 @@
 package controllers
 
-import "github.com/s-union/PortalDots/backend/internal/domain/circle"
+import (
+	"context"
+
+	"github.com/s-union/PortalDots/backend/internal/domain/circle"
+)
 
 type staffManagedCircleResponse struct {
 	ID   string `json:"id"`
@@ -15,7 +19,7 @@ func mapStaffManagedCircle(circleValue circle.Circle) staffManagedCircleResponse
 }
 
 func listStaffManagedCircles(circles circle.Catalog) ([]circle.Circle, map[string]staffManagedCircleResponse, error) {
-	items, err := circles.ListForStaff()
+	items, err := circles.ListForStaff(context.Background())
 	if err != nil {
 		return nil, nil, err
 	}

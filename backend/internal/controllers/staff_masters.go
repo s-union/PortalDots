@@ -91,7 +91,7 @@ func (h *staffMastersHandlers) downloadStaffTagsCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	circles, err := h.circles.ListForStaff()
+	circles, err := h.circles.ListForStaff(c.Request().Context())
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
@@ -322,7 +322,7 @@ func (h *staffMastersHandlers) downloadStaffPlacesCSV(c echo.Context) error {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	circles, err := h.circles.ListForStaff()
+	circles, err := h.circles.ListForStaff(c.Request().Context())
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}

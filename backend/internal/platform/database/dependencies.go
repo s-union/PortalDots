@@ -67,7 +67,7 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 		Answers:              answer.NewSQLCRepository(store.Pool(), queries),
 		Authenticator:        auth.NewSQLCAuthenticator(queries),
 		Booths:               booth.NewSQLCRepository(queries),
-		Circles:              circle.NewSQLCCatalog(queries),
+		Circles:              circle.NewSQLCCatalog(store.Pool(), queries),
 		ContactCategories:    contactcategory.NewSQLCRepository(queries),
 		Documents:            document.NewSQLCRepository(queries),
 		Forms:                form.NewSQLCRepository(queries),
