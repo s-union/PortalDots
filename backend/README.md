@@ -85,31 +85,31 @@ Frontend-facing variables (read by Vite proxy):
 
 ```bash
 # Start with hot reload (requires PORTAL_DATABASE_URL in .env)
-mise run backend-dev
+mise run backend:dev
 
 # Run all migrations
-mise run backend-migrate
+mise run backend:migrate
 
 # Insert demo data
-mise run backend-seed
+mise run backend:seed
 
 # Run tests
-mise run backend-test
+mise run backend:test
 
 # Run tests with coverage
-mise run backend-cover
+mise run backend:cover
 
 # Static analysis (staticcheck)
-mise run backend-check
+mise run backend:check
 
 # Format
-mise run backend-format
+mise run backend:format
 
 # Regenerate sqlc Go code
-mise run backend-sqlc-generate
+mise run backend:sqlc:generate
 
 # Smoke-test generated queries against a live DB
-mise run backend-sqlc-smoke
+mise run backend:sqlc:smoke
 ```
 
 ## Behavior notes

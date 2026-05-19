@@ -73,7 +73,7 @@ The `@portaldots/api-client` workspace package wraps the OpenAPI schema and expo
 To regenerate types after changing `backend/api/openapi.yaml`:
 
 ```bash
-mise run frontend-generate
+mise run api:client:codegen
 ```
 
 ## Commands
@@ -82,7 +82,7 @@ Run from the repository root via mise, or directly inside `frontend/` with pnpm.
 
 ```bash
 # Dev server (usually started via `mise run dev` at the root)
-mise run frontend-dev
+mise run frontend:dev
 # or
 cd frontend && pnpm dev
 
@@ -93,12 +93,12 @@ cd frontend && pnpm typecheck
 cd frontend && pnpm lint
 
 # Format
-mise run frontend-format
+mise run frontend:format
 # or
 cd frontend && pnpm format
 
 # All static checks (typecheck + lint + format check)
-mise run frontend-check
+mise run frontend:check
 # or
 cd frontend && pnpm ci:check
 

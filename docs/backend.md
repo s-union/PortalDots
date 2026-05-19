@@ -100,7 +100,7 @@ Migration files are SQL in `db/migrations/`, using goose-format comments (`-- +g
 The migration runner is also available as a standalone script:
 
 ```bash
-mise run backend-migrate
+mise run backend:migrate
 ```
 
 All primary keys use `uuidv7()`, which requires the first migration to install the `pgcrypto` extension and a custom `uuidv7()` function. This is done in `0001_init.sql`.

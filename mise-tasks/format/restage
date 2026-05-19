@@ -8,8 +8,8 @@ while IFS= read -r -d '' path; do
   staged_files+=("$path")
 done < <(git diff --cached --name-only --diff-filter=ACMR -z)
 
-mise run frontend-format
-mise run backend-format
+mise run frontend:format
+mise run backend:format
 
 if [[ "${#staged_files[@]}" -eq 0 ]]; then
   exit 0

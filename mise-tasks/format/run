@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 #MISE description="Run formatters for frontend and backend"
 
-mise run frontend-format && \
-mise run backend-format
+mise run frontend:format && \
+mise run backend:format

@@ -7,44 +7,39 @@ air = "latest"
 prek = "latest"
 pnpm = "latest"
 
-[tasks.frontend-install]
+[tasks."frontend:install"]
 description = "Install dependencies for the new frontend workspace"
 run = "ni"
 
-[tasks.frontend-dev]
+[tasks."frontend:dev"]
 description = "Start vue vite dev server"
 dir = "frontend"
 run = "pnpm run dev -- --host 127.0.0.1"
 
-[tasks.frontend-check]
+[tasks."frontend:check"]
 description = "Run frontend static checks"
 run = "pnpm run ci:check"
 
-[tasks.frontend-format]
+[tasks."frontend:format"]
 description = "Run frontend formatter"
 run = "pnpm run format"
 
-[tasks.frontend-generate]
-description = "Run openapi-typescript"
-dir = "packages/api-client"
-run = "pnpm run codegen:api"
-
-[tasks.email-producer-dev]
+[tasks."email:producer:dev"]
 description = "Start the email producer Worker dev server"
 dir = "packages/email-producer"
 run = "pnpm run dev"
 
-[tasks.email-workers-dev]
+[tasks."email:workers:dev"]
 description = "Start email producer and consumer Workers in one local Queue dev session"
 dir = "packages/email-producer"
 run = "pnpm run dev:local-stack"
 
-[tasks.email-consumer-dev-high]
+[tasks."email:consumer:dev:high"]
 description = "Start the email consumer Worker (high priority) dev server"
 dir = "packages/email-consumer"
 run = "pnpm run dev:high"
 
-[tasks.email-consumer-dev-normal]
+[tasks."email:consumer:dev:normal"]
 description = "Start the email consumer Worker (normal priority) dev server"
 dir = "packages/email-consumer"
 run = "pnpm run dev:normal"
@@ -59,17 +54,17 @@ description = "Reset local db, then start backend, frontend, and local email Wor
 run = "go run ./scripts/dev.go worker"
 env = { _.file = ".env" }
 
-[tasks.backend-dev]
+[tasks."backend:dev"]
 description = "Start the new Go API"
 dir = "backend"
 run = "air -c .air.toml"
 env = { _.file = ".env" }
 
-[tasks.db-up]
+[tasks."db:up"]
 description = "Start local PostgreSQL container"
 run = "docker compose -f docker-compose.postgres.yml up -d postgres"
 
-[tasks.db-down]
+[tasks."db:down"]
 description = "Stop local PostgreSQL container"
 run = "docker compose -f docker-compose.postgres.yml down"
 
@@ -77,44 +72,44 @@ run = "docker compose -f docker-compose.postgres.yml down"
 description = "Stop local PostgreSQL container and delete its volume"
 run = "docker compose -f docker-compose.postgres.yml down -v"
 
-[tasks.backend-migrate]
+[tasks."backend:migrate"]
 description = "Apply backend SQL migrations against PORTAL_DATABASE_URL"
 dir = "backend"
 run = "go run ./scripts/migrate/main.go"
 env = { _.file = ".env" }
 
-[tasks.backend-seed]
+[tasks."backend:seed"]
 description = "Seed or sync demo data against PORTAL_DATABASE_URL"
 dir = "backend"
 run = "go run ./scripts/seed/main.go"
 env = { _.file = ".env" }
 
-[tasks.backend-test]
+[tasks."backend:test"]
 description = "Run Go tests for backend"
 dir = "backend"
 run = "go test ./..."
 
-[tasks.backend-cover]
+[tasks."backend:cover"]
 description = "Run Go tests with coverage for backend"
 dir = "backend"
 run = "mkdir -p ../generated/go && go test -coverprofile=../generated/go/backend-cover.out ./..."
 
-[tasks.backend-check]
+[tasks."backend:check"]
 description = "Run staticcheck for Go backend"
 dir = "backend"
 run = "staticcheck ./..."
 
-[tasks.backend-format]
+[tasks."backend:format"]
 description = "Run go fmt"
 dir = "backend"
 run = "go fmt ./..."
 
-[tasks.backend-sqlc-generate]
+[tasks."backend:sqlc:generate"]
 description = "Generate Go code from backend sqlc queries"
 dir = "backend"
 run = "sqlc generate"
 
-[tasks.backend-sqlc-smoke]
+[tasks."backend:sqlc:smoke"]
 description = "Run the sqlc smoke command against PORTAL_DATABASE_URL"
 dir = "backend"
 run = "go run ./scripts/sqlc-smoke/main.go"
@@ -125,22 +120,26 @@ description = "Run e2e integration tests against the real dev:worker stack"
 dir = "frontend"
 run = "unset NO_COLOR; pnpm exec playwright test --config=playwright.integration.config.ts --workers=1"
 
-[tasks."email-producer-check"]
+[tasks."email:producer:check"]
 description = "Run static checks for the email producer Worker"
 dir = "packages/email-producer"
 run = "pnpm run ci:check"
 
-[tasks."email-producer-test"]
+[tasks."email:producer:test"]
 description = "Run tests for the email producer Worker"
 dir = "packages/email-producer"
 run = "pnpm run test"
 
-[tasks."email-consumer-check"]
+[tasks."email:consumer:check"]
 description = "Run static checks for the email consumer Worker"
 dir = "packages/email-consumer"
 run = "pnpm run ci:check"
 
-[tasks."email-consumer-test"]
+[tasks."email:consumer:test"]
 description = "Run tests for the email consumer Worker"
 dir = "packages/email-consumer"
 run = "pnpm run test"
+
+[tasks.format]
+description = "Run all formatters"
+run = "mise run format:run"

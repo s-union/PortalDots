@@ -10,13 +10,6 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [VueRouter(), vue()],
-  server: {
-    fs: {
-      // `**/.git/**` in the default deny list blocks file access
-      // When the working directory path contains `.git` (e.g. git worktrees).
-      deny: ['.env', '.env.*', '*.{crt,pem}']
-    }
-  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -21,7 +21,7 @@ Details:
 - For frontend work, follow the Vue 3 structure under `frontend/src/` and use Composition API with `<script setup>`.
 - For backend work, follow the Go package boundaries in `backend/README.md`. Keep domain logic in `internal/domain/`, HTTP wiring in `internal/http/server/`, and handlers in `internal/controllers/`.
 - Before adding a dependency, verify the standard library or existing workspace package cannot solve the problem.
-- When the OpenAPI contract changes, regenerate the API client with `mise run frontend-generate` and update both sides together.
+- When the OpenAPI contract changes, regenerate the API client with `mise run api:client:codegen` and update both sides together.
 
 ## Quality Checks
 
@@ -32,14 +32,14 @@ Run the relevant checks before finishing any change.
 mise run check
 
 # Backend only
-mise run backend-check    # staticcheck
-mise run backend-test     # go test ./...
-mise run backend-format   # go fmt
+mise run backend:check    # staticcheck
+mise run backend:test     # go test ./...
+mise run backend:format   # go fmt
 
 # Frontend only
-mise run frontend-check   # typecheck + lint + format check
+mise run frontend:check   # typecheck + lint + format check
 cd frontend && pnpm test  # Vitest
-mise run frontend-format  # oxfmt
+mise run frontend:format  # oxfmt
 
 # Format everything
 mise run format

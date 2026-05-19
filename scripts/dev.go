@@ -77,20 +77,20 @@ func run(rootDir string, mode devMode) error {
 	}
 
 	databaseEnv := []string{"PORTAL_DATABASE_URL=" + databaseURL}
-	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend-migrate"); err != nil {
+	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend:migrate"); err != nil {
 		return err
 	}
-	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend-seed"); err != nil {
+	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend:seed"); err != nil {
 		return err
 	}
 
 	backendEnv := append(databaseEnv, emailEnv(mode)...)
 	commands := []*managedCommand{
 		newManagedCommandWithEnv("backend", filepath.Join(rootDir, "backend"), backendEnv, "air", "-c", ".air.toml"),
-		newManagedCommand("frontend", rootDir, "mise", "run", "frontend-dev"),
+		newManagedCommand("frontend", rootDir, "mise", "run", "frontend:dev"),
 	}
 	if mode == devModeWorker {
-		commands = append(commands, newManagedCommand("email-workers", rootDir, "mise", "run", "email-workers-dev"))
+		commands = append(commands, newManagedCommand("email-workers", rootDir, "mise", "run", "email:workers:dev"))
 	}
 
 	started, err := startCommands(commands)
@@ -450,7 +450,7 @@ func readProcessInfo(processID int) (processInfo, error) {
 
 func shutdownDatabase(rootDir string, composeFile string) {
 	if err := runCommand(rootDir, "docker", "compose", "-f", composeFile, "down"); err != nil {
-		log.Printf("db-down failed: %v", err)
+		log.Printf("db:down failed: %v", err)
 	}
 }
 

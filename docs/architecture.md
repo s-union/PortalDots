@@ -35,7 +35,7 @@ The TypeScript client in `packages/api-client/` is generated from that spec via 
 
 When the shape of an endpoint changes:
 1. Update `backend/api/openapi.yaml`.
-2. Run `mise run frontend-generate`.
+2. Run `mise run api:client:codegen`.
 3. Fix any TypeScript errors before finishing.
 
 This forces changes to be explicit and bi-directional rather than discovered at runtime.

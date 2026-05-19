@@ -79,21 +79,21 @@ mise run check
 
 # Format
 mise run format            # Go + frontend together
-mise run backend-format    # Go only
-mise run frontend-format   # frontend only
+mise run backend:format    # Go only
+mise run frontend:format   # frontend only
 
 # Tests
-mise run backend-test      # Go tests
+mise run backend:test      # Go tests
 cd frontend && pnpm test   # Vitest unit tests
 mise run e2e:worker        # Playwright integration tests (requires dev:worker)
 
 # Database
-mise run backend-migrate   # apply pending migrations
-mise run backend-seed      # insert demo data
+mise run backend:migrate   # apply pending migrations
+mise run backend:seed      # insert demo data
 mise run db:delete         # destroy local DB volume
 
 # API client type generation
-mise run frontend-generate
+mise run api:client:codegen
 ```
 
 For stack-specific details see:

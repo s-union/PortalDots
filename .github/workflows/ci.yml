@@ -26,16 +26,16 @@ jobs:
         run: npm install -g @antfu/ni
 
       - name: Install JS dependencies
-        run: mise run frontend-install
+        run: mise run frontend:install
 
       - name: Generate API client
-        run: mise run frontend-generate
+        run: mise run api:client:codegen
 
       - name: Build (generates typed-router.d.ts)
         run: pnpm --filter @portaldots/frontend run build
 
       - name: Check
-        run: mise run frontend-check
+        run: mise run frontend:check
 
   email-producer-check:
     runs-on: ubuntu-latest
@@ -52,10 +52,10 @@ jobs:
         run: npm install -g @antfu/ni
 
       - name: Install JS dependencies
-        run: mise run frontend-install
+        run: mise run frontend:install
 
       - name: Check
-        run: mise run email-producer-check
+        run: mise run email:producer:check
 
   email-consumer-check:
     runs-on: ubuntu-latest
@@ -72,10 +72,10 @@ jobs:
         run: npm install -g @antfu/ni
 
       - name: Install JS dependencies
-        run: mise run frontend-install
+        run: mise run frontend:install
 
       - name: Check
-        run: mise run email-consumer-check
+        run: mise run email:consumer:check
 
   backend-check:
     runs-on: ubuntu-latest
@@ -85,10 +85,10 @@ jobs:
       - uses: jdx/mise-action@v4
 
       - name: Generate sqlc
-        run: mise run backend-sqlc-generate
+        run: mise run backend:sqlc:generate
 
       - name: Check
-        run: mise run backend-check
+        run: mise run backend:check
 
   backend-test:
     runs-on: ubuntu-latest
@@ -124,13 +124,13 @@ jobs:
         run: npm install -g @antfu/ni
 
       - name: Install JS dependencies
-        run: mise run frontend-install
+        run: mise run frontend:install
 
       - name: Generate
         run: mise run generate
 
       - name: Migrate
-        run: mise run backend-migrate
+        run: mise run backend:migrate
 
       - name: Test
-        run: mise run backend-test
+        run: mise run backend:test

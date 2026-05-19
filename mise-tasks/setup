@@ -5,9 +5,11 @@ set -euo pipefail
 
 mise install
 [ -f .env ] || cp .env.example .env
-mise run frontend-install
+mise run frontend:install
 prek install
-mise run db-up
+mise run generate
+mise run db:up
 mise run db:wait
-mise run backend-migrate
-mise run backend-seed
+mise run backend:migrate
+mise run backend:seed
+mise run db:down

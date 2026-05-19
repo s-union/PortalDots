@@ -2,6 +2,6 @@
 #MISE description="Run all tests with coverage"
 
 mkdir -p generated/go && \
-mise run backend-cover && \
-mise run email-producer-test && \
-mise run email-consumer-test
+mise run backend:cover && \
+mise run email:producer:test && \
+mise run email:consumer:test

@@ -7,9 +7,8 @@ describe('main entrypoint', () => {
 
   it('initializes Temporal and theme before mounting the app', async () => {
     const use = vi.fn().mockReturnThis()
-    const component = vi.fn().mockReturnThis()
     const mount = vi.fn()
-    const createApp = vi.fn(() => ({ component, use, mount }))
+    const createApp = vi.fn(() => ({ use, mount }))
     const initTemporal = vi.fn().mockResolvedValue(undefined)
     const initializeFontAwesome = vi.fn()
     const initializeUiTheme = vi.fn()
@@ -19,9 +18,6 @@ describe('main entrypoint', () => {
     }))
     vi.doMock('@tanstack/vue-query', () => ({
       VueQueryPlugin: { install: vi.fn() }
-    }))
-    vi.doMock('@fortawesome/vue-fontawesome', () => ({
-      FontAwesomeIcon: { name: 'FontAwesomeIcon' }
     }))
     vi.doMock('@/app/App.vue', () => ({
       default: { name: 'AppRoot' }
@@ -57,7 +53,6 @@ describe('main entrypoint', () => {
     )
     expect(initTemporal.mock.invocationCallOrder[0]).toBeLessThan(initializeUiTheme.mock.invocationCallOrder[0])
     expect(createApp).toHaveBeenCalledTimes(1)
-    expect(component).toHaveBeenCalledWith('FontAwesomeIcon', { name: 'FontAwesomeIcon' })
     expect(use).toHaveBeenCalledTimes(3)
     expect(mount).toHaveBeenCalledWith('#v2-app')
   })
