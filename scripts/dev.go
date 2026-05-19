@@ -4,10 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -49,6 +52,10 @@ func main() {
 func run(rootDir string, mode devMode) error {
 	composeFile := filepath.Join(rootDir, "docker-compose.postgres.yml")
 
+	if err := checkRequiredPorts(rootDir, mode); err != nil {
+		return err
+	}
+
 	if err := resetDatabase(rootDir, composeFile); err != nil {
 		return err
 	}
@@ -61,7 +68,7 @@ func run(rootDir string, mode devMode) error {
 		return err
 	}
 
-	databaseURL, err := loadEnvVar(rootDir, ".env", "PORTAL_DATABASE_URL")
+	databaseURL, err := loadEnvValue(rootDir, "PORTAL_DATABASE_URL")
 	if err != nil {
 		return err
 	}
@@ -79,7 +86,7 @@ func run(rootDir string, mode devMode) error {
 
 	backendEnv := append(databaseEnv, emailEnv(mode)...)
 	commands := []*managedCommand{
-		newManagedCommandWithEnv("backend", rootDir, backendEnv, "mise", "run", "backend-dev"),
+		newManagedCommandWithEnv("backend", filepath.Join(rootDir, "backend"), backendEnv, "air", "-c", ".air.toml"),
 		newManagedCommand("frontend", rootDir, "mise", "run", "frontend-dev"),
 	}
 	if mode == devModeWorker {
@@ -148,6 +155,70 @@ func emailEnv(mode devMode) []string {
 		"PORTAL_EMAIL_PRODUCER_ENABLED=false",
 		"PORTAL_EMAIL_PRODUCER_TOKEN=",
 	}
+}
+
+func checkRequiredPorts(rootDir string, mode devMode) error {
+	apiBind, err := loadEnvValue(rootDir, "PORTAL_API_BIND")
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(apiBind) == "" {
+		apiBind = ":8081"
+	}
+
+	ports := []requiredPort{
+		{name: "backend API", address: normalizeListenAddress(apiBind)},
+		{name: "frontend Vite", address: "127.0.0.1:5173"},
+	}
+	if mode == devModeWorker {
+		ports = append(ports,
+			requiredPort{name: "email Worker", address: "127.0.0.1:8787"},
+			requiredPort{name: "Wrangler inspector", address: "127.0.0.1:9229"},
+		)
+	}
+
+	var busy []string
+	for _, port := range ports {
+		if err := assertPortAvailable(port.address); err != nil {
+			busy = append(busy, fmt.Sprintf("%s (%s)", port.name, port.address))
+		}
+	}
+	if len(busy) > 0 {
+		return fmt.Errorf("required dev port(s) already in use: %s. Stop the existing process or change the configured port before starting dev", strings.Join(busy, ", "))
+	}
+
+	return nil
+}
+
+type requiredPort struct {
+	name    string
+	address string
+}
+
+func normalizeListenAddress(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "127.0.0.1:8081"
+	}
+	if strings.HasPrefix(value, ":") {
+		return "127.0.0.1" + value
+	}
+	host, port, err := net.SplitHostPort(value)
+	if err != nil {
+		return value
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	return net.JoinHostPort(host, port)
+}
+
+func assertPortAvailable(address string) error {
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return err
+	}
+	return listener.Close()
 }
 
 func findRepoRoot() (string, error) {
@@ -244,28 +315,137 @@ func terminateCommand(cmd *exec.Cmd) error {
 		return nil
 	}
 
-	processGroupID := -cmd.Process.Pid
-	if err := syscall.Kill(processGroupID, syscall.SIGTERM); err != nil && !errors.Is(err, syscall.ESRCH) {
-		return err
+	processGroupIDs := processTreeGroupIDs(cmd.Process.Pid)
+	for _, processGroupID := range processGroupIDs {
+		if err := syscall.Kill(-processGroupID, syscall.SIGTERM); err != nil && !errors.Is(err, syscall.ESRCH) {
+			return err
+		}
 	}
 
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		err := syscall.Kill(processGroupID, 0)
-		if err != nil {
-			if errors.Is(err, syscall.ESRCH) {
-				return nil
+		allStopped := true
+		for _, processGroupID := range processGroupIDs {
+			err := syscall.Kill(-processGroupID, 0)
+			if err == nil {
+				allStopped = false
+				break
 			}
-			return err
+			if !errors.Is(err, syscall.ESRCH) {
+				return err
+			}
+		}
+		if allStopped {
+			return nil
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	if err := syscall.Kill(processGroupID, syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
-		return err
+	for _, processGroupID := range processGroupIDs {
+		if err := syscall.Kill(-processGroupID, syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
+			return err
+		}
 	}
 
 	return nil
+}
+
+type processInfo struct {
+	parentID       int
+	processGroupID int
+}
+
+func processTreeGroupIDs(rootProcessID int) []int {
+	snapshot, err := readProcessSnapshot()
+	if err != nil {
+		processGroupID, getpgidErr := syscall.Getpgid(rootProcessID)
+		if getpgidErr == nil {
+			return []int{processGroupID}
+		}
+		return []int{rootProcessID}
+	}
+
+	processIDs := []int{rootProcessID}
+	for index := 0; index < len(processIDs); index++ {
+		parentID := processIDs[index]
+		for processID, info := range snapshot {
+			if info.parentID == parentID {
+				processIDs = append(processIDs, processID)
+			}
+		}
+	}
+
+	groupSet := make(map[int]struct{})
+	for _, processID := range processIDs {
+		if info, ok := snapshot[processID]; ok && info.processGroupID > 0 {
+			groupSet[info.processGroupID] = struct{}{}
+		}
+	}
+	if len(groupSet) == 0 {
+		return []int{rootProcessID}
+	}
+
+	processGroupIDs := make([]int, 0, len(groupSet))
+	for processGroupID := range groupSet {
+		processGroupIDs = append(processGroupIDs, processGroupID)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(processGroupIDs)))
+	return processGroupIDs
+}
+
+func readProcessSnapshot() (map[int]processInfo, error) {
+	entries, err := os.ReadDir("/proc")
+	if err != nil {
+		return nil, err
+	}
+
+	processes := make(map[int]processInfo)
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		processID, err := strconv.Atoi(entry.Name())
+		if err != nil {
+			continue
+		}
+
+		info, err := readProcessInfo(processID)
+		if err != nil {
+			continue
+		}
+		processes[processID] = info
+	}
+
+	return processes, nil
+}
+
+func readProcessInfo(processID int) (processInfo, error) {
+	data, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(processID), "stat"))
+	if err != nil {
+		return processInfo{}, err
+	}
+
+	stat := string(data)
+	commEnd := strings.LastIndex(stat, ") ")
+	if commEnd == -1 {
+		return processInfo{}, fmt.Errorf("invalid proc stat for pid %d", processID)
+	}
+
+	fields := strings.Fields(stat[commEnd+2:])
+	if len(fields) < 4 {
+		return processInfo{}, fmt.Errorf("invalid proc stat for pid %d", processID)
+	}
+
+	parentID, err := strconv.Atoi(fields[1])
+	if err != nil {
+		return processInfo{}, err
+	}
+	processGroupID, err := strconv.Atoi(fields[2])
+	if err != nil {
+		return processInfo{}, err
+	}
+
+	return processInfo{parentID: parentID, processGroupID: processGroupID}, nil
 }
 
 func shutdownDatabase(rootDir string, composeFile string) {
@@ -318,6 +498,13 @@ func loadEnvVar(dir string, filename string, key string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func loadEnvValue(dir string, key string) (string, error) {
+	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+		return value, nil
+	}
+	return loadEnvVar(dir, ".env", key)
 }
 
 func commandOutput(dir string, name string, args ...string) (string, error) {

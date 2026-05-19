@@ -51,13 +51,11 @@ run = "pnpm run dev:normal"
 
 [tasks.dev]
 description = "Reset local db, then start backend and frontend with mock email delivery"
-dir = "backend"
 run = "go run ./scripts/dev.go"
 env = { _.file = ".env" }
 
 [tasks."dev:worker"]
 description = "Reset local db, then start backend, frontend, and local email Workers"
-dir = "backend"
 run = "go run ./scripts/dev.go worker"
 env = { _.file = ".env" }
 

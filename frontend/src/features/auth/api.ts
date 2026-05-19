@@ -274,12 +274,12 @@ export async function requestAuthVerification(type: 'email' | 'univemail', csrfT
   )
 }
 
-export async function verifyAuthVerificationLink(payload: VerifyAuthVerificationLinkPayload) {
+export async function verifyAuthVerificationLink(payload: VerifyAuthVerificationLinkPayload, csrfToken?: string) {
   return $api.mutationData(
     'post',
     '/auth/verification/verify',
     {
-      headers: createJsonHeaders(),
+      headers: createJsonHeaders(csrfToken),
       body: payload
     },
     (value) => parseWithSchema(authVerificationLinkVerifySchema, value, 'auth verification link verify'),
@@ -427,10 +427,16 @@ export function useRequestAuthVerificationMutation() {
 }
 
 export function useVerifyAuthVerificationLinkMutation() {
+  const sessionStore = useSessionStore()
   const queryClient = useQueryClient()
 
   return useMutation<AuthVerificationLinkVerifyResult, unknown, VerifyAuthVerificationLinkPayload>({
-    mutationFn: async (payload: VerifyAuthVerificationLinkPayload) => verifyAuthVerificationLink(payload),
+    mutationFn: async (payload: VerifyAuthVerificationLinkPayload) => {
+      const session = await fetchSessionBootstrap()
+      sessionStore.hydrate(session)
+      queryClient.setQueryData(['session', 'bootstrap'], session)
+      return verifyAuthVerificationLink(payload, session.csrfToken)
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['auth', 'verification'] }),

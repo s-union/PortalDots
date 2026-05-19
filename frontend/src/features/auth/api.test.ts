@@ -199,6 +199,28 @@ describe('auth api', () => {
     )
   })
 
+  it('passes csrf token when verifying an auth verification link with an active session', async () => {
+    await verifyAuthVerificationLink(
+      {
+        type: 'email',
+        userId: 'user-123',
+        token: 'token-abc'
+      },
+      'csrf-token'
+    )
+
+    expect(apiClientMocks.$api.mutationData).toHaveBeenCalledWith(
+      'post',
+      '/auth/verification/verify',
+      {
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'csrf-token' },
+        body: { type: 'email', userId: 'user-123', token: 'token-abc' }
+      },
+      expect.any(Function),
+      expect.objectContaining({ errorMessage: 'Failed to verify auth verification link' })
+    )
+  })
+
   it('hydrates the session and updates the bootstrap cache after login/complete', async () => {
     const loginMutation = useLoginMutation()
     const completeMutation = useCompleteRegistrationMutation()
@@ -213,6 +235,34 @@ describe('auth api', () => {
       expect.objectContaining({
         csrfToken: 'next-token'
       })
+    )
+  })
+
+  it('bootstraps csrf before verifying an auth verification link', async () => {
+    apiClientMocks.$api.mutationData.mockResolvedValueOnce({ completed: false })
+    const verifyMutation = useVerifyAuthVerificationLinkMutation()
+
+    await verifyMutation.mutationFn({
+      type: 'email',
+      userId: 'user-123',
+      token: 'token-abc'
+    })
+
+    expect(sessionApiMocks.fetchSessionBootstrap).toHaveBeenCalledOnce()
+    expect(sessionStoreMocks.store.hydrate).toHaveBeenCalledWith(expect.objectContaining({ csrfToken: 'next-token' }))
+    expect(setQueryData).toHaveBeenCalledWith(
+      ['session', 'bootstrap'],
+      expect.objectContaining({ csrfToken: 'next-token' })
+    )
+    expect(apiClientMocks.$api.mutationData).toHaveBeenCalledWith(
+      'post',
+      '/auth/verification/verify',
+      {
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'next-token' },
+        body: { type: 'email', userId: 'user-123', token: 'token-abc' }
+      },
+      expect.any(Function),
+      expect.objectContaining({ errorMessage: 'Failed to verify auth verification link' })
     )
   })
 

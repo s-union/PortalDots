@@ -50,13 +50,10 @@ PortalDots/
 git clone git@github.com:s-union/PortalDots.git
 cd PortalDots
 
-# 2. Install all managed tools (Go, Node.js, sqlc, air, …)
-mise install
+# 2. Install tools and dependencies, initialize .env, set up hooks, and seed the DB
+mise run setup
 
-# 3. Install Node.js packages, set up git hooks, and initialize .env
-mise run prepare
-
-# 4. Start the dev stack
+# 3. Start the dev stack
 mise run dev
 ```
 
