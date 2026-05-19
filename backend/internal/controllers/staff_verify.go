@@ -53,13 +53,9 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 		return statusError(c, status)
 	}
 
-	verifyCode := h.staffVerifyCode
-	if h.allowDangerously || strings.TrimSpace(verifyCode) == "" {
-		generatedCode, err := generateStaffVerifyCode()
-		if err != nil {
-			return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
-		}
-		verifyCode = generatedCode
+	verifyCode, err := generateStaffVerifyCode()
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_verify_code")
 	}
 
 	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {

@@ -32,8 +32,6 @@ import (
 type sharedDeps struct {
 	sessions            session.Store
 	allowDangerously    bool
-	enableDemoMode      bool
-	staffVerifyCode     string
 	sessionCookieName   string
 	sessionCookieSecure bool
 	sessionCookieTTL    time.Duration
@@ -271,9 +269,7 @@ func NewServerWithDependencies(
 		sessionCookieName:   cfg.SessionCookieName,
 		sessionCookieTTL:    cfg.SessionTTL,
 		sessionCookieSecure: cfg.SessionCookieSecure,
-		staffVerifyCode:     cfg.StaffVerifyCode,
 		allowDangerously:    cfg.AllowDangerously,
-		enableDemoMode:      cfg.EnableDemoMode,
 		sessions:            sessionStore,
 	}
 
@@ -497,7 +493,6 @@ func NewServerWithDependencies(
 		Sessions:          sessionStore,
 	}
 	v1.Use(middlewares.VerifyCSRF(sessionMiddlewareConfig))
-	v1.Use(demoModeMiddleware(cfg.EnableDemoMode))
 
 	RegisterPublicRoutes(v1, PublicRoutes{
 		GetPublicConfig:            publicHomeH.getPublicConfig,

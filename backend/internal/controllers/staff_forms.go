@@ -6,12 +6,10 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
-	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type staffFormSummaryResponse struct {
@@ -504,21 +502,6 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 	request.Type = strings.TrimSpace(request.Type)
 	if !slices.Contains(formquestion.AllowedQuestionTypes, request.Type) {
 		return validationError(c, map[string][]string{"type": {"設問タイプが不正です"}})
-	}
-
-	if h.sharedDeps.enableDemoMode {
-		now := time.Now().UTC().Format(time.RFC3339)
-		return c.JSON(http.StatusCreated, staffFormQuestion{
-			ID:          uuidv7.MustString(),
-			Name:        "",
-			Description: "",
-			Type:        request.Type,
-			IsRequired:  false,
-			IsPermanent: false,
-			Priority:    9999,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		})
 	}
 
 	created, err := h.formQuestions.Create(c.Request().Context(), formValue.ID, request.Type)

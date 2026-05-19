@@ -12,7 +12,6 @@ import (
 const (
 	DefaultSessionTTLSeconds = 12 * 60 * 60
 	defaultAuthPassword      = "demo-admin"
-	defaultStaffVerifyCode   = "123456"
 	demoAdminUserID          = "0195ec00-0051-7000-8000-000000000001"
 	demoStaffUserID          = "0195ec00-0052-7000-8000-000000000001"
 	demoStaffSubUserID       = "0195ec00-0053-7000-8000-000000000001"
@@ -25,22 +24,17 @@ type Config struct {
 	DatabaseURL               string
 	MigrationsDir             string
 	AllowDangerously          bool
-	EnableDemoMode            bool
 	SessionCookieName         string
 	SessionCookieSecure       bool
 	SessionTTL                time.Duration
 	AppName                   string
 	PortalDescription         string
 	AppURL                    string
-	AppForceHTTPS             bool
 	PortalAdminName           string
 	PortalContactEmail        string
 	PortalUnivemailDomainPart string
 	PortalStudentIDName       string
 	PortalUnivemailName       string
-	PortalPrimaryColorH       int
-	PortalPrimaryColorS       int
-	PortalPrimaryColorL       int
 	RegistrationVerifyTTL     time.Duration
 	Version                   string
 	EmailFrom                 string
@@ -51,7 +45,6 @@ type Config struct {
 	MaintenanceMode           bool
 	AuthUser                  AuthUser
 	Users                     []User
-	StaffVerifyCode           string
 	ParticipationTypes        []ParticipationType
 	Circles                   []Circle
 	Pages                     []Page
@@ -61,8 +54,6 @@ type Config struct {
 	Places                    []Place
 	Booths                    []BoothAssignment
 	ContactCategories         []ContactCategory
-	authPasswordProvided      bool
-	staffVerifyCodeProvided   bool
 }
 
 type AuthUser struct {
@@ -196,10 +187,8 @@ func ternaryString(condition bool, whenTrue string, whenFalse string) string {
 }
 
 func FromEnv() Config {
-	staffVerifyCode, staffVerifyCodeProvided := getenvWithPresence("PORTAL_STAFF_VERIFY_CODE", defaultStaffVerifyCode)
 	defaultAuthUser := defaultDemoAuthUser()
 	allowDangerously := getenv("PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE", "") == "true"
-	enableDemoMode := getenv("PORTAL_ENABLE_DEMO_MODE", "") == "true"
 	appURL := getenv("APP_URL", "http://127.0.0.1:8080")
 
 	return Config{
@@ -207,22 +196,17 @@ func FromEnv() Config {
 		DatabaseURL:               getenv("PORTAL_DATABASE_URL", ""),
 		MigrationsDir:             getenv("PORTAL_MIGRATIONS_DIR", "db/migrations"),
 		AllowDangerously:          allowDangerously,
-		EnableDemoMode:            enableDemoMode,
 		SessionCookieName:         getenv("PORTAL_SESSION_COOKIE", "portaldots_session"),
 		SessionCookieSecure:       getenvBool("PORTAL_SESSION_COOKIE_SECURE", strings.HasPrefix(appURL, "https://")),
 		SessionTTL:                time.Duration(getenvInt("PORTAL_SESSION_TTL_SECONDS", DefaultSessionTTLSeconds)) * time.Second,
 		AppName:                   getenv("PORTAL_APP_NAME", "PortalDots"),
 		PortalDescription:         getenv("PORTAL_DESCRIPTION", ternaryString(allowDangerously, "PortalDots デモサイトです。", "学園祭参加団体向けポータル")),
 		AppURL:                    appURL,
-		AppForceHTTPS:             getenv("APP_FORCE_HTTPS", "") == "true",
 		PortalAdminName:           getenv("PORTAL_ADMIN_NAME", ternaryString(allowDangerously, "PortalDots 実行委員会", "PortalDots 実行委員会")),
 		PortalContactEmail:        getenv("PORTAL_CONTACT_EMAIL", ternaryString(allowDangerously, "support@portaldots.com", "contact@example.com")),
 		PortalUnivemailDomainPart: getenv("PORTAL_UNIVEMAIL_DOMAIN_PART", ternaryString(allowDangerously, "portaldots.com", "example.ac.jp")),
 		PortalStudentIDName:       getenv("PORTAL_STUDENT_ID_NAME", "学籍番号"),
 		PortalUnivemailName:       getenv("PORTAL_UNIVEMAIL_NAME", ternaryString(allowDangerously, "学生用メールアドレス", "大学メールアドレス")),
-		PortalPrimaryColorH:       getenvInt("PORTAL_PRIMARY_COLOR_H", 214),
-		PortalPrimaryColorS:       getenvInt("PORTAL_PRIMARY_COLOR_S", 91),
-		PortalPrimaryColorL:       getenvInt("PORTAL_PRIMARY_COLOR_L", 53),
 		RegistrationVerifyTTL:     time.Duration(getenvInt("PORTAL_REGISTRATION_VERIFY_TTL_MINUTES", 60)) * time.Minute,
 		Version:                   getenv("PORTAL_VERSION", ""),
 		EmailFrom:                 getenv("PORTAL_EMAIL_FROM", getenv("PORTAL_SMTP_FROM", "")),
@@ -245,8 +229,6 @@ func FromEnv() Config {
 			}
 			return []User{}
 		}(),
-		StaffVerifyCode:         staffVerifyCode,
-		staffVerifyCodeProvided: staffVerifyCodeProvided,
 		ParticipationTypes: []ParticipationType{
 			{
 				ID:            "0195ec00-0001-7000-8000-000000000001",
@@ -559,31 +541,15 @@ func (c Config) ValidateForAPI() error {
 	if appURLErr != nil {
 		issues = append(issues, "APP_URL must be an absolute http or https URL")
 	}
-	if strings.TrimSpace(c.StaffVerifyCode) == "" {
-		issues = append(issues, "PORTAL_STAFF_VERIFY_CODE must not be empty")
-	}
 	if c.RegistrationVerifyTTL <= 0 {
 		issues = append(issues, "PORTAL_REGISTRATION_VERIFY_TTL_MINUTES must be greater than zero")
 	}
-	if c.AllowDangerously {
-		if len(c.AuthUser.LoginIDs) == 0 {
-			issues = append(issues, "PORTAL_AUTH_LOGIN_IDS must contain at least one login ID")
-		}
-		if strings.TrimSpace(c.AuthUser.Password) == "" {
-			issues = append(issues, "PORTAL_AUTH_PASSWORD must not be empty")
-		}
-	} else {
+	if !c.AllowDangerously {
 		if appURLErr == nil && !strings.HasPrefix(appOrigin, "https://") {
 			issues = append(issues, "APP_URL must use https unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 		if !c.SessionCookieSecure {
 			issues = append(issues, "PORTAL_SESSION_COOKIE_SECURE must be true unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
-		}
-		if !c.staffVerifyCodeProvided || c.StaffVerifyCode == defaultStaffVerifyCode {
-			issues = append(issues, "PORTAL_STAFF_VERIFY_CODE must be set to a non-default value unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
-		}
-		if !c.authPasswordProvided || c.AuthUser.Password == defaultAuthPassword {
-			issues = append(issues, "PORTAL_AUTH_PASSWORD must be set to a non-default value unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
 		}
 		if strings.TrimSpace(c.EmailProducerURL) == "" {
 			issues = append(issues, "PORTAL_EMAIL_PRODUCER_URL is required unless PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true")
@@ -632,15 +598,6 @@ func getenvBool(key string, fallback bool) bool {
 	}
 
 	return value == "true"
-}
-
-func getenvWithPresence(key, fallback string) (string, bool) {
-	value, ok := os.LookupEnv(key)
-	if !ok || value == "" {
-		return fallback, false
-	}
-
-	return value, true
 }
 
 func getenvInt(key string, fallback int) int {

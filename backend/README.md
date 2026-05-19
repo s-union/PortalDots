@@ -67,8 +67,8 @@ Copy `.env.example` to `.env` at the repository root and adjust:
 | -------- | ------- | ----------- |
 | `PORTAL_DATABASE_URL` | `postgres://portaldots:portaldots@127.0.0.1:55432/portaldots_rebuild?sslmode=disable` | PostgreSQL connection string |
 | `PORTAL_API_BIND` | `127.0.0.1:8080` | Bind address for the HTTP server |
-| `PORTAL_STAFF_VERIFY_CODE` | `654321` | Required staff verification code (must be non-default in production) |
-| `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE` | `true` | Skips staff verify step and re-seeds on every startup |
+| `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE` | `true` | Re-seeds on every startup and exposes the randomly generated verify code in verify/request responses (development only) |
+| `PORTAL_EMAIL_PRODUCER_ENABLED` | `false` | Force-enables the email producer even when `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` |
 | `PORTAL_SESSION_TTL_SECONDS` | `86400` | Session cookie lifetime (default 24 h) |
 | `PORTAL_EMAIL_PRODUCER_URL` | `http://localhost:8787` | Email producer Worker endpoint |
 | `PORTAL_EMAIL_PRODUCER_TOKEN` | `dev-token` | Auth token for the email producer |
@@ -116,8 +116,7 @@ mise run backend-sqlc-smoke
 
 - `main.go` runs SQL migrations on startup before accepting requests.
 - Seed data is inserted when the `users` table is empty.
-- `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` re-applies seed data on every startup and exposes the verify code in `POST /v1/staff/verify/request`.
-- `PORTAL_STAFF_VERIFY_CODE` must be set to a non-default value in production unless demo mode is enabled.
+- `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` re-applies seed data on every startup and exposes the randomly generated verify code in `POST /v1/staff/verify/request` responses (development only).
 - Uploaded files (form answers, documents) are stored as binary in PostgreSQL. No external object storage is wired yet.
 - Form answers are stored per-question in `answer_details` and `answer_uploads`. Forms with zero questions fall back to `body`-based storage for backwards compatibility.
 - UUID generation uses `uuidv7()` — requires PostgreSQL 18+.

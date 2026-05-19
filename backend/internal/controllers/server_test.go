@@ -25,8 +25,6 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
-const strictStaffVerifyCode = "654321"
-
 func TestLoginAndBootstrap(t *testing.T) {
 	t.Parallel()
 
@@ -373,7 +371,7 @@ func TestUpdatePasswordAllowsLoginWithoutNotificationRecipient(t *testing.T) {
 func TestUpdatePasswordQueuesNotificationMail(t *testing.T) {
 	t.Parallel()
 
-	cfg := testStrictStaffConfig()
+	cfg := testStaffConfig()
 	for index := range cfg.Users {
 		if cfg.Users[index].ID != "0195ec00-0058-7000-8000-000000000001" {
 			continue
@@ -404,14 +402,6 @@ func TestUpdatePasswordQueuesNotificationMail(t *testing.T) {
 	staffCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, staffCookies)
 	authorizeStaff(t, server, staffCookies)
-	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
-
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": strictStaffVerifyCode,
-	}, staffCSRF)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
 
 	assertStaffMailsEmpty(t, server, staffCookies)
 }
@@ -419,7 +409,7 @@ func TestUpdatePasswordQueuesNotificationMail(t *testing.T) {
 func TestPasswordResetFlow(t *testing.T) {
 	t.Parallel()
 
-	cfg := testStrictStaffConfig()
+	cfg := testStaffConfig()
 	for index := range cfg.Users {
 		if cfg.Users[index].ID != "0195ec00-0058-7000-8000-000000000001" {
 			continue
@@ -439,14 +429,6 @@ func TestPasswordResetFlow(t *testing.T) {
 	staffCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, staffCookies)
 	authorizeStaff(t, server, staffCookies)
-	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
-
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": strictStaffVerifyCode,
-	}, staffCSRF)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
 
 	assertStaffMailsEmpty(t, server, staffCookies)
 
@@ -555,7 +537,7 @@ func TestPasswordResetFlow(t *testing.T) {
 func TestPasswordResetStartMatchesLoginIDCaseInsensitive(t *testing.T) {
 	t.Parallel()
 
-	cfg := testStrictStaffConfig()
+	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
 		ID:           "0195ec00-00b3-7000-8000-000000000001",
 		LoginIDs:     []string{"MiXeDLoginID"},
@@ -577,14 +559,6 @@ func TestPasswordResetStartMatchesLoginIDCaseInsensitive(t *testing.T) {
 	staffCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, staffCookies)
 	authorizeStaff(t, server, staffCookies)
-	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
-
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": strictStaffVerifyCode,
-	}, staffCSRF)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
 
 	assertStaffMailsEmpty(t, server, staffCookies)
 }
@@ -592,7 +566,7 @@ func TestPasswordResetStartMatchesLoginIDCaseInsensitive(t *testing.T) {
 func TestPasswordResetStartDoesNotFuzzyMatchLoginID(t *testing.T) {
 	t.Parallel()
 
-	cfg := testStrictStaffConfig()
+	cfg := testStaffConfig()
 	cfg.Users = append(cfg.Users, config.User{
 		ID:           "0195ec00-00b4-7000-8000-000000000001",
 		LoginIDs:     []string{"MiXeDLoginID"},
@@ -622,14 +596,6 @@ func TestPasswordResetStartDoesNotFuzzyMatchLoginID(t *testing.T) {
 	staffCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, staffCookies)
 	authorizeStaff(t, server, staffCookies)
-	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
-
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": strictStaffVerifyCode,
-	}, staffCSRF)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
 
 	recorder = doJSONRequest(t, server, staffCookies, http.MethodGet, "/v1/staff/mails", nil)
 	if recorder.Code != http.StatusOK {
@@ -1024,17 +990,6 @@ func TestStartRegistrationQueuesVerificationMailWhenSecure(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 
-	authorizeStaff(t, server, staffCookies)
-	staffCSRF = map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
-
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": strictStaffVerifyCode,
-	}, staffCSRF)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
-
-	assertStaffMailsEmpty(t, server, staffCookies)
 	if strings.Contains(logs.String(), "secure-registration@example.ac.jp") || strings.Contains(logs.String(), "【重要】メール認証のお願い") {
 		t.Fatalf("expected secure mode logs to avoid raw queued mail payloads, got logs=%s", logs.String())
 	}
@@ -1246,7 +1201,7 @@ func TestCompleteRegistrationAutoSendsContactVerificationWhenNeeded(t *testing.T
 func TestAuthVerificationRequestQueuesMailWhenSecure(t *testing.T) {
 	t.Parallel()
 
-	cfg := testStrictStaffConfig()
+	cfg := testStaffConfig()
 	for index := range cfg.Users {
 		if cfg.Users[index].ID != "0195ec00-0058-7000-8000-000000000001" {
 			continue
@@ -1277,14 +1232,6 @@ func TestAuthVerificationRequestQueuesMailWhenSecure(t *testing.T) {
 	staffCookies := map[string]*http.Cookie{}
 	loginAsStaff(t, server, staffCookies)
 	authorizeStaff(t, server, staffCookies)
-	staffCSRF := map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, staffCookies)}
-
-	recorder = doJSONRequest(t, server, staffCookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": strictStaffVerifyCode,
-	}, staffCSRF)
-	if recorder.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
-	}
 
 	assertStaffMailsEmpty(t, server, staffCookies)
 }
@@ -3202,7 +3149,7 @@ func TestUpsertFormAnswerRejectsBlankBody(t *testing.T) {
 func TestStaffVerificationFlow(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testStrictStaffConfig())
+	server := NewServer(testStaffConfig())
 	cookies := map[string]*http.Cookie{}
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
@@ -3242,12 +3189,13 @@ func TestStaffVerificationFlow(t *testing.T) {
 	if requestResponse.Message != "認証コードを送信しました。" {
 		t.Fatalf("unexpected staff verify request response: %#v", requestResponse)
 	}
-	if requestResponse.VerifyCode != "" {
-		t.Fatalf("expected verifyCode to be hidden in strict mode, got %#v", requestResponse)
+	if strings.TrimSpace(requestResponse.VerifyCode) == "" {
+		t.Fatalf("expected verifyCode in insecure mode response, got %#v", requestResponse)
 	}
 
+	csrf = map[string]string{"X-CSRF-Token": fetchCSRFToken(t, server, cookies)}
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/verify/confirm", map[string]string{
-		"verifyCode": strictStaffVerifyCode,
+		"verifyCode": requestResponse.VerifyCode,
 	}, csrf)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
@@ -6011,7 +5959,7 @@ func authorizeStaff(t *testing.T, server *echo.Echo, cookies map[string]*http.Co
 
 	// In AllowDangerously mode verifyCode is included in the response so we can
 	// complete the full flow here. In strict mode (AllowDangerously=false) the
-	// caller is responsible for calling verify/confirm with the known static code.
+	// code is not exposed, so authorization remains incomplete after this call.
 	if strings.TrimSpace(response.VerifyCode) == "" {
 		return
 	}
@@ -6096,21 +6044,16 @@ func testConfig() config.Config {
 	return config.Config{
 		SessionCookieName:         "test_session",
 		SessionTTL:                12 * time.Hour,
-		StaffVerifyCode:           "123456",
 		AllowDangerously:          true,
 		AppName:                   "PortalDots",
 		PortalDescription:         "学園祭参加団体向けポータル",
 		AppURL:                    "https://portal.example.com",
-		AppForceHTTPS:             true,
 		RegistrationVerifyTTL:     time.Hour,
 		PortalAdminName:           "PortalDots 実行委員会",
 		PortalContactEmail:        "contact@example.com",
 		PortalUnivemailDomainPart: "example.ac.jp",
 		PortalStudentIDName:       "学籍番号",
 		PortalUnivemailName:       "大学メールアドレス",
-		PortalPrimaryColorH:       190,
-		PortalPrimaryColorS:       80,
-		PortalPrimaryColorL:       45,
 		AuthUser: config.AuthUser{
 			ID:          "0195ec00-0093-7000-8000-000000000001",
 			LoginIDs:    []string{"demo@example.com", "24a0000"},
@@ -6408,7 +6351,6 @@ func testStaffConfig() config.Config {
 func testStrictStaffConfig() config.Config {
 	cfg := testStaffConfig()
 	cfg.AllowDangerously = false
-	cfg.StaffVerifyCode = strictStaffVerifyCode
 	return cfg
 }
 

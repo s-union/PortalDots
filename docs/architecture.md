@@ -79,9 +79,9 @@ Session cookies use `HttpOnly; SameSite=Strict` and are scoped to the API server
 
 ## Staff verification
 
-Staff-mode access requires a second verification step beyond the normal session. The staff verify code (`PORTAL_STAFF_VERIFY_CODE`) is an out-of-band secret set by an administrator — not a per-user credential. This deliberately limits the blast radius of a compromised session: knowing the session cookie is not enough to reach staff-only endpoints.
+Staff-mode access requires a second verification step beyond the normal session. When a staff user calls `POST /v1/staff/verify/request`, the server generates a cryptographically random 6-digit code, stores it in the session, and sends it to the user's registered email address. The user then submits the code to `POST /v1/staff/verify/confirm`. This limits the blast radius of a compromised session: knowing the session cookie is not enough to reach staff-only endpoints.
 
-In `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true`, this step is bypassed automatically so that local development does not require the out-of-band flow.
+In `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true`, the generated code is also returned in the `verifyRequest` response body so that local development and E2E tests can complete the flow without email delivery.
 
 ---
 

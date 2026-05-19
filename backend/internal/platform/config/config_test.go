@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -12,40 +11,33 @@ func TestValidateForAPIRejectsInsecureDefaults(t *testing.T) {
 	t.Parallel()
 
 	cfg := Config{
-		DatabaseURL:     "postgres://example",
-		MigrationsDir:   "db/migrations",
-		SessionTTL:      time.Hour,
-		StaffVerifyCode: "123456",
+		DatabaseURL:   "postgres://example",
+		MigrationsDir: "db/migrations",
+		SessionTTL:    time.Hour,
 	}
 
 	err := cfg.ValidateForAPI()
 	if err == nil {
 		t.Fatal("expected insecure defaults to be rejected")
 	}
-	if !strings.Contains(err.Error(), "PORTAL_STAFF_VERIFY_CODE") {
-		t.Fatalf("expected staff verify code error, got %v", err)
+	if !strings.Contains(err.Error(), "SESSION_COOKIE_NAME") && !strings.Contains(err.Error(), "APP_URL") {
+		t.Fatalf("expected validation error, got %v", err)
 	}
 }
 
-func TestValidateForAPIAllowsSecureExplicitConfigurationWithoutDemoAuthSettings(t *testing.T) {
+func TestValidateForAPIAllowsSecureExplicitConfiguration(t *testing.T) {
 	t.Parallel()
 
 	cfg := Config{
-		DatabaseURL:             "postgres://example",
-		MigrationsDir:           "db/migrations",
-		SessionCookieName:       "portaldots_session",
-		SessionCookieSecure:     true,
-		SessionTTL:              time.Hour,
-		AppURL:                  "https://portal.example.com",
-		RegistrationVerifyTTL:   time.Hour,
-		EmailProducerURL:        "https://email-producer.example.com",
-		EmailProducerToken:      "super-secret-token",
-		StaffVerifyCode:         "654321",
-		staffVerifyCodeProvided: true,
-		AuthUser: AuthUser{
-			Password: "strong-production-password",
-		},
-		authPasswordProvided: true,
+		DatabaseURL:           "postgres://example",
+		MigrationsDir:         "db/migrations",
+		SessionCookieName:     "portaldots_session",
+		SessionCookieSecure:   true,
+		SessionTTL:            time.Hour,
+		AppURL:                "https://portal.example.com",
+		RegistrationVerifyTTL: time.Hour,
+		EmailProducerURL:      "https://email-producer.example.com",
+		EmailProducerToken:    "super-secret-token",
 	}
 
 	if err := cfg.ValidateForAPI(); err != nil {
@@ -53,100 +45,18 @@ func TestValidateForAPIAllowsSecureExplicitConfigurationWithoutDemoAuthSettings(
 	}
 }
 
-func TestValidateForAPIRejectsDefaultAuthPassword(t *testing.T) {
-	t.Parallel()
-
-	cfg := Config{
-		DatabaseURL:             "postgres://example",
-		MigrationsDir:           "db/migrations",
-		SessionCookieName:       "portaldots_session",
-		SessionTTL:              time.Hour,
-		AppURL:                  "https://portal.example.com",
-		SessionCookieSecure:     true,
-		StaffVerifyCode:         "654321",
-		staffVerifyCodeProvided: true,
-		AuthUser: AuthUser{
-			Password: defaultAuthPassword,
-		},
-		authPasswordProvided: true,
-	}
-
-	err := cfg.ValidateForAPI()
-	if err == nil {
-		t.Fatal("expected default auth password to be rejected")
-	}
-	if !strings.Contains(err.Error(), "PORTAL_AUTH_PASSWORD") {
-		t.Fatalf("expected auth password error, got %v", err)
-	}
-}
-
-func TestValidateForAPIRejectsUnprovidedAuthPassword(t *testing.T) {
-	t.Parallel()
-
-	cfg := Config{
-		DatabaseURL:             "postgres://example",
-		MigrationsDir:           "db/migrations",
-		SessionCookieName:       "portaldots_session",
-		SessionTTL:              time.Hour,
-		AppURL:                  "https://portal.example.com",
-		SessionCookieSecure:     true,
-		StaffVerifyCode:         "654321",
-		staffVerifyCodeProvided: true,
-		// authPasswordProvided is false (default) → not explicitly set
-	}
-
-	err := cfg.ValidateForAPI()
-	if err == nil {
-		t.Fatal("expected unprovided auth password to be rejected")
-	}
-	if !strings.Contains(err.Error(), "PORTAL_AUTH_PASSWORD") {
-		t.Fatalf("expected auth password error, got %v", err)
-	}
-}
-
-func TestValidateForAPIRequiresDemoAuthSettingsWhenInsecureDefaultsEnabled(t *testing.T) {
-	t.Parallel()
-
-	cfg := Config{
-		DatabaseURL:       "postgres://example",
-		MigrationsDir:     "db/migrations",
-		SessionCookieName: "portaldots_session",
-		SessionTTL:        time.Hour,
-		AppURL:            "http://127.0.0.1:8080",
-		AllowDangerously:  true,
-		StaffVerifyCode:   "123456",
-	}
-
-	err := cfg.ValidateForAPI()
-	if err == nil {
-		t.Fatal("expected demo auth settings to be required")
-	}
-	if !strings.Contains(err.Error(), "PORTAL_AUTH_LOGIN_IDS") {
-		t.Fatalf("expected login ids error, got %v", err)
-	}
-	if !strings.Contains(err.Error(), "PORTAL_AUTH_PASSWORD") {
-		t.Fatalf("expected auth password error, got %v", err)
-	}
-}
-
 func TestValidateForAPIRejectsInsecureAppURLAndCookieInSecureMode(t *testing.T) {
 	t.Parallel()
 
 	cfg := Config{
-		DatabaseURL:             "postgres://example",
-		MigrationsDir:           "db/migrations",
-		SessionCookieName:       "portaldots_session",
-		SessionTTL:              time.Hour,
-		AppURL:                  "http://portal.example.com",
-		RegistrationVerifyTTL:   time.Hour,
-		EmailProducerURL:        "https://email-producer.example.com",
-		EmailProducerToken:      "super-secret-token",
-		StaffVerifyCode:         "654321",
-		staffVerifyCodeProvided: true,
-		AuthUser: AuthUser{
-			Password: "strong-production-password",
-		},
-		authPasswordProvided: true,
+		DatabaseURL:           "postgres://example",
+		MigrationsDir:         "db/migrations",
+		SessionCookieName:     "portaldots_session",
+		SessionTTL:            time.Hour,
+		AppURL:                "http://portal.example.com",
+		RegistrationVerifyTTL: time.Hour,
+		EmailProducerURL:      "https://email-producer.example.com",
+		EmailProducerToken:    "super-secret-token",
 	}
 
 	err := cfg.ValidateForAPI()
@@ -172,31 +82,6 @@ func TestAppOriginNormalizesPath(t *testing.T) {
 	}
 	if origin != "https://portal.example.com" {
 		t.Fatalf("expected normalized origin, got %q", origin)
-	}
-}
-
-func TestFromEnvUsesDefaultPrimaryColor(t *testing.T) {
-	t.Parallel()
-
-	keys := []string{
-		"PORTAL_PRIMARY_COLOR_H",
-		"PORTAL_PRIMARY_COLOR_S",
-		"PORTAL_PRIMARY_COLOR_L",
-	}
-	for _, key := range keys {
-		if err := os.Unsetenv(key); err != nil {
-			t.Fatalf("unset env %s: %v", key, err)
-		}
-	}
-
-	cfg := FromEnv()
-	if cfg.PortalPrimaryColorH != 214 || cfg.PortalPrimaryColorS != 91 || cfg.PortalPrimaryColorL != 53 {
-		t.Fatalf(
-			"expected default primary color 214/91/53, got %d/%d/%d",
-			cfg.PortalPrimaryColorH,
-			cfg.PortalPrimaryColorS,
-			cfg.PortalPrimaryColorL,
-		)
 	}
 }
 

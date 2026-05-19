@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: portaldots_rebuild
       POSTGRES_USER: portaldots
-      POSTGRES_PASSWORD: portaldots
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U portaldots -d portaldots_rebuild"]
       interval: 5s
