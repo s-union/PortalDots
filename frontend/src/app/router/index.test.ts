@@ -79,7 +79,7 @@ describe('app router guards', () => {
     expect(router.currentRoute.value.fullPath).toBe('/login')
   })
 
-  it('redirects authenticated workspace pages without current circle to selector', async () => {
+  it('allows authenticated workspace viewing pages without current circle', async () => {
     sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
       csrfToken: 'csrf-token',
       currentCircle: null,
@@ -93,9 +93,29 @@ describe('app router guards', () => {
       }
     })
 
-    await router.push('/workspace/pages')
+    for (const path of ['/workspace/pages', '/workspace/documents', '/workspace/contact']) {
+      await router.push(path)
+      expect(router.currentRoute.value.fullPath).toBe(path)
+    }
+  })
 
-    expect(router.currentRoute.value.fullPath).toBe('/circles/select?redirect=/workspace/pages')
+  it('redirects authenticated workspace forms without current circle to selector', async () => {
+    sessionApiMocks.fetchSessionBootstrap.mockResolvedValue({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['participant'],
+      permissions: [],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
+
+    await router.push('/workspace/forms')
+
+    expect(router.currentRoute.value.fullPath).toBe('/circles/select?redirect=/workspace/forms')
   })
 
   it('redirects authenticated workspace root to home when current circle exists', async () => {

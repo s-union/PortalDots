@@ -44,3 +44,25 @@ func effectiveCircleTags(ctx context.Context, currentCircle circle.Circle, parti
 
 	return tags
 }
+
+func effectiveCircleTagsForCircles(ctx context.Context, circles []circle.Circle, participationTypes participationtype.Repository) []string {
+	tags := make([]string, 0)
+	seen := map[string]struct{}{}
+
+	for _, currentCircle := range circles {
+		for _, tag := range effectiveCircleTags(ctx, currentCircle, participationTypes) {
+			normalized := strings.TrimSpace(tag)
+			if normalized == "" {
+				continue
+			}
+			key := strings.ToLower(normalized)
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			tags = append(tags, normalized)
+		}
+	}
+
+	return tags
+}

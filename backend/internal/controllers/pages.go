@@ -44,20 +44,24 @@ type pageDocumentResponse struct {
 }
 
 func (h *workspaceHandlers) listPages(c echo.Context) error {
-	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, status, ok := h.currentWorkspaceSession(c)
+	if !ok {
+		return statusError(c, status)
+	}
+	circleTags, status, ok := h.currentWorkspaceCircleTags(c, currentSession)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	pages := h.pages.ListForCircle(c.Request().Context(), effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes), c.QueryParam("query"))
+	pages := h.pages.ListForCircle(c.Request().Context(), circleTags, c.QueryParam("query"))
 	pagination := readPagesPagination(c)
 	total := len(pages)
 	if h.pages.SupportsPagination(c.Request().Context()) {
-		total = h.pages.CountForCircle(c.Request().Context(), effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes), c.QueryParam("query"))
+		total = h.pages.CountForCircle(c.Request().Context(), circleTags, c.QueryParam("query"))
 		page, pageSize := models.NormalizePagination(pagination, total)
 		pagination.Page = page
 		pagination.PageSize = pageSize
-		pages = h.pages.ListForCirclePaginated(c.Request().Context(), effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes), c.QueryParam("query"), pageSize, (page-1)*pageSize)
+		pages = h.pages.ListForCirclePaginated(c.Request().Context(), circleTags, c.QueryParam("query"), pageSize, (page-1)*pageSize)
 	}
 
 	readPageIDs := listReadPageIDSet(c.Request().Context(), h.pages, currentSession.User.ID, pages)
@@ -80,12 +84,16 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) getPage(c echo.Context) error {
-	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, status, ok := h.currentWorkspaceSession(c)
+	if !ok {
+		return statusError(c, status)
+	}
+	circleTags, status, ok := h.currentWorkspaceCircleTags(c, currentSession)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	pageValue, found := h.pages.FindForCircle(c.Request().Context(), effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes), c.Param("pageID"))
+	pageValue, found := h.pages.FindForCircle(c.Request().Context(), circleTags, c.Param("pageID"))
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
@@ -99,7 +107,7 @@ func (h *workspaceHandlers) getPage(c echo.Context) error {
 		IsLimited: len(pageValue.ViewableTags) > 0,
 		CreatedAt: pageValue.CreatedAt,
 		UpdatedAt: pageValue.UpdatedAt,
-		Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, false, effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes)),
+		Documents: pageDocuments(h.documents, pageValue.DocumentIDs, false, false, circleTags),
 	})
 }
 

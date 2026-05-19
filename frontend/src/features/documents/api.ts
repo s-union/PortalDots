@@ -60,8 +60,8 @@ export function useDocumentsQuery() {
     },
     (value) => parsePaginatedResult(value, parseDocumentSummary, 'documents'),
     {
-      queryKey: computed(() => ['documents', sessionStore.currentCircle?.id ?? 'none', { page: 1, pageSize: 10 }]),
-      enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
+      queryKey: computed(() => ['documents', { page: 1, pageSize: 10 }]),
+      enabled: computed(() => sessionStore.isAuthenticated),
       retry: false
     },
     {
@@ -87,8 +87,8 @@ export function useDocumentsPageQuery(pagination: MaybeRefOrGetter<DocumentsPagi
     }),
     (value) => parsePaginatedResult(value, parseDocumentSummary, 'documents'),
     {
-      queryKey: computed(() => ['documents', sessionStore.currentCircle?.id ?? 'none', toValue(pagination)]),
-      enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
+      queryKey: computed(() => ['documents', toValue(pagination)]),
+      enabled: computed(() => sessionStore.isAuthenticated),
       retry: false
     },
     {

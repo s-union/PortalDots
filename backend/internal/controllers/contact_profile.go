@@ -59,17 +59,9 @@ type updatedProfileResponse struct {
 }
 
 func (h *authHandlers) listContactHistory(c echo.Context) error {
-	sessionID, currentSession, ok := h.getSession(c)
+	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)
-	}
-
-	selectedCircle, err := resolveCurrentCircle(c.Request().Context(), sessionID, currentSession, h.circles, h.sessions)
-	if err != nil {
-		return internalError(c)
-	}
-	if selectedCircle == nil {
-		return statusError(c, http.StatusConflict)
 	}
 
 	entries, err := h.mailHistory.List(c.Request().Context())
@@ -79,7 +71,7 @@ func (h *authHandlers) listContactHistory(c echo.Context) error {
 
 	response := make([]submitContactResponse, 0)
 	for _, entry := range entries {
-		if !contactHistoryMatches(entry.Body, selectedCircle.ID, currentSession.User.ID) {
+		if !contactHistoryMatches(entry.Body, "", currentSession.User.ID) {
 			continue
 		}
 		categoryID, categoryName := extractContactMetadata(entry.Body)
@@ -146,9 +138,6 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	if selectedCircle == nil {
-		return statusError(c, http.StatusConflict)
-	}
 
 	var request submitContactRequest
 	if err := c.Bind(&request); err != nil {
@@ -188,14 +177,14 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		currentSession.User.ID,
 		currentSession.User.DisplayName,
 		currentSession.User.ID,
-		selectedCircle.ID,
-		selectedCircle.Name,
-		selectedCircle.ID,
+		selectedCircleID(selectedCircle),
+		selectedCircleName(selectedCircle),
+		selectedCircleID(selectedCircle),
 		request.Subject,
 		request.Body,
 	)
 
-	confirmationRecipients, err := h.contactConfirmationRecipients(selectedCircle.ID, currentSession.User.ID)
+	confirmationRecipients, err := h.contactConfirmationRecipients(selectedCircleID(selectedCircle), currentSession.User.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -252,7 +241,7 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 	}); err != nil {
 		return internalError(c)
 	}
-	logQueuedMail("contact", jobID, selectedCircle.ID, currentSession.User.ID, request.Subject, staffBody, []string{category.Email}, h.allowDangerously)
+	logQueuedMail("contact", jobID, selectedCircleID(selectedCircle), currentSession.User.ID, request.Subject, staffBody, []string{category.Email}, h.allowDangerously)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
@@ -260,7 +249,7 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		"contact.submitted",
 		"contact_category",
 		category.ID,
-		selectedCircle.ID,
+		selectedCircleID(selectedCircle),
 		buildActivitySummary("利用者がお問い合わせを送信しました", request.Subject),
 	)
 
@@ -275,13 +264,15 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 }
 
 func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID string) ([]string, error) {
-	users, err := h.users.ListByCircleIDs([]string{circleID})
-	if err != nil {
-		return nil, err
-	}
-	recipients := collectUsersEmailRecipients(users)
-	if len(recipients) > 0 {
-		return recipients, nil
+	if strings.TrimSpace(circleID) != "" {
+		users, err := h.users.ListByCircleIDs([]string{circleID})
+		if err != nil {
+			return nil, err
+		}
+		recipients := collectUsersEmailRecipients(users)
+		if len(recipients) > 0 {
+			return recipients, nil
+		}
 	}
 
 	senderUser, err := h.users.Find(senderUserID)
@@ -291,7 +282,7 @@ func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID stri
 	if err != nil {
 		return nil, err
 	}
-	recipients = collectUsersEmailRecipients([]useradmin.User{senderUser})
+	recipients := collectUsersEmailRecipients([]useradmin.User{senderUser})
 	if len(recipients) > 0 {
 		return recipients, nil
 	}
@@ -300,6 +291,20 @@ func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID stri
 	}
 
 	return nil, nil
+}
+
+func selectedCircleID(selectedCircle *circleInfo) string {
+	if selectedCircle == nil {
+		return ""
+	}
+	return selectedCircle.ID
+}
+
+func selectedCircleName(selectedCircle *circleInfo) string {
+	if selectedCircle == nil {
+		return "未選択"
+	}
+	return selectedCircle.Name
 }
 
 func (h *authHandlers) updateProfile(c echo.Context) error {

@@ -97,7 +97,7 @@ describe('ContactPage', () => {
 
     expect(wrapper.text()).toContain('「その他」に問い合わせを送信しました。')
     expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain('ユーザー設定')
-    expect(wrapper.get('input[readonly]').element).toHaveProperty('value', 'デモ企画A')
+    expect(wrapper.find('input[readonly]').exists()).toBe(false)
     expect(router.currentRoute.value.fullPath).toBe('/workspace/contact')
   })
 

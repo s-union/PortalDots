@@ -23,12 +23,16 @@ type documentSummaryResponse struct {
 }
 
 func (h *workspaceHandlers) listDocuments(c echo.Context) error {
-	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, status, ok := h.currentWorkspaceSession(c)
+	if !ok {
+		return statusError(c, status)
+	}
+	circleTags, status, ok := h.currentWorkspaceCircleTags(c, currentSession)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	documents := h.documents.ListPublic(effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes))
+	documents := h.documents.ListPublic(circleTags)
 	docIDs := make([]string, len(documents))
 	for i, doc := range documents {
 		docIDs[i] = doc.ID
@@ -60,12 +64,16 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) getDocument(c echo.Context) error {
-	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
+	currentSession, status, ok := h.currentWorkspaceSession(c)
+	if !ok {
+		return statusError(c, status)
+	}
+	circleTags, status, ok := h.currentWorkspaceCircleTags(c, currentSession)
 	if !ok {
 		return statusError(c, status)
 	}
 
-	document, found := h.documents.FindPublic(c.Param("documentID"), effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes))
+	document, found := h.documents.FindPublic(c.Param("documentID"), circleTags)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "document_not_found")
 	}

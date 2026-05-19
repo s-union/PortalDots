@@ -2041,10 +2041,12 @@ func TestListPagesReturnsPublicPagesAcrossCircles(t *testing.T) {
 		t.Fatalf("unmarshal pages response: %v", err)
 	}
 
-	if len(response.Items) != 2 {
-		t.Fatalf("expected 2 visible pages for selected circle tags, got %#v", response)
+	if len(response.Items) != 3 {
+		t.Fatalf("expected 3 visible pages for all joined circle tags, got %#v", response)
 	}
-	if response.Items[0].ID != "0195ec00-0033-7000-8000-000000000001" || response.Items[1].ID != "0195ec00-0034-7000-8000-000000000001" {
+	if response.Items[0].ID != "0195ec00-0033-7000-8000-000000000001" ||
+		response.Items[1].ID != "0195ec00-0034-7000-8000-000000000001" ||
+		response.Items[2].ID != "0195ec00-0031-7000-8000-000000000001" {
 		t.Fatalf("expected public pages sorted desc, got %#v", response)
 	}
 	if !response.Items[0].IsLimited || !response.Items[0].IsUnread {
@@ -2109,10 +2111,11 @@ func TestListPagesUsesParticipationTypeTagsWhenCircleTagsAreEmpty(t *testing.T) 
 		t.Fatalf("unmarshal pages response: %v", err)
 	}
 
-	if len(response.Items) != 1 {
-		t.Fatalf("expected 1 visible page from participation type tags, got %#v", response)
+	if len(response.Items) != 2 {
+		t.Fatalf("expected 2 visible pages from all joined participation type tags, got %#v", response)
 	}
-	if response.Items[0].ID != "0195ec00-0034-7000-8000-000000000001" {
+	if response.Items[0].ID != "0195ec00-0034-7000-8000-000000000001" ||
+		response.Items[1].ID != "0195ec00-0031-7000-8000-000000000001" {
 		t.Fatalf("unexpected page visibility from participation type tags: %#v", response)
 	}
 }
@@ -2163,8 +2166,8 @@ func TestGetPageReturnsPublicPageAcrossCircles(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/pages/0195ec00-0034-7000-8000-000000000001", nil)
-	if recorder.Code != http.StatusNotFound {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 }
 
@@ -2279,7 +2282,7 @@ func TestListDocumentsReturnsPublicAcrossCircles(t *testing.T) {
 	}
 }
 
-func TestDocumentsEndpointsRequireAuthAndCurrentCircle(t *testing.T) {
+func TestDocumentsEndpointsRequireAuth(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testConfig())
@@ -2306,15 +2309,8 @@ func TestDocumentsEndpointsRequireAuthAndCurrentCircle(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/documents", nil)
-	if recorder.Code != http.StatusConflict {
-		t.Fatalf("expected status %d, got %d, body=%s", http.StatusConflict, recorder.Code, recorder.Body.String())
-	}
-	var conflict map[string]string
-	if err := json.Unmarshal(recorder.Body.Bytes(), &conflict); err != nil {
-		t.Fatalf("unmarshal current-circle-required response: %v", err)
-	}
-	if conflict["message"] != "current_circle_required" {
-		t.Fatalf("unexpected current-circle-required message: %#v", conflict)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
 	}
 }
 

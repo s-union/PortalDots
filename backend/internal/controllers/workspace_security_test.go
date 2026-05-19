@@ -38,11 +38,15 @@ func TestWorkspaceEndpointsRejectStaleCurrentCircleMembership(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
 	}
 
+	for _, path := range []string{"/v1/pages", "/v1/documents", "/v1/documents/0195ec00-0042-7000-8000-000000000001"} {
+		recorder = doJSONRequest(t, server, participantCookies, http.MethodGet, path, nil)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected status %d for %s, got %d, body=%s", http.StatusOK, path, recorder.Code, recorder.Body.String())
+		}
+	}
+
 	for _, path := range []string{
-		"/v1/pages",
 		"/v1/pages/0195ec00-0034-7000-8000-000000000001",
-		"/v1/documents",
-		"/v1/documents/0195ec00-0042-7000-8000-000000000001",
 		"/v1/circles/current/members",
 	} {
 		recorder = doJSONRequest(t, server, participantCookies, http.MethodGet, path, nil)

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 definePage({
   meta: {
-    requiresAuth: true,
-    requiresCircle: true
+    requiresAuth: true
   }
 })
 

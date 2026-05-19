@@ -92,9 +92,9 @@ export function usePagesQuery(query: MaybeRefOrGetter<string>, pagination: Maybe
   const sessionStore = useSessionStore()
 
   return useQuery({
-    queryKey: computed(() => ['pages', sessionStore.currentCircle?.id ?? 'none', toValue(query), toValue(pagination)]),
+    queryKey: computed(() => ['pages', toValue(query), toValue(pagination)]),
     queryFn: () => fetchPages(toValue(query), toValue(pagination)),
-    enabled: computed(() => sessionStore.isAuthenticated && sessionStore.currentCircle !== null),
+    enabled: computed(() => sessionStore.isAuthenticated),
     retry: false
   })
 }
@@ -115,10 +115,8 @@ export function usePageDetailQuery(pageId: MaybeRefOrGetter<string>) {
     }),
     parsePageDetail,
     {
-      queryKey: computed(() => ['pages', 'detail', toValue(pageId), sessionStore.currentCircle?.id ?? 'none']),
-      enabled: computed(
-        () => sessionStore.isAuthenticated && sessionStore.currentCircle !== null && toValue(pageId).trim().length > 0
-      ),
+      queryKey: computed(() => ['pages', 'detail', toValue(pageId)]),
+      enabled: computed(() => sessionStore.isAuthenticated && toValue(pageId).trim().length > 0),
       retry: false
     },
     {

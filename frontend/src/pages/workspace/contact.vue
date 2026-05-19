@@ -2,8 +2,7 @@
 definePage({
   path: '/workspace/contact',
   meta: {
-    requiresAuth: true,
-    requiresCircle: true
+    requiresAuth: true
   }
 })
 
@@ -37,7 +36,6 @@ const successMessage = ref('')
 const selectedCategoryName = computed(
   () => categoriesQuery.data.value?.find((category) => category.id === form.categoryId)?.name ?? ''
 )
-const selectedCircleLabel = computed(() => sessionStore.currentCircle?.name ?? '')
 
 const { getFieldError, markTouched, validateAll } = useFormValidation({
   schema: contactFormSchema,
@@ -78,12 +76,6 @@ async function handleSubmit() {
           <RouterLink class="text-primary underline" to="/workspace/settings">ユーザー設定</RouterLink>
           で変更できます。
         </p>
-
-        <div class="grid gap-2">
-          <FormField label="企画名">
-            <input :value="selectedCircleLabel" readonly type="text" />
-          </FormField>
-        </div>
 
         <div class="grid gap-2">
           <FormField label="お問い合わせ項目">

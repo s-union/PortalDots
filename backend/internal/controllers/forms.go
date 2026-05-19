@@ -99,9 +99,9 @@ func (h *workspaceHandlers) getForm(c echo.Context) error {
 }
 
 func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (session.Session, circle.Circle, int, bool) {
-	_, currentSession, ok := h.getSession(c)
-	if !ok || currentSession.User == nil {
-		return session.Session{}, circle.Circle{}, http.StatusUnauthorized, false
+	currentSession, status, ok := h.currentWorkspaceSession(c)
+	if !ok {
+		return session.Session{}, circle.Circle{}, status, false
 	}
 	if currentSession.CurrentCircleID == "" {
 		return session.Session{}, circle.Circle{}, http.StatusConflict, false
@@ -113,6 +113,24 @@ func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (se
 	}
 
 	return currentSession, currentCircle, http.StatusOK, true
+}
+
+func (h *workspaceHandlers) currentWorkspaceSession(c echo.Context) (session.Session, int, bool) {
+	_, currentSession, ok := h.getSession(c)
+	if !ok || currentSession.User == nil {
+		return session.Session{}, http.StatusUnauthorized, false
+	}
+
+	return currentSession, http.StatusOK, true
+}
+
+func (h *workspaceHandlers) currentWorkspaceCircleTags(c echo.Context, currentSession session.Session) ([]string, int, bool) {
+	circles, err := h.circles.ListSelectable(c.Request().Context(), currentSession.User)
+	if err != nil {
+		return nil, http.StatusInternalServerError, false
+	}
+
+	return effectiveCircleTagsForCircles(c.Request().Context(), circles, h.participationTypes), http.StatusOK, true
 }
 
 func (h *workspaceHandlers) listAccessibleWorkspaceForms(ctx context.Context, currentCircle circle.Circle, status string, query string) ([]backendform.Form, error) {
