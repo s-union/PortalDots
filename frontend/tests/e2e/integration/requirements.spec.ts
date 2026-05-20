@@ -286,7 +286,7 @@ test('workspace form covers question types, uploads, staff answer verification, 
 
   await page.getByLabel('E2E テキスト').fill('テキスト回答')
   await page.getByLabel('E2E 長文').fill('長文回答')
-  await page.getByLabel('E2E 数値').fill('7')
+  await page.getByLabel('E2E 数値').selectOption('7')
   await page.getByLabel('E2E セレクト').selectOption('セレクトB')
   await page.getByLabel('ラジオA').check()
   await page.getByLabel('チェックA').check()

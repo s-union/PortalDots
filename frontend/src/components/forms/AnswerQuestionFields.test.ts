@@ -103,6 +103,40 @@ describe('AnswerQuestionFields', () => {
     expect(radioDraft['question-radio']).toBe('いいえ')
   })
 
+  it('updates markdown question draft through the markdown editor', async () => {
+    const question = createQuestion({ id: 'question-markdown', type: 'markdown' })
+    const draft: FormAnswerDraft = { 'question-markdown': '' }
+
+    const wrapper = mount(AnswerQuestionFields, {
+      props: createProps(question, draft)
+    })
+
+    await wrapper.get('textarea[name="question-markdown"]').setValue('**強調** できます')
+
+    expect(draft['question-markdown']).toBe('**強調** できます')
+  })
+
+  it('renders number question as a dropdown from min and max', async () => {
+    const question = createQuestion({
+      id: 'question-number',
+      type: 'number',
+      numberMin: 2,
+      numberMax: 4
+    })
+    const draft: FormAnswerDraft = { 'question-number': '' }
+
+    const wrapper = mount(AnswerQuestionFields, {
+      props: createProps(question, draft)
+    })
+
+    const options = wrapper.findAll('select option')
+    expect(options.map((option) => option.text())).toEqual(['選択してください', '2', '3', '4'])
+
+    await wrapper.get('select').setValue('3')
+
+    expect(draft['question-number']).toBe('3')
+  })
+
   it('renders upload list and emits file events', async () => {
     const question = createQuestion({
       id: 'question-upload',

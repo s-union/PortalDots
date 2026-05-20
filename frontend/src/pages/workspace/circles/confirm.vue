@@ -10,6 +10,7 @@ definePage({
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
+import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -139,6 +140,11 @@ function uploadNames(questionId: string) {
                 <li v-for="name in uploadNames(question.id)" :key="name">{{ name }}</li>
                 <li v-if="uploadNames(question.id).length === 0" class="list-none text-muted">未アップロード</li>
               </ul>
+              <PageMarkdownContent
+                v-else-if="question.type === 'markdown'"
+                class="mt-3 rounded border border-border bg-surface-light p-3"
+                :source="answerText(question.id)"
+              />
               <p v-else class="mt-3 whitespace-pre-wrap text-sm text-body">
                 {{ answerText(question.id) }}
               </p>

@@ -429,6 +429,9 @@ paths:
                 body:
                   type: string
                   minLength: 1
+                ccSubleader:
+                  type: boolean
+                  default: true
       responses:
         "201":
           description: Submitted contact

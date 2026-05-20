@@ -25,9 +25,10 @@ type participantContactCategoryResponse struct {
 }
 
 type submitContactRequest struct {
-	CategoryID string `json:"categoryId"`
-	Subject    string `json:"subject"`
-	Body       string `json:"body"`
+	CategoryID  string `json:"categoryId"`
+	Subject     string `json:"subject"`
+	Body        string `json:"body"`
+	CCSubleader *bool  `json:"ccSubleader"`
 }
 
 type submitContactResponse struct {
@@ -184,7 +185,11 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 		request.Body,
 	)
 
-	confirmationRecipients, err := h.contactConfirmationRecipients(selectedCircleID(selectedCircle), currentSession.User.ID)
+	confirmationRecipients, err := h.contactConfirmationRecipients(
+		selectedCircleID(selectedCircle),
+		currentSession.User.ID,
+		contactShouldCCSubleader(request.CCSubleader),
+	)
 	if err != nil {
 		return internalError(c)
 	}
@@ -263,13 +268,13 @@ func (h *authHandlers) submitContact(c echo.Context) error {
 	})
 }
 
-func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID string) ([]string, error) {
+func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID string, ccSubleader bool) ([]string, error) {
 	if strings.TrimSpace(circleID) != "" {
 		users, err := h.users.ListByCircleIDs([]string{circleID})
 		if err != nil {
 			return nil, err
 		}
-		recipients := collectUsersEmailRecipients(users)
+		recipients := contactCircleConfirmationRecipients(users, circleID, senderUserID, ccSubleader)
 		if len(recipients) > 0 {
 			return recipients, nil
 		}
@@ -291,6 +296,40 @@ func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID stri
 	}
 
 	return nil, nil
+}
+
+func contactShouldCCSubleader(value *bool) bool {
+	if value == nil {
+		return true
+	}
+	return *value
+}
+
+func contactCircleConfirmationRecipients(users []useradmin.User, circleID, senderUserID string, ccSubleader bool) []string {
+	leaders := make([]useradmin.User, 0, len(users))
+	subleaders := make([]useradmin.User, 0, len(users))
+	var senderUser *useradmin.User
+
+	for index := range users {
+		userValue := users[index]
+		if userValue.ID == senderUserID {
+			senderUser = &users[index]
+		}
+		if slices.Contains(userValue.LeaderCircleIDs, circleID) {
+			leaders = append(leaders, userValue)
+			continue
+		}
+		subleaders = append(subleaders, userValue)
+	}
+
+	if ccSubleader {
+		return collectUsersEmailRecipients(append(leaders, subleaders...))
+	}
+	if senderUser != nil && !slices.Contains(senderUser.LeaderCircleIDs, circleID) {
+		return collectUsersEmailRecipients([]useradmin.User{*senderUser})
+	}
+
+	return collectUsersEmailRecipients(leaders)
 }
 
 func selectedCircleID(selectedCircle *circleInfo) string {

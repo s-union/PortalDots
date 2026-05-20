@@ -83,6 +83,20 @@ function createForm(overrides: Partial<StaffFormDetail> = {}): StaffFormDetail {
         updatedAt: '2026-03-01T00:00:00Z'
       },
       {
+        id: 'question-markdown',
+        name: '紹介文',
+        description: 'Markdown',
+        type: 'markdown',
+        isRequired: false,
+        numberMin: null,
+        numberMax: 1000,
+        allowedTypes: '',
+        options: [],
+        priority: 5,
+        createdAt: '2026-03-01T00:00:00Z',
+        updatedAt: '2026-03-01T00:00:00Z'
+      },
+      {
         id: 'question-upload',
         name: '添付資料',
         description: 'ファイル',
@@ -92,7 +106,7 @@ function createForm(overrides: Partial<StaffFormDetail> = {}): StaffFormDetail {
         numberMax: null,
         allowedTypes: 'pdf',
         options: [],
-        priority: 5,
+        priority: 6,
         createdAt: '2026-03-01T00:00:00Z',
         updatedAt: '2026-03-01T00:00:00Z'
       }
@@ -104,7 +118,8 @@ function createForm(overrides: Partial<StaffFormDetail> = {}): StaffFormDetail {
       details: {
         'question-checkbox': ['机', '椅子'],
         'question-textarea': ['複数行\nテキスト'],
-        'question-text': ['山田太郎']
+        'question-text': ['山田太郎'],
+        'question-markdown': ['**太字** の紹介文']
       },
       uploads: [
         {
@@ -140,6 +155,7 @@ describe('FormAnswerPreviewPanel', () => {
     expect(wrapper.text()).toContain('机, 椅子')
     expect(wrapper.text()).toContain('複数行\nテキスト')
     expect(wrapper.text()).toContain('山田太郎')
+    expect(wrapper.html()).toContain('<strong>太字</strong>')
     expect(wrapper.text()).toContain('layout.pdf')
     expect(wrapper.text()).toContain('1 件')
     expect(wrapper.get('a[href="/download/form-1/upload-1"]').text()).toContain('ダウンロード')

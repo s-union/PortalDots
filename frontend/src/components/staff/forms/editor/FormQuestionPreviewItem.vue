@@ -6,7 +6,9 @@ import { inputValue, textareaValue } from '@/lib/dom'
 import { normalizeOptions } from '@/lib/parseOptions'
 import PreviewHeading from './previews/PreviewHeading.vue'
 import PreviewText from './previews/PreviewText.vue'
+import PreviewNumber from './previews/PreviewNumber.vue'
 import PreviewTextarea from './previews/PreviewTextarea.vue'
+import PreviewMarkdown from './previews/PreviewMarkdown.vue'
 import PreviewRadio from './previews/PreviewRadio.vue'
 import PreviewSelect from './previews/PreviewSelect.vue'
 import PreviewCheckbox from './previews/PreviewCheckbox.vue'
@@ -127,11 +129,11 @@ const parsedOptions = computed(() => [...new Set(edit.options.filter((item) => i
 const showRequired = computed(() => edit.type !== 'heading')
 const showOptions = computed(() => ['radio', 'select', 'checkbox'].includes(edit.type))
 const showAllowedTypes = computed(() => edit.type === 'upload')
-const showNumberMin = computed(() => ['text', 'number', 'checkbox'].includes(edit.type))
-const showNumberMax = computed(() => ['text', 'number', 'checkbox'].includes(edit.type))
+const showNumberMin = computed(() => ['text', 'textarea', 'markdown', 'number', 'checkbox'].includes(edit.type))
+const showNumberMax = computed(() => ['text', 'textarea', 'markdown', 'number', 'checkbox'].includes(edit.type))
 const nameLabel = computed(() => (edit.type === 'heading' ? '見出し' : '設問名'))
 const numberMinLabel = computed(() => {
-  if (edit.type === 'text') {
+  if (['text', 'textarea', 'markdown'].includes(edit.type)) {
     return '最小文字数'
   }
   if (edit.type === 'number') {
@@ -143,7 +145,7 @@ const numberMinLabel = computed(() => {
   return null
 })
 const numberMaxLabel = computed(() => {
-  if (edit.type === 'text') {
+  if (['text', 'textarea', 'markdown'].includes(edit.type)) {
     return '最大文字数'
   }
   if (edit.type === 'number') {
@@ -160,10 +162,13 @@ const previewComponent = computed<Component>(() => {
     case 'heading':
       return PreviewHeading
     case 'text':
-    case 'number':
       return PreviewText
+    case 'number':
+      return PreviewNumber
     case 'textarea':
       return PreviewTextarea
+    case 'markdown':
+      return PreviewMarkdown
     case 'radio':
       return PreviewRadio
     case 'select':
@@ -186,9 +191,11 @@ const previewProps = computed<Record<string, unknown>>(() => {
     case 'heading':
       return base
     case 'text':
-    case 'number':
       return { ...base, isRequired: edit.isRequired, type: edit.type }
+    case 'number':
+      return { ...base, isRequired: edit.isRequired, numberMin: edit.numberMin, numberMax: edit.numberMax }
     case 'textarea':
+    case 'markdown':
       return { ...base, isRequired: edit.isRequired }
     case 'radio':
     case 'select':

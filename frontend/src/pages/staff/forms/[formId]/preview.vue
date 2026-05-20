@@ -18,6 +18,7 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import { inputChecked, inputValue, selectValue, textareaValue } from '@/lib/dom'
 
 const route = useRoute('/staff/forms/[formId]/preview')
@@ -94,6 +95,16 @@ function handleUploadChange(question: StaffFormQuestion, event: Event) {
     [question.id]: target.files?.[0]?.name ?? ''
   }
   submitNoticeVisible.value = false
+}
+
+function questionNumberOptions(question: StaffFormQuestion) {
+  const min = question.numberMin
+  const max = question.numberMax
+  if (min === null || max === null || min > max) {
+    return []
+  }
+
+  return Array.from({ length: max - min + 1 }, (_, index) => min + index)
 }
 
 function handlePreviewSubmit() {
@@ -184,14 +195,24 @@ function handlePreviewSubmit() {
                   placeholder="複数行入力"
                   @input="updateQuestionValue(question.id, textareaValue($event))"
                 />
-                <input
+                <MarkdownEditorField
+                  v-else-if="question.type === 'markdown'"
+                  :model-value="questionValue(question.id)"
+                  :name="question.id"
+                  min-height-class="min-h-32"
+                  @update:model-value="updateQuestionValue(question.id, $event)"
+                />
+                <select
                   v-else-if="question.type === 'number'"
                   class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
-                  type="number"
                   :value="questionValue(question.id)"
-                  placeholder="整数入力"
-                  @input="updateQuestionValue(question.id, inputValue($event))"
-                />
+                  @change="updateQuestionValue(question.id, selectValue($event))"
+                >
+                  <option value="">選択してください</option>
+                  <option v-for="option in questionNumberOptions(question)" :key="option" :value="String(option)">
+                    {{ option }}
+                  </option>
+                </select>
                 <select
                   v-else-if="question.type === 'select'"
                   class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"

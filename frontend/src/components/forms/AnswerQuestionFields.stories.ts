@@ -40,6 +40,15 @@ const textareaQuestion: FormQuestion = {
   type: 'textarea'
 }
 
+const markdownQuestion: FormQuestion = {
+  ...baseQuestion,
+  id: 'q-md',
+  name: '企画紹介文を入力してください',
+  description: '見出し、箇条書き、リンクなどを Markdown で入力できます。',
+  type: 'markdown',
+  numberMax: 1000
+}
+
 const numberQuestion: FormQuestion = {
   ...baseQuestion,
   id: 'q-3',
@@ -117,7 +126,25 @@ export const Textarea: Story = {
   })
 }
 
-export const NumberInput: Story = {
+export const Markdown: Story = {
+  render: () => ({
+    components: { AnswerQuestionFields },
+    setup() {
+      const draft = ref<FormAnswerDraft>({})
+      return { draft, question: markdownQuestion }
+    },
+    template: `
+      <AnswerQuestionFields
+        :answer="null"
+        :draft="draft"
+        :question="question"
+        :download-href="() => ''"
+      />
+    `
+  })
+}
+
+export const NumberSelect: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {

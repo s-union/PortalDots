@@ -64,6 +64,48 @@ export const Textarea: Story = {
   }
 }
 
+export const Markdown: Story = {
+  args: {
+    question: {
+      ...baseQuestion,
+      id: 'q-markdown',
+      type: 'markdown',
+      name: '企画紹介文',
+      description: '## 見どころ\n\n- 体験できます\n- 写真撮影できます'
+    },
+    edit: {
+      ...baseQuestion,
+      id: 'q-markdown',
+      type: 'markdown',
+      name: '企画紹介文',
+      description: '## 見どころ\n\n- 体験できます\n- 写真撮影できます'
+    },
+    isOpen: false
+  }
+}
+
+export const NumberSelect: Story = {
+  args: {
+    question: {
+      ...baseQuestion,
+      id: 'q-number',
+      name: '参加人数',
+      type: 'number',
+      numberMin: 1,
+      numberMax: 8
+    },
+    edit: {
+      ...baseQuestion,
+      id: 'q-number',
+      name: '参加人数',
+      type: 'number',
+      numberMin: 1,
+      numberMax: 8
+    },
+    isOpen: false
+  }
+}
+
 export const Radio: Story = {
   args: {
     question: {
