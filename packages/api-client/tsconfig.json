@@ -1,16 +1,16 @@
 {
-    "compilerOptions": {
-        "composite": true,
-        "declaration": true,
-        "emitDeclarationOnly": true,
-        "lib": ["ES2022", "DOM"],
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
-        "skipLibCheck": true,
-        "strict": true,
-        "target": "ES2022",
-        "types": []
-    },
-    "include": ["src/**/*.ts", "src/**/*.d.ts"],
-    "exclude": ["node_modules/**"]
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "exclude": ["node_modules/**"]
 }

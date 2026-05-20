@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsgo --project tsconfig.node.json --noEmit && vue-tsgo --project tsconfig.app.json --noEmit",
-    "typecheck:tsc": "tsc --project tsconfig.node.json --noEmit && vue-tsc --project tsconfig.app.json --noEmit",
+    "typecheck:compat": "tsc --project tsconfig.node.json --noEmit && vue-tsc --project tsconfig.app.json --noEmit",
     "lint": "oxlint --type-aware .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",

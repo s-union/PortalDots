@@ -8,6 +8,7 @@
     "deploy:high": "wrangler deploy --env high",
     "deploy:normal": "wrangler deploy --env normal",
     "typecheck": "tsgo --noEmit",
+    "typecheck:compat": "tsc --noEmit",
     "lint": "oxlint --type-aware .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",

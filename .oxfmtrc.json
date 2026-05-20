@@ -10,5 +10,6 @@
   "endOfLine": "lf",
   "insertFinalNewline": true,
   "vueIndentScriptAndStyle": false,
-  "ignorePatterns": []
+  "sortPackageJson": true,
+  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**", "storybook-static/**", ".wrangler/**"]
 }
