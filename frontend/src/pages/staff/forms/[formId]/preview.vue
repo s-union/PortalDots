@@ -97,14 +97,19 @@ function handleUploadChange(question: StaffFormQuestion, event: Event) {
   submitNoticeVisible.value = false
 }
 
-function questionNumberOptions(question: StaffFormQuestion) {
+const MAX_NUMBER_SELECT_OPTIONS = 200
+
+function questionNumberOptions(question: StaffFormQuestion): number[] | null {
   const min = question.numberMin
   const max = question.numberMax
   if (min === null || max === null || min > max) {
-    return []
+    return null
   }
-
-  return Array.from({ length: max - min + 1 }, (_, index) => min + index)
+  const count = max - min + 1
+  if (count > MAX_NUMBER_SELECT_OPTIONS) {
+    return null
+  }
+  return Array.from({ length: count }, (_, index) => min + index)
 }
 
 function handlePreviewSubmit() {
@@ -203,16 +208,25 @@ function handlePreviewSubmit() {
                   @update:model-value="updateQuestionValue(question.id, $event)"
                 />
                 <select
-                  v-else-if="question.type === 'number'"
+                  v-else-if="question.type === 'number' && questionNumberOptions(question) !== null"
                   class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
                   :value="questionValue(question.id)"
                   @change="updateQuestionValue(question.id, selectValue($event))"
                 >
                   <option value="">選択してください</option>
-                  <option v-for="option in questionNumberOptions(question)" :key="option" :value="String(option)">
+                  <option v-for="option in questionNumberOptions(question)!" :key="option" :value="String(option)">
                     {{ option }}
                   </option>
                 </select>
+                <input
+                  v-else-if="question.type === 'number'"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+                  :value="questionValue(question.id)"
+                  type="number"
+                  :min="question.numberMin ?? undefined"
+                  :max="question.numberMax ?? undefined"
+                  @input="updateQuestionValue(question.id, inputValue($event))"
+                />
                 <select
                   v-else-if="question.type === 'select'"
                   class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"

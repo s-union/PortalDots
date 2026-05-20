@@ -325,7 +325,7 @@ func contactCircleConfirmationRecipients(users []useradmin.User, circleID, sende
 	if ccSubleader {
 		return collectUsersEmailRecipients(append(leaders, subleaders...))
 	}
-	if senderUser != nil && !slices.Contains(senderUser.LeaderCircleIDs, circleID) {
+	if senderUser != nil {
 		return collectUsersEmailRecipients([]useradmin.User{*senderUser})
 	}
 

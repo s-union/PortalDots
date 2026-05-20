@@ -79,14 +79,19 @@ function eventTargetChecked(event: Event) {
   return target instanceof HTMLInputElement ? target.checked : false
 }
 
-function questionNumberOptions(currentQuestion: FormQuestion) {
+const MAX_NUMBER_SELECT_OPTIONS = 200
+
+function questionNumberOptions(currentQuestion: FormQuestion): number[] | null {
   const min = currentQuestion.numberMin
   const max = currentQuestion.numberMax
   if (min === null || max === null || min > max) {
-    return []
+    return null
   }
-
-  return Array.from({ length: max - min + 1 }, (_, index) => min + index)
+  const count = max - min + 1
+  if (count > MAX_NUMBER_SELECT_OPTIONS) {
+    return null
+  }
+  return Array.from({ length: count }, (_, index) => min + index)
 }
 </script>
 
@@ -119,17 +124,28 @@ function questionNumberOptions(currentQuestion: FormQuestion) {
   />
 
   <select
-    v-else-if="question.type === 'number'"
+    v-else-if="question.type === 'number' && questionNumberOptions(question) !== null"
     :value="String(draftValue())"
     :disabled="disabled"
     :aria-label="question.name"
     @change="setAnswerValue(draft, question, eventTargetValue($event))"
   >
     <option value="">選択してください</option>
-    <option v-for="option in questionNumberOptions(question)" :key="option" :value="String(option)">
+    <option v-for="option in questionNumberOptions(question)!" :key="option" :value="String(option)">
       {{ option }}
     </option>
   </select>
+
+  <input
+    v-else-if="question.type === 'number'"
+    :value="String(draftValue())"
+    :disabled="disabled"
+    :aria-label="question.name"
+    type="number"
+    :min="question.numberMin ?? undefined"
+    :max="question.numberMax ?? undefined"
+    @input="setAnswerValue(draft, question, eventTargetValue($event))"
+  />
 
   <select
     v-else-if="question.type === 'select'"

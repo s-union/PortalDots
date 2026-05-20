@@ -44,14 +44,31 @@ func TestContactCircleConfirmationRecipients(t *testing.T) {
 		t.Fatalf("expected leader and subleader recipients, got %#v", withSubleader)
 	}
 
-	leaderOnly := contactCircleConfirmationRecipients(users, "circle-a", "leader", false)
-	if !slices.Equal(leaderOnly, []string{"leader@example.com"}) {
-		t.Fatalf("expected leader-only recipients, got %#v", leaderOnly)
+	senderOnlyLeader := contactCircleConfirmationRecipients(users, "circle-a", "leader", false)
+	if !slices.Equal(senderOnlyLeader, []string{"leader@example.com"}) {
+		t.Fatalf("expected sender-only (leader) recipient, got %#v", senderOnlyLeader)
 	}
 
-	senderOnly := contactCircleConfirmationRecipients(users, "circle-a", "subleader", false)
-	if !slices.Equal(senderOnly, []string{"subleader@example.com"}) {
-		t.Fatalf("expected subleader sender recipient, got %#v", senderOnly)
+	senderOnlySubleader := contactCircleConfirmationRecipients(users, "circle-a", "subleader", false)
+	if !slices.Equal(senderOnlySubleader, []string{"subleader@example.com"}) {
+		t.Fatalf("expected sender-only (subleader) recipient, got %#v", senderOnlySubleader)
+	}
+
+	// 複数リーダーがいても ccSubleader=false のとき送信者のみに送る
+	multiLeaderUsers := []useradmin.User{
+		{
+			ID:              "leader2",
+			DisplayName:     "Leader2",
+			ContactEmail:    "leader2@example.com",
+			LeaderCircleIDs: []string{"circle-a"},
+			IsEmailVerified: true,
+		},
+		users[0], // leader
+		users[1], // subleader
+	}
+	multiLeaderSenderOnly := contactCircleConfirmationRecipients(multiLeaderUsers, "circle-a", "leader", false)
+	if !slices.Equal(multiLeaderSenderOnly, []string{"leader@example.com"}) {
+		t.Fatalf("expected sender-only even with multiple leaders, got %#v", multiLeaderSenderOnly)
 	}
 }
 

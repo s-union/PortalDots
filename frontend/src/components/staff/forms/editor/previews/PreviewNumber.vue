@@ -9,12 +9,17 @@ const { numberMin, numberMax } = defineProps<{
   numberMax: number | null
 }>()
 
+const MAX_NUMBER_SELECT_OPTIONS = 200
+
 const numberOptions = computed(() => {
   if (numberMin === null || numberMax === null || numberMin > numberMax) {
-    return []
+    return null
   }
-
-  return Array.from({ length: numberMax - numberMin + 1 }, (_, index) => numberMin + index)
+  const count = numberMax - numberMin + 1
+  if (count > MAX_NUMBER_SELECT_OPTIONS) {
+    return null
+  }
+  return Array.from({ length: count }, (_, index) => numberMin + index)
 })
 </script>
 
@@ -27,12 +32,20 @@ const numberOptions = computed(() => {
     {{ description }}
   </p>
   <select
+    v-if="numberOptions !== null"
     :aria-label="`${name || '整数入力'}のプレビュー`"
     class="w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-muted"
     disabled
     tabindex="-1"
   >
-    <option v-if="numberOptions.length === 0">最低数・最大数を設定してください</option>
     <option v-for="option in numberOptions" :key="option" :value="option">{{ option }}</option>
   </select>
+  <p
+    v-else-if="numberMin !== null && numberMax !== null && numberMax - numberMin + 1 > MAX_NUMBER_SELECT_OPTIONS"
+    class="text-xs text-muted"
+  >
+    選択肢数（{{ numberMax - numberMin + 1 }} 件）が上限（{{ MAX_NUMBER_SELECT_OPTIONS }}
+    件）を超えています。最低数・最大数の範囲を狭めてください。
+  </p>
+  <p v-else class="text-xs text-muted">最低数・最大数を設定してください</p>
 </template>
