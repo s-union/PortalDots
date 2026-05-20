@@ -9,7 +9,7 @@ pnpm = "latest"
 
 [tasks."frontend:install"]
 description = "Install dependencies for the new frontend workspace"
-run = "ni"
+run = "pnpm install"
 
 [tasks."frontend:dev"]
 description = "Start vue vite dev server"

@@ -22,9 +22,6 @@ jobs:
         with:
           version: 10
 
-      - name: Install ni
-        run: npm install -g @antfu/ni
-
       - name: Install JS dependencies
         run: mise run frontend:install
 
@@ -48,9 +45,6 @@ jobs:
         with:
           version: 10
 
-      - name: Install ni
-        run: npm install -g @antfu/ni
-
       - name: Install JS dependencies
         run: mise run frontend:install
 
@@ -67,9 +61,6 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 10
-
-      - name: Install ni
-        run: npm install -g @antfu/ni
 
       - name: Install JS dependencies
         run: mise run frontend:install
@@ -119,9 +110,6 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 10
-
-      - name: Install ni
-        run: npm install -g @antfu/ni
 
       - name: Install JS dependencies
         run: mise run frontend:install
