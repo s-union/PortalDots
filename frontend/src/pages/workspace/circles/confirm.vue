@@ -142,7 +142,7 @@ function uploadNames(questionId: string) {
               </ul>
               <PageMarkdownContent
                 v-else-if="question.type === 'markdown'"
-                class="mt-3 rounded border border-border bg-surface-light p-3"
+                class="mt-3 rounded border border-border bg-surface p-3"
                 :source="answerText(question.id)"
               />
               <p v-else class="mt-3 whitespace-pre-wrap text-sm text-body">

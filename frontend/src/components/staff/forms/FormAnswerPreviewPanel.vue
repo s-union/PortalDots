@@ -84,7 +84,7 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
 
           <PageMarkdownContent
             v-else-if="question.type === 'markdown'"
-            class="mt-3 rounded border border-border bg-surface-light p-3"
+            class="mt-3 rounded border border-border bg-surface p-3"
             :source="answerDetails(question.id)[0] ?? ''"
           />
 
