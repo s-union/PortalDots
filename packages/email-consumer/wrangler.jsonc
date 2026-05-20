@@ -3,6 +3,13 @@
   "name": "email-consumer",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-02",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "email-idempotency",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
   "queues": {
     "consumers": [
       {
@@ -36,6 +43,13 @@
           }
         ]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "email-idempotency",
+          "database_id": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
       "send_email": [
         {
           "name": "EMAIL"
@@ -53,6 +67,13 @@
           }
         ]
       },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "email-idempotency",
+          "database_id": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
       "send_email": [
         {
           "name": "EMAIL"

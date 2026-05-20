@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --port 8787 --inspector-port 9229",
-    "dev:local-stack": "wrangler dev -c wrangler.jsonc -c ../email-consumer/wrangler.jsonc --persist-to .wrangler/state --port 8787 --inspector-port 9229",
+    "dev:local-stack": "wrangler d1 migrations apply email-idempotency --local --persist-to .wrangler/state && wrangler dev -c wrangler.jsonc -c ../email-consumer/wrangler.jsonc --persist-to .wrangler/state --port 8787 --inspector-port 9229",
     "deploy": "wrangler deploy",
     "typecheck": "tsgo --noEmit",
     "typecheck:compat": "tsc --noEmit",
