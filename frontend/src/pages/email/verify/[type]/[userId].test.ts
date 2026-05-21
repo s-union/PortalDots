@@ -17,7 +17,8 @@ async function mountAtVerifyAction() {
       { path: '/', component: { template: '<div>home</div>' } },
       { path: '/login', component: { template: '<div>login</div>' } },
       { path: '/email/verify/completed', component: EmailVerifyCompletedPage },
-      { path: '/email/verify/:type/:userId', component: EmailVerifyActionPage }
+      { path: '/email/verify/:type/:userId', component: EmailVerifyActionPage },
+      { path: '/email/verify', component: { template: '<div>verify</div>' } }
     ]
   })
 
@@ -190,7 +191,8 @@ describe('EmailVerifyActionPage', () => {
         { path: '/', component: { template: '<div>home</div>' } },
         { path: '/login', component: { template: '<div>login</div>' } },
         { path: '/email/verify/completed', component: EmailVerifyCompletedPage },
-        { path: '/email/verify/:type/:userId', component: EmailVerifyActionPage }
+        { path: '/email/verify/:type/:userId', component: EmailVerifyActionPage },
+        { path: '/email/verify', component: { template: '<div>verify</div>' } }
       ]
     })
 

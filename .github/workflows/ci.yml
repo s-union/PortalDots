@@ -34,6 +34,32 @@ jobs:
       - name: Check
         run: mise run frontend:check
 
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install JS dependencies
+        run: mise run frontend:install
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @portaldots/frontend exec playwright install --with-deps chromium
+
+      - name: Generate API client
+        run: mise run api:client:codegen
+
+      - name: Build (generates typed-router.d.ts)
+        run: pnpm --filter @portaldots/frontend run build
+
+      - name: Test
+        run: mise run frontend:test
+
   email-producer-check:
     runs-on: ubuntu-latest
     steps:
@@ -51,6 +77,23 @@ jobs:
       - name: Check
         run: mise run email:producer:check
 
+  email-producer-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install JS dependencies
+        run: mise run frontend:install
+
+      - name: Test
+        run: mise run email:producer:test
+
   email-consumer-check:
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +110,23 @@ jobs:
 
       - name: Check
         run: mise run email:consumer:check
+
+  email-consumer-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install JS dependencies
+        run: mise run frontend:install
+
+      - name: Test
+        run: mise run email:consumer:test
 
   backend-check:
     runs-on: ubuntu-latest

@@ -4,6 +4,12 @@ import BottomTabLink from './BottomTabLink.vue'
 
 describe('BottomTabLink', () => {
   it('renders label, icon, and notifier', () => {
+    const FaIconStub = {
+      name: 'FaIcon',
+      props: ['name', 'prefix', 'fixedWidth', 'pulse', 'className', 'iconClass'],
+      template: '<span />'
+    }
+
     const wrapper = mount(BottomTabLink, {
       props: {
         to: '/workspace',
@@ -14,14 +20,19 @@ describe('BottomTabLink', () => {
       },
       global: {
         stubs: {
-          RouterLink: RouterLinkStub
+          RouterLink: RouterLinkStub,
+          FaIcon: FaIconStub
         }
       }
     })
 
     expect(wrapper.getComponent(RouterLinkStub).props('to')).toBe('/workspace')
     expect(wrapper.text()).toContain('ホーム')
-    expect(wrapper.find('i.fas.fa-home').exists()).toBe(true)
-    expect(wrapper.find('i.fas.fa-circle').exists()).toBe(true)
+
+    const faIcons = wrapper.findAllComponents(FaIconStub)
+    const iconFaIcon = faIcons.find((w) => w.props('iconClass') === 'fas fa-home')
+    expect(iconFaIcon?.exists()).toBe(true)
+    const notifierFaIcon = faIcons.find((w) => w.props('name') === 'circle')
+    expect(notifierFaIcon?.exists()).toBe(true)
   })
 })

@@ -68,7 +68,7 @@ const { getFieldError, validateAll, markTouched } = useFormValidation({
   form: editForm
 })
 
-const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'edit'))
+const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTabs(formId.value, 'edit') : []))
 const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 
