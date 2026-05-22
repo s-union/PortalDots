@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import FaIcon from '@/components/ui/FaIcon.vue'
+
 const { href, download } = defineProps<{
   href: string
   download?: boolean

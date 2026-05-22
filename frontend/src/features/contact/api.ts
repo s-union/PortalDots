@@ -22,6 +22,7 @@ interface SubmitContactPayload {
   categoryId: string
   subject: string
   body: string
+  ccSubleader?: boolean
 }
 
 type SubmitContactResult = ContactSubmission

@@ -12,6 +12,7 @@ export const QUESTION_TYPE_META: Record<AllowedQuestionType, QuestionTypeMeta> =
   text: { label: '一行入力', icon: '≡' },
   number: { label: '整数入力', icon: '#' },
   textarea: { label: '複数行入力', icon: '☰' },
+  markdown: { label: 'Markdown 入力', icon: 'M' },
   radio: { label: '単一選択（ラジオボタン）', icon: '◉' },
   select: { label: '単一選択（ドロップダウン）', icon: '▼' },
   checkbox: { label: '複数選択（チェックボックス）', icon: '☑' },

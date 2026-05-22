@@ -55,6 +55,7 @@ describe('StaffDashboardPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
         { path: '/staff', component: StaffDashboardPage },
         { path: '/staff/circles', component: { template: '<div>staff circles</div>' } },
         {
@@ -138,12 +139,37 @@ describe('StaffDashboardPage', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
         { path: '/staff', component: StaffDashboardPage },
         { path: '/staff/circles', component: { template: '<div>staff circles</div>' } },
         {
           path: '/staff/circles/participation_types',
           component: { template: '<div>participation types</div>' }
         },
+        {
+          path: '/staff/activity-logs',
+          component: { template: '<div>activity logs</div>' }
+        },
+        { path: '/staff/pages', component: { template: '<div>staff pages</div>' } },
+        { path: '/staff/mails', component: { template: '<div>staff mails</div>' } },
+        { path: '/staff/documents', component: { template: '<div>staff documents</div>' } },
+        { path: '/staff/tags', component: { template: '<div>staff tags</div>' } },
+        { path: '/staff/places', component: { template: '<div>staff places</div>' } },
+        {
+          path: '/staff/contact-categories',
+          component: { template: '<div>staff contact categories</div>' }
+        },
+        { path: '/staff/forms', component: { template: '<div>staff forms</div>' } },
+        { path: '/staff/settings', component: { template: '<div>staff settings</div>' } },
+        {
+          path: '/staff/markdown-guide',
+          component: { template: '<div>staff markdown guide</div>' }
+        },
+        {
+          path: '/staff/permissions',
+          component: { template: '<div>staff permissions</div>' }
+        },
+        { path: '/staff/users', component: { template: '<div>staff users</div>' } },
         { path: '/staff/exports', component: { template: '<div>exports</div>' } }
       ]
     })

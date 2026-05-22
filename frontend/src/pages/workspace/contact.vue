@@ -29,6 +29,7 @@ const categoriesQuery = useContactCategoriesQuery()
 const submitContactMutation = useSubmitContactMutation()
 const form = reactive({
   categoryId: '',
+  ccSubleader: true,
   body: ''
 })
 const submitErrorMessage = ref('')
@@ -54,10 +55,12 @@ async function handleSubmit() {
     const result = await submitContactMutation.mutateAsync({
       categoryId: form.categoryId,
       subject: selectedCategoryName.value || 'お問い合わせ',
-      body: form.body
+      body: form.body,
+      ccSubleader: form.ccSubleader
     })
     successMessage.value = `「${result.categoryName}」に問い合わせを送信しました。`
     form.categoryId = ''
+    form.ccSubleader = true
     form.body = ''
   } catch (error) {
     submitErrorMessage.value = extractContactValidationMessage(error)
@@ -93,6 +96,22 @@ async function handleSubmit() {
             </select>
           </FormField>
           <FormError v-if="getFieldError('categoryId')" :message="getFieldError('categoryId')" />
+        </div>
+
+        <div v-if="sessionStore.currentCircle" class="grid gap-2">
+          <FormField label="返信内容の共有先">
+            <label
+              class="flex items-start gap-3 rounded border border-border bg-surface-light px-4 py-3 text-sm text-body"
+            >
+              <input v-model="form.ccSubleader" class="mt-1" name="ccSubleader" type="checkbox" />
+              <span>
+                <span class="block font-medium">副責任者にもメールで共有する（CC）</span>
+                <span class="mt-1 block text-xs leading-6 text-muted-2">
+                  チェックを外すと送信者のみに確認メールが送信されます。
+                </span>
+              </span>
+            </label>
+          </FormField>
         </div>
 
         <div class="grid gap-2">

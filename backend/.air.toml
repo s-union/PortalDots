@@ -3,8 +3,7 @@ tmp_dir = "tmp"
 
 [build]
   cmd = "go build -o ./tmp/api ."
-  bin = "./tmp/api"
-  full_bin = "./tmp/api"
+  entrypoint = ["./tmp/api"]
   include_ext = ["go", "tpl", "tmpl", "html"]
   exclude_dir = ["tmp", "vendor", "testdata"]
   exclude_regex = ["_test\\.go"]

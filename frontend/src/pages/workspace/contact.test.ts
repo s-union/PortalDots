@@ -67,6 +67,7 @@ async function fillContactForm(wrapper: ReturnType<typeof mount>) {
 
 describe('ContactPage', () => {
   it('lists categories and submits a contact message', async () => {
+    let submittedBody: unknown
     server.use(
       http.get('/v1/contact-categories', () =>
         HttpResponse.json([
@@ -74,8 +75,9 @@ describe('ContactPage', () => {
           { id: 'contact-other', name: 'その他' }
         ])
       ),
-      http.post('/v1/contact', () =>
-        HttpResponse.json(
+      http.post('/v1/contact', async ({ request }) => {
+        submittedBody = await request.json()
+        return HttpResponse.json(
           {
             id: 'mail-job-1',
             categoryId: 'contact-other',
@@ -86,7 +88,7 @@ describe('ContactPage', () => {
           },
           { status: 201 }
         )
-      )
+      })
     )
 
     const { router, wrapper } = await mountContactPage()
@@ -96,6 +98,7 @@ describe('ContactPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('「その他」に問い合わせを送信しました。')
+    expect(submittedBody).toMatchObject({ categoryId: 'contact-other', ccSubleader: true })
     expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain('ユーザー設定')
     expect(wrapper.find('input[readonly]').exists()).toBe(false)
     expect(router.currentRoute.value.fullPath).toBe('/workspace/contact')

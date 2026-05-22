@@ -4,6 +4,7 @@ export const formQuestionTypeSchema = z.enum([
   'heading',
   'text',
   'textarea',
+  'markdown',
   'number',
   'radio',
   'select',

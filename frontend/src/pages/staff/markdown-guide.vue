@@ -54,7 +54,7 @@ const guideSections = [
         >
           <h3 class="text-base font-semibold text-body">{{ section.title }}</h3>
           <pre
-            class="mt-3 overflow-x-auto whitespace-pre-wrap rounded bg-background px-4 py-3 text-sm leading-7 text-body"
+            class="mt-3 overflow-x-auto whitespace-pre-wrap rounded bg-surface px-4 py-3 text-sm leading-7 text-body"
           ><code>{{ section.example }}</code></pre>
         </article>
       </div>

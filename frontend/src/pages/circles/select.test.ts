@@ -115,6 +115,7 @@ describe('CircleSelectorPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/circles/select', component: CircleSelectorPage },
+        { path: '/circles/new', component: { template: '<div>new</div>' } },
         { path: '/', component: { template: '<div>home</div>' } }
       ]
     })
@@ -170,6 +171,7 @@ describe('CircleSelectorPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/circles/select', component: CircleSelectorPage },
+        { path: '/circles/new', component: { template: '<div>new</div>' } },
         { path: '/workspace/forms/:formId', component: { template: '<div>form</div>' } }
       ]
     })
@@ -226,6 +228,7 @@ describe('CircleSelectorPage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/circles/select', component: CircleSelectorPage },
+        { path: '/circles/new', component: { template: '<div>new</div>' } },
         { path: '/workspace/forms/:formId', component: { template: '<div>form</div>' } }
       ]
     })
@@ -261,7 +264,10 @@ describe('CircleSelectorPage', () => {
 
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: '/circles/select', component: CircleSelectorPage }]
+      routes: [
+        { path: '/circles/select', component: CircleSelectorPage },
+        { path: '/circles/new', component: { template: '<div>new</div>' } }
+      ]
     })
     await router.push('/circles/select')
     await router.isReady()

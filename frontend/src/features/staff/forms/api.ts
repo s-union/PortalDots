@@ -21,6 +21,7 @@ export const allowedQuestionTypes = [
   'heading',
   'text',
   'textarea',
+  'markdown',
   'number',
   'radio',
   'select',

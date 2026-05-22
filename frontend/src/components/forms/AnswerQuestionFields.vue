@@ -11,6 +11,7 @@ import {
 } from '@/features/forms/answers'
 import type { FormQuestion } from '@/features/forms/api'
 import ErrorState from '@/components/ui/ErrorState.vue'
+import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 
 const {
   answer,
@@ -77,6 +78,21 @@ function eventTargetChecked(event: Event) {
   const target = event.target
   return target instanceof HTMLInputElement ? target.checked : false
 }
+
+const MAX_NUMBER_SELECT_OPTIONS = 200
+
+function questionNumberOptions(currentQuestion: FormQuestion): number[] | null {
+  const min = currentQuestion.numberMin
+  const max = currentQuestion.numberMax
+  if (min === null || max === null || min > max) {
+    return null
+  }
+  const count = max - min + 1
+  if (count > MAX_NUMBER_SELECT_OPTIONS) {
+    return null
+  }
+  return Array.from({ length: count }, (_, index) => min + index)
+}
 </script>
 
 <template>
@@ -97,6 +113,28 @@ function eventTargetChecked(event: Event) {
     :disabled="disabled"
     @input="setAnswerValue(draft, question, eventTargetValue($event))"
   />
+
+  <MarkdownEditorField
+    v-else-if="question.type === 'markdown'"
+    :model-value="String(draftValue())"
+    :disabled="disabled"
+    :name="question.id"
+    min-height-class="min-h-32"
+    @update:model-value="setAnswerValue(draft, question, $event)"
+  />
+
+  <select
+    v-else-if="question.type === 'number' && questionNumberOptions(question) !== null"
+    :value="String(draftValue())"
+    :disabled="disabled"
+    :aria-label="question.name"
+    @change="setAnswerValue(draft, question, eventTargetValue($event))"
+  >
+    <option value="">選択してください</option>
+    <option v-for="option in questionNumberOptions(question)!" :key="option" :value="String(option)">
+      {{ option }}
+    </option>
+  </select>
 
   <input
     v-else-if="question.type === 'number'"

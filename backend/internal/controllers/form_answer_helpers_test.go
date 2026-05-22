@@ -139,6 +139,17 @@ func TestNormalizeAnswerValues(t *testing.T) {
 			wantValues: []string{"hello"},
 			wantErrors: nil,
 		},
+		{
+			name: "markdown validates maximum length",
+			question: formquestion.Question{
+				Type:      "markdown",
+				NumberMax: &max,
+			},
+			rawValue:   "abcdef",
+			hasValue:   true,
+			wantValues: nil,
+			wantErrors: []string{"5 文字以下で入力してください"},
+		},
 	}
 
 	for _, tc := range testCases {

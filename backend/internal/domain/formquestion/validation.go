@@ -82,6 +82,14 @@ func NormalizeAnswerValues(question Question, rawValue any, hasValue bool) ([]st
 				return nil, []string{fmt.Sprintf("%d 以下の値を入力してください", *question.NumberMax)}
 			}
 		}
+		if slices.Contains([]string{"text", "textarea", "markdown"}, question.Type) {
+			if question.NumberMin != nil && len([]rune(value)) < int(*question.NumberMin) {
+				return nil, []string{fmt.Sprintf("%d 文字以上で入力してください", *question.NumberMin)}
+			}
+			if question.NumberMax != nil && len([]rune(value)) > int(*question.NumberMax) {
+				return nil, []string{fmt.Sprintf("%d 文字以下で入力してください", *question.NumberMax)}
+			}
+		}
 		if slices.Contains([]string{"radio", "select"}, question.Type) && len(question.Options) > 0 && !slices.Contains(question.Options, value) {
 			return nil, []string{"選択肢の値が不正です"}
 		}

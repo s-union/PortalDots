@@ -8,7 +8,8 @@ import {
   hiraganaSchema,
   requiredTextSchema,
   userRegistrationFormSchema,
-  circleRegistrationFormSchema
+  circleRegistrationFormSchema,
+  buildFormAnswerSchema
 } from './schemas'
 
 describe('passwordSchema', () => {
@@ -39,6 +40,41 @@ describe('passwordSchema', () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.error.issues[0].message).toContain('数字')
+    }
+  })
+})
+
+describe('buildFormAnswerSchema', () => {
+  it('validates markdown required and max length rules', () => {
+    const schema = buildFormAnswerSchema([
+      {
+        id: 'question-markdown',
+        name: 'Markdown設問',
+        description: '',
+        type: 'markdown',
+        isRequired: true,
+        numberMin: null,
+        numberMax: 5,
+        allowedTypes: '',
+        options: [],
+        priority: 1,
+        createdAt: '2026-03-01T00:00:00Z',
+        updatedAt: '2026-03-01T00:00:00Z'
+      }
+    ])
+
+    expect(schema.safeParse({ 'question-markdown': '**OK' }).success).toBe(true)
+
+    const emptyResult = schema.safeParse({ 'question-markdown': '' })
+    expect(emptyResult.success).toBe(false)
+    if (!emptyResult.success) {
+      expect(emptyResult.error.issues[0].message).toContain('Markdown設問を入力してください')
+    }
+
+    const longResult = schema.safeParse({ 'question-markdown': '123456' })
+    expect(longResult.success).toBe(false)
+    if (!longResult.success) {
+      expect(longResult.error.issues[0].message).toContain('5文字以下')
     }
   })
 })

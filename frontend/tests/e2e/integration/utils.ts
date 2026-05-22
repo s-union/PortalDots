@@ -439,12 +439,9 @@ export async function waitForMiniflareEmail(
     before = new Set<string>()
   }: { timeoutMs?: number; intervalMs?: number; before?: Set<string> } = {}
 ): Promise<string> {
-  const dirs = findMiniflareEmailTextDirs()
-  if (dirs.length === 0) {
-    throw new Error('miniflare email-text directory not found. Run `mise run dev:worker` to start the email worker.')
-  }
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
+    const dirs = findMiniflareEmailTextDirs()
     for (const filePath of listEmailFiles(dirs)) {
       if (before.has(filePath)) {
         continue
@@ -460,5 +457,7 @@ export async function waitForMiniflareEmail(
     }
     await new Promise((resolve) => setTimeout(resolve, intervalMs))
   }
-  throw new Error('Timed out waiting for matching miniflare email file')
+  throw new Error(
+    'Timed out waiting for matching miniflare email file. Run `mise run dev:worker` to start the email worker.'
+  )
 }

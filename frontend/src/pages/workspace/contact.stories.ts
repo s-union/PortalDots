@@ -18,7 +18,19 @@ const meta = {
           })
         ),
         http.get('/v1/contact-categories', () => HttpResponse.json([mockContactCategory])),
-        http.post('/v1/contact', () => new HttpResponse(null, { status: 204 }))
+        http.post('/v1/contact', () =>
+          HttpResponse.json(
+            {
+              id: 'contact-job-1',
+              categoryId: mockContactCategory.id,
+              categoryName: mockContactCategory.name,
+              subject: mockContactCategory.name,
+              status: 'queued',
+              createdAt: '2026-03-13T10:00:00Z'
+            },
+            { status: 201 }
+          )
+        )
       ]
     }
   }

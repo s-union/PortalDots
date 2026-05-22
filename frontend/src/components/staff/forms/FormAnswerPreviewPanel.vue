@@ -5,6 +5,7 @@ import { formatDateTime } from '@/lib/format/datetime'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import UploadFileRow from './UploadFileRow.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
+import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
 
 const { formId, form, isParticipationForm } = defineProps<{
   formId: string
@@ -80,6 +81,12 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
           <pre v-else-if="question.type === 'textarea'" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{
             answerDetails(question.id)[0] ?? ''
           }}</pre>
+
+          <PageMarkdownContent
+            v-else-if="question.type === 'markdown'"
+            class="mt-3 rounded border border-border bg-surface p-3"
+            :source="answerDetails(question.id)[0] ?? ''"
+          />
 
           <p v-else class="mt-3 text-sm leading-7 text-body">
             {{ answerDetails(question.id)[0] ?? '未入力' }}

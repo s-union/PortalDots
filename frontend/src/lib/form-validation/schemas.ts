@@ -108,6 +108,7 @@ export type PasswordChangeFormData = z.infer<typeof passwordChangeFormSchema>
  */
 export const contactFormSchema = z.object({
   categoryId: z.string().min(1, 'お問い合わせ項目を選択してください'),
+  ccSubleader: z.boolean(),
   body: z.string().min(1, 'お問い合わせ内容を入力してください')
 })
 
@@ -296,10 +297,26 @@ export function buildFormAnswerSchema(questions: FormQuestion[]) {
               const base = z.array(z.string())
               return question.isRequired ? base.min(1, `${question.name}を選択してください`) : base
             })()
-          : // Text, textarea, select, radio
-            question.isRequired
-            ? z.string().min(1, `${question.name}を入力してください`)
-            : z.string()
+          : ['text', 'textarea', 'markdown'].includes(question.type)
+            ? z.string().superRefine((val, ctx) => {
+                if (val === '' && !question.isRequired) {
+                  return
+                }
+                if (val === '') {
+                  ctx.addIssue({ code: 'custom', message: `${question.name}を入力してください` })
+                  return
+                }
+                if (question.numberMin !== null && Array.from(val).length < question.numberMin) {
+                  ctx.addIssue({ code: 'custom', message: `${question.numberMin}文字以上で入力してください` })
+                }
+                if (question.numberMax !== null && Array.from(val).length > question.numberMax) {
+                  ctx.addIssue({ code: 'custom', message: `${question.numberMax}文字以下で入力してください` })
+                }
+              })
+            : // Select, radio
+              question.isRequired
+              ? z.string().min(1, `${question.name}を入力してください`)
+              : z.string()
 
     shape[question.id] = fieldSchema
   }

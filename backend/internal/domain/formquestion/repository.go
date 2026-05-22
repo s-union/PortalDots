@@ -16,6 +16,7 @@ var AllowedQuestionTypes = []string{
 	"heading",
 	"text",
 	"textarea",
+	"markdown",
 	"number",
 	"radio",
 	"select",
