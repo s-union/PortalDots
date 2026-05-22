@@ -1,0 +1,92 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "Asia/Tokyo",
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "description": "Automerge all non-major updates",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "Do not automerge mise updates",
+      "matchManagers": ["mise"],
+      "automerge": false
+    },
+    {
+      "description": "Group non-major Tailwind packages",
+      "matchPackageNames": ["tailwindcss", "tailwind-merge", "class-variance-authority"],
+      "matchPackagePatterns": ["^@tailwindcss/"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Tailwind CSS Packages"
+    },
+    {
+      "description": "Group non-major Vue ecosystem packages",
+      "matchPackageNames": ["vue", "vue-router", "pinia", "@tanstack/vue-query"],
+      "matchPackagePatterns": ["^@vue/"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Vue Ecosystem"
+    },
+    {
+      "description": "Group non-major Development Tools",
+      "matchPackageNames": ["oxlint", "oxfmt", "oxlint-tsgolint", "typescript", "vue-tsc", "vue-tsgo"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Frontend Development Tools"
+    },
+    {
+      "description": "Group non-major Storybook packages",
+      "matchPackagePatterns": ["^storybook", "^@storybook/"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Storybook Ecosystem"
+    },
+    {
+      "description": "Group non-major Testing Tools",
+      "matchPackageNames": ["jsdom", "msw", "msw-storybook-addon", "openapi-msw"],
+      "matchPackagePatterns": ["^vitest", "^@vitest/", "^@playwright/", "^@vue/test-utils"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Frontend Testing Tools"
+    },
+    {
+      "description": "Group non-major Markdown parsing packages",
+      "matchPackageNames": ["unified"],
+      "matchPackagePatterns": ["^remark-", "^rehype-"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Markdown Processing"
+    },
+    {
+      "description": "Group non-major Cloudflare and Hono packages",
+      "matchPackageNames": ["wrangler", "hono", "hono-email"],
+      "matchPackagePatterns": ["^@cloudflare/"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Cloudflare & Hono Ecosystem"
+    },
+    {
+      "description": "Group non-major OpenAPI client packages",
+      "matchPackageNames": ["openapi-fetch", "openapi-typescript"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "OpenAPI Client Packages"
+    },
+    {
+      "description": "Group non-major JavaScript Runtimes / Package Managers in mise",
+      "matchManagers": ["mise"],
+      "matchPackageNames": ["node", "pnpm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "JS Runtimes & Package Managers (Mise)"
+    },
+    {
+      "description": "Group non-major Go direct dependencies",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Go Backend Dependencies"
+    },
+    {
+      "description": "Group non-major GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "GitHub Actions"
+    }
+  ]
+}
