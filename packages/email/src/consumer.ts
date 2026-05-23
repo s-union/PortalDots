@@ -1,20 +1,6 @@
 import { renderTemplate } from './templates'
+import type { EmailJob } from './enqueue'
 
-interface EmailJob {
-  jobId: string
-  messageId: string
-  chunkIndex: number
-  chunkCount: number
-  template: string
-  priority: 'high' | 'normal'
-  from: string
-  to: string[]
-  subject: string
-  body: string
-  variables: Record<string, string>
-}
-
-const knownTemplates = new Set(['markdown-notice', 'registration-verify', 'staff-auth-notice'])
 const PROCESSING_STALE_AFTER_MS = 15 * 60 * 1000
 
 type JobStatus = 'queued' | 'enqueue_failed' | 'processing' | 'sent'
@@ -25,11 +11,22 @@ interface MessageStatus {
   updatedAt: string
 }
 
+export interface ConsumerEnv {
+  DB: D1Database
+  EMAIL: SendEmail
+}
+
+function nowIso(): string {
+  return new Date().toISOString()
+}
+
 function isStringRecord(value: unknown): value is Record<string, string> {
   return typeof value === 'object' && value !== null && Object.values(value).every((item) => typeof item === 'string')
 }
 
-function parseEmailJob(value: unknown): EmailJob | null {
+const knownTemplates = new Set(['markdown-notice', 'registration-verify', 'staff-auth-notice'])
+
+export function parseEmailJob(value: unknown): EmailJob | null {
   if (typeof value !== 'object' || value === null) {
     return null
   }
@@ -73,15 +70,6 @@ function parseEmailJob(value: unknown): EmailJob | null {
     body: candidate.body,
     variables: candidate.variables
   }
-}
-
-export interface Env {
-  DB: D1Database
-  EMAIL: SendEmail
-}
-
-function nowIso(): string {
-  return new Date().toISOString()
 }
 
 function isJobStatus(value: unknown): value is JobStatus {
@@ -204,69 +192,67 @@ async function markMessageFailed(db: D1Database, job: EmailJob, error: unknown):
   ])
 }
 
-export default {
-  async queue(batch, env: Env): Promise<void> {
-    for (const message of batch.messages) {
-      try {
-        const job = parseEmailJob(message.body)
-        if (!job) {
-          console.error('Invalid email job payload')
-          message.ack()
-          continue
-        }
-
-        if (job.to.length === 0) {
-          message.ack()
-          continue
-        }
-
-        const claim = await claimMessage(env.DB, job)
-        if (claim === 'skip') {
-          message.ack()
-          continue
-        }
-        if (claim === 'retry') {
-          message.retry()
-          continue
-        }
-
-        // Render template once per message
-        const { html, text } = await renderTemplate(job.template, job.variables)
-
-        // Send all pending recipients in one call (Producer guarantees max 50)
-        await env.EMAIL.send({
-          to: job.to,
-          from: job.from,
-          subject: job.subject,
-          html,
-          text
-        })
-
-        console.info('Email job sent', {
-          jobId: job.jobId,
-          template: job.template,
-          priority: job.priority,
-          recipientsCount: job.to.length
-        })
-
-        try {
-          await markMessageSent(env.DB, job)
-        } catch (error) {
-          console.error('Failed to mark email job as sent:', error)
-        }
+export async function queueHandler(batch: MessageBatch<unknown>, env: ConsumerEnv): Promise<void> {
+  for (const message of batch.messages) {
+    try {
+      const job = parseEmailJob(message.body)
+      if (!job) {
+        console.error('Invalid email job payload')
         message.ack()
-      } catch (error) {
-        console.error('Failed to process email job:', error)
-        const job = parseEmailJob(message.body)
-        if (job) {
-          try {
-            await markMessageFailed(env.DB, job, error)
-          } catch (markError) {
-            console.error('Failed to mark email job as failed:', markError)
-          }
-        }
-        message.retry()
+        continue
       }
+
+      if (job.to.length === 0) {
+        message.ack()
+        continue
+      }
+
+      const claim = await claimMessage(env.DB, job)
+      if (claim === 'skip') {
+        message.ack()
+        continue
+      }
+      if (claim === 'retry') {
+        message.retry()
+        continue
+      }
+
+      // Render template once per message
+      const { html, text } = await renderTemplate(job.template, job.variables)
+
+      // Send all pending recipients in one call (enqueue guarantees max 50)
+      await env.EMAIL.send({
+        to: job.to,
+        from: job.from,
+        subject: job.subject,
+        html,
+        text
+      })
+
+      console.info('Email job sent', {
+        jobId: job.jobId,
+        template: job.template,
+        priority: job.priority,
+        recipientsCount: job.to.length
+      })
+
+      try {
+        await markMessageSent(env.DB, job)
+      } catch (error) {
+        console.error('Failed to mark email job as sent:', error)
+      }
+      message.ack()
+    } catch (error) {
+      console.error('Failed to process email job:', error)
+      const job = parseEmailJob(message.body)
+      if (job) {
+        try {
+          await markMessageFailed(env.DB, job, error)
+        } catch (markError) {
+          console.error('Failed to mark email job as failed:', markError)
+        }
+      }
+      message.retry()
     }
   }
-} satisfies ExportedHandler<Env>
+}

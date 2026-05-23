@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "email-producer",
+  "name": "email",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-02",
   "d1_databases": [
@@ -21,6 +21,25 @@
         "queue": "email-normal",
         "binding": "NORMAL_QUEUE"
       }
+    ],
+    "consumers": [
+      {
+        "queue": "email-high",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 5
+      },
+      {
+        "queue": "email-normal",
+        "max_batch_size": 10,
+        "max_batch_timeout": 30,
+        "max_retries": 5
+      }
     ]
-  }
+  },
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ]
 }

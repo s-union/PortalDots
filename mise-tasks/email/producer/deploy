@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-#MISE dir="packages/email-producer"
-#MISE description="Deploy email-producer Worker"
-
-pnpm run deploy

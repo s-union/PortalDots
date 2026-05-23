@@ -3,6 +3,5 @@
 
 mise run generate && \
 mise run frontend:check && \
-mise run email:producer:check && \
-mise run email:consumer:check && \
+mise run email:check && \
 mise run backend:check

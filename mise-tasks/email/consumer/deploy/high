@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-#MISE dir="packages/email-consumer"
-#MISE description="Deploy email-consumer Worker (high priority)"
-
-pnpm run deploy:high
