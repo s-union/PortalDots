@@ -22,15 +22,13 @@
     },
     {
       "description": "Group non-major Tailwind packages",
-      "matchPackageNames": ["tailwindcss", "tailwind-merge", "class-variance-authority"],
-      "matchPackagePatterns": ["^@tailwindcss/"],
+      "matchPackageNames": ["tailwindcss", "tailwind-merge", "class-variance-authority", "/^@tailwindcss//"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Tailwind CSS Packages"
     },
     {
       "description": "Group non-major Vue ecosystem packages",
-      "matchPackageNames": ["vue", "vue-router", "pinia", "@tanstack/vue-query"],
-      "matchPackagePatterns": ["^@vue/"],
+      "matchPackageNames": ["vue", "vue-router", "pinia", "@tanstack/vue-query", "/^@vue//"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Vue Ecosystem"
     },
@@ -42,28 +40,28 @@
     },
     {
       "description": "Group non-major Storybook packages",
-      "matchPackagePatterns": ["^storybook", "^@storybook/"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Storybook Ecosystem"
+      "groupName": "Storybook Ecosystem",
+      "matchPackageNames": [
+        "/^storybook/",
+        "/^@storybook//"
+      ]
     },
     {
       "description": "Group non-major Testing Tools",
-      "matchPackageNames": ["jsdom", "msw", "msw-storybook-addon", "openapi-msw"],
-      "matchPackagePatterns": ["^vitest", "^@vitest/", "^@playwright/", "^@vue/test-utils"],
+      "matchPackageNames": ["jsdom", "msw", "msw-storybook-addon", "openapi-msw", "/^vitest/", "/^@vitest//", "/^@playwright//", "/^@vue/test-utils/"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Frontend Testing Tools"
     },
     {
       "description": "Group non-major Markdown parsing packages",
-      "matchPackageNames": ["unified"],
-      "matchPackagePatterns": ["^remark-", "^rehype-"],
+      "matchPackageNames": ["unified", "/^remark-/", "/^rehype-/"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Markdown Processing"
     },
     {
       "description": "Group non-major Cloudflare and Hono packages",
-      "matchPackageNames": ["wrangler", "hono", "hono-email"],
-      "matchPackagePatterns": ["^@cloudflare/"],
+      "matchPackageNames": ["wrangler", "hono", "hono-email", "/^@cloudflare//"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Cloudflare & Hono Ecosystem"
     },
