@@ -6,7 +6,7 @@
 | --------- | ---- |
 | Backend + PostgreSQL | VPS (Docker Compose) |
 | Frontend | Cloudflare Pages (or equivalent CDN) |
-| Email delivery | Cloudflare Workers (email-producer / email-consumer) |
+| Email delivery | Cloudflare Workers (email Worker) |
 
 ---
 
@@ -40,8 +40,8 @@ openssl rand -base64 32
 | `POSTGRES_PASSWORD` | PostgreSQL password. **Use a randomly generated value.** Used by both the `postgres` container and `PORTAL_DATABASE_URL`. |
 | `PORTAL_DATABASE_URL` | PostgreSQL connection string. Use the Compose service name: `postgres://portaldots:${POSTGRES_PASSWORD}@postgres:5432/portaldots?sslmode=disable` |
 | `PORTAL_SESSION_COOKIE_SECURE` | Set to `true` (HTTPS required). |
-| `PORTAL_EMAIL_PRODUCER_URL` | Endpoint URL of the deployed email-producer Worker. |
-| `PORTAL_EMAIL_PRODUCER_TOKEN` | Auth token for the email-producer Worker. **Use a randomly generated value** (must match the secret set in Wrangler). |
+| `PORTAL_EMAIL_PRODUCER_URL` | Endpoint URL of the deployed email Worker. |
+| `PORTAL_EMAIL_PRODUCER_TOKEN` | Auth token for the email Worker. **Use a randomly generated value** (must match the secret set in Wrangler). |
 | `PORTAL_EMAIL_FROM` | Sender address for outbound mail. |
 | `PORTAL_ADMIN_NAME` | Organization name shown in the UI (e.g. `〇〇実行委員会`). |
 | `PORTAL_CONTACT_EMAIL` | Contact email address shown to users. |
@@ -90,27 +90,13 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-rec
 
 ## 3. Deploy Cloudflare Workers (email delivery)
 
-### email-producer
-
 ```bash
-cd packages/email-producer
+cd packages/email
 
 # Set the production secret — must match PORTAL_EMAIL_PRODUCER_TOKEN in .env.prod
 echo "<AUTH_TOKEN>" | npx wrangler secret put AUTH_TOKEN
 
 npx wrangler deploy
-```
-
-### email-consumer
-
-```bash
-cd packages/email-consumer
-
-# High-priority queue (verification emails, etc.)
-npx wrangler deploy --env high
-
-# Normal-priority queue (bulk notifications, etc.)
-npx wrangler deploy --env normal
 ```
 
 For Cloudflare Queue creation and Email Routing configuration, see the [Cloudflare Workers documentation](https://developers.cloudflare.com/queues/).
@@ -126,5 +112,5 @@ For Cloudflare Queue creation and Email Routing configuration, see the [Cloudfla
 - [ ] `PORTAL_EMAIL_PRODUCER_TOKEN` is randomly generated and matches the Wrangler secret
 - [ ] `PORTAL_EMAIL_PRODUCER_URL` and `PORTAL_EMAIL_PRODUCER_TOKEN` are set
 - [ ] PostgreSQL data volume backup is configured
-- [ ] email-producer and email-consumer Workers are deployed to Cloudflare
+- [ ] email Worker is deployed to Cloudflare
 - [ ] Reverse proxy forwards traffic to port `8080` with a valid TLS certificate

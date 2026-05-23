@@ -35,7 +35,7 @@ func main() {
 
 	backendDir := filepath.Join(projectDir, "backend")
 	frontendDir := filepath.Join(projectDir, "frontend")
-	emailProducerDir := filepath.Join(projectDir, "packages", "email-producer")
+	emailDir := filepath.Join(projectDir, "packages", "email")
 
 	loadDotEnv(filepath.Join(projectDir, ".env"))
 
@@ -69,7 +69,7 @@ func main() {
 	// 7. Start email workers (optional)
 	if useWorkers {
 		log.Println("Starting email workers (local-stack)...")
-		startProcess(emailProducerDir, "pnpm", "run", "dev:local-stack")
+		startProcess(emailDir, "pnpm", "run", "dev:local-stack")
 	}
 
 	// Wait for signal

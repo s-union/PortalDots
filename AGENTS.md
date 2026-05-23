@@ -9,7 +9,7 @@ This repository contains PortalDots: a Vue 3 frontend and a Go backend API serve
 - `frontend/` — Vue 3 + Vite + TypeScript SPA
 - `backend/` — Go + Echo + PostgreSQL API server
 - `packages/api-client/` — openapi-typescript generated client shared by the frontend
-- `packages/email-producer/` and `packages/email-consumer/` — Cloudflare Workers for email delivery
+- `packages/email/` — Cloudflare Worker for email delivery (HTTP enqueue + queue consumer)
 
 Details:
 

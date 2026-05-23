@@ -23,7 +23,6 @@ backend/
 │   ├── controllers/          # Echo handlers and route registration
 │   ├── domain/               # feature-oriented business repositories and services
 │   ├── http/server/          # HTTP composition root (wires dependencies → Echo)
-│   ├── mailworker/           # local email delivery worker
 │   ├── middlewares/          # Echo middleware and request guards
 │   ├── models/               # shared HTTP transport models (errors, pagination)
 │   ├── platform/             # config loading, DB bootstrap, sqlc store wiring
@@ -68,10 +67,10 @@ Copy `.env.example` to `.env` at the repository root and adjust:
 | `PORTAL_DATABASE_URL` | `postgres://portaldots:portaldots@127.0.0.1:55432/portaldots_rebuild?sslmode=disable` | PostgreSQL connection string |
 | `PORTAL_API_BIND` | `127.0.0.1:8080` | Bind address for the HTTP server |
 | `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE` | `true` | Re-seeds on every startup and exposes the randomly generated verify code in verify/request responses (development only) |
-| `PORTAL_EMAIL_PRODUCER_ENABLED` | `false` | Force-enables the email producer even when `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` |
+| `PORTAL_EMAIL_PRODUCER_ENABLED` | `false` | Force-enables outbound enqueue to the email Worker even when `PORTAL_DANGEROUSLY_ALLOW_DEMO_MODE=true` |
 | `PORTAL_SESSION_TTL_SECONDS` | `86400` | Session cookie lifetime (default 24 h) |
-| `PORTAL_EMAIL_PRODUCER_URL` | `http://localhost:8787` | Email producer Worker endpoint |
-| `PORTAL_EMAIL_PRODUCER_TOKEN` | `dev-token` | Auth token for the email producer |
+| `PORTAL_EMAIL_PRODUCER_URL` | `http://localhost:8787` | Email Worker endpoint (handles both `/enqueue` and queue consumption) |
+| `PORTAL_EMAIL_PRODUCER_TOKEN` | `dev-token` | Auth token for the email Worker's `/enqueue` endpoint |
 | `PORTAL_EMAIL_FROM` | — | From address for outbound mail |
 
 Frontend-facing variables (read by Vite proxy):

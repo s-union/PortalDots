@@ -90,7 +90,7 @@ func run(rootDir string, mode devMode) error {
 		newManagedCommand("frontend", rootDir, "mise", "run", "frontend:dev"),
 	}
 	if mode == devModeWorker {
-		commands = append(commands, newManagedCommand("email-workers", rootDir, "mise", "run", "email:workers:dev"))
+		commands = append(commands, newManagedCommand("email", rootDir, "mise", "run", "email:dev"))
 	}
 
 	started, err := startCommands(commands)
