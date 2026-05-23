@@ -5,11 +5,17 @@
   ],
   "timezone": "Asia/Tokyo",
   "minimumReleaseAge": "3 days",
+  "dependencyDashboardApproval": false,
   "packageRules": [
     {
       "description": "Automerge all non-major updates",
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
+    },
+    {
+      "description": "Require approval for major updates",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
     },
     {
       "description": "Do not automerge mise updates",
