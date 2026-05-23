@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 func TestParseRFC3339Field(t *testing.T) {
@@ -24,7 +24,7 @@ func TestParseRFC3339Field(t *testing.T) {
 func TestBindAndValidateStaffForm(t *testing.T) {
 	t.Parallel()
 
-	newContext := func(body string) echo.Context {
+	newContext := func(body string) *echo.Context {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

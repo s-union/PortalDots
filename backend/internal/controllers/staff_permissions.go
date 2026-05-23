@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/staffpermission"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -40,7 +40,7 @@ type updateStaffPermissionsRequest struct {
 	Permissions []string `json:"permissions"`
 }
 
-func (h *staffPermissionHandlers) listStaffPermissions(c echo.Context) error {
+func (h *staffPermissionHandlers) listStaffPermissions(c *echo.Context) error {
 	_, currentSession, status, ok := h.requirePermissionsRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -74,7 +74,7 @@ func matchesStaffPermissionSearch(item staffPermissionUserSummaryResponse, query
 	return matchesStaffListSearch(values, query)
 }
 
-func (h *staffPermissionHandlers) getStaffPermission(c echo.Context) error {
+func (h *staffPermissionHandlers) getStaffPermission(c *echo.Context) error {
 	_, currentSession, status, ok := h.requirePermissionsRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -95,7 +95,7 @@ func (h *staffPermissionHandlers) getStaffPermission(c echo.Context) error {
 	})
 }
 
-func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
+func (h *staffPermissionHandlers) updateStaffPermissions(c *echo.Context) error {
 	sessionID, currentSession, status, ok := h.requirePermissionsEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -161,7 +161,7 @@ func (h *staffPermissionHandlers) updateStaffPermissions(c echo.Context) error {
 	})
 }
 
-func (h *staffPermissionHandlers) requirePermissionsRead(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffPermissionHandlers) requirePermissionsRead(c *echo.Context) (string, session.Session, int, bool) {
 	sessionID, currentSession, status, ok := h.requireStaffMode(c)
 	if !ok {
 		return "", session.Session{}, status, false
@@ -175,7 +175,7 @@ func (h *staffPermissionHandlers) requirePermissionsRead(c echo.Context) (string
 	return sessionID, currentSession, http.StatusOK, true
 }
 
-func (h *staffPermissionHandlers) requirePermissionsEdit(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffPermissionHandlers) requirePermissionsEdit(c *echo.Context) (string, session.Session, int, bool) {
 	sessionID, currentSession, status, ok := h.requireStaffMode(c)
 	if !ok {
 		return "", session.Session{}, status, false

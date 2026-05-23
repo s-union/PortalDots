@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
@@ -45,7 +45,7 @@ type formDetailResponse struct {
 	Questions           []staffFormQuestion `json:"questions"`
 }
 
-func (h *workspaceHandlers) listForms(c echo.Context) error {
+func (h *workspaceHandlers) listForms(c *echo.Context) error {
 	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return statusError(c, status)
@@ -71,7 +71,7 @@ func (h *workspaceHandlers) listForms(c echo.Context) error {
 	})
 }
 
-func (h *workspaceHandlers) getForm(c echo.Context) error {
+func (h *workspaceHandlers) getForm(c *echo.Context) error {
 	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return statusError(c, status)
@@ -98,7 +98,7 @@ func (h *workspaceHandlers) getForm(c echo.Context) error {
 	)
 }
 
-func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (session.Session, circle.Circle, int, bool) {
+func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c *echo.Context) (session.Session, circle.Circle, int, bool) {
 	currentSession, status, ok := h.currentWorkspaceSession(c)
 	if !ok {
 		return session.Session{}, circle.Circle{}, status, false
@@ -115,7 +115,7 @@ func (h *workspaceHandlers) currentWorkspaceSessionAndCircle(c echo.Context) (se
 	return currentSession, currentCircle, http.StatusOK, true
 }
 
-func (h *workspaceHandlers) currentWorkspaceSession(c echo.Context) (session.Session, int, bool) {
+func (h *workspaceHandlers) currentWorkspaceSession(c *echo.Context) (session.Session, int, bool) {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return session.Session{}, http.StatusUnauthorized, false
@@ -124,7 +124,7 @@ func (h *workspaceHandlers) currentWorkspaceSession(c echo.Context) (session.Ses
 	return currentSession, http.StatusOK, true
 }
 
-func (h *workspaceHandlers) currentWorkspaceCircleTags(c echo.Context, currentSession session.Session) ([]string, int, bool) {
+func (h *workspaceHandlers) currentWorkspaceCircleTags(c *echo.Context, currentSession session.Session) ([]string, int, bool) {
 	circles, err := h.circles.ListSelectable(c.Request().Context(), currentSession.User)
 	if err != nil {
 		return nil, http.StatusInternalServerError, false

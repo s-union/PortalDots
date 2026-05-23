@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -80,7 +80,7 @@ type addStaffCircleMemberRequest struct {
 	LoginID string `json:"loginId"`
 }
 
-func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
+func (h *staffCircleHandlers) listStaffCircles(c *echo.Context) error {
 	_, _, status, ok := h.requireCircleRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -108,7 +108,7 @@ func (h *staffCircleHandlers) listStaffCircles(c echo.Context) error {
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
-func (h *staffCircleHandlers) listAllStaffCircles(c echo.Context) error {
+func (h *staffCircleHandlers) listAllStaffCircles(c *echo.Context) error {
 	_, _, status, ok := h.requireCircleRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -205,7 +205,7 @@ func staffCircleStatusLabel(status string) string {
 	}
 }
 
-func (h *staffCircleHandlers) listManagedStaffCircles(c echo.Context) error {
+func (h *staffCircleHandlers) listManagedStaffCircles(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canListManagedCircles)
 	if !ok {
 		return statusError(c, status)
@@ -227,7 +227,7 @@ func (h *staffCircleHandlers) listManagedStaffCircles(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
+func (h *staffCircleHandlers) downloadStaffCirclesCSV(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canExportCircles)
 	if !ok {
 		return statusError(c, status)
@@ -270,7 +270,7 @@ func (h *staffCircleHandlers) downloadStaffCirclesCSV(c echo.Context) error {
 	return csvResponse(c, filename, csvBytes)
 }
 
-func (h *staffCircleHandlers) getStaffCircle(c echo.Context) error {
+func (h *staffCircleHandlers) getStaffCircle(c *echo.Context) error {
 	_, _, status, ok := h.requireCircleRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -287,7 +287,7 @@ func (h *staffCircleHandlers) getStaffCircle(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffCircle(circleValue))
 }
 
-func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
+func (h *staffCircleHandlers) createStaffCircle(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireCircleEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -345,7 +345,7 @@ func (h *staffCircleHandlers) createStaffCircle(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapStaffCircle(created))
 }
 
-func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
+func (h *staffCircleHandlers) updateStaffCircle(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireCircleEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -464,7 +464,7 @@ func (h *staffCircleHandlers) updateStaffCircle(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffCircle(updated))
 }
 
-func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
+func (h *staffCircleHandlers) deleteStaffCircle(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteCircles)
 	if !ok {
 		return statusError(c, status)
@@ -502,7 +502,7 @@ func (h *staffCircleHandlers) deleteStaffCircle(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffCircleHandlers) listStaffCircleMembers(c echo.Context) error {
+func (h *staffCircleHandlers) listStaffCircleMembers(c *echo.Context) error {
 	_, _, status, ok := h.requireCircleEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -519,7 +519,7 @@ func (h *staffCircleHandlers) listStaffCircleMembers(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffCircleHandlers) addStaffCircleMember(c echo.Context) error {
+func (h *staffCircleHandlers) addStaffCircleMember(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireCircleEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -582,7 +582,7 @@ func (h *staffCircleHandlers) addStaffCircleMember(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-func (h *staffCircleHandlers) deleteStaffCircleMember(c echo.Context) error {
+func (h *staffCircleHandlers) deleteStaffCircleMember(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireCircleEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -629,7 +629,7 @@ func (h *staffCircleHandlers) deleteStaffCircleMember(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffCircleHandlers) getStaffCircleMailForm(c echo.Context) error {
+func (h *staffCircleHandlers) getStaffCircleMailForm(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canAccessCircleMail)
 	if !ok {
 		return statusError(c, status)
@@ -654,7 +654,7 @@ func (h *staffCircleHandlers) getStaffCircleMailForm(c echo.Context) error {
 	})
 }
 
-func (h *staffCircleHandlers) sendStaffCircleMail(c echo.Context) error {
+func (h *staffCircleHandlers) sendStaffCircleMail(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canAccessCircleMail)
 	if !ok {
 		return statusError(c, status)

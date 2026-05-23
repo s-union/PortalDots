@@ -5,8 +5,8 @@ import (
 	"crypto/subtle"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 )
 
@@ -32,7 +32,7 @@ func Setup(e *echo.Echo, cfg SetupConfig) {
 		HSTSMaxAge:         0,
 	}))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			c.Response().Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 			c.Response().Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
 			c.Response().Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -43,7 +43,7 @@ func Setup(e *echo.Echo, cfg SetupConfig) {
 	e.Use(AccessLogMiddleware())
 	if cfg.MaintenanceMode {
 		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-			return func(c echo.Context) error {
+			return func(c *echo.Context) error {
 				if c.Request().URL.Path == "/healthz" {
 					return next(c)
 				}
@@ -70,7 +70,7 @@ func Setup(e *echo.Echo, cfg SetupConfig) {
 // Requests with no active session (e.g. the login endpoint) are skipped.
 func VerifyCSRF(cfg SessionMiddlewareConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			method := c.Request().Method
 			if method == http.MethodGet || method == http.MethodHead ||
 				method == http.MethodOptions || method == http.MethodTrace {
@@ -117,7 +117,7 @@ type SessionMiddlewareConfig struct {
 // RequireWorkspaceUser ensures a valid authenticated session exists.
 func RequireWorkspaceUser(cfg SessionMiddlewareConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			sessionID, currentSession, ok := getSessionFromCookie(c, cfg)
 			if !ok || currentSession.User == nil {
 				return c.JSON(http.StatusUnauthorized, map[string]string{
@@ -134,7 +134,7 @@ func RequireWorkspaceUser(cfg SessionMiddlewareConfig) echo.MiddlewareFunc {
 // RequireStaffMode ensures a valid staff-authenticated session exists.
 func RequireStaffMode(cfg SessionMiddlewareConfig, hasStaffAccess func([]string, []string) bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			sessionID, currentSession, ok := getSessionFromCookie(c, cfg)
 			if !ok || currentSession.User == nil {
 				return c.JSON(http.StatusUnauthorized, map[string]string{
@@ -159,7 +159,7 @@ func RequireStaffMode(cfg SessionMiddlewareConfig, hasStaffAccess func([]string,
 }
 
 // SessionFromContext returns the session id and session value captured by middleware, if available.
-func SessionFromContext(c echo.Context) (string, session.Session, bool) {
+func SessionFromContext(c *echo.Context) (string, session.Session, bool) {
 	storedID := c.Get(sessionIDContextKey)
 	stored := c.Get(sessionContextKey)
 	if storedID == nil || stored == nil {
@@ -176,7 +176,7 @@ func SessionFromContext(c echo.Context) (string, session.Session, bool) {
 	return sessionID, currentSession, true
 }
 
-func getSessionFromCookie(c echo.Context, cfg SessionMiddlewareConfig) (string, session.Session, bool) {
+func getSessionFromCookie(c *echo.Context, cfg SessionMiddlewareConfig) (string, session.Session, bool) {
 	cookie, err := c.Cookie(cfg.SessionCookieName)
 	if err != nil || cookie.Value == "" {
 		return "", session.Session{}, false

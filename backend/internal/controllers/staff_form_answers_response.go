@@ -11,7 +11,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type staffAnswerCircleResponse struct {
@@ -60,7 +60,7 @@ type existingStaffFormAnswerResponse struct {
 	ExistingAnswerID string `json:"existingAnswerId"`
 }
 
-func (h *staffFormHandlers) staffFormContext(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, backendform.Form, circle.Circle, []formquestion.Question, int, bool) {
+func (h *staffFormHandlers) staffFormContext(c *echo.Context, allowed func(*auth.User) bool) (string, session.Session, backendform.Form, circle.Circle, []formquestion.Question, int, bool) {
 	sessionID, currentSession, status, ok := h.requireStaffCapability(c, allowed)
 	if !ok {
 		return "", session.Session{}, backendform.Form{}, circle.Circle{}, nil, status, false

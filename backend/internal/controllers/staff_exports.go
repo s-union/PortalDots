@@ -9,13 +9,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
-func (h *staffAdminHandlers) downloadStaffSummaryCSV(c echo.Context) error {
+func (h *staffAdminHandlers) downloadStaffSummaryCSV(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canUseStaffExports)
 	if !ok {
 		return statusError(c, status)
@@ -30,7 +30,7 @@ func (h *staffAdminHandlers) downloadStaffSummaryCSV(c echo.Context) error {
 	return csvResponse(c, filename, csvBytes)
 }
 
-func (h *staffAdminHandlers) downloadStaffBundleZIP(c echo.Context) error {
+func (h *staffAdminHandlers) downloadStaffBundleZIP(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canUseStaffExports)
 	if !ok {
 		return statusError(c, status)

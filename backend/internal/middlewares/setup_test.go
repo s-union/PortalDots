@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
@@ -34,11 +34,10 @@ func TestTransformExternalIDs(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/staff/users/"+externalUserID, nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetParamNames("userID")
-		c.SetParamValues(externalUserID)
+		c.SetPathValues(echo.PathValues{{Name: "userID", Value: externalUserID}})
 
 		called := false
-		handler := TransformExternalIDs()(func(c echo.Context) error {
+		handler := TransformExternalIDs()(func(c *echo.Context) error {
 			called = true
 			if got := c.Param("userID"); got != "0195ec00-0054-7000-8000-000000000001" {
 				t.Fatalf("expected decoded internal id, got %q", got)
@@ -67,11 +66,10 @@ func TestTransformExternalIDs(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/staff/users/0195ec00-0054-7000-8000-000000000001", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetParamNames("userID")
-		c.SetParamValues("0195ec00-0054-7000-8000-000000000001")
+		c.SetPathValues(echo.PathValues{{Name: "userID", Value: "0195ec00-0054-7000-8000-000000000001"}})
 
 		called := false
-		handler := TransformExternalIDs()(func(c echo.Context) error {
+		handler := TransformExternalIDs()(func(c *echo.Context) error {
 			called = true
 			return c.NoContent(http.StatusNoContent)
 		})
@@ -102,7 +100,7 @@ func TestTransformExternalIDs(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		handler := TransformExternalIDs()(func(c echo.Context) error {
+		handler := TransformExternalIDs()(func(c *echo.Context) error {
 			var body struct {
 				CircleID string              `json:"circleId"`
 				Details  map[string][]string `json:"details"`
@@ -159,7 +157,7 @@ func TestTransformExternalIDs(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		handler := TransformExternalIDs()(func(c echo.Context) error {
+		handler := TransformExternalIDs()(func(c *echo.Context) error {
 			var body struct {
 				PendingRegistrationID string `json:"pendingRegistrationId"`
 				Token                 string `json:"token"`
@@ -194,7 +192,7 @@ func TestTransformExternalIDs(t *testing.T) {
 		rec.Header().Set(echo.HeaderXRequestID, "req-123")
 		c := e.NewContext(req, rec)
 
-		handler := TransformExternalIDs()(func(c echo.Context) error {
+		handler := TransformExternalIDs()(func(c *echo.Context) error {
 			return c.JSON(http.StatusOK, map[string]string{"id": circleID})
 		})
 
@@ -215,7 +213,7 @@ func TestTransformExternalIDs(t *testing.T) {
 		rec.Header().Set(echo.HeaderXRequestID, "req-456")
 		c := e.NewContext(req, rec)
 
-		handler := TransformExternalIDs()(func(c echo.Context) error {
+		handler := TransformExternalIDs()(func(c *echo.Context) error {
 			c.Response().Header().Set(echo.HeaderContentType, "application/zip")
 			if _, err := c.Response().Write([]byte("zipdata")); err != nil {
 				t.Fatalf("write response: %v", err)
@@ -259,7 +257,7 @@ func TestVerifyCSRF(t *testing.T) {
 		c := e.NewContext(req, rec)
 
 		called := false
-		handler := VerifyCSRF(baseConfig)(func(c echo.Context) error {
+		handler := VerifyCSRF(baseConfig)(func(c *echo.Context) error {
 			called = true
 			return c.NoContent(http.StatusNoContent)
 		})
@@ -286,7 +284,7 @@ func TestVerifyCSRF(t *testing.T) {
 		c := e.NewContext(req, rec)
 
 		called := false
-		handler := VerifyCSRF(baseConfig)(func(c echo.Context) error {
+		handler := VerifyCSRF(baseConfig)(func(c *echo.Context) error {
 			called = true
 			return c.NoContent(http.StatusNoContent)
 		})
@@ -335,7 +333,7 @@ func TestVerifyCSRF(t *testing.T) {
 				c := e.NewContext(req, rec)
 
 				called := false
-				handler := VerifyCSRF(tc.cfg)(func(c echo.Context) error {
+				handler := VerifyCSRF(tc.cfg)(func(c *echo.Context) error {
 					called = true
 					return c.NoContent(http.StatusNoContent)
 				})
@@ -367,7 +365,7 @@ func TestVerifyCSRF(t *testing.T) {
 			SessionCookieName: "session",
 			AllowDangerously:  true,
 			Sessions:          baseConfig.Sessions,
-		})(func(c echo.Context) error {
+		})(func(c *echo.Context) error {
 			called = true
 			return c.NoContent(http.StatusNoContent)
 		})
@@ -410,7 +408,7 @@ func TestRequireWorkspaceUser(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		handler := RequireWorkspaceUser(cfg)(func(c echo.Context) error {
+		handler := RequireWorkspaceUser(cfg)(func(c *echo.Context) error {
 			return c.NoContent(http.StatusNoContent)
 		})
 
@@ -431,7 +429,7 @@ func TestRequireWorkspaceUser(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		handler := RequireWorkspaceUser(cfg)(func(c echo.Context) error {
+		handler := RequireWorkspaceUser(cfg)(func(c *echo.Context) error {
 			sessionID, currentSession, ok := SessionFromContext(c)
 			if !ok {
 				t.Fatal("expected session in context")
@@ -531,7 +529,7 @@ func TestRequireStaffMode(t *testing.T) {
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
 
-				handler := RequireStaffMode(tc.cfg, tc.hasStaffAccess)(func(c echo.Context) error {
+				handler := RequireStaffMode(tc.cfg, tc.hasStaffAccess)(func(c *echo.Context) error {
 					return c.NoContent(http.StatusNoContent)
 				})
 
@@ -571,7 +569,7 @@ func TestRequireStaffMode(t *testing.T) {
 				rec := httptest.NewRecorder()
 				c := e.NewContext(req, rec)
 
-				handler := RequireStaffMode(cfg, func(_ []string, _ []string) bool { return true })(func(c echo.Context) error {
+				handler := RequireStaffMode(cfg, func(_ []string, _ []string) bool { return true })(func(c *echo.Context) error {
 					sessionID, _, ok := SessionFromContext(c)
 					if !ok || sessionID != "session-1" {
 						t.Fatalf("expected context session, got %q %v", sessionID, ok)

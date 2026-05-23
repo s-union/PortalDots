@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/booth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
@@ -56,7 +56,7 @@ type mutateStaffContactCategoryRequest struct {
 	Email string `json:"email"`
 }
 
-func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
+func (h *staffMastersHandlers) listStaffTags(c *echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadTags); !ok {
 		return statusError(c, status)
 	}
@@ -81,7 +81,7 @@ func (h *staffMastersHandlers) listStaffTags(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffMastersHandlers) downloadStaffTagsCSV(c echo.Context) error {
+func (h *staffMastersHandlers) downloadStaffTagsCSV(c *echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadTags); !ok {
 		return statusError(c, status)
 	}
@@ -148,7 +148,7 @@ func (h *staffMastersHandlers) downloadStaffTagsCSV(c echo.Context) error {
 	return csvResponse(c, filename, csvBytes)
 }
 
-func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {
+func (h *staffMastersHandlers) createStaffTag(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditTags)
 	if !ok {
 		return statusError(c, status)
@@ -180,7 +180,7 @@ func (h *staffMastersHandlers) createStaffTag(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapStaffTag(created))
 }
 
-func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
+func (h *staffMastersHandlers) updateStaffTag(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditTags)
 	if !ok {
 		return statusError(c, status)
@@ -217,7 +217,7 @@ func (h *staffMastersHandlers) updateStaffTag(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffTag(updated))
 }
 
-func (h *staffMastersHandlers) deleteStaffTag(c echo.Context) error {
+func (h *staffMastersHandlers) deleteStaffTag(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteTags)
 	if !ok {
 		return statusError(c, status)
@@ -233,7 +233,7 @@ func (h *staffMastersHandlers) deleteStaffTag(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffMastersHandlers) listStaffPlaces(c echo.Context) error {
+func (h *staffMastersHandlers) listStaffPlaces(c *echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadPlaces); !ok {
 		return statusError(c, status)
 	}
@@ -312,7 +312,7 @@ func staffPlaceFilterResolver(item staffPlaceResponse) func(string) (string, boo
 	}
 }
 
-func (h *staffMastersHandlers) downloadStaffPlacesCSV(c echo.Context) error {
+func (h *staffMastersHandlers) downloadStaffPlacesCSV(c *echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadPlaces); !ok {
 		return statusError(c, status)
 	}
@@ -342,7 +342,7 @@ func (h *staffMastersHandlers) downloadStaffPlacesCSV(c echo.Context) error {
 	return csvResponse(c, filename, csvBytes)
 }
 
-func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
+func (h *staffMastersHandlers) createStaffPlace(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPlaces)
 	if !ok {
 		return statusError(c, status)
@@ -370,7 +370,7 @@ func (h *staffMastersHandlers) createStaffPlace(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapStaffPlace(created))
 }
 
-func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
+func (h *staffMastersHandlers) updateStaffPlace(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPlaces)
 	if !ok {
 		return statusError(c, status)
@@ -403,7 +403,7 @@ func (h *staffMastersHandlers) updateStaffPlace(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffPlace(updated))
 }
 
-func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
+func (h *staffMastersHandlers) deleteStaffPlace(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeletePlaces)
 	if !ok {
 		return statusError(c, status)
@@ -422,7 +422,7 @@ func (h *staffMastersHandlers) deleteStaffPlace(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffMastersHandlers) listStaffContactCategories(c echo.Context) error {
+func (h *staffMastersHandlers) listStaffContactCategories(c *echo.Context) error {
 	if _, _, status, ok := h.requireStaffCapability(c, canReadContactCategories); !ok {
 		return statusError(c, status)
 	}
@@ -439,7 +439,7 @@ func (h *staffMastersHandlers) listStaffContactCategories(c echo.Context) error 
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffMastersHandlers) createStaffContactCategory(c echo.Context) error {
+func (h *staffMastersHandlers) createStaffContactCategory(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditContactCategories)
 	if !ok {
 		return statusError(c, status)
@@ -462,7 +462,7 @@ func (h *staffMastersHandlers) createStaffContactCategory(c echo.Context) error 
 	return c.JSON(http.StatusCreated, mapStaffContactCategory(created))
 }
 
-func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error {
+func (h *staffMastersHandlers) updateStaffContactCategory(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditContactCategories)
 	if !ok {
 		return statusError(c, status)
@@ -498,7 +498,7 @@ func (h *staffMastersHandlers) updateStaffContactCategory(c echo.Context) error 
 	return c.JSON(http.StatusOK, mapStaffContactCategory(updated))
 }
 
-func (h *staffMastersHandlers) deleteStaffContactCategory(c echo.Context) error {
+func (h *staffMastersHandlers) deleteStaffContactCategory(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteContactCategories)
 	if !ok {
 		return statusError(c, status)
@@ -514,7 +514,7 @@ func (h *staffMastersHandlers) deleteStaffContactCategory(c echo.Context) error 
 	return c.NoContent(http.StatusNoContent)
 }
 
-func bindStaffPlaceRequest(c echo.Context) (mutateStaffPlaceRequest, bool) {
+func bindStaffPlaceRequest(c *echo.Context) (mutateStaffPlaceRequest, bool) {
 	var request mutateStaffPlaceRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffPlaceRequest{}, false
@@ -530,7 +530,7 @@ func bindStaffPlaceRequest(c echo.Context) (mutateStaffPlaceRequest, bool) {
 	return request, true
 }
 
-func bindStaffContactCategoryRequest(c echo.Context) (mutateStaffContactCategoryRequest, map[string][]string) {
+func bindStaffContactCategoryRequest(c *echo.Context) (mutateStaffContactCategoryRequest, map[string][]string) {
 	var request mutateStaffContactCategoryRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffContactCategoryRequest{}, map[string][]string{"request": {"invalid_request"}}

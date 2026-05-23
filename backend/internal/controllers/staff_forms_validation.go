@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 )
 
@@ -18,7 +18,7 @@ func parseRFC3339Field(value string) (time.Time, bool) {
 	return parsed, true
 }
 
-func bindAndValidateStaffForm(c echo.Context, circleRequired bool) (mutateStaffFormRequest, map[string][]string, bool) {
+func bindAndValidateStaffForm(c *echo.Context, circleRequired bool) (mutateStaffFormRequest, map[string][]string, bool) {
 	var request mutateStaffFormRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffFormRequest{}, map[string][]string{

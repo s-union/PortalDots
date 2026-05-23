@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/models"
 )
@@ -22,7 +22,7 @@ type documentSummaryResponse struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
-func (h *workspaceHandlers) listDocuments(c echo.Context) error {
+func (h *workspaceHandlers) listDocuments(c *echo.Context) error {
 	currentSession, status, ok := h.currentWorkspaceSession(c)
 	if !ok {
 		return statusError(c, status)
@@ -63,7 +63,7 @@ func (h *workspaceHandlers) listDocuments(c echo.Context) error {
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
-func (h *workspaceHandlers) getDocument(c echo.Context) error {
+func (h *workspaceHandlers) getDocument(c *echo.Context) error {
 	currentSession, status, ok := h.currentWorkspaceSession(c)
 	if !ok {
 		return statusError(c, status)
@@ -86,7 +86,7 @@ func (h *workspaceHandlers) getDocument(c echo.Context) error {
 	return c.Blob(http.StatusOK, document.MimeType, document.Content)
 }
 
-func readDocumentsPagination(c echo.Context) models.PaginationParams {
+func readDocumentsPagination(c *echo.Context) models.PaginationParams {
 	pagination := readPagination(c)
 	if c.QueryParam("pageSize") == "" {
 		pagination.PageSize = 10

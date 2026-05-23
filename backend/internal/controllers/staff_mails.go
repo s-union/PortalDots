@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 )
 
@@ -27,7 +27,7 @@ type enqueueStaffMailRequest struct {
 	Recipients []string `json:"recipients"`
 }
 
-func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
+func (h *staffAdminHandlers) listStaffMails(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canUseMailQueue)
 	if !ok {
 		return statusError(c, status)
@@ -54,7 +54,7 @@ func (h *staffAdminHandlers) listStaffMails(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffAdminHandlers) enqueueStaffMail(c echo.Context) error {
+func (h *staffAdminHandlers) enqueueStaffMail(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canUseMailQueue)
 	if !ok {
 		return statusError(c, status)

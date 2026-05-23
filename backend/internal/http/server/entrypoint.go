@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	legacy "github.com/s-union/PortalDots/backend/internal/controllers"
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"

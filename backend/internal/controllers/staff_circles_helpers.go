@@ -5,28 +5,28 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 )
 
-func (h *staffCircleHandlers) requireCircleRead(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffCircleHandlers) requireCircleRead(c *echo.Context) (string, session.Session, int, bool) {
 	return h.requireStaffCapability(c, canReadCircles)
 }
 
-func (h *staffCircleHandlers) requireCircleEdit(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffCircleHandlers) requireCircleEdit(c *echo.Context) (string, session.Session, int, bool) {
 	return h.requireStaffCapability(c, canEditCircles)
 }
 
-func (h *staffCircleHandlers) requireParticipationTypeRead(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffCircleHandlers) requireParticipationTypeRead(c *echo.Context) (string, session.Session, int, bool) {
 	return h.requireStaffCapability(c, canReadParticipationTypes)
 }
 
-func (h *staffCircleHandlers) requireParticipationTypeAdmin(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffCircleHandlers) requireParticipationTypeAdmin(c *echo.Context) (string, session.Session, int, bool) {
 	return h.requireStaffCapability(c, canManageParticipationTypes)
 }
 
-func bindAndValidateStaffCircle(c echo.Context) (mutateStaffCircleRequest, map[string][]string, bool) {
+func bindAndValidateStaffCircle(c *echo.Context) (mutateStaffCircleRequest, map[string][]string, bool) {
 	var request mutateStaffCircleRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffCircleRequest{}, map[string][]string{

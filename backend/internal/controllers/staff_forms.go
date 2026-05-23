@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 )
@@ -103,7 +103,7 @@ type mutateStaffFormRequest struct {
 	ConfirmationMessage string   `json:"confirmationMessage"`
 }
 
-func (h *staffFormHandlers) listStaffForms(c echo.Context) error {
+func (h *staffFormHandlers) listStaffForms(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
@@ -175,7 +175,7 @@ func staffFormSummaryFilterResolver(item staffFormSummaryResponse) func(string) 
 	}
 }
 
-func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
+func (h *staffFormHandlers) getStaffForm(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
@@ -194,7 +194,7 @@ func (h *staffFormHandlers) getStaffForm(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(form, mapStaffManagedCircle(currentCircle), mapStaffFormQuestions(questions), nil))
 }
 
-func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
+func (h *staffFormHandlers) createStaffForm(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
@@ -243,7 +243,7 @@ func (h *staffFormHandlers) createStaffForm(c echo.Context) error {
 	return c.JSON(http.StatusCreated, h.mapStaffFormSummary(created, mapStaffManagedCircle(currentCircle)))
 }
 
-func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
+func (h *staffFormHandlers) updateStaffForm(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
@@ -291,7 +291,7 @@ func (h *staffFormHandlers) updateStaffForm(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.mapStaffFormSummary(updated, mapStaffManagedCircle(currentCircle)))
 }
 
-func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
+func (h *staffFormHandlers) previewStaffForm(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
@@ -310,7 +310,7 @@ func (h *staffFormHandlers) previewStaffForm(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.buildStaffFormDetailResponse(formValue, mapStaffManagedCircle(currentCircle), mapStaffFormQuestions(questions), nil))
 }
 
-func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
+func (h *staffFormHandlers) copyStaffForm(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDuplicateForms)
 	if !ok {
 		return statusError(c, status)
@@ -387,7 +387,7 @@ func (h *staffFormHandlers) copyStaffForm(c echo.Context) error {
 	return c.JSON(http.StatusCreated, h.mapStaffFormSummary(copied, mapStaffManagedCircle(currentCircle)))
 }
 
-func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
+func (h *staffFormHandlers) deleteStaffForm(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteForms)
 	if !ok {
 		return statusError(c, status)
@@ -418,7 +418,7 @@ func (h *staffFormHandlers) deleteStaffForm(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
+func (h *staffFormHandlers) downloadStaffFormsCSV(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canExportForms)
 	if !ok {
 		return statusError(c, status)
@@ -456,7 +456,7 @@ func (h *staffFormHandlers) downloadStaffFormsCSV(c echo.Context) error {
 	return csvResponse(c, filename, csvBytes)
 }
 
-func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {
+func (h *staffFormHandlers) downloadStaffFormUpload(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadForms)
 	if !ok {
 		return statusError(c, status)
@@ -484,7 +484,7 @@ func (h *staffFormHandlers) downloadStaffFormUpload(c echo.Context) error {
 	return errorJSON(c, http.StatusNotFound, "upload_not_found")
 }
 
-func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
+func (h *staffFormHandlers) createStaffFormQuestion(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
@@ -523,7 +523,7 @@ func (h *staffFormHandlers) createStaffFormQuestion(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapStaffFormQuestion(created))
 }
 
-func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
+func (h *staffFormHandlers) updateStaffFormQuestion(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
@@ -584,7 +584,7 @@ func (h *staffFormHandlers) updateStaffFormQuestion(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffFormQuestion(updated))
 }
 
-func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
+func (h *staffFormHandlers) deleteStaffFormQuestion(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
@@ -615,7 +615,7 @@ func (h *staffFormHandlers) deleteStaffFormQuestion(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffFormHandlers) reorderStaffFormQuestions(c echo.Context) error {
+func (h *staffFormHandlers) reorderStaffFormQuestions(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditForms)
 	if !ok {
 		return statusError(c, status)
