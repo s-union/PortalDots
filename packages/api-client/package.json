@@ -23,7 +23,7 @@
     "@tanstack/vue-query": "^5.92.9",
     "@typescript/native-preview": "7.0.0-dev.20260314.1",
     "openapi-typescript": "^7.13.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.0",
     "vitest": "^4.1.0",
     "vue": "^3.5.34"
   },
