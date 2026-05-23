@@ -51,7 +51,7 @@ jobs:
 
   frontend-test:
     needs: changes
-    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
