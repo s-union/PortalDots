@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@tanstack/vue-query": "^5.92.9",
-    "@typescript/native-preview": "7.0.0-dev.20260314.1",
+    "@typescript/native-preview": "7.0.0-dev.20260519.1",
     "openapi-typescript": "^7.13.0",
     "typescript": "^6.0.0",
     "vitest": "^4.1.0",

@@ -50,7 +50,7 @@
     "@storybook/vue3-vite": "^10.3.6",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^25.5.0",
-    "@typescript/native-preview": "7.0.0-dev.20260314.1",
+    "@typescript/native-preview": "7.0.0-dev.20260519.1",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vitest/browser-playwright": "^4.1.5",
     "@vitest/coverage-v8": "^4.1.5",
