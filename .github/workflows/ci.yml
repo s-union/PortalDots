@@ -12,6 +12,24 @@ permissions:
   attestations: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - 'packages/api-client/**'
+              - 'pnpm-lock.yaml'
+              - 'mise.toml'
+              - '.github/workflows/ci.yml'
+
   frontend-check:
     runs-on: ubuntu-latest
     steps:
@@ -32,6 +50,8 @@ jobs:
         run: mise run frontend:check
 
   frontend-test:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
