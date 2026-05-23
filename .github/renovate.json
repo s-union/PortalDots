@@ -16,11 +16,6 @@
       "automerge": true
     },
     {
-      "description": "Require approval for major updates",
-      "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": true
-    },
-    {
       "description": "Do not automerge mise updates",
       "matchManagers": ["mise"],
       "automerge": false
