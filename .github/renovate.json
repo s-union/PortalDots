@@ -6,6 +6,8 @@
   "timezone": "Asia/Tokyo",
   "minimumReleaseAge": "3 days",
   "mode": "update",
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
   "dependencyDashboardApproval": false,
   "packageRules": [
     {
