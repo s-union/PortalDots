@@ -16,12 +16,15 @@ func AccessLogMiddleware() echo.MiddlewareFunc {
 			elapsed := time.Since(start)
 
 			req := c.Request()
-			res := c.Response()
+			statusCode := 0
+			if res, unwrapErr := echo.UnwrapResponse(c.Response()); unwrapErr == nil {
+				statusCode = res.Status
+			}
 
 			attrs := []any{
 				"method", req.Method,
 				"path", req.URL.Path,
-				"status", res.Status,
+				"status", statusCode,
 				"ip", c.RealIP(),
 				"latency_ms", elapsed.Milliseconds(),
 			}

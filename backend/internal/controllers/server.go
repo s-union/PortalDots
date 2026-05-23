@@ -247,7 +247,6 @@ func NewServerWithDependencies(
 	}
 
 	e := echo.New()
-	e.HideBanner = true
 	allowedOrigin := cfg.AppURL
 	if origin, err := cfg.AppOrigin(); err == nil {
 		allowedOrigin = origin
