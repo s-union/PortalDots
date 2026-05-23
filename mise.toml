@@ -1,11 +1,11 @@
 [tools]
-node = "24"
-go = "1.26"
+node = "24.15.0"
+go = "1.26.3"
 sqlc = "1.31.1"
-staticcheck = "latest"
-air = "latest"
-prek = "latest"
-pnpm = "latest"
+staticcheck = "2026.1"
+air = "1.65.2"
+prek = "0.4.1"
+pnpm = "11.2.1"
 
 [tasks."frontend:install"]
 description = "Install dependencies for the new frontend workspace"

@@ -1,6 +1,7 @@
 {
     "private": true,
     "name": "portaldots",
+    "packageManager": "pnpm@11.2.1",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/s-union/PortalDots.git"
@@ -16,8 +17,8 @@
         "format": "pnpm -C frontend run format"
     },
     "devDependencies": {
-        "oxfmt": "^0.51.0",
-        "oxlint": "^1.65.0",
-        "oxlint-tsgolint": "^0.23.0"
+        "oxfmt": "0.51.0",
+        "oxlint": "1.66.0",
+        "oxlint-tsgolint": "0.23.0"
     }
 }
