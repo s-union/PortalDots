@@ -151,7 +151,7 @@ const enqueueRequestSchema = z.object({
   to: z.union([z.string().email(), z.array(z.string().email())]),
   subject: z.string().min(1),
   body: z.string().optional(),
-  variables: z.record(z.string()).default({})
+  variables: z.record(z.string(), z.string()).default({})
 })
 
 const app = new Hono<{ Bindings: Env }>()
