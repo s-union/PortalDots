@@ -20,11 +20,6 @@ run = "pnpm run dev -- --host 127.0.0.1"
 description = "Run frontend static checks"
 run = "pnpm run ci:check"
 
-[tasks."frontend:test"]
-description = "Run frontend unit and browser tests (vitest, includes Storybook/Chromium)"
-dir = "frontend"
-run = "pnpm run test"
-
 [tasks."frontend:format"]
 description = "Run frontend formatter"
 run = "pnpm run format"
