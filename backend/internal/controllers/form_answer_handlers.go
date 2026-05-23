@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 )
 
-func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
+func (h *workspaceHandlers) getFormAnswer(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -27,7 +27,7 @@ func (h *workspaceHandlers) getFormAnswer(c echo.Context) error {
 	})
 }
 
-func (h *workspaceHandlers) listFormAnswers(c echo.Context) error {
+func (h *workspaceHandlers) listFormAnswers(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -48,7 +48,7 @@ func (h *workspaceHandlers) listFormAnswers(c echo.Context) error {
 	})
 }
 
-func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
+func (h *workspaceHandlers) getFormAnswerByID(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -64,7 +64,7 @@ func (h *workspaceHandlers) getFormAnswerByID(c echo.Context) error {
 	})
 }
 
-func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
+func (h *workspaceHandlers) createFormAnswer(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -83,7 +83,7 @@ func (h *workspaceHandlers) createFormAnswer(c echo.Context) error {
 	})
 }
 
-func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
+func (h *workspaceHandlers) upsertFormAnswer(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -129,7 +129,7 @@ func (h *workspaceHandlers) upsertFormAnswer(c echo.Context) error {
 	})
 }
 
-func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
+func (h *workspaceHandlers) updateFormAnswer(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -188,7 +188,7 @@ func (h *workspaceHandlers) updateFormAnswer(c echo.Context) error {
 	})
 }
 
-func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
+func (h *workspaceHandlers) uploadFormAnswerFile(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -265,7 +265,7 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapFormAnswerUpload(upload))
 }
 
-func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
+func (h *workspaceHandlers) uploadFormAnswerFileByID(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveWritableCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -347,7 +347,7 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapFormAnswerUpload(upload))
 }
 
-func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
+func (h *workspaceHandlers) downloadFormAnswerFile(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)
@@ -362,7 +362,7 @@ func (h *workspaceHandlers) downloadFormAnswerFile(c echo.Context) error {
 	return c.Blob(http.StatusOK, upload.MimeType, upload.Content)
 }
 
-func (h *workspaceHandlers) downloadFormAnswerFileByID(c echo.Context) error {
+func (h *workspaceHandlers) downloadFormAnswerFileByID(c *echo.Context) error {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
 		return workspaceFormStatusError(c, status)

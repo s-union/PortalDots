@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
@@ -52,7 +52,7 @@ type mutateStaffParticipationTypeRequest struct {
 	IsPublic                bool     `json:"isPublic"`
 }
 
-func (h *staffCircleHandlers) listStaffParticipationTypes(c echo.Context) error {
+func (h *staffCircleHandlers) listStaffParticipationTypes(c *echo.Context) error {
 	_, _, status, ok := h.requireParticipationTypeRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -75,7 +75,7 @@ func (h *staffCircleHandlers) listStaffParticipationTypes(c echo.Context) error 
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffCircleHandlers) getStaffParticipationType(c echo.Context) error {
+func (h *staffCircleHandlers) getStaffParticipationType(c *echo.Context) error {
 	_, _, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
 		return statusError(c, status)
@@ -97,7 +97,7 @@ func (h *staffCircleHandlers) getStaffParticipationType(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffParticipationType(item, formValue))
 }
 
-func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c echo.Context) error {
+func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c *echo.Context) error {
 	_, _, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
 		return statusError(c, status)
@@ -138,7 +138,7 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c echo.Context) 
 	return c.JSON(http.StatusOK, paginateItems(filtered, readPagination(c)))
 }
 
-func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c echo.Context) error {
+func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c *echo.Context) error {
 	_, _, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
 		return statusError(c, status)
@@ -191,7 +191,7 @@ func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c echo.Co
 	return csvResponse(c, filename, csvBytes)
 }
 
-func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error {
+func (h *staffCircleHandlers) createStaffParticipationType(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
 		return statusError(c, status)
@@ -244,7 +244,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c echo.Context) error
 	return c.JSON(http.StatusCreated, mapStaffParticipationType(item, formValue))
 }
 
-func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error {
+func (h *staffCircleHandlers) updateStaffParticipationType(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
 		return statusError(c, status)
@@ -307,7 +307,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c echo.Context) error
 	return c.JSON(http.StatusOK, mapStaffParticipationType(updatedType, updatedForm))
 }
 
-func (h *staffCircleHandlers) deleteStaffParticipationType(c echo.Context) error {
+func (h *staffCircleHandlers) deleteStaffParticipationType(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireParticipationTypeAdmin(c)
 	if !ok {
 		return statusError(c, status)
@@ -345,7 +345,7 @@ func (h *staffCircleHandlers) deleteStaffParticipationType(c echo.Context) error
 	return c.NoContent(http.StatusNoContent)
 }
 
-func bindAndValidateStaffParticipationType(c echo.Context) (mutateStaffParticipationTypeRequest, map[string][]string, bool) {
+func bindAndValidateStaffParticipationType(c *echo.Context) (mutateStaffParticipationTypeRequest, map[string][]string, bool) {
 	var request mutateStaffParticipationTypeRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffParticipationTypeRequest{}, map[string][]string{"request": {"invalid_request"}}, false

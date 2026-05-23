@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
@@ -43,7 +43,7 @@ type patchStaffPagePinRequest struct {
 	IsPinned bool `json:"isPinned"`
 }
 
-func (h *staffPageHandlers) listStaffPages(c echo.Context) error {
+func (h *staffPageHandlers) listStaffPages(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadPages)
 	if !ok {
 		return statusError(c, status)
@@ -102,7 +102,7 @@ func staffPageSummaryFilterResolver(item staffPageSummaryResponse) func(string) 
 	}
 }
 
-func (h *staffPageHandlers) getStaffPage(c echo.Context) error {
+func (h *staffPageHandlers) getStaffPage(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadPages)
 	if !ok {
 		return statusError(c, status)
@@ -118,7 +118,7 @@ func (h *staffPageHandlers) getStaffPage(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
+func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPages)
 	if !ok {
 		return statusError(c, status)
@@ -160,7 +160,7 @@ func (h *staffPageHandlers) createStaffPage(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapStaffPageSummary(created, h.pageDocuments(created.DocumentIDs, true)))
 }
 
-func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
+func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPages)
 	if !ok {
 		return statusError(c, status)
@@ -213,7 +213,7 @@ func (h *staffPageHandlers) updateStaffPage(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
 }
 
-func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
+func (h *staffPageHandlers) deleteStaffPage(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeletePages)
 	if !ok {
 		return statusError(c, status)
@@ -243,7 +243,7 @@ func (h *staffPageHandlers) deleteStaffPage(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
+func (h *staffPageHandlers) patchStaffPagePin(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditPages)
 	if !ok {
 		return statusError(c, status)
@@ -289,7 +289,7 @@ func (h *staffPageHandlers) patchStaffPagePin(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
 }
 
-func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
+func (h *staffPageHandlers) downloadStaffPagesCSV(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canExportPages)
 	if !ok {
 		return statusError(c, status)
@@ -307,7 +307,7 @@ func (h *staffPageHandlers) downloadStaffPagesCSV(c echo.Context) error {
 	return csvResponse(c, filename, csvBytes)
 }
 
-func bindStaffPageRequest(c echo.Context) (mutateStaffPageRequest, map[string][]string, bool) {
+func bindStaffPageRequest(c *echo.Context) (mutateStaffPageRequest, map[string][]string, bool) {
 	var request mutateStaffPageRequest
 	if err := c.Bind(&request); err != nil {
 		return mutateStaffPageRequest{}, map[string][]string{

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
 	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/models"
@@ -43,7 +43,7 @@ type pageDocumentResponse struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
-func (h *workspaceHandlers) listPages(c echo.Context) error {
+func (h *workspaceHandlers) listPages(c *echo.Context) error {
 	currentSession, status, ok := h.currentWorkspaceSession(c)
 	if !ok {
 		return statusError(c, status)
@@ -83,7 +83,7 @@ func (h *workspaceHandlers) listPages(c echo.Context) error {
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
-func (h *workspaceHandlers) getPage(c echo.Context) error {
+func (h *workspaceHandlers) getPage(c *echo.Context) error {
 	currentSession, status, ok := h.currentWorkspaceSession(c)
 	if !ok {
 		return statusError(c, status)
@@ -179,7 +179,7 @@ func isPageNew(currentPage backendpage.Page) bool {
 	return !createdAt.Add(72 * time.Hour).Before(time.Now().UTC())
 }
 
-func readPagesPagination(c echo.Context) models.PaginationParams {
+func readPagesPagination(c *echo.Context) models.PaginationParams {
 	pagination := readPagination(c)
 	if c.QueryParam("pageSize") == "" {
 		pagination.PageSize = 10

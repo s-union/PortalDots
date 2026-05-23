@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
@@ -94,7 +94,7 @@ type publicHomeDocumentResponse struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
-func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
+func (h *publicHomeHandlers) getPublicHome(c *echo.Context) error {
 	participationTypes, err := h.listPublicParticipationTypes(c.Request().Context())
 	if err != nil {
 		return internalError(c)
@@ -115,7 +115,7 @@ func (h *publicHomeHandlers) getPublicHome(c echo.Context) error {
 	})
 }
 
-func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
+func (h *publicHomeHandlers) getPublicConfig(c *echo.Context) error {
 	return c.JSON(http.StatusOK, publicConfigResponse{
 		IsDemo:                    h.allowDangerously,
 		AppName:                   h.appName,
@@ -125,7 +125,7 @@ func (h *publicHomeHandlers) getPublicConfig(c echo.Context) error {
 	})
 }
 
-func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
+func (h *publicHomeHandlers) listPublicPages(c *echo.Context) error {
 	pages := h.pages.ListGuest(c.Request().Context(), c.QueryParam("query"))
 	pagination := readPagesPagination(c)
 	total := len(pages)
@@ -163,7 +163,7 @@ func (h *publicHomeHandlers) listPublicPages(c echo.Context) error {
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
-func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
+func (h *publicHomeHandlers) getPublicPage(c *echo.Context) error {
 	pageValue, found := h.pages.FindGuest(c.Request().Context(), c.Param("pageID"))
 	if found {
 		return c.JSON(http.StatusOK, pageDetailResponse{
@@ -180,11 +180,11 @@ func (h *publicHomeHandlers) getPublicPage(c echo.Context) error {
 	return errorJSON(c, http.StatusNotFound, "page_not_found")
 }
 
-func (h *publicHomeHandlers) listPublicDocuments(c echo.Context) error {
+func (h *publicHomeHandlers) listPublicDocuments(c *echo.Context) error {
 	return c.JSON(http.StatusOK, h.collectPublicDocuments(0))
 }
 
-func (h *publicHomeHandlers) getPublicDocument(c echo.Context) error {
+func (h *publicHomeHandlers) getPublicDocument(c *echo.Context) error {
 	documentID := c.Param("documentID")
 	documentValue, found := h.documents.FindPublic(documentID, nil)
 	if found {
@@ -280,7 +280,7 @@ func (h *publicHomeHandlers) collectPinnedPublicPages(ctx context.Context, circl
 	return pages
 }
 
-func (h *publicHomeHandlers) currentPublicHomeCircleTags(c echo.Context) []string {
+func (h *publicHomeHandlers) currentPublicHomeCircleTags(c *echo.Context) []string {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil || currentSession.CurrentCircleID == "" {
 		return nil

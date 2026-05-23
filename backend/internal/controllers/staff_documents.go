@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	backenddocument "github.com/s-union/PortalDots/backend/internal/domain/document"
 )
 
@@ -43,7 +43,7 @@ type mutateStaffDocumentRequest struct {
 	ViewableTags []string
 }
 
-func (h *staffDocumentHandlers) listStaffDocuments(c echo.Context) error {
+func (h *staffDocumentHandlers) listStaffDocuments(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadDocuments)
 	if !ok {
 		return statusError(c, status)
@@ -112,7 +112,7 @@ func staffDocumentSummaryFilterResolver(item staffDocumentSummaryResponse) func(
 	}
 }
 
-func (h *staffDocumentHandlers) getStaffDocument(c echo.Context) error {
+func (h *staffDocumentHandlers) getStaffDocument(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadDocuments)
 	if !ok {
 		return statusError(c, status)
@@ -126,7 +126,7 @@ func (h *staffDocumentHandlers) getStaffDocument(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffDocumentDetail(documentValue, staffManagedCircleResponse{}))
 }
 
-func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
+func (h *staffDocumentHandlers) createStaffDocument(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditDocuments)
 	if !ok {
 		return statusError(c, status)
@@ -171,7 +171,7 @@ func (h *staffDocumentHandlers) createStaffDocument(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapStaffDocumentSummary(created, staffManagedCircleResponse{}))
 }
 
-func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
+func (h *staffDocumentHandlers) updateStaffDocument(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canEditDocuments)
 	if !ok {
 		return statusError(c, status)
@@ -230,7 +230,7 @@ func (h *staffDocumentHandlers) updateStaffDocument(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffDocumentSummary(updated, staffManagedCircleResponse{}))
 }
 
-func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
+func (h *staffDocumentHandlers) deleteStaffDocument(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffCapability(c, canDeleteDocuments)
 	if !ok {
 		return statusError(c, status)
@@ -260,7 +260,7 @@ func (h *staffDocumentHandlers) deleteStaffDocument(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffDocumentHandlers) downloadStaffDocumentFile(c echo.Context) error {
+func (h *staffDocumentHandlers) downloadStaffDocumentFile(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canReadDocuments)
 	if !ok {
 		return statusError(c, status)
@@ -275,7 +275,7 @@ func (h *staffDocumentHandlers) downloadStaffDocumentFile(c echo.Context) error 
 	return c.Blob(http.StatusOK, documentValue.MimeType, documentValue.Content)
 }
 
-func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c echo.Context) error {
+func (h *staffDocumentHandlers) downloadStaffDocumentsCSV(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canExportDocuments)
 	if !ok {
 		return statusError(c, status)
@@ -338,7 +338,7 @@ func mapStaffDocumentDetail(document backenddocument.Document, circleValue staff
 }
 
 func bindStaffDocumentRequest(
-	c echo.Context,
+	c *echo.Context,
 	fileRequired ...bool,
 ) (mutateStaffDocumentRequest, *multipart.FileHeader, map[string][]string, bool) {
 	required := len(fileRequired) > 0 && fileRequired[0]

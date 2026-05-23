@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
 
@@ -43,7 +43,7 @@ type updateStaffUserRolesRequest struct {
 	Roles []string `json:"roles"`
 }
 
-func (h *staffUserHandlers) listStaffUsers(c echo.Context) error {
+func (h *staffUserHandlers) listStaffUsers(c *echo.Context) error {
 	_, _, status, ok := h.requireUserRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -84,7 +84,7 @@ func (h *staffUserHandlers) listStaffUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, paginateItems(response, pagination))
 }
 
-func (h *staffUserHandlers) getStaffUser(c echo.Context) error {
+func (h *staffUserHandlers) getStaffUser(c *echo.Context) error {
 	_, _, status, ok := h.requireUserRead(c)
 	if !ok {
 		return statusError(c, status)
@@ -101,7 +101,7 @@ func (h *staffUserHandlers) getStaffUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffUser(userValue))
 }
 
-func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
+func (h *staffUserHandlers) updateStaffUser(c *echo.Context) error {
 	sessionID, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -150,7 +150,7 @@ func (h *staffUserHandlers) updateStaffUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffUser(updatedUser))
 }
 
-func (h *staffUserHandlers) updateStaffUserRoles(c echo.Context) error {
+func (h *staffUserHandlers) updateStaffUserRoles(c *echo.Context) error {
 	sessionID, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -218,7 +218,7 @@ func (h *staffUserHandlers) updateStaffUserRoles(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffUser(updatedUser))
 }
 
-func (h *staffUserHandlers) verifyStaffUser(c echo.Context) error {
+func (h *staffUserHandlers) verifyStaffUser(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -259,7 +259,7 @@ func (h *staffUserHandlers) verifyStaffUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapStaffUser(updatedUser))
 }
 
-func (h *staffUserHandlers) deleteStaffUser(c echo.Context) error {
+func (h *staffUserHandlers) deleteStaffUser(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireUserEdit(c)
 	if !ok {
 		return statusError(c, status)
@@ -307,7 +307,7 @@ func (h *staffUserHandlers) deleteStaffUser(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffUserHandlers) downloadStaffUsersCSV(c echo.Context) error {
+func (h *staffUserHandlers) downloadStaffUsersCSV(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canExportUsers)
 	if !ok {
 		return statusError(c, status)

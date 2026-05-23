@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
@@ -16,11 +16,11 @@ func isPublicParticipationForm(formValue backendform.Form) bool {
 	return formValue.IsPublic && formValue.IsOpen
 }
 
-func (h *workspaceHandlers) respondWithCircleRegistration(c echo.Context, user *auth.User, circleValue circle.Circle) error {
+func (h *workspaceHandlers) respondWithCircleRegistration(c *echo.Context, user *auth.User, circleValue circle.Circle) error {
 	return h.respondWithCircleRegistrationStatus(c, user, circleValue, http.StatusOK)
 }
 
-func (h *workspaceHandlers) respondWithCircleRegistrationStatus(c echo.Context, user *auth.User, circleValue circle.Circle, status int) error {
+func (h *workspaceHandlers) respondWithCircleRegistrationStatus(c *echo.Context, user *auth.User, circleValue circle.Circle, status int) error {
 	_, pt, formValue, questions, members, leaderDisplayName, isLeader, err := h.loadCurrentCircleRegistration(c.Request().Context(), user, circleValue.ID)
 	if err != nil {
 		return internalError(c)

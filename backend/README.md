@@ -4,7 +4,7 @@ Go API server for PortalDots.
 
 ## Stack
 
-- **Framework**: Echo v4
+- **Framework**: Echo v5
 - **Database**: PostgreSQL 18 (pgx/v5)
 - **Query generation**: sqlc
 - **Hot reload**: air

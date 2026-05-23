@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/models"
 )
@@ -18,7 +18,7 @@ type loginRequest struct {
 	Remember bool   `json:"remember"`
 }
 
-func clientIP(c echo.Context) string {
+func clientIP(c *echo.Context) string {
 	if ip := c.RealIP(); ip != "" {
 		return ip
 	}
@@ -28,7 +28,7 @@ func clientIP(c echo.Context) string {
 	return c.Request().RemoteAddr
 }
 
-func (h *authHandlers) login(c echo.Context) error {
+func (h *authHandlers) login(c *echo.Context) error {
 	ip := clientIP(c)
 
 	if locked, _ := h.loginAttempts.IsLocked(ip); locked {
@@ -111,7 +111,7 @@ func (h *authHandlers) login(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *authHandlers) logout(c echo.Context) error {
+func (h *authHandlers) logout(c *echo.Context) error {
 	cookie, err := c.Cookie(h.sessionCookieName)
 	if err == nil && cookie.Value != "" {
 		_ = h.sessions.Delete(c.Request().Context(), cookie.Value)

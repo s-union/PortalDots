@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
@@ -32,7 +32,7 @@ type confirmStaffVerificationRequest struct {
 	VerifyCode string `json:"verifyCode"`
 }
 
-func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
+func (h *staffVerifyHandlers) staffStatus(c *echo.Context) error {
 	_, currentSession, status, ok := h.requireStaffUser(c)
 	if !ok {
 		return statusError(c, status)
@@ -47,7 +47,7 @@ func (h *staffVerifyHandlers) staffStatus(c echo.Context) error {
 	})
 }
 
-func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
+func (h *staffVerifyHandlers) requestStaffVerification(c *echo.Context) error {
 	sessionID, currentSession, status, ok := h.requireStaffUser(c)
 	if !ok {
 		return statusError(c, status)
@@ -82,7 +82,7 @@ func (h *staffVerifyHandlers) requestStaffVerification(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {
+func (h *staffVerifyHandlers) confirmStaffVerification(c *echo.Context) error {
 	sessionID, currentSession, status, ok := h.requireStaffUser(c)
 	if !ok {
 		return statusError(c, status)
@@ -118,7 +118,7 @@ func (h *staffVerifyHandlers) confirmStaffVerification(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *sharedDeps) requireStaffUser(c echo.Context) (string, session.Session, int, bool) {
+func (s *sharedDeps) requireStaffUser(c *echo.Context) (string, session.Session, int, bool) {
 	sessionID, currentSession, ok := s.getSession(c)
 	if !ok || currentSession.User == nil {
 		return "", session.Session{}, http.StatusUnauthorized, false
@@ -130,7 +130,7 @@ func (s *sharedDeps) requireStaffUser(c echo.Context) (string, session.Session, 
 	return sessionID, currentSession, http.StatusOK, true
 }
 
-func (s *sharedDeps) requireStaffMode(c echo.Context) (string, session.Session, int, bool) {
+func (s *sharedDeps) requireStaffMode(c *echo.Context) (string, session.Session, int, bool) {
 	sessionID, currentSession, status, ok := s.requireStaffUser(c)
 	if !ok {
 		return "", session.Session{}, status, false

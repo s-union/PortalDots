@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 )
@@ -40,7 +40,7 @@ type formAnswerUploadResponse struct {
 
 const maxAnswerUploadBytes = 5 * 1024 * 1024
 
-func (h *workspaceHandlers) resolveCurrentForm(c echo.Context) (formDetailResponse, session.Session, int, bool) {
+func (h *workspaceHandlers) resolveCurrentForm(c *echo.Context) (formDetailResponse, session.Session, int, bool) {
 	currentSession, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return formDetailResponse{}, session.Session{}, status, false
@@ -65,7 +65,7 @@ func (h *workspaceHandlers) resolveCurrentForm(c echo.Context) (formDetailRespon
 	), currentSession, http.StatusOK, true
 }
 
-func (h *workspaceHandlers) resolveWritableCurrentForm(c echo.Context) (formDetailResponse, session.Session, int, bool) {
+func (h *workspaceHandlers) resolveWritableCurrentForm(c *echo.Context) (formDetailResponse, session.Session, int, bool) {
 	currentForm, currentSession, status, ok := h.resolveCurrentForm(c)
 	if !ok {
 		return formDetailResponse{}, session.Session{}, status, false
@@ -80,7 +80,7 @@ func (h *workspaceHandlers) resolveWritableCurrentForm(c echo.Context) (formDeta
 	return currentForm, currentSession, http.StatusOK, true
 }
 
-func workspaceFormStatusError(c echo.Context, status int) error {
+func workspaceFormStatusError(c *echo.Context, status int) error {
 	if status == http.StatusUnprocessableEntity {
 		return validationError(c, map[string][]string{
 			"circle": {workspaceCircleNotApprovedMessage},

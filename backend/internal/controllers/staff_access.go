@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/staffpermission"
@@ -279,7 +279,7 @@ func canListManagedCircles(user *auth.User) bool {
 		canUseStaffExports(user)
 }
 
-func (s *sharedDeps) requireStaffCapability(c echo.Context, allowed func(*auth.User) bool) (string, session.Session, int, bool) {
+func (s *sharedDeps) requireStaffCapability(c *echo.Context, allowed func(*auth.User) bool) (string, session.Session, int, bool) {
 	sessionID, currentSession, status, ok := s.requireStaffMode(c)
 	if !ok {
 		return "", session.Session{}, status, false
@@ -311,7 +311,7 @@ func userHasAnyPermission(user *auth.User, permissions ...string) bool {
 
 func RequireCapability(allowed func(*auth.User) bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			_, currentSession, ok := middlewares.SessionFromContext(c)
 			if !ok || currentSession.User == nil {
 				return c.JSON(http.StatusUnauthorized, map[string]string{"message": "unauthenticated"})

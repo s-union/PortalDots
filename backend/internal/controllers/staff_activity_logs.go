@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
 )
 
@@ -21,7 +21,7 @@ type staffActivityLogResponse struct {
 	CreatedAt   string `json:"createdAt"`
 }
 
-func (h *staffAdminHandlers) listStaffActivityLogs(c echo.Context) error {
+func (h *staffAdminHandlers) listStaffActivityLogs(c *echo.Context) error {
 	_, _, status, ok := h.requireStaffCapability(c, canViewActivityLogs)
 	if !ok {
 		return statusError(c, status)

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -71,7 +71,7 @@ type completeRegistrationRequest struct {
 	PasswordConfirmation  string `json:"passwordConfirmation"`
 }
 
-func (h *authHandlers) startRegistration(c echo.Context) error {
+func (h *authHandlers) startRegistration(c *echo.Context) error {
 	var request startRegistrationRequest
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
@@ -136,7 +136,7 @@ func (h *authHandlers) startRegistration(c echo.Context) error {
 	})
 }
 
-func (h *authHandlers) verifyRegistration(c echo.Context) error {
+func (h *authHandlers) verifyRegistration(c *echo.Context) error {
 	var request verifyRegistrationRequest
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
@@ -173,7 +173,7 @@ func (h *authHandlers) verifyRegistration(c echo.Context) error {
 	})
 }
 
-func (h *authHandlers) completeRegistration(c echo.Context) error {
+func (h *authHandlers) completeRegistration(c *echo.Context) error {
 	var request completeRegistrationRequest
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
@@ -326,7 +326,7 @@ func (h *authHandlers) completeRegistration(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *authHandlers) getAuthVerification(c echo.Context) error {
+func (h *authHandlers) getAuthVerification(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -343,7 +343,7 @@ func (h *authHandlers) getAuthVerification(c echo.Context) error {
 	return c.JSON(http.StatusOK, buildAuthVerificationStatus(managedUser, deriveUnivemail(managedUser, h.portalUnivemailDomainPart)))
 }
 
-func (h *authHandlers) requestAuthVerification(c echo.Context) error {
+func (h *authHandlers) requestAuthVerification(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -395,7 +395,7 @@ func (h *authHandlers) requestAuthVerification(c echo.Context) error {
 	})
 }
 
-func (h *authHandlers) verifyAuthVerification(c echo.Context) error {
+func (h *authHandlers) verifyAuthVerification(c *echo.Context) error {
 	var request authVerificationLinkVerifyRequest
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
@@ -490,7 +490,7 @@ func (h *authHandlers) sendParticipantVerificationLink(
 	return h.enqueueParticipantVerifyLinkMail(ctx, userID, verificationType, recipientEmail, verifyURL)
 }
 
-func (h *authHandlers) issueRegisteredUserSession(c echo.Context, managedUser useradmin.User) (string, error) {
+func (h *authHandlers) issueRegisteredUserSession(c *echo.Context, managedUser useradmin.User) (string, error) {
 	sessionUser := &auth.User{
 		ID:          managedUser.ID,
 		DisplayName: managedUser.DisplayName,

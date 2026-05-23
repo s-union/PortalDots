@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
 
-func (h *workspaceHandlers) listCircles(c echo.Context) error {
+func (h *workspaceHandlers) listCircles(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -46,7 +46,7 @@ func (h *workspaceHandlers) listCircles(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *workspaceHandlers) listParticipationTypes(c echo.Context) error {
+func (h *workspaceHandlers) listParticipationTypes(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -72,7 +72,7 @@ func (h *workspaceHandlers) listParticipationTypes(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *workspaceHandlers) getParticipationTypeRegistrationForm(c echo.Context) error {
+func (h *workspaceHandlers) getParticipationTypeRegistrationForm(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -122,7 +122,7 @@ func (h *workspaceHandlers) getParticipationTypeRegistrationForm(c echo.Context)
 	})
 }
 
-func (h *workspaceHandlers) setCurrentCircle(c echo.Context) error {
+func (h *workspaceHandlers) setCurrentCircle(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -155,7 +155,7 @@ func (h *workspaceHandlers) setCurrentCircle(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *workspaceHandlers) createCircle(c echo.Context) error {
+func (h *workspaceHandlers) createCircle(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -258,7 +258,7 @@ func (h *workspaceHandlers) createCircle(c echo.Context) error {
 	return h.respondWithCircleRegistrationStatus(c, currentSession.User, created, http.StatusCreated)
 }
 
-func (h *workspaceHandlers) getCurrentCircleDetail(c echo.Context) error {
+func (h *workspaceHandlers) getCurrentCircleDetail(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -288,7 +288,7 @@ type authCurrentCircleRequest struct {
 	Password string `json:"password"`
 }
 
-func (h *workspaceHandlers) authCurrentCircle(c echo.Context) error {
+func (h *workspaceHandlers) authCurrentCircle(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -334,7 +334,7 @@ func (h *workspaceHandlers) authCurrentCircle(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
+func (h *workspaceHandlers) updateCurrentCircle(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -421,7 +421,7 @@ func (h *workspaceHandlers) updateCurrentCircle(c echo.Context) error {
 	return c.JSON(http.StatusOK, h.buildCircleRegistrationResponse(c.Request().Context(), updated, pt, formValue, questions, members, leaderDisplayName, isLeader))
 }
 
-func (h *workspaceHandlers) deleteCurrentCircle(c echo.Context) error {
+func (h *workspaceHandlers) deleteCurrentCircle(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -445,7 +445,7 @@ func (h *workspaceHandlers) deleteCurrentCircle(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
+func (h *workspaceHandlers) submitCurrentCircle(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -558,7 +558,7 @@ func (h *workspaceHandlers) submitCurrentCircle(c echo.Context) error {
 	return h.respondWithCircleRegistration(c, currentSession.User, submitted)
 }
 
-func (h *workspaceHandlers) listCurrentCircleMembers(c echo.Context) error {
+func (h *workspaceHandlers) listCurrentCircleMembers(c *echo.Context) error {
 	_, currentCircle, status, ok := h.currentWorkspaceSessionAndCircle(c)
 	if !ok {
 		return statusError(c, status)
@@ -585,7 +585,7 @@ type addCurrentCircleMemberRequest struct {
 	UserID string `json:"userId"`
 }
 
-func (h *workspaceHandlers) addCurrentCircleMember(c echo.Context) error {
+func (h *workspaceHandlers) addCurrentCircleMember(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -624,7 +624,7 @@ func (h *workspaceHandlers) addCurrentCircleMember(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *workspaceHandlers) removeCurrentCircleMember(c echo.Context) error {
+func (h *workspaceHandlers) removeCurrentCircleMember(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -647,7 +647,7 @@ func (h *workspaceHandlers) removeCurrentCircleMember(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *workspaceHandlers) regenerateInvitationToken(c echo.Context) error {
+func (h *workspaceHandlers) regenerateInvitationToken(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
@@ -673,7 +673,7 @@ func (h *workspaceHandlers) regenerateInvitationToken(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapCircleDetail(updated))
 }
 
-func (h *workspaceHandlers) getCircleByInvitationToken(c echo.Context) error {
+func (h *workspaceHandlers) getCircleByInvitationToken(c *echo.Context) error {
 	token := c.Param("token")
 	if token == "" {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
@@ -703,7 +703,7 @@ func (h *workspaceHandlers) getCircleByInvitationToken(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapCircleDetail(joinTarget))
 }
 
-func (h *workspaceHandlers) joinCircleByToken(c echo.Context) error {
+func (h *workspaceHandlers) joinCircleByToken(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")

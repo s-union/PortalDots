@@ -1,13 +1,13 @@
 package controllers
 
 import (
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/models"
 )
 
 // readPagination extracts pagination parameters from a request query string.
 // This is a convenience wrapper around models.ReadPagination.
-func readPagination(c echo.Context) models.PaginationParams {
+func readPagination(c *echo.Context) models.PaginationParams {
 	return models.ReadPagination(c)
 }
 
