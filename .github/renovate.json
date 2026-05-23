@@ -74,6 +74,11 @@
       "groupName": "OpenAPI Client Packages"
     },
     {
+      "description": "Keep zod aligned across workspaces (frontend + workers share a lockfile)",
+      "matchPackageNames": ["zod"],
+      "groupName": "zod"
+    },
+    {
       "description": "Group non-major JavaScript Runtimes / Package Managers in mise",
       "matchManagers": ["mise"],
       "matchPackageNames": ["node", "pnpm"],
