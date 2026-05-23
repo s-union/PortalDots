@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -40,7 +40,7 @@ type sessionBootstrapUserInfo struct {
 	PhoneNumber                 string `json:"phoneNumber"`
 }
 
-func (h *authHandlers) sessionBootstrap(c echo.Context) error {
+func (h *authHandlers) sessionBootstrap(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return c.JSON(http.StatusOK, sessionBootstrapResponse{

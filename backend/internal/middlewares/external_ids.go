@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
@@ -65,7 +65,7 @@ var externalIDMapKeyParents = map[string]struct{}{
 
 func TransformExternalIDs() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if err := decodeExternalIDParams(c); err != nil {
 				return invalidRequest(c)
 			}
@@ -73,12 +73,16 @@ func TransformExternalIDs() echo.MiddlewareFunc {
 				return invalidRequest(c)
 			}
 
-			originalWriter := c.Response().Writer
+			response, err := echo.UnwrapResponse(c.Response())
+			if err != nil {
+				return err
+			}
+			originalWriter := response.ResponseWriter
 			transformingWriter := newExternalIDResponseWriter(originalWriter)
-			c.Response().Writer = transformingWriter
+			response.ResponseWriter = transformingWriter
 
-			err := next(c)
-			c.Response().Writer = originalWriter
+			err = next(c)
+			response.ResponseWriter = originalWriter
 			if err != nil {
 				return err
 			}
@@ -258,17 +262,16 @@ func (w *externalIDResponseWriter) shouldBufferJSON() bool {
 	return isJSONContentType(w.header.Get(echo.HeaderContentType))
 }
 
-func decodeExternalIDParams(c echo.Context) error {
-	paramNames := c.ParamNames()
-	if len(paramNames) == 0 {
+func decodeExternalIDParams(c *echo.Context) error {
+	pathValues := c.PathValues()
+	if len(pathValues) == 0 {
 		return nil
 	}
 
-	paramValues := make([]string, len(paramNames))
-	for index, name := range paramNames {
-		value := c.Param(name)
+	for index, pathValue := range pathValues {
+		name := pathValue.Name
+		value := pathValue.Value
 		if _, ok := uuidParamNames[name]; !ok || value == "" {
-			paramValues[index] = value
 			continue
 		}
 
@@ -276,14 +279,14 @@ func decodeExternalIDParams(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		paramValues[index] = decoded
+		pathValues[index].Value = decoded
 	}
 
-	c.SetParamValues(paramValues...)
+	c.SetPathValues(pathValues)
 	return nil
 }
 
-func decodeExternalIDRequest(c echo.Context) error {
+func decodeExternalIDRequest(c *echo.Context) error {
 	contentType, _, _ := mime.ParseMediaType(c.Request().Header.Get(echo.HeaderContentType))
 
 	switch contentType {
@@ -300,7 +303,7 @@ func decodeExternalIDRequest(c echo.Context) error {
 
 const maxExternalIDBodyBytes = 1 << 20
 
-func decodeExternalIDJSONBody(c echo.Context) error {
+func decodeExternalIDJSONBody(c *echo.Context) error {
 	if c.Request().Body == nil {
 		return nil
 	}
@@ -338,7 +341,7 @@ func decodeExternalIDJSONBody(c echo.Context) error {
 	return nil
 }
 
-func decodeExternalIDForm(c echo.Context, multipart bool) error {
+func decodeExternalIDForm(c *echo.Context, multipart bool) error {
 	var err error
 	if multipart {
 		err = c.Request().ParseMultipartForm(32 << 20)
@@ -548,7 +551,7 @@ func transformResponseJSON(parentKey string, value any) (any, error) {
 	}
 }
 
-func invalidRequest(c echo.Context) error {
+func invalidRequest(c *echo.Context) error {
 	return c.JSON(http.StatusBadRequest, map[string]string{"message": "invalid_request"})
 }
 

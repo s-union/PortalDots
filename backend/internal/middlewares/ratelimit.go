@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/time/rate"
 )
 
@@ -78,7 +78,7 @@ func RateLimitMiddleware(cfg RateLimitConfig) echo.MiddlewareFunc {
 		}
 	}()
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			ip := c.RealIP()
 			if !limiter.allow(ip) {
 				return c.JSON(http.StatusTooManyRequests, map[string]string{

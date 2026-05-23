@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
@@ -59,7 +59,7 @@ type updatedProfileResponse struct {
 	DisplayName string `json:"displayName"`
 }
 
-func (h *authHandlers) listContactHistory(c echo.Context) error {
+func (h *authHandlers) listContactHistory(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)
@@ -107,7 +107,7 @@ func extractContactMetadata(body string) (string, string) {
 	return categoryID, categoryName
 }
 
-func (h *authHandlers) listContactCategories(c echo.Context) error {
+func (h *authHandlers) listContactCategories(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)
@@ -129,7 +129,7 @@ func (h *authHandlers) listContactCategories(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *authHandlers) submitContact(c echo.Context) error {
+func (h *authHandlers) submitContact(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)
@@ -346,7 +346,7 @@ func selectedCircleName(selectedCircle *circleInfo) string {
 	return selectedCircle.Name
 }
 
-func (h *authHandlers) updateProfile(c echo.Context) error {
+func (h *authHandlers) updateProfile(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)
@@ -512,7 +512,7 @@ func (h *authHandlers) updateProfile(c echo.Context) error {
 	return c.JSON(http.StatusOK, buildSessionBootstrapUserInfo(updatedUser, h.portalUnivemailDomainPart))
 }
 
-func (h *authHandlers) updatePassword(c echo.Context) error {
+func (h *authHandlers) updatePassword(c *echo.Context) error {
 	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)
@@ -588,7 +588,7 @@ func (h *authHandlers) updatePassword(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *authHandlers) deleteAccount(c echo.Context) error {
+func (h *authHandlers) deleteAccount(c *echo.Context) error {
 	_, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"

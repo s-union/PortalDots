@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
@@ -20,11 +20,11 @@ var manageableRoles = []string{
 	"admin",
 }
 
-func (h *staffUserHandlers) requireUserRead(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffUserHandlers) requireUserRead(c *echo.Context) (string, session.Session, int, bool) {
 	return h.requireStaffCapability(c, canReadUsers)
 }
 
-func (h *staffUserHandlers) requireUserEdit(c echo.Context) (string, session.Session, int, bool) {
+func (h *staffUserHandlers) requireUserEdit(c *echo.Context) (string, session.Session, int, bool) {
 	return h.requireStaffCapability(c, canEditUsers)
 }
 
@@ -37,7 +37,7 @@ func rolesGrantUserManagement(roles []string) bool {
 	return false
 }
 
-func bindAndValidateStaffUser(c echo.Context) (updateStaffUserRequest, map[string][]string, bool) {
+func bindAndValidateStaffUser(c *echo.Context) (updateStaffUserRequest, map[string][]string, bool) {
 	var request updateStaffUserRequest
 	if err := c.Bind(&request); err != nil {
 		return updateStaffUserRequest{}, map[string][]string{

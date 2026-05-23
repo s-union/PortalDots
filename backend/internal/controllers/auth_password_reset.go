@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 )
@@ -34,7 +34,7 @@ type passwordResetCompleteRequest struct {
 	PasswordConfirmation string `json:"passwordConfirmation"`
 }
 
-func (h *authHandlers) startPasswordReset(c echo.Context) error {
+func (h *authHandlers) startPasswordReset(c *echo.Context) error {
 	var request passwordResetStartRequest
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
@@ -74,7 +74,7 @@ func (h *authHandlers) startPasswordReset(c echo.Context) error {
 	})
 }
 
-func (h *authHandlers) verifyPasswordReset(c echo.Context) error {
+func (h *authHandlers) verifyPasswordReset(c *echo.Context) error {
 	var request passwordResetVerifyRequest
 	if err := c.Bind(&request); err != nil {
 		return errorJSON(c, http.StatusBadRequest, "invalid_request")
@@ -105,7 +105,7 @@ func (h *authHandlers) verifyPasswordReset(c echo.Context) error {
 	})
 }
 
-func (h *authHandlers) completePasswordReset(c echo.Context) error {
+func (h *authHandlers) completePasswordReset(c *echo.Context) error {
 	if h.passwordResetter == nil {
 		return internalError(c)
 	}

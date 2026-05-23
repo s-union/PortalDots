@@ -3,7 +3,7 @@ package models
 import (
 	"math"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const (
@@ -27,7 +27,7 @@ type PaginatedResponse[T any] struct {
 }
 
 // ReadPagination extracts pagination parameters from a request query string.
-func ReadPagination(c echo.Context) PaginationParams {
+func ReadPagination(c *echo.Context) PaginationParams {
 	page := parsePositiveInt(c.QueryParam("page"), DefaultPage)
 	pageSize := parsePositiveInt(c.QueryParam("pageSize"), DefaultPageSize)
 	if pageSize > MaxPageSize {

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
@@ -18,7 +18,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
-func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
+func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c *echo.Context) error {
 	_, _, formValue, _, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -77,7 +77,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswersCSV(c echo.Context) error {
 	return csvResponse(c, filename, csvBytes)
 }
 
-func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c echo.Context) error {
+func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c *echo.Context) error {
 	_, _, formValue, _, questions, status, ok := h.staffFormContext(c, canExportFormAnswers)
 	if !ok {
 		return statusError(c, status)

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
-func (h *staffFormHandlers) listStaffFormAnswers(c echo.Context) error {
+func (h *staffFormHandlers) listStaffFormAnswers(c *echo.Context) error {
 	_, _, formValue, currentCircle, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -87,7 +87,7 @@ func staffFormAnswerFilterResolver(item staffManagedFormAnswerSummaryResponse) f
 	}
 }
 
-func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
+func (h *staffFormHandlers) getStaffFormAnswer(c *echo.Context) error {
 	_, _, formValue, currentFormCircle, questions, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -117,7 +117,7 @@ func (h *staffFormHandlers) getStaffFormAnswer(c echo.Context) error {
 	})
 }
 
-func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
+func (h *staffFormHandlers) createStaffFormAnswer(c *echo.Context) error {
 	_, currentSession, formValue, _, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -188,7 +188,7 @@ func (h *staffFormHandlers) createStaffFormAnswer(c echo.Context) error {
 	})
 }
 
-func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
+func (h *staffFormHandlers) updateStaffFormAnswer(c *echo.Context) error {
 	_, currentSession, formValue, _, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -239,7 +239,7 @@ func (h *staffFormHandlers) updateStaffFormAnswer(c echo.Context) error {
 	return c.JSON(http.StatusOK, buildStaffFormAnswerResponse(updated, uploads))
 }
 
-func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
+func (h *staffFormHandlers) deleteStaffFormAnswer(c *echo.Context) error {
 	_, currentSession, formValue, _, _, status, ok := h.staffFormContext(c, canDeleteFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -268,7 +268,7 @@ func (h *staffFormHandlers) deleteStaffFormAnswer(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
+func (h *staffFormHandlers) uploadStaffFormAnswerFile(c *echo.Context) error {
 	_, currentSession, formValue, _, questions, status, ok := h.staffFormContext(c, canEditFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -353,7 +353,7 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c echo.Context) error {
 	return c.JSON(http.StatusCreated, mapFormAnswerUpload(upload))
 }
 
-func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c echo.Context) error {
+func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c *echo.Context) error {
 	_, _, formValue, _, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)
@@ -373,7 +373,7 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUpload(c echo.Context) error 
 	return c.Blob(http.StatusOK, upload.MimeType, upload.Content)
 }
 
-func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c echo.Context) error {
+func (h *staffFormHandlers) listStaffFormNotAnsweredCircles(c *echo.Context) error {
 	_, _, formValue, _, _, status, ok := h.staffFormContext(c, canReadFormAnswers)
 	if !ok {
 		return statusError(c, status)

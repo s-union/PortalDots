@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
@@ -37,7 +37,7 @@ type sharedDeps struct {
 	sessionCookieTTL    time.Duration
 }
 
-func (s *sharedDeps) getSession(c echo.Context) (string, session.Session, bool) {
+func (s *sharedDeps) getSession(c *echo.Context) (string, session.Session, bool) {
 	if sessionID, currentSession, ok := middlewares.SessionFromContext(c); ok {
 		return sessionID, currentSession, true
 	}
@@ -247,7 +247,6 @@ func NewServerWithDependencies(
 	}
 
 	e := echo.New()
-	e.HideBanner = true
 	allowedOrigin := cfg.AppURL
 	if origin, err := cfg.AppOrigin(); err == nil {
 		allowedOrigin = origin
@@ -482,7 +481,7 @@ func NewServerWithDependencies(
 		},
 	}
 
-	e.GET("/healthz", func(c echo.Context) error {
+	e.GET("/healthz", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 
