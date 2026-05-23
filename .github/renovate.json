@@ -5,6 +5,7 @@
   ],
   "timezone": "Asia/Tokyo",
   "minimumReleaseAge": "3 days",
+  "mode": "update",
   "dependencyDashboardApproval": false,
   "packageRules": [
     {
