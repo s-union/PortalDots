@@ -1,5 +1,5 @@
 [tools]
-node = "24.15.0"
+node = "24.16.0"
 go = "1.26.3"
 sqlc = "1.31.1"
 staticcheck = "2026.1"
