@@ -24,7 +24,7 @@ This means:
 
 ### `emailSender` (Go backend)
 
-`internal/mailworker/` contains the `emailSender` interface and its implementations. Handlers receive it via dependency injection and call `Enqueue(ctx, job)`.
+The Go-side email enqueueing implementation lives under `backend/internal/shared/cloudflareemail/` and is wired into the relevant handlers/services via dependency injection. Callers use the injected `emailSender` and call `Enqueue(ctx, job)`.
 
 In production (`PORTAL_EMAIL_PRODUCER_URL` set), `Enqueue` does a `POST` to the email Worker. In demo mode or when the producer URL is not configured, it is a no-op (the job is dropped silently).
 
