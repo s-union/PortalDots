@@ -34,7 +34,7 @@ A single Cloudflare Worker that acts as both producer and consumer:
 
 **Producer (`fetch` handler):**
 1. Receives a `POST /enqueue` from the Go backend.
-2. Validates the `Authorization` header against `AUTH_TOKEN`.
+2. Validates the `Authorization` header in the form `Bearer ${AUTH_TOKEN}`.
 3. Puts the job onto the Cloudflare Queue.
 
 It is stateless — it only bridges the Go backend to the queue. The token prevents unauthorized parties from injecting mail jobs.
