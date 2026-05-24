@@ -24,25 +24,10 @@ run = "pnpm run ci:check"
 description = "Run frontend formatter"
 run = "pnpm run format"
 
-[tasks."email:producer:dev"]
-description = "Start the email producer Worker dev server"
-dir = "packages/email-producer"
-run = "pnpm run dev"
-
-[tasks."email:workers:dev"]
-description = "Start email producer and consumer Workers in one local Queue dev session"
-dir = "packages/email-producer"
+[tasks."email:dev"]
+description = "Start the email Worker dev server (HTTP + queue consumer)"
+dir = "packages/email"
 run = "pnpm run dev:local-stack"
-
-[tasks."email:consumer:dev:high"]
-description = "Start the email consumer Worker (high priority) dev server"
-dir = "packages/email-consumer"
-run = "pnpm run dev:high"
-
-[tasks."email:consumer:dev:normal"]
-description = "Start the email consumer Worker (normal priority) dev server"
-dir = "packages/email-consumer"
-run = "pnpm run dev:normal"
 
 [tasks.dev]
 description = "Reset local db, then start backend and frontend with mock email delivery"
@@ -120,24 +105,14 @@ description = "Run e2e integration tests against the real dev:worker stack"
 dir = "frontend"
 run = "unset NO_COLOR; pnpm exec playwright test --config=playwright.integration.config.ts --workers=1"
 
-[tasks."email:producer:check"]
-description = "Run static checks for the email producer Worker"
-dir = "packages/email-producer"
+[tasks."email:check"]
+description = "Run static checks for the email Worker"
+dir = "packages/email"
 run = "pnpm run ci:check"
 
-[tasks."email:producer:test"]
-description = "Run tests for the email producer Worker"
-dir = "packages/email-producer"
-run = "pnpm run test"
-
-[tasks."email:consumer:check"]
-description = "Run static checks for the email consumer Worker"
-dir = "packages/email-consumer"
-run = "pnpm run ci:check"
-
-[tasks."email:consumer:test"]
-description = "Run tests for the email consumer Worker"
-dir = "packages/email-consumer"
+[tasks."email:test"]
+description = "Run tests for the email Worker"
+dir = "packages/email"
 run = "pnpm run test"
 
 [tasks.format]

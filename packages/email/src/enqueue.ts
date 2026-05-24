@@ -17,7 +17,7 @@ export interface EmailJob {
   variables: Record<string, string>
 }
 
-type Env = {
+export type Env = {
   HIGH_QUEUE: Queue<EmailJob>
   NORMAL_QUEUE: Queue<EmailJob>
   DB: D1Database
@@ -154,7 +154,7 @@ const enqueueRequestSchema = z.object({
   variables: z.record(z.string(), z.string()).default({})
 })
 
-const app = new Hono<{ Bindings: Env }>()
+export const app = new Hono<{ Bindings: Env }>()
 
 app.post('/enqueue', async (c) => {
   const authError = checkAuth(c)
@@ -242,5 +242,3 @@ app.post('/enqueue', async (c) => {
     status: 'queued'
   })
 })
-
-export default app

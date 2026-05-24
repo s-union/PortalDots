@@ -12,7 +12,7 @@ Browser
                     └── PostgreSQL
 ```
 
-Email delivery is separated from the request path entirely and runs through a Cloudflare Workers Queue pipeline.
+Email delivery is separated from the request path entirely. The Go API enqueues outbound messages through the `packages/email` Cloudflare Worker, and the same Worker consumes Cloudflare Queues to deliver mail asynchronously.
 
 ---
 
@@ -21,7 +21,7 @@ Email delivery is separated from the request path entirely and runs through a Cl
 The two halves of the application have fundamentally different operational profiles:
 
 - **Frontend**: changes frequently, needs hot-reload in dev, benefits from CDN edge caching in production.
-- **Backend**: owns transactions, authentication, file storage, and email delivery. Stability matters more than iteration speed.
+- **Backend**: owns transactions, authentication, file storage, and email enqueueing. Stability matters more than iteration speed.
 
 Keeping them as separate processes lets each evolve independently and be deployed to appropriate infrastructure (static host + cheap VPS or container).
 

@@ -18,7 +18,7 @@ Developed by s-union, department of information systems. Free and open source un
 | Backend | Go · Echo · PostgreSQL 18 |
 | DB access | sqlc · pgx/v5 |
 | API contract | OpenAPI 3.x at `backend/api/openapi.yaml` |
-| Email delivery | Cloudflare Workers Queue (email-producer / email-consumer) |
+| Email delivery | Cloudflare Workers Queue (email Worker) |
 | Task runner | [mise](https://mise.jdx.dev/) |
 | Package manager | pnpm (workspace) |
 
@@ -30,8 +30,7 @@ PortalDots/
 ├── frontend/             # Vue 3 SPA
 ├── packages/
 │   ├── api-client/       # openapi-typescript generated client
-│   ├── email-producer/   # Cloudflare Worker: enqueue outbound mail
-│   └── email-consumer/   # Cloudflare Worker: deliver queued mail
+│   └── email/            # Cloudflare Worker: enqueue and deliver outbound mail
 └── mise.toml             # task runner config
 ```
 

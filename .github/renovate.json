@@ -8,7 +8,10 @@
   "mode": "update",
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
+  "dependencyDashboard": true,
   "dependencyDashboardApproval": false,
+  "rangeStrategy": "pin",
+  "pinDigests": true,
   "packageRules": [
     {
       "description": "Automerge all non-major updates",
@@ -39,6 +42,12 @@
       "groupName": "Frontend Development Tools"
     },
     {
+      "description": "Keep Node.js type definitions aligned with the mise Node.js runtime",
+      "matchPackageNames": ["@types/node"],
+      "allowedVersions": "24.x",
+      "groupName": "Node.js Runtime"
+    },
+    {
       "description": "Group non-major Storybook packages",
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Storybook Ecosystem",
@@ -60,10 +69,16 @@
       "groupName": "Markdown Processing"
     },
     {
-      "description": "Group non-major Cloudflare and Hono packages",
-      "matchPackageNames": ["wrangler", "hono", "hono-email", "/^@cloudflare//"],
+      "description": "Group non-major Cloudflare Worker runtime packages",
+      "matchPackageNames": ["wrangler", "@cloudflare/workers-types"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Cloudflare & Hono Ecosystem"
+      "groupName": "Cloudflare Worker Runtime"
+    },
+    {
+      "description": "Group non-major Hono packages",
+      "matchPackageNames": ["hono", "hono-email"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Hono Ecosystem"
     },
     {
       "description": "Group non-major OpenAPI client packages",
@@ -81,7 +96,7 @@
       "matchManagers": ["mise"],
       "matchPackageNames": ["node", "pnpm"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "JS Runtimes & Package Managers (Mise)"
+      "groupName": "Node.js Runtime"
     },
     {
       "description": "Group non-major Go direct dependencies",

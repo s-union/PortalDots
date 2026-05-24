@@ -5,6 +5,7 @@ set -euo pipefail
 
 mise install
 [ -f .env ] || cp .env.example .env
+[ -f packages/email/.dev.vars ] || cp packages/email/.dev.vars.example packages/email/.dev.vars
 mise run frontend:install
 prek install
 mise run generate

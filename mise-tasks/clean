@@ -4,7 +4,6 @@
 rm -rf generated/ && \
 rm -rf frontend/node_modules/ && \
 rm -rf packages/api-client/node_modules/ && \
-rm -rf packages/email-producer/node_modules/ && \
-rm -rf packages/email-consumer/node_modules/ && \
+rm -rf packages/email/node_modules/ && \
 rm -rf backend/vendor/ && \
 go clean -cache -testcache -modcache 2>/dev/null || true

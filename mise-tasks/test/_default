@@ -2,5 +2,4 @@
 #MISE description="Run all tests"
 
 mise run backend:test && \
-mise run email:producer:test && \
-mise run email:consumer:test
+mise run email:test
