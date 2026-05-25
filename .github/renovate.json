@@ -92,9 +92,15 @@
       "groupName": "zod"
     },
     {
-      "description": "Group non-major JavaScript Runtimes / Package Managers in mise",
+      "description": "Group pnpm version updates across mise and packageManager",
+      "matchManagers": ["mise", "npm"],
+      "matchPackageNames": ["pnpm"],
+      "groupName": "pnpm"
+    },
+    {
+      "description": "Group non-major JavaScript Runtime (Node.js) in mise",
       "matchManagers": ["mise"],
-      "matchPackageNames": ["node", "pnpm"],
+      "matchPackageNames": ["node"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Node.js Runtime"
     },
