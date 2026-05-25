@@ -5,7 +5,7 @@ sqlc = "1.31.1"
 staticcheck = "2026.1"
 air = "1.65.3"
 prek = "0.4.1"
-pnpm = "11.2.1"
+pnpm = "11.2.2"
 
 [tasks."frontend:install"]
 description = "Install dependencies for the new frontend workspace"
