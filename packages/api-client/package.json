@@ -21,7 +21,7 @@
     "openapi-fetch": "0.17.0"
   },
   "devDependencies": {
-    "@tanstack/vue-query": "5.100.13",
+    "@tanstack/vue-query": "5.100.14",
     "@typescript/native-preview": "7.0.0-dev.20260314.1",
     "openapi-typescript": "7.13.0",
     "typescript": "6.0.3",
@@ -29,7 +29,7 @@
     "vue": "3.5.34"
   },
   "peerDependencies": {
-    "@tanstack/vue-query": "5.100.13",
+    "@tanstack/vue-query": "5.100.14",
     "vue": "3.5.34"
   }
 }
