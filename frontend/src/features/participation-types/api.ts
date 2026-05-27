@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import type { z } from 'zod'
+import type * as z from 'zod'
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import { parseArrayWithSchema, participationTypeSchema } from '@/lib/api/schema'
 

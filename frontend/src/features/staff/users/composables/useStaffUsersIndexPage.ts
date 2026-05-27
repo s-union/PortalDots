@@ -6,7 +6,7 @@ import {
   type StaffFilterField,
   type StaffFilterQuery
 } from '@/lib/staffFilterSchema'
-import { z } from 'zod'
+import * as z from 'zod'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {

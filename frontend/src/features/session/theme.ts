@@ -1,5 +1,5 @@
 import { readonly, shallowRef } from 'vue'
-import { z } from 'zod'
+import * as z from 'zod'
 
 export const uiThemeValues = ['system', 'light', 'dark'] as const
 const uiThemeSchema = z.enum(uiThemeValues)

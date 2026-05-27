@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import StaffContactCategoryEditor from './StaffContactCategoryEditor.vue'
+import { toCategoryId } from '@/lib/api/schema'
 
 const meta = {
   title: 'UI/Staff/Contact Categories/StaffContactCategoryEditor',
@@ -31,7 +32,7 @@ export const CreateNew: Story = {
 export const EditExisting: Story = {
   args: {
     category: {
-      id: 'cat-1',
+      id: toCategoryId('cat-1'),
       name: '一般問い合わせ',
       email: 'contact@example.com'
     }

@@ -4,13 +4,9 @@ import { parseWithSchema, parseArrayWithSchema, staffTagSchema } from '@/lib/api
 import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useStaffMasterMutation } from './shared'
+import * as z from 'zod'
 
-export interface StaffTag {
-  id: string
-  name: string
-  createdAt: string
-  updatedAt: string
-}
+export type StaffTag = z.infer<typeof staffTagSchema>
 
 export async function fetchStaffTags(params?: StaffListQueryParamsInput) {
   return $api.queryData(

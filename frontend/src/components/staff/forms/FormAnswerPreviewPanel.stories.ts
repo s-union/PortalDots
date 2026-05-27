@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import FormAnswerPreviewPanel from './FormAnswerPreviewPanel.vue'
 import type { StaffFormDetail } from '@/features/staff/forms/api'
+import { toCircleId, toFormId, toQuestionId, toAnswerId, toUploadId } from '@/lib/api/schema'
 
 const meta = {
   title: 'UI/Staff/Forms/FormAnswerPreviewPanel',
@@ -16,7 +17,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const baseQuestion = {
-  id: 'q-1',
+  id: toQuestionId('q-1'),
   name: '企画名',
   description: '',
   type: 'text' as const,
@@ -32,8 +33,8 @@ const baseQuestion = {
 }
 
 const formBase: StaffFormDetail = {
-  circle: { id: '', name: '' },
-  id: 'form-1',
+  circle: { id: toCircleId(''), name: '' },
+  id: toFormId('form-1'),
   name: 'テスト申請フォーム',
   description: 'テスト用の申請フォームです。',
   openAt: '2026-01-01T00:00:00Z',
@@ -48,8 +49,8 @@ const formBase: StaffFormDetail = {
   isParticipationForm: false,
   questions: [
     baseQuestion,
-    { ...baseQuestion, id: 'q-2', name: '活動内容', type: 'textarea', isRequired: false, priority: 2 },
-    { ...baseQuestion, id: 'q-3', name: '参加人数', type: 'number', isRequired: true, priority: 3 }
+    { ...baseQuestion, id: toQuestionId('q-2'), name: '活動内容', type: 'textarea', isRequired: false, priority: 2 },
+    { ...baseQuestion, id: toQuestionId('q-3'), name: '参加人数', type: 'number', isRequired: true, priority: 3 }
   ],
   answer: null
 }
@@ -67,7 +68,7 @@ export const WithAnswer: Story = {
     form: {
       ...formBase,
       answer: {
-        id: 'answer-1',
+        id: toAnswerId('answer-1'),
         body: '',
         updatedAt: '2026-01-15T10:00:00Z',
         details: {
@@ -90,7 +91,7 @@ export const WithUploads: Story = {
         ...formBase.questions,
         {
           ...baseQuestion,
-          id: 'q-upload',
+          id: toQuestionId('q-upload'),
           name: '活動写真',
           type: 'upload' as const,
           isRequired: false,
@@ -99,14 +100,14 @@ export const WithUploads: Story = {
         }
       ],
       answer: {
-        id: 'answer-1',
+        id: toAnswerId('answer-1'),
         body: '',
         updatedAt: '2026-01-15T10:00:00Z',
         details: { 'q-1': ['テストサークル'] },
         uploads: [
           {
-            id: 'upload-1',
-            questionId: 'q-upload',
+            id: toUploadId('upload-1'),
+            questionId: toQuestionId('q-upload'),
             filename: 'activity.jpg',
             mimeType: 'image/jpeg',
             sizeBytes: 204800,

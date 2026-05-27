@@ -18,6 +18,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import { canAccessCircleMail } from '@/features/staff/access/capabilities'
+import type { ParticipationTypeId, PlaceId } from '@/lib/api/schema'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   extractStaffCircleMemberValidationMessage,
@@ -50,11 +51,11 @@ const form = ref({
   nameYomi: '',
   groupName: '',
   groupNameYomi: '',
-  participationTypeId: '',
+  participationTypeId: '' as ParticipationTypeId,
   notes: '',
   status: 'pending' as 'pending' | 'approved' | 'rejected',
   statusReason: '',
-  placeIds: [] as string[]
+  placeIds: [] as PlaceId[]
 })
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -77,6 +78,20 @@ const circleTabs = computed(() =>
   })
 )
 
+function resolveCirclePlaceIds(
+  circlePlaces: readonly string[],
+  places?: readonly { id: PlaceId; name: string }[]
+): PlaceId[] {
+  if (!places) {
+    return []
+  }
+
+  const selectedPlaceValues = new Set(circlePlaces)
+  return places
+    .filter((place) => selectedPlaceValues.has(place.id) || selectedPlaceValues.has(place.name))
+    .map((place) => place.id)
+}
+
 watch(
   () => [circleQuery.data.value, placesQuery.data.value] as const,
   ([circle, places]) => {
@@ -92,7 +107,7 @@ watch(
       notes: circle.notes,
       status: circle.status as 'pending' | 'approved' | 'rejected',
       statusReason: circle.statusReason,
-      placeIds: places ? places.filter((p) => circle.places.includes(p.name)).map((p) => p.id) : []
+      placeIds: resolveCirclePlaceIds(circle.places, places)
     }
   },
   { immediate: true }

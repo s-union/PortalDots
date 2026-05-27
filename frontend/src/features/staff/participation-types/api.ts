@@ -1,6 +1,6 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import type { z } from 'zod'
+import type * as z from 'zod'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import {
   parseWithSchema,

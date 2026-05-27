@@ -29,6 +29,7 @@ import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import { useFormValidation, staffFormSchema } from '@/lib/form-validation'
+import type { CircleId } from '@/lib/api/schema'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -52,7 +53,7 @@ const copyFormMutation = useCopyStaffFormMutation()
 const deleteFormMutation = useDeleteStaffFormMutation()
 const errorMessage = ref('')
 const editForm = ref({
-  circleId: '',
+  circleId: '' as CircleId,
   name: '',
   description: '',
   openAt: '',

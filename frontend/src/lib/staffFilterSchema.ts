@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 export const staffFilterFieldTypeSchema = z.enum(['string', 'bool'])
 export const staffFilterOperatorSchema = z.enum(['=', '!=', 'like', 'not like'])

@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { z } from 'zod'
+import * as z from 'zod'
 import { $api, buildApiUrl, createJsonHeaders, postMultipart } from '@/lib/api/client'
 import {
   existingAnswerConflictSchema,
@@ -8,23 +8,25 @@ import {
   staffFormAnswersIndexSchema,
   staffManagedFormAnswerDetailSchema,
   staffManagedFormAnswerSummarySchema,
-  staffManagedFormAnswerValueSchema
+  staffManagedFormAnswerValueSchema,
+  type AnswerId,
+  type CircleId
 } from '@/lib/api/schema'
 import { extractValidationMessage as extractApiValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
 import type { FormAnswerDraft } from '@/features/forms/answers'
-import type { StaffFormDetail, StaffFormUpload } from '@/features/staff/forms/api'
+import type { StaffFormDetail } from '@/features/staff/forms/api'
 
 export interface StaffAnswerCircle {
-  id: string
+  id: CircleId
   name: string
   groupName: string
   participationTypeName: string
 }
 
 export interface StaffManagedFormAnswerSummary {
-  id: string
+  id: AnswerId
   circle: StaffAnswerCircle
   body: string
   createdAt: string
@@ -43,19 +45,12 @@ export interface StaffFormAnswersIndex {
 export interface StaffManagedFormAnswerDetail {
   form: StaffFormDetail
   circle: StaffAnswerCircle
-  answer: {
-    id: string
-    body: string
-    createdAt: string
-    updatedAt: string
-    details: Record<string, string[]>
-    uploads: StaffFormUpload[]
-  }
+  answer: z.infer<typeof staffManagedFormAnswerValueSchema>
   siblingAnswers: StaffManagedFormAnswerSummary[]
 }
 
 interface MutateStaffFormAnswerPayload {
-  circleId: string
+  circleId: CircleId
   body: string
   details: Record<string, string | string[]>
 }
@@ -350,7 +345,7 @@ export function buildStaffFormAnswerUploadDownloadUrl(formId: string, answerId: 
 }
 
 export function staffAnswerDraftToPayload(
-  circleId: string,
+  circleId: CircleId,
   body: string,
   draft: FormAnswerDraft
 ): MutateStaffFormAnswerPayload {

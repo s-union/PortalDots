@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import type { StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 
 export function resolveRowId(row: StaffDataGridRow): string {

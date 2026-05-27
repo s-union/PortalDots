@@ -6,6 +6,9 @@ import { parseWithSchema, staffPermissionDetailSchema, staffPermissionUserSummar
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
+import * as z from 'zod'
+
+export type StaffPermissionUserSummary = z.infer<typeof staffPermissionUserSummarySchema>
 
 export interface StaffPermissionDefinition {
   name: string
@@ -13,15 +16,6 @@ export interface StaffPermissionDefinition {
   displayName: string
   shortName: string
   description: string
-}
-
-export interface StaffPermissionUserSummary {
-  id: string
-  displayName: string
-  loginIds: string[]
-  roles: string[]
-  permissions: StaffPermissionDefinition[]
-  isEditable: boolean
 }
 
 export interface StaffPermissionDetail {

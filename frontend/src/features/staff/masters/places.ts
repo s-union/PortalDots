@@ -1,12 +1,12 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { createJsonHeaders, $api } from '@/lib/api/client'
-import { parseWithSchema, parseArrayWithSchema, staffPlaceSchema } from '@/lib/api/schema'
+import { parseWithSchema, parseArrayWithSchema, staffPlaceSchema, type PlaceId } from '@/lib/api/schema'
 import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useStaffMasterMutation } from './shared'
 
 export interface StaffPlace {
-  id: string
+  id: PlaceId
   name: string
   type: number
   notes: string

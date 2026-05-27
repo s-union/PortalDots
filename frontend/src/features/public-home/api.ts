@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { z } from 'zod'
+import * as z from 'zod'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import {
   pageDetailSchema,

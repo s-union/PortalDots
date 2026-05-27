@@ -1,5 +1,5 @@
 import { Hono, type Context } from 'hono'
-import { z } from 'zod'
+import * as z from 'zod'
 
 type EmailPriority = 'high' | 'normal'
 

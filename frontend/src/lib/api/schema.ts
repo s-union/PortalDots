@@ -1,4 +1,113 @@
-import { z } from 'zod'
+import * as z from 'zod'
+import type { FormId, StudentId, CircleId } from '@/lib/types/branded'
+import {
+  userIdSchema,
+  circleIdSchema,
+  formIdSchema,
+  questionIdSchema,
+  answerIdSchema,
+  uploadIdSchema,
+  pageIdSchema,
+  documentIdSchema,
+  participationTypeIdSchema,
+  categoryIdSchema,
+  tagIdSchema,
+  placeIdSchema,
+  jobIdSchema,
+  loginIdSchema,
+  studentIdSchema,
+  pendingRegistrationIdSchema,
+  invitationTokenSchema,
+  csrfTokenSchema,
+  activityLogIdSchema,
+  contactSubmissionIdSchema,
+  toUserId,
+  toCircleId,
+  toFormId,
+  toQuestionId,
+  toAnswerId,
+  toUploadId,
+  toPageId,
+  toDocumentId,
+  toParticipationTypeId,
+  toCategoryId,
+  toTagId,
+  toPlaceId,
+  toJobId,
+  toLoginId,
+  toStudentId,
+  toPendingRegistrationId,
+  toInvitationToken,
+  toCsrfToken,
+  toActivityLogId,
+  toContactSubmissionId
+} from '@/lib/types/branded'
+
+export {
+  userIdSchema,
+  circleIdSchema,
+  formIdSchema,
+  questionIdSchema,
+  answerIdSchema,
+  uploadIdSchema,
+  pageIdSchema,
+  documentIdSchema,
+  participationTypeIdSchema,
+  categoryIdSchema,
+  tagIdSchema,
+  placeIdSchema,
+  jobIdSchema,
+  loginIdSchema,
+  studentIdSchema,
+  pendingRegistrationIdSchema,
+  invitationTokenSchema,
+  csrfTokenSchema,
+  activityLogIdSchema,
+  contactSubmissionIdSchema,
+  toUserId,
+  toCircleId,
+  toFormId,
+  toQuestionId,
+  toAnswerId,
+  toUploadId,
+  toPageId,
+  toDocumentId,
+  toParticipationTypeId,
+  toCategoryId,
+  toTagId,
+  toPlaceId,
+  toJobId,
+  toLoginId,
+  toStudentId,
+  toPendingRegistrationId,
+  toInvitationToken,
+  toCsrfToken,
+  toActivityLogId,
+  toContactSubmissionId
+}
+
+export type {
+  UserId,
+  CircleId,
+  FormId,
+  QuestionId,
+  AnswerId,
+  UploadId,
+  PageId,
+  DocumentId,
+  ParticipationTypeId,
+  CategoryId,
+  TagId,
+  PlaceId,
+  JobId,
+  LoginId,
+  StudentId,
+  PendingRegistrationId,
+  InvitationToken,
+  CsrfToken,
+  ActivityLogId,
+  ContactSubmissionId
+} from '@/lib/types/branded'
 
 export const formQuestionTypeSchema = z.enum([
   'heading',
@@ -40,7 +149,7 @@ export const paginatedResultSchema = <TItem extends z.ZodType>(itemSchema: TItem
   })
 
 export const pageSummarySchema = z.object({
-  id: z.string(),
+  id: pageIdSchema,
   title: z.string(),
   summary: z.string(),
   isLimited: z.boolean(),
@@ -51,7 +160,7 @@ export const pageSummarySchema = z.object({
 })
 
 export const pageDocumentSchema = z.object({
-  id: z.string(),
+  id: documentIdSchema,
   name: z.string(),
   description: z.string(),
   isImportant: z.boolean(),
@@ -62,7 +171,7 @@ export const pageDocumentSchema = z.object({
 })
 
 export const pageDetailSchema = z.object({
-  id: z.string(),
+  id: pageIdSchema,
   title: z.string(),
   body: z.string(),
   isLimited: z.boolean(),
@@ -72,7 +181,7 @@ export const pageDetailSchema = z.object({
 })
 
 export const selectableCircleSchema = z.object({
-  id: z.string(),
+  id: circleIdSchema,
   name: z.string(),
   groupName: z.string(),
   participationTypeName: z.string(),
@@ -81,14 +190,14 @@ export const selectableCircleSchema = z.object({
 })
 
 export const circleDetailSchema = z.object({
-  id: z.string(),
+  id: circleIdSchema,
   name: z.string(),
   nameYomi: z.string(),
   groupName: z.string(),
   groupNameYomi: z.string(),
-  participationTypeId: z.string(),
+  participationTypeId: participationTypeIdSchema,
   participationTypeName: z.string(),
-  formId: z.string().default(''),
+  formId: formIdSchema.default('' as FormId),
   notes: z.string(),
   leaderDisplayName: z.string().default(''),
   canChangeGroupName: z.boolean().default(true),
@@ -103,14 +212,14 @@ export const circleDetailSchema = z.object({
   questions: z.array(z.lazy(() => formQuestionSchema)).default([]),
   answer: z
     .object({
-      id: z.string(),
+      id: answerIdSchema,
       body: z.string(),
       updatedAt: z.string(),
       details: z.record(z.string(), z.array(z.string())),
       uploads: z.array(
         z.object({
-          id: z.string(),
-          questionId: z.string(),
+          id: uploadIdSchema,
+          questionId: questionIdSchema,
           filename: z.string(),
           mimeType: z.string(),
           sizeBytes: z.number(),
@@ -120,35 +229,35 @@ export const circleDetailSchema = z.object({
     })
     .nullable()
     .default(null),
-  invitationToken: z.string(),
+  invitationToken: invitationTokenSchema,
   submittedAt: z.string().nullable(),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
   statusReason: z.string().default(''),
   formCloseAt: z.string().default(''),
-  places: z.array(z.string()).default([])
+  places: z.array(placeIdSchema).default([])
 })
 
 export const circleMemberSchema = z.object({
-  userId: z.string(),
+  userId: userIdSchema,
   displayName: z.string(),
   isLeader: z.boolean()
 })
 
 export const addCircleMemberInputSchema = z.object({
-  loginId: z.string().trim().min(1)
+  loginId: loginIdSchema.trim().min(1)
 })
 
 export const sessionCircleSchema = z.object({
-  id: z.string(),
+  id: circleIdSchema,
   name: z.string()
 })
 
 export const sessionUserSchema = z.object({
-  id: z.string(),
+  id: userIdSchema,
   displayName: z.string(),
   canDeleteAccount: z.boolean().default(false),
   canCreateCircleRegistration: z.boolean().default(true),
-  studentId: z.string().default(''),
+  studentId: studentIdSchema.default('' as StudentId),
   univemail: z.string().default(''),
   lastName: z.string().default(''),
   lastNameReading: z.string().default(''),
@@ -159,7 +268,7 @@ export const sessionUserSchema = z.object({
 })
 
 export const sessionBootstrapSchema = z.object({
-  csrfToken: z.string(),
+  csrfToken: csrfTokenSchema,
   featureFlags: stringArraySchema,
   roles: stringArraySchema,
   permissions: stringArraySchema.optional(),
@@ -168,7 +277,7 @@ export const sessionBootstrapSchema = z.object({
 })
 
 export const documentSummarySchema = z.object({
-  id: z.string(),
+  id: documentIdSchema,
   name: z.string(),
   description: z.string(),
   isImportant: z.boolean(),
@@ -180,13 +289,13 @@ export const documentSummarySchema = z.object({
 })
 
 export const contactCategorySchema = z.object({
-  id: z.string(),
+  id: categoryIdSchema,
   name: z.string()
 })
 
 export const contactSubmissionSchema = z.object({
-  id: z.string(),
-  categoryId: z.string(),
+  id: contactSubmissionIdSchema,
+  categoryId: categoryIdSchema,
   categoryName: z.string(),
   subject: z.string(),
   status: z.string(),
@@ -210,7 +319,7 @@ export const authVerificationStatusItemSchema = z.object({
 })
 
 export const authVerificationStatusSchema = z.object({
-  userId: z.string(),
+  userId: userIdSchema,
   displayName: z.string(),
   completed: z.boolean(),
   items: z.array(authVerificationStatusItemSchema)
@@ -229,37 +338,37 @@ export const passwordResetStartResultSchema = z.object({
 })
 
 export const passwordResetVerificationSchema = z.object({
-  userId: z.string(),
+  userId: userIdSchema,
   valid: z.boolean()
 })
 
 export const registrationVerificationSchema = z.object({
-  pendingRegistrationId: z.string(),
+  pendingRegistrationId: pendingRegistrationIdSchema,
   univemail: z.string(),
-  studentId: z.string(),
+  studentId: studentIdSchema,
   verified: z.boolean()
 })
 
 export const staffActivityLogSchema = z.object({
-  id: z.string(),
-  actorUserId: z.string(),
+  id: activityLogIdSchema,
+  actorUserId: userIdSchema,
   action: z.string(),
   targetType: z.string(),
   targetId: z.string(),
-  circleId: z.string(),
+  circleId: circleIdSchema,
   summary: z.string(),
   createdAt: z.string()
 })
 
 export const staffTagSchema = z.object({
-  id: z.string(),
+  id: tagIdSchema,
   name: z.string(),
   createdAt: z.string().default(''),
   updatedAt: z.string().default('')
 })
 
 export const staffPlaceSchema = z.object({
-  id: z.string(),
+  id: placeIdSchema,
   name: z.string(),
   type: z.number(),
   notes: z.string(),
@@ -268,13 +377,13 @@ export const staffPlaceSchema = z.object({
 })
 
 export const staffContactCategorySchema = z.object({
-  id: z.string(),
+  id: categoryIdSchema,
   name: z.string(),
   email: z.string()
 })
 
 export const staffMailSchema = z.object({
-  jobId: z.string(),
+  jobId: jobIdSchema,
   template: z.string(),
   priority: z.enum(['high', 'normal']).default('normal'),
   subject: z.string(),
@@ -284,7 +393,7 @@ export const staffMailSchema = z.object({
 })
 
 export const staffUserSchema = z.object({
-  id: z.string(),
+  id: userIdSchema,
   lastName: z.string().default(''),
   lastNameReading: z.string().default(''),
   firstName: z.string().default(''),
@@ -302,32 +411,32 @@ export const staffUserSchema = z.object({
 })
 
 export const staffCircleSchema = z.object({
-  id: z.string(),
+  id: circleIdSchema,
   name: z.string(),
   nameYomi: z.string(),
   groupName: z.string(),
   groupNameYomi: z.string(),
-  participationTypeId: z.string(),
+  participationTypeId: participationTypeIdSchema,
   participationTypeName: z.string(),
-  tags: z.array(z.string()),
+  tags: z.array(tagIdSchema),
   notes: z.string(),
   submittedAt: z.string().nullable(),
   status: z.enum(['pending', 'approved', 'rejected']),
   statusReason: z.string(),
   statusSetAt: z.string().nullable(),
-  statusSetById: z.string().nullable(),
-  places: z.array(z.string())
+  statusSetById: userIdSchema.nullable(),
+  places: z.array(placeIdSchema)
 })
 
 export const staffCircleMailRecipientSchema = z.object({
-  id: z.string(),
+  id: userIdSchema,
   displayName: z.string(),
   loginIds: stringArraySchema,
   isLeader: z.boolean()
 })
 
 export const staffCircleMemberSchema = z.object({
-  userId: z.string(),
+  userId: userIdSchema,
   displayName: z.string(),
   loginIds: stringArraySchema,
   isLeader: z.boolean()
@@ -339,7 +448,7 @@ export const staffCircleMailFormSchema = z.object({
 })
 
 export const formQuestionSchema = z.object({
-  id: z.string(),
+  id: questionIdSchema,
   name: z.string(),
   description: z.string(),
   type: formQuestionTypeSchema,
@@ -355,7 +464,7 @@ export const formQuestionSchema = z.object({
 })
 
 export const formSummarySchema = z.object({
-  id: z.string(),
+  id: formIdSchema,
   name: z.string(),
   description: z.string(),
   openAt: z.string(),
@@ -369,7 +478,7 @@ export const formSummarySchema = z.object({
 })
 
 export const formDetailSchema = z.object({
-  id: z.string(),
+  id: formIdSchema,
   name: z.string(),
   description: z.string(),
   openAt: z.string(),
@@ -384,8 +493,8 @@ export const formDetailSchema = z.object({
 })
 
 export const answerUploadSchema = z.object({
-  id: z.string(),
-  questionId: z.string(),
+  id: uploadIdSchema,
+  questionId: questionIdSchema,
   filename: z.string(),
   mimeType: z.string(),
   sizeBytes: z.number(),
@@ -395,7 +504,7 @@ export const answerUploadSchema = z.object({
 export const answerDetailsSchema = z.record(z.string(), z.array(z.string()))
 
 export const formAnswerSchema = z.object({
-  id: z.string(),
+  id: answerIdSchema,
   body: z.string(),
   updatedAt: z.string(),
   details: answerDetailsSchema,
@@ -407,13 +516,13 @@ export const formAnswerEnvelopeSchema = z.object({
 })
 
 export const staffManagedCircleSchema = z.object({
-  id: z.string(),
+  id: circleIdSchema,
   name: z.string()
 })
 
 export const staffFormSummarySchema = z.object({
-  circle: staffManagedCircleSchema.default({ id: '', name: '' }),
-  id: z.string(),
+  circle: staffManagedCircleSchema.default({ id: '' as CircleId, name: '' }),
+  id: formIdSchema,
   name: z.string(),
   description: z.string(),
   openAt: z.string(),
@@ -431,7 +540,7 @@ export const staffFormSummarySchema = z.object({
 export const staffFormUploadSchema = answerUploadSchema
 
 export const staffFormAnswerSchema = z.object({
-  id: z.string(),
+  id: answerIdSchema,
   body: z.string(),
   updatedAt: z.string(),
   details: answerDetailsSchema,
@@ -444,7 +553,7 @@ export const staffFormDetailSchema = staffFormSummarySchema.extend({
 })
 
 export const staffFormPreviewSchema = z.object({
-  id: z.string(),
+  id: formIdSchema,
   name: z.string(),
   description: z.string(),
   openAt: z.string(),
@@ -461,14 +570,14 @@ export const staffFormPreviewSchema = z.object({
 })
 
 export const staffAnswerCircleSchema = z.object({
-  id: z.string(),
+  id: circleIdSchema,
   name: z.string(),
   groupName: z.string(),
   participationTypeName: z.string()
 })
 
 export const staffManagedFormAnswerSummarySchema = z.object({
-  id: z.string(),
+  id: answerIdSchema,
   circle: staffAnswerCircleSchema,
   body: z.string(),
   createdAt: z.string(),
@@ -478,7 +587,7 @@ export const staffManagedFormAnswerSummarySchema = z.object({
 })
 
 export const staffManagedFormAnswerValueSchema = z.object({
-  id: z.string(),
+  id: answerIdSchema,
   body: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -501,11 +610,11 @@ export const staffManagedFormAnswerDetailSchema = z.object({
 })
 
 export const existingAnswerConflictSchema = z.object({
-  existingAnswerId: z.string()
+  existingAnswerId: answerIdSchema
 })
 
 export const staffPageSummarySchema = z.object({
-  id: z.string(),
+  id: pageIdSchema,
   title: z.string(),
   body: z.string(),
   notes: z.string(),
@@ -514,7 +623,7 @@ export const staffPageSummarySchema = z.object({
   isPinned: z.boolean(),
   isPublic: z.boolean(),
   viewableTags: stringArraySchema,
-  documentIds: stringArraySchema,
+  documentIds: z.array(documentIdSchema),
   documents: z.array(pageDocumentSchema)
 })
 
@@ -523,8 +632,8 @@ export const staffPageDocumentSchema = pageDocumentSchema
 export const staffPageDetailSchema = staffPageSummarySchema
 
 export const staffDocumentSummarySchema = z.object({
-  circle: staffManagedCircleSchema.default({ id: '', name: '' }),
-  id: z.string(),
+  circle: staffManagedCircleSchema.default({ id: '' as CircleId, name: '' }),
+  id: documentIdSchema,
   name: z.string(),
   description: z.string(),
   notes: z.string(),
@@ -554,7 +663,7 @@ export const staffPermissionDefinitionSchema = z.object({
 })
 
 export const staffPermissionUserSummarySchema = z.object({
-  id: z.string(),
+  id: userIdSchema,
   displayName: z.string(),
   loginIds: stringArraySchema,
   roles: stringArraySchema,
@@ -569,7 +678,7 @@ export const staffPermissionDetailSchema = z.object({
 })
 
 export const staffParticipationTypeFormSchema = z.object({
-  id: z.string(),
+  id: formIdSchema,
   name: z.string(),
   description: z.string(),
   openAt: z.string(),
@@ -584,12 +693,12 @@ export const staffParticipationTypeFormSchema = z.object({
 export const participationTypeFormSchema = staffParticipationTypeFormSchema
 
 export const participationTypeSchema = z.object({
-  id: z.string(),
+  id: participationTypeIdSchema,
   name: z.string(),
   description: z.string(),
   usersCountMin: z.number(),
   usersCountMax: z.number(),
-  tags: stringArraySchema,
+  tags: z.array(tagIdSchema),
   form: participationTypeFormSchema
 })
 
@@ -600,7 +709,7 @@ export const publicHomeLoginMethodSchema = z.object({
 })
 
 export const publicHomePageSchema = z.object({
-  id: z.string(),
+  id: pageIdSchema,
   title: z.string(),
   summary: z.string(),
   createdAt: z.string(),
@@ -610,7 +719,7 @@ export const publicHomePageSchema = z.object({
 })
 
 export const publicPinnedPageSchema = z.object({
-  id: z.string(),
+  id: pageIdSchema,
   title: z.string(),
   body: z.string(),
   createdAt: z.string(),
@@ -621,7 +730,7 @@ export const publicPinnedPageSchema = z.object({
 })
 
 export const publicHomeDocumentSchema = z.object({
-  id: z.string(),
+  id: documentIdSchema,
   name: z.string(),
   description: z.string(),
   isImportant: z.boolean(),
@@ -653,11 +762,11 @@ export const publicHomeSchema = z.object({
 })
 
 export const staffParticipationTypeSchema = z.object({
-  id: z.string(),
+  id: participationTypeIdSchema,
   name: z.string(),
   description: z.string(),
   usersCountMin: z.number(),
   usersCountMax: z.number(),
-  tags: stringArraySchema,
+  tags: z.array(tagIdSchema),
   form: staffParticipationTypeFormSchema
 })
