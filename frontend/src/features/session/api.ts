@@ -1,5 +1,6 @@
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, sessionBootstrapSchema } from '@/lib/api/schema'
+import { STALE_TIME } from '@/lib/api/cacheConfig'
 import { useSessionStore, type SessionBootstrap } from './store'
 
 export async function fetchSessionBootstrap() {
@@ -32,7 +33,8 @@ export function useSessionBootstrapQuery() {
     },
     {
       queryKey: ['session', 'bootstrap'],
-      retry: false
+      retry: false,
+      staleTime: STALE_TIME.SESSION
     },
     {
       errorMessage: 'Failed to fetch session bootstrap'

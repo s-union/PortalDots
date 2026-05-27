@@ -28,6 +28,7 @@ type Store interface {
 	DeleteByUserID(ctx context.Context, userID string) error
 	DeleteOtherSessionsByUserID(ctx context.Context, userID string, currentSessionID string) error
 	Update(ctx context.Context, id string, update func(*Session)) bool
+	InvalidateUser(userID string)
 }
 
 type memorySessionEntry struct {
@@ -174,6 +175,9 @@ func (s *MemoryStore) Update(ctx context.Context, id string, update func(*Sessio
 		updatedAt: s.now(),
 	}
 	return true
+}
+
+func (s *MemoryStore) InvalidateUser(_ string) {
 }
 
 func (s *MemoryStore) isExpired(updatedAt time.Time) bool {

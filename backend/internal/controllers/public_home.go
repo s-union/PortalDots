@@ -116,6 +116,7 @@ func (h *publicHomeHandlers) getPublicHome(c *echo.Context) error {
 }
 
 func (h *publicHomeHandlers) getPublicConfig(c *echo.Context) error {
+	setCacheControlPublic(c, 600)
 	return c.JSON(http.StatusOK, publicConfigResponse{
 		IsDemo:                    h.allowDangerously,
 		AppName:                   h.appName,
@@ -126,6 +127,7 @@ func (h *publicHomeHandlers) getPublicConfig(c *echo.Context) error {
 }
 
 func (h *publicHomeHandlers) listPublicPages(c *echo.Context) error {
+	setCacheControlPublic(c, 60)
 	pages := h.pages.ListGuest(c.Request().Context(), c.QueryParam("query"))
 	pagination := readPagesPagination(c)
 	total := len(pages)
@@ -166,6 +168,7 @@ func (h *publicHomeHandlers) listPublicPages(c *echo.Context) error {
 func (h *publicHomeHandlers) getPublicPage(c *echo.Context) error {
 	pageValue, found := h.pages.FindGuest(c.Request().Context(), c.Param("pageID"))
 	if found {
+		setCacheControlPublic(c, 60)
 		return c.JSON(http.StatusOK, pageDetailResponse{
 			ID:        pageValue.ID,
 			Title:     pageValue.Title,
@@ -181,6 +184,7 @@ func (h *publicHomeHandlers) getPublicPage(c *echo.Context) error {
 }
 
 func (h *publicHomeHandlers) listPublicDocuments(c *echo.Context) error {
+	setCacheControlPublic(c, 60)
 	return c.JSON(http.StatusOK, h.collectPublicDocuments(0))
 }
 
@@ -188,6 +192,7 @@ func (h *publicHomeHandlers) getPublicDocument(c *echo.Context) error {
 	documentID := c.Param("documentID")
 	documentValue, found := h.documents.FindPublic(documentID, nil)
 	if found {
+		setCacheControlPublic(c, 60)
 		c.Response().Header().Set(echo.HeaderContentType, documentValue.MimeType)
 		c.Response().Header().Set(echo.HeaderContentDisposition, publicInlineContentDisposition(documentValue))
 		return c.Blob(http.StatusOK, documentValue.MimeType, documentValue.Content)

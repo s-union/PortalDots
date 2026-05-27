@@ -6,23 +6,28 @@ import (
 	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
+	"github.com/s-union/PortalDots/backend/internal/platform/cache"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
 )
 
+const userCacheTTL = 1 * time.Minute
+
 type SQLCStore struct {
-	queries *dbgen.Queries
-	now     func() time.Time
-	ttl     time.Duration
+	queries   *dbgen.Queries
+	now       func() time.Time
+	ttl       time.Duration
+	userCache *cache.TTL[auth.User]
 }
 
 var ErrSessionNotFound = errors.New("session not found after create")
 
 func NewSQLCStore(queries *dbgen.Queries, ttl time.Duration) *SQLCStore {
 	return &SQLCStore{
-		queries: queries,
-		now:     time.Now,
-		ttl:     ttl,
+		queries:   queries,
+		now:       time.Now,
+		ttl:       ttl,
+		userCache: cache.NewTTL[auth.User](userCacheTTL),
 	}
 }
 
@@ -67,17 +72,8 @@ func (s *SQLCStore) Get(ctx context.Context, id string) (Session, bool) {
 		return Session{}, false
 	}
 
-	userRow, err := s.queries.GetUserByID(ctx, sessionRow.UserID)
-	if err != nil {
-		return Session{}, false
-	}
-
-	roles, err := s.queries.ListUserRoles(ctx, userRow.ID)
-	if err != nil {
-		return Session{}, false
-	}
-	permissions, err := s.queries.ListUserPermissions(ctx, userRow.ID)
-	if err != nil {
+	user, ok := s.getUser(ctx, sessionRow.UserID)
+	if !ok {
 		return Session{}, false
 	}
 
@@ -92,13 +88,41 @@ func (s *SQLCStore) Get(ctx context.Context, id string) (Session, bool) {
 		StaffAuthorized:    sessionRow.StaffAuthorized,
 		StaffVerifyCode:    sessionRow.StaffVerifyCode,
 		StaffVerifyExpires: sessionRow.StaffVerifyExpires.Time,
-		User: &auth.User{
-			ID:          userRow.ID,
-			DisplayName: userRow.DisplayName,
-			Roles:       roles,
-			Permissions: permissions,
-		},
+		User:               &user,
 	}, true
+}
+
+func (s *SQLCStore) getUser(ctx context.Context, userID string) (auth.User, bool) {
+	if cached, ok := s.userCache.Get(userID); ok {
+		return cached, true
+	}
+
+	userRow, err := s.queries.GetUserByID(ctx, userID)
+	if err != nil {
+		return auth.User{}, false
+	}
+
+	roles, err := s.queries.ListUserRoles(ctx, userRow.ID)
+	if err != nil {
+		return auth.User{}, false
+	}
+	permissions, err := s.queries.ListUserPermissions(ctx, userRow.ID)
+	if err != nil {
+		return auth.User{}, false
+	}
+
+	user := auth.User{
+		ID:          userRow.ID,
+		DisplayName: userRow.DisplayName,
+		Roles:       roles,
+		Permissions: permissions,
+	}
+	s.userCache.Set(userID, user)
+	return user, true
+}
+
+func (s *SQLCStore) InvalidateUser(userID string) {
+	s.userCache.Delete(userID)
 }
 
 func (s *SQLCStore) Delete(ctx context.Context, id string) error {

@@ -11,6 +11,7 @@ import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffUsersExportUrl,
+  fetchStaffUsers,
   type StaffUserFilterKey,
   type StaffUserFilterMode,
   type StaffUserFilterOperator,
@@ -20,6 +21,7 @@ import {
 } from '@/features/staff/users/api'
 import { usePaginationState } from '@/lib/usePaginationState'
 import { createSortKeyGuard, useSortState } from '@/lib/useSortState'
+import { usePrefetchNextPage } from '@/lib/api/prefetch'
 
 const staffUserSortKeys = [
   'id',
@@ -124,6 +126,32 @@ export function useStaffUsersIndexPage() {
   watchEffect(() => {
     totalUsers.value = usersQuery.data.value?.total ?? 0
   })
+
+  usePrefetchNextPage(pagination.page, pagination.totalPages, (nextPage) => ({
+    queryKey: [
+      'staff',
+      'users',
+      {
+        page: nextPage,
+        pageSize: pagination.pageSize.value,
+        query: searchQuery.value,
+        sortKey: sort.sortKey.value,
+        sortDirection: sort.sortDirection.value,
+        queries: appliedFilterQueries.value,
+        mode: appliedFilterMode.value
+      }
+    ],
+    queryFn: () =>
+      fetchStaffUsers({
+        page: nextPage,
+        pageSize: pagination.pageSize.value,
+        query: searchQuery.value,
+        sortKey: sort.sortKey.value,
+        sortDirection: sort.sortDirection.value,
+        queries: appliedFilterQueries.value,
+        mode: appliedFilterMode.value
+      })
+  }))
 
   const rows = computed<StaffUserRow[]>(() =>
     (usersQuery.data.value?.items ?? []).map((user, index) => ({
