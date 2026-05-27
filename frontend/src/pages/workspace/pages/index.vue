@@ -33,10 +33,15 @@ const pageList = computed(() => pagesQuery.data.value ?? { items: [], page: 1, p
 const shouldShowPagination = computed(() => calculateTotalPages(pageList.value.total, pageList.value.pageSize) > 1)
 const totalPages = computed(() => calculateTotalPages(pageList.value.total, pageList.value.pageSize))
 
-usePrefetchNextPage(page, totalPages, (nextPage) => ({
-  queryKey: ['pages', searchQuery.value, { page: nextPage, pageSize }],
-  queryFn: () => fetchPages(searchQuery.value, { page: nextPage, pageSize })
-}))
+usePrefetchNextPage(
+  page,
+  totalPages,
+  (nextPage) => ({
+    queryKey: ['pages', searchQuery.value, { page: nextPage, pageSize }],
+    queryFn: () => fetchPages(searchQuery.value, { page: nextPage, pageSize })
+  }),
+  [searchQuery]
+)
 
 watch(
   () => route.query.query,

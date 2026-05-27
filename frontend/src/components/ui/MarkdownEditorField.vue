@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import { computed, defineAsyncComponent, nextTick, ref, useTemplateRef } from 'vue'
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { cn } from '@/lib/ui/cn'
 import { formControlVariants } from '@/lib/ui/variants'

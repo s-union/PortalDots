@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { type StaffFormDetail } from '@/features/staff/forms/api'
 import { formatDateTime } from '@/lib/format/datetime'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import UploadFileRow from './UploadFileRow.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 
 const { formId, form, isParticipationForm } = defineProps<{
   formId: string

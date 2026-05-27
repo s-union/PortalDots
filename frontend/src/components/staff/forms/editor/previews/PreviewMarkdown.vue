@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+import { defineAsyncComponent } from 'vue'
+
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 
 defineProps<{
   name: string

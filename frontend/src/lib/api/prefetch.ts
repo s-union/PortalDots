@@ -4,12 +4,13 @@ import { useQueryClient, type QueryKey } from '@tanstack/vue-query'
 export function usePrefetchNextPage<T>(
   currentPage: Ref<number> | ComputedRef<number>,
   totalPages: Ref<number> | ComputedRef<number>,
-  buildNextQuery: (nextPage: number) => { queryKey: QueryKey; queryFn: () => Promise<T> }
+  buildNextQuery: (nextPage: number) => { queryKey: QueryKey; queryFn: () => Promise<T> },
+  extraWatchSources: (Ref | ComputedRef)[] = []
 ) {
   const queryClient = useQueryClient()
 
   watch(
-    [currentPage, totalPages],
+    [currentPage, totalPages, ...extraWatchSources],
     ([page, total]) => {
       const nextPage = page + 1
       if (nextPage > total) {

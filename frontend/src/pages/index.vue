@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
@@ -21,7 +21,7 @@ import {
   type CircleStatusItem
 } from '@/features/circles/statusDisplay'
 import { useAuthVerificationStatusQuery } from '@/features/auth/api'
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { hasStaffAccess } from '@/features/staff/access/capabilities'
 import { useSessionStore } from '@/features/session/store'

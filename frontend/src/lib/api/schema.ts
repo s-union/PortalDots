@@ -234,7 +234,7 @@ export const circleDetailSchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
   statusReason: z.string().default(''),
   formCloseAt: z.string().default(''),
-  places: z.array(placeIdSchema).default([])
+  places: z.array(z.string()).default([])
 })
 
 export const circleMemberSchema = z.object({
@@ -425,7 +425,7 @@ export const staffCircleSchema = z.object({
   statusReason: z.string(),
   statusSetAt: z.string().nullable(),
   statusSetById: userIdSchema.nullable(),
-  places: z.array(placeIdSchema)
+  places: z.array(z.string())
 })
 
 export const staffCircleMailRecipientSchema = z.object({

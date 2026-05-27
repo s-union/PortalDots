@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
@@ -81,7 +81,14 @@ describe('PageDetailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('搬入時間のお知らせ')
-    expect(wrapper.text()).toContain('Aブロックの搬入は 9:00 から開始します。')
+
+    await vi.waitFor(
+      () => {
+        expect(wrapper.text()).toContain('Aブロックの搬入は 9:00 から開始します。')
+      },
+      { timeout: 5000 }
+    )
+
     expect(wrapper.text()).toContain('搬入手順書')
   })
 })

@@ -7,10 +7,10 @@ definePage({
   }
 })
 
-import { computed, ref } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'

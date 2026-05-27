@@ -127,31 +127,36 @@ export function useStaffUsersIndexPage() {
     totalUsers.value = usersQuery.data.value?.total ?? 0
   })
 
-  usePrefetchNextPage(pagination.page, pagination.totalPages, (nextPage) => ({
-    queryKey: [
-      'staff',
-      'users',
-      {
-        page: nextPage,
-        pageSize: pagination.pageSize.value,
-        query: searchQuery.value,
-        sortKey: sort.sortKey.value,
-        sortDirection: sort.sortDirection.value,
-        queries: appliedFilterQueries.value,
-        mode: appliedFilterMode.value
-      }
-    ],
-    queryFn: () =>
-      fetchStaffUsers({
-        page: nextPage,
-        pageSize: pagination.pageSize.value,
-        query: searchQuery.value,
-        sortKey: sort.sortKey.value,
-        sortDirection: sort.sortDirection.value,
-        queries: appliedFilterQueries.value,
-        mode: appliedFilterMode.value
-      })
-  }))
+  usePrefetchNextPage(
+    pagination.page,
+    pagination.totalPages,
+    (nextPage) => ({
+      queryKey: [
+        'staff',
+        'users',
+        {
+          page: nextPage,
+          pageSize: pagination.pageSize.value,
+          query: searchQuery.value,
+          sortKey: sort.sortKey.value,
+          sortDirection: sort.sortDirection.value,
+          queries: appliedFilterQueries.value,
+          mode: appliedFilterMode.value
+        }
+      ],
+      queryFn: () =>
+        fetchStaffUsers({
+          page: nextPage,
+          pageSize: pagination.pageSize.value,
+          query: searchQuery.value,
+          sortKey: sort.sortKey.value,
+          sortDirection: sort.sortDirection.value,
+          queries: appliedFilterQueries.value,
+          mode: appliedFilterMode.value
+        })
+    }),
+    [pagination.pageSize, searchQuery, sort.sortKey, sort.sortDirection, appliedFilterQueries, appliedFilterMode]
+  )
 
   const rows = computed<StaffUserRow[]>(() =>
     (usersQuery.data.value?.items ?? []).map((user, index) => ({
