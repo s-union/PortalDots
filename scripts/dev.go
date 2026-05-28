@@ -76,7 +76,12 @@ func run(rootDir string, mode devMode) error {
 		return fmt.Errorf("PORTAL_DATABASE_URL not found in .env")
 	}
 
-	databaseEnv := []string{"PORTAL_DATABASE_URL=" + databaseURL}
+	fileEnv, err := loadEnvFile(rootDir, ".env")
+	if err != nil {
+		return err
+	}
+
+	databaseEnv := mergeEnv(fileEnv, []string{"PORTAL_DATABASE_URL=" + databaseURL})
 	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend:migrate"); err != nil {
 		return err
 	}
@@ -84,7 +89,7 @@ func run(rootDir string, mode devMode) error {
 		return err
 	}
 
-	backendEnv := append(databaseEnv, emailEnv(mode)...)
+	backendEnv := mergeEnv(databaseEnv, emailEnv(mode))
 	commands := []*managedCommand{
 		newManagedCommandWithEnv("backend", filepath.Join(rootDir, "backend"), backendEnv, "air", "-c", ".air.toml"),
 		newManagedCommand("frontend", rootDir, "mise", "run", "frontend:dev"),
@@ -505,6 +510,60 @@ func loadEnvValue(dir string, key string) (string, error) {
 		return value, nil
 	}
 	return loadEnvVar(dir, ".env", key)
+}
+
+func loadEnvFile(dir string, filename string) ([]string, error) {
+	path := filepath.Join(dir, filename)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var env []string
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		value = strings.Trim(strings.TrimSpace(value), "\"'")
+		env = append(env, key+"="+value)
+	}
+	return env, nil
+}
+
+func mergeEnv(base []string, override []string) []string {
+	result := append([]string{}, base...)
+	indexByKey := make(map[string]int, len(result)+len(override))
+	for index, entry := range result {
+		key, _, ok := strings.Cut(entry, "=")
+		if ok {
+			indexByKey[key] = index
+		}
+	}
+	for _, entry := range override {
+		key, _, ok := strings.Cut(entry, "=")
+		if !ok {
+			continue
+		}
+		if index, exists := indexByKey[key]; exists {
+			result[index] = entry
+			continue
+		}
+		indexByKey[key] = len(result)
+		result = append(result, entry)
+	}
+	return result
 }
 
 func commandOutput(dir string, name string, args ...string) (string, error) {
