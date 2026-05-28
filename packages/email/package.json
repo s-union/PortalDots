@@ -15,12 +15,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "hono": "4.12.22",
+    "hono": "4.12.23",
     "hono-email": "0.4.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20260522.1",
+    "@cloudflare/workers-types": "4.20260524.1",
     "@typescript/native-preview": "7.0.0-dev.20260314.1",
     "typescript": "6.0.3",
     "vitest": "4.1.7",
