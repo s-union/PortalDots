@@ -23,6 +23,11 @@ jobs:
       - name: Install JS dependencies
         run: mise run frontend:install
 
+      - name: Prepare local dev configuration
+        run: |
+          cp .env.example .env
+          cp packages/email/.dev.vars.example packages/email/.dev.vars
+
       - name: Cache Playwright browsers
         uses: actions/cache@v5
         id: playwright-cache
@@ -45,7 +50,7 @@ jobs:
         run: pnpm --filter @portaldots/frontend run build
 
       - name: Test e2e
-        run: mise run frontend:test:e2e
+        run: mise run e2e:worker
 
   frontend-storybook:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-storybook')
