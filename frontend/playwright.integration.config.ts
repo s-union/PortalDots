@@ -21,6 +21,7 @@ export default defineConfig({
     command: 'mise run dev:worker',
     url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000
+    timeout: 120000,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 10000 }
   }
 })

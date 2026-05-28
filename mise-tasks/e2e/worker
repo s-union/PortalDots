@@ -8,4 +8,9 @@ if [[ -n "${PORTALDOTS_E2E_SHARD:-}" ]]; then
   shard_args+=(--shard "${PORTALDOTS_E2E_SHARD}")
 fi
 
-unset NO_COLOR; pnpm exec playwright test --config=playwright.integration.config.ts --workers=1 "${shard_args[@]}"
+reporter_args=()
+if [[ -n "${CI:-}" ]]; then
+  reporter_args+=(--reporter list)
+fi
+
+unset NO_COLOR; pnpm exec playwright test --config=playwright.integration.config.ts --workers=1 "${shard_args[@]}" "${reporter_args[@]}"
