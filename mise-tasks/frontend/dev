@@ -2,4 +2,4 @@
 #MISE dir="frontend"
 #MISE description="Start vue vite dev server"
 
-pnpm run dev -- --host 127.0.0.1
+pnpm exec vite --host 127.0.0.1
