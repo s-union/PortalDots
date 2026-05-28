@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -90,19 +91,29 @@ func run(rootDir string, mode devMode) error {
 	}
 
 	backendEnv := mergeEnv(databaseEnv, emailEnv(mode))
+	backendCommand := newManagedCommandWithEnv("backend", filepath.Join(rootDir, "backend"), backendEnv, "air", "-c", ".air.toml")
+	started, err := startCommands([]*managedCommand{backendCommand})
+	if err != nil {
+		return err
+	}
+	if err := waitForHTTPURL("backend API", backendHealthURL(rootDir), 60*time.Second); err != nil {
+		stopCommands(started)
+		return err
+	}
+
 	commands := []*managedCommand{
-		newManagedCommandWithEnv("backend", filepath.Join(rootDir, "backend"), backendEnv, "air", "-c", ".air.toml"),
 		newManagedCommand("frontend", rootDir, "mise", "run", "frontend:dev"),
 	}
 	if mode == devModeWorker {
 		commands = append(commands, newManagedCommand("email", rootDir, "mise", "run", "email:dev"))
 	}
 
-	started, err := startCommands(commands)
+	additionalStarted, err := startCommands(commands)
 	if err != nil {
-		stopCommands(commands)
+		stopCommands(append(started, additionalStarted...))
 		return err
 	}
+	started = append(started, additionalStarted...)
 	defer stopCommands(started)
 
 	signalCh := make(chan os.Signal, 1)
@@ -226,6 +237,14 @@ func assertPortAvailable(address string) error {
 	return listener.Close()
 }
 
+func backendHealthURL(rootDir string) string {
+	apiBind, err := loadEnvValue(rootDir, "PORTAL_API_BIND")
+	if err != nil || strings.TrimSpace(apiBind) == "" {
+		apiBind = ":8081"
+	}
+	return "http://" + normalizeListenAddress(apiBind) + "/v1/public/config"
+}
+
 func findRepoRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -271,6 +290,31 @@ func waitForComposeService(rootDir string, composeFile string, service string, t
 
 		if time.Now().After(deadline) {
 			return fmt.Errorf("timed out waiting for %s to become healthy", service)
+		}
+
+		time.Sleep(time.Second)
+	}
+}
+
+func waitForHTTPURL(name string, url string, timeout time.Duration) error {
+	client := http.Client{Timeout: time.Second}
+	deadline := time.Now().Add(timeout)
+	for {
+		response, err := client.Get(url)
+		if err == nil {
+			if closeErr := response.Body.Close(); closeErr != nil {
+				return closeErr
+			}
+			if response.StatusCode >= 200 && response.StatusCode < 500 {
+				return nil
+			}
+		}
+
+		if time.Now().After(deadline) {
+			if err != nil {
+				return fmt.Errorf("timed out waiting for %s at %s: %w", name, url, err)
+			}
+			return fmt.Errorf("timed out waiting for %s at %s", name, url)
 		}
 
 		time.Sleep(time.Second)
