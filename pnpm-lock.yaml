@@ -185,11 +185,11 @@ importers:
   packages/email:
     dependencies:
       hono:
-        specifier: 4.12.22
-        version: 4.12.22
+        specifier: 4.12.23
+        version: 4.12.23
       hono-email:
         specifier: 0.4.0
-        version: 0.4.0(hono@4.12.22)
+        version: 0.4.0(hono@4.12.23)
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -2782,8 +2782,8 @@ packages:
     peerDependencies:
       hono: ^4.0.0
 
-  hono@4.12.22:
-    resolution: {integrity: sha512-7fvVPbB92zNRsQke+uiRGwtTuef0tB2Dg4hWxYfFNvkQhIltWoyi0ONReM5LWA+jJWS3nfT5lTq+qbsIpX0IQw==}
+  hono@4.12.23:
+    resolution: {integrity: sha512-eIaZ9qDgu7XV0pxOCrg7/WhnQ6Ivm22UcxhXx/A3dcbqbbYgBEkc6e/J/s7j2tS96zoB0S9VBdLwQNCWwUo4LA==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -6206,12 +6206,12 @@ snapshots:
       '@types/set-cookie-parser': 2.4.10
       set-cookie-parser: 3.1.0
 
-  hono-email@0.4.0(hono@4.12.22):
+  hono-email@0.4.0(hono@4.12.23):
     dependencies:
-      hono: 4.12.22
+      hono: 4.12.23
       htmlrewriter: 0.0.13
 
-  hono@4.12.22: {}
+  hono@4.12.23: {}
 
   hookable@5.5.3: {}
 
