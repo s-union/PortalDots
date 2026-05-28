@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="backend"
+#MISE description="Run Go tests with coverage for backend"
+
+mkdir -p ../generated/go && go test -coverprofile=../generated/go/backend-cover.out ./...

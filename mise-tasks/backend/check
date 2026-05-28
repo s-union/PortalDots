@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="backend"
+#MISE description="Run staticcheck for Go backend"
+
+staticcheck ./...

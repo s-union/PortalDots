@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE dir="backend"
+#MISE env = { _.file = ".env" }
+#MISE description="Seed or sync demo data against PORTAL_DATABASE_URL"
+
+go run ./scripts/seed/main.go

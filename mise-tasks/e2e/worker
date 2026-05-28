@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="frontend"
+#MISE description="Run e2e integration tests against the real dev:worker stack"
+
+unset NO_COLOR; pnpm exec playwright test --config=playwright.integration.config.ts --workers=1

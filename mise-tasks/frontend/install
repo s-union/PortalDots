@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Install dependencies for the new frontend workspace"
+
+pnpm install

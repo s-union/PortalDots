@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="packages/email"
+#MISE description="Start the email Worker dev server (HTTP + queue consumer)"
+
+pnpm run dev:local-stack
