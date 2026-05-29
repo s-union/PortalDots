@@ -6,6 +6,7 @@ use App\Eloquents\Concerns\IsNewTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -14,6 +15,8 @@ class Document extends Model
     use HasFactory;
     use IsNewTrait;
     use LogsActivity;
+
+    public const PUBLIC_CACHE_KEY_PREFIX = 'document.public.';
 
     protected $fillable = [
         'name',
@@ -44,6 +47,11 @@ class Document extends Model
             ->logOnlyDirty();
     }
 
+    public static function publicCacheKey(int $document_id): string
+    {
+        return self::PUBLIC_CACHE_KEY_PREFIX . $document_id;
+    }
+
     /**
      * モデルの「初期起動」メソッド
      *
@@ -55,6 +63,14 @@ class Document extends Model
 
         static::addGlobalScope('updated_at', function (Builder $builder) {
             $builder->latest('updated_at');
+        });
+
+        static::saved(function (Document $document) {
+            Cache::forget(self::publicCacheKey($document->id));
+        });
+
+        static::deleted(function (Document $document) {
+            Cache::forget(self::publicCacheKey($document->id));
         });
     }
 
