@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Storage;
 
 class ShowAction extends Controller
 {
+    // documents.id (MySQL INT UNSIGNED) の現実的な最大値
+    private const MAX_DOCUMENT_ID = 4294967295;
+
     public function __invoke(string $document)
     {
         // URLパラメータが数値IDでない場合は不正アクセスとして404にする
@@ -18,29 +21,45 @@ class ShowAction extends Controller
             return;
         }
 
-        $document_id = (int) $document;
+        // 極端に大きいIDは早期に404として扱い、不要な処理を避ける
+        $normalized_document = ltrim($document, '0');
+        if ($normalized_document === '') {
+            $normalized_document = '0';
+        }
+        $max_document_id = (string) self::MAX_DOCUMENT_ID;
+        if (
+            strlen($normalized_document) > strlen($max_document_id) ||
+            (strlen($normalized_document) === strlen($max_document_id) &&
+                strcmp($normalized_document, $max_document_id) > 0)
+        ) {
+            abort(404);
+
+            return;
+        }
+
+        $document_id = (int) $normalized_document;
         $cache_key = Document::publicCacheKey($document_id);
 
-        // 公開済み配布資料の最小情報をキャッシュし、DBアクセス回数を削減する
-        $public_document = Cache::rememberForever($cache_key, function () use ($document_id) {
+        // 公開資料のみを永続キャッシュする（非公開/不存在はキャッシュしない）
+        $public_document = Cache::get($cache_key);
+        if (empty($public_document)) {
             $document = Document::query()
                 ->select(['id', 'path'])
                 ->public()
                 ->find($document_id);
-
-            // 非公開または存在しない資料は「非公開扱い」の結果をキャッシュする
             if (empty($document)) {
-                return ['is_public' => false];
+                abort(404);
+
+                return;
             }
 
-            return [
-                'is_public' => true,
+            $public_document = [
                 'path' => $document->path,
             ];
-        });
+            Cache::forever($cache_key, $public_document);
+        }
 
-        // 公開資料として扱えない場合は詳細を返さず404にする
-        if (! ($public_document['is_public'] ?? false) || empty($public_document['path'])) {
+        if (empty($public_document['path'])) {
             abort(404);
 
             return;

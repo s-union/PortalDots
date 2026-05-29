@@ -66,6 +66,38 @@ final class ShowActionTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
+    public function 非公開資料はキャッシュされない()
+    {
+        $this->document->is_public = false;
+        $this->document->save();
+
+        $cache_key = Document::publicCacheKey($this->document->id);
+
+        $this->actingAs($this->user)
+            ->get(route('documents.show', [
+                'document' => $this->document,
+            ]))
+            ->assertStatus(404);
+
+        $this->assertFalse(Cache::has($cache_key));
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 存在しない資料idはキャッシュされない()
+    {
+        $document_id = $this->document->id + 100000;
+        $cache_key = Document::publicCacheKey($document_id);
+
+        $this->actingAs($this->user)
+            ->get(route('documents.show', [
+                'document' => $document_id,
+            ]))
+            ->assertStatus(404);
+
+        $this->assertFalse(Cache::has($cache_key));
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
     public function 二回目アクセスではdocumentsテーブルを参照しない()
     {
         $connection = DB::connection();
@@ -91,6 +123,22 @@ final class ShowActionTest extends TestCase
 
         $this->assertGreaterThan(0, $this->countDocumentsQueries($first_query_log));
         $this->assertSame(0, $this->countDocumentsQueries($second_query_log));
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function 上限を超えるidは404を返しdocumentsを参照しない()
+    {
+        $connection = DB::connection();
+        $connection->enableQueryLog();
+        $connection->flushQueryLog();
+
+        $this->actingAs($this->user)
+            ->get(route('documents.show', [
+                'document' => '999999999999999999999999',
+            ]))
+            ->assertStatus(404);
+
+        $this->assertSame(0, $this->countDocumentsQueries($connection->getQueryLog()));
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
