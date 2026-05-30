@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Run frontend formatter"
+
+pnpm run format

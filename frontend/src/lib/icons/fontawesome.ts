@@ -5,7 +5,6 @@ import {
   faAngleDoubleRight,
   faArrowDown,
   faArrowUp,
-  faArrowsRotate,
   faAt,
   faBell,
   faBold,
@@ -53,8 +52,7 @@ import {
   faTimes,
   faTrash,
   faUser,
-  faUserEdit,
-  faUsers
+  faUserEdit
 } from '@fortawesome/free-solid-svg-icons'
 import {
   faAddressBook,
@@ -81,7 +79,6 @@ export function initializeFontAwesome() {
     faAngleDoubleRight,
     faArrowDown,
     faArrowUp,
-    faArrowsRotate,
     faAt,
     faBell,
     faBold,
@@ -135,8 +132,7 @@ export function initializeFontAwesome() {
     faTimes,
     faTrash,
     faUser,
-    faUserEdit,
-    faUsers
+    faUserEdit
   )
 
   isInitialized = true

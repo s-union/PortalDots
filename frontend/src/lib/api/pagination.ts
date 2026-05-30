@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import { paginatedResultSchema, parseWithSchema } from '@/lib/api/schema'
 
 export interface PaginatedResult<T> {

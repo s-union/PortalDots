@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import type { StaffFilterField, StaffFilterQuery } from '@/lib/staffFilterSchema'
 
 export interface StaffCircleRow {

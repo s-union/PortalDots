@@ -5,11 +5,13 @@ import {
   parseArrayWithSchema,
   staffFormDetailSchema,
   staffFormPreviewSchema,
-  staffFormSummarySchema
+  staffFormSummarySchema,
+  type QuestionId,
+  type CircleId
 } from '@/lib/api/schema'
 import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
-import type { z } from 'zod'
+import type * as z from 'zod'
 
 export type StaffFormSummary = z.infer<typeof staffFormSummarySchema>
 export type StaffFormDetail = z.infer<typeof staffFormDetailSchema>
@@ -30,7 +32,7 @@ export const allowedQuestionTypes = [
 ] as const
 
 export interface CreateStaffFormPayload {
-  circleId?: string
+  circleId?: CircleId
   name: string
   description: string
   openAt: string
@@ -46,7 +48,7 @@ export interface CreateStaffFormQuestionPayload {
 }
 
 export interface UpdateStaffFormQuestionPayload {
-  id: string
+  id: QuestionId
   name: string
   description: string
   type: string

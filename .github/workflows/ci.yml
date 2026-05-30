@@ -16,24 +16,6 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            frontend:
-              - 'frontend/**'
-              - 'packages/api-client/**'
-              - 'pnpm-lock.yaml'
-              - 'mise.toml'
-              - '.github/workflows/ci.yml'
-
   frontend-check:
     runs-on: ubuntu-latest
     steps:
@@ -54,8 +36,6 @@ jobs:
         run: mise run frontend:check
 
   frontend-test:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -65,28 +45,13 @@ jobs:
       - name: Install JS dependencies
         run: mise run frontend:install
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package.json') }}
-
-      - name: Install Playwright Chromium
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @portaldots/frontend exec playwright install --with-deps chromium
-
-      - name: Install Playwright system dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @portaldots/frontend exec playwright install-deps chromium
-
       - name: Generate API client
         run: mise run api:client:codegen
 
       - name: Build (generates typed-router.d.ts)
         run: pnpm --filter @portaldots/frontend run build
 
-      - name: Test
+      - name: Test unit
         run: mise run frontend:test
 
   email-check:

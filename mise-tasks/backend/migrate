@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE dir="backend"
+#MISE env = { _.file = ".env" }
+#MISE description="Apply backend SQL migrations against PORTAL_DATABASE_URL"
+
+go run ./scripts/migrate/main.go

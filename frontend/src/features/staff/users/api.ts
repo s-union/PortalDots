@@ -6,6 +6,9 @@ import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { fetchSessionBootstrap } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
+import * as z from 'zod'
+
+export type StaffUser = z.infer<typeof staffUserSchema>
 
 export const manageableRoles = [
   'participant',
@@ -39,24 +42,6 @@ export const roleDescriptions: Record<string, string> = {
 
 export function getRoleDisplayName(role: string): string {
   return roleDisplayNames[role] ?? role
-}
-
-export interface StaffUser {
-  id: string
-  lastName: string
-  lastNameReading: string
-  firstName: string
-  firstNameReading: string
-  displayName: string
-  loginIds: string[]
-  contactEmail: string
-  univemail: string
-  phoneNumber: string
-  roles: string[]
-  isVerified: boolean
-  isEmailVerified: boolean
-  createdAt: string
-  updatedAt: string
 }
 
 export interface UpdateStaffUserPayload {

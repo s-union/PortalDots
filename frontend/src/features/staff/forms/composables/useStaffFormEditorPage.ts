@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, ref, watch, watchEffect, type MaybeRefOrGett
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useSessionStore } from '@/features/session/store'
 import { type StaffFormQuestion } from '@/features/staff/forms/api'
+import type { QuestionId } from '@/lib/api/schema'
 import {
   extractStaffFormValidationMessage,
   useCreateStaffFormQuestionMutation,
@@ -34,10 +35,10 @@ export function useStaffFormEditorPage(
   const reorderQuestionMutation = useReorderStaffFormQuestionsMutation(formId)
 
   const editorErrorMessage = ref('')
-  const questionEdits = ref<Record<string, StaffFormQuestion>>({})
-  const openQuestionId = ref<string | null>(null)
-  const draggingQuestionId = ref<string | null>(null)
-  const dropTargetQuestionId = ref<string | null>(null)
+  const questionEdits = ref<Record<QuestionId, StaffFormQuestion>>({})
+  const openQuestionId = ref<QuestionId | null>(null)
+  const draggingQuestionId = ref<QuestionId | null>(null)
+  const dropTargetQuestionId = ref<QuestionId | null>(null)
   const savedMessageVisible = ref(false)
 
   let savedMessageTimer: number | undefined = undefined
@@ -135,11 +136,11 @@ export function useStaffFormEditorPage(
     }, 3000)
   }
 
-  function toggleQuestion(questionId: string) {
+  function toggleQuestion(questionId: QuestionId) {
     openQuestionId.value = openQuestionId.value === questionId ? null : questionId
   }
 
-  function questionIdsAfterReorder(sourceQuestionId: string, targetQuestionId: string) {
+  function questionIdsAfterReorder(sourceQuestionId: QuestionId, targetQuestionId: QuestionId) {
     const orderedIds = (formQuery.data.value?.questions ?? []).map((question) => question.id)
     const sourceIndex = orderedIds.indexOf(sourceQuestionId)
     const targetIndex = orderedIds.indexOf(targetQuestionId)
@@ -223,7 +224,7 @@ export function useStaffFormEditorPage(
     }
   }
 
-  async function saveQuestion(questionId: string) {
+  async function saveQuestion(questionId: QuestionId) {
     editorErrorMessage.value = ''
 
     try {
@@ -264,7 +265,7 @@ export function useStaffFormEditorPage(
     }
   }
 
-  async function moveQuestion(questionId: string, direction: -1 | 1) {
+  async function moveQuestion(questionId: QuestionId, direction: -1 | 1) {
     const orderedIds = (formQuery.data.value?.questions ?? []).map((question) => question.id)
     const currentIndex = orderedIds.indexOf(questionId)
     const nextIndex = currentIndex + direction
@@ -284,19 +285,19 @@ export function useStaffFormEditorPage(
     }
   }
 
-  function startQuestionDrag(questionId: string) {
+  function startQuestionDrag(questionId: QuestionId) {
     draggingQuestionId.value = questionId
     dropTargetQuestionId.value = null
   }
 
-  function dragOverQuestion(questionId: string) {
+  function dragOverQuestion(questionId: QuestionId) {
     if (!draggingQuestionId.value || draggingQuestionId.value === questionId) {
       return
     }
     dropTargetQuestionId.value = questionId
   }
 
-  async function dropQuestion(questionId: string) {
+  async function dropQuestion(questionId: QuestionId) {
     if (!draggingQuestionId.value) {
       return
     }
@@ -316,7 +317,7 @@ export function useStaffFormEditorPage(
     }
   }
 
-  function updateQuestionEdit(questionId: string, value: StaffFormQuestion) {
+  function updateQuestionEdit(questionId: QuestionId, value: StaffFormQuestion) {
     questionEdits.value[questionId] = value
   }
 

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Start local PostgreSQL container"
+
+docker compose -f docker-compose.postgres.yml up -d postgres

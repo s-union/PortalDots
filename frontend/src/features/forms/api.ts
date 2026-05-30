@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import type { z } from 'zod'
+import type * as z from 'zod'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import { formDetailSchema, formSummarySchema, parseWithSchema, type formQuestionSchema } from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'

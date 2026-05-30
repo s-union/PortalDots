@@ -1,6 +1,7 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { z } from 'zod'
+import * as z from 'zod'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
+import { STALE_TIME } from '@/lib/api/cacheConfig'
 import {
   pageDetailSchema,
   paginatedResultSchema,
@@ -25,7 +26,7 @@ export function usePublicConfigQuery() {
     '/public/config',
     { headers: createJsonHeaders() },
     (value) => parseWithSchema(publicConfigSchema, value, 'public config'),
-    { queryKey: computed(() => ['public', 'config']) },
+    { queryKey: computed(() => ['public', 'config']), staleTime: STALE_TIME.PUBLIC_CONFIG },
     { errorMessage: 'Failed to fetch public config' }
   )
 }

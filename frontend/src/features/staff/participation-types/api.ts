@@ -1,7 +1,8 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import type { z } from 'zod'
+import type * as z from 'zod'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
+import { STALE_TIME } from '@/lib/api/cacheConfig'
 import {
   parseWithSchema,
   parseArrayWithSchema,
@@ -187,7 +188,8 @@ export function useStaffParticipationTypesQuery(enabled: MaybeRefOrGetter<boolea
     {
       queryKey: ['staff', 'participation-types'],
       enabled: isEnabled,
-      retry: false
+      retry: false,
+      staleTime: STALE_TIME.MASTER_DATA
     },
     {
       errorMessage: 'Failed to fetch participation types'
@@ -214,7 +216,8 @@ export function useStaffParticipationTypeDetailQuery(
     {
       queryKey: computed(() => ['staff', 'participation-types', toValue(typeId)]),
       enabled: computed(() => toValue(enabled) && toValue(typeId).trim().length > 0),
-      retry: false
+      retry: false,
+      staleTime: STALE_TIME.MASTER_DATA
     },
     {
       errorMessage: 'Failed to fetch participation type'

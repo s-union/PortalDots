@@ -11,7 +11,6 @@ import '@/styles/app.css'
 
 await initTemporal()
 
-initializeFontAwesome()
 initializeUiTheme()
 
 const app = createApp(App)
@@ -21,3 +20,5 @@ app.use(router)
 app.use(VueQueryPlugin, { queryClient })
 
 app.mount('#v2-app')
+
+initializeFontAwesome()

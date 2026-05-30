@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE dir="backend"
+#MISE env = { _.file = ".env" }
+#MISE description="Start the new Go API"
+
+air -c .air.toml

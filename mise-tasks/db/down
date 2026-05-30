@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Stop local PostgreSQL container"
+
+docker compose -f docker-compose.postgres.yml down

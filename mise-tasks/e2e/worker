@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#MISE dir="frontend"
+#MISE description="Run e2e integration tests against the real dev:worker stack"
+
+mise run backend:sqlc:generate
+shard_args=()
+if [[ -n "${PORTALDOTS_E2E_SHARD:-}" ]]; then
+  shard_args+=(--shard "${PORTALDOTS_E2E_SHARD}")
+fi
+
+reporter_args=()
+if [[ -n "${CI:-}" ]]; then
+  reporter_args+=(--reporter list)
+fi
+
+unset NO_COLOR; pnpm exec playwright test --config=playwright.integration.config.ts --workers=1 "${shard_args[@]}" "${reporter_args[@]}"

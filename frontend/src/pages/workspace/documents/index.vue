@@ -17,9 +17,10 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { buildApiUrl } from '@/lib/api/client'
 import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
-import { useDocumentsPageQuery } from '@/features/documents/api'
+import { useDocumentsPageQuery, fetchDocuments } from '@/features/documents/api'
 import { calculateTotalPages } from '@/lib/pagination'
 import { routePositiveInteger } from '@/lib/routeQuery'
+import { usePrefetchNextPage } from '@/lib/api/prefetch'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +40,18 @@ const shouldShowPagination = computed(() => {
 
   return calculateTotalPages(pageData.total, pageData.pageSize) > 1
 })
+const totalPages = computed(() => {
+  const pageData = documentsQuery.data.value
+  if (!pageData) {
+    return 1
+  }
+  return calculateTotalPages(pageData.total, pageData.pageSize)
+})
+
+usePrefetchNextPage(currentPage, totalPages, (nextPage) => ({
+  queryKey: ['documents', { page: nextPage, pageSize }],
+  queryFn: () => fetchDocuments({ page: nextPage, pageSize })
+}))
 
 watch(
   () => documentsQuery.data.value?.page,

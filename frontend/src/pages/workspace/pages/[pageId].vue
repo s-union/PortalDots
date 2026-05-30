@@ -5,7 +5,7 @@ definePage({
   }
 })
 
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -17,7 +17,7 @@ import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { usePageDetailQuery } from '@/features/pages/api'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import LoadingState from '@/components/ui/LoadingState.vue'
 
 const route = useRoute('/workspace/pages/[pageId]')

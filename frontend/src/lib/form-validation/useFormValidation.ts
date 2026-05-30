@@ -1,5 +1,5 @@
 import { computed, getCurrentScope, onScopeDispose, ref, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
-import type { z } from 'zod'
+import type * as z from 'zod'
 
 export interface FieldError {
   field: string

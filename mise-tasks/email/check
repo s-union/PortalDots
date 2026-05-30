@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="packages/email"
+#MISE description="Run static checks for the email Worker"
+
+pnpm run ci:check

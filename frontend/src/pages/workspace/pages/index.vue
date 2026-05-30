@@ -12,12 +12,13 @@ import ListPanel from '@/components/ui/ListPanel.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import PaginationFooter from '@/components/ui/PaginationFooter.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import { usePagesQuery } from '@/features/pages/api'
+import { usePagesQuery, fetchPages } from '@/features/pages/api'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { calculateTotalPages } from '@/lib/pagination'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { routePositiveInteger, routeString } from '@/lib/routeQuery'
+import { usePrefetchNextPage } from '@/lib/api/prefetch'
 
 const route = useRoute()
 const router = useRouter()
@@ -30,6 +31,17 @@ const pagesQuery = usePagesQuery(
 )
 const pageList = computed(() => pagesQuery.data.value ?? { items: [], page: 1, pageSize, total: 0 })
 const shouldShowPagination = computed(() => calculateTotalPages(pageList.value.total, pageList.value.pageSize) > 1)
+const totalPages = computed(() => calculateTotalPages(pageList.value.total, pageList.value.pageSize))
+
+usePrefetchNextPage(
+  page,
+  totalPages,
+  (nextPage) => ({
+    queryKey: ['pages', searchQuery.value, { page: nextPage, pageSize }],
+    queryFn: () => fetchPages(searchQuery.value, { page: nextPage, pageSize })
+  }),
+  [searchQuery]
+)
 
 watch(
   () => route.query.query,

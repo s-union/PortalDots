@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -39,7 +39,12 @@ describe('PrivacyPolicyPage', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('プライバシーポリシー')
+    await vi.waitFor(
+      () => {
+        expect(wrapper.text()).toContain('プライバシーポリシー')
+      },
+      { timeout: 5000 }
+    )
     expect(wrapper.text()).toContain('第５条　Cookieについて')
     expect(wrapper.text()).toContain('Googleアナリティクス')
   })

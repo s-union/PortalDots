@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import StaffPlaceEditor from './StaffPlaceEditor.vue'
+import { toPlaceId } from '@/lib/api/schema'
 
 const meta = {
   title: 'UI/Staff/Places/StaffPlaceEditor',
@@ -45,7 +46,7 @@ export const CreateNew: Story = {
 export const EditIndoor: Story = {
   args: {
     place: {
-      id: 'place-1',
+      id: toPlaceId('place-1'),
       name: 'メインホール',
       type: 1,
       notes: '最大収容500人',
@@ -61,7 +62,7 @@ export const EditIndoor: Story = {
 export const EditOutdoor: Story = {
   args: {
     place: {
-      id: 'place-2',
+      id: toPlaceId('place-2'),
       name: 'メインステージ（屋外）',
       type: 2,
       notes: '雨天時は使用不可',

@@ -1,5 +1,6 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import type { FormQuestion } from '@/features/forms/api'
+import { categoryIdSchema, participationTypeIdSchema } from '@/lib/api/schema'
 
 /**
  * Password validation schema
@@ -107,7 +108,7 @@ export type PasswordChangeFormData = z.infer<typeof passwordChangeFormSchema>
  * Contact form schema
  */
 export const contactFormSchema = z.object({
-  categoryId: z.string().min(1, 'お問い合わせ項目を選択してください'),
+  categoryId: categoryIdSchema.min(1, 'お問い合わせ項目を選択してください'),
   ccSubleader: z.boolean(),
   body: z.string().min(1, 'お問い合わせ内容を入力してください')
 })
@@ -168,7 +169,7 @@ export const circleRegistrationFormSchema = z.object({
   nameYomi: hiraganaSchema,
   groupName: requiredTextSchema('団体名'),
   groupNameYomi: hiraganaSchema,
-  participationTypeId: z.string().min(1, '参加種別を選択してください'),
+  participationTypeId: participationTypeIdSchema.min(1, '参加種別を選択してください'),
   notes: z.string().optional()
 })
 

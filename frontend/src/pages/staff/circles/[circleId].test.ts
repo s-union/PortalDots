@@ -98,8 +98,22 @@ const defaultParticipationTypes = [
 ]
 
 const defaultPlaces = [
-  { id: 'place-booth', name: '屋内ブース', maxCircleCount: 200 },
-  { id: 'place-stage', name: 'メインステージ', maxCircleCount: 30 }
+  {
+    id: 'place-booth',
+    name: '屋内ブース',
+    type: 1,
+    notes: '',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z'
+  },
+  {
+    id: 'place-stage',
+    name: 'メインステージ',
+    type: 1,
+    notes: '',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z'
+  }
 ]
 
 function setupSession() {
@@ -142,6 +156,8 @@ async function setupRouter() {
 
 describe('StaffCircleDetailPage', () => {
   it('renders and updates circle detail', async () => {
+    let updateRequestBody: unknown
+
     server.use(
       http.get('/v1/staff/participation-types', () => HttpResponse.json(defaultParticipationTypes)),
       http.get('/v1/staff/places', () => HttpResponse.json(defaultPlaces)),
@@ -158,15 +174,16 @@ describe('StaffCircleDetailPage', () => {
           }))
         })
       ),
-      http.put('/v1/staff/circles/circle-b', () =>
-        HttpResponse.json({
+      http.put('/v1/staff/circles/circle-b', async ({ request }) => {
+        updateRequestBody = await request.json()
+        return HttpResponse.json({
           ...defaultCircle,
           name: '更新後の企画B',
           nameYomi: 'コウシンゴノキカクビー',
           groupName: '更新後Bブロック',
           groupNameYomi: 'コウシンゴビーブロック'
         })
-      ),
+      }),
       http.post('/v1/staff/circles/circle-b/email', () => HttpResponse.json({}, { status: 201 })),
       http.post('/v1/staff/circles/circle-b/members', () => new HttpResponse(null, { status: 201 })),
       http.delete('/v1/staff/circles/circle-b/members/user-2', () => new HttpResponse(null, { status: 204 }))
@@ -199,6 +216,7 @@ describe('StaffCircleDetailPage', () => {
 
     expect(wrapper.text()).toContain('企画を更新しました。')
     expect(wrapper.text()).toContain('既存企画の参加種別は変更できません。')
+    expect(updateRequestBody).toEqual(expect.objectContaining({ placeIds: ['place-booth'] }))
   })
 
   it('adds and removes circle members', async () => {

@@ -24,12 +24,13 @@ import {
 } from '@/features/staff/forms/answers'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import { routeString } from '@/lib/routeQuery'
+import { toCircleId, type CircleId } from '@/lib/api/schema'
 
 const route = useRoute('/staff/forms/[formId]/answers/create')
 const router = useRouter()
 const sessionStore = useSessionStore()
 const formId = computed(() => String(route.params.formId ?? ''))
-const selectedCircleId = ref('')
+const selectedCircleId = ref('' as CircleId)
 const errorMessage = ref('')
 
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
@@ -42,7 +43,7 @@ const createAnswerMutation = useCreateStaffFormAnswerMutation(formId)
 watch(
   () => route.query.circle,
   (value) => {
-    selectedCircleId.value = routeString(value)
+    selectedCircleId.value = toCircleId(routeString(value))
   },
   { immediate: true }
 )

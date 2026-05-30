@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import AnswerQuestionFields from './AnswerQuestionFields.vue'
 import type { FormQuestion } from '@/features/forms/api'
 import type { FormAnswerDraft } from '@/features/forms/answers'
+import { toQuestionId } from '@/lib/api/schema'
 
 const meta = {
   title: 'UI/Forms/AnswerQuestionFields',
@@ -14,7 +15,7 @@ export default meta
 type Story = StoryObj<VueRenderer>
 
 const baseQuestion = {
-  id: 'q-1',
+  id: toQuestionId('q-1'),
   description: '',
   isRequired: true,
   isPermanent: false,
@@ -35,14 +36,14 @@ const textQuestion: FormQuestion = {
 
 const textareaQuestion: FormQuestion = {
   ...baseQuestion,
-  id: 'q-2',
+  id: toQuestionId('q-2'),
   name: '企画の説明を入力してください',
   type: 'textarea'
 }
 
 const markdownQuestion: FormQuestion = {
   ...baseQuestion,
-  id: 'q-md',
+  id: toQuestionId('q-md'),
   name: '企画紹介文を入力してください',
   description: '見出し、箇条書き、リンクなどを Markdown で入力できます。',
   type: 'markdown',
@@ -51,7 +52,7 @@ const markdownQuestion: FormQuestion = {
 
 const numberQuestion: FormQuestion = {
   ...baseQuestion,
-  id: 'q-3',
+  id: toQuestionId('q-3'),
   name: '参加人数を入力してください',
   type: 'number',
   numberMin: 1,
@@ -60,7 +61,7 @@ const numberQuestion: FormQuestion = {
 
 const selectQuestion: FormQuestion = {
   ...baseQuestion,
-  id: 'q-4',
+  id: toQuestionId('q-4'),
   name: '希望時間帯を選んでください',
   type: 'select',
   options: ['午前（10:00〜12:00）', '午後（13:00〜15:00）', '夕方（16:00〜18:00）']
@@ -68,7 +69,7 @@ const selectQuestion: FormQuestion = {
 
 const radioQuestion: FormQuestion = {
   ...baseQuestion,
-  id: 'q-5',
+  id: toQuestionId('q-5'),
   name: '屋外使用を希望しますか？',
   type: 'radio',
   options: ['はい', 'いいえ', '未定']
@@ -76,7 +77,7 @@ const radioQuestion: FormQuestion = {
 
 const checkboxQuestion: FormQuestion = {
   ...baseQuestion,
-  id: 'q-6',
+  id: toQuestionId('q-6'),
   name: '必要な機材を選んでください（複数選択可）',
   type: 'checkbox',
   options: ['机（4人用）', 'イス', '電源', '延長コード']
@@ -84,7 +85,7 @@ const checkboxQuestion: FormQuestion = {
 
 const uploadQuestion: FormQuestion = {
   ...baseQuestion,
-  id: 'q-7',
+  id: toQuestionId('q-7'),
   name: 'チラシのPDFをアップロードしてください',
   type: 'upload'
 }

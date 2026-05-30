@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import UploadFileRow from './UploadFileRow.vue'
 import type { StaffFormUpload } from '@/features/staff/forms/api'
+import { toUploadId, toQuestionId } from '@/lib/api/schema'
 
 const meta = {
   title: 'UI/Staff/Forms/UploadFileRow',
@@ -18,8 +19,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const upload: StaffFormUpload = {
-  id: 'upload-1',
-  questionId: 'q-1',
+  id: toUploadId('upload-1'),
+  questionId: toQuestionId('q-1'),
   filename: 'activity-photo.jpg',
   mimeType: 'image/jpeg',
   sizeBytes: 204800,
@@ -47,7 +48,7 @@ export const PdfFile: Story = {
     formId: 'form-1',
     upload: {
       ...upload,
-      id: 'upload-2',
+      id: toUploadId('upload-2'),
       filename: 'application-form.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 512000
@@ -61,7 +62,7 @@ export const LargeFile: Story = {
     formId: 'form-1',
     upload: {
       ...upload,
-      id: 'upload-3',
+      id: toUploadId('upload-3'),
       filename: 'presentation-materials.zip',
       mimeType: 'application/zip',
       sizeBytes: 10485760

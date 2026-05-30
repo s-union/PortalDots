@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toValue, type MaybeRefOrGetter } from 'vue'
+import { defineAsyncComponent, toValue, type MaybeRefOrGetter } from 'vue'
 import { RouterLink } from 'vue-router'
 import ListItemLink from '@/components/ui/ListItemLink.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
@@ -9,7 +9,7 @@ import { formatFileSize } from '@/lib/format/fileSize'
 import { formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useSuspensePublicPageDetailQuery } from '@/features/public-home/api'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import ErrorState from '@/components/ui/ErrorState.vue'
 
 const { pageId } = defineProps<{

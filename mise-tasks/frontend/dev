@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="frontend"
+#MISE description="Start vue vite dev server"
+
+pnpm exec vite --host 127.0.0.1

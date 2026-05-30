@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -241,7 +241,14 @@ describe('FormDetailPage', () => {
     expect(wrapper.text()).toContain('レイアウト図')
     expect(wrapper.text()).toContain('1企画あたり 2 件まで回答できます。')
     expect(wrapper.text()).toContain('模擬店')
-    expect(wrapper.text()).toContain('搬入確認フォームへの回答ありがとうございました。')
+
+    await vi.waitFor(
+      () => {
+        expect(wrapper.text()).toContain('搬入確認フォームへの回答ありがとうございました。')
+      },
+      { timeout: 5000 }
+    )
+
     expect(wrapper.text()).toContain('申請企画名')
 
     const inputs = wrapper.findAll('input[type="text"]').filter((input) => !input.element.hasAttribute('readonly'))
