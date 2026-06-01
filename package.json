@@ -1,7 +1,7 @@
 {
     "private": true,
     "name": "portaldots",
-    "packageManager": "pnpm@11.2.2",
+    "packageManager": "pnpm@11.4.0",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/s-union/PortalDots.git"
