@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -76,7 +77,12 @@ func run(rootDir string, mode devMode) error {
 		return fmt.Errorf("PORTAL_DATABASE_URL not found in .env")
 	}
 
-	databaseEnv := []string{"PORTAL_DATABASE_URL=" + databaseURL}
+	fileEnv, err := loadEnvFile(rootDir, ".env")
+	if err != nil {
+		return err
+	}
+
+	databaseEnv := mergeEnv(fileEnv, []string{"PORTAL_DATABASE_URL=" + databaseURL})
 	if err := runCommandWithEnv(rootDir, databaseEnv, "mise", "run", "backend:migrate"); err != nil {
 		return err
 	}
@@ -84,20 +90,30 @@ func run(rootDir string, mode devMode) error {
 		return err
 	}
 
-	backendEnv := append(databaseEnv, emailEnv(mode)...)
+	backendEnv := mergeEnv(databaseEnv, emailEnv(mode))
+	backendCommand := newManagedCommandWithEnv("backend", filepath.Join(rootDir, "backend"), backendEnv, "air", "-c", ".air.toml")
+	started, err := startCommands([]*managedCommand{backendCommand})
+	if err != nil {
+		return err
+	}
+	if err := waitForHTTPURL("backend API", backendHealthURL(rootDir), 60*time.Second); err != nil {
+		stopCommands(started)
+		return err
+	}
+
 	commands := []*managedCommand{
-		newManagedCommandWithEnv("backend", filepath.Join(rootDir, "backend"), backendEnv, "air", "-c", ".air.toml"),
 		newManagedCommand("frontend", rootDir, "mise", "run", "frontend:dev"),
 	}
 	if mode == devModeWorker {
 		commands = append(commands, newManagedCommand("email", rootDir, "mise", "run", "email:dev"))
 	}
 
-	started, err := startCommands(commands)
+	additionalStarted, err := startCommands(commands)
 	if err != nil {
-		stopCommands(commands)
+		stopCommands(append(started, additionalStarted...))
 		return err
 	}
+	started = append(started, additionalStarted...)
 	defer stopCommands(started)
 
 	signalCh := make(chan os.Signal, 1)
@@ -221,6 +237,14 @@ func assertPortAvailable(address string) error {
 	return listener.Close()
 }
 
+func backendHealthURL(rootDir string) string {
+	apiBind, err := loadEnvValue(rootDir, "PORTAL_API_BIND")
+	if err != nil || strings.TrimSpace(apiBind) == "" {
+		apiBind = ":8081"
+	}
+	return "http://" + normalizeListenAddress(apiBind) + "/v1/public/config"
+}
+
 func findRepoRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -266,6 +290,31 @@ func waitForComposeService(rootDir string, composeFile string, service string, t
 
 		if time.Now().After(deadline) {
 			return fmt.Errorf("timed out waiting for %s to become healthy", service)
+		}
+
+		time.Sleep(time.Second)
+	}
+}
+
+func waitForHTTPURL(name string, url string, timeout time.Duration) error {
+	client := http.Client{Timeout: time.Second}
+	deadline := time.Now().Add(timeout)
+	for {
+		response, err := client.Get(url)
+		if err == nil {
+			if closeErr := response.Body.Close(); closeErr != nil {
+				return closeErr
+			}
+			if response.StatusCode >= 200 && response.StatusCode < 500 {
+				return nil
+			}
+		}
+
+		if time.Now().After(deadline) {
+			if err != nil {
+				return fmt.Errorf("timed out waiting for %s at %s: %w", name, url, err)
+			}
+			return fmt.Errorf("timed out waiting for %s at %s", name, url)
 		}
 
 		time.Sleep(time.Second)
@@ -505,6 +554,60 @@ func loadEnvValue(dir string, key string) (string, error) {
 		return value, nil
 	}
 	return loadEnvVar(dir, ".env", key)
+}
+
+func loadEnvFile(dir string, filename string) ([]string, error) {
+	path := filepath.Join(dir, filename)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var env []string
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		value = strings.Trim(strings.TrimSpace(value), "\"'")
+		env = append(env, key+"="+value)
+	}
+	return env, nil
+}
+
+func mergeEnv(base []string, override []string) []string {
+	result := append([]string{}, base...)
+	indexByKey := make(map[string]int, len(result)+len(override))
+	for index, entry := range result {
+		key, _, ok := strings.Cut(entry, "=")
+		if ok {
+			indexByKey[key] = index
+		}
+	}
+	for _, entry := range override {
+		key, _, ok := strings.Cut(entry, "=")
+		if !ok {
+			continue
+		}
+		if index, exists := indexByKey[key]; exists {
+			result[index] = entry
+			continue
+		}
+		indexByKey[key] = len(result)
+		result = append(result, entry)
+	}
+	return result
 }
 
 func commandOutput(dir string, name string, args ...string) (string, error) {

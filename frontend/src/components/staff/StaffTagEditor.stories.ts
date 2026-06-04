@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import StaffTagEditor from './StaffTagEditor.vue'
+import { toTagId } from '@/lib/api/schema'
 
 const meta = {
   title: 'UI/Staff/Tags/StaffTagEditor',
@@ -44,7 +45,7 @@ export const CreateNew: Story = {
 export const EditExisting: Story = {
   args: {
     tag: {
-      id: 'tag-1',
+      id: toTagId('tag-1'),
       name: '文化系',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z'

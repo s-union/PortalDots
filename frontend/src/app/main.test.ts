@@ -47,11 +47,10 @@ describe('main entrypoint', () => {
     expect(initTemporal).toHaveBeenCalledTimes(1)
     expect(initializeFontAwesome).toHaveBeenCalledTimes(1)
     expect(initializeUiTheme).toHaveBeenCalledTimes(1)
-    expect(initTemporal.mock.invocationCallOrder[0]).toBeLessThan(initializeFontAwesome.mock.invocationCallOrder[0])
-    expect(initializeFontAwesome.mock.invocationCallOrder[0]).toBeLessThan(
-      initializeUiTheme.mock.invocationCallOrder[0]
-    )
     expect(initTemporal.mock.invocationCallOrder[0]).toBeLessThan(initializeUiTheme.mock.invocationCallOrder[0])
+    expect(initTemporal.mock.invocationCallOrder[0]).toBeLessThan(mount.mock.invocationCallOrder[0])
+    expect(initializeUiTheme.mock.invocationCallOrder[0]).toBeLessThan(mount.mock.invocationCallOrder[0])
+    expect(mount.mock.invocationCallOrder[0]).toBeLessThan(initializeFontAwesome.mock.invocationCallOrder[0])
     expect(createApp).toHaveBeenCalledTimes(1)
     expect(use).toHaveBeenCalledTimes(3)
     expect(mount).toHaveBeenCalledWith('#v2-app')

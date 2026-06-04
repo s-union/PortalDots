@@ -1,14 +1,21 @@
 import { computed, ref, type MaybeRefOrGetter, toValue, watch } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { z } from 'zod'
+import * as z from 'zod'
 import { $api, buildApiUrl, createJsonHeaders, postMultipart } from '@/lib/api/client'
-import { formAnswerEnvelopeSchema, formAnswerSchema, parseWithSchema } from '@/lib/api/schema'
+import {
+  formAnswerEnvelopeSchema,
+  formAnswerSchema,
+  parseWithSchema,
+  type AnswerId,
+  type QuestionId,
+  type UploadId
+} from '@/lib/api/schema'
 import { extractValidationMessage as extractApiValidationMessage, parseValidationError } from '@/lib/api/validation'
 import type { FormQuestion } from '@/features/forms/api'
 import { useSessionStore } from '@/features/session/store'
 
 export interface FormAnswer {
-  id: string
+  id: AnswerId
   body: string
   updatedAt: string
   details: Record<string, string[]>
@@ -16,8 +23,8 @@ export interface FormAnswer {
 }
 
 export interface FormAnswerUpload {
-  id: string
-  questionId: string
+  id: UploadId
+  questionId: QuestionId
   filename: string
   mimeType: string
   sizeBytes: number
@@ -394,7 +401,7 @@ export function answerValue(draft: FormAnswerDraft, question: AnswerableQuestion
 }
 
 export function createAnswerableQuestionRef(
-  questionId: string,
+  questionId: QuestionId,
   type: AnswerableQuestionRef['type']
 ): AnswerableQuestionRef {
   return { id: questionId, type }

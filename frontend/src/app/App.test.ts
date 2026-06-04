@@ -106,13 +106,32 @@ describe('App', () => {
       })
       await flushPromises()
 
-      expect(wrapper.get('a[href="https://www.portaldots.com"]').text()).toContain('PortalDots')
+      await vi.waitFor(
+        () => {
+          expect(wrapper.get('a[href="https://www.portaldots.com"]').text()).toContain('PortalDots')
+        },
+        { timeout: 5000 }
+      )
       expect(wrapper.text()).toContain('PortalDots')
       expect(wrapper.text()).toContain('Powered by')
       expect(wrapper.get('a[href="/support"]').text()).toContain('推奨動作環境')
       expect(wrapper.get('a[href="/privacy_policy"]').text()).toContain('プライバシーポリシー')
+
+      await vi.waitFor(
+        () => {
+          expect(wrapper.findAll('a[href="/public/pages"]').length).toBeGreaterThan(0)
+        },
+        { timeout: 5000 }
+      )
       expect(wrapper.findAll('a[href="/public/pages"]').at(0)?.text()).toContain('お知らせ')
       expect(wrapper.findAll('a[href="/public/documents"]').at(0)?.text()).toContain('配布資料')
+
+      await vi.waitFor(
+        () => {
+          expect(wrapper.findAll('a[href="/workspace/settings/appearance"]').length).toBeGreaterThan(0)
+        },
+        { timeout: 5000 }
+      )
       expect(wrapper.findAll('a[href="/workspace/settings/appearance"]').at(0)?.text()).toContain('ユーザー設定')
     } finally {
       Object.defineProperty(window, 'matchMedia', {
@@ -194,8 +213,20 @@ describe('App', () => {
       })
       await flushPromises()
 
-      expect(wrapper.get('main a[href="/support"]').text()).toContain('推奨動作環境')
+      await vi.waitFor(
+        () => {
+          expect(wrapper.get('main a[href="/support"]').text()).toContain('推奨動作環境')
+        },
+        { timeout: 5000 }
+      )
       expect(wrapper.get('main a[href="/privacy_policy"]').text()).toContain('プライバシーポリシー')
+
+      await vi.waitFor(
+        () => {
+          expect(wrapper.findAll('a[href="/public/pages"]').length).toBeGreaterThan(0)
+        },
+        { timeout: 5000 }
+      )
       expect(wrapper.get('a[href="/public/pages"]').text()).toContain('お知らせ')
       expect(wrapper.findAllComponents({ name: 'BottomTabLink' }).length).toBe(3)
     } finally {

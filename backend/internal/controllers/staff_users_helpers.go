@@ -129,6 +129,8 @@ func updateStaffUserSession(ctx context.Context, sessionID string, currentSessio
 }
 
 func updateOrInvalidateStaffUserSession(ctx context.Context, sessionID string, currentSession session.Session, updatedUser useradmin.User, store session.Store) {
+	store.InvalidateUser(updatedUser.ID)
+
 	if currentSession.User != nil && currentSession.User.ID == updatedUser.ID {
 		updateStaffUserSession(ctx, sessionID, currentSession, updatedUser, store)
 		return

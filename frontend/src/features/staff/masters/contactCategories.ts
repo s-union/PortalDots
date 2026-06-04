@@ -1,14 +1,12 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { createJsonHeaders, $api } from '@/lib/api/client'
+import { STALE_TIME } from '@/lib/api/cacheConfig'
 import { parseWithSchema, parseArrayWithSchema, staffContactCategorySchema } from '@/lib/api/schema'
 import { parseValidationError } from '@/lib/api/validation'
 import { useStaffMasterMutation } from './shared'
+import * as z from 'zod'
 
-export interface StaffContactCategory {
-  id: string
-  name: string
-  email: string
-}
+export type StaffContactCategory = z.infer<typeof staffContactCategorySchema>
 
 export async function fetchStaffContactCategories() {
   return $api.queryData(
@@ -89,7 +87,8 @@ export function useStaffContactCategoriesQuery(enabled: MaybeRefOrGetter<boolean
     {
       queryKey: ['staff', 'contact-categories'],
       enabled: computed(() => toValue(enabled)),
-      retry: false
+      retry: false,
+      staleTime: STALE_TIME.MASTER_DATA
     },
     {
       errorMessage: 'Failed to fetch contact categories'

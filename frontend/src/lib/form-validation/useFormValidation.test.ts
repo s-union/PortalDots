@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { effectScope, reactive, ref, nextTick } from 'vue'
-import { z } from 'zod'
+import * as z from 'zod'
 import { useFormValidation } from './useFormValidation'
 
 const testSchema = z.object({

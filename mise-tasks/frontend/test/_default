@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 #MISE dir="frontend"
-#MISE description="Run frontend vitest"
+#MISE description="Run frontend vitest unit tests"
 
-pnpm run test
+pnpm exec vitest run --project=unit

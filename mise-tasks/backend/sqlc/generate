@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="backend"
+#MISE description="Generate Go code from backend sqlc queries"
+
+sqlc generate

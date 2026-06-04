@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import MarkdownEditorField from './MarkdownEditorField.vue'
@@ -41,7 +41,12 @@ describe('MarkdownEditorField', () => {
 
     await previewButton.trigger('click')
 
-    expect(wrapper.text()).toContain('プレビュー確認')
+    await vi.waitFor(
+      () => {
+        expect(wrapper.text()).toContain('プレビュー確認')
+      },
+      { timeout: 5000 }
+    )
     expect(wrapper.get('a').attributes('href')).toBe('/staff/markdown-guide')
   })
 })

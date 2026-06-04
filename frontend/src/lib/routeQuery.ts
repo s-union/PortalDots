@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 const routeStringSchema = z.string()
 const routeParamsSchema = z.record(z.string(), z.unknown())

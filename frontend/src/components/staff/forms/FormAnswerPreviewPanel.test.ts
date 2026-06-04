@@ -137,7 +137,7 @@ function createForm(overrides: Partial<StaffFormDetail> = {}): StaffFormDetail {
 }
 
 describe('FormAnswerPreviewPanel', () => {
-  it('renders answer details, upload links, and management link', () => {
+  it('renders answer details, upload links, and management link', async () => {
     const wrapper = mount(FormAnswerPreviewPanel, {
       props: {
         formId: 'form-1',
@@ -155,7 +155,14 @@ describe('FormAnswerPreviewPanel', () => {
     expect(wrapper.text()).toContain('机, 椅子')
     expect(wrapper.text()).toContain('複数行\nテキスト')
     expect(wrapper.text()).toContain('山田太郎')
-    expect(wrapper.html()).toContain('<strong>太字</strong>')
+
+    await vi.waitFor(
+      () => {
+        expect(wrapper.html()).toContain('<strong>太字</strong>')
+      },
+      { timeout: 5000 }
+    )
+
     expect(wrapper.text()).toContain('layout.pdf')
     expect(wrapper.text()).toContain('1 件')
     expect(wrapper.get('a[href="/download/form-1/upload-1"]').text()).toContain('ダウンロード')

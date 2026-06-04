@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE dir="backend"
+#MISE env = { _.file = ".env" }
+#MISE description="Run the sqlc smoke command against PORTAL_DATABASE_URL"
+
+go run ./scripts/sqlc-smoke/main.go

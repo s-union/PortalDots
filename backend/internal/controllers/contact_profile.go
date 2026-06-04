@@ -460,6 +460,7 @@ func (h *authHandlers) updateProfile(c *echo.Context) error {
 			}
 		}
 
+		h.sessions.InvalidateUser(updatedUser.ID)
 		h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 			if next.User == nil {
 				return
@@ -492,6 +493,7 @@ func (h *authHandlers) updateProfile(c *echo.Context) error {
 		return internalError(c)
 	}
 
+	h.sessions.InvalidateUser(updatedUser.ID)
 	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		if next.User == nil {
 			return

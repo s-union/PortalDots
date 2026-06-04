@@ -1676,6 +1676,9 @@ func TestGetPublicDocumentDownloadsGuestFile(t *testing.T) {
 	if recorder.Body.String() != "Aブロックの搬入は 9:00 から 9:30 です。" {
 		t.Fatalf("unexpected public document body: %s", recorder.Body.String())
 	}
+	if got := recorder.Header().Get("Cache-Control"); got != "public, max-age=60" {
+		t.Fatalf("unexpected public document cache control: %s", got)
+	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/public/documents/0195ec00-0043-7000-8000-000000000001", nil)
 	if recorder.Code != http.StatusNotFound {

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#MISE env = { _.file = ".env" }
 #MISE description="Reset local db, then start backend and frontend dev servers"
 
 go run ./scripts/dev.go

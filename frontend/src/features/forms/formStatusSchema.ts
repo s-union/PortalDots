@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 export const formStatusTabSchema = z.enum(['open', 'closed', 'all'])
 export type FormStatusTab = z.infer<typeof formStatusTabSchema>

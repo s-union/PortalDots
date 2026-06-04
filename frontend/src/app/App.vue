@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import AppDrawer from '@/components/shell/AppDrawer.vue'
-import BottomTabLink from '@/components/ui/BottomTabLink.vue'
-import PublicFooterLinks from '@/components/ui/PublicFooterLinks.vue'
 import { cn } from '@/lib/ui/cn'
 import { useAppShell } from '@/app/composables/useAppShell'
+
+const AppDrawer = defineAsyncComponent(() => import('@/components/shell/AppDrawer.vue'))
+const BottomTabLink = defineAsyncComponent(() => import('@/components/ui/BottomTabLink.vue'))
+const PublicFooterLinks = defineAsyncComponent(() => import('@/components/ui/PublicFooterLinks.vue'))
 
 const {
   appModeLabel,

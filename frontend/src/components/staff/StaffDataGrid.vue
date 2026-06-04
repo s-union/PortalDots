@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { z } from 'zod'
+import * as z from 'zod'
 import { calculateTotalPages } from '@/lib/pagination'
 import { formatDateTime } from '@/lib/format/datetime'
 import FaIcon from '@/components/ui/FaIcon.vue'

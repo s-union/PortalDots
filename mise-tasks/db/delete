@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Stop local PostgreSQL container and delete its volume"
+
+docker compose -f docker-compose.postgres.yml down -v

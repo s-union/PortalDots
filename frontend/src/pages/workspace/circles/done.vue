@@ -7,10 +7,10 @@ definePage({
   }
 })
 
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import PageMarkdownContent from '@/features/pages/components/PageMarkdownContent.vue'
+const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import { useCurrentCircleDetailQuery } from '@/features/circles/queries'
 import LoadingMessage from '@/components/ui/LoadingMessage.vue'
 import FaIcon from '@/components/ui/FaIcon.vue'

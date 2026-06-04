@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Run all formatters"
+
+mise run format:run
