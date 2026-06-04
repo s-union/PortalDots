@@ -20,7 +20,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20260531.1",
+    "@cloudflare/workers-types": "4.20260601.1",
     "@typescript/native-preview": "7.0.0-dev.20260314.1",
     "typescript": "6.0.3",
     "vitest": "4.1.7",
