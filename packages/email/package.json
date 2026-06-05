@@ -24,6 +24,6 @@
     "@typescript/native-preview": "7.0.0-dev.20260602.1",
     "typescript": "6.0.3",
     "vitest": "4.1.8",
-    "wrangler": "4.96.0"
+    "wrangler": "4.97.0"
   }
 }
