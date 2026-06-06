@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@tanstack/vue-query": "5.101.0",
-    "@typescript/native-preview": "7.0.0-dev.20260602.1",
+    "@typescript/native-preview": "7.0.0-dev.20260603.1",
     "openapi-typescript": "7.13.0",
     "typescript": "6.0.3",
     "vitest": "4.1.8",
