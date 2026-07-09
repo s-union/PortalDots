@@ -7,8 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsgo --noEmit",
-    "typecheck:compat": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "lint": "oxlint --type-aware .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
@@ -22,9 +21,9 @@
   },
   "devDependencies": {
     "@tanstack/vue-query": "5.101.0",
-    "@typescript/native-preview": "7.0.0-dev.20260607.1",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "openapi-typescript": "7.13.0",
-    "typescript": "6.0.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "4.1.8",
     "vue": "3.5.35"
   },
