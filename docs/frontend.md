@@ -8,7 +8,7 @@ Vue was chosen over React or Svelte because:
 
 - **Composition API with `<script setup>`** gives fine-grained reactivity without the boilerplate of class components or the ergonomic rough edges of React hooks.
 - **Single-file components** keep template, logic, and styles colocated, which fits the feature-first layout without cross-file hopping.
-- **TypeScript support** is first-class via `vue-tsc` / `vue-tsgo` and `@vue/tsconfig`.
+- **TypeScript support** is first-class via the native TypeScript 7 compiler (`tsc`) and [`golar`](https://github.com/positive-intentions/golar) for Vue template type checking, with `@vue/tsconfig`.
 
 All components use `<script setup lang="ts">`. Options API is not used anywhere in the codebase.
 
@@ -108,12 +108,12 @@ This centralizes cache key management and makes it easy to invalidate related qu
 
 ## Type checking
 
-The project uses two type checkers in parallel:
+The project uses the native TypeScript 7 compiler (`tsc`) together with `golar typecheck` for Vue single-file component type checking:
 
-- **`vue-tsgo`** (backed by the native TypeScript compiler `tsgo`) — fast incremental checks during development.
-- **`vue-tsc`** — slower but fully compatible, used as the authoritative CI check.
+- The `typecheck` script runs `tsc --project tsconfig.node.json --noEmit` (Vite/Node config) followed by `golar typecheck` (`.vue` template and component types).
+- `pnpm ci:check` runs `typecheck`, `lint`, and `format:check` as the authoritative CI gate.
 
-Both are run in `pnpm ci:check` via the `typecheck` script, which runs `tsgo` first (fast) and falls back to `tsc` if needed. The `typecheck:tsc` script runs only `tsc` for explicit full compatibility checks.
+TypeScript 7.0 ships its native Go-based `tsc` directly; the previous `@typescript/native-preview` (`tsgo`) preview build is no longer used.
 
 ---
 

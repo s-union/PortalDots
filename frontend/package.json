@@ -6,8 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsgo --project tsconfig.node.json --noEmit && golar typecheck",
-    "typecheck:compat": "tsc --project tsconfig.node.json --noEmit && vue-tsc --project tsconfig.app.json --noEmit",
+    "typecheck": "tsc --project tsconfig.node.json --noEmit && golar typecheck",
     "lint": "oxlint --type-aware .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
@@ -43,7 +42,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@golar/vue": "^0.1.7",
+    "@golar/vue": "^0.1.8",
     "@playwright/test": "1.60.0",
     "@storybook/addon-a11y": "10.4.2",
     "@storybook/addon-docs": "10.4.2",
@@ -51,23 +50,21 @@
     "@storybook/vue3-vite": "10.4.2",
     "@tailwindcss/vite": "4.3.0",
     "@types/node": "24.13.1",
-    "@typescript/native-preview": "7.0.0-dev.20260607.1",
     "@vitejs/plugin-vue": "6.0.7",
     "@vitest/browser-playwright": "4.1.8",
     "@vitest/coverage-v8": "4.1.8",
     "@vue/test-utils": "2.4.11",
     "@vue/tsconfig": "0.9.1",
-    "golar": "^0.1.7",
+    "golar": "^0.1.8",
     "jsdom": "29.1.1",
     "msw": "2.14.6",
     "msw-storybook-addon": "2.0.7",
     "openapi-msw": "2.0.0",
     "storybook": "10.4.2",
     "tailwindcss": "4.3.0",
-    "typescript": "6.0.3",
+    "typescript": "^7.0.2",
     "vite": "8.0.16",
-    "vitest": "4.1.8",
-    "vue-tsc": "3.3.4"
+    "vitest": "4.1.8"
   },
   "msw": {
     "workerDirectory": [
