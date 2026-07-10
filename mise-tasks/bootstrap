@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-#MISE description="First-time setup: install tools, dependencies, hooks, .env, and init DB"
+#MISE description="First-time setup: initialize env, install frontend dependencies, hooks, and database"
 
 set -euo pipefail
 
-mise install
 [ -f .env ] || cp .env.example .env
 [ -f packages/email/.dev.vars ] || cp packages/email/.dev.vars.example packages/email/.dev.vars
 mise run frontend:install

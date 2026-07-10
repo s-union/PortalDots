@@ -50,7 +50,7 @@ git clone git@github.com:s-union/PortalDots.git
 cd PortalDots
 
 # 2. Install tools and dependencies, initialize .env, set up hooks, and seed the DB
-mise run setup
+mise bootstrap
 
 # 3. Start the dev stack
 mise run dev
