@@ -181,18 +181,8 @@ async function handleUploadFile(questionId: string) {
   }
 }
 
-function handleFileChange(questionId: string, event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) {
-    selectedFiles.value = { ...selectedFiles.value, [questionId]: null }
-    return
-  }
-
-  const files = target.files
-  selectedFiles.value = {
-    ...selectedFiles.value,
-    [questionId]: files?.[0] ?? files?.item(0) ?? null
-  }
+function handleFileChange(questionId: string, file: File | null) {
+  selectedFiles.value = { ...selectedFiles.value, [questionId]: file }
 }
 
 function downloadHref(questionId: string) {
@@ -370,6 +360,7 @@ function downloadHref(questionId: string) {
                   :draft="draft"
                   :question="question"
                   :disabled="!canEdit"
+                  :selected-file="selectedFiles[question.id]"
                   :upload-button-label="'ファイルを追加'"
                   :upload-pending="uploadMutation.isPending.value"
                   :upload-error-message="uploadErrorMessages[question.id]"

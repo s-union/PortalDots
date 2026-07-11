@@ -52,6 +52,7 @@ const {
   selectAnswer,
   selectedAnswer,
   selectedAnswerId,
+  selectedFiles,
   uploadErrorMessages,
   uploadFile,
   uploadMutation
@@ -228,6 +229,7 @@ const remainingAnswerCount = computed(() => {
                         :draft="draft"
                         :question="question"
                         :disabled="!isFormWritable"
+                        :selected-file="selectedFiles[question.id]"
                         upload-button-label="ファイルを追加"
                         :upload-pending="uploadMutation.isPending.value"
                         :upload-error-message="uploadErrorMessages[question.id]"

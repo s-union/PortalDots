@@ -172,8 +172,10 @@ describe('AnswerQuestionFields', () => {
     expect(wrapper.text()).toContain('アップロードに失敗しました')
 
     const fileInput = wrapper.get('input[type="file"]')
+    const file = new File(['content'], 'flyer.pdf', { type: 'application/pdf' })
+    Object.defineProperty(fileInput.element, 'files', { configurable: true, value: [file] })
     await fileInput.trigger('change')
-    expect(wrapper.emitted('fileChange')?.[0]).toEqual(['question-upload', expect.any(Event)])
+    expect(wrapper.emitted('fileChange')?.[0]).toEqual(['question-upload', file])
 
     await wrapper.get('button[type="button"]').trigger('click')
     expect(wrapper.emitted('upload')?.[0]).toEqual(['question-upload'])

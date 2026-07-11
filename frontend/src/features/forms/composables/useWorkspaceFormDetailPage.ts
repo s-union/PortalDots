@@ -173,18 +173,8 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
     }
   }
 
-  function handleFileChange(questionId: string, event: Event) {
-    const target = event.target
-    if (!(target instanceof HTMLInputElement)) {
-      selectedFiles.value = { ...selectedFiles.value, [questionId]: null }
-      return
-    }
-
-    const files = target.files
-    selectedFiles.value = {
-      ...selectedFiles.value,
-      [questionId]: files?.[0] ?? files?.item(0) ?? null
-    }
+  function handleFileChange(questionId: string, file: File | null) {
+    selectedFiles.value = { ...selectedFiles.value, [questionId]: file }
   }
 
   function resolveUploadDownloadHref(questionId: string) {
@@ -223,6 +213,7 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
     selectAnswer,
     selectedAnswer,
     selectedAnswerId,
+    selectedFiles,
     uploadErrorMessages,
     uploadFile,
     uploadMutation

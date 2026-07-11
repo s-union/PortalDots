@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import { formatDateTime } from '@/lib/format/datetime'
 import {
@@ -11,13 +12,18 @@ import {
 } from '@/features/forms/answers'
 import type { FormQuestion } from '@/features/forms/api'
 import ErrorState from '@/components/ui/ErrorState.vue'
+import FileUploadField from '@/components/ui/FileUploadField.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
+
+// Mirrors backend/internal/controllers/form_answer_context.go's maxAnswerUploadBytes.
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 const {
   answer,
   draft,
   question,
   disabled,
+  selectedFile = null,
   uploadButtonLabel = 'アップロード',
   uploadPending = false,
   uploadErrorMessage,
@@ -28,6 +34,7 @@ const {
   draft: FormAnswerDraft
   question: FormQuestion
   disabled?: boolean
+  selectedFile?: File | null
   uploadButtonLabel?: string
   uploadPending?: boolean
   uploadErrorMessage?: string
@@ -37,8 +44,24 @@ const {
 
 const emit = defineEmits<{
   upload: [questionId: string]
-  fileChange: [questionId: string, event: Event]
+  fileChange: [questionId: string, file: File | null]
 }>()
+
+// Bridges FileUploadField's v-model to the props-down/events-up contract with the parent,
+// which owns the per-question selected file state.
+const selectedFileModel = computed<File | null>({
+  get: () => selectedFile,
+  set: (file) => emit('fileChange', question.id, file)
+})
+
+// Mirrors backend/internal/domain/formquestion/validation.go's NormalizeAllowedTypes.
+const allowedExtensions = computed<string[] | undefined>(() => {
+  const parts = question.allowedTypes
+    .split(/[,\n\r \t]+/)
+    .map((part) => part.trim().toLowerCase().replace(/^\./, ''))
+    .filter((part) => part !== '')
+  return parts.length > 0 ? parts : undefined
+})
 
 function toggleCheckboxValue(option: string, checked: boolean) {
   const currentValue = draftValue()
@@ -210,12 +233,13 @@ function questionNumberOptions(currentQuestion: FormQuestion): number[] | null {
     </ul>
 
     <div class="grid gap-3 min-[1001px]:grid-cols-[1fr_auto]">
-      <input
-        :disabled="disabled"
-        :name="`answer-file-${question.id}`"
+      <FileUploadField
+        v-model="selectedFileModel"
         :aria-label="question.name + 'のアップロード'"
-        type="file"
-        @change="emit('fileChange', question.id, $event)"
+        :disabled="disabled"
+        :extensions="allowedExtensions"
+        :max-size-bytes="MAX_UPLOAD_BYTES"
+        :name="`answer-file-${question.id}`"
       />
       <button
         :class="buttonVariants({ variant: 'secondary', size: 'md' })"

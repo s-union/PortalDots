@@ -6,7 +6,7 @@ definePage({
   }
 })
 
-import { computed, reactive, shallowRef, useTemplateRef } from 'vue'
+import { computed, reactive, shallowRef, watch } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
@@ -22,6 +22,7 @@ import { useFormValidation, contactFormSchema } from '@/lib/form-validation'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FileUploadField from '@/components/ui/FileUploadField.vue'
 import FormError from '@/components/ui/FormError.vue'
 import FormField from '@/components/ui/FormField.vue'
 
@@ -36,27 +37,12 @@ const form = reactive({
 const submitErrorMessage = shallowRef('')
 const successMessage = shallowRef('')
 const selectedFile = shallowRef<File | null>(null)
-const fileTouched = shallowRef(false)
+const fileError = shallowRef('')
 const serverFileError = shallowRef('')
-const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const maxFileBytes = 5 * 1024 * 1024
 const acceptedExtensions = ['pdf', 'docx', 'xlsx', 'pptx', 'png', 'jpg', 'jpeg']
 const selectedCategoryName = computed(
   () => categoriesQuery.data.value?.find((category) => category.id === form.categoryId)?.name ?? ''
-)
-const clientFileError = computed(() => {
-  if (!fileTouched.value || !selectedFile.value) return ''
-  if (selectedFile.value.size === 0) return '空のファイルはアップロードできません'
-  if (selectedFile.value.size > maxFileBytes) return 'ファイルサイズは 5MB 以下にしてください'
-  const extension = selectedFile.value.name.split('.').pop()?.toLowerCase() ?? ''
-  if (!acceptedExtensions.includes(extension)) {
-    return 'PDF、Word、Excel、PowerPoint、PNG、JPEG ファイルを選択してください'
-  }
-  return ''
-})
-const fileError = computed(() => clientFileError.value || serverFileError.value)
-const fileDescriptionIDs = computed(() =>
-  fileError.value ? 'contact-file-hint contact-file-error' : 'contact-file-hint'
 )
 
 const { getFieldError, markTouched, validateAll } = useFormValidation({
@@ -64,11 +50,15 @@ const { getFieldError, markTouched, validateAll } = useFormValidation({
   form: computed(() => form)
 })
 
+// Clear the stale server-side error whenever the user changes or removes the attachment.
+watch(selectedFile, () => {
+  serverFileError.value = ''
+})
+
 async function handleSubmit() {
   submitErrorMessage.value = ''
   successMessage.value = ''
 
-  fileTouched.value = true
   if (!validateAll() || fileError.value) {
     return
   }
@@ -85,31 +75,13 @@ async function handleSubmit() {
     form.categoryId = ''
     form.ccSubleader = true
     form.body = ''
-    removeSelectedFile()
+    selectedFile.value = null
   } catch (error) {
     serverFileError.value = extractContactFileValidationMessage(error)
     if (!serverFileError.value) {
       submitErrorMessage.value = extractContactValidationMessage(error)
     }
   }
-}
-
-function handleFileChange(event: Event) {
-  if (!(event.currentTarget instanceof HTMLInputElement)) return
-  selectedFile.value = event.currentTarget.files?.[0] ?? null
-  fileTouched.value = true
-  serverFileError.value = ''
-}
-
-function removeSelectedFile() {
-  selectedFile.value = null
-  fileTouched.value = false
-  serverFileError.value = ''
-  if (fileInput.value) fileInput.value.value = ''
-}
-
-function formatFileSize(size: number) {
-  return `${new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 1 }).format(size / 1024)} KB`
 }
 </script>
 
@@ -182,37 +154,21 @@ function formatFileSize(size: number) {
         </div>
 
         <div class="grid gap-2">
-          <FormField label="添付ファイル（任意）">
-            <p id="contact-file-hint" class="mb-2 text-xs leading-6 text-muted-2">
-              PDF、Word、Excel、PowerPoint、PNG、JPEG（5MB以下）を1ファイル選択できます。
-            </p>
-            <input
-              ref="fileInput"
-              accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-              :aria-describedby="fileDescriptionIDs"
-              :aria-invalid="fileError ? 'true' : undefined"
-              :class="{ 'border-danger': fileError }"
+          <FormField label="添付ファイル（任意）" as="div">
+            <FileUploadField
+              id="contact-file"
+              v-model="selectedFile"
+              v-model:error="fileError"
+              aria-label="添付ファイル（任意）"
               :disabled="submitContactMutation.isPending.value"
+              :extensions="acceptedExtensions"
+              extension-error-message="PDF、Word、Excel、PowerPoint、PNG、JPEG ファイルを選択してください"
+              hint="PDF、Word、Excel、PowerPoint、PNG、JPEG（5MB以下）を1ファイル選択できます。"
+              :max-size-bytes="maxFileBytes"
               name="file"
-              type="file"
-              @change="handleFileChange"
+              :server-error="serverFileError"
             />
           </FormField>
-          <div
-            v-if="selectedFile"
-            class="flex items-center justify-between gap-3 rounded border border-border bg-surface-light px-4 py-3 text-sm"
-          >
-            <span class="min-w-0 truncate">{{ selectedFile.name }}（{{ formatFileSize(selectedFile.size) }}）</span>
-            <button
-              class="shrink-0 text-primary underline"
-              :disabled="submitContactMutation.isPending.value"
-              type="button"
-              @click="removeSelectedFile"
-            >
-              選択を解除
-            </button>
-          </div>
-          <FormError v-if="fileError" id="contact-file-error" :message="fileError" />
         </div>
 
         <AlertMessage v-if="successMessage" tone="success">
