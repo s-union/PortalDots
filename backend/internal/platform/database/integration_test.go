@@ -2,14 +2,58 @@ package database
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
+	"github.com/s-union/PortalDots/backend/internal/domain/contact"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/testutil/dbtest"
 )
+
+func TestContactRepositoryPersistsAttachmentTransactionally(t *testing.T) {
+	cfg := integrationConfig(t, true)
+	store := openIntegrationStore(t, cfg)
+	ctx := context.Background()
+	if err := EnsureSeedData(ctx, store, cfg); err != nil {
+		t.Fatalf("seed integration data: %v", err)
+	}
+
+	repository := contact.NewSQLCRepository(store.Pool(), store.Queries())
+	created, rawToken, err := repository.Create(ctx, contact.NewContact{
+		UserID:         "0195ec00-0051-7000-8000-000000000001",
+		CircleID:       testCircleAID,
+		CategoryID:     "0195ec00-0081-7000-8000-000000000001",
+		CategoryName:   "General",
+		Subject:        "Proposal",
+		Body:           "Please review.",
+		Status:         "sent",
+		StaffMailJobID: "contact-integration-job",
+	}, &contact.NewAttachment{Filename: "proposal.pdf", MimeType: "application/pdf", Content: []byte("%PDF-1.7")})
+	if err != nil {
+		t.Fatalf("create contact: %v", err)
+	}
+	digest, err := contact.HashDownloadToken(rawToken)
+	if err != nil {
+		t.Fatalf("hash download token: %v", err)
+	}
+	attachment, err := repository.FindAttachment(ctx, digest)
+	if err != nil || string(attachment.Content) != "%PDF-1.7" {
+		t.Fatalf("find attachment = %#v, %v", attachment, err)
+	}
+	items, err := repository.ListByOwner(ctx, created.UserID, created.CircleID)
+	if err != nil || len(items) != 1 || items[0].Attachment == nil {
+		t.Fatalf("list contacts = %#v, %v", items, err)
+	}
+	if err := repository.Delete(ctx, created.ID); err != nil {
+		t.Fatalf("delete contact: %v", err)
+	}
+	if _, err := repository.FindAttachment(ctx, digest); !errors.Is(err, contact.ErrNotFound) {
+		t.Fatalf("find cascaded attachment error = %v, want not found", err)
+	}
+}
 
 const (
 	testCircleAID = "0195ec00-0021-7000-8000-000000000001"

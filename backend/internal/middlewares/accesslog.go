@@ -20,10 +20,14 @@ func AccessLogMiddleware() echo.MiddlewareFunc {
 			if res, unwrapErr := echo.UnwrapResponse(c.Response()); unwrapErr == nil {
 				statusCode = res.Status
 			}
+			path := req.URL.Path
+			if c.Path() == "/v1/contact/attachments/:token" {
+				path = c.Path()
+			}
 
 			attrs := []any{
 				"method", req.Method,
-				"path", req.URL.Path,
+				"path", path,
 				"status", statusCode,
 				"ip", c.RealIP(),
 				"latency_ms", elapsed.Milliseconds(),

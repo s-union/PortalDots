@@ -8,6 +8,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/booth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
+	"github.com/s-union/PortalDots/backend/internal/domain/contact"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
@@ -25,6 +26,7 @@ import (
 
 type SharedDependencies struct {
 	Activities  activitylog.Repository
+	Contacts    contact.Repository
 	MailHistory mailhistory.Repository
 	Sessions    session.Store
 	Users       useradmin.Repository
@@ -87,6 +89,7 @@ func NewWithDependencies(cfg config.Config, deps Dependencies) *echo.Echo {
 		deps.Public.Authenticator,
 		deps.Staff.Booths,
 		deps.Workspace.Circles,
+		deps.Shared.Contacts,
 		deps.Public.ContactCategories,
 		deps.Public.Documents,
 		deps.Public.Forms,

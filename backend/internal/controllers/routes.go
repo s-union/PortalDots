@@ -28,6 +28,7 @@ type PublicRoutes struct {
 	ListContactCategories      echo.HandlerFunc
 	ListContactHistory         echo.HandlerFunc
 	SubmitContact              echo.HandlerFunc
+	DownloadContactAttachment  echo.HandlerFunc
 	StaffStatus                echo.HandlerFunc
 	RequestStaffVerification   echo.HandlerFunc
 	ConfirmStaffVerification   echo.HandlerFunc
@@ -197,6 +198,7 @@ func RegisterPublicRoutes(v1 *echo.Group, r PublicRoutes) {
 	v1.GET("/contact-categories", r.ListContactCategories)
 	v1.GET("/contact", r.ListContactHistory)
 	v1.POST("/contact", r.SubmitContact)
+	v1.GET("/contact/attachments/:token", r.DownloadContactAttachment)
 	v1.GET("/staff/status", r.StaffStatus)
 	v1.POST("/staff/verify/request", r.RequestStaffVerification)
 	v1.POST("/staff/verify/confirm", r.ConfirmStaffVerification)

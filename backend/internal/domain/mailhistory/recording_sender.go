@@ -19,7 +19,12 @@ func NewRecordingSender(repository Repository, next cloudflareemail.Sender) Reco
 }
 
 func (s RecordingSender) Enqueue(ctx context.Context, job cloudflareemail.EmailJob) error {
-	if err := s.repository.Record(ctx, job); err != nil {
+	recordedJob := job
+	if job.HistoryBody != "" {
+		recordedJob.Body = job.HistoryBody
+	}
+	recordedJob.HistoryBody = ""
+	if err := s.repository.Record(ctx, recordedJob); err != nil {
 		return err
 	}
 	return s.next.Enqueue(ctx, job)

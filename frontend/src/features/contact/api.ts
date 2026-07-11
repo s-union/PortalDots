@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { createJsonHeaders, $api } from '@/lib/api/client'
+import { createJsonHeaders, postMultipart, $api } from '@/lib/api/client'
 import { contactCategorySchema, contactSubmissionSchema, parseWithSchema, parseArrayWithSchema } from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'
-import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { extractValidationMessage, parseValidationError, unwrapValidationError } from '@/lib/api/validation'
 
 export interface ContactCategory {
   id: string
@@ -16,13 +16,23 @@ export interface ContactSubmission {
   subject: string
   status: string
   createdAt: string
+  attachment?: ContactAttachment
 }
 
-interface SubmitContactPayload {
+/** Metadata for an attachment stored with a contact submission. */
+export interface ContactAttachment {
+  filename: string
+  mimeType: string
+  sizeBytes: number
+}
+
+/** Fields accepted when submitting a contact form. */
+export interface SubmitContactPayload {
   categoryId: string
   subject: string
   body: string
   ccSubleader?: boolean
+  file?: File
 }
 
 type SubmitContactResult = ContactSubmission
@@ -42,21 +52,25 @@ export async function fetchContactCategories() {
 }
 
 export async function submitContact(payload: SubmitContactPayload, csrfToken: string) {
-  return $api.mutationData(
-    'post',
-    '/contact',
-    {
-      headers: createJsonHeaders(csrfToken),
-      body: payload
-    },
-    parseContactResult,
-    {
-      errorMessage: 'Failed to submit contact',
-      errorParsers: {
-        422: (error) => parseValidationError(error, 'contact')
-      }
-    }
-  )
+  const formData = new FormData()
+  formData.set('categoryId', payload.categoryId)
+  formData.set('subject', payload.subject)
+  formData.set('body', payload.body)
+  formData.set('ccSubleader', String(payload.ccSubleader ?? true))
+  if (payload.file) {
+    formData.set('file', payload.file)
+  }
+
+  const response = await postMultipart('/contact', formData, csrfToken)
+  if (response.status === 422) {
+    throw new Error('Validation failed', {
+      cause: parseValidationError(await response.json(), 'contact')
+    })
+  }
+  if (!response.ok) {
+    throw new Error('Failed to submit contact')
+  }
+  return parseContactResult(await response.json())
 }
 
 export async function fetchContactHistory() {
@@ -126,6 +140,11 @@ export function useSubmitContactMutation() {
 
 export function extractContactValidationMessage(error: unknown) {
   return extractValidationMessage(error, 'お問い合わせの送信に失敗しました。')
+}
+
+/** Returns the server-side validation message for the attachment field. */
+export function extractContactFileValidationMessage(error: unknown) {
+  return unwrapValidationError(error)?.errors.file?.[0] ?? ''
 }
 
 function parseContactCategories(value: unknown): ContactCategory[] {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { File as NodeFile } from 'node:buffer'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
@@ -67,7 +68,7 @@ async function fillContactForm(wrapper: ReturnType<typeof mount>) {
 
 describe('ContactPage', () => {
   it('lists categories and submits a contact message', async () => {
-    let submittedBody: unknown
+    let submittedBody: FormData | undefined
     server.use(
       http.get('/v1/contact-categories', () =>
         HttpResponse.json([
@@ -76,7 +77,7 @@ describe('ContactPage', () => {
         ])
       ),
       http.post('/v1/contact', async ({ request }) => {
-        submittedBody = await request.json()
+        submittedBody = await request.formData()
         return HttpResponse.json(
           {
             id: 'mail-job-1',
@@ -98,10 +99,65 @@ describe('ContactPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('「その他」に問い合わせを送信しました。')
-    expect(submittedBody).toMatchObject({ categoryId: 'contact-other', ccSubleader: true })
+    expect(submittedBody?.get('categoryId')).toBe('contact-other')
+    expect(submittedBody?.get('ccSubleader')).toBe('true')
+    expect(submittedBody?.has('file')).toBe(false)
     expect(wrapper.get('a[href="/workspace/settings"]').text()).toContain('ユーザー設定')
     expect(wrapper.find('input[readonly]').exists()).toBe(false)
     expect(router.currentRoute.value.fullPath).toBe('/workspace/contact')
+  })
+
+  it('submits and resets an optional attachment', async () => {
+    server.use(
+      http.get('/v1/contact-categories', () => HttpResponse.json([{ id: 'contact-other', name: 'その他' }])),
+      http.post('/v1/contact', () => {
+        return HttpResponse.json(
+          {
+            id: 'mail-job-attachment',
+            categoryId: 'contact-other',
+            categoryName: 'その他',
+            subject: 'その他',
+            status: 'sent',
+            createdAt: '2026-03-13T10:00:00Z',
+            attachment: { filename: 'proposal.pdf', mimeType: 'application/pdf', sizeBytes: 12 }
+          },
+          { status: 201 }
+        )
+      })
+    )
+
+    const { wrapper } = await mountContactPage()
+    await fillContactForm(wrapper)
+    const input = wrapper.get('input[name="file"]')
+    const file = new NodeFile(['%PDF-1.7'], 'proposal.pdf', { type: 'application/pdf' })
+    Object.defineProperty(input.element, 'files', { configurable: true, value: [file] })
+    await input.trigger('change')
+
+    expect(wrapper.text()).toContain('proposal.pdf')
+    expect(input.attributes('aria-describedby')).toBe('contact-file-hint')
+
+    await wrapper.get('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(wrapper.find('button[type="button"]').exists()).toBe(false)
+    expect((wrapper.get('input[name="file"]').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('validates and removes a selected attachment accessibly', async () => {
+    server.use(http.get('/v1/contact-categories', () => HttpResponse.json([{ id: 'contact-other', name: 'その他' }])))
+    const { wrapper } = await mountContactPage()
+    const input = wrapper.get('input[name="file"]')
+    const file = new File(['text'], 'notes.txt', { type: 'text/plain' })
+    Object.defineProperty(input.element, 'files', { configurable: true, value: [file] })
+    await input.trigger('change')
+
+    expect(wrapper.text()).toContain('PDF、Word、Excel、PowerPoint、PNG、JPEG ファイルを選択してください')
+    expect(input.attributes('aria-invalid')).toBe('true')
+    expect(input.attributes('aria-describedby')).toContain('contact-file-error')
+
+    await wrapper.get('button[type="button"]').trigger('click')
+    expect(wrapper.text()).not.toContain('notes.txt')
+    expect(input.attributes('aria-invalid')).toBeUndefined()
   })
 
   it('shows the category placeholder when nothing is selected', async () => {

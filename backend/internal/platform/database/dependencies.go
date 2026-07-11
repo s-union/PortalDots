@@ -8,6 +8,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/booth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
+	"github.com/s-union/PortalDots/backend/internal/domain/contact"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
@@ -30,6 +31,7 @@ type Dependencies struct {
 	Booths               booth.Repository
 	Circles              circle.Catalog
 	ContactCategories    contactcategory.Repository
+	Contacts             contact.Repository
 	Documents            document.Repository
 	Forms                form.Repository
 	FormQuestions        formquestion.Repository
@@ -69,6 +71,7 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 		Booths:               booth.NewSQLCRepository(queries),
 		Circles:              circle.NewSQLCCatalog(store.Pool(), queries),
 		ContactCategories:    contactcategory.NewCachedRepository(contactcategory.NewSQLCRepository(queries)),
+		Contacts:             contact.NewSQLCRepository(store.Pool(), queries),
 		Documents:            document.NewSQLCRepository(queries),
 		Forms:                form.NewSQLCRepository(queries),
 		FormQuestions:        formquestion.NewSQLCRepository(store.Pool(), queries),
