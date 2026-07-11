@@ -57,7 +57,7 @@ const selectedFileModel = computed<File | null>({
 // Mirrors backend/internal/domain/formquestion/validation.go's NormalizeAllowedTypes.
 const allowedExtensions = computed<string[] | undefined>(() => {
   const parts = question.allowedTypes
-    .split(/[,\n\r \t]+/)
+    .split(/[,|\n\r \t]+/)
     .map((part) => part.trim().toLowerCase().replace(/^\./, ''))
     .filter((part) => part !== '')
   return parts.length > 0 ? parts : undefined

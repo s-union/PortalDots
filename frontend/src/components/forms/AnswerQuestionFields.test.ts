@@ -181,6 +181,21 @@ describe('AnswerQuestionFields', () => {
     expect(wrapper.emitted('upload')?.[0]).toEqual(['question-upload'])
   })
 
+  it('parses pipe-delimited allowedTypes into file input accept extensions', () => {
+    const question = createQuestion({
+      id: 'question-upload',
+      type: 'upload',
+      allowedTypes: 'png|jpg|jpeg|gif'
+    })
+    const draft: FormAnswerDraft = {}
+
+    const wrapper = mount(AnswerQuestionFields, {
+      props: createProps(question, draft)
+    })
+
+    expect(wrapper.get('input[type="file"]').attributes('accept')).toBe('.png,.jpg,.jpeg,.gif')
+  })
+
   it('uses custom download label and shows empty state', () => {
     const question = createQuestion({ id: 'question-upload', type: 'upload' })
     const draft: FormAnswerDraft = {}
