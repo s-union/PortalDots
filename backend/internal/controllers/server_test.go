@@ -264,6 +264,78 @@ func TestSubmitContactKeepsAttachmentTokenOutOfConfirmationAndLogs(t *testing.T)
 	}
 }
 
+// TestSubmitContactRejectsOversizedMultipartBodyWithChunkedTransfer exercises the full
+// middleware stack (contactRequestBodyLimit + TransformExternalIDs) with a request whose
+// Content-Length is unknown, forcing the size check to rely on http.MaxBytesReader while
+// ParseMultipartForm reads the body. Regression test for the oversized multipart body being
+// reported as 400 invalid_request instead of 413 request_too_large.
+func TestSubmitContactRejectsOversizedMultipartBodyWithChunkedTransfer(t *testing.T) {
+	t.Parallel()
+
+	cfg := demoCircleConfig()
+	cfg.ContactCategories = []config.ContactCategory{
+		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
+	}
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId": "demo@example.com", "password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("login status = %d, want 204", recorder.Code)
+	}
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
+	csrfToken := fetchCSRFToken(t, server, cookies)
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("categoryId", encodeExternalIDTestFormValue("categoryId", "0195ec00-0081-7000-8000-000000000001")); err != nil {
+		t.Fatalf("write multipart field: %v", err)
+	}
+	if err := writer.WriteField("subject", "巨大ファイル"); err != nil {
+		t.Fatalf("write multipart field: %v", err)
+	}
+	if err := writer.WriteField("body", "サイズ超過テスト"); err != nil {
+		t.Fatalf("write multipart field: %v", err)
+	}
+	part, err := writer.CreateFormFile("file", "oversized.pdf")
+	if err != nil {
+		t.Fatalf("create multipart file: %v", err)
+	}
+	if _, err := part.Write(bytes.Repeat([]byte("A"), maxContactRequestBytes+4096)); err != nil {
+		t.Fatalf("write multipart file: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	// Wrapping the buffer in io.NopCloser keeps httptest.NewRequest from special-casing
+	// *bytes.Buffer, which leaves Request.ContentLength at -1 just like a chunked-transfer
+	// client that doesn't announce its body size upfront.
+	request := httptest.NewRequest(http.MethodPost, "/v1/contact", io.NopCloser(&body))
+	request.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
+	request.Header.Set("X-CSRF-Token", csrfToken)
+	for _, cookie := range cookies {
+		request.AddCookie(cookie)
+	}
+
+	recorder = httptest.NewRecorder()
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("oversized multipart status = %d, want 413, body=%s", recorder.Code, recorder.Body.String())
+	}
+	var errorResponse struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &errorResponse); err != nil {
+		t.Fatalf("unmarshal error response: %v", err)
+	}
+	if errorResponse.Message != "request_too_large" {
+		t.Fatalf("error message = %q, want request_too_large", errorResponse.Message)
+	}
+}
+
 func TestUpdateProfileReflectsInBootstrap(t *testing.T) {
 	t.Parallel()
 

@@ -42,7 +42,7 @@ backend/
 
 Each sub-package owns the repository interface and its implementation for one bounded context:
 
-`activitylog` · `answer` · `auth` · `booth` · `circle` · `contactcategory` · `document` · `form` · `formquestion` · `mailhistory` · `mailqueue` · `page` · `participationtype` · `pendingregistration` · `place` · `portalsetting` · `registrationmail` · `session` · `staffpermission` · `tag` · `useradmin`
+`activitylog` · `answer` · `auth` · `booth` · `circle` · `contact` · `contactcategory` · `document` · `form` · `formquestion` · `mailhistory` · `mailqueue` · `page` · `participationtype` · `pendingregistration` · `place` · `portalsetting` · `registrationmail` · `session` · `staffpermission` · `tag` · `useradmin`
 
 ### Backend map (concern → file)
 
@@ -52,6 +52,7 @@ Each sub-package owns the repository interface and its implementation for one bo
 | Circles | `controllers/circles*.go` | `domain/circle`, `domain/participationtype` | `queries/circles.sql`, `participation_types.sql` |
 | Pages | `controllers/pages.go` | `domain/page`, `domain/document` | `queries/pages.sql`, `documents.sql` |
 | Forms & Answers | `controllers/forms.go`, `form_answer_*.go` | `domain/form`, `domain/formquestion`, `domain/answer` | `queries/forms.sql`, `form_questions.sql`, `answers.sql` |
+| Contact | `controllers/contact_profile.go`, `contact_attachment.go` | `domain/contact`, `domain/contactcategory` | `queries/contacts.sql`, `contact_categories.sql` |
 | Staff / Users | `controllers/staff_users*.go`, `staff_permissions.go` | `domain/useradmin`, `domain/staffpermission` | `queries/users.sql` |
 | Staff / Masters | `controllers/staff_masters.go` | `domain/tag`, `domain/place`, `domain/contactcategory` | `queries/tags.sql`, `places.sql`, `contact_categories.sql` |
 | Staff / Admin | `controllers/staff_activity_logs.go`, `staff_mails.go` | `domain/activitylog`, `domain/mailqueue` | `queries/activity_logs.sql` |
