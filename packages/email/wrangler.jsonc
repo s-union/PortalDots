@@ -3,6 +3,12 @@
   "name": "email",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-02",
+  // Required for `vite dev`'s workerd environment to boot: it statically
+  // resolves hono-email's un-bundled dependency graph, which references a
+  // couple of Node built-ins (tty, util) pre-bundling. The production
+  // `vite build` output does not itself import Node built-ins, but this
+  // flag is kept so `vite dev` keeps working.
+  "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
     {
       "binding": "DB",

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE dir="packages/email"
+#MISE description="Preview email templates in a local live-editing UI"
+
+pnpm run preview
