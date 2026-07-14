@@ -29,6 +29,6 @@ minimumReleaseAgeExclude:
   - '@typescript/typescript-win32-arm64@7.0.2'
   - '@typescript/typescript-win32-x64@7.0.2'
   - typescript@7.0.2
-  - hono-email@0.7.0
-  - '@hono-email/preview@0.7.0'
-  - '@hono-email/tailwind-plugin@0.7.0'
+  - hono-email@0.8.0
+  - '@hono-email/preview@0.8.0'
+  - '@hono-email/tailwind-plugin@0.8.0'

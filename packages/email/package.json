@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --config vite.worker.config.ts --port 8787",
-    "dev:local-stack": "wrangler d1 migrations apply email-idempotency --local --persist-to .wrangler/state && vite dev --config vite.worker.config.ts --port 8787",
-    "deploy": "vite build --config vite.worker.config.ts && wrangler deploy",
+    "dev": "vite dev --port 8787",
+    "dev:local-stack": "wrangler d1 migrations apply email-idempotency --local --persist-to .wrangler/state && vite dev --port 8787",
+    "deploy": "vite build && wrangler deploy",
     "preview": "hono-email preview --dir src/templates",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --type-aware .",
@@ -16,14 +16,14 @@
   },
   "dependencies": {
     "hono": "4.12.25",
-    "hono-email": "0.7.0",
+    "hono-email": "0.8.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.44.0",
     "@cloudflare/workers-types": "4.20260608.1",
-    "@hono-email/preview": "0.7.0",
-    "@hono-email/tailwind-plugin": "0.7.0",
+    "@hono-email/preview": "0.8.0",
+    "@hono-email/tailwind-plugin": "0.8.0",
     "@tailwindcss/vite": "4.3.2",
     "tailwindcss": "4.3.2",
     "typescript": "^7.0.2",
