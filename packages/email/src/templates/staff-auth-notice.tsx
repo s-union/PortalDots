@@ -21,10 +21,7 @@ import {
 export interface StaffAuthNoticeProps {
   adminName: string
   appName: string
-  // Not sent by the backend today (see staff_verify.go); the wordmark link and
-  // footer app-link line degrade gracefully when it's absent. See
-  // templates.test.ts / task report for the variable the backend should start
-  // sending for full design parity.
+  // Not sent by the backend today, so the wordmark link and footer app line degrade when absent.
   appURL?: string
   authCode: string
   contactEmail: string

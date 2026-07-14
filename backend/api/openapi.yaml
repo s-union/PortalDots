@@ -483,6 +483,8 @@ paths:
           description: Unauthenticated
         "409":
           description: Current circle is not selected
+        "413":
+          description: Attachment exceeds the maximum allowed size
         "422":
           description: Validation error
   /contact/attachments/{token}:

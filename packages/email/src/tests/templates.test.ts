@@ -3,11 +3,6 @@ import { renderMarkdownNotice } from '../templates/markdown-notice'
 import { renderRegistrationVerify } from '../templates/registration-verify'
 import { renderStaffAuthNotice } from '../templates/staff-auth-notice'
 
-// Variables actually sent by the backend today (see auth_mail_notifications.go,
-// staff_verify.go, and the various markdown-notice call sites grepped under
-// backend/internal/controllers). Notably `userName` (registration-verify,
-// staff-auth-notice) and `appURL` (staff-auth-notice) are NOT sent, so those
-// props stay optional and their design elements degrade at render time.
 const baseVariables = {
   adminName: 'PortalDots 実行委員会',
   appName: 'PortalDots',
@@ -142,10 +137,7 @@ describe('email templates', () => {
   })
 
   describe('staff-auth-notice', () => {
-    // The backend never sends `appURL` or `userName` for this template today
-    // (see staff_verify.go), so tests must exercise that actual contract, not
-    // the shared `baseVariables` (which includes `appURL` for the other two
-    // templates).
+    // The backend never sends `appURL` or `userName` for this template.
     const { appURL: _appURL, ...staffVariables } = baseVariables
 
     it('renders the code ticket and degrades the chrome per the backend variable contract', async () => {

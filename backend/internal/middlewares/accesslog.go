@@ -2,10 +2,35 @@ package middlewares
 
 import (
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v5"
 )
+
+// contactAttachmentPathPrefix is the URL prefix under which download tokens
+// appear. Tokens grant permanent public access, so any path starting with
+// this prefix must have the token portion redacted before being logged,
+// even when routing does not match the registered route (e.g. wrong method,
+// 404, or extra trailing segments).
+const contactAttachmentPathPrefix = "/v1/contact/attachments/"
+
+// contactAttachmentRoutePath is the canonical redacted path logged for any
+// request under contactAttachmentPathPrefix.
+const contactAttachmentRoutePath = contactAttachmentPathPrefix + ":token"
+
+// normalizeForRedactionCheck lowercases the path and collapses repeated
+// slashes so the prefix check below cannot be bypassed by case variation
+// (e.g. "/v1/Contact/...") or duplicated slashes (e.g. "//v1/contact/...",
+// "/v1/contact//attachments/..."). req.URL.Path is already percent-decoded
+// by net/http, so no additional decoding is needed here.
+func normalizeForRedactionCheck(path string) string {
+	normalized := strings.ToLower(path)
+	for strings.Contains(normalized, "//") {
+		normalized = strings.ReplaceAll(normalized, "//", "/")
+	}
+	return normalized
+}
 
 // AccessLogMiddleware logs every HTTP request using structured logging.
 func AccessLogMiddleware() echo.MiddlewareFunc {
@@ -21,8 +46,10 @@ func AccessLogMiddleware() echo.MiddlewareFunc {
 				statusCode = res.Status
 			}
 			path := req.URL.Path
-			if c.Path() == "/v1/contact/attachments/:token" {
-				path = c.Path()
+			if c.Path() == contactAttachmentRoutePath {
+				path = contactAttachmentRoutePath
+			} else if strings.HasPrefix(normalizeForRedactionCheck(path), contactAttachmentPathPrefix) {
+				path = contactAttachmentRoutePath
 			}
 
 			attrs := []any{
