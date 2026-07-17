@@ -139,7 +139,7 @@ describe('ContactPage', () => {
     await wrapper.get('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.find('button[type="button"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('proposal.pdf')
     expect((wrapper.get('input[name="file"]').element as HTMLInputElement).value).toBe('')
   })
 
@@ -155,7 +155,11 @@ describe('ContactPage', () => {
     expect(input.attributes('aria-invalid')).toBe('true')
     expect(input.attributes('aria-describedby')).toContain('contact-file-error')
 
-    await wrapper.get('button[type="button"]').trigger('click')
+    const removeButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === '選択を解除')
+    if (!removeButton) {
+      throw new Error('remove button not found')
+    }
+    await removeButton.trigger('click')
     expect(wrapper.text()).not.toContain('notes.txt')
     expect(input.attributes('aria-invalid')).toBeUndefined()
   })

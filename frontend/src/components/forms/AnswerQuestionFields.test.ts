@@ -177,7 +177,11 @@ describe('AnswerQuestionFields', () => {
     await fileInput.trigger('change')
     expect(wrapper.emitted('fileChange')?.[0]).toEqual(['question-upload', file])
 
-    await wrapper.get('button[type="button"]').trigger('click')
+    const uploadButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === 'アップロード')
+    if (!uploadButton) {
+      throw new Error('upload button not found')
+    }
+    await uploadButton.trigger('click')
     expect(wrapper.emitted('upload')?.[0]).toEqual(['question-upload'])
   })
 
@@ -194,6 +198,7 @@ describe('AnswerQuestionFields', () => {
     })
 
     expect(wrapper.get('input[type="file"]').attributes('accept')).toBe('.png,.jpg,.jpeg,.gif')
+    expect(wrapper.text()).toContain('png / jpg / jpeg / gif ・1ファイル5MBまで')
   })
 
   it('uses custom download label and shows empty state', () => {
@@ -222,7 +227,12 @@ describe('AnswerQuestionFields', () => {
       }
     })
 
-    const button = wrapper.get('button[type="button"]')
+    const button = wrapper
+      .findAll('button[type="button"]')
+      .find((currentButton) => currentButton.text() === '送信中...')
+    if (!button) {
+      throw new Error('pending upload button not found')
+    }
     expect(button.text()).toBe('送信中...')
     expect(button.attributes('disabled')).toBeDefined()
   })
