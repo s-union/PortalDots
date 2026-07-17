@@ -23,6 +23,7 @@ coverage.xml
 /frontend/dist
 /packages/*/node_modules
 /packages/*/dist
+/.pnpm-store/
 /playwright-report
 /test-results
 /public/build
