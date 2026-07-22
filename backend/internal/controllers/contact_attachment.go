@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -42,7 +43,7 @@ func contactRequestBodyLimit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			request := c.Request()
-			if request.Method != http.MethodPost || request.URL.Path != "/v1/contact" {
+			if request.Method != http.MethodPost || path.Clean(request.URL.Path) != "/v1/contact" {
 				return next(c)
 			}
 			if request.ContentLength > maxContactRequestBytes {

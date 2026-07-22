@@ -65,6 +65,35 @@ func TestContactRequestBodyLimitRejectsBeforeHandler(t *testing.T) {
 	}
 }
 
+func TestContactRequestBodyLimitRejectsEquivalentPaths(t *testing.T) {
+	t.Parallel()
+
+	for _, requestPath := range []string{
+		"/v1/contact/",
+		"//v1/contact",
+		"/v1//contact",
+	} {
+		t.Run(requestPath, func(t *testing.T) {
+			e := echo.New()
+			called := false
+			handler := contactRequestBodyLimit()(func(c *echo.Context) error {
+				called = true
+				return c.NoContent(http.StatusCreated)
+			})
+
+			request := httptest.NewRequest(http.MethodPost, requestPath, strings.NewReader("body"))
+			request.ContentLength = maxContactRequestBytes + 1
+			recorder := httptest.NewRecorder()
+			if err := handler(e.NewContext(request, recorder)); err != nil {
+				t.Fatalf("contactRequestBodyLimit() error = %v", err)
+			}
+			if recorder.Code != http.StatusRequestEntityTooLarge || called {
+				t.Fatalf("oversized request status = %d, handler called = %v; want 413 before handler", recorder.Code, called)
+			}
+		})
+	}
+}
+
 func TestDownloadContactAttachmentUsesOpaqueTokenAndSafeHeaders(t *testing.T) {
 	t.Parallel()
 	repository := contact.NewMemoryRepository()
