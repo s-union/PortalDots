@@ -106,50 +106,51 @@ export function Wordmark({ appName, appURL }: WordmarkProps) {
 }
 
 // White card holding the message body, topped by a brand gradient strip.
-// The strip carries the rounded top corners; the card body carries the
-// bottom ones, so the two tables read as a single surface. Outlook ignores
-// `background-image` and falls back to the solid brand `background-color`.
+// One outer cell owns the border and rounded corners so the strip and body
+// cannot drift apart. Outlook ignores `background-image` and falls back to
+// the solid brand `background-color`.
 export function CardShell({ children }: PropsWithChildren) {
   return (
-    <>
+    <Card
+      width={CARD_WIDTH}
+      backgroundColor="#ffffff"
+      borderColor={LINE}
+      borderWidth={1}
+      padding={0}
+      align="center"
+      contentStyle={{ borderRadius: '12px', overflow: 'hidden' }}
+      style={{ width: `${CARD_WIDTH}px`, maxWidth: '100%', margin: '0 auto' }}
+    >
       <table
         role="presentation"
         border={0}
         cellPadding="0"
         cellSpacing="0"
-        width={CARD_WIDTH}
-        align="center"
-        style={{ width: `${CARD_WIDTH}px`, maxWidth: '100%', margin: '0 auto' }}
+        width="100%"
+        style={{ width: '100%', borderCollapse: 'collapse', borderSpacing: '0' }}
       >
         <tbody>
           <tr>
             <td
+              height={5}
               style={{
                 backgroundColor: BRAND,
                 backgroundImage: `linear-gradient(90deg, ${BRAND} 0%, ${BRAND_SOFT} 70%, ${BRAND_FAINT} 100%)`,
-                borderRadius: '16px 16px 0 0',
-                fontSize: '5px',
+                fontSize: '0',
                 height: '5px',
-                lineHeight: '5px'
+                lineHeight: '0',
+                padding: '0'
               }}
             >
               &nbsp;
             </td>
           </tr>
+          <tr>
+            <td style={{ backgroundColor: '#ffffff', padding: '40px', textAlign: 'left' }}>{children}</td>
+          </tr>
         </tbody>
       </table>
-      <Card
-        width={CARD_WIDTH}
-        backgroundColor="#ffffff"
-        borderColor={LINE}
-        borderWidth={1}
-        padding={40}
-        contentStyle={{ borderRadius: '0 0 16px 16px', borderTop: 'none', textAlign: 'left' }}
-        style={{ width: `${CARD_WIDTH}px`, maxWidth: '100%', margin: '0 auto' }}
-      >
-        {children}
-      </Card>
-    </>
+    </Card>
   )
 }
 
@@ -190,7 +191,7 @@ export function CardHeading({ children }: PropsWithChildren) {
         style={{
           color: INK,
           fontSize: '24px',
-          fontWeight: 'bold',
+          fontWeight: '600',
           letterSpacing: '-0.5px',
           lineHeight: '1.4',
           margin: '0 0 14px',
@@ -229,7 +230,7 @@ export function PrimaryButton({ children, href }: PropsWithChildren<{ href: stri
             borderRadius: '10px',
             color: '#ffffff',
             fontSize: '15px',
-            fontWeight: 'bold',
+            fontWeight: '600',
             letterSpacing: '0.2px',
             padding: '14px 44px'
           }}

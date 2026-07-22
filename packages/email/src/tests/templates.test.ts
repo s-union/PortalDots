@@ -47,29 +47,30 @@ describe('email templates', () => {
       // Wordmark: app name closed by the brand-blue full stop, linked to the app.
       expect(html).toContain(wordmarkLink)
 
-      // Card: 570px white box under the gradient accent strip (solid brand
-      // background-color as the Outlook fallback).
+      // Card: one rounded, bordered outer cell wraps both the gradient accent
+      // strip and the body. The solid brand background is the Outlook fallback.
       expect(html).toContain('width="570px"')
       expect(html).toContain(
-        'background-color:#0a65db;background-image:linear-gradient(90deg, #0a65db 0%, #7fabe9 70%, #c9dcf7 100%);border-radius:16px 16px 0 0'
+        'background-color:#ffffff;border:1px solid #d7dee4;padding:0px;border-radius:12px;overflow:hidden'
       )
       expect(html).toContain(
-        'background-color:#ffffff;border:1px solid #d7dee4;padding:40px;border-radius:0 0 16px 16px'
+        'background-color:#0a65db;background-image:linear-gradient(90deg, #0a65db 0%, #7fabe9 70%, #c9dcf7 100%);font-size:0;height:5px;line-height:0;padding:0'
       )
+      expect(html).toContain('background-color:#ffffff;padding:40px;text-align:left')
 
       // Eyebrow and hardcoded heading (not the dynamic subject) with the
       // three-dot ornament, plus the salutation.
       expect(html).toContain('letter-spacing:2.5px')
       expect(html).toContain('ユーザー登録')
       expect(html).toContain(
-        '<h1 style="color:#22292f;font-size:24px;font-weight:bold;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">メール認証のお願い</h1>'
+        '<h1 style="color:#22292f;font-size:24px;font-weight:600;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">メール認証のお願い</h1>'
       )
       expect(html).toContain(headingDot)
       expect(html).toContain('山田 太郎 様')
 
       // Primary button.
       expect(html).toContain(
-        'background-color:#0a65db;border-radius:10px;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:0.2px;padding:14px 44px'
+        'background-color:#0a65db;border-radius:10px;color:#ffffff;font-size:15px;font-weight:600;letter-spacing:0.2px;padding:14px 44px'
       )
       expect(html).toContain('>認証する（ログイン不要）<')
 
@@ -106,7 +107,7 @@ describe('email templates', () => {
 
       expect(warnings).toEqual([])
       expect(html).toContain(
-        '<h1 style="color:#22292f;font-size:24px;font-weight:bold;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">お知らせ</h1>'
+        '<h1 style="color:#22292f;font-size:24px;font-weight:600;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">お知らせ</h1>'
       )
       expect(html).toContain(headingDot)
       expect(html).toContain('color:#22292f;font-size:15px;line-height:1.8') // Markdown container
@@ -147,7 +148,7 @@ describe('email templates', () => {
       expect(warnings).toEqual([])
       expect(html).toContain('スタッフモード')
       expect(html).toContain(
-        '<h1 style="color:#22292f;font-size:24px;font-weight:bold;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">スタッフ認証</h1>'
+        '<h1 style="color:#22292f;font-size:24px;font-weight:600;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">スタッフ認証</h1>'
       )
       expect(html).not.toContain(' 様')
 
