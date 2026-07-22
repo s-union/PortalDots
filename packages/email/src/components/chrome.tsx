@@ -67,7 +67,7 @@ export function Wordmark({ appName, appURL }: WordmarkProps) {
   const markStyle = {
     color: INK,
     fontSize: '18px',
-    fontWeight: 700,
+    fontWeight: 'bold',
     letterSpacing: '-0.2px',
     textDecoration: 'none'
   }
@@ -191,7 +191,7 @@ export function CardHeading({ children }: PropsWithChildren) {
         style={{
           color: INK,
           fontSize: '24px',
-          fontWeight: '600',
+          fontWeight: 'bold',
           letterSpacing: '-0.5px',
           lineHeight: '1.4',
           margin: '0 0 14px',
@@ -212,7 +212,7 @@ export function CardHeading({ children }: PropsWithChildren) {
 // Body paragraph text.
 export function BodyText({ children }: PropsWithChildren) {
   return (
-    <Text style={{ color: INK, fontSize: '15px', lineHeight: '1.8', margin: '0 0 16px', textAlign: 'left' }}>
+    <Text style={{ color: INK, fontSize: '15px', lineHeight: '1.7', margin: '0 0 16px', textAlign: 'left' }}>
       {children}
     </Text>
   )
@@ -230,7 +230,7 @@ export function PrimaryButton({ children, href }: PropsWithChildren<{ href: stri
             borderRadius: '10px',
             color: '#ffffff',
             fontSize: '15px',
-            fontWeight: '600',
+            fontWeight: 'bold',
             letterSpacing: '0.2px',
             padding: '14px 44px'
           }}
@@ -291,7 +291,7 @@ export function Footer({ adminName, appName, appURL, contactEmail }: FooterProps
         <tr>
           <td style={{ padding: '0 4px', textAlign: 'center' }}>
             <Text style={{ color: MUTED, fontSize: '12px', lineHeight: '2', margin: 0 }}>
-              <span style={{ fontWeight: 600 }}>{adminName}</span>
+              <span style={{ fontWeight: 'bold' }}>{adminName}</span>
               <br />
               <a href={`mailto:${contactEmail}`} style={linkStyle}>
                 {contactEmail}
@@ -310,7 +310,7 @@ export function Footer({ adminName, appName, appURL, contactEmail }: FooterProps
             </Text>
             <Text style={{ color: MUTED, fontSize: '11px', letterSpacing: '0.3px', margin: '16px 0 0' }}>
               Powered by{' '}
-              <a href="https://www.portaldots.com" style={{ color: MUTED, fontWeight: 700, textDecoration: 'none' }}>
+              <a href="https://www.portaldots.com" style={{ color: MUTED, fontWeight: 'bold', textDecoration: 'none' }}>
                 PortalDots<span style={{ color: BRAND }}>.</span>
               </a>
             </Text>

@@ -52,7 +52,7 @@ const withHardLineBreaks = (markdown: string) => markdown.replace(/\r\n|\r|\n/g,
 // spacing between elements.
 const markdownClassNames = {
   a: 'text-[#0a65db] underline',
-  blockquote: 'my-4 pl-4 text-[#22292f] border-l-4 border-dotted border-[#c9dcf7]',
+  blockquote: 'm-4 px-2 pt-4 pb-0 text-[#22292f] border-l-4 border-dotted border-[#c9dcf7]',
   code: 'font-mono',
   codeInline: 'font-mono bg-[#f0f5fc] px-1 py-0.5 rounded',
   h1: 'mt-0 mb-4 text-xl leading-7 text-[#22292f] font-bold',
@@ -62,13 +62,13 @@ const markdownClassNames = {
   h5: 'mt-0 mb-2 text-sm leading-5 text-[#22292f] font-bold',
   h6: 'mt-0 mb-2 text-sm leading-5 text-[#22292f] font-bold',
   img: 'block max-w-full',
-  li: 'mb-2',
+  li: 'mb-1 text-[15px] leading-[1.7]',
   ol: 'mt-0 mb-4 pl-6',
-  p: 'mt-0 mb-4 text-[15px] leading-[1.8]',
-  pre: 'mt-0 mb-4 p-3 overflow-auto bg-[#f0f5fc] rounded-md',
+  p: 'mt-0 mb-4 text-[15px] leading-[1.7]',
+  pre: 'mt-0 mb-4 p-3 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] bg-[#f0f5fc] rounded-md',
   table: 'w-full mb-4 border-collapse',
-  td: 'p-2 border border-[#d7dee4] align-top',
-  th: 'p-2 border border-[#d7dee4] align-top text-left bg-[#f0f5fc]',
+  td: 'p-2 border border-[#d7dee4] align-top break-words',
+  th: 'p-2 border border-[#d7dee4] align-top text-left bg-[#f0f5fc] break-words',
   ul: 'mt-0 mb-4 pl-6'
 }
 

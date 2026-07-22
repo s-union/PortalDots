@@ -32,10 +32,10 @@ const knownButtonHiddenWarning =
 // Signature chrome shared by every template: the wordmark's brand-blue full
 // stop, the three-dot heading ornament, and the "Powered by PortalDots." credit.
 const wordmarkLink =
-  '<a href="https://example.com" style="color:#22292f;font-size:18px;font-weight:700;letter-spacing:-0.2px;text-decoration:none">PortalDots<span style="color:#0a65db">.</span></a>'
+  '<a href="https://example.com" style="color:#22292f;font-size:18px;font-weight:bold;letter-spacing:-0.2px;text-decoration:none">PortalDots<span style="color:#0a65db">.</span></a>'
 const headingDot = 'border-radius:3px;display:inline-block;height:6px'
 const poweredBy =
-  'Powered by <a href="https://www.portaldots.com" style="color:#586169;font-weight:700;text-decoration:none">PortalDots<span style="color:#0a65db">.</span></a>'
+  'Powered by <a href="https://www.portaldots.com" style="color:#586169;font-weight:bold;text-decoration:none">PortalDots<span style="color:#0a65db">.</span></a>'
 
 describe('email templates', () => {
   describe('registration-verify', () => {
@@ -63,14 +63,14 @@ describe('email templates', () => {
       expect(html).toContain('letter-spacing:2.5px')
       expect(html).toContain('ユーザー登録')
       expect(html).toContain(
-        '<h1 style="color:#22292f;font-size:24px;font-weight:600;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">メール認証のお願い</h1>'
+        '<h1 style="color:#22292f;font-size:24px;font-weight:bold;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">メール認証のお願い</h1>'
       )
       expect(html).toContain(headingDot)
       expect(html).toContain('山田 太郎 様')
 
       // Primary button.
       expect(html).toContain(
-        'background-color:#0a65db;border-radius:10px;color:#ffffff;font-size:15px;font-weight:600;letter-spacing:0.2px;padding:14px 44px'
+        'background-color:#0a65db;border-radius:10px;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:0.2px;padding:14px 44px'
       )
       expect(html).toContain('>認証する（ログイン不要）<')
 
@@ -85,7 +85,7 @@ describe('email templates', () => {
       expect(html).toContain('本メールに心当たりがない場合、そのままメールを破棄してください。')
 
       // Shared footer.
-      expect(html).toContain('<span style="font-weight:600">PortalDots 実行委員会</span>')
+      expect(html).toContain('<span style="font-weight:bold">PortalDots 実行委員会</span>')
       expect(html).toContain('mailto:contact@example.com')
       expect(html).toContain(poweredBy)
 
@@ -107,7 +107,7 @@ describe('email templates', () => {
 
       expect(warnings).toEqual([])
       expect(html).toContain(
-        '<h1 style="color:#22292f;font-size:24px;font-weight:600;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">お知らせ</h1>'
+        '<h1 style="color:#22292f;font-size:24px;font-weight:bold;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">お知らせ</h1>'
       )
       expect(html).toContain(headingDot)
       expect(html).toContain('color:#22292f;font-size:15px;line-height:1.8') // Markdown container
@@ -148,14 +148,14 @@ describe('email templates', () => {
       expect(warnings).toEqual([])
       expect(html).toContain('スタッフモード')
       expect(html).toContain(
-        '<h1 style="color:#22292f;font-size:24px;font-weight:600;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">スタッフ認証</h1>'
+        '<h1 style="color:#22292f;font-size:24px;font-weight:bold;letter-spacing:-0.5px;line-height:1.4;margin:0 0 14px;text-align:left">スタッフ認証</h1>'
       )
       expect(html).not.toContain(' 様')
 
       // Without `appURL` the wordmark still renders, but as plain text.
       expect(html).not.toContain(wordmarkLink)
       expect(html).toContain(
-        '<span style="color:#22292f;font-size:18px;font-weight:700;letter-spacing:-0.2px;text-decoration:none">PortalDots<span style="color:#0a65db">.</span></span>'
+        '<span style="color:#22292f;font-size:18px;font-weight:bold;letter-spacing:-0.2px;text-decoration:none">PortalDots<span style="color:#0a65db">.</span></span>'
       )
 
       // The code ticket: dotted brand border on the wash panel, the code set
@@ -173,7 +173,7 @@ describe('email templates', () => {
       expect(html).toContain('認証コードに覚えがない場合は、このメールを破棄してください。')
 
       // Shared footer, without the app-link line.
-      expect(html).toContain('<span style="font-weight:600">PortalDots 実行委員会</span>')
+      expect(html).toContain('<span style="font-weight:bold">PortalDots 実行委員会</span>')
       expect(html).not.toContain('href="https://example.com"')
       expect(html).toContain(poweredBy)
     })
