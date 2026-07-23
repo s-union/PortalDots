@@ -250,17 +250,8 @@ describe('useWorkspaceFormDetailPage', () => {
       onClearSelectedAnswer: vi.fn()
     })
     const file = new File(['demo'], 'sample.txt', { type: 'text/plain' })
-    const input = document.createElement('input')
-    Object.defineProperty(input, 'files', {
-      configurable: true,
-      value: {
-        0: file,
-        length: 1,
-        item: (index: number) => (index === 0 ? file : null)
-      }
-    })
 
-    page.handleFileChange('q-upload', { target: input } as unknown as Event)
+    page.handleFileChange('q-upload', file)
     await page.uploadFile('q-upload')
 
     expect(uploadMutation.mutateAsync).toHaveBeenCalledWith({
@@ -271,7 +262,7 @@ describe('useWorkspaceFormDetailPage', () => {
     expect(page.uploadErrorMessages.value['q-upload']).toBe('')
   })
 
-  it('handles invalid file inputs by clearing the staged file', () => {
+  it('clears the staged file when passed null', async () => {
     const page = useWorkspaceFormDetailPage({
       formId: 'form-1',
       selectedAnswerId: '',
@@ -279,9 +270,12 @@ describe('useWorkspaceFormDetailPage', () => {
       onClearSelectedAnswer: vi.fn()
     })
 
-    page.handleFileChange('q-upload', { target: document.createElement('div') } as unknown as Event)
+    page.handleFileChange('q-upload', new File(['demo'], 'sample.txt'))
+    page.handleFileChange('q-upload', null)
+    await page.uploadFile('q-upload')
 
-    expect(page.resolveUploadDownloadHref('q-upload')).toBe('/legacy/form-1/')
+    expect(page.uploadErrorMessages.value['q-upload']).toBe('ファイルを選択してください。')
+    expect(uploadMutation.mutateAsync).not.toHaveBeenCalled()
   })
 
   it('resolves upload download urls for both selected answers and legacy answers', () => {
@@ -326,18 +320,9 @@ describe('useWorkspaceFormDetailPage', () => {
       onClearSelectedAnswer: vi.fn()
     })
     const file = new File(['demo'], 'sample.txt', { type: 'text/plain' })
-    const input = document.createElement('input')
-    Object.defineProperty(input, 'files', {
-      configurable: true,
-      value: {
-        0: file,
-        length: 1,
-        item: () => file
-      }
-    })
 
     await page.saveAnswer()
-    page.handleFileChange('q-upload', { target: input } as unknown as Event)
+    page.handleFileChange('q-upload', file)
     await page.uploadFile('q-upload')
 
     expect(page.errorMessage.value).toBe('サーバーがエラーを返しました。')

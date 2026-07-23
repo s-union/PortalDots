@@ -121,16 +121,8 @@ async function handleUploadFile(questionId: string) {
   }
 }
 
-function handleFileChange(questionId: string, event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) {
-    return
-  }
-
-  selectedFiles.value = {
-    ...selectedFiles.value,
-    [questionId]: target.files?.[0] ?? target.files?.item(0) ?? null
-  }
+function handleFileChange(questionId: string, file: File | null) {
+  selectedFiles.value = { ...selectedFiles.value, [questionId]: file }
 }
 </script>
 
@@ -208,6 +200,7 @@ function handleFileChange(questionId: string, event: Event) {
                   :answer="answerQuery.data.value.answer"
                   :draft="draft"
                   :question="question"
+                  :selected-file="selectedFiles[question.id]"
                   :upload-button-label="'添付を更新'"
                   :upload-pending="uploadMutation.isPending.value"
                   :upload-error-message="uploadErrorMessages[question.id]"

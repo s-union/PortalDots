@@ -19,14 +19,15 @@ const (
 )
 
 type EmailJob struct {
-	JobId     string            `json:"jobId"`
-	Template  string            `json:"template"`
-	Priority  Priority          `json:"priority"`
-	From      string            `json:"from"`
-	To        []string          `json:"to"`
-	Subject   string            `json:"subject"`
-	Body      string            `json:"body"`
-	Variables map[string]string `json:"variables"`
+	JobId       string            `json:"jobId"`
+	Template    string            `json:"template"`
+	Priority    Priority          `json:"priority"`
+	From        string            `json:"from"`
+	To          []string          `json:"to"`
+	Subject     string            `json:"subject"`
+	Body        string            `json:"body"`
+	HistoryBody string            `json:"-"`
+	Variables   map[string]string `json:"variables"`
 }
 
 type Sender interface {

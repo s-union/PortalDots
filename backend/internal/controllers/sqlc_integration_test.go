@@ -174,6 +174,7 @@ func newSQLCIntegrationServer(t *testing.T, cfg config.Config) *echo.Echo {
 		dependencies.Authenticator,
 		dependencies.Booths,
 		dependencies.Circles,
+		dependencies.Contacts,
 		dependencies.ContactCategories,
 		dependencies.Documents,
 		dependencies.Forms,

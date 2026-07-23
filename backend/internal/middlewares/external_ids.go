@@ -70,6 +70,12 @@ func TransformExternalIDs() echo.MiddlewareFunc {
 				return invalidRequest(c)
 			}
 			if err := decodeExternalIDRequest(c); err != nil {
+				// Body-size errors must propagate unchanged so contactRequestBodyLimit
+				// can turn them into 413 responses instead of a generic 400.
+				var maxBytesError *http.MaxBytesError
+				if errors.As(err, &maxBytesError) {
+					return err
+				}
 				return invalidRequest(c)
 			}
 

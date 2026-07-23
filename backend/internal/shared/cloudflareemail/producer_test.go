@@ -31,12 +31,13 @@ func TestEnqueue_SendsCorrectPayload(t *testing.T) {
 
 	client := NewProducerClient(server.URL, "test-token")
 	err := client.Enqueue(context.Background(), EmailJob{
-		JobId:    "job-1",
-		Template: "markdown-notice",
-		Priority: PriorityHigh,
-		From:     "sender@example.com",
-		To:       []string{"a@example.com", "b@example.com"},
-		Subject:  "Test",
+		JobId:       "job-1",
+		Template:    "markdown-notice",
+		Priority:    PriorityHigh,
+		From:        "sender@example.com",
+		To:          []string{"a@example.com", "b@example.com"},
+		Subject:     "Test",
+		HistoryBody: "must not be delivered",
 		Variables: map[string]string{
 			"appName": "PortalDots",
 		},
@@ -49,6 +50,28 @@ func TestEnqueue_SendsCorrectPayload(t *testing.T) {
 	}
 	if receivedJob.Priority != PriorityHigh {
 		t.Errorf("expected priority high, got %s", receivedJob.Priority)
+	}
+	if receivedJob.HistoryBody != "" {
+		t.Errorf("history body leaked into producer payload: %q", receivedJob.HistoryBody)
+	}
+}
+
+func TestEmailJobHistoryBodyIsNotSerialized(t *testing.T) {
+	t.Parallel()
+
+	payload, err := json.Marshal(EmailJob{Body: "delivered", HistoryBody: "recorded"})
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+	if _, exists := decoded["HistoryBody"]; exists {
+		t.Fatalf("serialized payload exposed HistoryBody: %s", payload)
+	}
+	if _, exists := decoded["historyBody"]; exists {
+		t.Fatalf("serialized payload exposed historyBody: %s", payload)
 	}
 }
 

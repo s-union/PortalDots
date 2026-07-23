@@ -23,6 +23,7 @@ func main() {
 	server := httpserver.NewWithDependencies(cfg, httpserver.Dependencies{
 		Shared: httpserver.SharedDependencies{
 			Activities:  dependencies.Activities,
+			Contacts:    dependencies.Contacts,
 			MailHistory: dependencies.MailHistory,
 			Sessions:    dependencies.Sessions,
 			Users:       dependencies.Users,

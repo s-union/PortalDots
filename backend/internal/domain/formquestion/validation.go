@@ -143,7 +143,7 @@ func NormalizeAllowedTypes(value string) []string {
 	}
 
 	parts := strings.FieldsFunc(value, func(r rune) bool {
-		return r == ',' || r == '\n' || r == '\r' || r == ' ' || r == '\t'
+		return r == ',' || r == '|' || r == '\n' || r == '\r' || r == ' ' || r == '\t'
 	})
 	normalized := make([]string, 0, len(parts))
 	for _, part := range parts {

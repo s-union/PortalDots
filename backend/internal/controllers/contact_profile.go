@@ -5,13 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"mime"
+	"mime/multipart"
 	"net/http"
+	"net/url"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
+	"github.com/s-union/PortalDots/backend/internal/domain/contact"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
@@ -32,12 +37,19 @@ type submitContactRequest struct {
 }
 
 type submitContactResponse struct {
-	ID           string `json:"id"`
-	CategoryID   string `json:"categoryId"`
-	CategoryName string `json:"categoryName"`
-	Subject      string `json:"subject"`
-	Status       string `json:"status"`
-	CreatedAt    string `json:"createdAt"`
+	ID           string                     `json:"id"`
+	CategoryID   string                     `json:"categoryId"`
+	CategoryName string                     `json:"categoryName"`
+	Subject      string                     `json:"subject"`
+	Status       string                     `json:"status"`
+	CreatedAt    string                     `json:"createdAt"`
+	Attachment   *contactAttachmentResponse `json:"attachment,omitempty"`
+}
+
+type contactAttachmentResponse struct {
+	Filename  string `json:"filename"`
+	MimeType  string `json:"mimeType"`
+	SizeBytes int64  `json:"sizeBytes"`
 }
 
 type updateProfileRequest struct {
@@ -60,9 +72,27 @@ type updatedProfileResponse struct {
 }
 
 func (h *authHandlers) listContactHistory(c *echo.Context) error {
-	_, currentSession, ok := h.getSession(c)
+	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return statusError(c, http.StatusUnauthorized)
+	}
+	selectedCircle, err := resolveCurrentCircle(c.Request().Context(), sessionID, currentSession, h.circles, h.sessions)
+	if err != nil {
+		return internalError(c)
+	}
+	if selectedCircle == nil {
+		return statusError(c, http.StatusConflict)
+	}
+
+	contacts, err := h.contacts.ListByOwner(c.Request().Context(), currentSession.User.ID, selectedCircle.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	response := make([]submitContactResponse, 0, len(contacts))
+	knownMailJobs := make(map[string]struct{}, len(contacts))
+	for _, item := range contacts {
+		knownMailJobs[item.StaffMailJobID] = struct{}{}
+		response = append(response, mapContactResponse(item))
 	}
 
 	entries, err := h.mailHistory.List(c.Request().Context())
@@ -70,9 +100,8 @@ func (h *authHandlers) listContactHistory(c *echo.Context) error {
 		return internalError(c)
 	}
 
-	response := make([]submitContactResponse, 0)
 	for _, entry := range entries {
-		if !contactHistoryMatches(entry.Body, "", currentSession.User.ID) {
+		if _, exists := knownMailJobs[entry.JobID]; exists || strings.HasPrefix(entry.JobID, "contact-confirm-") || !contactHistoryMatches(entry.Body, selectedCircle.ID, currentSession.User.ID) {
 			continue
 		}
 		categoryID, categoryName := extractContactMetadata(entry.Body)
@@ -85,18 +114,59 @@ func (h *authHandlers) listContactHistory(c *echo.Context) error {
 			CreatedAt:    entry.CreatedAt,
 		})
 	}
+	sort.SliceStable(response, func(i, j int) bool { return response[i].CreatedAt > response[j].CreatedAt })
 
 	return c.JSON(http.StatusOK, response)
 }
 
+func mapContactResponse(item contact.Contact) submitContactResponse {
+	response := submitContactResponse{
+		ID:           item.StaffMailJobID,
+		CategoryID:   item.CategoryID,
+		CategoryName: item.CategoryName,
+		Subject:      item.Subject,
+		Status:       item.Status,
+		CreatedAt:    item.CreatedAt,
+	}
+	if item.Attachment != nil {
+		response.Attachment = &contactAttachmentResponse{
+			Filename:  item.Attachment.Filename,
+			MimeType:  item.Attachment.MimeType,
+			SizeBytes: item.Attachment.SizeBytes,
+		}
+	}
+	return response
+}
+
+func contactHistoryHeader(body string) string {
+	if idx := strings.Index(body, "\n\n"); idx >= 0 {
+		return body[:idx]
+	}
+	return body
+}
+
 func contactHistoryMatches(body, circleID, userID string) bool {
-	return strings.Contains(body, circleID) && strings.Contains(body, userID)
+	header := contactHistoryHeader(body)
+	var matchedCircle, matchedUser bool
+	for _, line := range strings.Split(header, "\n") {
+		switch {
+		case line == "from_user_id: "+userID:
+			matchedUser = true
+		case strings.HasPrefix(line, "from: ") && strings.HasSuffix(line, "("+userID+")"):
+			matchedUser = true
+		case line == "circle_id: "+circleID:
+			matchedCircle = true
+		case strings.HasPrefix(line, "circle: ") && strings.HasSuffix(line, "("+circleID+")"):
+			matchedCircle = true
+		}
+	}
+	return matchedCircle && matchedUser
 }
 
 func extractContactMetadata(body string) (string, string) {
 	categoryID := ""
 	categoryName := ""
-	for _, line := range strings.Split(body, "\n") {
+	for _, line := range strings.Split(contactHistoryHeader(body), "\n") {
 		if strings.HasPrefix(line, "category_id: ") {
 			categoryID = strings.TrimPrefix(line, "category_id: ")
 		}
@@ -139,10 +209,20 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	if selectedCircle == nil {
+		return statusError(c, http.StatusConflict)
+	}
 
-	var request submitContactRequest
-	if err := c.Bind(&request); err != nil {
-		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	contentType, _, err := mime.ParseMediaType(c.Request().Header.Get(echo.HeaderContentType))
+	if err != nil || contentType != echo.MIMEMultipartForm {
+		return errorJSON(c, http.StatusUnsupportedMediaType, "multipart_form_required")
+	}
+	ccSubleader, ccErrors := parseContactCCSubleader(c.FormValue("ccSubleader"))
+	request := submitContactRequest{
+		CategoryID:  c.FormValue("categoryId"),
+		Subject:     c.FormValue("subject"),
+		Body:        c.FormValue("body"),
+		CCSubleader: ccSubleader,
 	}
 
 	request.CategoryID = strings.TrimSpace(request.CategoryID)
@@ -150,6 +230,9 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 	request.Body = strings.TrimSpace(request.Body)
 
 	validationErrors := map[string][]string{}
+	for key, messages := range ccErrors {
+		validationErrors[key] = messages
+	}
 	if request.CategoryID == "" {
 		validationErrors["categoryId"] = []string{"問い合わせカテゴリを選択してください"}
 	}
@@ -158,6 +241,16 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 	}
 	if request.Body == "" {
 		validationErrors["body"] = []string{"本文を入力してください"}
+	}
+
+	var fileHeader *multipart.FileHeader
+	fileHeader, err = c.FormFile("file")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+		return errorJSON(c, http.StatusBadRequest, "invalid_request")
+	}
+	attachment, attachmentErrors := parseContactAttachment(fileHeader)
+	for key, messages := range attachmentErrors {
+		validationErrors[key] = messages
 	}
 	if len(validationErrors) > 0 {
 		return validationError(c, validationErrors)
@@ -178,28 +271,53 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 		currentSession.User.ID,
 		currentSession.User.DisplayName,
 		currentSession.User.ID,
-		selectedCircleID(selectedCircle),
-		selectedCircleName(selectedCircle),
-		selectedCircleID(selectedCircle),
+		selectedCircle.ID,
+		selectedCircle.Name,
+		selectedCircle.ID,
 		request.Subject,
 		request.Body,
 	)
 
+	jobID := "contact-" + uuidv7.MustString()
+	created, rawToken, err := h.contacts.Create(c.Request().Context(), contact.NewContact{
+		UserID:         currentSession.User.ID,
+		CircleID:       selectedCircle.ID,
+		CategoryID:     category.ID,
+		CategoryName:   category.Name,
+		Subject:        request.Subject,
+		Body:           request.Body,
+		Status:         "sent",
+		StaffMailJobID: jobID,
+	}, attachment)
+	if err != nil {
+		return internalError(c)
+	}
+	cleanupContact := func() {
+		if err := h.contacts.Delete(c.Request().Context(), created.ID); err != nil && !errors.Is(err, contact.ErrNotFound) {
+			slog.Error("failed to clean up contact after mail enqueue failure", "contactID", created.ID, "error", err)
+		}
+		if err := h.mailHistory.Delete(c.Request().Context(), jobID); err != nil {
+			slog.Error("failed to clean up mail history after mail enqueue failure", "jobID", jobID, "error", err)
+		}
+	}
+
 	confirmationRecipients, err := h.contactConfirmationRecipients(
-		selectedCircleID(selectedCircle),
+		selectedCircle.ID,
 		currentSession.User.ID,
 		contactShouldCCSubleader(request.CCSubleader),
 	)
 	if err != nil {
+		cleanupContact()
 		return internalError(c)
 	}
 	if len(confirmationRecipients) > 0 {
 		confirmationSubject := "お問い合わせを承りました"
 		confirmationBody := fmt.Sprintf(
-			"お問い合わせを受け付けました。\n\nカテゴリ: %s\n件名: %s\n\n%s",
+			"お問い合わせを受け付けました。\n\nカテゴリ: %s\n件名: %s\n\n%s%s",
 			category.Name,
 			request.Subject,
 			request.Body,
+			contactAttachmentDescription(attachment),
 		)
 		confirmationJobID := "contact-confirm-" + uuidv7.MustString()
 		if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
@@ -220,23 +338,30 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 				"preview":      confirmationSubject,
 			},
 		}); err != nil {
+			cleanupContact()
 			return internalError(c)
 		}
 		logQueuedMail("contact_confirmation", confirmationJobID, "", currentSession.User.ID, confirmationSubject, confirmationBody, confirmationRecipients, h.allowDangerously)
 	}
 
-	jobID := "contact-" + uuidv7.MustString()
+	staffMailBody := staffBody
+	staffHistoryBody := staffBody + contactAttachmentDescription(attachment)
+	if attachment != nil {
+		downloadURL := strings.TrimRight(h.appURL, "/") + "/v1/contact/attachments/" + url.PathEscape(rawToken)
+		staffMailBody += fmt.Sprintf("\n\n添付ファイル: %s\nダウンロード: %s", attachment.Filename, downloadURL)
+	}
 	if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
-		JobId:    jobID,
-		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
-		From:     h.from,
-		To:       []string{category.Email},
-		Subject:  request.Subject,
-		Body:     staffBody,
+		JobId:       jobID,
+		Template:    "markdown-notice",
+		Priority:    cloudflareemail.PriorityNormal,
+		From:        h.from,
+		To:          []string{category.Email},
+		Subject:     request.Subject,
+		Body:        staffMailBody,
+		HistoryBody: staffHistoryBody,
 		Variables: map[string]string{
 			"subject":      request.Subject,
-			"body":         staffBody,
+			"body":         staffMailBody,
 			"appName":      h.appName,
 			"appURL":       h.appURL,
 			"adminName":    h.adminName,
@@ -244,9 +369,11 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 			"preview":      request.Subject,
 		},
 	}); err != nil {
+		cleanupContact()
 		return internalError(c)
 	}
-	logQueuedMail("contact", jobID, selectedCircleID(selectedCircle), currentSession.User.ID, request.Subject, staffBody, []string{category.Email}, h.allowDangerously)
+	// The mail body contains a bearer token, so it must stay redacted even in demo mode.
+	logQueuedMail("contact", jobID, selectedCircle.ID, currentSession.User.ID, request.Subject, staffMailBody, []string{category.Email}, false)
 	recordActivity(
 		c.Request().Context(),
 		h.activities,
@@ -254,7 +381,7 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 		"contact.submitted",
 		"contact_category",
 		category.ID,
-		selectedCircleID(selectedCircle),
+		selectedCircle.ID,
 		buildActivitySummary("利用者がお問い合わせを送信しました", request.Subject),
 	)
 
@@ -264,8 +391,28 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 		CategoryName: category.Name,
 		Subject:      request.Subject,
 		Status:       "sent",
-		CreatedAt:    time.Now().UTC().Format(time.RFC3339),
+		CreatedAt:    created.CreatedAt,
+		Attachment:   mapContactResponse(created).Attachment,
 	})
+}
+
+func (h *authHandlers) downloadContactAttachment(c *echo.Context) error {
+	tokenHash, err := contact.HashDownloadToken(c.Param("token"))
+	if err != nil {
+		return statusError(c, http.StatusNotFound)
+	}
+	attachment, err := h.contacts.FindAttachment(c.Request().Context(), tokenHash)
+	if errors.Is(err, contact.ErrNotFound) {
+		return statusError(c, http.StatusNotFound)
+	}
+	if err != nil {
+		return internalError(c)
+	}
+
+	c.Response().Header().Set(echo.HeaderCacheControl, "no-store")
+	c.Response().Header().Set("X-Content-Type-Options", "nosniff")
+	c.Response().Header().Set(echo.HeaderContentDisposition, attachmentContentDisposition(attachment.Filename))
+	return c.Blob(http.StatusOK, attachment.MimeType, attachment.Content)
 }
 
 func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID string, ccSubleader bool) ([]string, error) {
@@ -330,20 +477,6 @@ func contactCircleConfirmationRecipients(users []useradmin.User, circleID, sende
 	}
 
 	return collectUsersEmailRecipients(leaders)
-}
-
-func selectedCircleID(selectedCircle *circleInfo) string {
-	if selectedCircle == nil {
-		return ""
-	}
-	return selectedCircle.ID
-}
-
-func selectedCircleName(selectedCircle *circleInfo) string {
-	if selectedCircle == nil {
-		return "未選択"
-	}
-	return selectedCircle.Name
 }
 
 func (h *authHandlers) updateProfile(c *echo.Context) error {

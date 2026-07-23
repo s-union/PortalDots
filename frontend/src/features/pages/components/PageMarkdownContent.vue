@@ -49,10 +49,18 @@ const renderedHtml = computed(() => {
 </script>
 
 <template>
-  <div class="page-markdown text-sm leading-8 text-body" v-html="renderedHtml" />
+  <div class="page-markdown text-body" v-html="renderedHtml" />
 </template>
 
 <style scoped>
+/* Typography mirrors packages/email/src/templates/markdown-notice.tsx
+   (markdownClassNames) so お知らせ reads the same in-app and in mail.
+   Colors are mapped to theme tokens (email hex → CSS var) for dark mode. */
+.page-markdown {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
 .page-markdown:deep(*) {
   word-break: break-word;
 }
@@ -60,7 +68,6 @@ const renderedHtml = computed(() => {
 .page-markdown:deep(p),
 .page-markdown:deep(ul),
 .page-markdown:deep(ol),
-.page-markdown:deep(blockquote),
 .page-markdown:deep(pre),
 .page-markdown:deep(table) {
   margin-top: 0;
@@ -70,24 +77,43 @@ const renderedHtml = computed(() => {
 .page-markdown:deep(h1),
 .page-markdown:deep(h2),
 .page-markdown:deep(h3),
-.page-markdown:deep(h4) {
-  margin-top: 1.75rem;
-  margin-bottom: 0.75rem;
+.page-markdown:deep(h4),
+.page-markdown:deep(h5),
+.page-markdown:deep(h6) {
+  margin-top: 0;
   font-weight: 700;
-  line-height: 1.5;
   color: var(--color-body);
 }
 
 .page-markdown:deep(h1) {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  margin-bottom: 1rem;
 }
 
 .page-markdown:deep(h2) {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .page-markdown:deep(h3) {
-  font-size: 1.125rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.page-markdown:deep(h4) {
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-markdown:deep(h5),
+.page-markdown:deep(h6) {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .page-markdown:deep(ul),
@@ -111,32 +137,39 @@ const renderedHtml = computed(() => {
   list-style: lower-alpha;
 }
 
-.page-markdown:deep(li + li) {
-  margin-top: 0.35rem;
+.page-markdown:deep(li) {
+  margin-bottom: 0.25rem;
 }
 
 .page-markdown:deep(input[type='checkbox']) {
   margin-right: 0.5rem;
 }
 
+.page-markdown:deep(a) {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
 .page-markdown:deep(blockquote) {
-  border-left: 3px solid var(--color-border);
-  padding-left: 1rem;
-  color: var(--color-muted);
+  margin: 1rem;
+  padding: 1rem 0.5rem 0;
+  border-left: 4px dotted var(--color-border);
+  color: var(--color-body);
 }
 
 .page-markdown:deep(code) {
-  border-radius: 0.375rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  border-radius: 0.25rem;
   background: var(--color-form-control);
-  padding: 0.125rem 0.375rem;
-  font-size: 0.875em;
+  padding: 0.125rem 0.25rem;
 }
 
 .page-markdown:deep(pre) {
-  overflow-x: auto;
-  border-radius: 0.75rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  border-radius: 0.375rem;
   background: var(--color-form-control);
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 .page-markdown:deep(pre code) {
@@ -152,13 +185,18 @@ const renderedHtml = computed(() => {
 .page-markdown:deep(th),
 .page-markdown:deep(td) {
   border: 1px solid var(--color-border);
-  padding: 0.625rem 0.75rem;
-  text-align: left;
+  padding: 0.5rem;
   vertical-align: top;
 }
 
 .page-markdown:deep(th) {
   background: var(--color-form-control);
+  text-align: left;
+}
+
+.page-markdown:deep(img) {
+  display: block;
+  max-width: 100%;
 }
 
 .page-markdown:deep(hr) {

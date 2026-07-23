@@ -83,3 +83,11 @@ ORDER BY created_at DESC, job_id DESC
 	}
 	return entries, rows.Err()
 }
+
+func (r *PostgresRepository) Delete(ctx context.Context, jobID string) error {
+	_, err := r.pool.Exec(ctx, `
+DELETE FROM outbound_mails
+WHERE job_id = $1
+`, jobID)
+	return err
+}

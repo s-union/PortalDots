@@ -10,6 +10,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/booth"
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
+	"github.com/s-union/PortalDots/backend/internal/domain/contact"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/document"
 	"github.com/s-union/PortalDots/backend/internal/domain/form"
@@ -65,6 +66,7 @@ type authHandlers struct {
 	registrationAuth           auth.RegistrationAuthenticator
 	circles                    circle.Catalog
 	contactCategories          contactcategory.Repository
+	contacts                   contact.Repository
 	mailHistory                mailhistory.Repository
 	pendingRegistrations       pendingregistration.Repository
 	passwordResetTokens        *passwordResetTokenStore
@@ -207,6 +209,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 		authenticator,
 		booth.NewMemoryRepository(cfg.Booths),
 		circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
+		contact.NewMemoryRepository(),
 		contactcategory.NewMemoryRepository(cfg.ContactCategories),
 		document.NewStaticRepository(cfg.Documents),
 		form.NewStaticRepository(cfg.Forms),
@@ -229,6 +232,7 @@ func NewServerWithDependencies(
 	authenticator auth.Authenticator,
 	booths booth.Repository,
 	circles circle.Catalog,
+	contacts contact.Repository,
 	contactCategories contactcategory.Repository,
 	documents document.Repository,
 	forms form.Repository,
@@ -245,8 +249,12 @@ func NewServerWithDependencies(
 	if mailHistory == nil {
 		mailHistory = mailhistory.NewMemoryRepository()
 	}
+	if contacts == nil {
+		contacts = contact.NewMemoryRepository()
+	}
 
 	e := echo.New()
+	e.Pre(contactRequestBodyLimit())
 	allowedOrigin := cfg.AppURL
 	if origin, err := cfg.AppOrigin(); err == nil {
 		allowedOrigin = origin
@@ -301,6 +309,7 @@ func NewServerWithDependencies(
 		registrationAuth:           registrationAuth,
 		circles:                    circles,
 		contactCategories:          contactCategories,
+		contacts:                   contacts,
 		mailHistory:                mailHistory,
 		pendingRegistrations:       pendingRegistrations,
 		passwordResetTokens:        newPasswordResetTokenStore(),
@@ -518,6 +527,7 @@ func NewServerWithDependencies(
 		ListContactCategories:      authH.listContactCategories,
 		ListContactHistory:         authH.listContactHistory,
 		SubmitContact:              authH.submitContact,
+		DownloadContactAttachment:  authH.downloadContactAttachment,
 		StaffStatus:                staffVerifyH.staffStatus,
 		RequestStaffVerification:   staffVerifyH.requestStaffVerification,
 		ConfirmStaffVerification:   staffVerifyH.confirmStaffVerification,

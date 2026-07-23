@@ -406,6 +406,17 @@ paths:
                     createdAt:
                       type: string
                       format: date-time
+                    attachment:
+                      type: object
+                      required: [filename, mimeType, sizeBytes]
+                      properties:
+                        filename:
+                          type: string
+                        mimeType:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          format: int64
         "401":
           description: Unauthenticated
         "409":
@@ -416,7 +427,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required: [categoryId, subject, body]
@@ -432,6 +443,9 @@ paths:
                 ccSubleader:
                   type: boolean
                   default: true
+                file:
+                  type: string
+                  format: binary
       responses:
         "201":
           description: Submitted contact
@@ -454,10 +468,59 @@ paths:
                   createdAt:
                     type: string
                     format: date-time
+                  attachment:
+                    type: object
+                    required: [filename, mimeType, sizeBytes]
+                    properties:
+                      filename:
+                        type: string
+                      mimeType:
+                        type: string
+                      sizeBytes:
+                        type: integer
+                        format: int64
+        "400":
+          description: Malformed form data
         "401":
           description: Unauthenticated
         "409":
           description: Current circle is not selected
+        "413":
+          description: Attachment exceeds the maximum allowed size
+        "415":
+          description: Content-Type is not multipart/form-data
+        "422":
+          description: Validation error
+  /contact/attachments/{token}:
+    get:
+      operationId: downloadContactAttachment
+      summary: Download a contact attachment using its opaque permanent token
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contact attachment
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+            Content-Disposition:
+              schema:
+                type: string
+            X-Content-Type-Options:
+              schema:
+                type: string
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Attachment not found
   /staff/status:
     get:
       operationId: getStaffStatus

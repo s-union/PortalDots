@@ -172,11 +172,33 @@ describe('AnswerQuestionFields', () => {
     expect(wrapper.text()).toContain('アップロードに失敗しました')
 
     const fileInput = wrapper.get('input[type="file"]')
+    const file = new File(['content'], 'flyer.pdf', { type: 'application/pdf' })
+    Object.defineProperty(fileInput.element, 'files', { configurable: true, value: [file] })
     await fileInput.trigger('change')
-    expect(wrapper.emitted('fileChange')?.[0]).toEqual(['question-upload', expect.any(Event)])
+    expect(wrapper.emitted('fileChange')?.[0]).toEqual(['question-upload', file])
 
-    await wrapper.get('button[type="button"]').trigger('click')
+    const uploadButton = wrapper.findAll('button[type="button"]').find((button) => button.text() === 'アップロード')
+    if (!uploadButton) {
+      throw new Error('upload button not found')
+    }
+    await uploadButton.trigger('click')
     expect(wrapper.emitted('upload')?.[0]).toEqual(['question-upload'])
+  })
+
+  it('parses pipe-delimited allowedTypes into file input accept extensions', () => {
+    const question = createQuestion({
+      id: 'question-upload',
+      type: 'upload',
+      allowedTypes: 'png|jpg|jpeg|gif'
+    })
+    const draft: FormAnswerDraft = {}
+
+    const wrapper = mount(AnswerQuestionFields, {
+      props: createProps(question, draft)
+    })
+
+    expect(wrapper.get('input[type="file"]').attributes('accept')).toBe('.png,.jpg,.jpeg,.gif')
+    expect(wrapper.text()).toContain('png / jpg / jpeg / gif ・1ファイル5MBまで')
   })
 
   it('uses custom download label and shows empty state', () => {
@@ -205,7 +227,12 @@ describe('AnswerQuestionFields', () => {
       }
     })
 
-    const button = wrapper.get('button[type="button"]')
+    const button = wrapper
+      .findAll('button[type="button"]')
+      .find((currentButton) => currentButton.text() === '送信中...')
+    if (!button) {
+      throw new Error('pending upload button not found')
+    }
     expect(button.text()).toBe('送信中...')
     expect(button.attributes('disabled')).toBeDefined()
   })

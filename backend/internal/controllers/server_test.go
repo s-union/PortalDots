@@ -128,7 +128,7 @@ func TestContactCategoriesAndSubmitContact(t *testing.T) {
 		t.Fatal("expected contact categories")
 	}
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/contact", map[string]string{
+	recorder = doMultipartFieldsRequest(t, server, cookies, http.MethodPost, "/v1/contact", map[string]string{
 		"categoryId": categories[0].ID,
 		"subject":    "搬入時間について",
 		"body":       "当日の搬入可能時刻を確認したいです。",
@@ -182,7 +182,7 @@ func TestSubmitContactQueuesConfirmationAndStaffCopy(t *testing.T) {
 
 	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
 
-	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/contact", map[string]string{
+	recorder = doMultipartFieldsRequest(t, server, cookies, http.MethodPost, "/v1/contact", map[string]string{
 		"categoryId": "0195ec00-0081-7000-8000-000000000001",
 		"subject":    "搬入時間について",
 		"body":       "当日の搬入可能時刻を確認したいです。",
@@ -194,6 +194,205 @@ func TestSubmitContactQueuesConfirmationAndStaffCopy(t *testing.T) {
 	loginAsStaff(t, server, cookies)
 	authorizeStaff(t, server, cookies)
 	assertStaffMailsEmpty(t, server, cookies)
+}
+
+func TestSubmitContactKeepsAttachmentTokenOutOfConfirmationAndLogs(t *testing.T) {
+	var jobs []cloudflareemail.EmailJob
+	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		var job cloudflareemail.EmailJob
+		if err := json.NewDecoder(request.Body).Decode(&job); err != nil {
+			t.Fatalf("decode email job: %v", err)
+		}
+		jobs = append(jobs, job)
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(producer.Close)
+
+	cfg := demoCircleConfig()
+	cfg.ContactCategories = []config.ContactCategory{
+		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
+	}
+	cfg.EmailProducerURL = producer.URL
+	cfg.EmailProducerEnabled = true
+	cfg.AppURL = "https://portal.example.com"
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previousLogger) })
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId": "demo@example.com", "password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("login status = %d, want 204", recorder.Code)
+	}
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
+	recorder = doMultipartRequest(t, server, cookies, http.MethodPost, "/v1/contact", "file", "proposal.pdf", []byte("%PDF-1.7\n"), "", map[string]string{
+		"categoryId": "0195ec00-0081-7000-8000-000000000001",
+		"subject":    "企画書",
+		"body":       "添付をご確認ください。",
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("contact status = %d, want 201, body=%s", recorder.Code, recorder.Body.String())
+	}
+	if len(jobs) != 2 {
+		t.Fatalf("queued jobs = %d, want confirmation and staff jobs", len(jobs))
+	}
+
+	var confirmation, staff cloudflareemail.EmailJob
+	for _, job := range jobs {
+		if strings.HasPrefix(job.JobId, "contact-confirm-") {
+			confirmation = job
+		} else if strings.HasPrefix(job.JobId, "contact-") {
+			staff = job
+		}
+	}
+	if !strings.Contains(confirmation.Body, "添付ファイル: proposal.pdf") || strings.Contains(confirmation.Body, "/contact/attachments/") {
+		t.Fatalf("confirmation body exposed or omitted attachment metadata: %q", confirmation.Body)
+	}
+	linkPrefix := "https://portal.example.com/v1/contact/attachments/"
+	linkIndex := strings.Index(staff.Body, linkPrefix)
+	if linkIndex < 0 || !strings.Contains(staff.Body, "添付ファイル: proposal.pdf") {
+		t.Fatalf("staff body has no permanent attachment link: %q", staff.Body)
+	}
+	token := strings.Fields(staff.Body[linkIndex+len(linkPrefix):])[0]
+	if strings.Contains(logs.String(), token) || strings.Contains(logs.String(), "%PDF-1.7") {
+		t.Fatalf("contact token or bytes leaked to logs: %s", logs.String())
+	}
+}
+
+func TestSubmitContactCleansUpHistoryWhenStaffMailEnqueueFails(t *testing.T) {
+	t.Parallel()
+
+	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		var job cloudflareemail.EmailJob
+		if err := json.NewDecoder(request.Body).Decode(&job); err != nil {
+			t.Fatalf("decode email job: %v", err)
+		}
+		if strings.HasPrefix(job.JobId, "contact-confirm-") {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if strings.HasPrefix(job.JobId, "contact-") {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(producer.Close)
+
+	cfg := demoCircleConfig()
+	cfg.ContactCategories = []config.ContactCategory{
+		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
+	}
+	cfg.EmailProducerURL = producer.URL
+	cfg.EmailProducerEnabled = true
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId": "demo@example.com", "password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("login status = %d, want 204", recorder.Code)
+	}
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
+
+	recorder = doMultipartFieldsRequest(t, server, cookies, http.MethodPost, "/v1/contact", map[string]string{
+		"categoryId": "0195ec00-0081-7000-8000-000000000001",
+		"subject":    "搬入時間について",
+		"body":       "当日の搬入可能時刻を確認したいです。",
+	})
+	if recorder.Code != http.StatusInternalServerError {
+		t.Fatalf("contact status = %d, want 500, body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/contact", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var history []submitContactResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &history); err != nil {
+		t.Fatalf("unmarshal contact history: %v", err)
+	}
+	if len(history) != 0 {
+		t.Fatalf("expected empty contact history after staff mail enqueue failure, got %#v", history)
+	}
+}
+
+// TestSubmitContactRejectsOversizedMultipartBodyWithChunkedTransfer exercises the full
+// middleware stack (contactRequestBodyLimit + TransformExternalIDs) with a request whose
+// Content-Length is unknown, forcing the size check to rely on http.MaxBytesReader while
+// ParseMultipartForm reads the body. Regression test for the oversized multipart body being
+// reported as 400 invalid_request instead of 413 request_too_large.
+func TestSubmitContactRejectsOversizedMultipartBodyWithChunkedTransfer(t *testing.T) {
+	t.Parallel()
+
+	cfg := demoCircleConfig()
+	cfg.ContactCategories = []config.ContactCategory{
+		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
+	}
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId": "demo@example.com", "password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("login status = %d, want 204", recorder.Code)
+	}
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
+	csrfToken := fetchCSRFToken(t, server, cookies)
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("categoryId", encodeExternalIDTestFormValue("categoryId", "0195ec00-0081-7000-8000-000000000001")); err != nil {
+		t.Fatalf("write multipart field: %v", err)
+	}
+	if err := writer.WriteField("subject", "巨大ファイル"); err != nil {
+		t.Fatalf("write multipart field: %v", err)
+	}
+	if err := writer.WriteField("body", "サイズ超過テスト"); err != nil {
+		t.Fatalf("write multipart field: %v", err)
+	}
+	part, err := writer.CreateFormFile("file", "oversized.pdf")
+	if err != nil {
+		t.Fatalf("create multipart file: %v", err)
+	}
+	if _, err := part.Write(bytes.Repeat([]byte("A"), maxContactRequestBytes+4096)); err != nil {
+		t.Fatalf("write multipart file: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	// Wrapping the buffer in io.NopCloser keeps httptest.NewRequest from special-casing
+	// *bytes.Buffer, which leaves Request.ContentLength at -1 just like a chunked-transfer
+	// client that doesn't announce its body size upfront.
+	request := httptest.NewRequest(http.MethodPost, "/v1/contact", io.NopCloser(&body))
+	request.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
+	request.Header.Set("X-CSRF-Token", csrfToken)
+	for _, cookie := range cookies {
+		request.AddCookie(cookie)
+	}
+
+	recorder = httptest.NewRecorder()
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("oversized multipart status = %d, want 413, body=%s", recorder.Code, recorder.Body.String())
+	}
+	var errorResponse struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &errorResponse); err != nil {
+		t.Fatalf("unmarshal error response: %v", err)
+	}
+	if errorResponse.Message != "request_too_large" {
+		t.Fatalf("error message = %q, want request_too_large", errorResponse.Message)
+	}
 }
 
 func TestUpdateProfileReflectsInBootstrap(t *testing.T) {
@@ -6629,6 +6828,43 @@ func doMultipartRequest(
 		cookies[cookie.Name] = cookie
 	}
 
+	return recorder
+}
+
+func doMultipartFieldsRequest(
+	t *testing.T,
+	server *echo.Echo,
+	cookies map[string]*http.Cookie,
+	method string,
+	path string,
+	fields map[string]string,
+) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	for key, value := range fields {
+		if err := writer.WriteField(key, encodeExternalIDTestFormValue(key, value)); err != nil {
+			t.Fatalf("write multipart field %s: %v", key, err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(method, path, &body)
+	req.URL.Path = encodeExternalIDTestPath(req.URL.Path)
+	req.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
+	for _, cookie := range cookies {
+		req.AddCookie(cookie)
+	}
+	if len(cookies) > 0 && requiresCSRFHeader(method) {
+		req.Header.Set("X-CSRF-Token", fetchCSRFToken(t, server, cookies))
+	}
+
+	recorder := httptest.NewRecorder()
+	server.ServeHTTP(recorder, req)
+	normalizeExternalIDTestResponse(recorder)
 	return recorder
 }
 

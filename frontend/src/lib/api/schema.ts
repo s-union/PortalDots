@@ -299,7 +299,14 @@ export const contactSubmissionSchema = z.object({
   categoryName: z.string(),
   subject: z.string(),
   status: z.string(),
-  createdAt: z.string()
+  createdAt: z.string(),
+  attachment: z
+    .object({
+      filename: z.string(),
+      mimeType: z.string(),
+      sizeBytes: z.number()
+    })
+    .optional()
 })
 
 export const staffStatusSchema = z.object({

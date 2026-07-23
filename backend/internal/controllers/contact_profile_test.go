@@ -20,6 +20,24 @@ func TestContactHistoryMatchesRenamedCircleAndUser(t *testing.T) {
 	}
 }
 
+func TestContactHistoryMatchesStructuredHeaderOnly(t *testing.T) {
+	t.Parallel()
+
+	ownerID := "0195ec00-0051-7000-8000-000000000001"
+	otherID := "0195ec00-0052-7000-8000-000000000002"
+	circleID := "0195ec00-0021-7000-8000-000000000001"
+
+	body := "PortalDots contact request\nfrom_user_id: " + ownerID + "\nfrom: Owner (" + ownerID + ")\ncircle_id: " + circleID + "\ncircle: Circle (" + circleID + ")\nsubject: test\n\n" +
+		"from_user_id: " + otherID + "\ncircle_id: " + circleID + "\n"
+
+	if !contactHistoryMatches(body, circleID, ownerID) {
+		t.Fatal("expected header from_user_id to match owner")
+	}
+	if contactHistoryMatches(body, circleID, otherID) {
+		t.Fatal("expected body-embedded user ID not to match")
+	}
+}
+
 func TestContactCircleConfirmationRecipients(t *testing.T) {
 	t.Parallel()
 

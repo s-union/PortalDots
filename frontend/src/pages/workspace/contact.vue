@@ -6,13 +6,14 @@ definePage({
   }
 })
 
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, shallowRef, watch } from 'vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import ListPanel from '@/components/ui/ListPanel.vue'
 import PanelBody from '@/components/ui/PanelBody.vue'
 import {
   extractContactValidationMessage,
+  extractContactFileValidationMessage,
   useContactCategoriesQuery,
   useSubmitContactMutation
 } from '@/features/contact/api'
@@ -21,6 +22,7 @@ import { useFormValidation, contactFormSchema } from '@/lib/form-validation'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
+import FileUploadField from '@/components/ui/FileUploadField.vue'
 import FormError from '@/components/ui/FormError.vue'
 import FormField from '@/components/ui/FormField.vue'
 
@@ -32,8 +34,13 @@ const form = reactive({
   ccSubleader: true,
   body: ''
 })
-const submitErrorMessage = ref('')
-const successMessage = ref('')
+const submitErrorMessage = shallowRef('')
+const successMessage = shallowRef('')
+const selectedFile = shallowRef<File | null>(null)
+const fileError = shallowRef('')
+const serverFileError = shallowRef('')
+const maxFileBytes = 5 * 1024 * 1024
+const acceptedExtensions = ['pdf', 'docx', 'xlsx', 'pptx', 'png', 'jpg', 'jpeg']
 const selectedCategoryName = computed(
   () => categoriesQuery.data.value?.find((category) => category.id === form.categoryId)?.name ?? ''
 )
@@ -43,11 +50,16 @@ const { getFieldError, markTouched, validateAll } = useFormValidation({
   form: computed(() => form)
 })
 
+// Clear the stale server-side error whenever the user changes or removes the attachment.
+watch(selectedFile, () => {
+  serverFileError.value = ''
+})
+
 async function handleSubmit() {
   submitErrorMessage.value = ''
   successMessage.value = ''
 
-  if (!validateAll()) {
+  if (!validateAll() || fileError.value) {
     return
   }
 
@@ -56,14 +68,19 @@ async function handleSubmit() {
       categoryId: form.categoryId,
       subject: selectedCategoryName.value || 'お問い合わせ',
       body: form.body,
-      ccSubleader: form.ccSubleader
+      ccSubleader: form.ccSubleader,
+      file: selectedFile.value ?? undefined
     })
     successMessage.value = `「${result.categoryName}」に問い合わせを送信しました。`
     form.categoryId = ''
     form.ccSubleader = true
     form.body = ''
+    selectedFile.value = null
   } catch (error) {
-    submitErrorMessage.value = extractContactValidationMessage(error)
+    serverFileError.value = extractContactFileValidationMessage(error)
+    if (!serverFileError.value) {
+      submitErrorMessage.value = extractContactValidationMessage(error)
+    }
   }
 }
 </script>
@@ -86,6 +103,7 @@ async function handleSubmit() {
               v-model="form.categoryId"
               aria-label="お問い合わせ項目"
               name="categoryId"
+              :disabled="submitContactMutation.isPending.value"
               :class="{ 'border-danger': getFieldError('categoryId') }"
               @change="markTouched('categoryId')"
             >
@@ -103,7 +121,13 @@ async function handleSubmit() {
             <label
               class="flex items-start gap-3 rounded border border-border bg-surface-light px-4 py-3 text-sm text-body"
             >
-              <input v-model="form.ccSubleader" class="mt-1" name="ccSubleader" type="checkbox" />
+              <input
+                v-model="form.ccSubleader"
+                class="mt-1"
+                :disabled="submitContactMutation.isPending.value"
+                name="ccSubleader"
+                type="checkbox"
+              />
               <span>
                 <span class="block font-medium">副責任者にもメールで共有する（CC）</span>
                 <span class="mt-1 block text-xs leading-6 text-muted-2">
@@ -120,12 +144,31 @@ async function handleSubmit() {
               v-model="form.body"
               class="min-h-40"
               name="body"
+              :disabled="submitContactMutation.isPending.value"
               :class="{ 'border-danger': getFieldError('body') }"
               @blur="markTouched('body')"
               @input="markTouched('body')"
             />
           </FormField>
           <FormError v-if="getFieldError('body')" :message="getFieldError('body')" />
+        </div>
+
+        <div class="grid gap-2">
+          <FormField label="添付ファイル（任意）" as="div">
+            <FileUploadField
+              id="contact-file"
+              v-model="selectedFile"
+              v-model:error="fileError"
+              aria-label="添付ファイル（任意）"
+              :disabled="submitContactMutation.isPending.value"
+              :extensions="acceptedExtensions"
+              extension-error-message="PDF、Word、Excel、PowerPoint、PNG、JPEG ファイルを選択してください"
+              hint="PDF、Word、Excel、PowerPoint、PNG、JPEG（5MB以下）を1ファイル選択できます。"
+              :max-size-bytes="maxFileBytes"
+              name="file"
+              :server-error="serverFileError"
+            />
+          </FormField>
         </div>
 
         <AlertMessage v-if="successMessage" tone="success">

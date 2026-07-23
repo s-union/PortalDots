@@ -217,6 +217,12 @@ func TestNormalizeAllowedTypes(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected allowed types: %#v", got)
 	}
+
+	gotPipe := normalizeAllowedTypes("png|jpg|jpeg|gif")
+	wantPipe := []string{"png", "jpg", "jpeg", "gif"}
+	if !reflect.DeepEqual(gotPipe, wantPipe) {
+		t.Fatalf("unexpected allowed types: %#v", gotPipe)
+	}
 }
 
 func TestBuildAnswerSummary(t *testing.T) {
