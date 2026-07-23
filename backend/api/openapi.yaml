@@ -618,7 +618,7 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                  required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                   properties:
                     id:
                       type: string
@@ -630,6 +630,9 @@ paths:
                       type: string
                       format: date-time
                     updatedAt:
+                      type: string
+                      format: date-time
+                    publishedAt:
                       type: string
                       format: date-time
                     isPinned:
@@ -705,6 +708,9 @@ paths:
                   type: boolean
                 isPublic:
                   type: boolean
+                publishedAt:
+                  type: string
+                  format: date-time
       responses:
         "201":
           description: Created page
@@ -712,7 +718,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -724,6 +730,9 @@ paths:
                     type: string
                     format: date-time
                   updatedAt:
+                    type: string
+                    format: date-time
+                  publishedAt:
                     type: string
                     format: date-time
                   isPinned:
@@ -802,7 +811,7 @@ paths:
               schema:
                 type: object
                 required:
-                  [id, title, body, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                  [id, title, body, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -816,6 +825,9 @@ paths:
                     type: string
                     format: date-time
                   updatedAt:
+                    type: string
+                    format: date-time
+                  publishedAt:
                     type: string
                     format: date-time
                   isPinned:
@@ -893,6 +905,9 @@ paths:
                   type: boolean
                 isPublic:
                   type: boolean
+                publishedAt:
+                  type: string
+                  format: date-time
       responses:
         "200":
           description: Updated page
@@ -900,7 +915,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -912,6 +927,9 @@ paths:
                     type: string
                     format: date-time
                   updatedAt:
+                    type: string
+                    format: date-time
+                  publishedAt:
                     type: string
                     format: date-time
                   isPinned:
@@ -996,7 +1014,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -1008,6 +1026,9 @@ paths:
                     type: string
                     format: date-time
                   updatedAt:
+                    type: string
+                    format: date-time
+                  publishedAt:
                     type: string
                     format: date-time
                   isPinned:

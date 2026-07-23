@@ -256,6 +256,9 @@ func (h *publicHomeHandlers) collectPinnedPublicPages(ctx context.Context, circl
 		if !currentPage.IsPinned || !currentPage.IsPublic {
 			continue
 		}
+		if !isPagePublished(currentPage) {
+			continue
+		}
 		if len(circleTags) == 0 {
 			if len(currentPage.ViewableTags) > 0 {
 				continue

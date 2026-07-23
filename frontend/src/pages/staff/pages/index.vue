@@ -54,7 +54,7 @@ const deletePageMutation = useDeleteStaffPageByIdMutation()
 const exportHref = computed(() => buildStaffPagesExportUrl())
 const mailQueueAvailable = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
 
-const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt'] as const
+const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt', 'publishedAt'] as const
 type StaffPageSortKey = (typeof sortKeys)[number]
 
 const filterFields: StaffFilterField[] = [
@@ -65,7 +65,8 @@ const filterFields: StaffFilterField[] = [
   { key: 'body', label: '本文', type: 'string' },
   { key: 'notes', label: 'スタッフ用メモ', type: 'string' },
   { key: 'createdAt', label: '作成日時', type: 'string' },
-  { key: 'updatedAt', label: '更新日時', type: 'string' }
+  { key: 'updatedAt', label: '更新日時', type: 'string' },
+  { key: 'publishedAt', label: '公開日時', type: 'string' }
 ]
 
 const isFilterKey = createIsFilterKey(filterFields)
@@ -78,6 +79,7 @@ const columns: StaffDataGridColumn[] = [
   { key: 'body', label: '本文' },
   { key: 'isPinned', label: '固定', sortable: true, align: 'center' },
   { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
+  { key: 'publishedAt', label: '公開日時', sortable: true },
   { key: 'notes', label: 'スタッフ用メモ' },
   { key: 'createdAt', label: '作成日時', sortable: true },
   { key: 'updatedAt', label: '更新日時', sortable: true }
@@ -103,6 +105,7 @@ const rawRows = computed<StaffDataGridRow[]>(() =>
     isPublic: page.isPublic,
     createdAt: page.createdAt,
     updatedAt: page.updatedAt,
+    publishedAt: page.publishedAt,
     notes: page.notes
   }))
 )
@@ -312,6 +315,10 @@ async function handleReload() {
 
           <template #cell-isPublic="{ value }">
             <YesNo :value="value === true" />
+          </template>
+
+          <template #cell-publishedAt="{ value }">
+            <span>{{ typeof value === 'string' && value ? formatDateTimeTable(value) : '-' }}</span>
           </template>
 
           <template #cell-createdAt="{ value }">

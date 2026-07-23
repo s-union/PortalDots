@@ -22,6 +22,7 @@ type Page struct {
 	DocumentIDs  []string
 	CreatedAt    string
 	UpdatedAt    string
+	PublishedAt  string
 }
 
 type Repository interface {
@@ -35,8 +36,8 @@ type Repository interface {
 	FindGuest(ctx context.Context, pageID string) (Page, bool)
 	FindForCircle(ctx context.Context, circleTags []string, pageID string) (Page, bool)
 	FindForStaff(ctx context.Context, pageID string) (Page, bool)
-	Create(ctx context.Context, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) Page
-	Update(ctx context.Context, pageID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string) (Page, bool)
+	Create(ctx context.Context, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string, publishedAt time.Time) Page
+	Update(ctx context.Context, pageID, title, body, notes string, isPublic bool, isPinned bool, viewableTags []string, documentIDs []string, publishedAt time.Time) (Page, bool)
 	SetPinned(ctx context.Context, pageID string, isPinned bool) (Page, bool)
 	Delete(ctx context.Context, pageID string) bool
 	ListReadPageIDs(ctx context.Context, userID string, pageIDs []string) []string
@@ -65,6 +66,7 @@ func NewStaticRepository(cfg []config.Page) *StaticRepository {
 			DocumentIDs:  append([]string{}, item.DocumentIDs...),
 			CreatedAt:    item.CreatedAt,
 			UpdatedAt:    item.UpdatedAt,
+			PublishedAt:  item.CreatedAt,
 		})
 	}
 
@@ -150,6 +152,7 @@ func (r *StaticRepository) Create(
 	isPinned bool,
 	viewableTags []string,
 	documentIDs []string,
+	publishedAt time.Time,
 ) Page {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -166,6 +169,7 @@ func (r *StaticRepository) Create(
 		DocumentIDs:  append([]string{}, documentIDs...),
 		CreatedAt:    now,
 		UpdatedAt:    now,
+		PublishedAt:  publishedAt.UTC().Format(time.RFC3339),
 	}
 	r.nextID++
 	r.pages = append(r.pages, page)
@@ -183,6 +187,7 @@ func (r *StaticRepository) Update(
 	isPinned bool,
 	viewableTags []string,
 	documentIDs []string,
+	publishedAt time.Time,
 ) (Page, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -200,6 +205,7 @@ func (r *StaticRepository) Update(
 		r.pages[index].ViewableTags = append([]string{}, viewableTags...)
 		r.pages[index].DocumentIDs = append([]string{}, documentIDs...)
 		r.pages[index].UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+		r.pages[index].PublishedAt = publishedAt.UTC().Format(time.RFC3339)
 		delete(r.reads, pageID)
 		return clonePage(r.pages[index]), true
 	}
@@ -283,6 +289,9 @@ func (r *StaticRepository) listPages(query string, circleTags []string, guestOnl
 		if currentPage.IsPinned || !currentPage.IsPublic {
 			continue
 		}
+		if !isPagePublished(currentPage.PublishedAt) {
+			continue
+		}
 		if guestOnly {
 			if len(currentPage.ViewableTags) > 0 {
 				continue
@@ -309,6 +318,9 @@ func (r *StaticRepository) findPage(pageID string, circleTags []string, guestOnl
 			continue
 		}
 		if currentPage.IsPinned || !currentPage.IsPublic {
+			return Page{}, false
+		}
+		if !isPagePublished(currentPage.PublishedAt) {
 			return Page{}, false
 		}
 		if guestOnly {
@@ -373,6 +385,17 @@ func sortPages(pages []Page) {
 		}
 		return pages[i].UpdatedAt > pages[j].UpdatedAt
 	})
+}
+
+func isPagePublished(publishedAt string) bool {
+	if publishedAt == "" {
+		return true
+	}
+	publishTime, err := time.Parse(time.RFC3339, publishedAt)
+	if err != nil {
+		return true
+	}
+	return !publishTime.After(time.Now().UTC())
 }
 
 func canViewPage(viewableTags []string, circleTags []string) bool {

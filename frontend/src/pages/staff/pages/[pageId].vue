@@ -12,7 +12,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import { formatDateTimeUpdated } from '@/lib/format/datetime'
+import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
@@ -52,6 +52,18 @@ const { fieldErrors, validateAll, markTouched } = useFormValidation({
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
 
+const scheduledPublishLabel = computed(() => {
+  const page = pageQuery.data.value
+  if (!page) {
+    return ''
+  }
+  const publishTime = Date.parse(page.publishedAt)
+  if (Number.isNaN(publishTime) || publishTime <= Date.now()) {
+    return ''
+  }
+  return formatDateTime(page.publishedAt)
+})
+
 watch(
   () => pageQuery.data.value,
   (page) => {
@@ -67,7 +79,8 @@ watch(
       isPublic: page.isPublic,
       viewableTags: [...page.viewableTags],
       documentIds: [...page.documentIds],
-      sendEmails: false
+      sendEmails: false,
+      publishedAt: page.publishedAt
     }
   },
   { immediate: true }
@@ -90,7 +103,8 @@ async function handleSavePage() {
       isPublic: form.value.isPublic,
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails
+      sendEmails: form.value.sendEmails,
+      publishedAt: form.value.publishedAt
     })
     form.value.sendEmails = false
     successMessage.value = 'お知らせを更新しました。'
@@ -130,6 +144,9 @@ async function handleDeletePage() {
             </StatusBadge>
             <StatusBadge :tone="pageQuery.data.value.isPinned ? 'primary' : 'muted'" appearance="outlined">
               {{ pageQuery.data.value.isPinned ? '固定表示' : '通常表示' }}
+            </StatusBadge>
+            <StatusBadge v-if="scheduledPublishLabel" tone="warning" appearance="outlined">
+              予約公開: {{ scheduledPublishLabel }}
             </StatusBadge>
           </div>
           <p class="mt-3 text-sm text-muted">お知らせID: {{ pageQuery.data.value.id }}</p>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import { cn } from '@/lib/ui/cn'
 import { formControlVariants } from '@/lib/ui/variants'
+import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import type { MutateStaffPagePayload, StaffPageDocument } from '@/features/staff/pages/api'
 import FormError from '@/components/ui/FormError.vue'
 import FormField from '@/components/ui/FormField.vue'
@@ -12,6 +14,13 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import CheckboxField from '@/components/ui/CheckboxField.vue'
 
 const form = defineModel<MutateStaffPagePayload>({ required: true })
+
+const publishedAtInput = computed({
+  get: () => formatDateTimeLocalValue(form.value.publishedAt),
+  set: (value: string) => {
+    form.value.publishedAt = parseDateTimeLocalValue(value, form.value.publishedAt)
+  }
+})
 
 const {
   availableTags,
@@ -106,6 +115,13 @@ function handleDocumentChange(documentId: string, event: Event) {
     <CheckboxField v-model="form.isPinned" label="固定表示する" name="isPinned" />
 
     <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
+
+    <FormField label="公開日時" label-class="font-medium">
+      <input v-model="publishedAtInput" :class="formControlVariants()" name="publishedAt" type="datetime-local" />
+      <p class="text-xs text-muted">
+        未来の日時を指定すると、その時刻から公開される予約公開になります。空欄の場合はすぐに公開されます。
+      </p>
+    </FormField>
 
     <CheckboxField v-model="form.sendEmails" label="保存後にメール配信を予約する" name="sendEmails" />
 

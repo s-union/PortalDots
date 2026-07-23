@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v5"
 	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
@@ -19,6 +20,7 @@ type staffPageSummaryResponse struct {
 	Notes        string                 `json:"notes"`
 	CreatedAt    string                 `json:"createdAt"`
 	UpdatedAt    string                 `json:"updatedAt"`
+	PublishedAt  string                 `json:"publishedAt"`
 	IsPinned     bool                   `json:"isPinned"`
 	IsPublic     bool                   `json:"isPublic"`
 	ViewableTags []string               `json:"viewableTags"`
@@ -37,6 +39,7 @@ type mutateStaffPageRequest struct {
 	ViewableTags []string `json:"viewableTags"`
 	DocumentIDs  []string `json:"documentIds"`
 	SendEmails   bool     `json:"sendEmails"`
+	PublishedAt  string   `json:"publishedAt"`
 }
 
 type patchStaffPagePinRequest struct {
@@ -67,14 +70,15 @@ func (h *staffPageHandlers) listStaffPages(c *echo.Context) error {
 }
 
 var staffPageFilterableFields = map[string]staffListFilterFieldType{
-	"id":        staffListFilterFieldTypeString,
-	"title":     staffListFilterFieldTypeString,
-	"isPinned":  staffListFilterFieldTypeBool,
-	"isPublic":  staffListFilterFieldTypeBool,
-	"body":      staffListFilterFieldTypeString,
-	"notes":     staffListFilterFieldTypeString,
-	"createdAt": staffListFilterFieldTypeString,
-	"updatedAt": staffListFilterFieldTypeString,
+	"id":          staffListFilterFieldTypeString,
+	"title":       staffListFilterFieldTypeString,
+	"isPinned":    staffListFilterFieldTypeBool,
+	"isPublic":    staffListFilterFieldTypeBool,
+	"body":        staffListFilterFieldTypeString,
+	"notes":       staffListFilterFieldTypeString,
+	"createdAt":   staffListFilterFieldTypeString,
+	"updatedAt":   staffListFilterFieldTypeString,
+	"publishedAt": staffListFilterFieldTypeString,
 }
 
 func staffPageSummaryFilterResolver(item staffPageSummaryResponse) func(string) (string, bool) {
@@ -96,6 +100,8 @@ func staffPageSummaryFilterResolver(item staffPageSummaryResponse) func(string) 
 			return item.CreatedAt, true
 		case "updatedAt":
 			return item.UpdatedAt, true
+		case "publishedAt":
+			return item.PublishedAt, true
 		default:
 			return "", false
 		}
@@ -134,6 +140,13 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, nil); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
+	if !validPublishedAt {
+		return validationError(c, publishedAtErrors)
+	}
+	if emailErrors := validatePageMailSchedule(request.SendEmails, publishedAt); len(emailErrors) > 0 {
+		return validationError(c, emailErrors)
+	}
 
 	created := h.pages.Create(c.Request().Context(),
 		request.Title,
@@ -143,6 +156,7 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 		request.IsPinned,
 		request.ViewableTags,
 		request.DocumentIDs,
+		publishedAt,
 	)
 	recordActivity(
 		c.Request().Context(),
@@ -181,6 +195,13 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, pageValue.DocumentIDs); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
+	if !validPublishedAt {
+		return validationError(c, publishedAtErrors)
+	}
+	if emailErrors := validatePageMailSchedule(request.SendEmails, publishedAt); len(emailErrors) > 0 {
+		return validationError(c, emailErrors)
+	}
 
 	updated, found := h.pages.Update(c.Request().Context(),
 		c.Param("pageID"),
@@ -191,6 +212,7 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 		request.IsPinned,
 		request.ViewableTags,
 		request.DocumentIDs,
+		publishedAt,
 	)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
@@ -335,6 +357,25 @@ func bindStaffPageRequest(c *echo.Context) (mutateStaffPageRequest, map[string][
 	return request, nil, true
 }
 
+func parseStaffPagePublishedAt(value string) (time.Time, map[string][]string, bool) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return time.Now().UTC(), nil, true
+	}
+	parsed, err := time.Parse(time.RFC3339, trimmed)
+	if err != nil || parsed.IsZero() {
+		return time.Time{}, map[string][]string{"publishedAt": {"公開日時が正しくありません"}}, false
+	}
+	return parsed.UTC(), nil, true
+}
+
+func validatePageMailSchedule(sendEmails bool, publishedAt time.Time) map[string][]string {
+	if sendEmails && publishedAt.After(time.Now().UTC()) {
+		return map[string][]string{"sendEmails": {"予約公開の日時より前にメール配信は予約できません"}}
+	}
+	return nil
+}
+
 func mapStaffPageSummary(currentPage backendpage.Page, documents []pageDocumentResponse) staffPageSummaryResponse {
 	return staffPageSummaryResponse{
 		ID:           currentPage.ID,
@@ -343,6 +384,7 @@ func mapStaffPageSummary(currentPage backendpage.Page, documents []pageDocumentR
 		Notes:        currentPage.Notes,
 		CreatedAt:    currentPage.CreatedAt,
 		UpdatedAt:    currentPage.UpdatedAt,
+		PublishedAt:  currentPage.PublishedAt,
 		IsPinned:     currentPage.IsPinned,
 		IsPublic:     currentPage.IsPublic,
 		ViewableTags: slices.Clone(currentPage.ViewableTags),
@@ -359,6 +401,7 @@ func mapStaffPageDetail(currentPage backendpage.Page) staffPageDetailResponse {
 		Notes:        currentPage.Notes,
 		CreatedAt:    currentPage.CreatedAt,
 		UpdatedAt:    currentPage.UpdatedAt,
+		PublishedAt:  currentPage.PublishedAt,
 		IsPinned:     currentPage.IsPinned,
 		IsPublic:     currentPage.IsPublic,
 		ViewableTags: slices.Clone(currentPage.ViewableTags),

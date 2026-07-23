@@ -56,7 +56,8 @@ async function handleCreatePage() {
       isPublic: form.value.isPublic,
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails
+      sendEmails: form.value.sendEmails,
+      publishedAt: form.value.publishedAt
     })
     await router.push(`/staff/pages/${created.id}`)
   } catch (error) {

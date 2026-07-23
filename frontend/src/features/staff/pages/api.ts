@@ -18,6 +18,7 @@ export interface StaffPageSummary {
   notes: string
   createdAt: string
   updatedAt: string
+  publishedAt: string
   isPinned: boolean
   isPublic: boolean
   viewableTags: string[]
@@ -36,6 +37,7 @@ export interface MutateStaffPagePayload {
   viewableTags: string[]
   documentIds: string[]
   sendEmails: boolean
+  publishedAt: string
 }
 
 export interface StaffPageDocument {
@@ -333,7 +335,8 @@ export function useStaffPageForm() {
     isPublic: true,
     viewableTags: [],
     documentIds: [],
-    sendEmails: false
+    sendEmails: false,
+    publishedAt: ''
   })
 }
 
