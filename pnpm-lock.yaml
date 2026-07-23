@@ -182,11 +182,11 @@ importers:
   packages/email:
     dependencies:
       hono:
-        specifier: 4.12.25
-        version: 4.12.25
+        specifier: 4.12.27
+        version: 4.12.27
       hono-email:
         specifier: 0.8.0
-        version: 0.8.0(hono@4.12.25)
+        version: 0.8.0(hono@4.12.27)
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -199,10 +199,10 @@ importers:
         version: 4.20260608.1
       '@hono-email/preview':
         specifier: 0.8.0
-        version: 0.8.0(@hono-email/tailwind-plugin@0.8.0(hono-email@0.8.0(hono@4.12.25)))(@types/node@24.13.1)(hono-email@0.8.0(hono@4.12.25))(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)
+        version: 0.8.0(@hono-email/tailwind-plugin@0.8.0(hono-email@0.8.0(hono@4.12.27)))(@types/node@24.13.1)(hono-email@0.8.0(hono@4.12.27))(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)
       '@hono-email/tailwind-plugin':
         specifier: 0.8.0
-        version: 0.8.0(hono-email@0.8.0(hono@4.12.25))
+        version: 0.8.0(hono-email@0.8.0(hono@4.12.27))
       '@tailwindcss/vite':
         specifier: 4.3.2
         version: 4.3.2(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
@@ -3121,6 +3121,10 @@ packages:
     resolution: {integrity: sha512-2NFaIyNVgJmBs/ecmtGzlmluTFs5cHEWGTdu0t1HBwYzoGXOL5nUQBRMXsXWla5i4KkG//QMzVP88m1+I3fdAQ==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.12.27:
+    resolution: {integrity: sha512-1yrb/+w6HWQJrUCLkJ2IF5jNIPvvFkblV5RNOYl6bV+OA6p9GLcMpHFFGTosSvHvcAUibuUukRqhlYI4z32C7Q==}
+    engines: {node: '>=16.9.0'}
+
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
 
@@ -4929,17 +4933,17 @@ snapshots:
   '@golar/win32-x64@0.1.8':
     optional: true
 
-  '@hono-email/preview@0.8.0(@hono-email/tailwind-plugin@0.8.0(hono-email@0.8.0(hono@4.12.25)))(@types/node@24.13.1)(hono-email@0.8.0(hono@4.12.25))(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)':
+  '@hono-email/preview@0.8.0(@hono-email/tailwind-plugin@0.8.0(hono-email@0.8.0(hono@4.12.27)))(@types/node@24.13.1)(hono-email@0.8.0(hono@4.12.27))(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)':
     dependencies:
       '@hono/node-server': 1.19.14(hono@4.12.25)
       '@tailwindcss/vite': 4.3.2(vite@6.4.3(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
       citty: 0.1.6
       hono: 4.12.25
-      hono-email: 0.8.0(hono@4.12.25)
+      hono-email: 0.8.0(hono@4.12.27)
       tailwindcss: 4.3.2
       vite: 6.4.3(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)
     optionalDependencies:
-      '@hono-email/tailwind-plugin': 0.8.0(hono-email@0.8.0(hono@4.12.25))
+      '@hono-email/tailwind-plugin': 0.8.0(hono-email@0.8.0(hono@4.12.27))
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -4953,9 +4957,9 @@ snapshots:
       - tsx
       - yaml
 
-  '@hono-email/tailwind-plugin@0.8.0(hono-email@0.8.0(hono@4.12.25))':
+  '@hono-email/tailwind-plugin@0.8.0(hono-email@0.8.0(hono@4.12.27))':
     dependencies:
-      hono-email: 0.8.0(hono@4.12.25)
+      hono-email: 0.8.0(hono@4.12.27)
       unplugin: 3.0.0
 
   '@hono/node-server@1.19.14(hono@4.12.25)':
@@ -6913,12 +6917,14 @@ snapshots:
       '@types/set-cookie-parser': 2.4.10
       set-cookie-parser: 3.1.0
 
-  hono-email@0.8.0(hono@4.12.25):
+  hono-email@0.8.0(hono@4.12.27):
     dependencies:
-      hono: 4.12.25
+      hono: 4.12.27
       htmlrewriter: 0.0.13
 
   hono@4.12.25: {}
+
+  hono@4.12.27: {}
 
   hookable@5.5.3: {}
 
