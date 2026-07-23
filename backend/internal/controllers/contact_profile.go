@@ -138,14 +138,35 @@ func mapContactResponse(item contact.Contact) submitContactResponse {
 	return response
 }
 
+func contactHistoryHeader(body string) string {
+	if idx := strings.Index(body, "\n\n"); idx >= 0 {
+		return body[:idx]
+	}
+	return body
+}
+
 func contactHistoryMatches(body, circleID, userID string) bool {
-	return strings.Contains(body, circleID) && strings.Contains(body, userID)
+	header := contactHistoryHeader(body)
+	var matchedCircle, matchedUser bool
+	for _, line := range strings.Split(header, "\n") {
+		switch {
+		case line == "from_user_id: "+userID:
+			matchedUser = true
+		case strings.HasPrefix(line, "from: ") && strings.HasSuffix(line, "("+userID+")"):
+			matchedUser = true
+		case line == "circle_id: "+circleID:
+			matchedCircle = true
+		case strings.HasPrefix(line, "circle: ") && strings.HasSuffix(line, "("+circleID+")"):
+			matchedCircle = true
+		}
+	}
+	return matchedCircle && matchedUser
 }
 
 func extractContactMetadata(body string) (string, string) {
 	categoryID := ""
 	categoryName := ""
-	for _, line := range strings.Split(body, "\n") {
+	for _, line := range strings.Split(contactHistoryHeader(body), "\n") {
 		if strings.HasPrefix(line, "category_id: ") {
 			categoryID = strings.TrimPrefix(line, "category_id: ")
 		}
@@ -274,6 +295,9 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 	cleanupContact := func() {
 		if err := h.contacts.Delete(c.Request().Context(), created.ID); err != nil && !errors.Is(err, contact.ErrNotFound) {
 			slog.Error("failed to clean up contact after mail enqueue failure", "contactID", created.ID, "error", err)
+		}
+		if err := h.mailHistory.Delete(c.Request().Context(), jobID); err != nil {
+			slog.Error("failed to clean up mail history after mail enqueue failure", "jobID", jobID, "error", err)
 		}
 	}
 

@@ -22,6 +22,7 @@ type Entry struct {
 type Repository interface {
 	Record(ctx context.Context, job cloudflareemail.EmailJob) error
 	List(ctx context.Context) ([]Entry, error)
+	Delete(ctx context.Context, jobID string) error
 }
 
 type MemoryRepository struct {
@@ -69,4 +70,17 @@ func (r *MemoryRepository) List(_ context.Context) ([]Entry, error) {
 		entries = append(entries, entry)
 	}
 	return entries, nil
+}
+
+func (r *MemoryRepository) Delete(_ context.Context, jobID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for index, entry := range r.entries {
+		if entry.JobID == jobID {
+			r.entries = append(r.entries[:index], r.entries[index+1:]...)
+			return nil
+		}
+	}
+	return nil
 }

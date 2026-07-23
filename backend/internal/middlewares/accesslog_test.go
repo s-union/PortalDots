@@ -60,6 +60,7 @@ func TestAccessLogRedactsContactAttachmentTokenOnUnmatchedRoute(t *testing.T) {
 		{"case-varied prefix", http.MethodGet, "/v1/Contact/attachments/" + token},
 		{"leading double slash", http.MethodGet, "//v1/contact/attachments/" + token},
 		{"internal double slash", http.MethodGet, "/v1/contact//attachments/" + token},
+		{"internal dot segment", http.MethodGet, "/v1/contact/./attachments/" + token},
 	}
 
 	for _, tc := range testCases {

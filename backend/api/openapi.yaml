@@ -479,12 +479,16 @@ paths:
                       sizeBytes:
                         type: integer
                         format: int64
+        "400":
+          description: Malformed form data
         "401":
           description: Unauthenticated
         "409":
           description: Current circle is not selected
         "413":
           description: Attachment exceeds the maximum allowed size
+        "415":
+          description: Content-Type is not multipart/form-data
         "422":
           description: Validation error
   /contact/attachments/{token}:

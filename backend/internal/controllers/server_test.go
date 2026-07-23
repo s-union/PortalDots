@@ -264,6 +264,65 @@ func TestSubmitContactKeepsAttachmentTokenOutOfConfirmationAndLogs(t *testing.T)
 	}
 }
 
+func TestSubmitContactCleansUpHistoryWhenStaffMailEnqueueFails(t *testing.T) {
+	t.Parallel()
+
+	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		var job cloudflareemail.EmailJob
+		if err := json.NewDecoder(request.Body).Decode(&job); err != nil {
+			t.Fatalf("decode email job: %v", err)
+		}
+		if strings.HasPrefix(job.JobId, "contact-confirm-") {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if strings.HasPrefix(job.JobId, "contact-") {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(producer.Close)
+
+	cfg := demoCircleConfig()
+	cfg.ContactCategories = []config.ContactCategory{
+		{ID: "0195ec00-0081-7000-8000-000000000001", Name: "総合窓口", Email: "general@example.com"},
+	}
+	cfg.EmailProducerURL = producer.URL
+	cfg.EmailProducerEnabled = true
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+		"loginId": "demo@example.com", "password": "password",
+	})
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("login status = %d, want 204", recorder.Code)
+	}
+	selectCircle(t, server, cookies, "0195ec00-0021-7000-8000-000000000001")
+
+	recorder = doMultipartFieldsRequest(t, server, cookies, http.MethodPost, "/v1/contact", map[string]string{
+		"categoryId": "0195ec00-0081-7000-8000-000000000001",
+		"subject":    "搬入時間について",
+		"body":       "当日の搬入可能時刻を確認したいです。",
+	})
+	if recorder.Code != http.StatusInternalServerError {
+		t.Fatalf("contact status = %d, want 500, body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/contact", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var history []submitContactResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &history); err != nil {
+		t.Fatalf("unmarshal contact history: %v", err)
+	}
+	if len(history) != 0 {
+		t.Fatalf("expected empty contact history after staff mail enqueue failure, got %#v", history)
+	}
+}
+
 // TestSubmitContactRejectsOversizedMultipartBodyWithChunkedTransfer exercises the full
 // middleware stack (contactRequestBodyLimit + TransformExternalIDs) with a request whose
 // Content-Length is unknown, forcing the size check to rely on http.MaxBytesReader while

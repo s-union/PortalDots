@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"log/slog"
+	"path"
 	"strings"
 	"time"
 
@@ -19,17 +20,14 @@ const contactAttachmentPathPrefix = "/v1/contact/attachments/"
 // request under contactAttachmentPathPrefix.
 const contactAttachmentRoutePath = contactAttachmentPathPrefix + ":token"
 
-// normalizeForRedactionCheck lowercases the path and collapses repeated
-// slashes so the prefix check below cannot be bypassed by case variation
-// (e.g. "/v1/Contact/...") or duplicated slashes (e.g. "//v1/contact/...",
-// "/v1/contact//attachments/..."). req.URL.Path is already percent-decoded
-// by net/http, so no additional decoding is needed here.
-func normalizeForRedactionCheck(path string) string {
-	normalized := strings.ToLower(path)
-	for strings.Contains(normalized, "//") {
-		normalized = strings.ReplaceAll(normalized, "//", "/")
-	}
-	return normalized
+// normalizeForRedactionCheck lowercases the path and resolves dot segments and
+// repeated slashes so the prefix check below cannot be bypassed by case
+// variation (e.g. "/v1/Contact/..."), duplicated slashes (e.g.
+// "//v1/contact/...", "/v1/contact//attachments/..."), or dot segments (e.g.
+// "/v1/contact/./attachments/..."). req.URL.Path is already percent-decoded by
+// net/http, so no additional decoding is needed here.
+func normalizeForRedactionCheck(requestPath string) string {
+	return path.Clean(strings.ToLower(requestPath))
 }
 
 // AccessLogMiddleware logs every HTTP request using structured logging.
