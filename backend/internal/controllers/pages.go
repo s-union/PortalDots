@@ -184,15 +184,7 @@ func isPageNew(currentPage backendpage.Page) bool {
 }
 
 func isPagePublished(currentPage backendpage.Page) bool {
-	if currentPage.PublishedAt == "" {
-		return true
-	}
-	publishedAt, err := time.Parse(time.RFC3339, currentPage.PublishedAt)
-	if err != nil {
-		return true
-	}
-
-	return !publishedAt.After(time.Now().UTC())
+	return backendpage.IsPublished(currentPage.PublishedAt)
 }
 
 func readPagesPagination(c *echo.Context) models.PaginationParams {

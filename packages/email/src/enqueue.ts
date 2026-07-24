@@ -156,6 +156,7 @@ async function markEnqueueFailed(
   await db.batch(statements)
 }
 
+/** Result of a dispatch attempt: `queued` for a new job, `duplicate` when the job id already exists. */
 export interface DispatchResult {
   status: 'queued' | 'duplicate'
   jobId: string
@@ -270,11 +271,12 @@ interface ScheduledEmailRow {
   status: ScheduledStatus
   send_at: string
   payload: string
+  updated_at: string
 }
 
 async function getScheduledEmail(db: D1Database, groupId: string): Promise<ScheduledEmailRow | null> {
   return db
-    .prepare('SELECT group_id, status, send_at, payload FROM scheduled_emails WHERE group_id = ?')
+    .prepare('SELECT group_id, status, send_at, payload, updated_at FROM scheduled_emails WHERE group_id = ?')
     .bind(groupId)
     .first<ScheduledEmailRow>()
 }
@@ -304,36 +306,79 @@ async function cancelScheduledEmail(db: D1Database, groupId: string): Promise<vo
     .run()
 }
 
-async function markScheduledFired(db: D1Database, groupId: string): Promise<void> {
-  await db
-    .prepare("UPDATE scheduled_emails SET status = 'fired', updated_at = ? WHERE group_id = ?")
-    .bind(nowIso(), groupId)
+// Optimistic lock: only mark rows still 'scheduled' with the same updated_at observed
+// by the due listing, so a concurrent /scheduled/sync update or cancel wins.
+async function markScheduledFired(db: D1Database, groupId: string, expectedUpdatedAt: string): Promise<number> {
+  const result = await db
+    .prepare(
+      "UPDATE scheduled_emails SET status = 'fired', updated_at = ? WHERE group_id = ? AND status = 'scheduled' AND updated_at = ?"
+    )
+    .bind(nowIso(), groupId, expectedUpdatedAt)
     .run()
+  return result.meta.changes
 }
 
-export async function listDueScheduledEmails(db: D1Database, now: string): Promise<ScheduledEmailRow[]> {
+async function listDueScheduledEmails(db: D1Database, now: string): Promise<ScheduledEmailRow[]> {
   return db
     .prepare(
-      "SELECT group_id, status, send_at, payload FROM scheduled_emails WHERE status = 'scheduled' AND send_at <= ?"
+      // deliberate: bounded batch — drain at most 100 due rows per cron run so a large backlog cannot stall firing
+      "SELECT group_id, status, send_at, payload, updated_at FROM scheduled_emails WHERE status = 'scheduled' AND send_at <= ? ORDER BY send_at LIMIT 100"
     )
     .bind(now)
     .all<ScheduledEmailRow>()
     .then((result) => result.results)
 }
 
+/** Statuses of an existing email_jobs row that mean delivery is already underway or done. */
+const deliveredJobStatuses = new Set(['queued', 'processing', 'sent'])
+
+function parseStoredPayload(raw: string): DispatchPayload | null {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return null
+  }
+  const result = enqueueRequestSchema.safeParse(parsed)
+  return result.success ? toDispatchPayload(result.data) : null
+}
+
 /**
  * Fire every scheduled email whose send_at has passed. Invoked by the Cron
- * trigger. Each fired payload is dispatched through the normal queue path.
+ * trigger. Each due row is dispatched through the normal queue path and marked
+ * 'fired' only once delivery is confirmed; rows that fail to dispatch stay
+ * 'scheduled' so the next cron run retries them. Returns the number of rows
+ * marked 'fired' in this run.
  */
 export async function fireDueScheduledEmails(env: Env): Promise<number> {
   const due = await listDueScheduledEmails(env.DB, nowIso())
   let fired = 0
   for (const row of due) {
     try {
-      const payload = JSON.parse(row.payload) as DispatchPayload
-      await dispatchJob(env, payload)
-      await markScheduledFired(env.DB, row.group_id)
-      fired++
+      const payload = parseStoredPayload(row.payload)
+      if (!payload) {
+        // deliberate: poison payloads are cancelled, not retried every minute forever
+        console.error('Invalid scheduled email payload; cancelling', { groupId: row.group_id })
+        await cancelScheduledEmail(env.DB, row.group_id)
+        continue
+      }
+      const result = await dispatchJob(env, payload)
+      const delivered =
+        result.status === 'queued' ||
+        (result.status === 'duplicate' &&
+          result.existingStatus != null &&
+          deliveredJobStatuses.has(result.existingStatus))
+      if (!delivered) {
+        console.error('Scheduled email was not delivered; leaving scheduled for retry', {
+          groupId: row.group_id,
+          jobId: result.jobId,
+          existingStatus: result.existingStatus
+        })
+        continue
+      }
+      if ((await markScheduledFired(env.DB, row.group_id, row.updated_at)) === 1) {
+        fired++
+      }
     } catch (error) {
       console.error('Failed to fire scheduled email', { groupId: row.group_id, error })
     }
@@ -345,13 +390,15 @@ const syncRequestSchema = z.object({
   groupId: z.string().min(1),
   isPublic: z.boolean(),
   sendEmails: z.boolean(),
-  sendAt: z.string().optional(),
+  // ISO 8601 with Z or an explicit UTC offset; normalized to UTC ISO before storage
+  sendAt: z.iso.datetime({ offset: true }).optional(),
   payload: z.object(emailPayloadShape).nullable()
 })
 
+/** Outcome of a `/scheduled/sync` state-machine transition. */
 export type SyncOutcome = 'scheduled' | 'updated' | 'dispatched' | 'cancelled' | 'unchanged'
 
-function isFutureSend(sendAt: string | undefined): boolean {
+function isFutureSend(sendAt: string | undefined): sendAt is string {
   if (!sendAt) {
     return false
   }
@@ -359,6 +406,12 @@ function isFutureSend(sendAt: string | undefined): boolean {
   return Number.isFinite(sendTime) && sendTime > Date.now()
 }
 
+/** Normalize a schema-validated ISO datetime to UTC so string comparisons in SQL stay chronological. */
+function normalizeSendAt(sendAt: string): string {
+  return new Date(sendAt).toISOString()
+}
+
+/** Hono app exposing the email producer API (`/enqueue`, `/scheduled/sync`). */
 export const app = new Hono<{ Bindings: Env }>()
 
 app.post('/enqueue', async (c) => {
@@ -408,7 +461,7 @@ app.post('/scheduled/sync', async (c) => {
   if (hasPending && request.payload) {
     await upsertScheduledEmail(c.env.DB, {
       groupId: request.groupId,
-      sendAt: request.sendAt ?? nowIso(),
+      sendAt: normalizeSendAt(request.sendAt ?? nowIso()),
       payload: JSON.stringify(toDispatchPayload(request.payload))
     })
     outcome = 'updated'
@@ -423,7 +476,7 @@ app.post('/scheduled/sync', async (c) => {
     if (isFutureSend(request.sendAt)) {
       await upsertScheduledEmail(c.env.DB, {
         groupId: request.groupId,
-        sendAt: request.sendAt as string,
+        sendAt: normalizeSendAt(request.sendAt),
         payload: JSON.stringify(payload)
       })
       outcome = 'scheduled'

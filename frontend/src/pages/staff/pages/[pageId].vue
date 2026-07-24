@@ -104,7 +104,7 @@ async function handleSavePage() {
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
       sendEmails: form.value.sendEmails,
-      ...(form.value.publishedAt ? { publishedAt: form.value.publishedAt } : {})
+      publishedAt: form.value.publishedAt ?? ''
     })
     form.value.sendEmails = false
     successMessage.value = 'お知らせを更新しました。'

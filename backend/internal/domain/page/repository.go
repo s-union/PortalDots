@@ -289,7 +289,7 @@ func (r *StaticRepository) listPages(query string, circleTags []string, guestOnl
 		if currentPage.IsPinned || !currentPage.IsPublic {
 			continue
 		}
-		if !isPagePublished(currentPage.PublishedAt) {
+		if !IsPublished(currentPage.PublishedAt) {
 			continue
 		}
 		if guestOnly {
@@ -320,7 +320,7 @@ func (r *StaticRepository) findPage(pageID string, circleTags []string, guestOnl
 		if currentPage.IsPinned || !currentPage.IsPublic {
 			return Page{}, false
 		}
-		if !isPagePublished(currentPage.PublishedAt) {
+		if !IsPublished(currentPage.PublishedAt) {
 			return Page{}, false
 		}
 		if guestOnly {
@@ -387,7 +387,10 @@ func sortPages(pages []Page) {
 	})
 }
 
-func isPagePublished(publishedAt string) bool {
+// IsPublished reports whether a page with the given RFC3339 publishedAt is
+// already visible to its audience. Empty or unparsable values count as
+// published.
+func IsPublished(publishedAt string) bool {
 	if publishedAt == "" {
 		return true
 	}

@@ -86,7 +86,12 @@ describe('/scheduled/sync', () => {
 
   it('cancels a pending email when the page is not public', async () => {
     const env = createTestEnv()
-    env.DB.scheduled.set('page-1', { status: 'scheduled', sendAt: futureIso(), payload: JSON.stringify(emailPayload) })
+    env.DB.scheduled.set('page-1', {
+      status: 'scheduled',
+      sendAt: futureIso(),
+      payload: JSON.stringify(emailPayload),
+      updatedAt: pastIso()
+    })
     const res = await postSync(env, { groupId: 'page-1', isPublic: false, sendEmails: false, payload: null })
     expect(res.status).toBe(200)
     const body = (await res.json()) as { status: string }
@@ -96,7 +101,12 @@ describe('/scheduled/sync', () => {
 
   it('updates the pending email when the page is edited while public', async () => {
     const env = createTestEnv()
-    env.DB.scheduled.set('page-1', { status: 'scheduled', sendAt: futureIso(), payload: JSON.stringify(emailPayload) })
+    env.DB.scheduled.set('page-1', {
+      status: 'scheduled',
+      sendAt: futureIso(),
+      payload: JSON.stringify(emailPayload),
+      updatedAt: pastIso()
+    })
     const newSendAt = futureIso()
     const res = await postSync(env, {
       groupId: 'page-1',
@@ -122,6 +132,35 @@ describe('/scheduled/sync', () => {
     const body = (await res.json()) as { status: string }
     expect(body.status).toBe('unchanged')
   })
+
+  it('rejects a non-ISO sendAt with 400', async () => {
+    const env = createTestEnv()
+    const res = await postSync(env, {
+      groupId: 'page-1',
+      isPublic: true,
+      sendEmails: true,
+      sendAt: 'tomorrow at noon',
+      payload: emailPayload
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('normalizes a sendAt with a UTC offset to UTC before storing', async () => {
+    const env = createTestEnv()
+    const base = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    const offsetIso = new Date(base.getTime() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+    const res = await postSync(env, {
+      groupId: 'page-1',
+      isPublic: true,
+      sendEmails: true,
+      sendAt: offsetIso,
+      payload: emailPayload
+    })
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { status: string }
+    expect(body.status).toBe('scheduled')
+    expect(env.DB.scheduled.get('page-1')?.sendAt).toBe(base.toISOString())
+  })
 })
 
 describe('fireDueScheduledEmails', () => {
@@ -130,12 +169,14 @@ describe('fireDueScheduledEmails', () => {
     env.DB.scheduled.set('page-due', {
       status: 'scheduled',
       sendAt: pastIso(),
-      payload: JSON.stringify(emailPayload)
+      payload: JSON.stringify(emailPayload),
+      updatedAt: pastIso()
     })
     env.DB.scheduled.set('page-future', {
       status: 'scheduled',
       sendAt: futureIso(),
-      payload: JSON.stringify({ ...emailPayload, jobId: 'job-page-future' })
+      payload: JSON.stringify({ ...emailPayload, jobId: 'job-page-future' }),
+      updatedAt: pastIso()
     })
 
     const fired = await fireDueScheduledEmails(env as never)
@@ -144,5 +185,70 @@ describe('fireDueScheduledEmails', () => {
     expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(1)
     expect(env.DB.scheduled.get('page-due')?.status).toBe('fired')
     expect(env.DB.scheduled.get('page-future')?.status).toBe('scheduled')
+  })
+
+  it('marks the row fired when the job was already delivered (duplicate)', async () => {
+    const env = createTestEnv()
+    env.DB.jobs.set('job-page-1', { status: 'sent' })
+    env.DB.scheduled.set('page-dup', {
+      status: 'scheduled',
+      sendAt: pastIso(),
+      payload: JSON.stringify(emailPayload),
+      updatedAt: pastIso()
+    })
+
+    const fired = await fireDueScheduledEmails(env as never)
+
+    expect(fired).toBe(1)
+    expect(env.DB.scheduled.get('page-dup')?.status).toBe('fired')
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+  })
+
+  it('leaves the row scheduled when dispatch fails so the next run retries', async () => {
+    const env = createTestEnv()
+    env.NORMAL_QUEUE.send.mockRejectedValueOnce(new Error('queue unavailable'))
+    env.DB.scheduled.set('page-fail', {
+      status: 'scheduled',
+      sendAt: pastIso(),
+      payload: JSON.stringify(emailPayload),
+      updatedAt: pastIso()
+    })
+
+    // First run: queue.send rejects, leaving the job 'enqueue_failed'; the row must stay scheduled.
+    const firstFired = await fireDueScheduledEmails(env as never)
+
+    expect(firstFired).toBe(0)
+    expect(env.DB.jobs.get('job-page-1')?.status).toBe('enqueue_failed')
+    expect(env.DB.scheduled.get('page-fail')?.status).toBe('scheduled')
+
+    // Second run: dispatchJob reports a duplicate with 'enqueue_failed' status, which is not
+    // a delivered state; the row must still not be marked fired.
+    const secondFired = await fireDueScheduledEmails(env as never)
+
+    expect(secondFired).toBe(0)
+    expect(env.DB.scheduled.get('page-fail')?.status).toBe('scheduled')
+  })
+
+  it('cancels scheduled emails with invalid payloads instead of retrying forever', async () => {
+    const env = createTestEnv()
+    env.DB.scheduled.set('page-bad-json', {
+      status: 'scheduled',
+      sendAt: pastIso(),
+      payload: '{not-json',
+      updatedAt: pastIso()
+    })
+    env.DB.scheduled.set('page-bad-schema', {
+      status: 'scheduled',
+      sendAt: pastIso(),
+      payload: JSON.stringify({ jobId: '' }),
+      updatedAt: pastIso()
+    })
+
+    const fired = await fireDueScheduledEmails(env as never)
+
+    expect(fired).toBe(0)
+    expect(env.DB.scheduled.get('page-bad-json')?.status).toBe('cancelled')
+    expect(env.DB.scheduled.get('page-bad-schema')?.status).toBe('cancelled')
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
   })
 })

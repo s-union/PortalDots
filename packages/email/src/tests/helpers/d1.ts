@@ -45,7 +45,7 @@ export function runResult(changes: number): D1RunResult {
 export class TestD1Database {
   readonly jobs = new Map<string, { status: string; chunkCount?: number }>()
   readonly chunks = new Map<string, { jobId: string; status: string; updatedAt: string }>()
-  readonly scheduled = new Map<string, { status: string; sendAt: string; payload: string }>()
+  readonly scheduled = new Map<string, { status: string; sendAt: string; payload: string; updatedAt: string }>()
   failSentUpdate = false
 
   prepare(query: string): TestD1Statement {
@@ -152,7 +152,8 @@ export class TestD1Database {
       this.scheduled.set(groupId, {
         status: 'scheduled',
         sendAt: String(values[1]),
-        payload: String(values[2])
+        payload: String(values[2]),
+        updatedAt: String(values[4])
       })
       return runResult(1)
     }
@@ -161,14 +162,19 @@ export class TestD1Database {
       const record = this.scheduled.get(groupId)
       if (record && record.status === 'scheduled') {
         record.status = 'cancelled'
+        record.updatedAt = String(values[0])
         return runResult(1)
       }
       return runResult(0)
     }
     if (query.includes('UPDATE scheduled_emails') && query.includes("SET status = 'fired'")) {
       const record = this.scheduled.get(String(values[1]))
-      if (record) record.status = 'fired'
-      return runResult(record ? 1 : 0)
+      if (record && record.status === 'scheduled' && record.updatedAt === String(values[2])) {
+        record.status = 'fired'
+        record.updatedAt = String(values[0])
+        return runResult(1)
+      }
+      return runResult(0)
     }
     return runResult(0)
   }
@@ -196,7 +202,8 @@ export class TestD1Database {
         group_id: String(values[0]),
         status: record.status,
         send_at: record.sendAt,
-        payload: record.payload
+        payload: record.payload,
+        updated_at: record.updatedAt
       } as T
     }
     return null
@@ -208,11 +215,14 @@ export class TestD1Database {
       const now = String(values[0])
       const results = Array.from(this.scheduled.entries())
         .filter(([, record]) => record.status === 'scheduled' && record.sendAt <= now)
+        .sort(([, a], [, b]) => (a.sendAt < b.sendAt ? -1 : a.sendAt > b.sendAt ? 1 : 0))
+        .slice(0, 100) // mirrors ORDER BY send_at LIMIT 100
         .map(([groupId, record]) => ({
           group_id: groupId,
           status: record.status,
           send_at: record.sendAt,
-          payload: record.payload
+          payload: record.payload,
+          updated_at: record.updatedAt
         }))
       return { results: results as T[], success: true, meta: { changes: 0 } }
     }

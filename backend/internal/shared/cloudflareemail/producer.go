@@ -79,6 +79,17 @@ func (NoopSender) SyncScheduledPage(_ context.Context, req ScheduledPageEmail) (
 		"is_public", req.IsPublic,
 		"send_emails", req.SendEmails,
 	)
+	// deliberate: mirror the worker state machine so mail history, activity
+	// logs, and queued-mail observations still fire without an email producer.
+	if !req.IsPublic {
+		return SyncCancelled, nil
+	}
+	if req.SendEmails && req.Payload != nil {
+		if !req.SendAt.IsZero() && req.SendAt.After(time.Now()) {
+			return SyncScheduled, nil
+		}
+		return SyncDispatched, nil
+	}
 	return SyncUnchanged, nil
 }
 

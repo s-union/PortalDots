@@ -506,13 +506,15 @@ func (h *staffPageHandlers) buildPageMailJob(ctx context.Context, currentPage ba
 func (h *staffPageHandlers) syncPageMail(ctx context.Context, createdByUserID string, currentPage backendpage.Page, sendEmails bool, publishedAt time.Time) {
 	req := cloudflareemail.ScheduledPageEmail{
 		GroupID:    currentPage.ID,
-		IsPublic:   currentPage.IsPublic,
 		SendEmails: sendEmails,
 		SendAt:     publishedAt,
 	}
 	if currentPage.IsPublic {
 		req.Payload = h.buildPageMailJob(ctx, currentPage)
 	}
+	// A public page without eligible recipients must cancel any pending email;
+	// leaving it public would keep it scheduled for stale recipients.
+	req.IsPublic = currentPage.IsPublic && req.Payload != nil
 
 	outcome, err := h.email.EmailSender.SyncScheduledPage(ctx, req)
 	if err != nil {

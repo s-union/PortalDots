@@ -183,4 +183,90 @@ describe('StaffPageDetailPage', () => {
     expect(deleted).toBe(true)
     expect(router.currentRoute.value.fullPath).toBe('/staff/pages')
   })
+
+  it('sends an empty publishedAt to publish immediately when the schedule is cleared', async () => {
+    let updatedRequestBody: Record<string, unknown> | null = null
+
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([])),
+      http.get('/v1/staff/documents', () => HttpResponse.json([])),
+      http.get('/v1/staff/pages/page-circle-b-1', () =>
+        HttpResponse.json({
+          id: 'page-circle-b-1',
+          title: '予約公開のお知らせ',
+          body: '初期本文です。',
+          notes: '',
+          createdAt: '2026-03-05T10:00:00Z',
+          updatedAt: '2026-03-05T10:00:00Z',
+          publishedAt: '2027-01-15T10:00:00Z',
+          isPinned: false,
+          isPublic: true,
+          viewableTags: [],
+          documentIds: [],
+          documents: []
+        })
+      ),
+      http.put('/v1/staff/pages/page-circle-b-1', async ({ request }) => {
+        updatedRequestBody = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({
+          id: 'page-circle-b-1',
+          title: '予約公開のお知らせ',
+          body: '初期本文です。',
+          notes: '',
+          createdAt: '2026-03-05T10:00:00Z',
+          updatedAt: '2026-07-25T10:00:00Z',
+          publishedAt: '2026-07-25T10:00:00Z',
+          isPinned: false,
+          isPublic: true,
+          viewableTags: [],
+          documentIds: [],
+          documents: []
+        })
+      })
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/staff/pages/:pageId', component: StaffPageDetailPage }]
+    })
+    await router.push('/staff/pages/page-circle-b-1')
+    await router.isReady()
+
+    const wrapper = mount(StaffPageDetailPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await vi.waitFor(() => {
+      expect(wrapper.get('input[name="publishedAt"]').element).toHaveProperty('value', '2027-01-15T19:00')
+    })
+
+    await wrapper.get('input[name="publishedAt"]').setValue('')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('お知らせを更新しました。')
+    expect(updatedRequestBody).toMatchObject({ publishedAt: '' })
+  })
 })
