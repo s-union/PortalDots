@@ -39,7 +39,7 @@ type mutateStaffPageRequest struct {
 	ViewableTags []string `json:"viewableTags"`
 	DocumentIDs  []string `json:"documentIds"`
 	SendEmails   bool     `json:"sendEmails"`
-	PublishedAt  string   `json:"publishedAt"`
+	PublishedAt  *string  `json:"publishedAt"`
 }
 
 type patchStaffPagePinRequest struct {
@@ -140,7 +140,7 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, nil); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
-	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt, time.Now().UTC())
 	if !validPublishedAt {
 		return validationError(c, publishedAtErrors)
 	}
@@ -195,7 +195,11 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, pageValue.DocumentIDs); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
-	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
+	publishedAtFallback := time.Now().UTC()
+	if existing, err := time.Parse(time.RFC3339, pageValue.PublishedAt); err == nil {
+		publishedAtFallback = existing
+	}
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt, publishedAtFallback)
 	if !validPublishedAt {
 		return validationError(c, publishedAtErrors)
 	}
@@ -357,8 +361,11 @@ func bindStaffPageRequest(c *echo.Context) (mutateStaffPageRequest, map[string][
 	return request, nil, true
 }
 
-func parseStaffPagePublishedAt(value string) (time.Time, map[string][]string, bool) {
-	trimmed := strings.TrimSpace(value)
+func parseStaffPagePublishedAt(value *string, omittedFallback time.Time) (time.Time, map[string][]string, bool) {
+	if value == nil {
+		return omittedFallback, nil, true
+	}
+	trimmed := strings.TrimSpace(*value)
 	if trimmed == "" {
 		return time.Now().UTC(), nil, true
 	}

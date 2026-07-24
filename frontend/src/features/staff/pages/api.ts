@@ -37,7 +37,7 @@ export interface MutateStaffPagePayload {
   viewableTags: string[]
   documentIds: string[]
   sendEmails: boolean
-  publishedAt: string
+  publishedAt?: string
 }
 
 export interface StaffPageDocument {

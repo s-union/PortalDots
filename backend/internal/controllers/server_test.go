@@ -1913,6 +1913,60 @@ func TestScheduledPageRejectsEmailBeforePublishTime(t *testing.T) {
 	}
 }
 
+func TestUpdateStaffPagePreservesScheduledPublishTimeWhenOmitted(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	future := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":        "予約公開のお知らせ",
+		"body":         "未来に公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  future,
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var created staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("unmarshal created page: %v", err)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/"+created.ID, map[string]any{
+		"title":        "タイトルだけ更新",
+		"body":         "未来に公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var updated staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
+		t.Fatalf("unmarshal updated page: %v", err)
+	}
+	if updated.PublishedAt != created.PublishedAt {
+		t.Fatalf("expected publishedAt to be preserved (%q), got %q", created.PublishedAt, updated.PublishedAt)
+	}
+
+	guestCookies := map[string]*http.Cookie{}
+	recorder = doJSONRequest(t, server, guestCookies, http.MethodGet, "/v1/public/pages/"+created.ID, nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("scheduled page must remain hidden after update without publishedAt: expected %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestListPublicDocumentsReturnsGuestDocumentCollection(t *testing.T) {
 	t.Parallel()
 

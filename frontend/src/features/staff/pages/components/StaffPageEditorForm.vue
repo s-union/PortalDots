@@ -16,9 +16,9 @@ import CheckboxField from '@/components/ui/CheckboxField.vue'
 const form = defineModel<MutateStaffPagePayload>({ required: true })
 
 const publishedAtInput = computed({
-  get: () => formatDateTimeLocalValue(form.value.publishedAt),
+  get: () => formatDateTimeLocalValue(form.value.publishedAt ?? ''),
   set: (value: string) => {
-    form.value.publishedAt = parseDateTimeLocalValue(value, form.value.publishedAt)
+    form.value.publishedAt = parseDateTimeLocalValue(value, form.value.publishedAt ?? '')
   }
 })
 

@@ -89,6 +89,7 @@ export const mockPageDetail = {
   isLimited: false,
   createdAt: '2026-01-10T09:00:00Z',
   updatedAt: '2026-01-15T12:00:00Z',
+  publishedAt: '2026-01-10T09:00:00Z',
   documents: []
 }
 
