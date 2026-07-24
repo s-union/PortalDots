@@ -1887,7 +1887,7 @@ func TestScheduledPageIsHiddenFromGuestsUntilPublishTime(t *testing.T) {
 	}
 }
 
-func TestScheduledPageRejectsEmailBeforePublishTime(t *testing.T) {
+func TestScheduledPageWithEmailIsCreatedAndStaysHidden(t *testing.T) {
 	t.Parallel()
 
 	server := NewServer(testStaffConfig())
@@ -1908,8 +1908,18 @@ func TestScheduledPageRejectsEmailBeforePublishTime(t *testing.T) {
 		"publishedAt":  future,
 		"sendEmails":   true,
 	})
-	if recorder.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("expected status %d for emailing a scheduled page, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d for a scheduled page with email, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var created staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("unmarshal created page: %v", err)
+	}
+
+	guestCookies := map[string]*http.Cookie{}
+	recorder = doJSONRequest(t, server, guestCookies, http.MethodGet, "/v1/public/pages/"+created.ID, nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("scheduled page must stay hidden from guests: expected %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
 	}
 }
 

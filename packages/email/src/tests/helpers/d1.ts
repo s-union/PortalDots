@@ -24,6 +24,10 @@ export class TestD1Statement {
   async first<T>(): Promise<T | null> {
     return this.db.first<T>(this.query, this.values)
   }
+
+  async all<T>(): Promise<{ results: T[]; success: true; meta: { changes: number } }> {
+    return this.db.all<T>(this.query, this.values)
+  }
 }
 
 export function runResult(changes: number): D1RunResult {
@@ -41,6 +45,7 @@ export function runResult(changes: number): D1RunResult {
 export class TestD1Database {
   readonly jobs = new Map<string, { status: string; chunkCount?: number }>()
   readonly chunks = new Map<string, { jobId: string; status: string; updatedAt: string }>()
+  readonly scheduled = new Map<string, { status: string; sendAt: string; payload: string }>()
   failSentUpdate = false
 
   prepare(query: string): TestD1Statement {
@@ -140,6 +145,31 @@ export class TestD1Database {
       if (chunk) chunk.status = 'enqueue_failed'
       return runResult(chunk ? 1 : 0)
     }
+
+    // --- scheduled_emails patterns ---
+    if (query.includes('INSERT INTO scheduled_emails')) {
+      const groupId = String(values[0])
+      this.scheduled.set(groupId, {
+        status: 'scheduled',
+        sendAt: String(values[1]),
+        payload: String(values[2])
+      })
+      return runResult(1)
+    }
+    if (query.includes('UPDATE scheduled_emails') && query.includes("SET status = 'cancelled'")) {
+      const groupId = String(values[1])
+      const record = this.scheduled.get(groupId)
+      if (record && record.status === 'scheduled') {
+        record.status = 'cancelled'
+        return runResult(1)
+      }
+      return runResult(0)
+    }
+    if (query.includes('UPDATE scheduled_emails') && query.includes("SET status = 'fired'")) {
+      const record = this.scheduled.get(String(values[1]))
+      if (record) record.status = 'fired'
+      return runResult(record ? 1 : 0)
+    }
     return runResult(0)
   }
 
@@ -159,6 +189,33 @@ export class TestD1Database {
         chunk_updated_at: chunk.updatedAt
       } as T
     }
+    if (query.includes('FROM scheduled_emails') && query.includes('WHERE group_id = ?')) {
+      const record = this.scheduled.get(String(values[0]))
+      if (!record) return null
+      return {
+        group_id: String(values[0]),
+        status: record.status,
+        send_at: record.sendAt,
+        payload: record.payload
+      } as T
+    }
     return null
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async all<T>(query: string, values: unknown[]): Promise<{ results: T[]; success: true; meta: { changes: number } }> {
+    if (query.includes('FROM scheduled_emails') && query.includes('send_at <= ?')) {
+      const now = String(values[0])
+      const results = Array.from(this.scheduled.entries())
+        .filter(([, record]) => record.status === 'scheduled' && record.sendAt <= now)
+        .map(([groupId, record]) => ({
+          group_id: groupId,
+          status: record.status,
+          send_at: record.sendAt,
+          payload: record.payload
+        }))
+      return { results: results as T[], success: true, meta: { changes: 0 } }
+    }
+    return { results: [], success: true, meta: { changes: 0 } }
   }
 }

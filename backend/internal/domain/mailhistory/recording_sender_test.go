@@ -16,6 +16,10 @@ func (s *capturingSender) Enqueue(_ context.Context, job cloudflareemail.EmailJo
 	return nil
 }
 
+func (s *capturingSender) SyncScheduledPage(_ context.Context, _ cloudflareemail.ScheduledPageEmail) (cloudflareemail.SyncOutcome, error) {
+	return cloudflareemail.SyncUnchanged, nil
+}
+
 func TestRecordingSenderSeparatesHistoryBodyFromDeliveredBody(t *testing.T) {
 	t.Parallel()
 
