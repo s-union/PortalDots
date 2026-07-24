@@ -44,6 +44,9 @@ importers:
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
+      gen-interface-jp:
+        specifier: 0.8.0
+        version: 0.8.0
       pinia:
         specifier: 3.0.4
         version: 3.0.4(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2))
@@ -3046,6 +3049,9 @@ packages:
 
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
+
+  gen-interface-jp@0.8.0:
+    resolution: {integrity: sha512-7rIytSAfuugVjYithrQseT0zqeUIkJd0LY3Ugdfbk/FxzMSeagcskeZlof5uWJ5liW3Zhn7pdLHq2OIvAftx+A==}
 
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
@@ -6820,6 +6826,8 @@ snapshots:
     optional: true
 
   function-bind@1.1.2: {}
+
+  gen-interface-jp@0.8.0: {}
 
   get-caller-file@2.0.5: {}
 

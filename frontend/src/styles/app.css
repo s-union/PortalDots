@@ -72,8 +72,8 @@
 
   /* Font */
   --font-sans:
-    'Segoe UI', Meiryo, system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    'Gen Interface JP', 'Noto Sans JP', 'Segoe UI', Meiryo, system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 /* ========================================================================
