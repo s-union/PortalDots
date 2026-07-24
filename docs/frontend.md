@@ -8,7 +8,7 @@ Vue was chosen over React or Svelte because:
 
 - **Composition API with `<script setup>`** gives fine-grained reactivity without the boilerplate of class components or the ergonomic rough edges of React hooks.
 - **Single-file components** keep template, logic, and styles colocated, which fits the feature-first layout without cross-file hopping.
-- **TypeScript support** is first-class via the native TypeScript 7 compiler (`tsc`) and [`golar`](https://github.com/positive-intentions/golar) for Vue template type checking, with `@vue/tsconfig`.
+- **TypeScript support** is first-class via the native Go `tsgo` checker. Tools that drive the classic TypeScript API ([`vue-tsc`](https://github.com/vuejs/language-tools) for Vue templates) alias `typescript` to [`typescript-native-bridge`](https://github.com/johnsoncodehk/typescript-native-bridge); packages without such tools use stock `typescript@7`. Vue type checking uses `vue-tsc` with `@vue/tsconfig`.
 
 All components use `<script setup lang="ts">`. Options API is not used anywhere in the codebase.
 
@@ -108,12 +108,10 @@ This centralizes cache key management and makes it easy to invalidate related qu
 
 ## Type checking
 
-The project uses the native TypeScript 7 compiler (`tsc`) together with `golar typecheck` for Vue single-file component type checking:
+Vue tooling drives the classic TypeScript programmatic API — `vue-tsc` loads `typescript/lib/tsc`, and `openapi-typescript` (in `packages/api-client`) does the same — which the native TypeScript 7 compiler no longer exposes. Packages that host such tools alias their `typescript` dependency to [`typescript-native-bridge`](https://github.com/johnsoncodehk/typescript-native-bridge) (TNB), a drop-in `typescript` replacement that keeps the classic API while running the checker on the native Go `tsgo` engine. Packages with no such tool (`packages/email`) use stock `typescript@7`:
 
-- The `typecheck` script runs `tsc --project tsconfig.node.json --noEmit` (Vite/Node config) followed by `golar typecheck` (`.vue` template and component types).
+- The frontend `typecheck` script runs `tsc --project tsconfig.node.json --noEmit` (Vite/Node config) followed by `vue-tsc --noEmit --project tsconfig.app.json` (`.vue` template and component types). Both run on TNB in the frontend, since `vue-tsc` requires it.
 - `pnpm ci:check` runs `typecheck`, `lint`, and `format:check` as the authoritative CI gate.
-
-TypeScript 7.0 ships its native Go-based `tsc` directly; the previous `@typescript/native-preview` (`tsgo`) preview build is no longer used.
 
 ---
 

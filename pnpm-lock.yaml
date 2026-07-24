@@ -34,13 +34,13 @@ importers:
         version: 7.2.0
       '@fortawesome/vue-fontawesome':
         specifier: 3.2.0
-        version: 3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(vue@3.5.35(typescript@7.0.2))
+        version: 3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       '@portaldots/api-client':
         specifier: workspace:0.0.0
         version: link:../packages/api-client
       '@tanstack/vue-query':
         specifier: 5.101.0
-        version: 5.101.0(vue@3.5.35(typescript@7.0.2))
+        version: 5.101.0(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -49,7 +49,7 @@ importers:
         version: 0.8.0
       pinia:
         specifier: 3.0.4
-        version: 3.0.4(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2))
+        version: 3.0.4(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       rehype-sanitize:
         specifier: 6.0.0
         version: 6.0.0
@@ -79,17 +79,14 @@ importers:
         version: 0.1.3
       vue:
         specifier: 3.5.35
-        version: 3.5.35(typescript@7.0.2)
+        version: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
       vue-router:
         specifier: 5.1.0
-        version: 5.1.0(@vue/compiler-sfc@3.5.35)(pinia@3.0.4(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2)))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript@7.0.2))
+        version: 5.1.0(@vue/compiler-sfc@3.5.35)(pinia@3.0.4(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       zod:
         specifier: 4.4.3
         version: 4.4.3
     devDependencies:
-      '@golar/vue':
-        specifier: ^0.1.8
-        version: 0.1.8
       '@playwright/test':
         specifier: 1.60.0
         version: 1.60.0
@@ -104,7 +101,7 @@ importers:
         version: 10.5.0(@vitest/browser-playwright@4.1.8)(@vitest/browser@4.1.8)(@vitest/runner@4.1.8)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vitest@4.1.8)
       '@storybook/vue3-vite':
         specifier: 10.5.0
-        version: 10.5.0(esbuild@0.28.1)(rollup@4.62.2)(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript@7.0.2))
+        version: 10.5.0(esbuild@0.28.1)(rollup@4.62.2)(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       '@tailwindcss/vite':
         specifier: 4.3.0
         version: 4.3.0(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
@@ -113,34 +110,31 @@ importers:
         version: 24.13.1
       '@vitejs/plugin-vue':
         specifier: 6.0.7
-        version: 6.0.7(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript@7.0.2))
+        version: 6.0.7(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       '@vitest/browser-playwright':
         specifier: 4.1.8
-        version: 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+        version: 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
       '@vitest/coverage-v8':
         specifier: 4.1.8
         version: 4.1.8(@vitest/browser@4.1.8)(vitest@4.1.8)
       '@vue/test-utils':
         specifier: 2.4.11
-        version: 2.4.11(@vue/compiler-dom@3.5.35)(@vue/server-renderer@3.5.35(vue@3.5.35(typescript@7.0.2)))(vue@3.5.35(typescript@7.0.2))
+        version: 2.4.11(@vue/compiler-dom@3.5.35)(@vue/server-renderer@3.5.35(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       '@vue/tsconfig':
         specifier: 0.9.1
-        version: 0.9.1(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2))
-      golar:
-        specifier: ^0.1.8
-        version: 0.1.8
+        version: 0.9.1(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       jsdom:
         specifier: 29.1.1
         version: 29.1.1
       msw:
         specifier: 2.14.6
-        version: 2.14.6(@types/node@24.13.1)(typescript@7.0.2)
+        version: 2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
       msw-storybook-addon:
         specifier: 2.0.7
-        version: 2.0.7(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))
+        version: 2.0.7(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       openapi-msw:
         specifier: 2.0.0
-        version: 2.0.0(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))
+        version: 2.0.0(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       storybook:
         specifier: 10.5.0
         version: 10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -148,14 +142,17 @@ importers:
         specifier: 4.3.0
         version: 4.3.0
       typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
+        specifier: npm:typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
+        version: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
       vite:
         specifier: 8.0.16
         version: 8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
       vitest:
         specifier: 4.1.8
-        version: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      vue-tsc:
+        specifier: 3.3.8
+        version: 3.3.8(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
   packages/api-client:
     dependencies:
@@ -165,22 +162,19 @@ importers:
     devDependencies:
       '@tanstack/vue-query':
         specifier: 5.101.0
-        version: 5.101.0(vue@3.5.35(@typescript/typescript6@6.0.2))
-      '@typescript/native':
-        specifier: npm:typescript@^7.0.2
-        version: typescript@7.0.2
+        version: 5.101.0(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       openapi-typescript:
         specifier: 7.13.0
-        version: 7.13.0(@typescript/typescript6@6.0.2)
+        version: 7.13.0(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
       typescript:
-        specifier: npm:@typescript/typescript6@^6.0.2
-        version: '@typescript/typescript6@6.0.2'
+        specifier: npm:typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
+        version: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
       vitest:
         specifier: 4.1.8
-        version: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       vue:
         specifier: 3.5.35
-        version: 3.5.35(@typescript/typescript6@6.0.2)
+        version: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
   packages/email:
     dependencies:
@@ -761,64 +755,6 @@ packages:
     peerDependencies:
       '@fortawesome/fontawesome-svg-core': ~1 || ~6 || ~7
       vue: '>= 3.0.0 < 4'
-
-  '@golar/darwin-arm64@0.1.8':
-    resolution: {integrity: sha512-EOkrshX8QHwe2oV0VvLr8jBWtekeoqIkgU8Yqjmv3I59E4j+htnld5bbHqN30jnYCBbgaRIM9rZ4FI8kiHZjMQ==}
-    engines: {node: '>=22.12.0'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@golar/darwin-x64@0.1.8':
-    resolution: {integrity: sha512-X4hODaULRjbBAFBRx9TqyMvif59NZOoOjjd5a5XRS+uTFBnFKIaM3MtYNNEEAQdtTR2cD+pSFFuMfi1uGUhSMg==}
-    engines: {node: '>=22.12.0'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@golar/linux-arm64-musl@0.1.8':
-    resolution: {integrity: sha512-NaE0MhdUKbamaZDSV2qoOWY1Sf819TZGXDsSje1jjwHIoSGIaccP5vD+AUsY8SscQ7cxJvvU+T5GiLBKckmq+w==}
-    engines: {node: '>=22.12.0'}
-    cpu: [arm64]
-    os: [linux]
-    libc: [musl]
-
-  '@golar/linux-arm64@0.1.8':
-    resolution: {integrity: sha512-ExC4fuThsNXDlPPCaxEopcLKUVJBr9IAIzC7iNsfn5sPeFasV5L2/OMame5KkukPoQLh4ftvyYFgp5jQg8w51g==}
-    engines: {node: '>=22.12.0'}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@golar/linux-x64-musl@0.1.8':
-    resolution: {integrity: sha512-rxOZc9pCsVtaDB5j/76w6j1FWELvIunbMcoiD77M768K2oXZgXntf+peeif0hr7toi3mDyX52CD36gEYCPW7qg==}
-    engines: {node: '>=22.12.0'}
-    cpu: [x64]
-    os: [linux]
-    libc: [musl]
-
-  '@golar/linux-x64@0.1.8':
-    resolution: {integrity: sha512-Nj2iBw9tLGwImmzbLnqM9qcMOFHlbNu39wZ/i1LA8yDJdrA95q4vxM78mh9r/8kPpcAVU/UmW/2pfhdXrlICug==}
-    engines: {node: '>=22.12.0'}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
-
-  '@golar/util@0.1.8':
-    resolution: {integrity: sha512-zzoRuEdMv7tIoGPXIAMRkAfGJ9fMYTQsaS2p/aDEcM7JSIIRD9aVKtiTCCMeieJwlKQ/SYqHQWhczMl4dYMTEQ==}
-    engines: {node: '>=22.12.0'}
-
-  '@golar/volar@0.1.8':
-    resolution: {integrity: sha512-QXMc/3sMu+YM4+qNJ2t8bww++NBXnbmcTytUL3xSEOZri2EbFgGEfPOu/gDKys2xs6Xw1/wjhENwjhX1E/gY0g==}
-    engines: {node: '>=22.12.0'}
-
-  '@golar/vue@0.1.8':
-    resolution: {integrity: sha512-aFiQMx2rrxTV7cRPh2QUEIgHWkA44XrGW3g+pKuopqGwwdDx3GseFcVlHJmjo2J6LsrkMi01GO4mxuEdvOFqkQ==}
-    engines: {node: '>=22.12.0'}
-
-  '@golar/win32-x64@0.1.8':
-    resolution: {integrity: sha512-SyEe30GZ92vOOCVl71fK4cLwGSnd1caEqL3TX2d7h0eH2evjxIKapIcqV+xd0LsEWMlabneGranPoqOz6AWiWw==}
-    engines: {node: '>=22.12.0'}
-    cpu: [x64]
-    os: [win32]
 
   '@hono-email/preview@0.8.0':
     resolution: {integrity: sha512-9Gc7IEjHzqTobWbyfzHWQS/GtWeV9HIEz2n4WXgR3/Hqu0HBzWAP4tljAnnA1PbNkpcmIbq44RdMYFhTUKVCBQ==}
@@ -2342,6 +2278,41 @@ packages:
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
 
+  '@typescript-native-bridge/darwin-arm64@6.0.3-bridge.6.tsgo.7.0.2':
+    resolution: {integrity: sha512-MDJ278AxW73T9FH/FGVozOVz3q32m3pTa9qm7Rm6XhXqMMWlsn16RdaWEAlYx3w5ka4QHeDdXt5RIA8C+JNhNA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@typescript-native-bridge/darwin-x64@6.0.3-bridge.6.tsgo.7.0.2':
+    resolution: {integrity: sha512-VT9RtHf1MAv6jpJeTwW7CVIQn096GE/PZclU0VwJvXUOEdaiqN9w23giwvxuZl65TMFBlghBMSGSS09fhpaD1g==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@typescript-native-bridge/linux-arm64@6.0.3-bridge.6.tsgo.7.0.2':
+    resolution: {integrity: sha512-YTMHiU5TWRtXzPrE3WiUYAnnoTZfC8DE/R0V1rKaL0N7altt/nNkoh3bRlif0peJgQDC2suqfloNYHG8+z41bw==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@typescript-native-bridge/linux-arm@6.0.3-bridge.6.tsgo.7.0.2':
+    resolution: {integrity: sha512-WdZLFuKn+ym/Zm3XjKJD306O2f4c0E3dhrm9FyF8r27q37k/BnJlyOQHCyKeJw4/lfzrqOPBJqHLXio1UXLF6Q==}
+    cpu: [arm]
+    os: [linux]
+
+  '@typescript-native-bridge/linux-x64@6.0.3-bridge.6.tsgo.7.0.2':
+    resolution: {integrity: sha512-IBr5p9z4pJPjYgaucQNsPt7Uv4eiZhWvE3b+vAq8RNJ4DSfLSMvjQT+9cOoEXiumAJzcGVziQzFXipfA1FmnUA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@typescript-native-bridge/win32-arm64@6.0.3-bridge.6.tsgo.7.0.2':
+    resolution: {integrity: sha512-DA+1VUvNQw9IYn+Jvf36lKecZevMu++Dk6vxLWs46RB1gj7W7LnIzQ6vtA5Xh5pF6i4FnVC3GovdeMsm3EvfZQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@typescript-native-bridge/win32-x64@6.0.3-bridge.6.tsgo.7.0.2':
+    resolution: {integrity: sha512-n8Qpt0DrEb43fMEtLk4s7EVY1eunFp27SEib7a/xf0WMv3OVBGRDRPGm5OIxLNcppqmnJEPjg4/Fh/XainY5EA==}
+    cpu: [x64]
+    os: [win32]
+
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
     engines: {node: '>=16.20.0'}
@@ -2461,10 +2432,6 @@ packages:
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
-
-  '@typescript/typescript6@6.0.2':
-    resolution: {integrity: sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w==}
-    hasBin: true
 
   '@ungap/structured-clone@1.3.1':
     resolution: {integrity: sha512-mUFwbeTqrVgDQxFveS+df2yfap6iuP20NAKAsBt5jDEoOTDew+zwLAOilHCeQJOVSvmgCX4ogqIrA0mnyr08yQ==}
@@ -2588,11 +2555,11 @@ packages:
   '@vue/devtools-shared@8.1.2':
     resolution: {integrity: sha512-X9RyVFYAdkBe4IUf5v48TxBF/6QPmF8CmWrDAjXzfUHrgQ/HGfTC1A6TqgXqZ03ye66l3AD51BAGD69IvKM9sw==}
 
-  '@vue/language-core@3.3.5':
-    resolution: {integrity: sha512-UkKu5nhX89fg4VhlG/FOeI10G3cj/7radKT/cy9BT4Q9qJmJlSTAc/dP63Xqs29aypN4f39xUV6PsLNk/dcD6g==}
-
   '@vue/language-core@3.3.7':
     resolution: {integrity: sha512-LzmkKinXAMMoh8Jfi/jMUSDUjuPdv8mynH5WJGKfXyZtDw3hQ6GBaoI6Bcnl/Xqlu32q/0Z6i/trp4VXykzyLw==}
+
+  '@vue/language-core@3.3.8':
+    resolution: {integrity: sha512-ieGT8jJdhhy0mGzStZhsg/qPw5bQZJg5yF+3+XU6saf4sM7yo9ZXy3h+nCwrm2+b4qS/SypkNdR2jAF3uei9tA==}
 
   '@vue/reactivity@3.5.35':
     resolution: {integrity: sha512-tVc+SsHConvh/Lz64qq1pP3rYArBmK42xonovEcxY74SQtvctZodG/zhq54P5dr38cVuw25d27cPNRdlMidpGQ==}
@@ -3068,11 +3035,6 @@ packages:
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
     deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
-    hasBin: true
-
-  golar@0.1.8:
-    resolution: {integrity: sha512-+ZOLEfgQ4TNyXcM0dydYxcp3QYPXLjmd9so/Z6kuXslJgpnLFPqyFANLzZqJingc8s19N/D77byfKAsk03lGmg==}
-    engines: {node: '>=22.12.0'}
     hasBin: true
 
   gopd@1.2.0:
@@ -4118,13 +4080,13 @@ packages:
     resolution: {integrity: sha512-8ZiHFm91orbSAe2PSAiSVBVko18pbhbiB3U9GglSzF/zCGkR+rxpHx6sEMCUm4kxY4LjDIUGgCfUMtwfZfjfUA==}
     engines: {node: '>=20'}
 
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
-    engines: {node: '>=14.17'}
+  typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2:
+    resolution: {integrity: sha512-I8zP90Yds3EVWC0TtQdyZ0vSydsmenoGlUa0tggwYOB/KxWZGdOvfBdE9m6a0tXnyDbEZUP+kOFtooZwn8Gk+g==}
+    engines: {node: '>=20.19'}
     hasBin: true
 
-  typescript@6.0.3:
-    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -4419,6 +4381,12 @@ packages:
         optional: true
       vite:
         optional: true
+
+  vue-tsc@3.3.8:
+    resolution: {integrity: sha512-xXmYlVQpcwJDWyGlqbHrGVOl1h3UOsASymRibrHc+iy9j/UNnOrOn4u+fntHz4D6Cs74RtapeqVV6CzJeg+UlA==}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.0.0'
 
   vue@3.5.35:
     resolution: {integrity: sha512-cx89fnr+0kVGHiNFG6y6s0bdjypJRFNZn6x3WPstNdQR1bi1mbB7h4v5IBGTsPJU3nK1+0Iqj3Zf+hZWMieR4Q==}
@@ -4895,45 +4863,10 @@ snapshots:
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.2.0
 
-  '@fortawesome/vue-fontawesome@3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(vue@3.5.35(typescript@7.0.2))':
+  '@fortawesome/vue-fontawesome@3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@fortawesome/fontawesome-svg-core': 7.2.0
-      vue: 3.5.35(typescript@7.0.2)
-
-  '@golar/darwin-arm64@0.1.8':
-    optional: true
-
-  '@golar/darwin-x64@0.1.8':
-    optional: true
-
-  '@golar/linux-arm64-musl@0.1.8':
-    optional: true
-
-  '@golar/linux-arm64@0.1.8':
-    optional: true
-
-  '@golar/linux-x64-musl@0.1.8':
-    optional: true
-
-  '@golar/linux-x64@0.1.8':
-    optional: true
-
-  '@golar/util@0.1.8': {}
-
-  '@golar/volar@0.1.8':
-    dependencies:
-      '@volar/language-core': 2.4.28
-      golar: 0.1.8
-
-  '@golar/vue@0.1.8':
-    dependencies:
-      '@golar/util': 0.1.8
-      '@golar/volar': 0.1.8
-      '@vue/compiler-dom': 3.5.35
-      '@vue/language-core': 3.3.5
-
-  '@golar/win32-x64@0.1.8':
-    optional: true
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
   '@hono-email/preview@0.8.0(@hono-email/tailwind-plugin@0.8.0(hono-email@0.8.0(hono@4.12.25)))(@types/node@24.13.1)(hono-email@0.8.0(hono@4.12.25))(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)':
     dependencies:
@@ -5703,10 +5636,10 @@ snapshots:
       '@storybook/icons': 2.0.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       storybook: 10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
     optionalDependencies:
-      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
-      '@vitest/browser-playwright': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+      '@vitest/browser-playwright': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
       '@vitest/runner': 4.1.8
-      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
     transitivePeerDependencies:
       - react
       - react-dom
@@ -5746,28 +5679,28 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.15
 
-  '@storybook/vue3-vite@10.5.0(esbuild@0.28.1)(rollup@4.62.2)(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript@7.0.2))':
+  '@storybook/vue3-vite@10.5.0(esbuild@0.28.1)(rollup@4.62.2)(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@storybook/builder-vite': 10.5.0(esbuild@0.28.1)(rollup@4.62.2)(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
-      '@storybook/vue3': 10.5.0(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vue@3.5.35(typescript@7.0.2))
+      '@storybook/vue3': 10.5.0(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       magic-string: 0.30.21
       storybook: 10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       typescript: 5.9.3
       vite: 8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
       vue-component-meta: 3.3.7(typescript@5.9.3)
-      vue-docgen-api: 4.79.2(vue@3.5.35(typescript@7.0.2))
+      vue-docgen-api: 4.79.2(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
     transitivePeerDependencies:
       - esbuild
       - rollup
       - vue
       - webpack
 
-  '@storybook/vue3@10.5.0(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vue@3.5.35(typescript@7.0.2))':
+  '@storybook/vue3@10.5.0(storybook@10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@storybook/global': 5.0.0
       storybook: 10.5.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       type-fest: 5.6.0
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
       vue-component-type-helpers: 3.3.1
 
   '@tailwindcss/node@4.3.0':
@@ -5919,21 +5852,13 @@ snapshots:
 
   '@tanstack/query-core@5.101.0': {}
 
-  '@tanstack/vue-query@5.101.0(vue@3.5.35(@typescript/typescript6@6.0.2))':
+  '@tanstack/vue-query@5.101.0(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@tanstack/match-sorter-utils': 8.19.4
       '@tanstack/query-core': 5.101.0
       '@vue/devtools-api': 6.6.4
-      vue: 3.5.35(@typescript/typescript6@6.0.2)
-      vue-demi: 0.14.10(vue@3.5.35(@typescript/typescript6@6.0.2))
-
-  '@tanstack/vue-query@5.101.0(vue@3.5.35(typescript@7.0.2))':
-    dependencies:
-      '@tanstack/match-sorter-utils': 8.19.4
-      '@tanstack/query-core': 5.101.0
-      '@vue/devtools-api': 6.6.4
-      vue: 3.5.35(typescript@7.0.2)
-      vue-demi: 0.14.10(vue@3.5.35(typescript@7.0.2))
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
+      vue-demi: 0.14.10(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -6018,6 +5943,27 @@ snapshots:
 
   '@types/unist@3.0.3': {}
 
+  '@typescript-native-bridge/darwin-arm64@6.0.3-bridge.6.tsgo.7.0.2':
+    optional: true
+
+  '@typescript-native-bridge/darwin-x64@6.0.3-bridge.6.tsgo.7.0.2':
+    optional: true
+
+  '@typescript-native-bridge/linux-arm64@6.0.3-bridge.6.tsgo.7.0.2':
+    optional: true
+
+  '@typescript-native-bridge/linux-arm@6.0.3-bridge.6.tsgo.7.0.2':
+    optional: true
+
+  '@typescript-native-bridge/linux-x64@6.0.3-bridge.6.tsgo.7.0.2':
+    optional: true
+
+  '@typescript-native-bridge/win32-arm64@6.0.3-bridge.6.tsgo.7.0.2':
+    optional: true
+
+  '@typescript-native-bridge/win32-x64@6.0.3-bridge.6.tsgo.7.0.2':
+    optional: true
+
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
 
@@ -6078,44 +6024,40 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@typescript/typescript6@6.0.2':
-    dependencies:
-      '@typescript/old': typescript@6.0.3
-
   '@ungap/structured-clone@1.3.1': {}
 
-  '@vitejs/plugin-vue@6.0.7(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript@7.0.2))':
+  '@vitejs/plugin-vue@6.0.7(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
-  '@vitest/browser-playwright@4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(playwright@1.60.0)(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
+  '@vitest/browser-playwright@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
     dependencies:
-      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
-      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       playwright: 1.60.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+    transitivePeerDependencies:
+      - bufferutil
+      - msw
+      - utf-8-validate
+      - vite
+
+  '@vitest/browser-playwright@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(playwright@1.60.0)(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
+    dependencies:
+      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      playwright: 1.60.0
+      tinyrainbow: 3.1.0
+      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
     transitivePeerDependencies:
       - bufferutil
       - msw
       - utf-8-validate
       - vite
     optional: true
-
-  '@vitest/browser-playwright@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
-    dependencies:
-      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
-      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
-      playwright: 1.60.0
-      tinyrainbow: 3.1.0
-      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
-    transitivePeerDependencies:
-      - bufferutil
-      - msw
-      - utf-8-validate
-      - vite
 
   '@vitest/browser-playwright@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(playwright@1.60.0)(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
     dependencies:
@@ -6131,16 +6073,33 @@ snapshots:
       - vite
     optional: true
 
-  '@vitest/browser@4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
+  '@vitest/browser@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
     dependencies:
       '@blazediff/core': 1.9.1
-      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       '@vitest/utils': 4.1.8
       magic-string: 0.30.21
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.0
-      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      ws: 8.21.0
+    transitivePeerDependencies:
+      - bufferutil
+      - msw
+      - utf-8-validate
+      - vite
+
+  '@vitest/browser@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
+    dependencies:
+      '@blazediff/core': 1.9.1
+      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      '@vitest/utils': 4.1.8
+      magic-string: 0.30.21
+      pngjs: 7.0.0
+      sirv: 3.0.2
+      tinyrainbow: 3.1.0
+      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
@@ -6148,23 +6107,6 @@ snapshots:
       - utf-8-validate
       - vite
     optional: true
-
-  '@vitest/browser@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
-    dependencies:
-      '@blazediff/core': 1.9.1
-      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
-      '@vitest/utils': 4.1.8
-      magic-string: 0.30.21
-      pngjs: 7.0.0
-      sirv: 3.0.2
-      tinyrainbow: 3.1.0
-      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
-      ws: 8.21.0
-    transitivePeerDependencies:
-      - bufferutil
-      - msw
-      - utf-8-validate
-      - vite
 
   '@vitest/browser@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)':
     dependencies:
@@ -6196,9 +6138,9 @@ snapshots:
       obug: 2.1.1
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      vitest: 4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
     optionalDependencies:
-      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+      '@vitest/browser': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
 
   '@vitest/expect@3.2.4':
     dependencies:
@@ -6217,23 +6159,23 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.8
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      msw: 2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2)
-      vite: 8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
-
-  '@vitest/mocker@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))':
-    dependencies:
-      '@vitest/spy': 4.1.8
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      msw: 2.14.6(@types/node@24.13.1)(typescript@7.0.2)
+      msw: 2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
       vite: 8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
+
+  '@vitest/mocker@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))':
+    dependencies:
+      '@vitest/spy': 4.1.8
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      msw: 2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
+      vite: 8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
 
   '@vitest/mocker@4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))':
     dependencies:
@@ -6294,7 +6236,7 @@ snapshots:
       path-browserify: 1.0.1
       vscode-uri: 3.1.0
 
-  '@vue-macros/common@3.1.2(vue@3.5.35(typescript@7.0.2))':
+  '@vue-macros/common@3.1.2(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@vue/compiler-sfc': 3.5.35
       ast-kit: 2.2.0
@@ -6302,7 +6244,7 @@ snapshots:
       magic-string-ast: 1.0.3
       unplugin-utils: 0.3.1
     optionalDependencies:
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
   '@vue/compiler-core@3.5.35':
     dependencies:
@@ -6367,7 +6309,7 @@ snapshots:
 
   '@vue/devtools-shared@8.1.2': {}
 
-  '@vue/language-core@3.3.5':
+  '@vue/language-core@3.3.7':
     dependencies:
       '@volar/language-core': 2.4.28
       '@vue/compiler-dom': 3.5.35
@@ -6375,9 +6317,9 @@ snapshots:
       alien-signals: 3.2.1
       muggle-string: 0.4.1
       path-browserify: 1.0.1
-      picomatch: 4.0.4
+      picomatch: 4.0.5
 
-  '@vue/language-core@3.3.7':
+  '@vue/language-core@3.3.8':
     dependencies:
       '@volar/language-core': 2.4.28
       '@vue/compiler-dom': 3.5.35
@@ -6403,33 +6345,27 @@ snapshots:
       '@vue/shared': 3.5.35
       csstype: 3.2.3
 
-  '@vue/server-renderer@3.5.35(vue@3.5.35(@typescript/typescript6@6.0.2))':
+  '@vue/server-renderer@3.5.35(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@vue/compiler-ssr': 3.5.35
       '@vue/shared': 3.5.35
-      vue: 3.5.35(@typescript/typescript6@6.0.2)
-
-  '@vue/server-renderer@3.5.35(vue@3.5.35(typescript@7.0.2))':
-    dependencies:
-      '@vue/compiler-ssr': 3.5.35
-      '@vue/shared': 3.5.35
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
   '@vue/shared@3.5.35': {}
 
-  '@vue/test-utils@2.4.11(@vue/compiler-dom@3.5.35)(@vue/server-renderer@3.5.35(vue@3.5.35(typescript@7.0.2)))(vue@3.5.35(typescript@7.0.2))':
+  '@vue/test-utils@2.4.11(@vue/compiler-dom@3.5.35)(@vue/server-renderer@3.5.35(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     dependencies:
       '@vue/compiler-dom': 3.5.35
       js-beautify: 1.15.4
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
       vue-component-type-helpers: 3.3.1
     optionalDependencies:
-      '@vue/server-renderer': 3.5.35(vue@3.5.35(typescript@7.0.2))
+      '@vue/server-renderer': 3.5.35(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
 
-  '@vue/tsconfig@0.9.1(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2))':
+  '@vue/tsconfig@0.9.1(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))':
     optionalDependencies:
-      typescript: 7.0.2
-      vue: 3.5.35(typescript@7.0.2)
+      typescript: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
   '@webcontainer/env@1.1.1': {}
 
@@ -6857,20 +6793,6 @@ snapshots:
       minipass: 7.1.3
       package-json-from-dist: 1.0.1
       path-scurry: 1.11.1
-
-  golar@0.1.8:
-    dependencies:
-      '@golar/util': 0.1.8
-      detect-libc: 2.1.2
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@golar/darwin-arm64': 0.1.8
-      '@golar/darwin-x64': 0.1.8
-      '@golar/linux-arm64': 0.1.8
-      '@golar/linux-arm64-musl': 0.1.8
-      '@golar/linux-x64': 0.1.8
-      '@golar/linux-x64-musl': 0.1.8
-      '@golar/win32-x64': 0.1.8
 
   gopd@1.2.0: {}
 
@@ -7512,12 +7434,12 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msw-storybook-addon@2.0.7(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2)):
+  msw-storybook-addon@2.0.7(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)):
     dependencies:
       is-node-process: 1.2.0
-      msw: 2.14.6(@types/node@24.13.1)(typescript@7.0.2)
+      msw: 2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
-  msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2):
+  msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2):
     dependencies:
       '@inquirer/confirm': 6.0.13(@types/node@24.13.1)
       '@mswjs/interceptors': 0.41.9
@@ -7538,10 +7460,9 @@ snapshots:
       until-async: 3.0.2
       yargs: 17.7.2
     optionalDependencies:
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
     transitivePeerDependencies:
       - '@types/node'
-    optional: true
 
   msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2):
     dependencies:
@@ -7567,6 +7488,7 @@ snapshots:
       typescript: 7.0.2
     transitivePeerDependencies:
       - '@types/node'
+    optional: true
 
   muggle-string@0.4.1: {}
 
@@ -7593,20 +7515,20 @@ snapshots:
     dependencies:
       openapi-typescript-helpers: 0.1.0
 
-  openapi-msw@2.0.0(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2)):
+  openapi-msw@2.0.0(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)):
     dependencies:
-      msw: 2.14.6(@types/node@24.13.1)(typescript@7.0.2)
+      msw: 2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
   openapi-typescript-helpers@0.1.0: {}
 
-  openapi-typescript@7.13.0(@typescript/typescript6@6.0.2):
+  openapi-typescript@7.13.0(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2):
     dependencies:
       '@redocly/openapi-core': 1.34.17(supports-color@10.2.2)
       ansi-colors: 4.1.3
       change-case: 5.4.4
       parse-json: 8.3.0
       supports-color: 10.2.2
-      typescript: '@typescript/typescript6@6.0.2'
+      typescript: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
       yargs-parser: 21.1.1
 
   outvariant@1.4.3: {}
@@ -7757,12 +7679,12 @@ snapshots:
 
   picomatch@4.0.5: {}
 
-  pinia@3.0.4(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2)):
+  pinia@3.0.4(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)):
     dependencies:
       '@vue/devtools-api': 7.7.9
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
     optionalDependencies:
-      typescript: 7.0.2
+      typescript: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
 
   pkg-types@1.3.1:
     dependencies:
@@ -8263,9 +8185,17 @@ snapshots:
     dependencies:
       tagged-tag: 1.0.0
 
-  typescript@5.9.3: {}
+  typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2:
+    optionalDependencies:
+      '@typescript-native-bridge/darwin-arm64': 6.0.3-bridge.6.tsgo.7.0.2
+      '@typescript-native-bridge/darwin-x64': 6.0.3-bridge.6.tsgo.7.0.2
+      '@typescript-native-bridge/linux-arm': 6.0.3-bridge.6.tsgo.7.0.2
+      '@typescript-native-bridge/linux-arm64': 6.0.3-bridge.6.tsgo.7.0.2
+      '@typescript-native-bridge/linux-x64': 6.0.3-bridge.6.tsgo.7.0.2
+      '@typescript-native-bridge/win32-arm64': 6.0.3-bridge.6.tsgo.7.0.2
+      '@typescript-native-bridge/win32-x64': 6.0.3-bridge.6.tsgo.7.0.2
 
-  typescript@6.0.3: {}
+  typescript@5.9.3: {}
 
   typescript@7.0.2:
     optionalDependencies:
@@ -8414,40 +8344,10 @@ snapshots:
       jiti: 2.7.0
       yaml: 2.9.0
 
-  vitest@4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
+  vitest@4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.8
-      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
-      '@vitest/pretty-format': 4.1.8
-      '@vitest/runner': 4.1.8
-      '@vitest/snapshot': 4.1.8
-      '@vitest/spy': 4.1.8
-      '@vitest/utils': 4.1.8
-      es-module-lexer: 2.1.0
-      expect-type: 1.3.0
-      magic-string: 0.30.21
-      obug: 2.1.1
-      pathe: 2.0.3
-      picomatch: 4.0.4
-      std-env: 4.1.0
-      tinybench: 2.9.0
-      tinyexec: 1.1.2
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.0
-      vite: 8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 24.13.1
-      '@vitest/browser-playwright': 4.1.8(msw@2.14.6(@types/node@24.13.1)(@typescript/typescript6@6.0.2))(playwright@1.60.0)(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
-      '@vitest/coverage-v8': 4.1.8(@vitest/browser@4.1.8)(vitest@4.1.8)
-      jsdom: 29.1.1
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
-    dependencies:
-      '@vitest/expect': 4.1.8
-      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.8
       '@vitest/runner': 4.1.8
       '@vitest/snapshot': 4.1.8
@@ -8468,7 +8368,37 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.13.1
-      '@vitest/browser-playwright': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript@7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+      '@vitest/browser-playwright': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(playwright@1.60.0)(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
+      '@vitest/coverage-v8': 4.1.8(@vitest/browser@4.1.8)(vitest@4.1.8)
+      jsdom: 29.1.1
+    transitivePeerDependencies:
+      - msw
+
+  vitest@4.1.8(@types/node@24.13.1)(@vitest/browser-playwright@4.1.8)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)):
+    dependencies:
+      '@vitest/expect': 4.1.8
+      '@vitest/mocker': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+      '@vitest/pretty-format': 4.1.8
+      '@vitest/runner': 4.1.8
+      '@vitest/snapshot': 4.1.8
+      '@vitest/spy': 4.1.8
+      '@vitest/utils': 4.1.8
+      es-module-lexer: 2.1.0
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.1
+      pathe: 2.0.3
+      picomatch: 4.0.4
+      std-env: 4.1.0
+      tinybench: 2.9.0
+      tinyexec: 1.1.2
+      tinyglobby: 0.2.17
+      tinyrainbow: 3.1.0
+      vite: 8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 24.13.1
+      '@vitest/browser-playwright': 4.1.8(msw@2.14.6(@types/node@24.13.1)(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))(playwright@1.60.0)(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.8)
       '@vitest/coverage-v8': 4.1.8(@vitest/browser@4.1.8)(vitest@4.1.8)
       jsdom: 29.1.1
     transitivePeerDependencies:
@@ -8518,15 +8448,11 @@ snapshots:
 
   vue-component-type-helpers@3.3.1: {}
 
-  vue-demi@0.14.10(vue@3.5.35(@typescript/typescript6@6.0.2)):
+  vue-demi@0.14.10(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)):
     dependencies:
-      vue: 3.5.35(@typescript/typescript6@6.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
-  vue-demi@0.14.10(vue@3.5.35(typescript@7.0.2)):
-    dependencies:
-      vue: 3.5.35(typescript@7.0.2)
-
-  vue-docgen-api@4.79.2(vue@3.5.35(typescript@7.0.2)):
+  vue-docgen-api@4.79.2(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)):
     dependencies:
       '@babel/parser': 7.29.3
       '@babel/types': 7.29.0
@@ -8539,17 +8465,17 @@ snapshots:
       pug: 3.0.4
       recast: 0.23.11
       ts-map: 1.0.3
-      vue: 3.5.35(typescript@7.0.2)
-      vue-inbrowser-compiler-independent-utils: 4.71.1(vue@3.5.35(typescript@7.0.2))
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
+      vue-inbrowser-compiler-independent-utils: 4.71.1(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
 
-  vue-inbrowser-compiler-independent-utils@4.71.1(vue@3.5.35(typescript@7.0.2)):
+  vue-inbrowser-compiler-independent-utils@4.71.1(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)):
     dependencies:
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
 
-  vue-router@5.1.0(@vue/compiler-sfc@3.5.35)(pinia@3.0.4(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2)))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript@7.0.2)):
+  vue-router@5.1.0(@vue/compiler-sfc@3.5.35)(pinia@3.0.4(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)))(vite@8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)):
     dependencies:
       '@babel/generator': 8.0.0-rc.5
-      '@vue-macros/common': 3.1.2(vue@3.5.35(typescript@7.0.2))
+      '@vue-macros/common': 3.1.2(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       '@vue/devtools-api': 8.1.2
       ast-walker-scope: 0.9.0
       chokidar: 5.0.0
@@ -8564,32 +8490,28 @@ snapshots:
       tinyglobby: 0.2.16
       unplugin: 3.0.0
       unplugin-utils: 0.3.1
-      vue: 3.5.35(typescript@7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)
       yaml: 2.9.0
     optionalDependencies:
       '@vue/compiler-sfc': 3.5.35
-      pinia: 3.0.4(typescript@7.0.2)(vue@3.5.35(typescript@7.0.2))
+      pinia: 3.0.4(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2)(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       vite: 8.0.16(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
 
-  vue@3.5.35(@typescript/typescript6@6.0.2):
+  vue-tsc@3.3.8(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2):
     dependencies:
-      '@vue/compiler-dom': 3.5.35
-      '@vue/compiler-sfc': 3.5.35
-      '@vue/runtime-dom': 3.5.35
-      '@vue/server-renderer': 3.5.35(vue@3.5.35(@typescript/typescript6@6.0.2))
-      '@vue/shared': 3.5.35
-    optionalDependencies:
-      typescript: '@typescript/typescript6@6.0.2'
+      '@volar/typescript': 2.4.28
+      '@vue/language-core': 3.3.8
+      typescript: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
 
-  vue@3.5.35(typescript@7.0.2):
+  vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2):
     dependencies:
       '@vue/compiler-dom': 3.5.35
       '@vue/compiler-sfc': 3.5.35
       '@vue/runtime-dom': 3.5.35
-      '@vue/server-renderer': 3.5.35(vue@3.5.35(typescript@7.0.2))
+      '@vue/server-renderer': 3.5.35(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2))
       '@vue/shared': 3.5.35
     optionalDependencies:
-      typescript: 7.0.2
+      typescript: typescript-native-bridge@6.0.3-bridge.6.tsgo.7.0.2
 
   w3c-xmlserializer@5.0.0:
     dependencies:
