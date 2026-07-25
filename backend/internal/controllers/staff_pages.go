@@ -10,7 +10,6 @@ import (
 
 	"github.com/labstack/echo/v5"
 	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
@@ -141,7 +140,7 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, nil); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
-	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt, time.Now().UTC())
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
 	if !validPublishedAt {
 		return validationError(c, publishedAtErrors)
 	}
@@ -166,7 +165,10 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 		"",
 		buildActivitySummary("staff がページを作成しました", created.Title),
 	)
-	h.syncPageMail(c.Request().Context(), currentSession.User.ID, created, request.SendEmails, publishedAt)
+	if canSendPageEmails(currentSession.User) {
+		h.schedulePageMail(c.Request().Context(), currentSession.User.ID, created.ID, request.SendEmails)
+	}
+
 	return c.JSON(http.StatusCreated, mapStaffPageSummary(created, h.pageDocuments(created.DocumentIDs, true)))
 }
 
@@ -191,11 +193,7 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, pageValue.DocumentIDs); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
 	}
-	publishedAtFallback := time.Now().UTC()
-	if existing, err := time.Parse(time.RFC3339, pageValue.PublishedAt); err == nil {
-		publishedAtFallback = existing
-	}
-	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt, publishedAtFallback)
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
 	if !validPublishedAt {
 		return validationError(c, publishedAtErrors)
 	}
@@ -225,7 +223,11 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 		"",
 		buildActivitySummary("staff がページを更新しました", updated.Title),
 	)
-	h.syncPageMail(c.Request().Context(), currentSession.User.ID, updated, request.SendEmails, publishedAt)
+	// An operator without the mail capability must not be able to create,
+	// retarget or silence a pending announcement mail by editing the page.
+	if canSendPageEmails(currentSession.User) {
+		h.schedulePageMail(c.Request().Context(), currentSession.User.ID, updated.ID, request.SendEmails)
+	}
 
 	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
 }
@@ -246,7 +248,9 @@ func (h *staffPageHandlers) deleteStaffPage(c *echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
-	h.cancelPageMail(c.Request().Context(), pageID)
+	// Any pending announcement mail goes with the page: the scheduled mail row
+	// references it with ON DELETE CASCADE, and the dispatcher refuses to send
+	// mail for a page it cannot read back.
 
 	recordActivity(
 		c.Request().Context(),
@@ -354,15 +358,13 @@ func bindStaffPageRequest(c *echo.Context) (mutateStaffPageRequest, map[string][
 	return request, nil, true
 }
 
-func parseStaffPagePublishedAt(value *string, omittedFallback time.Time) (time.Time, map[string][]string, bool) {
+// parseStaffPagePublishedAt reads the requested publish time: a null publishes
+// the page immediately, an RFC 3339 timestamp schedules it for that time.
+func parseStaffPagePublishedAt(value *string) (time.Time, map[string][]string, bool) {
 	if value == nil {
-		return omittedFallback, nil, true
-	}
-	trimmed := strings.TrimSpace(*value)
-	if trimmed == "" {
 		return time.Now().UTC(), nil, true
 	}
-	parsed, err := time.Parse(time.RFC3339, trimmed)
+	parsed, err := time.Parse(time.RFC3339, strings.TrimSpace(*value))
 	if err != nil || parsed.IsZero() {
 		return time.Time{}, map[string][]string{"publishedAt": {"公開日時が正しくありません"}}, false
 	}
@@ -425,10 +427,6 @@ func (h *staffPageHandlers) pageDocuments(documentIDs []string, forStaff bool) [
 	return pageDocuments(h.documents, documentIDs, forStaff, false, nil)
 }
 
-func (h *staffPageHandlers) publicPageDocuments(documentIDs []string, circleTags []string) []pageDocumentResponse {
-	return pageDocuments(h.documents, documentIDs, false, false, circleTags)
-}
-
 func normalizePageDocumentIDs(documentIDs []string) []string {
 	normalized := make([]string, 0, len(documentIDs))
 	seen := map[string]struct{}{}
@@ -462,127 +460,27 @@ func (h *staffPageHandlers) validateStaffPageDocumentIDs(documentIDs []string, e
 	return nil
 }
 
-func (h *staffPageHandlers) buildPageMailJob(ctx context.Context, currentPage backendpage.Page) *cloudflareemail.EmailJob {
-	recipients := h.pageMailRecipients(ctx, currentPage.ViewableTags)
-	if len(recipients) == 0 {
-		return nil
+// schedulePageMail records or clears the intent to send the announcement email
+// of a page.
+//
+// Only the intent is stored: the recipients, the body and the send time are all
+// derived from the live page when the mail is dispatched. Unpublishing,
+// rescheduling or deleting the page therefore needs no counterpart here.
+//
+// Callers must already have checked that the operator may send page mail; an
+// operator without that capability must leave an existing intent untouched.
+func (h *staffPageHandlers) schedulePageMail(ctx context.Context, actorUserID, pageID string, sendEmails bool) {
+	var err error
+	if sendEmails {
+		// The job ID is only used when no intent exists yet: an already
+		// scheduled page keeps its original one so that a retried dispatch
+		// stays idempotent.
+		err = h.scheduledPageMails.Schedule(ctx, pageID, "staff-page-"+uuidv7.MustString(), actorUserID)
+	} else {
+		err = h.scheduledPageMails.Unschedule(ctx, pageID)
 	}
-
-	body := currentPage.Body
-	documents := h.publicPageDocuments(currentPage.DocumentIDs, currentPage.ViewableTags)
-	if len(documents) > 0 {
-		lines := make([]string, 0, len(documents)+2)
-		lines = append(lines, "", "", "関連する配布資料")
-		for _, document := range documents {
-			line := "- " + document.Name
-			if document.Description != "" {
-				line += ": " + strings.ReplaceAll(document.Description, "\n", " ")
-			}
-			lines = append(lines, line)
-		}
-		body += strings.Join(lines, "\n")
-	}
-
-	return &cloudflareemail.EmailJob{
-		JobId:    "staff-page-" + uuidv7.MustString(),
-		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
-		From:     h.email.From,
-		To:       recipients,
-		Subject:  currentPage.Title,
-		Body:     body,
-		Variables: map[string]string{
-			"subject":      currentPage.Title,
-			"body":         body,
-			"appName":      h.email.AppName,
-			"appURL":       h.email.AppURL,
-			"adminName":    h.email.AdminName,
-			"contactEmail": h.email.ContactEmail,
-			"preview":      currentPage.Title,
-		},
-	}
-}
-
-func (h *staffPageHandlers) syncPageMail(ctx context.Context, createdByUserID string, currentPage backendpage.Page, sendEmails bool, publishedAt time.Time) {
-	req := cloudflareemail.ScheduledPageEmail{
-		GroupID:    currentPage.ID,
-		SendEmails: sendEmails,
-		SendAt:     publishedAt,
-	}
-	if currentPage.IsPublic {
-		req.Payload = h.buildPageMailJob(ctx, currentPage)
-	}
-	// A public page without eligible recipients must cancel any pending email;
-	// leaving it public would keep it scheduled for stale recipients.
-	req.IsPublic = currentPage.IsPublic && req.Payload != nil
-
-	outcome, err := h.email.EmailSender.SyncScheduledPage(ctx, req)
 	if err != nil {
-		slog.Error("failed to sync scheduled page email", "page_id", currentPage.ID, "error", err)
-		return
+		slog.Error("failed to record scheduled page mail intent",
+			"page_id", pageID, "send_emails", sendEmails, "error", err)
 	}
-	if (outcome == cloudflareemail.SyncScheduled || outcome == cloudflareemail.SyncDispatched) && req.Payload != nil {
-		logQueuedMail("staff_page", req.Payload.JobId, "", createdByUserID, currentPage.Title, req.Payload.Body, req.Payload.To, h.allowDangerously)
-		recordActivity(
-			ctx,
-			h.activities,
-			createdByUserID,
-			"staff.mail.queued",
-			"mail_job",
-			req.Payload.JobId,
-			"",
-			buildActivitySummary("staff がページのお知らせメールをキューに追加しました", currentPage.Title),
-		)
-	}
-}
-
-func (h *staffPageHandlers) cancelPageMail(ctx context.Context, pageID string) {
-	if _, err := h.email.EmailSender.SyncScheduledPage(ctx, cloudflareemail.ScheduledPageEmail{
-		GroupID:  pageID,
-		IsPublic: false,
-	}); err != nil {
-		slog.Error("failed to cancel scheduled page email", "page_id", pageID, "error", err)
-	}
-}
-
-func (h *staffPageHandlers) pageMailRecipients(ctx context.Context, viewableTags []string) []string {
-	circleIDs := []string{}
-	if len(viewableTags) > 0 {
-		circles, err := h.circles.ListForStaff(ctx)
-		if err != nil {
-			return nil
-		}
-
-		for _, currentCircle := range circles {
-			if pageVisibleToCircleTags(viewableTags, effectiveCircleTags(ctx, currentCircle, h.participationTypes)) {
-				circleIDs = append(circleIDs, currentCircle.ID)
-			}
-		}
-		if len(circleIDs) == 0 {
-			return nil
-		}
-	}
-
-	users, err := h.users.ListVerifiedByCircleIDs(circleIDs)
-	if err != nil {
-		return nil
-	}
-
-	return collectUsersEmailRecipients(users)
-}
-
-func pageVisibleToCircleTags(viewableTags []string, circleTags []string) bool {
-	if len(viewableTags) == 0 {
-		return true
-	}
-
-	for _, viewableTag := range viewableTags {
-		for _, circleTag := range circleTags {
-			if strings.EqualFold(viewableTag, circleTag) {
-				return true
-			}
-		}
-	}
-
-	return false
 }

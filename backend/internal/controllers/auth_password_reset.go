@@ -51,7 +51,7 @@ func (h *authHandlers) startPasswordReset(c *echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	if recipients := collectUserEmailRecipients(targetUser); found && len(recipients) > 0 {
+	if recipients := useradmin.MailRecipients(targetUser); found && len(recipients) > 0 {
 		token, err := generateRegistrationToken()
 		if err != nil {
 			return errorJSON(c, http.StatusInternalServerError, "failed_to_generate_password_reset_token")
@@ -166,7 +166,7 @@ func (h *authHandlers) completePasswordReset(c *echo.Context) error {
 		}
 		return internalError(c)
 	}
-	if err := h.enqueuePasswordChangedMail(c.Request().Context(), request.UserID, collectUserEmailRecipients(targetUser)); err != nil {
+	if err := h.enqueuePasswordChangedMail(c.Request().Context(), request.UserID, useradmin.MailRecipients(targetUser)); err != nil {
 		return internalError(c)
 	}
 

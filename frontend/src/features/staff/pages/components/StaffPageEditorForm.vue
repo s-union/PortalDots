@@ -18,9 +18,16 @@ const form = defineModel<MutateStaffPagePayload>({ required: true })
 const publishedAtInput = computed({
   get: () => formatDateTimeLocalValue(form.value.publishedAt ?? ''),
   set: (value: string) => {
-    form.value.publishedAt = parseDateTimeLocalValue(value, form.value.publishedAt ?? '')
+    const parsed = parseDateTimeLocalValue(value, form.value.publishedAt ?? '')
+    form.value.publishedAt = parsed.length > 0 ? parsed : null
   }
 })
+
+const publishedAtHelper = computed(() =>
+  form.value.isPublic
+    ? '未来の日時を指定すると、その時刻から公開される予約公開になります。空欄の場合はすぐに公開されます。日時は日本時間で指定してください。'
+    : '「公開する」がオフの間は、日時を指定してもお知らせは公開されません。予約公開するには「公開する」をオンにしてください。日時は日本時間で指定してください。'
+)
 
 const {
   availableTags,
@@ -85,11 +92,13 @@ function handleDocumentChange(documentId: string, event: Event) {
       <textarea v-model="form.notes" :class="cn(formControlVariants(), 'min-h-28')" name="notes" />
     </FormField>
 
-    <label class="grid gap-2 text-sm text-body">
-      <span class="font-medium">閲覧可能なタグ</span>
+    <FormField
+      label="閲覧可能なタグ"
+      label-class="font-medium"
+      helper="空欄なら全員に公開、指定すると一致する企画タグだけに限定公開します。"
+    >
       <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
-      <p class="text-xs text-muted">空欄なら全員に公開、指定すると一致する企画タグだけに限定公開します。</p>
-    </label>
+    </FormField>
 
     <fieldset class="grid gap-2 text-sm text-body">
       <legend class="font-medium">関連する配布資料</legend>
@@ -116,14 +125,26 @@ function handleDocumentChange(documentId: string, event: Event) {
 
     <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
 
-    <FormField label="公開日時" label-class="font-medium">
-      <input v-model="publishedAtInput" :class="formControlVariants()" name="publishedAt" type="datetime-local" />
-      <p class="text-xs text-muted">
-        未来の日時を指定すると、その時刻から公開される予約公開になります。空欄の場合はすぐに公開されます。
-      </p>
+    <FormField
+      label="公開日時（日本時間）"
+      label-class="font-medium"
+      :helper="publishedAtHelper"
+      :error="fieldErrors?.publishedAt"
+    >
+      <input
+        v-model="publishedAtInput"
+        :class="[formControlVariants(), { 'border-danger': fieldErrors?.publishedAt }]"
+        name="publishedAt"
+        type="datetime-local"
+      />
     </FormField>
 
-    <CheckboxField v-model="form.sendEmails" label="保存後にメール配信を予約する" name="sendEmails" />
+    <div class="grid gap-1">
+      <CheckboxField v-model="form.sendEmails" label="公開時にメールで配信する" name="sendEmails" />
+      <p class="text-xs text-muted">
+        公開日時になったタイミングでメールを配信します。公開日時が空欄または過去の日時の場合は、保存後1分以内に配信します。
+      </p>
+    </div>
 
     <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
     <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>

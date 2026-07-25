@@ -32,29 +32,7 @@ type EmailJob struct {
 
 type Sender interface {
 	Enqueue(ctx context.Context, job EmailJob) error
-	SyncScheduledPage(ctx context.Context, req ScheduledPageEmail) (SyncOutcome, error)
 }
-
-// ScheduledPageEmail reconciles the announcement email for a single page with
-// the email worker. The worker is the source of truth for any pending scheduled
-// email, keyed by GroupID (the page ID).
-type ScheduledPageEmail struct {
-	GroupID    string
-	IsPublic   bool
-	SendEmails bool
-	SendAt     time.Time
-	Payload    *EmailJob
-}
-
-type SyncOutcome string
-
-const (
-	SyncScheduled  SyncOutcome = "scheduled"
-	SyncUpdated    SyncOutcome = "updated"
-	SyncDispatched SyncOutcome = "dispatched"
-	SyncCancelled  SyncOutcome = "cancelled"
-	SyncUnchanged  SyncOutcome = "unchanged"
-)
 
 type NoopSender struct{}
 
@@ -70,27 +48,6 @@ func (NoopSender) Enqueue(_ context.Context, job EmailJob) error {
 		"verifyURL", job.Variables["verifyURL"],
 	)
 	return nil
-}
-
-func (NoopSender) SyncScheduledPage(_ context.Context, req ScheduledPageEmail) (SyncOutcome, error) {
-	slog.Info("email producer is not configured; skipping scheduled page email sync",
-		"kind", "email",
-		"group_id", req.GroupID,
-		"is_public", req.IsPublic,
-		"send_emails", req.SendEmails,
-	)
-	// deliberate: mirror the worker state machine so mail history, activity
-	// logs, and queued-mail observations still fire without an email producer.
-	if !req.IsPublic {
-		return SyncCancelled, nil
-	}
-	if req.SendEmails && req.Payload != nil {
-		if !req.SendAt.IsZero() && req.SendAt.After(time.Now()) {
-			return SyncScheduled, nil
-		}
-		return SyncDispatched, nil
-	}
-	return SyncUnchanged, nil
 }
 
 type ProducerClient struct {
@@ -135,55 +92,4 @@ func (c *ProducerClient) Enqueue(ctx context.Context, job EmailJob) error {
 		return fmt.Errorf("unexpected status: %d", resp.StatusCode)
 	}
 	return nil
-}
-
-func (c *ProducerClient) SyncScheduledPage(ctx context.Context, req ScheduledPageEmail) (SyncOutcome, error) {
-	wire := struct {
-		GroupID    string    `json:"groupId"`
-		IsPublic   bool      `json:"isPublic"`
-		SendEmails bool      `json:"sendEmails"`
-		SendAt     string    `json:"sendAt,omitempty"`
-		Payload    *EmailJob `json:"payload"`
-	}{
-		GroupID:    req.GroupID,
-		IsPublic:   req.IsPublic,
-		SendEmails: req.SendEmails,
-		Payload:    req.Payload,
-	}
-	if !req.SendAt.IsZero() {
-		wire.SendAt = req.SendAt.UTC().Format(time.RFC3339)
-	}
-
-	body, err := json.Marshal(wire)
-	if err != nil {
-		return SyncUnchanged, fmt.Errorf("marshal scheduled page email: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+"/scheduled/sync", bytes.NewReader(body))
-	if err != nil {
-		return SyncUnchanged, fmt.Errorf("create request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.AuthToken)
-
-	resp, err := c.HTTPClient.Do(httpReq)
-	if err != nil {
-		return SyncUnchanged, fmt.Errorf("send request: %w", err)
-	}
-	defer func() {
-		_, _ = io.Copy(io.Discard, resp.Body)
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return SyncUnchanged, fmt.Errorf("unexpected status: %d", resp.StatusCode)
-	}
-
-	var result struct {
-		Status SyncOutcome `json:"status"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return SyncUnchanged, fmt.Errorf("decode response: %w", err)
-	}
-	return result.Status, nil
 }

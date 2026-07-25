@@ -41,8 +41,5 @@
     {
       "name": "EMAIL"
     }
-  ],
-  "triggers": {
-    "crons": ["* * * * *"]
-  }
+  ]
 }

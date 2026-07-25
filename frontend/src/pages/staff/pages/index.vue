@@ -23,9 +23,13 @@ import { canUseMailQueue } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffPagesExportUrl,
+  resolveStaffPagePublishStatus,
+  staffPagePublishStatusLabels,
+  staffPagePublishStatusTones,
   useDeleteStaffPageByIdMutation,
   usePatchStaffPagePinByIdMutation,
-  useStaffPagesQuery
+  useStaffPagesQuery,
+  type StaffPagePublishStatus
 } from '@/features/staff/pages/api'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
@@ -78,7 +82,7 @@ const columns: StaffDataGridColumn[] = [
   { key: 'documents', label: '関連する配布資料' },
   { key: 'body', label: '本文' },
   { key: 'isPinned', label: '固定', sortable: true, align: 'center' },
-  { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
+  { key: 'isPublic', label: '公開状態', sortable: true, align: 'center' },
   { key: 'publishedAt', label: '公開日時', sortable: true },
   { key: 'notes', label: 'スタッフ用メモ' },
   { key: 'createdAt', label: '作成日時', sortable: true },
@@ -103,12 +107,25 @@ const rawRows = computed<StaffDataGridRow[]>(() =>
     body: page.body,
     isPinned: page.isPinned,
     isPublic: page.isPublic,
+    publishStatus: resolveStaffPagePublishStatus(page),
     createdAt: page.createdAt,
     updatedAt: page.updatedAt,
     publishedAt: page.publishedAt,
     notes: page.notes
   }))
 )
+
+function toPublishStatus(value: unknown): StaffPagePublishStatus {
+  return value === 'scheduled' || value === 'published' ? value : 'unpublished'
+}
+
+function publishStatusTone(value: unknown) {
+  return staffPagePublishStatusTones[toPublishStatus(value)]
+}
+
+function publishStatusLabel(value: unknown) {
+  return staffPagePublishStatusLabels[toPublishStatus(value)]
+}
 
 function resolveSortValue(row: StaffDataGridRow, key: StaffPageSortKey) {
   if (key === 'isPinned') {
@@ -313,8 +330,10 @@ async function handleReload() {
             <YesNo :value="value === true" />
           </template>
 
-          <template #cell-isPublic="{ value }">
-            <YesNo :value="value === true" />
+          <template #cell-isPublic="{ row }">
+            <StatusBadge :tone="publishStatusTone(row.publishStatus)" size="sm">
+              {{ publishStatusLabel(row.publishStatus) }}
+            </StatusBadge>
           </template>
 
           <template #cell-publishedAt="{ value }">

@@ -37,7 +37,9 @@ A single Cloudflare Worker that acts as both producer and consumer:
 2. Validates the `Authorization` header in the form `Bearer ${AUTH_TOKEN}`.
 3. Puts the job onto the Cloudflare Queue.
 
-It is stateless — it only bridges the Go backend to the queue. The token prevents unauthorized parties from injecting mail jobs.
+The Worker holds no scheduling state: it bridges the Go backend to the queue and nothing else decides *when* mail goes out. The token prevents unauthorized parties from injecting mail jobs.
+
+The one thing it does persist is idempotency bookkeeping in D1 (`email_jobs`, `email_job_chunks`), keyed by the caller's `jobId`. A chunk row is written only after the queue has accepted that chunk, so retrying a `jobId` sends exactly the chunks that were never accepted and nothing else. That is what makes `POST /enqueue` safe to call repeatedly, which the scheduled announcement mail path below relies on.
 
 **Consumer (`queue` handler):**
 1. Receives batched messages from the queue.
@@ -45,6 +47,32 @@ It is stateless — it only bridges the Go backend to the queue. The token preve
 3. On success, acknowledges the message. On failure, lets it retry according to queue policy.
 
 Two queues are configured with different batch settings: `email-high` (for time-sensitive mails like verification codes, batch size 1) and `email-normal` (for bulk notifications, batch size 10).
+
+---
+
+## Scheduled announcement mail
+
+A staff page ("announcement") can be published at a future time, and its announcement email is delivered at that same moment. PostgreSQL owns the schedule end to end; the Worker is not involved until the mail is actually due.
+
+`scheduled_page_mails` stores only the *intent* to send: a page ID, a stable job ID, and the staff member who asked for it. It deliberately holds neither the send time nor the mail body. Both are derived from the live `pages` row when the mail is dispatched, which is what makes the rest of the feature fall out for free:
+
+| Staff action | What makes it take effect |
+|---|---|
+| Deletes the page | `ON DELETE CASCADE` removes the intent row |
+| Unpublishes the page | The due query stops matching it |
+| Moves the publish time | The due query reads the new `published_at` |
+| Edits the body or the audience | The mail is rendered at dispatch time |
+
+`pagemail.Dispatcher` (`backend/internal/domain/pagemail/`) runs in-process, once a minute, started from `main.go` on a context cancelled by `SIGINT`/`SIGTERM`. Each tick claims due rows with `FOR UPDATE ... SKIP LOCKED`, re-reads each page, rebuilds the mail from it, and calls the Worker's `POST /enqueue`. A page is due only when it is publicly visible — `is_public = true AND published_at <= now()` — the same predicate the public API filters on, so mail can never precede visibility.
+
+Failures return the row to `pending` and count an attempt; after a handful of attempts the row moves to a terminal `failed` state so that one broken announcement cannot occupy the batch and starve later mail. A process that dies mid-dispatch leaves a row claimed; those are reclaimed after a timeout, and retrying is safe because the job ID is stable and the Worker deduplicates on it.
+
+Two consequences worth knowing:
+
+- Recipients are resolved **at delivery time**, not when the mail was scheduled. Somebody who joins between scheduling and publication receives it; somebody who loses access does not.
+- "Publish now" means "within about a minute", since delivery rides the same one-minute tick.
+
+Only operators holding the `pages.sendEmails` capability can create, retarget or clear a scheduled mail. Editing a page without that capability leaves any pending mail untouched.
 
 ---
 

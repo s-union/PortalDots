@@ -12,6 +12,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/platform/database"
+	"github.com/s-union/PortalDots/backend/internal/platform/email"
 	"github.com/s-union/PortalDots/backend/internal/testutil/dbtest"
 )
 
@@ -169,6 +170,7 @@ func newSQLCIntegrationServer(t *testing.T, cfg config.Config) *echo.Echo {
 
 	return NewServerWithDependencies(
 		cfg,
+		email.NewSender(cfg, dependencies.MailHistory),
 		dependencies.Activities,
 		dependencies.Answers,
 		dependencies.Authenticator,
@@ -184,6 +186,7 @@ func newSQLCIntegrationServer(t *testing.T, cfg config.Config) *echo.Echo {
 		dependencies.PendingRegistrations,
 		dependencies.ParticipationTypes,
 		dependencies.Places,
+		dependencies.ScheduledPageMails,
 		dependencies.Sessions,
 		dependencies.Tags,
 		dependencies.Users,

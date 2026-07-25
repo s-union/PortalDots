@@ -15,6 +15,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
+	"github.com/s-union/PortalDots/backend/internal/domain/pagemail"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
@@ -22,11 +23,13 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 )
 
 type SharedDependencies struct {
 	Activities  activitylog.Repository
 	Contacts    contact.Repository
+	EmailSender cloudflareemail.Sender
 	MailHistory mailhistory.Repository
 	Sessions    session.Store
 	Users       useradmin.Repository
@@ -66,6 +69,7 @@ type StaffDependencies struct {
 	Pages              page.Repository
 	ParticipationTypes participationtype.Repository
 	Places             place.Repository
+	ScheduledPageMails pagemail.Repository
 	Tags               tag.Repository
 	Users              useradmin.Repository
 }
@@ -84,6 +88,7 @@ func New(cfg config.Config) *echo.Echo {
 func NewWithDependencies(cfg config.Config, deps Dependencies) *echo.Echo {
 	return legacy.NewServerWithDependencies(
 		cfg,
+		deps.Shared.EmailSender,
 		deps.Shared.Activities,
 		deps.Workspace.Answers,
 		deps.Public.Authenticator,
@@ -99,6 +104,7 @@ func NewWithDependencies(cfg config.Config, deps Dependencies) *echo.Echo {
 		deps.Public.PendingRegistrations,
 		deps.Public.ParticipationTypes,
 		deps.Staff.Places,
+		deps.Staff.ScheduledPageMails,
 		deps.Shared.Sessions,
 		deps.Staff.Tags,
 		deps.Shared.Users,

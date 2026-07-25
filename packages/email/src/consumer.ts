@@ -3,7 +3,7 @@ import type { EmailJob } from './enqueue'
 
 const PROCESSING_STALE_AFTER_MS = 15 * 60 * 1000
 
-type JobStatus = 'queued' | 'enqueue_failed' | 'processing' | 'sent'
+type JobStatus = 'pending' | 'queued' | 'enqueue_failed' | 'processing' | 'sent'
 
 interface MessageStatus {
   jobStatus: JobStatus
@@ -73,7 +73,13 @@ export function parseEmailJob(value: unknown): EmailJob | null {
 }
 
 function isJobStatus(value: unknown): value is JobStatus {
-  return value === 'queued' || value === 'enqueue_failed' || value === 'processing' || value === 'sent'
+  return (
+    value === 'pending' ||
+    value === 'queued' ||
+    value === 'enqueue_failed' ||
+    value === 'processing' ||
+    value === 'sent'
+  )
 }
 
 function isStaleProcessing(updatedAt: string): boolean {
@@ -85,9 +91,11 @@ async function ensureMessageRecord(db: D1Database, job: EmailJob): Promise<void>
   const now = nowIso()
   await db
     .prepare(
+      // 'pending': this message was accepted by the queue, but nothing here proves
+      // the producer got the job's other chunks onto the queue.
       `INSERT OR IGNORE INTO email_jobs (
         job_id, status, template, priority, subject, recipients_count, chunk_count, created_at, updated_at
-      ) VALUES (?, 'queued', ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(job.jobId, job.template, job.priority, job.subject, job.to.length, job.chunkCount, now, now)
     .run()

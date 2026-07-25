@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
+	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
@@ -50,7 +51,7 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 	if formValue.CreatedByUserID != "" {
 		creator, err := h.users.Find(formValue.CreatedByUserID)
 		if err == nil {
-			staffRecipients := normalizeRecipients(collectUserEmailRecipients(creator))
+			staffRecipients := normalizeRecipients(useradmin.MailRecipients(creator))
 			if len(staffRecipients) > 0 {
 				subject := fmt.Sprintf("【スタッフ用控え】申請「%s」を承りました", formValue.Name)
 				body := answerValue.Body
@@ -88,5 +89,5 @@ func (h *workspaceHandlers) workspaceFormAnswerMailRecipients(targetCircleID str
 	if err != nil {
 		return nil
 	}
-	return normalizeRecipients(collectUsersEmailRecipients(users))
+	return normalizeRecipients(useradmin.MailRecipients(users...))
 }

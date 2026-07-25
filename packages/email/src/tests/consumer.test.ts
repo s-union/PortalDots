@@ -159,7 +159,7 @@ describe('email queue consumer', () => {
     const emailSend = vi.fn()
     const db = new TestD1Database()
     db.jobs.set('job-1', { status: 'queued' })
-    db.chunks.set('job-1:0', { jobId: 'job-1', status: 'sent', updatedAt: new Date().toISOString() })
+    db.chunks.set('job-1:0', { jobId: 'job-1', chunkIndex: 0, status: 'sent', updatedAt: new Date().toISOString() })
 
     const batch = createMessageBatch([
       {

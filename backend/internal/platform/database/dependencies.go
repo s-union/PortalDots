@@ -15,6 +15,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
+	"github.com/s-union/PortalDots/backend/internal/domain/pagemail"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
@@ -40,6 +41,7 @@ type Dependencies struct {
 	PendingRegistrations pendingregistration.Repository
 	ParticipationTypes   participationtype.Repository
 	Places               place.Repository
+	ScheduledPageMails   pagemail.Repository
 	Sessions             session.Store
 	Tags                 tag.Repository
 	Users                useradmin.Repository
@@ -80,6 +82,7 @@ func BuildDependencies(ctx context.Context, cfg config.Config) (Dependencies, er
 		PendingRegistrations: pendingregistration.NewSQLCRepository(queries),
 		ParticipationTypes:   participationtype.NewCachedRepository(participationtype.NewSQLCRepository(queries)),
 		Places:               place.NewCachedRepository(place.NewSQLCRepository(queries)),
+		ScheduledPageMails:   pagemail.NewSQLCRepository(queries),
 		Sessions:             session.NewSQLCStore(queries, cfg.SessionTTL),
 		Tags:                 tag.NewCachedRepository(tag.NewSQLCRepository(queries)),
 		Users:                useradmin.NewSQLCRepository(store.Pool(), queries),

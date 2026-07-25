@@ -711,6 +711,10 @@ paths:
                 publishedAt:
                   type: string
                   format: date-time
+                  nullable: true
+                  description: >-
+                    Publish time of the notice. Null publishes it immediately;
+                    an RFC 3339 timestamp schedules it for that time.
       responses:
         "201":
           description: Created page
@@ -908,6 +912,10 @@ paths:
                 publishedAt:
                   type: string
                   format: date-time
+                  nullable: true
+                  description: >-
+                    Publish time of the notice. Null publishes it immediately;
+                    an RFC 3339 timestamp schedules it for that time.
       responses:
         "200":
           description: Updated page

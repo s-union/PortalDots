@@ -44,8 +44,7 @@ export function runResult(changes: number): D1RunResult {
  */
 export class TestD1Database {
   readonly jobs = new Map<string, { status: string; chunkCount?: number }>()
-  readonly chunks = new Map<string, { jobId: string; status: string; updatedAt: string }>()
-  readonly scheduled = new Map<string, { status: string; sendAt: string; payload: string; updatedAt: string }>()
+  readonly chunks = new Map<string, { jobId: string; chunkIndex: number; status: string; updatedAt: string }>()
   failSentUpdate = false
 
   prepare(query: string): TestD1Statement {
@@ -58,37 +57,27 @@ export class TestD1Database {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async run(query: string, values: unknown[]): Promise<D1RunResult> {
-    // --- producer patterns (strict INSERT) ---
-    if (query.includes('INSERT INTO email_jobs') && !query.includes('OR IGNORE')) {
+    // --- insert patterns (producer: ON CONFLICT DO NOTHING, consumer: INSERT OR IGNORE) ---
+    if (query.includes('INTO email_jobs')) {
       const jobId = String(values[0])
       if (this.jobs.has(jobId)) {
-        throw new Error('SQLITE_CONSTRAINT: UNIQUE constraint failed: email_jobs.job_id')
+        return runResult(0)
       }
-      this.jobs.set(jobId, { status: 'queued', chunkCount: Number(values[5]) })
+      this.jobs.set(jobId, { status: 'pending', chunkCount: Number(values[5]) })
       return runResult(1)
     }
-    if (query.includes('INSERT INTO email_job_chunks') && !query.includes('OR IGNORE')) {
+    if (query.includes('INTO email_job_chunks')) {
       const messageId = String(values[0])
-      this.chunks.set(messageId, { jobId: String(values[1]), status: 'queued', updatedAt: String(values[6]) })
+      if (this.chunks.has(messageId)) {
+        return runResult(0)
+      }
+      this.chunks.set(messageId, {
+        jobId: String(values[1]),
+        chunkIndex: Number(values[2]),
+        status: 'queued',
+        updatedAt: String(values[6])
+      })
       return runResult(1)
-    }
-
-    // --- consumer patterns (INSERT OR IGNORE) ---
-    if (query.includes('INSERT OR IGNORE INTO email_jobs')) {
-      const jobId = String(values[0])
-      if (!this.jobs.has(jobId)) {
-        this.jobs.set(jobId, { status: 'queued' })
-        return runResult(1)
-      }
-      return runResult(0)
-    }
-    if (query.includes('INSERT OR IGNORE INTO email_job_chunks')) {
-      const messageId = String(values[0])
-      if (!this.chunks.has(messageId)) {
-        this.chunks.set(messageId, { jobId: String(values[1]), status: 'queued', updatedAt: String(values[6]) })
-        return runResult(1)
-      }
-      return runResult(0)
     }
 
     // --- shared update patterns ---
@@ -130,61 +119,32 @@ export class TestD1Database {
       }
       return runResult(0)
     }
+    // Mirrors the producer's "never regress a job the consumer advanced" guard.
+    const blockedByGuard = (status: string): boolean =>
+      query.includes("NOT IN ('processing', 'sent')") && (status === 'processing' || status === 'sent')
+
     if (query.includes("UPDATE email_jobs SET status = 'queued'")) {
       const job = this.jobs.get(String(values[1]))
-      if (job) job.status = 'queued'
-      return runResult(job ? 1 : 0)
+      if (!job || blockedByGuard(job.status)) return runResult(0)
+      job.status = 'queued'
+      return runResult(1)
     }
     if (query.includes("UPDATE email_jobs SET status = 'enqueue_failed'")) {
       const job = this.jobs.get(String(values[2]))
-      if (job) job.status = 'enqueue_failed'
-      return runResult(job ? 1 : 0)
+      if (!job || blockedByGuard(job.status)) return runResult(0)
+      job.status = 'enqueue_failed'
+      return runResult(1)
     }
     if (query.includes("SET status = 'enqueue_failed'") && query.includes('email_job_chunks')) {
       const chunk = this.chunks.get(String(values[2]))
       if (chunk) chunk.status = 'enqueue_failed'
       return runResult(chunk ? 1 : 0)
     }
-
-    // --- scheduled_emails patterns ---
-    if (query.includes('INSERT INTO scheduled_emails')) {
-      const groupId = String(values[0])
-      this.scheduled.set(groupId, {
-        status: 'scheduled',
-        sendAt: String(values[1]),
-        payload: String(values[2]),
-        updatedAt: String(values[4])
-      })
-      return runResult(1)
-    }
-    if (query.includes('UPDATE scheduled_emails') && query.includes("SET status = 'cancelled'")) {
-      const groupId = String(values[1])
-      const record = this.scheduled.get(groupId)
-      if (record && record.status === 'scheduled') {
-        record.status = 'cancelled'
-        record.updatedAt = String(values[0])
-        return runResult(1)
-      }
-      return runResult(0)
-    }
-    if (query.includes('UPDATE scheduled_emails') && query.includes("SET status = 'fired'")) {
-      const record = this.scheduled.get(String(values[1]))
-      if (record && record.status === 'scheduled' && record.updatedAt === String(values[2])) {
-        record.status = 'fired'
-        record.updatedAt = String(values[0])
-        return runResult(1)
-      }
-      return runResult(0)
-    }
     return runResult(0)
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async first<T>(query: string, values: unknown[]): Promise<T | null> {
-    if (query.includes('SELECT status FROM email_jobs')) {
-      const job = this.jobs.get(String(values[0]))
-      return (job ? { status: job.status } : null) as T | null
-    }
     if (query.includes('FROM email_jobs') && query.includes('JOIN email_job_chunks')) {
       const job = this.jobs.get(String(values[0]))
       const chunk = this.chunks.get(String(values[1]))
@@ -195,35 +155,16 @@ export class TestD1Database {
         chunk_updated_at: chunk.updatedAt
       } as T
     }
-    if (query.includes('FROM scheduled_emails') && query.includes('WHERE group_id = ?')) {
-      const record = this.scheduled.get(String(values[0]))
-      if (!record) return null
-      return {
-        group_id: String(values[0]),
-        status: record.status,
-        send_at: record.sendAt,
-        payload: record.payload,
-        updated_at: record.updatedAt
-      } as T
-    }
     return null
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async all<T>(query: string, values: unknown[]): Promise<{ results: T[]; success: true; meta: { changes: number } }> {
-    if (query.includes('FROM scheduled_emails') && query.includes('send_at <= ?')) {
-      const now = String(values[0])
-      const results = Array.from(this.scheduled.entries())
-        .filter(([, record]) => record.status === 'scheduled' && record.sendAt <= now)
-        .sort(([, a], [, b]) => (a.sendAt < b.sendAt ? -1 : a.sendAt > b.sendAt ? 1 : 0))
-        .slice(0, 100) // mirrors ORDER BY send_at LIMIT 100
-        .map(([groupId, record]) => ({
-          group_id: groupId,
-          status: record.status,
-          send_at: record.sendAt,
-          payload: record.payload,
-          updated_at: record.updatedAt
-        }))
+    if (query.includes('SELECT chunk_index FROM email_job_chunks')) {
+      const jobId = String(values[0])
+      const results = Array.from(this.chunks.values())
+        .filter((chunk) => chunk.jobId === jobId)
+        .map((chunk) => ({ chunk_index: chunk.chunkIndex }))
       return { results: results as T[], success: true, meta: { changes: 0 } }
     }
     return { results: [], success: true, meta: { changes: 0 } }

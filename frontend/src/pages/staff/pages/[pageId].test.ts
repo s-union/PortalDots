@@ -150,7 +150,7 @@ describe('StaffPageDetailPage', () => {
       expect(wrapper.text()).toContain('展示ガイド')
     })
     expect(wrapper.text()).toContain('展示')
-    expect(wrapper.text()).toContain('保存後にメール配信を予約する')
+    expect(wrapper.text()).toContain('公開時にメールで配信する')
 
     await wrapper.get('input[name="title"]').setValue('展示担当向け更新連絡')
     await wrapper.get('textarea[name="body"]').setValue('更新後本文です。')
@@ -184,7 +184,7 @@ describe('StaffPageDetailPage', () => {
     expect(router.currentRoute.value.fullPath).toBe('/staff/pages')
   })
 
-  it('sends an empty publishedAt to publish immediately when the schedule is cleared', async () => {
+  it('sends a null publishedAt to publish immediately when the schedule is cleared', async () => {
     let updatedRequestBody: Record<string, unknown> | null = null
 
     server.use(
@@ -198,7 +198,7 @@ describe('StaffPageDetailPage', () => {
           notes: '',
           createdAt: '2026-03-05T10:00:00Z',
           updatedAt: '2026-03-05T10:00:00Z',
-          publishedAt: '2027-01-15T10:00:00Z',
+          publishedAt: '2099-01-15T10:00:00Z',
           isPinned: false,
           isPublic: true,
           viewableTags: [],
@@ -258,8 +258,11 @@ describe('StaffPageDetailPage', () => {
     await flushPromises()
 
     await vi.waitFor(() => {
-      expect(wrapper.get('input[name="publishedAt"]').element).toHaveProperty('value', '2027-01-15T19:00')
+      expect(wrapper.get('input[name="publishedAt"]').element).toHaveProperty('value', '2099-01-15T19:00')
     })
+
+    expect(wrapper.text()).toContain('予約公開: 2099年1月15日(木) 19:00')
+    expect(wrapper.text()).not.toContain('公開中')
 
     await wrapper.get('input[name="publishedAt"]').setValue('')
     await wrapper.get('form').trigger('submit')
@@ -267,6 +270,81 @@ describe('StaffPageDetailPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('お知らせを更新しました。')
-    expect(updatedRequestBody).toMatchObject({ publishedAt: '' })
+    expect(updatedRequestBody).toMatchObject({ publishedAt: null })
+  })
+
+  it('shows the publish time validation error next to the field', async () => {
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([])),
+      http.get('/v1/staff/documents', () => HttpResponse.json([])),
+      http.get('/v1/staff/pages/page-circle-b-1', () =>
+        HttpResponse.json({
+          id: 'page-circle-b-1',
+          title: '予約公開のお知らせ',
+          body: '初期本文です。',
+          notes: '',
+          createdAt: '2026-03-05T10:00:00Z',
+          updatedAt: '2026-03-05T10:00:00Z',
+          publishedAt: '2099-01-15T10:00:00Z',
+          isPinned: false,
+          isPublic: true,
+          viewableTags: [],
+          documentIds: [],
+          documents: []
+        })
+      ),
+      http.put('/v1/staff/pages/page-circle-b-1', () =>
+        HttpResponse.json(
+          {
+            message: '入力内容を確認してください。',
+            errors: { publishedAt: ['公開日時が正しくありません'] }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: {
+        id: 'circle-b',
+        name: 'デモ企画B'
+      },
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/staff/pages/:pageId', component: StaffPageDetailPage }]
+    })
+    await router.push('/staff/pages/page-circle-b-1')
+    await router.isReady()
+
+    const wrapper = mount(StaffPageDetailPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await vi.waitFor(() => {
+      expect(wrapper.get('input[name="publishedAt"]').element).toHaveProperty('value', '2099-01-15T19:00')
+    })
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await flushPromises()
+
+    const publishedAtField = wrapper.get('input[name="publishedAt"]').element.closest('label')
+    expect(publishedAtField?.textContent).toContain('公開日時が正しくありません')
   })
 })

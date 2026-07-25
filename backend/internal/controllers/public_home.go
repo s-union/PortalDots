@@ -263,7 +263,7 @@ func (h *publicHomeHandlers) collectPinnedPublicPages(ctx context.Context, circl
 			if len(currentPage.ViewableTags) > 0 {
 				continue
 			}
-		} else if !pageVisibleToCircleTags(currentPage.ViewableTags, circleTags) {
+		} else if !page.VisibleToCircleTags(currentPage.ViewableTags, circleTags) {
 			continue
 		}
 		pages = append(pages, publicPinnedPageResponse{
@@ -299,7 +299,7 @@ func (h *publicHomeHandlers) currentPublicHomeCircleTags(c *echo.Context) []stri
 		return nil
 	}
 
-	return effectiveCircleTags(c.Request().Context(), currentCircle, h.participationTypes)
+	return circle.EffectiveTags(c.Request().Context(), currentCircle, h.participationTypes)
 }
 
 func (h *publicHomeHandlers) collectPublicDocuments(limit int) []publicHomeDocumentResponse {

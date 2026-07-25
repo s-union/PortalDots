@@ -1,4 +1,6 @@
 import { Hono } from 'hono'
+import { bearerAuth } from 'hono/bearer-auth'
+import { bodyLimit } from 'hono/body-limit'
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import { sValidator } from '@hono/standard-validator'
@@ -28,9 +30,9 @@ export type Env = {
 }
 
 const MAX_RECIPIENTS_PER_MESSAGE = 50
+// deliberate: ~25k recipients worth of JSON; raise if a single job ever needs more
+const MAX_BODY_BYTES = 1024 * 1024
 const knownTemplates = ['markdown-notice', 'registration-verify', 'staff-auth-notice'] as const
-
-type ScheduledStatus = 'scheduled' | 'fired' | 'cancelled'
 
 interface DispatchPayload {
   jobId: string
@@ -47,13 +49,11 @@ function nowIso(): string {
   return new Date().toISOString()
 }
 
-function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    (error.message.includes('SQLITE_CONSTRAINT') || error.message.includes('UNIQUE constraint'))
-  )
-}
-
+/**
+ * Split recipients into fixed-size chunks. Pure function of `arr`: chunk `i`
+ * holds the same recipients on every retry as long as the caller replays the
+ * identical payload, which is what keeps `<jobId>:<index>` message ids stable.
+ */
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = []
   for (let i = 0; i < arr.length; i += size) {
@@ -62,21 +62,20 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return chunks
 }
 
-const auth = createMiddleware<{ Bindings: Env }>(async (c, next) => {
-  const authHeader = c.req.header('Authorization')
-  const expectedToken = c.env.AUTH_TOKEN
-  if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
-    throw new HTTPException(401, { message: 'Unauthorized' })
+const auth = createMiddleware<{ Bindings: Env }>((c, next) => {
+  const token = c.env.AUTH_TOKEN
+  if (!token) {
+    throw new HTTPException(500, { message: 'AUTH_TOKEN is not configured' })
   }
-  await next()
+  return bearerAuth<{ Bindings: Env }>({ token })(c, next)
 })
 
-async function getExistingJobStatus(db: D1Database, jobId: string): Promise<string | null> {
-  const row = await db.prepare('SELECT status FROM email_jobs WHERE job_id = ?').bind(jobId).first<{ status: string }>()
-  return row?.status ?? null
-}
-
-async function createJobRecord(
+/**
+ * Insert the job row in its initial `pending` state, meaning "no chunk has been
+ * accepted by the queue yet". Idempotent: a retry of the same job id keeps the
+ * row created by the previous attempt.
+ */
+async function ensureJobRecord(
   db: D1Database,
   job: {
     jobId: string
@@ -86,24 +85,36 @@ async function createJobRecord(
     recipientsCount: number
     chunkCount: number
   }
-): Promise<{ created: true } | { created: false; status: string | null }> {
+): Promise<void> {
   const now = nowIso()
-  try {
-    await db
-      .prepare(
-        `INSERT INTO email_jobs (
-          job_id, status, template, priority, subject, recipients_count, chunk_count, created_at, updated_at
-        ) VALUES (?, 'queued', ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .bind(job.jobId, job.template, job.priority, job.subject, job.recipientsCount, job.chunkCount, now, now)
-      .run()
-    return { created: true }
-  } catch (error) {
-    if (!isUniqueConstraintError(error)) {
-      throw error
+  await db
+    .prepare(
+      `INSERT INTO email_jobs (
+        job_id, status, template, priority, subject, recipients_count, chunk_count, created_at, updated_at
+      ) VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(job_id) DO NOTHING`
+    )
+    .bind(job.jobId, job.template, job.priority, job.subject, job.recipientsCount, job.chunkCount, now, now)
+    .run()
+}
+
+/**
+ * Chunk indexes the queue has already accepted for this job. A chunk row is
+ * only written after `queue.send` returned (or by the consumer, which can only
+ * see a message the queue accepted), so its existence never over-reports.
+ */
+async function listAcceptedChunkIndexes(db: D1Database, jobId: string): Promise<Set<number>> {
+  const { results } = await db
+    .prepare('SELECT chunk_index FROM email_job_chunks WHERE job_id = ?')
+    .bind(jobId)
+    .all<{ chunk_index: unknown }>()
+  const indexes = new Set<number>()
+  for (const row of results) {
+    if (typeof row.chunk_index === 'number') {
+      indexes.add(row.chunk_index)
     }
-    return { created: false, status: await getExistingJobStatus(db, job.jobId) }
   }
+  return indexes
 }
 
 async function createChunkRecord(
@@ -121,63 +132,54 @@ async function createChunkRecord(
     .prepare(
       `INSERT INTO email_job_chunks (
         message_id, job_id, chunk_index, chunk_count, status, recipients_count, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, 'queued', ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, 'queued', ?, ?, ?)
+      ON CONFLICT(message_id) DO NOTHING`
     )
     .bind(chunk.messageId, chunk.jobId, chunk.chunkIndex, chunk.chunkCount, chunk.recipientsCount, now, now)
     .run()
 }
 
+// Both transitions leave a job the consumer already advanced alone: a producer
+// retry must never pull 'processing'/'sent' back to a producer-side status.
 async function markJobQueued(db: D1Database, jobId: string): Promise<void> {
   await db
-    .prepare("UPDATE email_jobs SET status = 'queued', updated_at = ?, last_error = NULL WHERE job_id = ?")
+    .prepare(
+      `UPDATE email_jobs SET status = 'queued', updated_at = ?, last_error = NULL
+       WHERE job_id = ? AND status NOT IN ('processing', 'sent')`
+    )
     .bind(nowIso(), jobId)
     .run()
 }
 
-async function markEnqueueFailed(
-  db: D1Database,
-  jobId: string,
-  messageId: string | null,
-  error: unknown
-): Promise<void> {
+async function markEnqueueFailed(db: D1Database, jobId: string, error: unknown): Promise<void> {
   const message = error instanceof Error ? error.message : 'Unknown enqueue error'
-  const now = nowIso()
-  const statements = [
-    db
-      .prepare("UPDATE email_jobs SET status = 'enqueue_failed', updated_at = ?, last_error = ? WHERE job_id = ?")
-      .bind(now, message, jobId)
-  ]
-  if (messageId) {
-    statements.push(
-      db
-        .prepare(
-          "UPDATE email_job_chunks SET status = 'enqueue_failed', updated_at = ?, last_error = ? WHERE message_id = ?"
-        )
-        .bind(now, message, messageId)
+  await db
+    .prepare(
+      `UPDATE email_jobs SET status = 'enqueue_failed', updated_at = ?, last_error = ?
+       WHERE job_id = ? AND status NOT IN ('processing', 'sent')`
     )
-  }
-  await db.batch(statements)
+    .bind(nowIso(), message, jobId)
+    .run()
 }
 
-/** Result of a dispatch attempt: `queued` for a new job, `duplicate` when the job id already exists. */
-export interface DispatchResult {
-  status: 'queued' | 'duplicate'
+interface DispatchResult {
+  status: 'queued'
   jobId: string
   priority: EmailPriority
   messageCount: number
-  existingStatus?: string | null
 }
 
 /**
- * Chunk the recipients, record the job/chunks in D1 and push the chunks onto the
- * appropriate queue. Shared by the immediate `/enqueue` path and the scheduled
- * fire path (cron).
+ * Record the job in D1 and push every chunk that the queue has not accepted yet.
+ * Safe to call repeatedly with the same `jobId`: chunks already accepted are
+ * skipped, so a retry completes a partially enqueued job instead of duplicating
+ * or abandoning it. Returns once the queue holds every chunk of the job.
  */
-export async function dispatchJob(env: Env, payload: DispatchPayload): Promise<DispatchResult> {
+async function dispatchJob(env: Env, payload: DispatchPayload): Promise<DispatchResult> {
   const queue = payload.priority === 'high' ? env.HIGH_QUEUE : env.NORMAL_QUEUE
   const chunks = chunkArray(payload.to, MAX_RECIPIENTS_PER_MESSAGE)
 
-  const jobRecord = await createJobRecord(env.DB, {
+  await ensureJobRecord(env.DB, {
     jobId: payload.jobId,
     template: payload.template,
     priority: payload.priority,
@@ -186,75 +188,69 @@ export async function dispatchJob(env: Env, payload: DispatchPayload): Promise<D
     chunkCount: chunks.length
   })
 
-  if (!jobRecord.created) {
-    return {
-      status: 'duplicate',
-      jobId: payload.jobId,
-      priority: payload.priority,
-      messageCount: 0,
-      existingStatus: jobRecord.status
-    }
-  }
-
-  let currentMessageId: string | null = null
   try {
-    for (const [index, chunk] of chunks.entries()) {
-      currentMessageId = `${payload.jobId}:${index}`
-      await createChunkRecord(env.DB, {
-        messageId: currentMessageId,
-        jobId: payload.jobId,
-        chunkIndex: index,
-        chunkCount: chunks.length,
-        recipientsCount: chunk.length
-      })
+    const accepted = await listAcceptedChunkIndexes(env.DB, payload.jobId)
+    let sentCount = 0
+    for (const [index, recipients] of chunks.entries()) {
+      if (accepted.has(index)) {
+        continue
+      }
+      const messageId = `${payload.jobId}:${index}`
       await queue.send({
         jobId: payload.jobId,
-        messageId: currentMessageId,
+        messageId,
         chunkIndex: index,
         chunkCount: chunks.length,
         template: payload.template,
         priority: payload.priority,
         from: payload.from,
-        to: chunk,
+        to: recipients,
         subject: payload.subject,
         body: payload.body,
         variables: payload.variables
       })
+      await createChunkRecord(env.DB, {
+        messageId,
+        jobId: payload.jobId,
+        chunkIndex: index,
+        chunkCount: chunks.length,
+        recipientsCount: recipients.length
+      })
+      sentCount++
     }
     await markJobQueued(env.DB, payload.jobId)
+
+    console.info('Email job queued', {
+      jobId: payload.jobId,
+      template: payload.template,
+      priority: payload.priority,
+      messageCount: chunks.length,
+      sentCount,
+      recipientsCount: payload.to.length
+    })
+
+    return {
+      status: 'queued',
+      jobId: payload.jobId,
+      priority: payload.priority,
+      messageCount: chunks.length
+    }
   } catch (error) {
-    await markEnqueueFailed(env.DB, payload.jobId, currentMessageId, error)
+    await markEnqueueFailed(env.DB, payload.jobId, error)
     throw error
-  }
-
-  console.info('Email job queued', {
-    jobId: payload.jobId,
-    template: payload.template,
-    priority: payload.priority,
-    messageCount: chunks.length,
-    recipientsCount: payload.to.length
-  })
-
-  return {
-    status: 'queued',
-    jobId: payload.jobId,
-    priority: payload.priority,
-    messageCount: chunks.length
   }
 }
 
-const emailPayloadShape = {
+const enqueueRequestSchema = z.object({
   jobId: z.string().min(1),
   template: z.enum(knownTemplates),
   priority: z.enum(['high', 'normal']).optional(),
   from: z.string().email(),
-  to: z.union([z.string().email(), z.array(z.string().email())]),
+  to: z.union([z.string().email(), z.array(z.string().email()).min(1)]),
   subject: z.string().min(1),
   body: z.string().optional(),
   variables: z.record(z.string(), z.string()).default({})
-}
-
-const enqueueRequestSchema = z.object(emailPayloadShape)
+})
 
 function toDispatchPayload(body: z.infer<typeof enqueueRequestSchema>): DispatchPayload {
   return {
@@ -269,156 +265,12 @@ function toDispatchPayload(body: z.infer<typeof enqueueRequestSchema>): Dispatch
   }
 }
 
-interface ScheduledEmailRow {
-  group_id: string
-  status: ScheduledStatus
-  send_at: string
-  payload: string
-  updated_at: string
-}
-
-async function getScheduledEmail(db: D1Database, groupId: string): Promise<ScheduledEmailRow | null> {
-  return db
-    .prepare('SELECT group_id, status, send_at, payload, updated_at FROM scheduled_emails WHERE group_id = ?')
-    .bind(groupId)
-    .first<ScheduledEmailRow>()
-}
-
-async function upsertScheduledEmail(
-  db: D1Database,
-  record: { groupId: string; sendAt: string; payload: string }
-): Promise<void> {
-  const now = nowIso()
-  await db
-    .prepare(
-      `INSERT INTO scheduled_emails (group_id, status, send_at, payload, created_at, updated_at)
-       VALUES (?, 'scheduled', ?, ?, ?, ?)
-       ON CONFLICT(group_id) DO UPDATE SET status = 'scheduled', send_at = excluded.send_at,
-         payload = excluded.payload, updated_at = excluded.updated_at`
-    )
-    .bind(record.groupId, record.sendAt, record.payload, now, now)
-    .run()
-}
-
-async function cancelScheduledEmail(db: D1Database, groupId: string): Promise<void> {
-  await db
-    .prepare(
-      "UPDATE scheduled_emails SET status = 'cancelled', updated_at = ? WHERE group_id = ? AND status = 'scheduled'"
-    )
-    .bind(nowIso(), groupId)
-    .run()
-}
-
-// Optimistic lock: only mark rows still 'scheduled' with the same updated_at observed
-// by the due listing, so a concurrent /scheduled/sync update or cancel wins.
-async function markScheduledFired(db: D1Database, groupId: string, expectedUpdatedAt: string): Promise<number> {
-  const result = await db
-    .prepare(
-      "UPDATE scheduled_emails SET status = 'fired', updated_at = ? WHERE group_id = ? AND status = 'scheduled' AND updated_at = ?"
-    )
-    .bind(nowIso(), groupId, expectedUpdatedAt)
-    .run()
-  return result.meta.changes
-}
-
-async function listDueScheduledEmails(db: D1Database, now: string): Promise<ScheduledEmailRow[]> {
-  return db
-    .prepare(
-      // deliberate: bounded batch — drain at most 100 due rows per cron run so a large backlog cannot stall firing
-      "SELECT group_id, status, send_at, payload, updated_at FROM scheduled_emails WHERE status = 'scheduled' AND send_at <= ? ORDER BY send_at LIMIT 100"
-    )
-    .bind(now)
-    .all<ScheduledEmailRow>()
-    .then((result) => result.results)
-}
-
-/** Statuses of an existing email_jobs row that mean delivery is already underway or done. */
-const deliveredJobStatuses = new Set(['queued', 'processing', 'sent'])
-
-function parseStoredPayload(raw: string): DispatchPayload | null {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return null
-  }
-  const result = enqueueRequestSchema.safeParse(parsed)
-  return result.success ? toDispatchPayload(result.data) : null
-}
-
-/**
- * Fire every scheduled email whose send_at has passed. Invoked by the Cron
- * trigger. Each due row is dispatched through the normal queue path and marked
- * 'fired' only once delivery is confirmed; rows that fail to dispatch stay
- * 'scheduled' so the next cron run retries them. Returns the number of rows
- * marked 'fired' in this run.
- */
-export async function fireDueScheduledEmails(env: Env): Promise<number> {
-  const due = await listDueScheduledEmails(env.DB, nowIso())
-  let fired = 0
-  for (const row of due) {
-    try {
-      const payload = parseStoredPayload(row.payload)
-      if (!payload) {
-        // deliberate: poison payloads are cancelled, not retried every minute forever
-        console.error('Invalid scheduled email payload; cancelling', { groupId: row.group_id })
-        await cancelScheduledEmail(env.DB, row.group_id)
-        continue
-      }
-      const result = await dispatchJob(env, payload)
-      const delivered =
-        result.status === 'queued' ||
-        (result.status === 'duplicate' &&
-          result.existingStatus != null &&
-          deliveredJobStatuses.has(result.existingStatus))
-      if (!delivered) {
-        console.error('Scheduled email was not delivered; leaving scheduled for retry', {
-          groupId: row.group_id,
-          jobId: result.jobId,
-          existingStatus: result.existingStatus
-        })
-        continue
-      }
-      if ((await markScheduledFired(env.DB, row.group_id, row.updated_at)) === 1) {
-        fired++
-      }
-    } catch (error) {
-      console.error('Failed to fire scheduled email', { groupId: row.group_id, error })
-    }
-  }
-  return fired
-}
-
-const syncRequestSchema = z.object({
-  groupId: z.string().min(1),
-  isPublic: z.boolean(),
-  sendEmails: z.boolean(),
-  // ISO 8601 with Z or an explicit UTC offset; normalized to UTC ISO before storage
-  sendAt: z.iso.datetime({ offset: true }).optional(),
-  payload: z.object(emailPayloadShape).nullable()
-})
-
-/** Outcome of a `/scheduled/sync` state-machine transition. */
-export type SyncOutcome = 'scheduled' | 'updated' | 'dispatched' | 'cancelled' | 'unchanged'
-
-function isFutureSend(sendAt: string | undefined): sendAt is string {
-  if (!sendAt) {
-    return false
-  }
-  const sendTime = Date.parse(sendAt)
-  return Number.isFinite(sendTime) && sendTime > Date.now()
-}
-
-/** Normalize a schema-validated ISO datetime to UTC so string comparisons in SQL stay chronological. */
-function normalizeSendAt(sendAt: string): string {
-  return new Date(sendAt).toISOString()
-}
-
-/** Hono app exposing the email producer API (`/enqueue`, `/scheduled/sync`). */
+/** Hono app exposing the email producer API (`/enqueue`). */
 export const app = new Hono<{ Bindings: Env }>()
   .use('*', auth)
   .post(
     '/enqueue',
+    bodyLimit({ maxSize: MAX_BODY_BYTES, onError: (c) => c.json({ error: 'Request body too large' }, 413) }),
     sValidator('json', enqueueRequestSchema, (result, c) => {
       if (!result.success) {
         return c.json({ error: 'Invalid request', issues: result.error }, 400)
@@ -426,9 +278,6 @@ export const app = new Hono<{ Bindings: Env }>()
     }),
     async (c) => {
       const payload = toDispatchPayload(c.req.valid('json'))
-      if (payload.to.length === 0) {
-        throw new HTTPException(400, { message: 'No recipients' })
-      }
       try {
         const result = await dispatchJob(c.env, payload)
         return c.json({ success: true, ...result })
@@ -438,66 +287,13 @@ export const app = new Hono<{ Bindings: Env }>()
       }
     }
   )
-  .post(
-    '/scheduled/sync',
-    sValidator('json', syncRequestSchema, (result, c) => {
-      if (!result.success) {
-        return c.json({ error: 'Invalid request', issues: result.error }, 400)
-      }
-    }),
-    async (c) => {
-      const request = c.req.valid('json')
-
-      if (!request.isPublic) {
-        await cancelScheduledEmail(c.env.DB, request.groupId)
-        return c.json({ success: true, status: 'cancelled' })
-      }
-
-      const existing = await getScheduledEmail(c.env.DB, request.groupId)
-      const hasPending = existing?.status === 'scheduled'
-
-      if (hasPending && request.payload) {
-        await upsertScheduledEmail(c.env.DB, {
-          groupId: request.groupId,
-          sendAt: normalizeSendAt(request.sendAt ?? nowIso()),
-          payload: JSON.stringify(toDispatchPayload(request.payload))
-        })
-        return c.json({ success: true, status: 'updated' })
-      }
-
-      if (request.sendEmails && request.payload) {
-        const payload = toDispatchPayload(request.payload)
-        if (payload.to.length === 0) {
-          throw new HTTPException(400, { message: 'No recipients' })
-        }
-        if (isFutureSend(request.sendAt)) {
-          await upsertScheduledEmail(c.env.DB, {
-            groupId: request.groupId,
-            sendAt: normalizeSendAt(request.sendAt),
-            payload: JSON.stringify(payload)
-          })
-          return c.json({ success: true, status: 'scheduled' })
-        }
-        try {
-          await dispatchJob(c.env, payload)
-        } catch (error) {
-          console.error('Email dispatch failed', { groupId: request.groupId, error })
-          throw new HTTPException(500, { message: 'Dispatch failed' })
-        }
-        return c.json({ success: true, status: 'dispatched' })
-      }
-
-      return c.json({ success: true, status: 'unchanged' })
+  .onError((error, c) => {
+    if (error instanceof HTTPException) {
+      return error.getResponse()
     }
-  )
-
-app.onError((error, c) => {
-  if (error instanceof HTTPException) {
-    return error.getResponse()
-  }
-  if (error instanceof SyntaxError) {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-  console.error('Unhandled error', { error })
-  return c.json({ error: 'Internal Server Error' }, 500)
-})
+    if (error instanceof SyntaxError) {
+      return c.json({ error: 'Invalid JSON body' }, 400)
+    }
+    console.error('Unhandled error', { error })
+    return c.json({ error: 'Internal Server Error' }, 500)
+  })

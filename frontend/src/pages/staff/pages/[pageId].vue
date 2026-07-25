@@ -17,7 +17,11 @@ import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
 import {
+  extractStaffPagePublishedAtError,
   extractStaffPageValidationMessage,
+  resolveStaffPagePublishStatus,
+  staffPagePublishStatusLabels,
+  staffPagePublishStatusTones,
   useDeleteStaffPageMutation,
   useStaffPageDetailQuery,
   useStaffPageForm,
@@ -43,6 +47,7 @@ const deletePageMutation = useDeleteStaffPageMutation(pageId)
 const form = useStaffPageForm()
 const errorMessage = ref('')
 const successMessage = ref('')
+const publishedAtError = ref('')
 
 const { fieldErrors, validateAll, markTouched } = useFormValidation({
   schema: staffPageFormSchema,
@@ -52,16 +57,22 @@ const { fieldErrors, validateAll, markTouched } = useFormValidation({
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
 
-const scheduledPublishLabel = computed(() => {
+const editorFieldErrors = computed(() =>
+  publishedAtError.value ? { ...fieldErrors.value, publishedAt: publishedAtError.value } : fieldErrors.value
+)
+
+const publishStatusBadge = computed(() => {
   const page = pageQuery.data.value
   if (!page) {
-    return ''
+    return null
   }
-  const publishTime = Date.parse(page.publishedAt)
-  if (Number.isNaN(publishTime) || publishTime <= Date.now()) {
-    return ''
+
+  const status = resolveStaffPagePublishStatus(page)
+  const label = staffPagePublishStatusLabels[status]
+  return {
+    tone: staffPagePublishStatusTones[status],
+    label: status === 'scheduled' ? `${label}: ${formatDateTime(page.publishedAt)}` : label
   }
-  return formatDateTime(page.publishedAt)
 })
 
 watch(
@@ -89,6 +100,7 @@ watch(
 async function handleSavePage() {
   errorMessage.value = ''
   successMessage.value = ''
+  publishedAtError.value = ''
 
   if (!validateAll()) {
     return
@@ -104,12 +116,13 @@ async function handleSavePage() {
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
       sendEmails: form.value.sendEmails,
-      publishedAt: form.value.publishedAt ?? ''
+      publishedAt: form.value.publishedAt
     })
     form.value.sendEmails = false
     successMessage.value = 'お知らせを更新しました。'
   } catch (error) {
     errorMessage.value = extractStaffPageValidationMessage(error)
+    publishedAtError.value = extractStaffPagePublishedAtError(error)
   }
 }
 
@@ -139,14 +152,11 @@ async function handleDeletePage() {
         <SurfaceCardBand>
           <h1 class="text-2xl font-semibold text-body">お知らせを編集</h1>
           <div class="mt-3 flex flex-wrap gap-2">
-            <StatusBadge :tone="pageQuery.data.value.isPublic ? 'success' : 'muted'" appearance="outlined">
-              {{ pageQuery.data.value.isPublic ? '公開中' : '非公開' }}
+            <StatusBadge v-if="publishStatusBadge" :tone="publishStatusBadge.tone" appearance="outlined">
+              {{ publishStatusBadge.label }}
             </StatusBadge>
             <StatusBadge :tone="pageQuery.data.value.isPinned ? 'primary' : 'muted'" appearance="outlined">
               {{ pageQuery.data.value.isPinned ? '固定表示' : '通常表示' }}
-            </StatusBadge>
-            <StatusBadge v-if="scheduledPublishLabel" tone="warning" appearance="outlined">
-              予約公開: {{ scheduledPublishLabel }}
             </StatusBadge>
           </div>
           <p class="mt-3 text-sm text-muted">お知らせID: {{ pageQuery.data.value.id }}</p>
@@ -163,7 +173,7 @@ async function handleDeletePage() {
             :success-message="successMessage"
             submit-label="保存"
             :submitting="updatePageMutation.isPending.value"
-            :field-errors="fieldErrors"
+            :field-errors="editorFieldErrors"
             :on-blur-field="markTouched"
           />
         </div>
