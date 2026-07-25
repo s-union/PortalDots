@@ -134,7 +134,9 @@ const { primaryLabel, showDanger, showSuccess } = defineProps<{
     <!-- Typography -->
     <section class="mb-8">
       <h2 class="mb-4 text-xl font-semibold">タイポグラフィ</h2>
-      <p class="mb-4 text-sm text-muted">base: 15px / line-height 1.7 / font-family: Segoe UI, Meiryo, system-ui...</p>
+      <p class="mb-4 text-sm text-muted">
+        base: 15px / line-height 1.7 / font-family: Gen Interface JP, Segoe UI, system-ui...
+      </p>
       <div :class="cn(surfaceVariants(), 'p-6')">
         <p style="font-size: 1.6rem; font-weight: var(--font-weight-bold)">$font-size-xl (1.6rem = 24px) — 見出し大</p>
         <p class="mt-2" style="font-size: 1.333rem; font-weight: var(--font-weight-bold)">
