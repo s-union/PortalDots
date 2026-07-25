@@ -7,9 +7,6 @@ import { queryClient } from '@/app/providers/queryClient'
 import { initTemporal } from '@/lib/temporal'
 import { initializeFontAwesome } from '@/lib/icons/fontawesome'
 import { initializeUiTheme } from '@/features/session/theme'
-import 'gen-interface-jp/400.css'
-import 'gen-interface-jp/500.css'
-import 'gen-interface-jp/600.css'
 import '@/styles/app.css'
 
 await initTemporal()

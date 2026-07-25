@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import 'gen-interface-jp/400.css';
+@import 'gen-interface-jp/500.css';
+@import 'gen-interface-jp/600.css';
 
 @custom-variant dark {
   &:where([data-theme='dark'], [data-theme='dark'] *) {
