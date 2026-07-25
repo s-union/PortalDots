@@ -41,6 +41,8 @@ The Worker holds no scheduling state: it bridges the Go backend to the queue and
 
 The one thing it does persist is idempotency bookkeeping in D1 (`email_jobs`, `email_job_chunks`), keyed by the caller's `jobId`. A chunk row is written only after the queue has accepted that chunk, so retrying a `jobId` sends exactly the chunks that were never accepted and nothing else. That is what makes `POST /enqueue` safe to call repeatedly, which the scheduled announcement mail path below relies on.
 
+Drizzle owns that schema: it is declared in `src/db/schema.ts`, `pnpm run db:generate` turns a change to it into a migration under `migrations/`, and `pnpm run dev:local-stack` (local) and `pnpm run deploy` (production) apply pending migrations before the Worker starts serving.
+
 **Consumer (`queue` handler):**
 1. Receives batched messages from the queue.
 2. Sends the email via SMTP or Cloudflare Email Routing.

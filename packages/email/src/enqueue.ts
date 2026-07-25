@@ -4,7 +4,10 @@ import { bodyLimit } from 'hono/body-limit'
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import { sValidator } from '@hono/standard-validator'
+import { and, eq, notInArray } from 'drizzle-orm'
 import * as z from 'zod'
+import { createDb, type EmailDb } from './db/client'
+import { emailJobChunks, emailJobs } from './db/schema'
 
 type EmailPriority = 'high' | 'normal'
 
@@ -76,7 +79,7 @@ const auth = createMiddleware<{ Bindings: Env }>((c, next) => {
  * row created by the previous attempt.
  */
 async function ensureJobRecord(
-  db: D1Database,
+  db: EmailDb,
   job: {
     jobId: string
     template: string
@@ -88,14 +91,9 @@ async function ensureJobRecord(
 ): Promise<void> {
   const now = nowIso()
   await db
-    .prepare(
-      `INSERT INTO email_jobs (
-        job_id, status, template, priority, subject, recipients_count, chunk_count, created_at, updated_at
-      ) VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(job_id) DO NOTHING`
-    )
-    .bind(job.jobId, job.template, job.priority, job.subject, job.recipientsCount, job.chunkCount, now, now)
-    .run()
+    .insert(emailJobs)
+    .values({ ...job, status: 'pending', createdAt: now, updatedAt: now })
+    .onConflictDoNothing({ target: emailJobs.jobId })
 }
 
 /**
@@ -103,22 +101,16 @@ async function ensureJobRecord(
  * only written after `queue.send` returned (or by the consumer, which can only
  * see a message the queue accepted), so its existence never over-reports.
  */
-async function listAcceptedChunkIndexes(db: D1Database, jobId: string): Promise<Set<number>> {
-  const { results } = await db
-    .prepare('SELECT chunk_index FROM email_job_chunks WHERE job_id = ?')
-    .bind(jobId)
-    .all<{ chunk_index: unknown }>()
-  const indexes = new Set<number>()
-  for (const row of results) {
-    if (typeof row.chunk_index === 'number') {
-      indexes.add(row.chunk_index)
-    }
-  }
-  return indexes
+async function listAcceptedChunkIndexes(db: EmailDb, jobId: string): Promise<Set<number>> {
+  const rows = await db
+    .select({ chunkIndex: emailJobChunks.chunkIndex })
+    .from(emailJobChunks)
+    .where(eq(emailJobChunks.jobId, jobId))
+  return new Set(rows.map((row) => row.chunkIndex))
 }
 
 async function createChunkRecord(
-  db: D1Database,
+  db: EmailDb,
   chunk: {
     messageId: string
     jobId: string
@@ -129,37 +121,29 @@ async function createChunkRecord(
 ): Promise<void> {
   const now = nowIso()
   await db
-    .prepare(
-      `INSERT INTO email_job_chunks (
-        message_id, job_id, chunk_index, chunk_count, status, recipients_count, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, 'queued', ?, ?, ?)
-      ON CONFLICT(message_id) DO NOTHING`
-    )
-    .bind(chunk.messageId, chunk.jobId, chunk.chunkIndex, chunk.chunkCount, chunk.recipientsCount, now, now)
-    .run()
+    .insert(emailJobChunks)
+    .values({ ...chunk, status: 'queued', createdAt: now, updatedAt: now })
+    .onConflictDoNothing({ target: emailJobChunks.messageId })
 }
 
 // Both transitions leave a job the consumer already advanced alone: a producer
 // retry must never pull 'processing'/'sent' back to a producer-side status.
-async function markJobQueued(db: D1Database, jobId: string): Promise<void> {
+const notAdvancedByConsumer = (jobId: string) =>
+  and(eq(emailJobs.jobId, jobId), notInArray(emailJobs.status, ['processing', 'sent']))
+
+async function markJobQueued(db: EmailDb, jobId: string): Promise<void> {
   await db
-    .prepare(
-      `UPDATE email_jobs SET status = 'queued', updated_at = ?, last_error = NULL
-       WHERE job_id = ? AND status NOT IN ('processing', 'sent')`
-    )
-    .bind(nowIso(), jobId)
-    .run()
+    .update(emailJobs)
+    .set({ status: 'queued', updatedAt: nowIso(), lastError: null })
+    .where(notAdvancedByConsumer(jobId))
 }
 
-async function markEnqueueFailed(db: D1Database, jobId: string, error: unknown): Promise<void> {
+async function markEnqueueFailed(db: EmailDb, jobId: string, error: unknown): Promise<void> {
   const message = error instanceof Error ? error.message : 'Unknown enqueue error'
   await db
-    .prepare(
-      `UPDATE email_jobs SET status = 'enqueue_failed', updated_at = ?, last_error = ?
-       WHERE job_id = ? AND status NOT IN ('processing', 'sent')`
-    )
-    .bind(nowIso(), message, jobId)
-    .run()
+    .update(emailJobs)
+    .set({ status: 'enqueue_failed', updatedAt: nowIso(), lastError: message })
+    .where(notAdvancedByConsumer(jobId))
 }
 
 interface DispatchResult {
@@ -178,8 +162,9 @@ interface DispatchResult {
 async function dispatchJob(env: Env, payload: DispatchPayload): Promise<DispatchResult> {
   const queue = payload.priority === 'high' ? env.HIGH_QUEUE : env.NORMAL_QUEUE
   const chunks = chunkArray(payload.to, MAX_RECIPIENTS_PER_MESSAGE)
+  const db = createDb(env.DB)
 
-  await ensureJobRecord(env.DB, {
+  await ensureJobRecord(db, {
     jobId: payload.jobId,
     template: payload.template,
     priority: payload.priority,
@@ -189,7 +174,7 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
   })
 
   try {
-    const accepted = await listAcceptedChunkIndexes(env.DB, payload.jobId)
+    const accepted = await listAcceptedChunkIndexes(db, payload.jobId)
     let sentCount = 0
     for (const [index, recipients] of chunks.entries()) {
       if (accepted.has(index)) {
@@ -209,7 +194,7 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
         body: payload.body,
         variables: payload.variables
       })
-      await createChunkRecord(env.DB, {
+      await createChunkRecord(db, {
         messageId,
         jobId: payload.jobId,
         chunkIndex: index,
@@ -218,7 +203,7 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
       })
       sentCount++
     }
-    await markJobQueued(env.DB, payload.jobId)
+    await markJobQueued(db, payload.jobId)
 
     console.info('Email job queued', {
       jobId: payload.jobId,
@@ -236,7 +221,7 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
       messageCount: chunks.length
     }
   } catch (error) {
-    await markEnqueueFailed(env.DB, payload.jobId, error)
+    await markEnqueueFailed(db, payload.jobId, error)
     throw error
   }
 }

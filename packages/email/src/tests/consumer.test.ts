@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 
 vi.mock('../templates', () => ({
   renderTemplate: vi.fn()
@@ -158,8 +158,8 @@ describe('email queue consumer', () => {
     const retry = vi.fn()
     const emailSend = vi.fn()
     const db = new TestD1Database()
-    db.jobs.set('job-1', { status: 'queued' })
-    db.chunks.set('job-1:0', { jobId: 'job-1', chunkIndex: 0, status: 'sent', updatedAt: new Date().toISOString() })
+    await db.seedJob({ jobId: 'job-1', status: 'queued', chunkCount: 1 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'sent' })
 
     const batch = createMessageBatch([
       {
@@ -190,9 +190,12 @@ describe('email queue consumer', () => {
   it('acks sent email even when sent status update fails', async () => {
     const ack = vi.fn()
     const retry = vi.fn()
-    const emailSend = vi.fn()
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    onTestFinished(() => consoleError.mockRestore())
     const db = new TestD1Database()
-    db.failSentUpdate = true
+    // The mail leaves, then D1 goes down: every write after delivery fails,
+    // including the one that records the chunk as sent.
+    const emailSend = vi.fn().mockImplementation(() => db.breakWrites())
 
     const batch = createMessageBatch([
       {
@@ -216,6 +219,9 @@ describe('email queue consumer', () => {
 
     await queueHandler(batch as never, createEnv(emailSend, db) as never)
     expect(emailSend).toHaveBeenCalledTimes(1)
+    // Proof the bookkeeping really failed, so the ack below is the "sent but
+    // unrecorded" path rather than an ordinary success.
+    expect(consoleError).toHaveBeenCalledWith('Failed to mark email job as sent:', expect.any(Error))
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
   })

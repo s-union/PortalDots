@@ -96,7 +96,9 @@ cd packages/email
 # Set the production secret — must match PORTAL_EMAIL_PRODUCER_TOKEN in .env.prod
 echo "<AUTH_TOKEN>" | npx wrangler secret put AUTH_TOKEN
 
-npx wrangler deploy
+# Applies pending D1 migrations, then deploys. The Worker cannot serve
+# /enqueue without them, so never run `wrangler deploy` on its own.
+pnpm run deploy
 ```
 
 For Cloudflare Queue creation and Email Routing configuration, see the [Cloudflare Workers documentation](https://developers.cloudflare.com/queues/).
@@ -112,5 +114,5 @@ For Cloudflare Queue creation and Email Routing configuration, see the [Cloudfla
 - [ ] `PORTAL_EMAIL_PRODUCER_TOKEN` is randomly generated and matches the Wrangler secret
 - [ ] `PORTAL_EMAIL_PRODUCER_URL` and `PORTAL_EMAIL_PRODUCER_TOKEN` are set
 - [ ] PostgreSQL data volume backup is configured
-- [ ] email Worker is deployed to Cloudflare
+- [ ] email Worker is deployed to Cloudflare, with its D1 migrations applied
 - [ ] Reverse proxy forwards traffic to port `8080` with a valid TLS certificate
