@@ -1,4 +1,7 @@
-import { Hono, type Context } from 'hono'
+import { Hono } from 'hono'
+import { createMiddleware } from 'hono/factory'
+import { HTTPException } from 'hono/http-exception'
+import { sValidator } from '@hono/standard-validator'
 import * as z from 'zod'
 
 type EmailPriority = 'high' | 'normal'
@@ -59,14 +62,14 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return chunks
 }
 
-function checkAuth(c: Context<{ Bindings: Env }>): Response | null {
+const auth = createMiddleware<{ Bindings: Env }>(async (c, next) => {
   const authHeader = c.req.header('Authorization')
   const expectedToken = c.env.AUTH_TOKEN
   if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
-    return c.json({ error: 'Unauthorized' }, 401)
+    throw new HTTPException(401, { message: 'Unauthorized' })
   }
-  return null
-}
+  await next()
+})
 
 async function getExistingJobStatus(db: D1Database, jobId: string): Promise<string | null> {
   const row = await db.prepare('SELECT status FROM email_jobs WHERE job_id = ?').bind(jobId).first<{ status: string }>()
@@ -413,83 +416,88 @@ function normalizeSendAt(sendAt: string): string {
 
 /** Hono app exposing the email producer API (`/enqueue`, `/scheduled/sync`). */
 export const app = new Hono<{ Bindings: Env }>()
-
-app.post('/enqueue', async (c) => {
-  const authError = checkAuth(c)
-  if (authError) return authError
-
-  const parseResult = enqueueRequestSchema.safeParse(await c.req.json())
-  if (!parseResult.success) {
-    return c.json({ error: 'Invalid request', issues: parseResult.error.issues }, 400)
-  }
-
-  const payload = toDispatchPayload(parseResult.data)
-  if (payload.to.length === 0) {
-    return c.json({ error: 'No recipients' }, 400)
-  }
-
-  try {
-    const result = await dispatchJob(c.env, payload)
-    return c.json({ success: true, ...result })
-  } catch (error) {
-    console.error('Email enqueue failed', { jobId: payload.jobId, error })
-    return c.json({ error: 'Enqueue failed' }, 500)
-  }
-})
-
-app.post('/scheduled/sync', async (c) => {
-  const authError = checkAuth(c)
-  if (authError) return authError
-
-  const parseResult = syncRequestSchema.safeParse(await c.req.json())
-  if (!parseResult.success) {
-    return c.json({ error: 'Invalid request', issues: parseResult.error.issues }, 400)
-  }
-
-  const request = parseResult.data
-  let outcome: SyncOutcome = 'unchanged'
-
-  if (!request.isPublic) {
-    await cancelScheduledEmail(c.env.DB, request.groupId)
-    outcome = 'cancelled'
-    return c.json({ success: true, status: outcome })
-  }
-
-  const existing = await getScheduledEmail(c.env.DB, request.groupId)
-  const hasPending = existing?.status === 'scheduled'
-
-  if (hasPending && request.payload) {
-    await upsertScheduledEmail(c.env.DB, {
-      groupId: request.groupId,
-      sendAt: normalizeSendAt(request.sendAt ?? nowIso()),
-      payload: JSON.stringify(toDispatchPayload(request.payload))
-    })
-    outcome = 'updated'
-    return c.json({ success: true, status: outcome })
-  }
-
-  if (request.sendEmails && request.payload) {
-    const payload = toDispatchPayload(request.payload)
-    if (payload.to.length === 0) {
-      return c.json({ error: 'No recipients' }, 400)
+  .use('*', auth)
+  .post(
+    '/enqueue',
+    sValidator('json', enqueueRequestSchema, (result, c) => {
+      if (!result.success) {
+        return c.json({ error: 'Invalid request', issues: result.error }, 400)
+      }
+    }),
+    async (c) => {
+      const payload = toDispatchPayload(c.req.valid('json'))
+      if (payload.to.length === 0) {
+        throw new HTTPException(400, { message: 'No recipients' })
+      }
+      try {
+        const result = await dispatchJob(c.env, payload)
+        return c.json({ success: true, ...result })
+      } catch (error) {
+        console.error('Email enqueue failed', { jobId: payload.jobId, error })
+        throw new HTTPException(500, { message: 'Enqueue failed' })
+      }
     }
-    if (isFutureSend(request.sendAt)) {
-      await upsertScheduledEmail(c.env.DB, {
-        groupId: request.groupId,
-        sendAt: normalizeSendAt(request.sendAt),
-        payload: JSON.stringify(payload)
-      })
-      outcome = 'scheduled'
-      return c.json({ success: true, status: outcome })
-    }
-    try {
-      await dispatchJob(c.env, payload)
-      outcome = 'dispatched'
-    } catch (error) {
-      console.error('Email dispatch failed', { groupId: request.groupId, error })
-      return c.json({ error: 'Dispatch failed' }, 500)
-    }
-  }
+  )
+  .post(
+    '/scheduled/sync',
+    sValidator('json', syncRequestSchema, (result, c) => {
+      if (!result.success) {
+        return c.json({ error: 'Invalid request', issues: result.error }, 400)
+      }
+    }),
+    async (c) => {
+      const request = c.req.valid('json')
 
-  return c.json({ success: true, status: outcome })
+      if (!request.isPublic) {
+        await cancelScheduledEmail(c.env.DB, request.groupId)
+        return c.json({ success: true, status: 'cancelled' })
+      }
+
+      const existing = await getScheduledEmail(c.env.DB, request.groupId)
+      const hasPending = existing?.status === 'scheduled'
+
+      if (hasPending && request.payload) {
+        await upsertScheduledEmail(c.env.DB, {
+          groupId: request.groupId,
+          sendAt: normalizeSendAt(request.sendAt ?? nowIso()),
+          payload: JSON.stringify(toDispatchPayload(request.payload))
+        })
+        return c.json({ success: true, status: 'updated' })
+      }
+
+      if (request.sendEmails && request.payload) {
+        const payload = toDispatchPayload(request.payload)
+        if (payload.to.length === 0) {
+          throw new HTTPException(400, { message: 'No recipients' })
+        }
+        if (isFutureSend(request.sendAt)) {
+          await upsertScheduledEmail(c.env.DB, {
+            groupId: request.groupId,
+            sendAt: normalizeSendAt(request.sendAt),
+            payload: JSON.stringify(payload)
+          })
+          return c.json({ success: true, status: 'scheduled' })
+        }
+        try {
+          await dispatchJob(c.env, payload)
+        } catch (error) {
+          console.error('Email dispatch failed', { groupId: request.groupId, error })
+          throw new HTTPException(500, { message: 'Dispatch failed' })
+        }
+        return c.json({ success: true, status: 'dispatched' })
+      }
+
+      return c.json({ success: true, status: 'unchanged' })
+    }
+  )
+
+app.onError((error, c) => {
+  if (error instanceof HTTPException) {
+    return error.getResponse()
+  }
+  if (error instanceof SyntaxError) {
+    return c.json({ error: 'Invalid JSON body' }, 400)
+  }
+  console.error('Unhandled error', { error })
+  return c.json({ error: 'Internal Server Error' }, 500)
 })
