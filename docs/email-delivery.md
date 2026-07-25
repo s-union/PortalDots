@@ -90,17 +90,24 @@ This starts the email Worker locally with a Wrangler-managed local queue. Mail i
 
 For development without email testing, `mise run dev` (without `:worker`) skips the email stack entirely. The Go backend will log a warning when it tries to enqueue and the Worker is not reachable.
 
+If the local D1 database reports `table already exists` after pulling changes that renumber migrations (e.g. `0001_...` → `0000_...`), delete the local Wrangler state and let it recreate the database from scratch:
+
+```bash
+rm -rf packages/email/.wrangler
+```
+
+This only affects the local development database; production D1 is unaffected.
+
 ---
 
 ## Mail history
 
-Every successfully enqueued job is written to `mail_queue` in PostgreSQL before being sent to the email Worker. After delivery, the consumer writes back to `mail_history`. This provides:
+Every job is recorded in `outbound_mails` (PostgreSQL) before being sent to the email Worker. The `RecordingSender` decorator wraps the actual sender: it writes the job to `outbound_mails` first, then calls the Worker's `POST /enqueue`. This provides:
 
-- **An audit trail** of what was sent, to whom, and when.
-- **A staff UI** to inspect queued and delivered mail.
-- **A basis for rate limiting** future bulk sends without re-querying an external service.
+- **An audit trail** of what was enqueued, to whom, and when.
+- **A staff UI** to inspect sent mail.
 
-The `mail_queue` table is the source of truth for pending mail. If the Worker is unavailable when the handler calls `Enqueue`, the job remains in `mail_queue` with status `pending` and can be retried by the staff mail management UI.
+`outbound_mails` is a write-once history log — it has no status column and does not track delivery state. The source of truth for delivery progress (pending / processing / sent) lives in the Worker's D1 tables (`email_jobs`, `email_job_chunks`). If the Worker is unavailable when the handler calls `Enqueue`, the record in `outbound_mails` still exists, but the mail is not retried automatically; the caller must re-enqueue the job.
 
 ---
 

@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 
 vi.mock('../templates', () => ({
@@ -5,6 +6,7 @@ vi.mock('../templates', () => ({
 }))
 
 import { queueHandler } from '../consumer'
+import { emailJobChunks } from '../db/schema'
 import { renderTemplate } from '../templates'
 import { TestD1Database } from './helpers/d1'
 
@@ -183,6 +185,78 @@ describe('email queue consumer', () => {
 
     await queueHandler(batch as never, createEnv(emailSend, db) as never)
     expect(emailSend).not.toHaveBeenCalled()
+    expect(ack).toHaveBeenCalled()
+    expect(retry).not.toHaveBeenCalled()
+  })
+
+  it('retries a non-stale processing chunk without sending', async () => {
+    const ack = vi.fn()
+    const retry = vi.fn()
+    const emailSend = vi.fn()
+    const db = new TestD1Database()
+    await db.seedJob({ jobId: 'job-1', status: 'queued', chunkCount: 1 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'processing' })
+
+    const batch = createMessageBatch([
+      {
+        body: {
+          jobId: 'job-1',
+          messageId: 'job-1:0',
+          chunkIndex: 0,
+          chunkCount: 1,
+          template: 'markdown-notice',
+          priority: 'normal',
+          to: ['a@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test',
+          body: 'Test body',
+          variables: {}
+        },
+        ack,
+        retry
+      }
+    ])
+
+    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    expect(emailSend).not.toHaveBeenCalled()
+    expect(retry).toHaveBeenCalled()
+    expect(ack).not.toHaveBeenCalled()
+  })
+
+  it('reclaims a stale processing chunk and sends', async () => {
+    const ack = vi.fn()
+    const retry = vi.fn()
+    const emailSend = vi.fn()
+    const db = new TestD1Database()
+    await db.seedJob({ jobId: 'job-1', status: 'queued', chunkCount: 1 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'processing' })
+    await db.drizzle
+      .update(emailJobChunks)
+      .set({ updatedAt: new Date(Date.now() - 16 * 60 * 1000).toISOString() })
+      .where(eq(emailJobChunks.messageId, 'job-1:0'))
+
+    const batch = createMessageBatch([
+      {
+        body: {
+          jobId: 'job-1',
+          messageId: 'job-1:0',
+          chunkIndex: 0,
+          chunkCount: 1,
+          template: 'markdown-notice',
+          priority: 'normal',
+          to: ['a@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test',
+          body: 'Test body',
+          variables: {}
+        },
+        ack,
+        retry
+      }
+    ])
+
+    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    expect(emailSend).toHaveBeenCalledTimes(1)
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
   })
