@@ -89,6 +89,7 @@ test('admin creates page and circle user reads it in workspace', async ({ page }
       notes: '',
       isPinned: false,
       isPublic: true,
+      publishedAt: null,
       viewableTags: [],
       documentIds: [],
       sendEmails: false
