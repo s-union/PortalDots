@@ -133,14 +133,9 @@ type staffFormHandlers struct {
 type staffPageHandlers struct {
 	sharedDeps
 	activities         activitylog.Repository
-	circles            circle.Catalog
 	documents          document.Repository
 	pages              page.Repository
-	participationTypes participationtype.Repository
 	scheduledPageMails pagemail.Repository
-	tags               tag.Repository
-	users              useradmin.Repository
-	email              EmailContext
 }
 
 // staffDocumentHandlers handles staff document endpoints.
@@ -402,21 +397,9 @@ func NewServerWithDependencies(
 	staffPageH := &staffPageHandlers{
 		sharedDeps:         shared,
 		activities:         activities,
-		circles:            circles,
 		documents:          documents,
 		pages:              pages,
-		participationTypes: participationTypes,
 		scheduledPageMails: scheduledPageMails,
-		tags:               tags,
-		users:              users,
-		email: EmailContext{
-			EmailSender:  emailSender,
-			From:         cfg.EmailFrom,
-			AdminName:    cfg.PortalAdminName,
-			ContactEmail: cfg.PortalContactEmail,
-			AppName:      cfg.AppName,
-			AppURL:       cfg.AppURL,
-		},
 	}
 
 	staffDocumentH := &staffDocumentHandlers{

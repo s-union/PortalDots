@@ -33,7 +33,8 @@ export type Env = {
 }
 
 const MAX_RECIPIENTS_PER_MESSAGE = 50
-// deliberate: ~25k recipients worth of JSON; raise if a single job ever needs more
+// deliberate: cap queue subrequests at ten per producer request
+const MAX_RECIPIENTS_PER_JOB = 500
 const MAX_BODY_BYTES = 1024 * 1024
 const knownTemplates = ['markdown-notice', 'registration-verify', 'staff-auth-notice'] as const
 
@@ -55,7 +56,7 @@ function nowIso(): string {
 /**
  * Split recipients into fixed-size chunks. Pure function of `arr`: chunk `i`
  * holds the same recipients on every retry as long as the caller replays the
- * identical payload, which is what keeps `<jobId>:<index>` message ids stable.
+ * identical payload, which is what keeps content-addressed message ids stable.
  */
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = []
@@ -68,7 +69,8 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 const auth = createMiddleware<{ Bindings: Env }>((c, next) => {
   const token = c.env.AUTH_TOKEN
   if (!token) {
-    throw new HTTPException(500, { message: 'AUTH_TOKEN is not configured' })
+    console.error('AUTH_TOKEN is not configured')
+    throw new HTTPException(500, { message: 'Internal Server Error' })
   }
   return bearerAuth<{ Bindings: Env }>({ token })(c, next)
 })
@@ -101,12 +103,34 @@ async function ensureJobRecord(
  * only written after `queue.send` returned (or by the consumer, which can only
  * see a message the queue accepted), so its existence never over-reports.
  */
-async function listAcceptedChunkIndexes(db: EmailDb, jobId: string): Promise<Set<number>> {
+async function listAcceptedChunks(db: EmailDb, jobId: string): Promise<Map<number, string>> {
   const rows = await db
-    .select({ chunkIndex: emailJobChunks.chunkIndex })
+    .select({ chunkIndex: emailJobChunks.chunkIndex, messageId: emailJobChunks.messageId })
     .from(emailJobChunks)
     .where(eq(emailJobChunks.jobId, jobId))
-  return new Set(rows.map((row) => row.chunkIndex))
+  return new Map(rows.map((row) => [row.chunkIndex, row.messageId]))
+}
+
+async function validateJobShape(
+  db: EmailDb,
+  jobId: string,
+  recipientsCount: number,
+  chunkCount: number
+): Promise<void> {
+  const row = await db
+    .select({ recipientsCount: emailJobs.recipientsCount, chunkCount: emailJobs.chunkCount })
+    .from(emailJobs)
+    .where(eq(emailJobs.jobId, jobId))
+    .get()
+  if (!row || row.recipientsCount !== recipientsCount || row.chunkCount !== chunkCount) {
+    throw new HTTPException(409, { message: 'Email job recipient set changed' })
+  }
+}
+
+async function chunkMessageId(jobId: string, chunkIndex: number, recipients: string[]): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(recipients)))
+  const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `${jobId}:${chunkIndex}:${hash}`
 }
 
 async function createChunkRecord(
@@ -174,13 +198,21 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
   })
 
   try {
-    const accepted = await listAcceptedChunkIndexes(db, payload.jobId)
+    await validateJobShape(db, payload.jobId, payload.to.length, chunks.length)
+    const messageIds = await Promise.all(
+      chunks.map((recipients, index) => chunkMessageId(payload.jobId, index, recipients))
+    )
+    const accepted = await listAcceptedChunks(db, payload.jobId)
     let sentCount = 0
     for (const [index, recipients] of chunks.entries()) {
-      if (accepted.has(index)) {
+      const messageId = messageIds[index]
+      const acceptedMessageId = accepted.get(index)
+      if (acceptedMessageId !== undefined && acceptedMessageId !== messageId) {
+        throw new HTTPException(409, { message: 'Recipients changed for an accepted email chunk' })
+      }
+      if (acceptedMessageId !== undefined) {
         continue
       }
-      const messageId = `${payload.jobId}:${index}`
       await queue.send({
         jobId: payload.jobId,
         messageId,
@@ -221,6 +253,9 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
       messageCount: chunks.length
     }
   } catch (error) {
+    if (error instanceof HTTPException && error.status === 409) {
+      throw error
+    }
     await markEnqueueFailed(db, payload.jobId, error)
     throw error
   }
@@ -231,7 +266,7 @@ const enqueueRequestSchema = z.object({
   template: z.enum(knownTemplates),
   priority: z.enum(['high', 'normal']).optional(),
   from: z.string().email(),
-  to: z.union([z.string().email(), z.array(z.string().email()).min(1)]),
+  to: z.union([z.string().email(), z.array(z.string().email()).min(1).max(MAX_RECIPIENTS_PER_JOB)]),
   subject: z.string().min(1),
   body: z.string().optional(),
   variables: z.record(z.string(), z.string()).default({})
@@ -268,6 +303,9 @@ export const app = new Hono<{ Bindings: Env }>()
         return c.json({ success: true, ...result })
       } catch (error) {
         console.error('Email enqueue failed', { jobId: payload.jobId, error })
+        if (error instanceof HTTPException) {
+          throw error
+        }
         throw new HTTPException(500, { message: 'Enqueue failed' })
       }
     }

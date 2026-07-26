@@ -618,7 +618,7 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                  required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                   properties:
                     id:
                       type: string
@@ -638,6 +638,8 @@ paths:
                     isPinned:
                       type: boolean
                     isPublic:
+                      type: boolean
+                    mailScheduled:
                       type: boolean
                     viewableTags:
                       type: array
@@ -684,7 +686,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, body, isPublic]
+              required: [title, body, isPublic, publishedAt]
               properties:
                 title:
                   type: string
@@ -722,7 +724,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -742,6 +744,8 @@ paths:
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array
@@ -815,7 +819,7 @@ paths:
               schema:
                 type: object
                 required:
-                  [id, title, body, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                  [id, title, body, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -837,6 +841,8 @@ paths:
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array
@@ -885,7 +891,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, body, isPublic]
+              required: [title, body, isPublic, publishedAt]
               properties:
                 title:
                   type: string
@@ -923,7 +929,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -943,6 +949,8 @@ paths:
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array
@@ -1022,7 +1030,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -1042,6 +1050,8 @@ paths:
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array

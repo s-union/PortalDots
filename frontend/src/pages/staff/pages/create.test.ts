@@ -66,6 +66,7 @@ const createdPage = {
   publishedAt: '2099-01-15T10:00:00Z',
   isPinned: false,
   isPublic: true,
+  mailScheduled: false,
   viewableTags: [],
   documentIds: [],
   documents: []

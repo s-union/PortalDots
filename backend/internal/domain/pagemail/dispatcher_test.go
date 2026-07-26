@@ -135,6 +135,7 @@ func TestTickGivesUpAfterRepeatedEnqueueFailures(t *testing.T) {
 	}
 
 	for attempt := 1; attempt < defaultMaxAttempts; attempt++ {
+		makeRetryDue(schedules, duePage.ID)
 		if err := dispatcher.Tick(context.Background()); err == nil {
 			t.Fatalf("Tick() attempt %d error = nil, want the enqueue failure", attempt)
 		}
@@ -143,6 +144,7 @@ func TestTickGivesUpAfterRepeatedEnqueueFailures(t *testing.T) {
 		}
 	}
 
+	makeRetryDue(schedules, duePage.ID)
 	if err := dispatcher.Tick(context.Background()); err == nil {
 		t.Fatal("Tick() on the last attempt error = nil, want the enqueue failure")
 	}
@@ -180,9 +182,21 @@ func TestTickStopsRetryingPageThatReachesNobody(t *testing.T) {
 	if len(sender.jobs) != 0 {
 		t.Fatalf("enqueued %d jobs, want 0", len(sender.jobs))
 	}
-	if status := scheduleStatus(t, schedules, duePage.ID); status != "sent" {
-		t.Fatalf("schedule status = %q, want sent", status)
+	if status := scheduleStatus(t, schedules, duePage.ID); status != "skipped" {
+		t.Fatalf("schedule status = %q, want skipped", status)
 	}
+	if err := schedules.Schedule(context.Background(), duePage.ID, "job-2", testActorUserID); err != nil {
+		t.Fatalf("Schedule() after skipped mail error = %v", err)
+	}
+	if status := scheduleStatus(t, schedules, duePage.ID); status != "pending" {
+		t.Fatalf("rescheduled status = %q, want pending", status)
+	}
+}
+
+func makeRetryDue(schedules *MemoryRepository, pageID string) {
+	schedules.mu.Lock()
+	defer schedules.mu.Unlock()
+	schedules.entries[pageID].nextAttemptAt = time.Time{}
 }
 
 func newTestDispatcher(t *testing.T) (

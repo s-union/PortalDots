@@ -124,11 +124,12 @@ func newPageMailDispatcher(
 		dependencies.ParticipationTypes,
 		dependencies.Users,
 		pagemail.MailConfig{
-			From:         cfg.EmailFrom,
-			AdminName:    cfg.PortalAdminName,
-			ContactEmail: cfg.PortalContactEmail,
-			AppName:      cfg.AppName,
-			AppURL:       cfg.AppURL,
+			From:             cfg.EmailFrom,
+			AdminName:        cfg.PortalAdminName,
+			ContactEmail:     cfg.PortalContactEmail,
+			AppName:          cfg.AppName,
+			AppURL:           cfg.AppURL,
+			AllowDangerously: cfg.AllowDangerously,
 		},
 	)
 

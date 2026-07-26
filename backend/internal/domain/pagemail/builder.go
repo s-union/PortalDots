@@ -15,11 +15,12 @@ import (
 
 // MailConfig holds the sender information shared by every announcement email.
 type MailConfig struct {
-	From         string
-	AdminName    string
-	ContactEmail string
-	AppName      string
-	AppURL       string
+	From             string
+	AdminName        string
+	ContactEmail     string
+	AppName          string
+	AppURL           string
+	AllowDangerously bool
 }
 
 // Builder renders the announcement email of a page from the live page state.

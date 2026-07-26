@@ -104,6 +104,7 @@ export const mockScheduledStaffPage = {
   publishedAt: '2099-01-15T10:00:00Z',
   isPinned: false,
   isPublic: true,
+  mailScheduled: true,
   viewableTags: [],
   documentIds: [],
   documents: []

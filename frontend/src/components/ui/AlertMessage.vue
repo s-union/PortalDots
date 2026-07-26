@@ -9,7 +9,7 @@ const { tone = 'danger', class: className } = defineProps<{
 </script>
 
 <template>
-  <p :class="cn(alertVariants({ tone }), className)">
+  <p role="alert" aria-live="polite" :class="cn(alertVariants({ tone }), className)">
     <slot />
   </p>
 </template>

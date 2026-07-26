@@ -5,7 +5,7 @@ definePage({
   meta: staffPageMeta('pages.edit')
 })
 
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -90,7 +90,7 @@ watch(
       isPublic: page.isPublic,
       viewableTags: [...page.viewableTags],
       documentIds: [...page.documentIds],
-      sendEmails: false,
+      sendEmails: page.mailScheduled,
       publishedAt: page.publishedAt
     }
   },
@@ -103,11 +103,12 @@ async function handleSavePage() {
   publishedAtError.value = ''
 
   if (!validateAll()) {
+    await focusFirstInvalidField()
     return
   }
 
   try {
-    await updatePageMutation.mutateAsync({
+    const updatedPage = await updatePageMutation.mutateAsync({
       title: form.value.title,
       body: form.value.body,
       notes: form.value.notes,
@@ -118,12 +119,19 @@ async function handleSavePage() {
       sendEmails: form.value.sendEmails,
       publishedAt: form.value.publishedAt
     })
-    form.value.sendEmails = false
+    form.value.sendEmails = updatedPage.mailScheduled
     successMessage.value = 'お知らせを更新しました。'
   } catch (error) {
     errorMessage.value = extractStaffPageValidationMessage(error)
     publishedAtError.value = extractStaffPagePublishedAtError(error)
+    await focusFirstInvalidField()
   }
+}
+
+async function focusFirstInvalidField() {
+  await nextTick()
+  const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]')
+  invalid?.focus()
 }
 
 async function handleDeletePage() {

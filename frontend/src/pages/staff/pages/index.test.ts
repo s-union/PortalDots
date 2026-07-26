@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/server'
+import { resolveStaffPagePublishStatus } from '@/features/staff/pages/api'
 import StaffDashboardPage from '../index.vue'
 import StaffPagesIndexPage from './index.vue'
 import StaffVerifyPage from '../verify.vue'
@@ -45,6 +46,7 @@ const pages = [
     publishedAt: '2026-03-05T09:00:00Z',
     isPinned: false,
     isPublic: false,
+    mailScheduled: false,
     viewableTags: [],
     documentIds: [],
     documents: []
@@ -59,6 +61,7 @@ const pages = [
     publishedAt: '2026-03-04T09:00:00Z',
     isPinned: false,
     isPublic: false,
+    mailScheduled: false,
     viewableTags: ['展示'],
     documentIds: ['document-circle-b-1'],
     documents: [documentCircleB1]
@@ -73,6 +76,7 @@ const pages = [
     publishedAt: '2099-01-15T10:00:00Z',
     isPinned: false,
     isPublic: true,
+    mailScheduled: false,
     viewableTags: [],
     documentIds: [],
     documents: []
@@ -87,6 +91,7 @@ const pages = [
     publishedAt: '2026-03-07T09:00:00Z',
     isPinned: false,
     isPublic: true,
+    mailScheduled: false,
     viewableTags: [],
     documentIds: [],
     documents: []
@@ -94,6 +99,17 @@ const pages = [
 ]
 
 describe('StaffPagesIndexPage', () => {
+  it.each([
+    [false, '2020-01-01T00:00:00Z', 'unpublished'],
+    [false, '2099-01-01T00:00:00Z', 'unpublished'],
+    [false, 'not-a-date', 'unpublished'],
+    [true, '2020-01-01T00:00:00Z', 'published'],
+    [true, '2099-01-01T00:00:00Z', 'scheduled'],
+    [true, 'not-a-date', 'published']
+  ] as const)('resolves publication status for isPublic=%s and publishedAt=%s', (isPublic, publishedAt, expected) => {
+    expect(resolveStaffPagePublishStatus({ isPublic, publishedAt })).toBe(expected)
+  })
+
   it('lists staff pages and shows create actions', async () => {
     server.use(
       http.get('/v1/staff/tags', () =>
@@ -225,11 +241,24 @@ describe('StaffPagesIndexPage', () => {
     })
     await flushPromises()
 
-    // Leading column is the actions cell, so title is td[2] and the publish status is td[7].
+    const headers = wrapper.findAll('thead th').map((header) => header.text().trim())
+    const titleColumn = headers.indexOf('タイトル')
+    const statusColumn = headers.indexOf('公開状態')
+    const publishedAtColumn = headers.indexOf('公開日時')
+    expect(titleColumn).toBeGreaterThanOrEqual(0)
+    expect(statusColumn).toBeGreaterThanOrEqual(0)
+    expect(publishedAtColumn).toBeGreaterThanOrEqual(0)
+
     const statusByTitle = Object.fromEntries(
       wrapper.findAll('tbody tr').map((row) => {
         const cells = row.findAll('td')
-        return [cells[2].text(), cells[7].text()]
+        return [cells[titleColumn].text(), cells[statusColumn].text()]
+      })
+    )
+    const publishedAtByTitle = Object.fromEntries(
+      wrapper.findAll('tbody tr').map((row) => {
+        const cells = row.findAll('td')
+        return [cells[titleColumn].text(), cells[publishedAtColumn].text()]
       })
     )
 
@@ -239,5 +268,7 @@ describe('StaffPagesIndexPage', () => {
       予約公開メモ: '予約公開',
       公開済みメモ: '公開中'
     })
+    expect(publishedAtByTitle['非公開メモ']).toBe('-')
+    expect(publishedAtByTitle['後続メモ']).toBe('-')
   })
 })

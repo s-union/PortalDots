@@ -388,15 +388,15 @@ func sortPages(pages []Page) {
 }
 
 // IsPublished reports whether a page with the given RFC3339 publishedAt is
-// already visible to its audience. Empty or unparsable values count as
+// already visible to its audience. Empty or unparsable values are not
 // published.
 func IsPublished(publishedAt string) bool {
 	if publishedAt == "" {
-		return true
+		return false
 	}
 	publishTime, err := time.Parse(time.RFC3339, publishedAt)
 	if err != nil {
-		return true
+		return false
 	}
 	return !publishTime.After(time.Now().UTC())
 }

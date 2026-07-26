@@ -68,9 +68,18 @@ function handleDocumentChange(documentId: string, event: Event) {
 
 <template>
   <div class="grid gap-4">
-    <FormField label="タイトル" label-class="font-medium" :error="fieldErrors?.title">
+    <FormField
+      id="staff-page-title-input"
+      as="div"
+      label="タイトル"
+      label-class="font-medium"
+      :error="fieldErrors?.title"
+    >
       <input
+        id="staff-page-title-input"
         v-model="form.title"
+        aria-describedby="staff-page-title-input-error"
+        :aria-invalid="Boolean(fieldErrors?.title)"
         :class="[formControlVariants(), { 'border-danger': fieldErrors?.title }]"
         name="title"
         type="text"
@@ -80,24 +89,44 @@ function handleDocumentChange(documentId: string, event: Event) {
     </FormField>
 
     <div class="grid gap-2 text-sm text-body">
-      <span class="font-medium">本文</span>
-      <MarkdownEditorField v-model="form.body" min-height-class="min-h-56" name="body" />
-      <FormError v-if="fieldErrors?.body" :message="fieldErrors.body" />
-      <p class="text-xs text-muted">
+      <label for="staff-page-body" class="font-medium">本文</label>
+      <MarkdownEditorField
+        id="staff-page-body"
+        v-model="form.body"
+        aria-describedby="staff-page-body-error staff-page-body-helper"
+        :aria-invalid="Boolean(fieldErrors?.body)"
+        min-height-class="min-h-56"
+        name="body"
+      />
+      <FormError v-if="fieldErrors?.body" id="staff-page-body-error" :message="fieldErrors.body" />
+      <p id="staff-page-body-helper" class="text-xs text-muted">
         Markdown で入力できます。表、取り消し線、タスクリスト、脚注は GFM として表示されます。
       </p>
     </div>
 
-    <FormField label="スタッフ用メモ" label-class="font-medium">
-      <textarea v-model="form.notes" :class="cn(formControlVariants(), 'min-h-28')" name="notes" />
+    <FormField id="staff-page-notes-input" as="div" label="スタッフ用メモ" label-class="font-medium">
+      <textarea
+        id="staff-page-notes-input"
+        v-model="form.notes"
+        :class="cn(formControlVariants(), 'min-h-28')"
+        name="notes"
+      />
     </FormField>
 
     <FormField
       label="閲覧可能なタグ"
+      id="staff-page-tags-input"
+      as="div"
       label-class="font-medium"
       helper="空欄なら全員に公開、指定すると一致する企画タグだけに限定公開します。"
     >
-      <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
+      <StaffTagPicker
+        id="staff-page-tags-input"
+        v-model="form.viewableTags"
+        aria-describedby="staff-page-tags-input-helper"
+        :available-tags="availableTags"
+        name="viewableTags"
+      />
     </FormField>
 
     <fieldset class="grid gap-2 text-sm text-body">
@@ -126,13 +155,18 @@ function handleDocumentChange(documentId: string, event: Event) {
     <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
 
     <FormField
+      id="staff-page-published-at-input"
+      as="div"
       label="公開日時（日本時間）"
       label-class="font-medium"
       :helper="publishedAtHelper"
       :error="fieldErrors?.publishedAt"
     >
       <input
+        id="staff-page-published-at-input"
         v-model="publishedAtInput"
+        aria-describedby="staff-page-published-at-input-helper staff-page-published-at-input-error"
+        :aria-invalid="Boolean(fieldErrors?.publishedAt)"
         :class="[formControlVariants(), { 'border-danger': fieldErrors?.publishedAt }]"
         name="publishedAt"
         type="datetime-local"
@@ -143,6 +177,7 @@ function handleDocumentChange(documentId: string, event: Event) {
       <CheckboxField v-model="form.sendEmails" label="公開時にメールで配信する" name="sendEmails" />
       <p class="text-xs text-muted">
         公開日時になったタイミングでメールを配信します。公開日時が空欄または過去の日時の場合は、保存後1分以内に配信します。
+        予約中のメール配信は、チェックを外して保存するとキャンセルされます。
       </p>
     </div>
 

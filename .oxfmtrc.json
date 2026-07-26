@@ -11,12 +11,5 @@
   "insertFinalNewline": true,
   "vueIndentScriptAndStyle": false,
   "sortPackageJson": true,
-  "ignorePatterns": [
-    "dist/**",
-    "node_modules/**",
-    "coverage/**",
-    "storybook-static/**",
-    ".wrangler/**",
-    "**/migrations/**"
-  ]
+  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**", "storybook-static/**", ".wrangler/**"]
 }

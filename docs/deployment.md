@@ -57,6 +57,12 @@ PORTAL_SESSION_COOKIE_SECURE=true
 
 `PORTAL_API_BIND` does not need to be set in `.env.prod`; `docker-compose.prod.yml` overrides it to `:8080`.
 
+### API contract deployment order
+
+When deploying a release that changes the staff pages API, deploy the backend first and wait for its health checks to pass before publishing the frontend bundle. The backend accepts the new required `publishedAt` request field and returns `mailScheduled`, so the frontend can be rolled out without a mixed-version contract.
+
+If a rollback is needed, roll back the frontend before rolling back the backend. A backend-only rollback exposes the old backend, which may accept an omitted `publishedAt` from an old or already-open frontend tab and immediately publish a page that was scheduled for later. Roll back the frontend first so active clients use the compatible contract, then roll back the backend; never use a backend-only rollback to resume a partially deployed frontend release without checking the staff page editor.
+
 ---
 
 ## 2. Start the backend

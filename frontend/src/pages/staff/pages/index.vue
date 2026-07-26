@@ -116,7 +116,10 @@ const rawRows = computed<StaffDataGridRow[]>(() =>
 )
 
 function toPublishStatus(value: unknown): StaffPagePublishStatus {
-  return value === 'scheduled' || value === 'published' ? value : 'unpublished'
+  if (value === 'scheduled' || value === 'published' || value === 'unpublished') {
+    return value
+  }
+  throw new Error(`Unexpected staff page publication status: ${String(value)}`)
 }
 
 function publishStatusTone(value: unknown) {
@@ -132,7 +135,7 @@ function resolveSortValue(row: StaffDataGridRow, key: StaffPageSortKey) {
     return row.isPinned ? '1' : '0'
   }
   if (key === 'isPublic') {
-    return row.isPublic ? '1' : '0'
+    return String({ unpublished: 0, scheduled: 1, published: 2 }[toPublishStatus(row.publishStatus)])
   }
   return String(row[key] ?? '').toLowerCase()
 }
@@ -336,8 +339,14 @@ async function handleReload() {
             </StatusBadge>
           </template>
 
-          <template #cell-publishedAt="{ value }">
-            <span>{{ typeof value === 'string' && value ? formatDateTimeTable(value) : '-' }}</span>
+          <template #cell-publishedAt="{ value, row }">
+            <span>{{
+              row.publishStatus === 'unpublished'
+                ? '-'
+                : typeof value === 'string' && value
+                  ? formatDateTimeTable(value)
+                  : '-'
+            }}</span>
           </template>
 
           <template #cell-createdAt="{ value }">

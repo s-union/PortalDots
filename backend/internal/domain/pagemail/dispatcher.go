@@ -14,12 +14,14 @@ import (
 const (
 	// defaultBatchSize bounds how many mails one tick dispatches.
 	defaultBatchSize = 50
-	// defaultMaxAttempts gives up on a mail that keeps failing, so that a
-	// permanently broken row cannot occupy the batch and starve later mail.
-	defaultMaxAttempts = 5
+	// defaultMaxAttempts gives up on a mail after roughly a day of exponential
+	// backoff, so a short worker outage does not permanently lose the mail.
+	defaultMaxAttempts = 30
 	// defaultStaleAfter reclaims mails left behind by a process that died
 	// between claiming and dispatching.
 	defaultStaleAfter = 10 * time.Minute
+	// defaultTickTimeout lets an in-flight dispatch finish after shutdown.
+	defaultTickTimeout = 20 * time.Second
 )
 
 // Dispatcher sends the announcement email of pages whose publish time has come.
@@ -65,7 +67,12 @@ func (d *Dispatcher) Run(ctx context.Context) {
 			slog.Info("scheduled page mail dispatcher stopped")
 			return
 		case <-ticker.C:
-			if err := d.Tick(ctx); err != nil {
+			// A signal cancels ctx while Echo is draining requests. Keep this
+			// tick alive long enough to persist the worker result before exit.
+			tickCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), defaultTickTimeout)
+			err := d.Tick(tickCtx)
+			cancel()
+			if err != nil {
 				// A failing tick must not stop the loop; the next one retries.
 				slog.Error("scheduled page mail dispatch failed", "error", err)
 			}
@@ -123,12 +130,13 @@ func (d *Dispatcher) dispatch(ctx context.Context, schedule Schedule) error {
 	}
 	if len(job.To) == 0 {
 		slog.Info("scheduled page mail reaches nobody", "page_id", schedule.PageID)
-		return d.schedules.MarkSent(ctx, schedule.PageID)
+		return d.schedules.MarkSkipped(ctx, schedule.PageID)
 	}
 
 	if err := d.sender.Enqueue(ctx, job); err != nil {
 		return d.fail(ctx, schedule, err)
 	}
+	logQueuedMail(schedule, job, d.builder.config.AllowDangerously)
 
 	if err := d.schedules.MarkSent(ctx, schedule.PageID); err != nil {
 		// The mail is already on its way. Leaving the row claimed would make
@@ -136,7 +144,6 @@ func (d *Dispatcher) dispatch(ctx context.Context, schedule Schedule) error {
 		// worker rejects the repeat.
 		return err
 	}
-
 	slog.Info("scheduled page mail dispatched",
 		"page_id", schedule.PageID, "job_id", schedule.JobID, "recipients", len(job.To))
 	if d.activities != nil && schedule.ActorUserID != "" {
@@ -147,6 +154,31 @@ func (d *Dispatcher) dispatch(ctx context.Context, schedule Schedule) error {
 	}
 
 	return nil
+}
+
+func logQueuedMail(schedule Schedule, job cloudflareemail.EmailJob, allowDangerously bool) {
+	attrs := []any{
+		"kind", "queued_mail",
+		"source", "scheduled_page",
+		"jobID", schedule.JobID,
+		"circleID", "",
+		"createdByUserID", schedule.ActorUserID,
+	}
+	if allowDangerously {
+		attrs = append(attrs,
+			"subject", job.Subject,
+			"body", job.Body,
+			"recipients", job.To,
+		)
+	} else {
+		attrs = append(attrs,
+			"subject", "[redacted]",
+			"body", "[redacted]",
+			"recipientsCount", len(job.To),
+		)
+	}
+
+	slog.Info("mock queued mail prepared", attrs...)
 }
 
 func (d *Dispatcher) fail(ctx context.Context, schedule Schedule, cause error) error {

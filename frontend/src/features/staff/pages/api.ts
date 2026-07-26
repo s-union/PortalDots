@@ -2,7 +2,7 @@ import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffPageDetailSchema, staffPageSummarySchema } from '@/lib/api/schema'
-import { extractValidationMessage, parseValidationError, unwrapValidationError } from '@/lib/api/validation'
+import { parseValidationError, unwrapValidationError } from '@/lib/api/validation'
 import { parseTagString, formatTags } from '@/lib/tags'
 import {
   buildStaffListRequestParams,
@@ -21,6 +21,7 @@ export interface StaffPageSummary {
   publishedAt: string
   isPinned: boolean
   isPublic: boolean
+  mailScheduled: boolean
   viewableTags: string[]
   documentIds: string[]
   documents: StaffPageDocument[]
@@ -375,7 +376,22 @@ export function useStaffPageForm() {
 }
 
 export function extractStaffPageValidationMessage(error: unknown) {
-  return extractValidationMessage(error, 'お知らせの保存に失敗しました。')
+  const validation = unwrapValidationError(error)
+  if (!validation) {
+    return 'お知らせの保存に失敗しました。'
+  }
+
+  let hasPublishedAtError = false
+  for (const [field, messages] of Object.entries(validation.errors)) {
+    if (field === 'publishedAt' && messages.length > 0) {
+      hasPublishedAtError = true
+    }
+    if (field !== 'publishedAt' && messages.length > 0) {
+      return messages[0]
+    }
+  }
+
+  return hasPublishedAtError ? '' : 'お知らせの保存に失敗しました。'
 }
 
 /** Returns the server-side validation message for the publish time field, or an empty string. */

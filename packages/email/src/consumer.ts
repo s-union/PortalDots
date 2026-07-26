@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, notExists, or } from 'drizzle-orm'
+import { and, count, eq, inArray, notInArray, or } from 'drizzle-orm'
 import { createDb, type EmailDb } from './db/client'
 import { emailJobChunks, emailJobs, type ChunkStatus, type JobStatus } from './db/schema'
 import { renderTemplate } from './templates'
@@ -123,13 +123,16 @@ async function getMessageStatus(db: EmailDb, job: EmailJob): Promise<MessageStat
     .where(and(eq(emailJobs.jobId, job.jobId), eq(emailJobChunks.messageId, job.messageId)))
     .get()
 
-  return row ?? { jobStatus: 'queued', chunkStatus: 'queued', updatedAt: nowIso() }
+  if (!row) {
+    throw new Error(`Email message record is missing: ${job.messageId}`)
+  }
+  return row
 }
 
 async function claimMessage(db: EmailDb, job: EmailJob): Promise<'claimed' | 'skip' | 'retry'> {
   await ensureMessageRecord(db, job)
   const status = await getMessageStatus(db, job)
-  if (status.jobStatus === 'sent' || status.chunkStatus === 'sent') {
+  if (status.chunkStatus === 'sent') {
     return 'skip'
   }
   if (status.chunkStatus === 'processing' && !isStaleProcessing(status.updatedAt)) {
@@ -158,20 +161,21 @@ async function markMessageSent(db: EmailDb, job: EmailJob): Promise<void> {
     .update(emailJobChunks)
     .set({ status: 'sent', updatedAt: now, lastError: null })
     .where(eq(emailJobChunks.messageId, job.messageId))
+  const [jobRow, sentChunks] = await Promise.all([
+    db.select({ chunkCount: emailJobs.chunkCount }).from(emailJobs).where(eq(emailJobs.jobId, job.jobId)).get(),
+    db
+      .select({ count: count(emailJobChunks.messageId) })
+      .from(emailJobChunks)
+      .where(and(eq(emailJobChunks.jobId, job.jobId), eq(emailJobChunks.status, 'sent')))
+      .get()
+  ])
+  if (!jobRow || sentChunks?.count !== jobRow.chunkCount) {
+    return
+  }
   await db
     .update(emailJobs)
     .set({ status: 'sent', updatedAt: now, lastError: null })
-    .where(
-      and(
-        eq(emailJobs.jobId, job.jobId),
-        notExists(
-          db
-            .select({ messageId: emailJobChunks.messageId })
-            .from(emailJobChunks)
-            .where(and(eq(emailJobChunks.jobId, job.jobId), ne(emailJobChunks.status, 'sent')))
-        )
-      )
-    )
+    .where(and(eq(emailJobs.jobId, job.jobId), notInArray(emailJobs.status, ['sent'])))
 }
 
 async function markMessageFailed(db: EmailDb, job: EmailJob, error: unknown): Promise<void> {
@@ -181,11 +185,11 @@ async function markMessageFailed(db: EmailDb, job: EmailJob, error: unknown): Pr
     db
       .update(emailJobChunks)
       .set({ status: 'enqueue_failed', updatedAt: now, lastError: message })
-      .where(eq(emailJobChunks.messageId, job.messageId)),
+      .where(and(eq(emailJobChunks.messageId, job.messageId), notInArray(emailJobChunks.status, ['sent']))),
     db
       .update(emailJobs)
       .set({ status: 'enqueue_failed', updatedAt: now, lastError: message })
-      .where(eq(emailJobs.jobId, job.jobId))
+      .where(and(eq(emailJobs.jobId, job.jobId), notInArray(emailJobs.status, ['processing', 'sent'])))
   ])
 }
 

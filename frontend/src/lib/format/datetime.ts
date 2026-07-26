@@ -3,13 +3,13 @@ import { getTemporal, type TemporalGlobal } from '@/lib/temporal'
 const TIME_ZONE = 'Asia/Tokyo'
 
 /**
- * ISO 8601 文字列を「2026年3月3日(月) 09:00」形式にフォーマットする。
- * 空文字列や不正な値の場合はそのまま返す。
+ * Formats an ISO 8601 string as `2026年3月3日(火) 09:00`.
+ * Returns a placeholder for empty or invalid input.
  */
 export function formatDateTime(value: string): string {
   const zdt = toZonedDateTime(value)
   if (zdt === null) {
-    return value
+    return '-'
   }
 
   const weekday = weekdayName(zdt.dayOfWeek)
@@ -17,25 +17,24 @@ export function formatDateTime(value: string): string {
 }
 
 /**
- * ISO 8601 文字列を「2026/03/03 09:00:00」形式にフォーマットする。
- * staff 管理画面の一覧テーブルで利用する。
+ * Formats an ISO 8601 string as `2026/03/03 09:00:00` for staff tables.
  */
 export function formatDateTimeTable(value: string): string {
   const zdt = toZonedDateTime(value)
   if (zdt === null) {
-    return value
+    return '-'
   }
 
   return `${zdt.year}/${pad(zdt.month)}/${pad(zdt.day)} ${pad(zdt.hour)}:${pad(zdt.minute)}:${pad(zdt.second)}`
 }
 
 /**
- * ISO 8601 文字列を「2026年3月3日(月)」形式（日付のみ）にフォーマットする。
+ * Formats an ISO 8601 string as a date-only value such as `2026年3月3日(火)`.
  */
 export function formatDate(value: string): string {
   const zdt = toZonedDateTime(value)
   if (zdt === null) {
-    return value
+    return '-'
   }
 
   const weekday = weekdayName(zdt.dayOfWeek)
@@ -43,28 +42,29 @@ export function formatDate(value: string): string {
 }
 
 /**
- * ISO 8601 文字列を「2026年3月3日(月) 09:00 更新」形式にフォーマットする。
+ * Formats an ISO 8601 string as `2026年3月3日(火) 09:00 更新`.
  */
 export function formatDateTimeUpdated(value: string): string {
-  return `${formatDateTime(value)} 更新`
+  const formatted = formatDateTime(value)
+  return formatted === '-' ? '-' : `${formatted} 更新`
 }
 
 /**
- * ISO 8601 文字列を HTML の datetime-local input 用の値に変換する。
- * ローカルタイムゾーン (Asia/Tokyo) で「YYYY-MM-DDTHH:mm」形式を返す。
+ * Converts an ISO 8601 string to an HTML datetime-local value in Asia/Tokyo.
+ * Returns an empty value when the input is invalid.
  */
 export function formatDateTimeLocalValue(value: string): string {
   const zdt = toZonedDateTime(value)
   if (zdt === null) {
-    return value
+    return ''
   }
 
   return `${zdt.year}-${pad(zdt.month)}-${pad(zdt.day)}T${pad(zdt.hour)}:${pad(zdt.minute)}`
 }
 
 /**
- * HTML datetime-local input の値を ISO 8601 文字列に変換する。
- * 前回の値が渡された場合、秒・ミリ秒を保持する。
+ * Converts an HTML datetime-local value to an ISO 8601 string.
+ * Preserves seconds and milliseconds when the previous value is valid.
  */
 export function parseDateTimeLocalValue(value: string, previousISOValue = ''): string {
   if (value.trim().length === 0) {
@@ -90,7 +90,7 @@ export function parseDateTimeLocalValue(value: string, previousISOValue = ''): s
     const adjusted = zdt.with({ second, millisecond })
     return adjusted.toInstant().toString()
   } catch {
-    return value
+    return toZonedDateTime(previousISOValue) === null ? '' : previousISOValue
   }
 }
 

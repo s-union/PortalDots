@@ -111,14 +111,19 @@ export class TestD1Database implements D1Database {
     return rows.map((row) => row.messageId)
   }
 
-  async seedJob(job: { jobId: string; status: JobStatus; chunkCount: number }): Promise<void> {
+  async seedJob(job: {
+    jobId: string
+    status: JobStatus
+    chunkCount: number
+    recipientsCount?: number
+  }): Promise<void> {
     const now = new Date().toISOString()
     await this.drizzle.insert(emailJobs).values({
       ...job,
       template: 'markdown-notice',
       priority: 'normal',
       subject: 'Test Subject',
-      recipientsCount: job.chunkCount,
+      recipientsCount: job.recipientsCount ?? job.chunkCount,
       createdAt: now,
       updatedAt: now
     })

@@ -30,6 +30,10 @@ func (r *SQLCRepository) Unschedule(ctx context.Context, pageID string) error {
 	return r.queries.DeleteScheduledPageMail(ctx, pageID)
 }
 
+func (r *SQLCRepository) HasActiveSchedule(ctx context.Context, pageID string) (bool, error) {
+	return r.queries.HasActiveScheduledPageMail(ctx, pageID)
+}
+
 func (r *SQLCRepository) ClaimDue(ctx context.Context, limit int) ([]Schedule, error) {
 	rows, err := r.queries.ClaimDueScheduledPageMails(ctx, int32(limit))
 	if err != nil {
@@ -59,6 +63,10 @@ func (r *SQLCRepository) Release(ctx context.Context, pageID string) error {
 
 func (r *SQLCRepository) MarkSent(ctx context.Context, pageID string) error {
 	return r.queries.MarkScheduledPageMailSent(ctx, pageID)
+}
+
+func (r *SQLCRepository) MarkSkipped(ctx context.Context, pageID string) error {
+	return r.queries.MarkScheduledPageMailSkipped(ctx, pageID)
 }
 
 func (r *SQLCRepository) MarkFailed(ctx context.Context, pageID string, maxAttempts int, cause string) error {

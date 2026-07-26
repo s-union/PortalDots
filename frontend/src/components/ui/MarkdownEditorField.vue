@@ -12,13 +12,19 @@ const {
   guideHref = '/staff/markdown-guide',
   minHeightClass = 'min-h-[20em]',
   name,
-  placeholder = ''
+  placeholder = '',
+  id,
+  ariaInvalid,
+  ariaDescribedBy
 } = defineProps<{
   disabled?: boolean
   guideHref?: string
   minHeightClass?: string
   name: string
   placeholder?: string
+  id?: string
+  ariaInvalid?: boolean
+  ariaDescribedBy?: string
 }>()
 
 const previewVisible = ref(false)
@@ -159,9 +165,12 @@ const toolbarActions: ToolbarAction[] = [
     <!-- Editor -->
     <div class="relative">
       <textarea
+        :id="id"
         ref="textarea"
         v-model="model"
+        :aria-describedby="ariaDescribedBy"
         :aria-label="name"
+        :aria-invalid="ariaInvalid"
         :class="
           cn(
             formControlVariants(),

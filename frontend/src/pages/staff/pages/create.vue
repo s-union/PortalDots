@@ -5,7 +5,7 @@ definePage({
   meta: staffPageMeta('pages.edit')
 })
 
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -51,6 +51,7 @@ async function handleCreatePage() {
   publishedAtError.value = ''
 
   if (!validateAll()) {
+    await focusFirstInvalidField()
     return
   }
 
@@ -70,7 +71,14 @@ async function handleCreatePage() {
   } catch (error) {
     errorMessage.value = extractStaffPageValidationMessage(error)
     publishedAtError.value = extractStaffPagePublishedAtError(error)
+    await focusFirstInvalidField()
   }
+}
+
+async function focusFirstInvalidField() {
+  await nextTick()
+  const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]')
+  invalid?.focus()
 }
 </script>
 

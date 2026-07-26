@@ -76,6 +76,7 @@ describe('StaffPageDetailPage', () => {
           publishedAt: '2026-03-05T10:00:00Z',
           isPinned: false,
           isPublic: true,
+          mailScheduled: false,
           viewableTags: ['展示'],
           documentIds: ['document-circle-b-1'],
           documents: [documentCircleB1]
@@ -94,6 +95,7 @@ describe('StaffPageDetailPage', () => {
           publishedAt: '2026-03-05T10:00:00Z',
           isPinned: false,
           isPublic: false,
+          mailScheduled: false,
           viewableTags: ['展示', 'ステージ'],
           documentIds: ['document-circle-b-1'],
           documents: [documentCircleB1]
@@ -201,6 +203,7 @@ describe('StaffPageDetailPage', () => {
           publishedAt: '2099-01-15T10:00:00Z',
           isPinned: false,
           isPublic: true,
+          mailScheduled: true,
           viewableTags: [],
           documentIds: [],
           documents: []
@@ -218,6 +221,7 @@ describe('StaffPageDetailPage', () => {
           publishedAt: '2026-07-25T10:00:00Z',
           isPinned: false,
           isPublic: true,
+          mailScheduled: true,
           viewableTags: [],
           documentIds: [],
           documents: []
@@ -288,6 +292,7 @@ describe('StaffPageDetailPage', () => {
           publishedAt: '2099-01-15T10:00:00Z',
           isPinned: false,
           isPublic: true,
+          mailScheduled: true,
           viewableTags: [],
           documentIds: [],
           documents: []
@@ -344,7 +349,7 @@ describe('StaffPageDetailPage', () => {
     await flushPromises()
     await flushPromises()
 
-    const publishedAtField = wrapper.get('input[name="publishedAt"]').element.closest('label')
-    expect(publishedAtField?.textContent).toContain('公開日時が正しくありません')
+    expect(wrapper.get('#staff-page-published-at-input-error').text()).toContain('公開日時が正しくありません')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 })

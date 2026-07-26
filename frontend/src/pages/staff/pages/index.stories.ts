@@ -14,22 +14,18 @@ const meta = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/pages', () =>
-          HttpResponse.json({
-            items: [
-              {
-                ...mockPageDetail,
-                notes: '',
-                isPinned: false,
-                isPublic: true,
-                viewableTags: [],
-                documentIds: [],
-                documents: []
-              }
-            ],
-            page: 1,
-            pageSize: 20,
-            total: 1
-          })
+          HttpResponse.json([
+            {
+              ...mockPageDetail,
+              notes: '',
+              isPinned: false,
+              isPublic: true,
+              mailScheduled: false,
+              viewableTags: [],
+              documentIds: [],
+              documents: []
+            }
+          ])
         )
       ]
     }
@@ -47,14 +43,7 @@ export const Scheduled: Story = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/pages', () =>
-          HttpResponse.json({
-            items: [mockScheduledStaffPage],
-            page: 1,
-            pageSize: 20,
-            total: 1
-          })
-        )
+        http.get('/v1/staff/pages', () => HttpResponse.json([mockScheduledStaffPage]))
       ]
     }
   }

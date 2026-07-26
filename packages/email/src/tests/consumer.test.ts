@@ -261,6 +261,41 @@ describe('email queue consumer', () => {
     expect(retry).not.toHaveBeenCalled()
   })
 
+  it('does not roll a sent job back when a later chunk fails', async () => {
+    const ack = vi.fn()
+    const retry = vi.fn()
+    const db = new TestD1Database()
+    await db.seedJob({ jobId: 'job-1', status: 'sent', chunkCount: 2, recipientsCount: 2 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'sent' })
+    await db.seedChunk({ messageId: 'job-1:1', jobId: 'job-1', chunkIndex: 1, status: 'queued' })
+    const emailSend = vi.fn().mockRejectedValue(new Error('Send failed'))
+
+    const batch = createMessageBatch([
+      {
+        body: {
+          jobId: 'job-1',
+          messageId: 'job-1:1',
+          chunkIndex: 1,
+          chunkCount: 2,
+          template: 'markdown-notice',
+          priority: 'normal',
+          to: ['b@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test',
+          body: 'Test body',
+          variables: {}
+        },
+        ack,
+        retry
+      }
+    ])
+
+    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    expect(await db.jobStatus('job-1')).toBe('sent')
+    expect(retry).toHaveBeenCalled()
+    expect(ack).not.toHaveBeenCalled()
+  })
+
   it('acks sent email even when sent status update fails', async () => {
     const ack = vi.fn()
     const retry = vi.fn()
