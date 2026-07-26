@@ -130,7 +130,7 @@ func (h *workspaceHandlers) currentWorkspaceCircleTags(c *echo.Context, currentS
 		return nil, http.StatusInternalServerError, false
 	}
 
-	return effectiveCircleTagsForCircles(c.Request().Context(), circles, h.participationTypes), http.StatusOK, true
+	return circle.EffectiveTagsForCircles(c.Request().Context(), circles, h.participationTypes), http.StatusOK, true
 }
 
 func (h *workspaceHandlers) listAccessibleWorkspaceForms(ctx context.Context, currentCircle circle.Circle, status string, query string) ([]backendform.Form, error) {
@@ -217,7 +217,7 @@ func (h *workspaceHandlers) canAccessWorkspaceForm(ctx context.Context, currentC
 		return true
 	}
 
-	for _, circleTag := range effectiveCircleTags(ctx, currentCircle, h.participationTypes) {
+	for _, circleTag := range circle.EffectiveTags(ctx, currentCircle, h.participationTypes) {
 		if slices.Contains(formValue.AnswerableTags, circleTag) {
 			return true
 		}

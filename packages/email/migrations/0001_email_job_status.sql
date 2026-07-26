@@ -1,6 +1,7 @@
 CREATE TABLE email_jobs (
   job_id TEXT PRIMARY KEY,
-  status TEXT NOT NULL CHECK (status IN ('queued', 'enqueue_failed', 'processing', 'sent')),
+  -- 'pending': the job is recorded but the queue has not accepted every chunk yet.
+  status TEXT NOT NULL CHECK (status IN ('pending', 'queued', 'enqueue_failed', 'processing', 'sent')),
   template TEXT NOT NULL,
   priority TEXT NOT NULL CHECK (priority IN ('high', 'normal')),
   subject TEXT NOT NULL,

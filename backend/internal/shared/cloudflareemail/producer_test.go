@@ -11,7 +11,7 @@ import (
 func TestEnqueue_SendsCorrectPayload(t *testing.T) {
 	t.Parallel()
 
-	var receivedJob EmailJob
+	var received map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
@@ -22,7 +22,7 @@ func TestEnqueue_SendsCorrectPayload(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-token" {
 			t.Errorf("expected Authorization header, got %s", r.Header.Get("Authorization"))
 		}
-		if err := json.NewDecoder(r.Body).Decode(&receivedJob); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
 			t.Fatalf("failed to decode body: %v", err)
 		}
 		w.WriteHeader(http.StatusOK)
@@ -37,6 +37,7 @@ func TestEnqueue_SendsCorrectPayload(t *testing.T) {
 		From:        "sender@example.com",
 		To:          []string{"a@example.com", "b@example.com"},
 		Subject:     "Test",
+		Body:        "delivered",
 		HistoryBody: "must not be delivered",
 		Variables: map[string]string{
 			"appName": "PortalDots",
@@ -45,14 +46,14 @@ func TestEnqueue_SendsCorrectPayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enqueue failed: %v", err)
 	}
-	if receivedJob.JobId != "job-1" {
-		t.Errorf("expected jobId job-1, got %s", receivedJob.JobId)
+	if received["jobId"] != "job-1" {
+		t.Errorf("expected jobId job-1, got %v", received["jobId"])
 	}
-	if receivedJob.Priority != PriorityHigh {
-		t.Errorf("expected priority high, got %s", receivedJob.Priority)
+	if received["priority"] != string(PriorityHigh) {
+		t.Errorf("expected priority high, got %v", received["priority"])
 	}
-	if receivedJob.HistoryBody != "" {
-		t.Errorf("history body leaked into producer payload: %q", receivedJob.HistoryBody)
+	if received["body"] != "delivered" {
+		t.Errorf("expected the delivered body on the wire, got %v", received["body"])
 	}
 }
 

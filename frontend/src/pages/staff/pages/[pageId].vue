@@ -5,19 +5,23 @@ definePage({
   meta: staffPageMeta('pages.edit')
 })
 
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import { formatDateTimeUpdated } from '@/lib/format/datetime'
+import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
 import {
+  extractStaffPagePublishedAtError,
   extractStaffPageValidationMessage,
+  resolveStaffPagePublishStatus,
+  staffPagePublishStatusLabels,
+  staffPagePublishStatusTones,
   useDeleteStaffPageMutation,
   useStaffPageDetailQuery,
   useStaffPageForm,
@@ -43,6 +47,7 @@ const deletePageMutation = useDeleteStaffPageMutation(pageId)
 const form = useStaffPageForm()
 const errorMessage = ref('')
 const successMessage = ref('')
+const publishedAtError = ref('')
 
 const { fieldErrors, validateAll, markTouched } = useFormValidation({
   schema: staffPageFormSchema,
@@ -51,6 +56,24 @@ const { fieldErrors, validateAll, markTouched } = useFormValidation({
 
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
+
+const editorFieldErrors = computed(() =>
+  publishedAtError.value ? { ...fieldErrors.value, publishedAt: publishedAtError.value } : fieldErrors.value
+)
+
+const publishStatusBadge = computed(() => {
+  const page = pageQuery.data.value
+  if (!page) {
+    return null
+  }
+
+  const status = resolveStaffPagePublishStatus(page)
+  const label = staffPagePublishStatusLabels[status]
+  return {
+    tone: staffPagePublishStatusTones[status],
+    label: status === 'scheduled' ? `${label}: ${formatDateTime(page.publishedAt)}` : label
+  }
+})
 
 watch(
   () => pageQuery.data.value,
@@ -67,7 +90,8 @@ watch(
       isPublic: page.isPublic,
       viewableTags: [...page.viewableTags],
       documentIds: [...page.documentIds],
-      sendEmails: false
+      sendEmails: page.mailScheduled,
+      publishedAt: page.publishedAt
     }
   },
   { immediate: true }
@@ -76,13 +100,15 @@ watch(
 async function handleSavePage() {
   errorMessage.value = ''
   successMessage.value = ''
+  publishedAtError.value = ''
 
   if (!validateAll()) {
+    await focusFirstInvalidField()
     return
   }
 
   try {
-    await updatePageMutation.mutateAsync({
+    const updatedPage = await updatePageMutation.mutateAsync({
       title: form.value.title,
       body: form.value.body,
       notes: form.value.notes,
@@ -90,13 +116,22 @@ async function handleSavePage() {
       isPublic: form.value.isPublic,
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails
+      sendEmails: form.value.sendEmails,
+      publishedAt: form.value.publishedAt
     })
-    form.value.sendEmails = false
+    form.value.sendEmails = updatedPage.mailScheduled
     successMessage.value = 'お知らせを更新しました。'
   } catch (error) {
     errorMessage.value = extractStaffPageValidationMessage(error)
+    publishedAtError.value = extractStaffPagePublishedAtError(error)
+    await focusFirstInvalidField()
   }
+}
+
+async function focusFirstInvalidField() {
+  await nextTick()
+  const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]')
+  invalid?.focus()
 }
 
 async function handleDeletePage() {
@@ -125,8 +160,8 @@ async function handleDeletePage() {
         <SurfaceCardBand>
           <h1 class="text-2xl font-semibold text-body">お知らせを編集</h1>
           <div class="mt-3 flex flex-wrap gap-2">
-            <StatusBadge :tone="pageQuery.data.value.isPublic ? 'success' : 'muted'" appearance="outlined">
-              {{ pageQuery.data.value.isPublic ? '公開中' : '非公開' }}
+            <StatusBadge v-if="publishStatusBadge" :tone="publishStatusBadge.tone" appearance="outlined">
+              {{ publishStatusBadge.label }}
             </StatusBadge>
             <StatusBadge :tone="pageQuery.data.value.isPinned ? 'primary' : 'muted'" appearance="outlined">
               {{ pageQuery.data.value.isPinned ? '固定表示' : '通常表示' }}
@@ -146,7 +181,7 @@ async function handleDeletePage() {
             :success-message="successMessage"
             submit-label="保存"
             :submitting="updatePageMutation.isPending.value"
-            :field-errors="fieldErrors"
+            :field-errors="editorFieldErrors"
             :on-blur-field="markTouched"
           />
         </div>

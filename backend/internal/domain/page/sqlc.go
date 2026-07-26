@@ -2,6 +2,7 @@ package page
 
 import (
 	"context"
+	"time"
 
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
@@ -159,6 +160,7 @@ func (r *SQLCRepository) Create(
 	isPinned bool,
 	viewableTags []string,
 	documentIDs []string,
+	publishedAt time.Time,
 ) Page {
 	row, err := r.queries.CreatePage(ctx, dbgen.CreatePageParams{
 		Title:        title,
@@ -168,6 +170,7 @@ func (r *SQLCRepository) Create(
 		IsPublic:     isPublic,
 		ViewableTags: viewableTags,
 		DocumentIds:  documentIDs,
+		PublishedAt:  pgutil.Timestamptz(publishedAt),
 	})
 	if err != nil {
 		return Page{}
@@ -186,6 +189,7 @@ func (r *SQLCRepository) Update(
 	isPinned bool,
 	viewableTags []string,
 	documentIDs []string,
+	publishedAt time.Time,
 ) (Page, bool) {
 	row, err := r.queries.UpdatePage(ctx, dbgen.UpdatePageParams{
 		ID:           pageID,
@@ -196,6 +200,7 @@ func (r *SQLCRepository) Update(
 		IsPublic:     isPublic,
 		ViewableTags: viewableTags,
 		DocumentIds:  documentIDs,
+		PublishedAt:  pgutil.Timestamptz(publishedAt),
 	})
 	if err != nil {
 		return Page{}, false
@@ -264,6 +269,7 @@ func mapGuestPage(row dbgen.ListGuestPagesRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -279,6 +285,7 @@ func mapCirclePage(row dbgen.ListPagesForCircleRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -294,6 +301,7 @@ func mapGuestPagePaginated(row dbgen.ListGuestPagesPaginatedRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -309,6 +317,7 @@ func mapCirclePagePaginated(row dbgen.ListPagesForCirclePaginatedRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -324,6 +333,7 @@ func mapStaffPageRow(row dbgen.ListStaffPagesRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -339,6 +349,7 @@ func mapGuestPageDetail(row dbgen.GetGuestPageByIDRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -354,6 +365,7 @@ func mapCirclePageDetail(row dbgen.GetPageByIDForCircleRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -369,6 +381,7 @@ func mapStaffPage(row dbgen.GetStaffPageByIDRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -384,6 +397,7 @@ func mapCreatedPage(row dbgen.CreatePageRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -399,6 +413,7 @@ func mapUpdatedPage(row dbgen.UpdatePageRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }
 
@@ -414,5 +429,6 @@ func mapPinnedPage(row dbgen.PatchPagePinRow) Page {
 		DocumentIDs:  append([]string{}, row.DocumentIds...),
 		CreatedAt:    pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt:    pgutil.FormatTimestamptz(row.UpdatedAt),
+		PublishedAt:  pgutil.FormatTimestamptz(row.PublishedAt),
 	}
 }

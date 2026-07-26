@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite dev --port 8787",
     "dev:local-stack": "wrangler d1 migrations apply email-idempotency --local --persist-to .wrangler/state && vite dev --port 8787",
-    "deploy": "vite build && wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "deploy": "vite build && wrangler d1 migrations apply email-idempotency --remote && wrangler deploy",
     "preview": "hono-email preview --dir src/templates",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --type-aware .",
@@ -15,6 +16,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hono/standard-validator": "^0.3.0",
+    "drizzle-orm": "^0.45.2",
     "hono": "4.12.27",
     "hono-email": "0.8.0",
     "zod": "4.4.3"
@@ -25,6 +28,7 @@
     "@hono-email/preview": "0.8.0",
     "@hono-email/tailwind-plugin": "0.8.0",
     "@tailwindcss/vite": "4.3.2",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "4.3.2",
     "typescript": "^7.0.2",
     "vite": "8.1.4",

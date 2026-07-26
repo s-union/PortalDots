@@ -1,10 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
 
 vi.mock('../templates', () => ({
   renderTemplate: vi.fn()
 }))
 
 import { queueHandler } from '../consumer'
+import { emailJobChunks } from '../db/schema'
 import { renderTemplate } from '../templates'
 import { TestD1Database } from './helpers/d1'
 
@@ -158,8 +160,8 @@ describe('email queue consumer', () => {
     const retry = vi.fn()
     const emailSend = vi.fn()
     const db = new TestD1Database()
-    db.jobs.set('job-1', { status: 'queued' })
-    db.chunks.set('job-1:0', { jobId: 'job-1', status: 'sent', updatedAt: new Date().toISOString() })
+    await db.seedJob({ jobId: 'job-1', status: 'queued', chunkCount: 1 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'sent' })
 
     const batch = createMessageBatch([
       {
@@ -187,12 +189,51 @@ describe('email queue consumer', () => {
     expect(retry).not.toHaveBeenCalled()
   })
 
-  it('acks sent email even when sent status update fails', async () => {
+  it('retries a non-stale processing chunk without sending', async () => {
     const ack = vi.fn()
     const retry = vi.fn()
     const emailSend = vi.fn()
     const db = new TestD1Database()
-    db.failSentUpdate = true
+    await db.seedJob({ jobId: 'job-1', status: 'queued', chunkCount: 1 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'processing' })
+
+    const batch = createMessageBatch([
+      {
+        body: {
+          jobId: 'job-1',
+          messageId: 'job-1:0',
+          chunkIndex: 0,
+          chunkCount: 1,
+          template: 'markdown-notice',
+          priority: 'normal',
+          to: ['a@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test',
+          body: 'Test body',
+          variables: {}
+        },
+        ack,
+        retry
+      }
+    ])
+
+    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    expect(emailSend).not.toHaveBeenCalled()
+    expect(retry).toHaveBeenCalled()
+    expect(ack).not.toHaveBeenCalled()
+  })
+
+  it('reclaims a stale processing chunk and sends', async () => {
+    const ack = vi.fn()
+    const retry = vi.fn()
+    const emailSend = vi.fn()
+    const db = new TestD1Database()
+    await db.seedJob({ jobId: 'job-1', status: 'queued', chunkCount: 1 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'processing' })
+    await db.drizzle
+      .update(emailJobChunks)
+      .set({ updatedAt: new Date(Date.now() - 16 * 60 * 1000).toISOString() })
+      .where(eq(emailJobChunks.messageId, 'job-1:0'))
 
     const batch = createMessageBatch([
       {
@@ -216,6 +257,80 @@ describe('email queue consumer', () => {
 
     await queueHandler(batch as never, createEnv(emailSend, db) as never)
     expect(emailSend).toHaveBeenCalledTimes(1)
+    expect(ack).toHaveBeenCalled()
+    expect(retry).not.toHaveBeenCalled()
+  })
+
+  it('does not roll a sent job back when a later chunk fails', async () => {
+    const ack = vi.fn()
+    const retry = vi.fn()
+    const db = new TestD1Database()
+    await db.seedJob({ jobId: 'job-1', status: 'sent', chunkCount: 2, recipientsCount: 2 })
+    await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'sent' })
+    await db.seedChunk({ messageId: 'job-1:1', jobId: 'job-1', chunkIndex: 1, status: 'queued' })
+    const emailSend = vi.fn().mockRejectedValue(new Error('Send failed'))
+
+    const batch = createMessageBatch([
+      {
+        body: {
+          jobId: 'job-1',
+          messageId: 'job-1:1',
+          chunkIndex: 1,
+          chunkCount: 2,
+          template: 'markdown-notice',
+          priority: 'normal',
+          to: ['b@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test',
+          body: 'Test body',
+          variables: {}
+        },
+        ack,
+        retry
+      }
+    ])
+
+    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    expect(await db.jobStatus('job-1')).toBe('sent')
+    expect(retry).toHaveBeenCalled()
+    expect(ack).not.toHaveBeenCalled()
+  })
+
+  it('acks sent email even when sent status update fails', async () => {
+    const ack = vi.fn()
+    const retry = vi.fn()
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    onTestFinished(() => consoleError.mockRestore())
+    const db = new TestD1Database()
+    // The mail leaves, then D1 goes down: every write after delivery fails,
+    // including the one that records the chunk as sent.
+    const emailSend = vi.fn().mockImplementation(() => db.breakWrites())
+
+    const batch = createMessageBatch([
+      {
+        body: {
+          jobId: 'job-1',
+          messageId: 'job-1:0',
+          chunkIndex: 0,
+          chunkCount: 1,
+          template: 'markdown-notice',
+          priority: 'normal',
+          to: ['a@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test',
+          body: 'Test body',
+          variables: {}
+        },
+        ack,
+        retry
+      }
+    ])
+
+    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    expect(emailSend).toHaveBeenCalledTimes(1)
+    // Proof the bookkeeping really failed, so the ack below is the "sent but
+    // unrecorded" path rather than an ordinary success.
+    expect(consoleError).toHaveBeenCalledWith('Failed to mark email job as sent:', expect.any(Error))
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
   })

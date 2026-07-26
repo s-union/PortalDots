@@ -13,6 +13,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
+	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
@@ -239,11 +240,11 @@ func (h *staffFormHandlers) staffFormAnswerMailRecipients(createdByUserID, targe
 		return nil
 	}
 
-	recipients := collectUsersEmailRecipients(users)
+	recipients := useradmin.MailRecipients(users...)
 
 	creator, err := h.users.Find(createdByUserID)
 	if err == nil {
-		recipients = append(recipients, collectUserEmailRecipients(creator)...)
+		recipients = append(recipients, useradmin.MailRecipients(creator)...)
 	}
 
 	return normalizeRecipients(recipients)

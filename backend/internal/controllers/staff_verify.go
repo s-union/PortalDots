@@ -12,6 +12,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
+	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
@@ -68,7 +69,7 @@ func (h *staffVerifyHandlers) requestStaffVerification(c *echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	recipients := collectUserEmailRecipients(managedUser)
+	recipients := useradmin.MailRecipients(managedUser)
 	if err := h.enqueueStaffVerifyCodeMail(c.Request().Context(), currentSession.User.ID, currentSession.CurrentCircleID, currentSession.User.DisplayName, verifyCode, recipients); err != nil {
 		return internalError(c)
 	}

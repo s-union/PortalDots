@@ -1,0 +1,206 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "de17646e-8748-4c85-a8c0-44749f968b8d",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "email_job_chunks": {
+      "name": "email_job_chunks",
+      "columns": {
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "chunk_index": {
+          "name": "chunk_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "chunk_count": {
+          "name": "chunk_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recipients_count": {
+          "name": "recipients_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "email_job_chunks_job_id_status_index": {
+          "name": "email_job_chunks_job_id_status_index",
+          "columns": ["job_id", "status"],
+          "isUnique": false
+        },
+        "email_job_chunks_job_id_chunk_index_unique": {
+          "name": "email_job_chunks_job_id_chunk_index_unique",
+          "columns": ["job_id", "chunk_index"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "email_job_chunks_job_id_email_jobs_job_id_fk": {
+          "name": "email_job_chunks_job_id_email_jobs_job_id_fk",
+          "tableFrom": "email_job_chunks",
+          "tableTo": "email_jobs",
+          "columnsFrom": ["job_id"],
+          "columnsTo": ["job_id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "email_job_chunks_status_check": {
+          "name": "email_job_chunks_status_check",
+          "value": "status IN ('queued', 'enqueue_failed', 'processing', 'sent')"
+        }
+      }
+    },
+    "email_jobs": {
+      "name": "email_jobs",
+      "columns": {
+        "job_id": {
+          "name": "job_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "template": {
+          "name": "template",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "priority": {
+          "name": "priority",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recipients_count": {
+          "name": "recipients_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "chunk_count": {
+          "name": "chunk_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "email_jobs_status_check": {
+          "name": "email_jobs_status_check",
+          "value": "status IN ('pending', 'queued', 'enqueue_failed', 'processing', 'sent')"
+        },
+        "email_jobs_priority_check": {
+          "name": "email_jobs_priority_check",
+          "value": "priority IN ('high', 'normal')"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

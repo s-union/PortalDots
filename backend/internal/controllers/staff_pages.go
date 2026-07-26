@@ -2,41 +2,62 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v5"
 	backendpage "github.com/s-union/PortalDots/backend/internal/domain/page"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 type staffPageSummaryResponse struct {
-	ID           string                 `json:"id"`
-	Title        string                 `json:"title"`
-	Body         string                 `json:"body"`
-	Notes        string                 `json:"notes"`
-	CreatedAt    string                 `json:"createdAt"`
-	UpdatedAt    string                 `json:"updatedAt"`
-	IsPinned     bool                   `json:"isPinned"`
-	IsPublic     bool                   `json:"isPublic"`
-	ViewableTags []string               `json:"viewableTags"`
-	DocumentIDs  []string               `json:"documentIds"`
-	Documents    []pageDocumentResponse `json:"documents"`
+	ID            string                 `json:"id"`
+	Title         string                 `json:"title"`
+	Body          string                 `json:"body"`
+	Notes         string                 `json:"notes"`
+	CreatedAt     string                 `json:"createdAt"`
+	UpdatedAt     string                 `json:"updatedAt"`
+	PublishedAt   string                 `json:"publishedAt"`
+	IsPinned      bool                   `json:"isPinned"`
+	IsPublic      bool                   `json:"isPublic"`
+	MailScheduled bool                   `json:"mailScheduled"`
+	ViewableTags  []string               `json:"viewableTags"`
+	DocumentIDs   []string               `json:"documentIds"`
+	Documents     []pageDocumentResponse `json:"documents"`
 }
 
 type staffPageDetailResponse = staffPageSummaryResponse
 
 type mutateStaffPageRequest struct {
-	Title        string   `json:"title"`
-	Body         string   `json:"body"`
-	Notes        string   `json:"notes"`
-	IsPinned     bool     `json:"isPinned"`
-	IsPublic     bool     `json:"isPublic"`
-	ViewableTags []string `json:"viewableTags"`
-	DocumentIDs  []string `json:"documentIds"`
-	SendEmails   bool     `json:"sendEmails"`
+	Title              string   `json:"title"`
+	Body               string   `json:"body"`
+	Notes              string   `json:"notes"`
+	IsPinned           bool     `json:"isPinned"`
+	IsPublic           bool     `json:"isPublic"`
+	ViewableTags       []string `json:"viewableTags"`
+	DocumentIDs        []string `json:"documentIds"`
+	SendEmails         *bool    `json:"sendEmails"`
+	PublishedAt        *string  `json:"publishedAt"`
+	publishedAtPresent bool
+}
+
+func (r *mutateStaffPageRequest) UnmarshalJSON(data []byte) error {
+	type requestAlias mutateStaffPageRequest
+	var decoded requestAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	*r = mutateStaffPageRequest(decoded)
+	_, r.publishedAtPresent = fields["publishedAt"]
+	return nil
 }
 
 type patchStaffPagePinRequest struct {
@@ -57,6 +78,11 @@ func (h *staffPageHandlers) listStaffPages(c *echo.Context) error {
 	response := make([]staffPageSummaryResponse, 0, len(pages))
 	for _, currentPage := range pages {
 		item := mapStaffPageSummary(currentPage, h.pageDocuments(currentPage.DocumentIDs, true))
+		mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), currentPage.ID)
+		if err != nil {
+			return internalError(c)
+		}
+		item.MailScheduled = mailScheduled
 		if !matchesStaffListFilters(staffPageSummaryFilterResolver(item), filterQueries, filterMode) {
 			continue
 		}
@@ -67,14 +93,15 @@ func (h *staffPageHandlers) listStaffPages(c *echo.Context) error {
 }
 
 var staffPageFilterableFields = map[string]staffListFilterFieldType{
-	"id":        staffListFilterFieldTypeString,
-	"title":     staffListFilterFieldTypeString,
-	"isPinned":  staffListFilterFieldTypeBool,
-	"isPublic":  staffListFilterFieldTypeBool,
-	"body":      staffListFilterFieldTypeString,
-	"notes":     staffListFilterFieldTypeString,
-	"createdAt": staffListFilterFieldTypeString,
-	"updatedAt": staffListFilterFieldTypeString,
+	"id":          staffListFilterFieldTypeString,
+	"title":       staffListFilterFieldTypeString,
+	"isPinned":    staffListFilterFieldTypeBool,
+	"isPublic":    staffListFilterFieldTypeBool,
+	"body":        staffListFilterFieldTypeString,
+	"notes":       staffListFilterFieldTypeString,
+	"createdAt":   staffListFilterFieldTypeString,
+	"updatedAt":   staffListFilterFieldTypeString,
+	"publishedAt": staffListFilterFieldTypeString,
 }
 
 func staffPageSummaryFilterResolver(item staffPageSummaryResponse) func(string) (string, bool) {
@@ -96,6 +123,8 @@ func staffPageSummaryFilterResolver(item staffPageSummaryResponse) func(string) 
 			return item.CreatedAt, true
 		case "updatedAt":
 			return item.UpdatedAt, true
+		case "publishedAt":
+			return item.PublishedAt, true
 		default:
 			return "", false
 		}
@@ -114,6 +143,11 @@ func (h *staffPageHandlers) getStaffPage(c *echo.Context) error {
 	}
 
 	response := mapStaffPageDetail(pageValue)
+	mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), pageValue.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	response.MailScheduled = mailScheduled
 	response.Documents = h.pageDocuments(pageValue.DocumentIDs, true)
 	return c.JSON(http.StatusOK, response)
 }
@@ -128,11 +162,15 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 	if !valid {
 		return validationError(c, validationErrors)
 	}
-	if request.SendEmails && !canSendPageEmails(currentSession.User) {
+	if request.SendEmails != nil && *request.SendEmails && !canSendPageEmails(currentSession.User) {
 		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, nil); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
+	}
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
+	if !validPublishedAt {
+		return validationError(c, publishedAtErrors)
 	}
 
 	created := h.pages.Create(c.Request().Context(),
@@ -143,6 +181,7 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 		request.IsPinned,
 		request.ViewableTags,
 		request.DocumentIDs,
+		publishedAt,
 	)
 	recordActivity(
 		c.Request().Context(),
@@ -154,10 +193,19 @@ func (h *staffPageHandlers) createStaffPage(c *echo.Context) error {
 		"",
 		buildActivitySummary("staff がページを作成しました", created.Title),
 	)
-	if request.SendEmails {
-		h.enqueuePageMail(c.Request().Context(), currentSession.User.ID, created)
+	if canSendPageEmails(currentSession.User) && request.SendEmails != nil {
+		if err := h.schedulePageMail(c.Request().Context(), currentSession.User.ID, created.ID, *request.SendEmails); err != nil {
+			return internalError(c)
+		}
 	}
-	return c.JSON(http.StatusCreated, mapStaffPageSummary(created, h.pageDocuments(created.DocumentIDs, true)))
+
+	response := mapStaffPageSummary(created, h.pageDocuments(created.DocumentIDs, true))
+	mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), created.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	response.MailScheduled = mailScheduled
+	return c.JSON(http.StatusCreated, response)
 }
 
 func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
@@ -175,11 +223,15 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 	if !valid {
 		return validationError(c, validationErrors)
 	}
-	if request.SendEmails && !canSendPageEmails(currentSession.User) {
+	if request.SendEmails != nil && *request.SendEmails && !canSendPageEmails(currentSession.User) {
 		return errorJSON(c, http.StatusForbidden, "forbidden")
 	}
 	if documentErrors := h.validateStaffPageDocumentIDs(request.DocumentIDs, pageValue.DocumentIDs); len(documentErrors) > 0 {
 		return validationError(c, documentErrors)
+	}
+	publishedAt, publishedAtErrors, validPublishedAt := parseStaffPagePublishedAt(request.PublishedAt)
+	if !validPublishedAt {
+		return validationError(c, publishedAtErrors)
 	}
 
 	updated, found := h.pages.Update(c.Request().Context(),
@@ -191,6 +243,7 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 		request.IsPinned,
 		request.ViewableTags,
 		request.DocumentIDs,
+		publishedAt,
 	)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
@@ -206,11 +259,21 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 		"",
 		buildActivitySummary("staff がページを更新しました", updated.Title),
 	)
-	if request.SendEmails {
-		h.enqueuePageMail(c.Request().Context(), currentSession.User.ID, updated)
+	// An operator without the mail capability must not be able to create,
+	// retarget or silence a pending announcement mail by editing the page.
+	if canSendPageEmails(currentSession.User) && request.SendEmails != nil {
+		if err := h.schedulePageMail(c.Request().Context(), currentSession.User.ID, updated.ID, *request.SendEmails); err != nil {
+			return internalError(c)
+		}
 	}
 
-	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
+	response := mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true))
+	mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), updated.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	response.MailScheduled = mailScheduled
+	return c.JSON(http.StatusOK, response)
 }
 
 func (h *staffPageHandlers) deleteStaffPage(c *echo.Context) error {
@@ -286,7 +349,13 @@ func (h *staffPageHandlers) patchStaffPagePin(c *echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "page_not_found")
 	}
 
-	return c.JSON(http.StatusOK, mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true)))
+	response := mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true))
+	mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), updated.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	response.MailScheduled = mailScheduled
+	return c.JSON(http.StatusOK, response)
 }
 
 func (h *staffPageHandlers) downloadStaffPagesCSV(c *echo.Context) error {
@@ -297,7 +366,7 @@ func (h *staffPageHandlers) downloadStaffPagesCSV(c *echo.Context) error {
 
 	pages := h.pages.ListForStaff(c.Request().Context(), "")
 	csvBytes, err := writeCSV(append([][]string{
-		{"お知らせID", "タイトル", "閲覧可能なタグ", "本文", "固定", "公開", "スタッフ用メモ", "作成日時", "更新日時"},
+		{"お知らせID", "タイトル", "閲覧可能なタグ", "本文", "固定", "公開状態", "公開日時", "スタッフ用メモ", "作成日時", "更新日時"},
 	}, staffPageRows(pages)...))
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
@@ -322,6 +391,9 @@ func bindStaffPageRequest(c *echo.Context) (mutateStaffPageRequest, map[string][
 	request.DocumentIDs = normalizePageDocumentIDs(request.DocumentIDs)
 
 	errors := map[string][]string{}
+	if !request.publishedAtPresent {
+		errors["publishedAt"] = []string{"公開日時を指定してください"}
+	}
 	if request.Title == "" {
 		errors["title"] = []string{"タイトルを入力してください"}
 	}
@@ -335,35 +407,52 @@ func bindStaffPageRequest(c *echo.Context) (mutateStaffPageRequest, map[string][
 	return request, nil, true
 }
 
+// parseStaffPagePublishedAt reads the requested publish time: a null publishes
+// the page immediately, an RFC 3339 timestamp schedules it for that time.
+func parseStaffPagePublishedAt(value *string) (time.Time, map[string][]string, bool) {
+	if value == nil {
+		return time.Now().UTC(), nil, true
+	}
+	parsed, err := time.Parse(time.RFC3339, strings.TrimSpace(*value))
+	if err != nil || parsed.IsZero() {
+		return time.Time{}, map[string][]string{"publishedAt": {"公開日時が正しくありません"}}, false
+	}
+	return parsed.UTC(), nil, true
+}
+
 func mapStaffPageSummary(currentPage backendpage.Page, documents []pageDocumentResponse) staffPageSummaryResponse {
 	return staffPageSummaryResponse{
-		ID:           currentPage.ID,
-		Title:        currentPage.Title,
-		Body:         currentPage.Body,
-		Notes:        currentPage.Notes,
-		CreatedAt:    currentPage.CreatedAt,
-		UpdatedAt:    currentPage.UpdatedAt,
-		IsPinned:     currentPage.IsPinned,
-		IsPublic:     currentPage.IsPublic,
-		ViewableTags: slices.Clone(currentPage.ViewableTags),
-		DocumentIDs:  slices.Clone(currentPage.DocumentIDs),
-		Documents:    slices.Clone(documents),
+		ID:            currentPage.ID,
+		Title:         currentPage.Title,
+		Body:          currentPage.Body,
+		Notes:         currentPage.Notes,
+		CreatedAt:     currentPage.CreatedAt,
+		UpdatedAt:     currentPage.UpdatedAt,
+		PublishedAt:   currentPage.PublishedAt,
+		IsPinned:      currentPage.IsPinned,
+		IsPublic:      currentPage.IsPublic,
+		MailScheduled: false,
+		ViewableTags:  slices.Clone(currentPage.ViewableTags),
+		DocumentIDs:   slices.Clone(currentPage.DocumentIDs),
+		Documents:     slices.Clone(documents),
 	}
 }
 
 func mapStaffPageDetail(currentPage backendpage.Page) staffPageDetailResponse {
 	return staffPageDetailResponse{
-		ID:           currentPage.ID,
-		Title:        currentPage.Title,
-		Body:         currentPage.Body,
-		Notes:        currentPage.Notes,
-		CreatedAt:    currentPage.CreatedAt,
-		UpdatedAt:    currentPage.UpdatedAt,
-		IsPinned:     currentPage.IsPinned,
-		IsPublic:     currentPage.IsPublic,
-		ViewableTags: slices.Clone(currentPage.ViewableTags),
-		DocumentIDs:  slices.Clone(currentPage.DocumentIDs),
-		Documents:    nil,
+		ID:            currentPage.ID,
+		Title:         currentPage.Title,
+		Body:          currentPage.Body,
+		Notes:         currentPage.Notes,
+		CreatedAt:     currentPage.CreatedAt,
+		UpdatedAt:     currentPage.UpdatedAt,
+		PublishedAt:   currentPage.PublishedAt,
+		IsPinned:      currentPage.IsPinned,
+		IsPublic:      currentPage.IsPublic,
+		MailScheduled: false,
+		ViewableTags:  slices.Clone(currentPage.ViewableTags),
+		DocumentIDs:   slices.Clone(currentPage.DocumentIDs),
+		Documents:     nil,
 	}
 }
 
@@ -377,6 +466,7 @@ func staffPageRows(pages []backendpage.Page) [][]string {
 			singleLine(currentPage.Body),
 			boolString(currentPage.IsPinned),
 			visibilityLabel(currentPage.IsPublic),
+			currentPage.PublishedAt,
 			singleLine(currentPage.Notes),
 			currentPage.CreatedAt,
 			currentPage.UpdatedAt,
@@ -387,10 +477,6 @@ func staffPageRows(pages []backendpage.Page) [][]string {
 
 func (h *staffPageHandlers) pageDocuments(documentIDs []string, forStaff bool) []pageDocumentResponse {
 	return pageDocuments(h.documents, documentIDs, forStaff, false, nil)
-}
-
-func (h *staffPageHandlers) publicPageDocuments(documentIDs []string, circleTags []string) []pageDocumentResponse {
-	return pageDocuments(h.documents, documentIDs, false, false, circleTags)
 }
 
 func normalizePageDocumentIDs(documentIDs []string) []string {
@@ -426,99 +512,28 @@ func (h *staffPageHandlers) validateStaffPageDocumentIDs(documentIDs []string, e
 	return nil
 }
 
-func (h *staffPageHandlers) enqueuePageMail(ctx context.Context, createdByUserID string, currentPage backendpage.Page) {
-	recipients := h.pageMailRecipients(ctx, currentPage.ViewableTags)
-	if len(recipients) == 0 {
-		return
+// schedulePageMail records or clears the intent to send the announcement email
+// of a page.
+//
+// Only the intent is stored: the recipients, the body and the send time are all
+// derived from the live page when the mail is dispatched. Unpublishing,
+// rescheduling or deleting the page therefore needs no counterpart here.
+//
+// Callers must already have checked that the operator may send page mail; an
+// operator without that capability must leave an existing intent untouched.
+func (h *staffPageHandlers) schedulePageMail(ctx context.Context, actorUserID, pageID string, sendEmails bool) error {
+	var err error
+	if sendEmails {
+		// The job ID is only used when no intent exists yet: an already
+		// scheduled page keeps its original one so that a retried dispatch
+		// stays idempotent.
+		err = h.scheduledPageMails.Schedule(ctx, pageID, "staff-page-"+uuidv7.MustString(), actorUserID)
+	} else {
+		err = h.scheduledPageMails.Unschedule(ctx, pageID)
 	}
-
-	body := currentPage.Body
-	documents := h.publicPageDocuments(currentPage.DocumentIDs, currentPage.ViewableTags)
-	if len(documents) > 0 {
-		lines := make([]string, 0, len(documents)+2)
-		lines = append(lines, "", "", "関連する配布資料")
-		for _, document := range documents {
-			line := "- " + document.Name
-			if document.Description != "" {
-				line += ": " + strings.ReplaceAll(document.Description, "\n", " ")
-			}
-			lines = append(lines, line)
-		}
-		body += strings.Join(lines, "\n")
-	}
-
-	jobID := "staff-page-" + uuidv7.MustString()
-	if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
-		JobId:    jobID,
-		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
-		From:     h.email.From,
-		To:       recipients,
-		Subject:  currentPage.Title,
-		Body:     body,
-		Variables: map[string]string{
-			"subject":      currentPage.Title,
-			"body":         body,
-			"appName":      h.email.AppName,
-			"appURL":       h.email.AppURL,
-			"adminName":    h.email.AdminName,
-			"contactEmail": h.email.ContactEmail,
-			"preview":      currentPage.Title,
-		},
-	}); err != nil {
-		return
-	}
-	logQueuedMail("staff_page", jobID, "", createdByUserID, currentPage.Title, body, recipients, h.allowDangerously)
-	recordActivity(
-		ctx,
-		h.activities,
-		createdByUserID,
-		"staff.mail.queued",
-		"mail_job",
-		jobID,
-		"",
-		buildActivitySummary("staff がページのお知らせメールをキューに追加しました", currentPage.Title),
-	)
-}
-
-func (h *staffPageHandlers) pageMailRecipients(ctx context.Context, viewableTags []string) []string {
-	circleIDs := []string{}
-	if len(viewableTags) > 0 {
-		circles, err := h.circles.ListForStaff(ctx)
-		if err != nil {
-			return nil
-		}
-
-		for _, currentCircle := range circles {
-			if pageVisibleToCircleTags(viewableTags, effectiveCircleTags(ctx, currentCircle, h.participationTypes)) {
-				circleIDs = append(circleIDs, currentCircle.ID)
-			}
-		}
-		if len(circleIDs) == 0 {
-			return nil
-		}
-	}
-
-	users, err := h.users.ListVerifiedByCircleIDs(circleIDs)
 	if err != nil {
-		return nil
+		slog.Error("failed to record scheduled page mail intent",
+			"page_id", pageID, "send_emails", sendEmails, "error", err)
 	}
-
-	return collectUsersEmailRecipients(users)
-}
-
-func pageVisibleToCircleTags(viewableTags []string, circleTags []string) bool {
-	if len(viewableTags) == 0 {
-		return true
-	}
-
-	for _, viewableTag := range viewableTags {
-		for _, circleTag := range circleTags {
-			if strings.EqualFold(viewableTag, circleTag) {
-				return true
-			}
-		}
-	}
-
-	return false
+	return err
 }

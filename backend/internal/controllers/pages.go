@@ -171,12 +171,20 @@ func mapPageSummary(currentPage backendpage.Page, readPageIDs map[string]struct{
 }
 
 func isPageNew(currentPage backendpage.Page) bool {
-	createdAt, err := time.Parse(time.RFC3339, currentPage.CreatedAt)
+	reference := currentPage.PublishedAt
+	if reference == "" {
+		reference = currentPage.CreatedAt
+	}
+	publishedAt, err := time.Parse(time.RFC3339, reference)
 	if err != nil {
 		return false
 	}
 
-	return !createdAt.Add(72 * time.Hour).Before(time.Now().UTC())
+	return !publishedAt.Add(72 * time.Hour).Before(time.Now().UTC())
+}
+
+func isPagePublished(currentPage backendpage.Page) bool {
+	return backendpage.IsPublished(currentPage.PublishedAt)
 }
 
 func readPagesPagination(c *echo.Context) models.PaginationParams {

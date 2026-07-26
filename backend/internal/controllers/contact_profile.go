@@ -434,7 +434,7 @@ func (h *authHandlers) contactConfirmationRecipients(circleID, senderUserID stri
 	if err != nil {
 		return nil, err
 	}
-	recipients := collectUsersEmailRecipients([]useradmin.User{senderUser})
+	recipients := useradmin.MailRecipients(senderUser)
 	if len(recipients) > 0 {
 		return recipients, nil
 	}
@@ -470,13 +470,13 @@ func contactCircleConfirmationRecipients(users []useradmin.User, circleID, sende
 	}
 
 	if ccSubleader {
-		return collectUsersEmailRecipients(append(leaders, subleaders...))
+		return useradmin.MailRecipients(append(leaders, subleaders...)...)
 	}
 	if senderUser != nil {
-		return collectUsersEmailRecipients([]useradmin.User{*senderUser})
+		return useradmin.MailRecipients(*senderUser)
 	}
 
-	return collectUsersEmailRecipients(leaders)
+	return useradmin.MailRecipients(leaders...)
 }
 
 func (h *authHandlers) updateProfile(c *echo.Context) error {
@@ -697,7 +697,7 @@ func (h *authHandlers) updatePassword(c *echo.Context) error {
 
 	_ = h.sessions.DeleteOtherSessionsByUserID(c.Request().Context(), currentSession.User.ID, sessionID)
 
-	if err := h.enqueuePasswordChangedMail(c.Request().Context(), currentSession.User.ID, collectUserEmailRecipients(managedUser)); err != nil {
+	if err := h.enqueuePasswordChangedMail(c.Request().Context(), currentSession.User.ID, useradmin.MailRecipients(managedUser)); err != nil {
 		return internalError(c)
 	}
 

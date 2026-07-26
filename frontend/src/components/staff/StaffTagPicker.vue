@@ -9,7 +9,10 @@ const {
   name = 'tagSearch',
   placeholder = 'タグ名を入力して追加',
   emptyMessage = 'タグは未選択です。',
-  allowCustom = true
+  allowCustom = true,
+  id,
+  ariaInvalid,
+  ariaDescribedBy
 } = defineProps<{
   modelValue: string[]
   availableTags: string[]
@@ -18,6 +21,9 @@ const {
   placeholder?: string
   emptyMessage?: string
   allowCustom?: boolean
+  id?: string
+  ariaInvalid?: boolean
+  ariaDescribedBy?: string
 }>()
 
 const emit = defineEmits<{
@@ -144,7 +150,10 @@ function handleKeydown(event: KeyboardEvent) {
 
     <label class="grid gap-2 text-sm text-body">
       <input
+        :id="id"
         v-model="searchQuery"
+        :aria-describedby="ariaDescribedBy"
+        :aria-invalid="ariaInvalid"
         :disabled="disabled"
         :name="name"
         :placeholder="placeholder"

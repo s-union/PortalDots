@@ -57,6 +57,12 @@ PORTAL_SESSION_COOKIE_SECURE=true
 
 `PORTAL_API_BIND` does not need to be set in `.env.prod`; `docker-compose.prod.yml` overrides it to `:8080`.
 
+### API contract deployment order
+
+When deploying a release that changes the staff pages API, deploy the backend first and wait for its health checks to pass before publishing the frontend bundle. The backend accepts the new required `publishedAt` request field and returns `mailScheduled`, so the frontend can be rolled out without a mixed-version contract.
+
+If a rollback is needed, roll back the frontend before rolling back the backend. A backend-only rollback exposes the old backend, which may accept an omitted `publishedAt` from an old or already-open frontend tab and immediately publish a page that was scheduled for later. Roll back the frontend first so active clients use the compatible contract, then roll back the backend; never use a backend-only rollback to resume a partially deployed frontend release without checking the staff page editor.
+
 ---
 
 ## 2. Start the backend
@@ -96,7 +102,9 @@ cd packages/email
 # Set the production secret — must match PORTAL_EMAIL_PRODUCER_TOKEN in .env.prod
 echo "<AUTH_TOKEN>" | npx wrangler secret put AUTH_TOKEN
 
-npx wrangler deploy
+# Applies pending D1 migrations, then deploys. The Worker cannot serve
+# /enqueue without them, so never run `wrangler deploy` on its own.
+pnpm run deploy
 ```
 
 For Cloudflare Queue creation and Email Routing configuration, see the [Cloudflare Workers documentation](https://developers.cloudflare.com/queues/).
@@ -112,5 +120,5 @@ For Cloudflare Queue creation and Email Routing configuration, see the [Cloudfla
 - [ ] `PORTAL_EMAIL_PRODUCER_TOKEN` is randomly generated and matches the Wrangler secret
 - [ ] `PORTAL_EMAIL_PRODUCER_URL` and `PORTAL_EMAIL_PRODUCER_TOKEN` are set
 - [ ] PostgreSQL data volume backup is configured
-- [ ] email Worker is deployed to Cloudflare
+- [ ] email Worker is deployed to Cloudflare, with its D1 migrations applied
 - [ ] Reverse proxy forwards traffic to port `8080` with a valid TLS certificate

@@ -17,6 +17,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
+	"github.com/s-union/PortalDots/backend/internal/domain/pagemail"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/pendingregistration"
 	"github.com/s-union/PortalDots/backend/internal/domain/place"
@@ -25,6 +26,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
+	"github.com/s-union/PortalDots/backend/internal/platform/email"
 	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
 	"golang.org/x/time/rate"
 )
@@ -131,13 +133,9 @@ type staffFormHandlers struct {
 type staffPageHandlers struct {
 	sharedDeps
 	activities         activitylog.Repository
-	circles            circle.Catalog
 	documents          document.Repository
 	pages              page.Repository
-	participationTypes participationtype.Repository
-	tags               tag.Repository
-	users              useradmin.Repository
-	email              EmailContext
+	scheduledPageMails pagemail.Repository
 }
 
 // staffDocumentHandlers handles staff document endpoints.
@@ -202,8 +200,10 @@ func NewServer(cfg config.Config) *echo.Echo {
 	if err != nil {
 		panic("failed to create static authenticator: " + err.Error())
 	}
+	mailHistory := mailhistory.NewMemoryRepository()
 	return NewServerWithDependencies(
 		cfg,
+		email.NewSender(cfg, mailHistory),
 		activitylog.NewMemoryRepository(),
 		answer.NewMemoryRepository(),
 		authenticator,
@@ -214,11 +214,12 @@ func NewServer(cfg config.Config) *echo.Echo {
 		document.NewStaticRepository(cfg.Documents),
 		form.NewStaticRepository(cfg.Forms),
 		formquestion.NewMemoryRepository(),
-		mailhistory.NewMemoryRepository(),
+		mailHistory,
 		page.NewStaticRepository(cfg.Pages),
 		pendingregistration.NewMemoryRepository(),
 		participationtype.NewMemoryRepository(cfg.ParticipationTypes),
 		place.NewMemoryRepository(cfg.Places),
+		pagemail.NewMemoryRepository(),
 		session.NewMemoryStore(cfg.SessionTTL),
 		tag.NewMemoryRepository(cfg.Tags),
 		useradmin.NewStaticRepository(cfg.AuthUser, cfg.Users),
@@ -227,6 +228,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 
 func NewServerWithDependencies(
 	cfg config.Config,
+	emailSender cloudflareemail.Sender,
 	activities activitylog.Repository,
 	answers answer.Repository,
 	authenticator auth.Authenticator,
@@ -242,6 +244,7 @@ func NewServerWithDependencies(
 	pendingRegistrations pendingregistration.Repository,
 	participationTypes participationtype.Repository,
 	places place.Repository,
+	scheduledPageMails pagemail.Repository,
 	sessionStore session.Store,
 	tags tag.Repository,
 	users useradmin.Repository,
@@ -293,13 +296,6 @@ func NewServerWithDependencies(
 		passwordResetter = pr
 	}
 
-	useEmailProducer := cfg.EmailProducerURL != "" && (!cfg.AllowDangerously || cfg.EmailProducerEnabled)
-	var emailSender cloudflareemail.Sender = cloudflareemail.NewNoopSender()
-	if useEmailProducer {
-		emailSender = cloudflareemail.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
-	}
-	emailSender = mailhistory.NewRecordingSender(mailHistory, emailSender)
-
 	authH := &authHandlers{
 		sharedDeps:                 shared,
 		activities:                 activities,
@@ -315,7 +311,7 @@ func NewServerWithDependencies(
 		passwordResetTokens:        newPasswordResetTokenStore(),
 		authVerificationTokens:     newAuthVerificationTokenStore(),
 		emailSender:                emailSender,
-		mockRegistrationVerifyMail: cfg.AllowDangerously && !useEmailProducer,
+		mockRegistrationVerifyMail: cfg.AllowDangerously && !email.ProducerEnabled(cfg),
 		portalUnivemailDomainPart:  cfg.PortalUnivemailDomainPart,
 		registrationVerifyTTL:      cfg.RegistrationVerifyTTL,
 		loginAttempts:              middlewares.NewLoginAttemptTracker(5, 5*time.Minute),
@@ -401,20 +397,9 @@ func NewServerWithDependencies(
 	staffPageH := &staffPageHandlers{
 		sharedDeps:         shared,
 		activities:         activities,
-		circles:            circles,
 		documents:          documents,
 		pages:              pages,
-		participationTypes: participationTypes,
-		tags:               tags,
-		users:              users,
-		email: EmailContext{
-			EmailSender:  emailSender,
-			From:         cfg.EmailFrom,
-			AdminName:    cfg.PortalAdminName,
-			ContactEmail: cfg.PortalContactEmail,
-			AppName:      cfg.AppName,
-			AppURL:       cfg.AppURL,
-		},
+		scheduledPageMails: scheduledPageMails,
 	}
 
 	staffDocumentH := &staffDocumentHandlers{

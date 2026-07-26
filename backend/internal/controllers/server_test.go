@@ -1823,6 +1823,280 @@ func TestGetPublicPageReturnsGuestPageDetail(t *testing.T) {
 	}
 }
 
+func TestScheduledPageIsHiddenFromGuestsUntilPublishTime(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	future := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":        "予約公開のお知らせ",
+		"body":         "未来に公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  future,
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var scheduled staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &scheduled); err != nil {
+		t.Fatalf("unmarshal scheduled page: %v", err)
+	}
+	if scheduled.PublishedAt != future {
+		t.Fatalf("expected publishedAt %q, got %q", future, scheduled.PublishedAt)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":        "即時公開のお知らせ",
+		"body":         "すぐに公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  nil,
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var immediate staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &immediate); err != nil {
+		t.Fatalf("unmarshal immediate page: %v", err)
+	}
+
+	guestCookies := map[string]*http.Cookie{}
+	recorder = doJSONRequest(t, server, guestCookies, http.MethodGet, "/v1/public/pages/"+scheduled.ID, nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("scheduled page must be hidden from guests before publish time: expected %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, guestCookies, http.MethodGet, "/v1/public/pages/"+immediate.ID, nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("immediately published page must be visible to guests: expected %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/pages/"+scheduled.ID, nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("staff must see scheduled page: expected %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestScheduledPageWithEmailIsCreatedAndStaysHidden(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	future := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":        "予約公開のお知らせ",
+		"body":         "未来に公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  future,
+		"sendEmails":   true,
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d for a scheduled page with email, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var created staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("unmarshal created page: %v", err)
+	}
+	if !created.MailScheduled {
+		t.Fatalf("expected scheduled page mail to be reported as active: %#v", created)
+	}
+
+	guestCookies := map[string]*http.Cookie{}
+	recorder = doJSONRequest(t, server, guestCookies, http.MethodGet, "/v1/public/pages/"+created.ID, nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("scheduled page must stay hidden from guests: expected %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestUpdateStaffPageKeepsScheduleWhenPublishedAtIsResent(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	future := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":        "予約公開のお知らせ",
+		"body":         "未来に公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  future,
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var created staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("unmarshal created page: %v", err)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/"+created.ID, map[string]any{
+		"title":        "タイトルだけ更新",
+		"body":         "未来に公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  future,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var updated staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
+		t.Fatalf("unmarshal updated page: %v", err)
+	}
+	if updated.PublishedAt != created.PublishedAt {
+		t.Fatalf("expected publishedAt to be preserved (%q), got %q", created.PublishedAt, updated.PublishedAt)
+	}
+
+	guestCookies := map[string]*http.Cookie{}
+	recorder = doJSONRequest(t, server, guestCookies, http.MethodGet, "/v1/public/pages/"+created.ID, nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("scheduled page must remain hidden after update: expected %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestStaffPagePublishedAtNullPublishesImmediately(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	future := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":        "予約公開のお知らせ",
+		"body":         "未来に公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  future,
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var created staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &created); err != nil {
+		t.Fatalf("unmarshal created page: %v", err)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/pages/"+created.ID, map[string]any{
+		"title":        "今すぐ公開に変更",
+		"body":         "すぐに公開されます。",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  nil,
+	})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var updated staffPageSummaryResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
+		t.Fatalf("unmarshal updated page: %v", err)
+	}
+	if updated.PublishedAt == created.PublishedAt {
+		t.Fatalf("expected a null publishedAt to reset the publish time, got %q", updated.PublishedAt)
+	}
+
+	guestCookies := map[string]*http.Cookie{}
+	recorder = doJSONRequest(t, server, guestCookies, http.MethodGet, "/v1/public/pages/"+created.ID, nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("page published by a null publishedAt must be visible to guests: expected %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestStaffPagePublishedAtRejectsInvalidTimestamp(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":        "不正な公開日時",
+		"body":         "本文",
+		"isPublic":     true,
+		"isPinned":     false,
+		"viewableTags": []string{},
+		"documentIds":  []string{},
+		"publishedAt":  "",
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal publishedAt validation response: %v", err)
+	}
+	if len(response.Errors["publishedAt"]) == 0 {
+		t.Fatalf("expected publishedAt validation errors, got %#v", response.Errors)
+	}
+}
+
+func TestStaffPagePublishedAtIsRequired(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
+		"title":    "公開日時なしのお知らせ",
+		"body":     "本文",
+		"isPublic": true,
+	})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	var response models.ValidationErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal publishedAt validation response: %v", err)
+	}
+	if len(response.Errors["publishedAt"]) == 0 {
+		t.Fatalf("expected publishedAt validation errors, got %#v", response.Errors)
+	}
+}
+
 func TestListPublicDocumentsReturnsGuestDocumentCollection(t *testing.T) {
 	t.Parallel()
 
@@ -3529,6 +3803,7 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 		"viewableTags": []string{"展示"},
 		"documentIds":  []string{"0195ec00-0042-7000-8000-000000000001"},
 		"sendEmails":   true,
+		"publishedAt":  nil,
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
@@ -3553,6 +3828,9 @@ func TestStaffPagesListAndCreateUseCurrentCircle(t *testing.T) {
 	var detail staffPageDetailResponse
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal staff page detail: %v", err)
+	}
+	if !detail.MailScheduled {
+		t.Fatalf("expected staff page detail to report an active mail schedule: %#v", detail)
 	}
 	if detail.Notes != "展示担当に周知済みです。" || len(detail.ViewableTags) != 1 || len(detail.DocumentIDs) != 1 {
 		t.Fatalf("unexpected staff page detail: %#v", detail)
@@ -3592,6 +3870,7 @@ func TestStaffPageCreateAllowsDocumentsFromDifferentCircle(t *testing.T) {
 		"isPublic":     true,
 		"viewableTags": []string{"展示"},
 		"documentIds":  []string{"0195ec00-0041-7000-8000-000000000001"},
+		"publishedAt":  nil,
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
@@ -3645,6 +3924,7 @@ func TestStaffPageUpdateAllowsPreservingLegacyDocumentsFromDifferentCircle(t *te
 		"isPublic":     false,
 		"viewableTags": []string{},
 		"documentIds":  detail.DocumentIDs,
+		"publishedAt":  nil,
 	})
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3691,6 +3971,7 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 		"isPublic":     true,
 		"viewableTags": []string{"展示"},
 		"documentIds":  []string{"0195ec00-0042-7000-8000-000000000001"},
+		"publishedAt":  nil,
 	})
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3740,7 +4021,7 @@ func TestStaffPageDetailUpdatePinDeleteAndExport(t *testing.T) {
 	if len(rows) != 5 {
 		t.Fatalf("expected 5 csv rows, got %#v", rows)
 	}
-	if strings.TrimPrefix(rows[0][0], "\ufeff") != "お知らせID" || rows[0][1] != "タイトル" || rows[0][7] != "作成日時" || rows[0][8] != "更新日時" {
+	if strings.TrimPrefix(rows[0][0], "\ufeff") != "お知らせID" || rows[0][1] != "タイトル" || rows[0][5] != "公開状態" || rows[0][6] != "公開日時" || rows[0][8] != "作成日時" || rows[0][9] != "更新日時" {
 		t.Fatalf("unexpected csv header: %#v", rows[0])
 	}
 	if rows[1][3] == "" {
@@ -5702,10 +5983,11 @@ func TestStaffActivityLogsListRecordedMutations(t *testing.T) {
 	authorizeStaff(t, server, cookies)
 
 	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"circleId": "0195ec00-0022-7000-8000-000000000001",
-		"title":    "スタッフ向け新着",
-		"body":     "設営順の詳細を更新しました。",
-		"isPublic": true,
+		"circleId":    "0195ec00-0022-7000-8000-000000000001",
+		"title":       "スタッフ向け新着",
+		"body":        "設営順の詳細を更新しました。",
+		"isPublic":    true,
+		"publishedAt": nil,
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
@@ -5796,9 +6078,10 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/pages", map[string]any{
-		"title":    "新着ページ",
-		"body":     "本文",
-		"isPublic": true,
+		"title":       "新着ページ",
+		"body":        "本文",
+		"isPublic":    true,
+		"publishedAt": nil,
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
@@ -5809,6 +6092,7 @@ func TestStaffListEndpointsSupportPagination(t *testing.T) {
 		"body":         "本文",
 		"isPublic":     true,
 		"viewableTags": []string{"展示"},
+		"publishedAt":  nil,
 	})
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())

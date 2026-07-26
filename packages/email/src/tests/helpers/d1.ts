@@ -1,164 +1,191 @@
-export interface D1RunResult {
-  meta: { changes: number }
-  results: unknown[]
-  success: true
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
+import { fileURLToPath } from 'node:url'
+import { asc, eq } from 'drizzle-orm'
+import { createDb, type EmailDb } from '../../db/client'
+import { emailJobChunks, emailJobs, type ChunkStatus, type JobStatus } from '../../db/schema'
+
+// `.href`, not the URL object: the ambient `URL` here is the Workers one, which
+// is not assignable to the `URL` `node:url` declares.
+const migrationsDir = fileURLToPath(new URL('../../../migrations/', import.meta.url).href)
+
+function migrationStatements(): string[] {
+  return readdirSync(migrationsDir)
+    .filter((file) => file.endsWith('.sql'))
+    .sort()
+    .map((file) => readFileSync(join(migrationsDir, file), 'utf8'))
 }
 
-export class TestD1Statement {
-  private values: unknown[] = []
+function d1Meta(changes: number, lastRowId: number) {
+  return {
+    duration: 0,
+    size_after: 0,
+    rows_read: 0,
+    rows_written: changes,
+    last_row_id: lastRowId,
+    changed_db: changes > 0,
+    changes
+  }
+}
 
+class TestD1Statement implements D1PreparedStatement {
   constructor(
+    private readonly db: TestD1Database,
     private readonly query: string,
-    private readonly db: TestD1Database
+    private readonly params: unknown[] = []
   ) {}
 
   bind(...values: unknown[]): TestD1Statement {
-    this.values = values
-    return this
+    return new TestD1Statement(this.db, this.query, values)
   }
 
-  async run(): Promise<D1RunResult> {
-    return this.db.run(this.query, this.values)
+  async first<T>(colName?: string): Promise<T | null> {
+    const row = (await this.all<Record<string, unknown>>()).results[0] ?? null
+    if (row === null || colName === undefined) {
+      return row as T | null
+    }
+    return row[colName] as T
   }
 
-  async first<T>(): Promise<T | null> {
-    return this.db.first<T>(this.query, this.values)
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async run<T>(): Promise<D1Result<T>> {
+    const { changes, lastInsertRowid } = this.db.statement(this.query).run(...this.db.toSqliteParams(this.params))
+    return { success: true, results: [], meta: d1Meta(Number(changes), Number(lastInsertRowid)) }
   }
-}
 
-export function runResult(changes: number): D1RunResult {
-  return {
-    success: true,
-    results: [],
-    meta: { changes }
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async all<T>(): Promise<D1Result<T>> {
+    const results = this.db.statement(this.query).all(...this.db.toSqliteParams(this.params)) as T[]
+    return { success: true, results, meta: d1Meta(0, 0) }
+  }
+
+  raw<T = unknown[]>(options: { columnNames: true }): Promise<[string[], ...T[]]>
+  raw<T = unknown[]>(options?: { columnNames?: false }): Promise<T[]>
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async raw(options?: { columnNames?: boolean }): Promise<unknown[]> {
+    const statement = this.db.statement(this.query)
+    statement.setReturnArrays(true)
+    const rows = statement.all(...this.db.toSqliteParams(this.params))
+    const columnNames = statement.columns().map((column) => column.name)
+    return options?.columnNames ? [columnNames, ...rows] : rows
   }
 }
 
 /**
- * In-memory D1 stub for unit tests.
- * Supports both the enqueue (producer) and consumer query patterns.
+ * D1 binding backed by a real in-memory SQLite database with the generated
+ * migrations applied, plus seeding and assertion helpers for tests. Queries run
+ * as actual SQL, so a malformed statement fails the test instead of passing
+ * through a pattern-matching stub.
  */
-export class TestD1Database {
-  readonly jobs = new Map<string, { status: string; chunkCount?: number }>()
-  readonly chunks = new Map<string, { jobId: string; status: string; updatedAt: string }>()
-  failSentUpdate = false
+export class TestD1Database implements D1Database {
+  private readonly sqlite = new DatabaseSync(':memory:')
+  private broken = false
+  readonly drizzle: EmailDb = createDb(this)
+
+  constructor() {
+    for (const statements of migrationStatements()) {
+      this.sqlite.exec(statements)
+    }
+  }
+
+  /** Make every subsequent statement fail, simulating D1 becoming unavailable mid-flight. */
+  breakWrites(): void {
+    this.broken = true
+  }
+
+  async jobStatus(jobId: string): Promise<JobStatus | undefined> {
+    const row = await this.drizzle
+      .select({ status: emailJobs.status })
+      .from(emailJobs)
+      .where(eq(emailJobs.jobId, jobId))
+      .get()
+    return row?.status
+  }
+
+  async chunkMessageIds(): Promise<string[]> {
+    const rows = await this.drizzle
+      .select({ messageId: emailJobChunks.messageId })
+      .from(emailJobChunks)
+      .orderBy(asc(emailJobChunks.chunkIndex))
+    return rows.map((row) => row.messageId)
+  }
+
+  async seedJob(job: {
+    jobId: string
+    status: JobStatus
+    chunkCount: number
+    recipientsCount?: number
+  }): Promise<void> {
+    const now = new Date().toISOString()
+    await this.drizzle.insert(emailJobs).values({
+      ...job,
+      template: 'markdown-notice',
+      priority: 'normal',
+      subject: 'Test Subject',
+      recipientsCount: job.recipientsCount ?? job.chunkCount,
+      createdAt: now,
+      updatedAt: now
+    })
+  }
+
+  async seedChunk(chunk: { messageId: string; jobId: string; chunkIndex: number; status: ChunkStatus }): Promise<void> {
+    const now = new Date().toISOString()
+    await this.drizzle.insert(emailJobChunks).values({
+      ...chunk,
+      chunkCount: 1,
+      recipientsCount: 1,
+      createdAt: now,
+      updatedAt: now
+    })
+  }
+
+  /** @internal Prepare a statement, refusing to run anything once the database is "down". */
+  statement(query: string) {
+    if (this.broken) {
+      throw new Error('D1 unavailable')
+    }
+    return this.sqlite.prepare(query)
+  }
+
+  /** @internal node:sqlite only accepts primitives; D1 never binds anything else here. */
+  toSqliteParams(params: unknown[]): (string | number | null)[] {
+    return params.map((param) => {
+      if (typeof param === 'string' || typeof param === 'number' || param === null) {
+        return param
+      }
+      throw new TypeError(`Unsupported bind value: ${JSON.stringify(param)}`)
+    })
+  }
 
   prepare(query: string): TestD1Statement {
-    return new TestD1Statement(query, this)
+    return new TestD1Statement(this, query)
   }
 
-  async batch(statements: TestD1Statement[]): Promise<D1RunResult[]> {
-    return Promise.all(statements.map((statement) => statement.run()))
-  }
-
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async run(query: string, values: unknown[]): Promise<D1RunResult> {
-    // --- producer patterns (strict INSERT) ---
-    if (query.includes('INSERT INTO email_jobs') && !query.includes('OR IGNORE')) {
-      const jobId = String(values[0])
-      if (this.jobs.has(jobId)) {
-        throw new Error('SQLITE_CONSTRAINT: UNIQUE constraint failed: email_jobs.job_id')
-      }
-      this.jobs.set(jobId, { status: 'queued', chunkCount: Number(values[5]) })
-      return runResult(1)
-    }
-    if (query.includes('INSERT INTO email_job_chunks') && !query.includes('OR IGNORE')) {
-      const messageId = String(values[0])
-      this.chunks.set(messageId, { jobId: String(values[1]), status: 'queued', updatedAt: String(values[6]) })
-      return runResult(1)
-    }
-
-    // --- consumer patterns (INSERT OR IGNORE) ---
-    if (query.includes('INSERT OR IGNORE INTO email_jobs')) {
-      const jobId = String(values[0])
-      if (!this.jobs.has(jobId)) {
-        this.jobs.set(jobId, { status: 'queued' })
-        return runResult(1)
-      }
-      return runResult(0)
-    }
-    if (query.includes('INSERT OR IGNORE INTO email_job_chunks')) {
-      const messageId = String(values[0])
-      if (!this.chunks.has(messageId)) {
-        this.chunks.set(messageId, { jobId: String(values[1]), status: 'queued', updatedAt: String(values[6]) })
-        return runResult(1)
-      }
-      return runResult(0)
-    }
-
-    // --- shared update patterns ---
-    if (query.includes("SET status = 'processing'")) {
-      const messageId = String(values[1])
-      const chunk = this.chunks.get(messageId)
-      if (!chunk) return runResult(0)
-      if (
-        chunk.status === 'queued' ||
-        chunk.status === 'enqueue_failed' ||
-        (chunk.status === 'processing' && chunk.updatedAt === values[2])
-      ) {
-        chunk.status = 'processing'
-        chunk.updatedAt = String(values[0])
-        return runResult(1)
-      }
-      return runResult(0)
-    }
-    if (query.includes("UPDATE email_job_chunks SET status = 'sent'")) {
-      if (this.failSentUpdate) {
-        throw new Error('D1 unavailable')
-      }
-      const chunk = this.chunks.get(String(values[1]))
-      if (chunk) {
-        chunk.status = 'sent'
-        chunk.updatedAt = String(values[0])
-      }
-      return runResult(chunk ? 1 : 0)
-    }
-    if (query.includes('UPDATE email_jobs') && query.includes("SET status = 'sent'")) {
-      const jobId = String(values[1])
-      const hasUnsentChunks = Array.from(this.chunks.values()).some(
-        (chunk) => chunk.jobId === jobId && chunk.status !== 'sent'
-      )
-      const job = this.jobs.get(jobId)
-      if (job && !hasUnsentChunks) {
-        job.status = 'sent'
-        return runResult(1)
-      }
-      return runResult(0)
-    }
-    if (query.includes("UPDATE email_jobs SET status = 'queued'")) {
-      const job = this.jobs.get(String(values[1]))
-      if (job) job.status = 'queued'
-      return runResult(job ? 1 : 0)
-    }
-    if (query.includes("UPDATE email_jobs SET status = 'enqueue_failed'")) {
-      const job = this.jobs.get(String(values[2]))
-      if (job) job.status = 'enqueue_failed'
-      return runResult(job ? 1 : 0)
-    }
-    if (query.includes("SET status = 'enqueue_failed'") && query.includes('email_job_chunks')) {
-      const chunk = this.chunks.get(String(values[2]))
-      if (chunk) chunk.status = 'enqueue_failed'
-      return runResult(chunk ? 1 : 0)
-    }
-    return runResult(0)
+  batch<T>(statements: TestD1Statement[]): Promise<D1Result<T>[]> {
+    this.sqlite.exec('BEGIN')
+    return Promise.all(statements.map((statement) => statement.run<T>()))
+      .then((results) => {
+        this.sqlite.exec('COMMIT')
+        return results
+      })
+      .catch((error: unknown) => {
+        this.sqlite.exec('ROLLBACK')
+        throw error
+      })
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async first<T>(query: string, values: unknown[]): Promise<T | null> {
-    if (query.includes('SELECT status FROM email_jobs')) {
-      const job = this.jobs.get(String(values[0]))
-      return (job ? { status: job.status } : null) as T | null
-    }
-    if (query.includes('FROM email_jobs') && query.includes('JOIN email_job_chunks')) {
-      const job = this.jobs.get(String(values[0]))
-      const chunk = this.chunks.get(String(values[1]))
-      if (!job || !chunk) return null
-      return {
-        job_status: job.status,
-        chunk_status: chunk.status,
-        chunk_updated_at: chunk.updatedAt
-      } as T
-    }
-    return null
+  async exec(query: string): Promise<D1ExecResult> {
+    this.sqlite.exec(query)
+    return { count: 0, duration: 0 }
+  }
+
+  withSession(): D1DatabaseSession {
+    throw new Error('withSession is not supported by the test D1 database')
+  }
+
+  dump(): Promise<ArrayBuffer> {
+    throw new Error('dump is not supported by the test D1 database')
   }
 }

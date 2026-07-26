@@ -627,8 +627,10 @@ export const staffPageSummarySchema = z.object({
   notes: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  publishedAt: z.string(),
   isPinned: z.boolean(),
   isPublic: z.boolean(),
+  mailScheduled: z.boolean(),
   viewableTags: stringArraySchema,
   documentIds: z.array(documentIdSchema),
   documents: z.array(pageDocumentSchema)

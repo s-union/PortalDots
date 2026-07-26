@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import StaffPageDetailPage from './[pageId].vue'
-import { mockSessionBootstrapStaff, mockDocument } from '@/mocks/data'
+import { mockSessionBootstrapStaff, mockDocument, mockScheduledStaffPage } from '@/mocks/data'
 
 const meta = {
   title: 'Pages/Staff/Notices/Edit',
@@ -24,6 +24,7 @@ const meta = {
             notes: 'スタッフ用メモ',
             createdAt: '2026-01-10T09:00:00Z',
             updatedAt: '2026-01-15T12:00:00Z',
+            publishedAt: '2026-01-10T09:00:00Z',
             isPinned: false,
             isPublic: true,
             viewableTags: [],
@@ -58,6 +59,7 @@ const meta = {
             notes: 'スタッフ用メモ',
             createdAt: '2026-01-10T09:00:00Z',
             updatedAt: '2026-01-15T12:00:00Z',
+            publishedAt: '2026-01-10T09:00:00Z',
             isPinned: false,
             isPublic: true,
             viewableTags: [],
@@ -73,6 +75,7 @@ const meta = {
             notes: 'スタッフ用メモ',
             createdAt: '2026-01-10T09:00:00Z',
             updatedAt: '2026-01-15T12:00:00Z',
+            publishedAt: '2026-01-10T09:00:00Z',
             isPinned: true,
             isPublic: true,
             viewableTags: [],
@@ -90,3 +93,22 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
+
+export const Scheduled: Story = {
+  parameters: {
+    route: {
+      path: '/staff/pages/page-scheduled'
+    },
+    msw: {
+      handlers: [
+        http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
+        http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
+        http.get('/v1/staff/pages/{pageID}', () => HttpResponse.json(mockScheduledStaffPage)),
+        http.get('/v1/staff/tags', () => HttpResponse.json([])),
+        http.get('/v1/staff/documents', () => HttpResponse.json([])),
+        http.put('/v1/staff/pages/{pageID}', () => HttpResponse.json(mockScheduledStaffPage)),
+        http.delete('/v1/staff/pages/{pageID}', () => new HttpResponse(null, { status: 204 }))
+      ]
+    }
+  }
+}

@@ -1,14 +1,14 @@
-package controllers
+package circle
 
 import (
 	"context"
 	"strings"
 
-	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 )
 
-func effectiveCircleTags(ctx context.Context, currentCircle circle.Circle, participationTypes participationtype.Repository) []string {
+// EffectiveTags returns the tags of a circle merged with the tags of its participation type.
+func EffectiveTags(ctx context.Context, currentCircle Circle, participationTypes participationtype.Repository) []string {
 	tags := make([]string, 0, len(currentCircle.Tags)+4)
 	seen := map[string]struct{}{}
 
@@ -45,22 +45,19 @@ func effectiveCircleTags(ctx context.Context, currentCircle circle.Circle, parti
 	return tags
 }
 
-func effectiveCircleTagsForCircles(ctx context.Context, circles []circle.Circle, participationTypes participationtype.Repository) []string {
+// EffectiveTagsForCircles returns the union of the effective tags of every given circle.
+func EffectiveTagsForCircles(ctx context.Context, circles []Circle, participationTypes participationtype.Repository) []string {
 	tags := make([]string, 0)
 	seen := map[string]struct{}{}
 
 	for _, currentCircle := range circles {
-		for _, tag := range effectiveCircleTags(ctx, currentCircle, participationTypes) {
-			normalized := strings.TrimSpace(tag)
-			if normalized == "" {
-				continue
-			}
-			key := strings.ToLower(normalized)
+		for _, tag := range EffectiveTags(ctx, currentCircle, participationTypes) {
+			key := strings.ToLower(tag)
 			if _, ok := seen[key]; ok {
 				continue
 			}
 			seen[key] = struct{}{}
-			tags = append(tags, normalized)
+			tags = append(tags, tag)
 		}
 	}
 

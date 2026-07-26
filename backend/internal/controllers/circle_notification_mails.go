@@ -29,7 +29,7 @@ func enqueueCircleNotificationMail(
 	contactEmail string,
 ) (string, bool, error) {
 	memberUsers := listCircleMemberUsers(users, members)
-	recipients := collectUsersEmailRecipients(memberUsers)
+	recipients := useradmin.MailRecipients(memberUsers...)
 	if len(recipients) == 0 {
 		return "", false, nil
 	}

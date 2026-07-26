@@ -5,7 +5,7 @@ definePage({
   meta: staffPageMeta('pages.edit')
 })
 
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -13,6 +13,7 @@ import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
 import {
+  extractStaffPagePublishedAtError,
   extractStaffPageValidationMessage,
   useCreateStaffPageMutation,
   useStaffPageForm
@@ -31,6 +32,7 @@ const documentsQuery = useStaffDocumentsQuery(enabled)
 const createPageMutation = useCreateStaffPageMutation()
 const form = useStaffPageForm()
 const errorMessage = ref('')
+const publishedAtError = ref('')
 
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
@@ -40,10 +42,16 @@ const { fieldErrors, validateAll, markTouched } = useFormValidation({
   form: computed(() => ({ title: form.value.title, body: form.value.body }))
 })
 
+const editorFieldErrors = computed(() =>
+  publishedAtError.value ? { ...fieldErrors.value, publishedAt: publishedAtError.value } : fieldErrors.value
+)
+
 async function handleCreatePage() {
   errorMessage.value = ''
+  publishedAtError.value = ''
 
   if (!validateAll()) {
+    await focusFirstInvalidField()
     return
   }
 
@@ -56,12 +64,21 @@ async function handleCreatePage() {
       isPublic: form.value.isPublic,
       viewableTags: form.value.viewableTags,
       documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails
+      sendEmails: form.value.sendEmails,
+      publishedAt: form.value.publishedAt
     })
     await router.push(`/staff/pages/${created.id}`)
   } catch (error) {
     errorMessage.value = extractStaffPageValidationMessage(error)
+    publishedAtError.value = extractStaffPagePublishedAtError(error)
+    await focusFirstInvalidField()
   }
+}
+
+async function focusFirstInvalidField() {
+  await nextTick()
+  const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]')
+  invalid?.focus()
 }
 </script>
 
@@ -81,7 +98,7 @@ async function handleCreatePage() {
             :error-message="errorMessage"
             submit-label="作成"
             :submitting="createPageMutation.isPending.value"
-            :field-errors="fieldErrors"
+            :field-errors="editorFieldErrors"
             :on-blur-field="markTouched"
           />
         </div>

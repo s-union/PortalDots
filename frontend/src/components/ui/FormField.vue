@@ -2,26 +2,36 @@
 import { computed } from 'vue'
 import FormError from '@/components/ui/FormError.vue'
 
-const { label, required, helper, error, labelClass, as } = defineProps<{
+const { label, required, helper, error, labelClass, as, id } = defineProps<{
   label: string
   required?: boolean
   helper?: string
   error?: string | boolean
   labelClass?: string
   as?: 'label' | 'div'
+  id?: string
 }>()
 
 const errorString = computed(() => (typeof error === 'string' ? error : undefined))
 </script>
 
 <template>
-  <component :is="as ?? 'label'" class="grid gap-2 text-sm text-body">
-    <span :class="labelClass">
-      {{ label }}
-      <span v-if="required" class="text-danger">*</span>
-    </span>
-    <span v-if="helper" class="text-xs text-muted">{{ helper }}</span>
-    <slot />
-    <FormError v-if="errorString" :message="errorString!" />
-  </component>
+  <div class="grid gap-2 text-sm text-body">
+    <label v-if="as !== 'div'" class="grid gap-2 text-sm text-body">
+      <span :class="labelClass">
+        {{ label }}
+        <span v-if="required" class="text-danger">*</span>
+      </span>
+      <slot />
+    </label>
+    <template v-else>
+      <label :for="id" :class="labelClass">
+        {{ label }}
+        <span v-if="required" class="text-danger">*</span>
+      </label>
+      <slot />
+    </template>
+    <span v-if="helper" :id="id ? `${id}-helper` : undefined" class="text-xs text-muted">{{ helper }}</span>
+    <FormError v-if="errorString" :id="id ? `${id}-error` : undefined" :message="errorString!" />
+  </div>
 </template>

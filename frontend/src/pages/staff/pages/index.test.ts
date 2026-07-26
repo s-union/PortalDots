@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/server'
+import { resolveStaffPagePublishStatus } from '@/features/staff/pages/api'
 import StaffDashboardPage from '../index.vue'
 import StaffPagesIndexPage from './index.vue'
 import StaffVerifyPage from '../verify.vue'
@@ -42,8 +43,10 @@ const pages = [
     notes: '次の案内です。',
     createdAt: '2026-03-05T09:00:00Z',
     updatedAt: '2026-03-05T09:00:00Z',
+    publishedAt: '2026-03-05T09:00:00Z',
     isPinned: false,
     isPublic: false,
+    mailScheduled: false,
     viewableTags: [],
     documentIds: [],
     documents: []
@@ -55,15 +58,58 @@ const pages = [
     notes: 'スタッフだけが確認するメモです。',
     createdAt: '2026-03-04T09:00:00Z',
     updatedAt: '2026-03-04T09:00:00Z',
+    publishedAt: '2026-03-04T09:00:00Z',
     isPinned: false,
     isPublic: false,
+    mailScheduled: false,
     viewableTags: ['展示'],
     documentIds: ['document-circle-b-1'],
     documents: [documentCircleB1]
+  },
+  {
+    id: 'page-circle-b-s',
+    title: '予約公開メモ',
+    body: '公開予定のお知らせです。',
+    notes: '公開予定のお知らせです。',
+    createdAt: '2026-03-06T09:00:00Z',
+    updatedAt: '2026-03-06T09:00:00Z',
+    publishedAt: '2099-01-15T10:00:00Z',
+    isPinned: false,
+    isPublic: true,
+    mailScheduled: false,
+    viewableTags: [],
+    documentIds: [],
+    documents: []
+  },
+  {
+    id: 'page-circle-b-p',
+    title: '公開済みメモ',
+    body: '公開中のお知らせです。',
+    notes: '公開中のお知らせです。',
+    createdAt: '2026-03-07T09:00:00Z',
+    updatedAt: '2026-03-07T09:00:00Z',
+    publishedAt: '2026-03-07T09:00:00Z',
+    isPinned: false,
+    isPublic: true,
+    mailScheduled: false,
+    viewableTags: [],
+    documentIds: [],
+    documents: []
   }
 ]
 
 describe('StaffPagesIndexPage', () => {
+  it.each([
+    [false, '2020-01-01T00:00:00Z', 'unpublished'],
+    [false, '2099-01-01T00:00:00Z', 'unpublished'],
+    [false, 'not-a-date', 'unpublished'],
+    [true, '2020-01-01T00:00:00Z', 'published'],
+    [true, '2099-01-01T00:00:00Z', 'scheduled'],
+    [true, 'not-a-date', 'published']
+  ] as const)('resolves publication status for isPublic=%s and publishedAt=%s', (isPublic, publishedAt, expected) => {
+    expect(resolveStaffPagePublishStatus({ isPublic, publishedAt })).toBe(expected)
+  })
+
   it('lists staff pages and shows create actions', async () => {
     server.use(
       http.get('/v1/staff/tags', () =>
@@ -154,5 +200,75 @@ describe('StaffPagesIndexPage', () => {
     expect(wrapper.text()).toContain('展示ガイド')
     expect(wrapper.text()).toContain('スタッフだけが確認するメモです。')
     expect(wrapper.get('a[href="/staff/pages/create"]').text()).toContain('新規お知らせ')
+  })
+
+  it('distinguishes unpublished, scheduled and published notices', async () => {
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([])),
+      http.get('/v1/staff/documents', () => HttpResponse.json([])),
+      http.get('/v1/staff/pages', () => HttpResponse.json(pages))
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/pages', component: StaffPagesIndexPage },
+        { path: '/staff/pages/create', component: { template: '<div>create</div>' } },
+        { path: '/staff/pages/:pageId', component: { template: '<div>detail</div>' } }
+      ]
+    })
+    await router.push('/staff/pages')
+    await router.isReady()
+
+    const wrapper = mount(StaffPagesIndexPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    const headers = wrapper.findAll('thead th').map((header) => header.text().trim())
+    const titleColumn = headers.indexOf('タイトル')
+    const statusColumn = headers.indexOf('公開状態')
+    const publishedAtColumn = headers.indexOf('公開日時')
+    expect(titleColumn).toBeGreaterThanOrEqual(0)
+    expect(statusColumn).toBeGreaterThanOrEqual(0)
+    expect(publishedAtColumn).toBeGreaterThanOrEqual(0)
+
+    const statusByTitle = Object.fromEntries(
+      wrapper.findAll('tbody tr').map((row) => {
+        const cells = row.findAll('td')
+        return [cells[titleColumn].text(), cells[statusColumn].text()]
+      })
+    )
+    const publishedAtByTitle = Object.fromEntries(
+      wrapper.findAll('tbody tr').map((row) => {
+        const cells = row.findAll('td')
+        return [cells[titleColumn].text(), cells[publishedAtColumn].text()]
+      })
+    )
+
+    expect(statusByTitle).toEqual({
+      非公開メモ: '非公開',
+      後続メモ: '非公開',
+      予約公開メモ: '予約公開',
+      公開済みメモ: '公開中'
+    })
+    expect(publishedAtByTitle['非公開メモ']).toBe('-')
+    expect(publishedAtByTitle['後続メモ']).toBe('-')
   })
 })

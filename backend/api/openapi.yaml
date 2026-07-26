@@ -618,7 +618,7 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                  required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                   properties:
                     id:
                       type: string
@@ -632,9 +632,14 @@ paths:
                     updatedAt:
                       type: string
                       format: date-time
+                    publishedAt:
+                      type: string
+                      format: date-time
                     isPinned:
                       type: boolean
                     isPublic:
+                      type: boolean
+                    mailScheduled:
                       type: boolean
                     viewableTags:
                       type: array
@@ -681,7 +686,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, body, isPublic]
+              required: [title, body, isPublic, publishedAt]
               properties:
                 title:
                   type: string
@@ -705,6 +710,13 @@ paths:
                   type: boolean
                 isPublic:
                   type: boolean
+                publishedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: >-
+                    Publish time of the notice. Null publishes it immediately;
+                    an RFC 3339 timestamp schedules it for that time.
       responses:
         "201":
           description: Created page
@@ -712,7 +724,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -726,9 +738,14 @@ paths:
                   updatedAt:
                     type: string
                     format: date-time
+                  publishedAt:
+                    type: string
+                    format: date-time
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array
@@ -802,7 +819,7 @@ paths:
               schema:
                 type: object
                 required:
-                  [id, title, body, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                  [id, title, body, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -818,9 +835,14 @@ paths:
                   updatedAt:
                     type: string
                     format: date-time
+                  publishedAt:
+                    type: string
+                    format: date-time
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array
@@ -869,7 +891,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, body, isPublic]
+              required: [title, body, isPublic, publishedAt]
               properties:
                 title:
                   type: string
@@ -893,6 +915,13 @@ paths:
                   type: boolean
                 isPublic:
                   type: boolean
+                publishedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: >-
+                    Publish time of the notice. Null publishes it immediately;
+                    an RFC 3339 timestamp schedules it for that time.
       responses:
         "200":
           description: Updated page
@@ -900,7 +929,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -914,9 +943,14 @@ paths:
                   updatedAt:
                     type: string
                     format: date-time
+                  publishedAt:
+                    type: string
+                    format: date-time
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array
@@ -996,7 +1030,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, title, notes, createdAt, updatedAt, isPinned, isPublic, viewableTags, documentIds, documents]
+                required: [id, title, notes, createdAt, updatedAt, publishedAt, isPinned, isPublic, mailScheduled, viewableTags, documentIds, documents]
                 properties:
                   id:
                     type: string
@@ -1010,9 +1044,14 @@ paths:
                   updatedAt:
                     type: string
                     format: date-time
+                  publishedAt:
+                    type: string
+                    format: date-time
                   isPinned:
                     type: boolean
                   isPublic:
+                    type: boolean
+                  mailScheduled:
                     type: boolean
                   viewableTags:
                     type: array

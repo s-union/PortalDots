@@ -2,7 +2,7 @@ import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffPageDetailSchema, staffPageSummarySchema } from '@/lib/api/schema'
-import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
+import { parseValidationError, unwrapValidationError } from '@/lib/api/validation'
 import { parseTagString, formatTags } from '@/lib/tags'
 import {
   buildStaffListRequestParams,
@@ -18,8 +18,10 @@ export interface StaffPageSummary {
   notes: string
   createdAt: string
   updatedAt: string
+  publishedAt: string
   isPinned: boolean
   isPublic: boolean
+  mailScheduled: boolean
   viewableTags: string[]
   documentIds: string[]
   documents: StaffPageDocument[]
@@ -36,6 +38,41 @@ export interface MutateStaffPagePayload {
   viewableTags: string[]
   documentIds: string[]
   sendEmails: boolean
+  /** `null` publishes immediately; an RFC 3339 timestamp schedules the publication. */
+  publishedAt: string | null
+}
+
+/** Publication state derived from `isPublic` and `publishedAt`. */
+export type StaffPagePublishStatus = 'unpublished' | 'scheduled' | 'published'
+
+/** Japanese label shown to staff for each publication state. */
+export const staffPagePublishStatusLabels: Record<StaffPagePublishStatus, string> = {
+  unpublished: '非公開',
+  scheduled: '予約公開',
+  published: '公開中'
+}
+
+/** Badge tone used for each publication state. */
+export const staffPagePublishStatusTones: Record<StaffPagePublishStatus, 'muted' | 'warning' | 'success'> = {
+  unpublished: 'muted',
+  scheduled: 'warning',
+  published: 'success'
+}
+
+/**
+ * Resolves the publication state of a page.
+ * A page is publicly visible only when it is public *and* its publish time has passed.
+ */
+export function resolveStaffPagePublishStatus(page: {
+  isPublic: boolean
+  publishedAt: string
+}): StaffPagePublishStatus {
+  if (!page.isPublic) {
+    return 'unpublished'
+  }
+
+  const publishTime = Date.parse(page.publishedAt)
+  return !Number.isNaN(publishTime) && publishTime > Date.now() ? 'scheduled' : 'published'
 }
 
 export interface StaffPageDocument {
@@ -333,12 +370,33 @@ export function useStaffPageForm() {
     isPublic: true,
     viewableTags: [],
     documentIds: [],
-    sendEmails: false
+    sendEmails: false,
+    publishedAt: null
   })
 }
 
 export function extractStaffPageValidationMessage(error: unknown) {
-  return extractValidationMessage(error, 'お知らせの保存に失敗しました。')
+  const validation = unwrapValidationError(error)
+  if (!validation) {
+    return 'お知らせの保存に失敗しました。'
+  }
+
+  let hasPublishedAtError = false
+  for (const [field, messages] of Object.entries(validation.errors)) {
+    if (field === 'publishedAt' && messages.length > 0) {
+      hasPublishedAtError = true
+    }
+    if (field !== 'publishedAt' && messages.length > 0) {
+      return messages[0]
+    }
+  }
+
+  return hasPublishedAtError ? '' : 'お知らせの保存に失敗しました。'
+}
+
+/** Returns the server-side validation message for the publish time field, or an empty string. */
+export function extractStaffPagePublishedAtError(error: unknown) {
+  return unwrapValidationError(error)?.errors.publishedAt?.[0] ?? ''
 }
 
 export function buildStaffPagesExportUrl() {

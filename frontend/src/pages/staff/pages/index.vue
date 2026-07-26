@@ -23,9 +23,13 @@ import { canUseMailQueue } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
   buildStaffPagesExportUrl,
+  resolveStaffPagePublishStatus,
+  staffPagePublishStatusLabels,
+  staffPagePublishStatusTones,
   useDeleteStaffPageByIdMutation,
   usePatchStaffPagePinByIdMutation,
-  useStaffPagesQuery
+  useStaffPagesQuery,
+  type StaffPagePublishStatus
 } from '@/features/staff/pages/api'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
@@ -54,7 +58,7 @@ const deletePageMutation = useDeleteStaffPageByIdMutation()
 const exportHref = computed(() => buildStaffPagesExportUrl())
 const mailQueueAvailable = computed(() => canUseMailQueue(sessionStore.roles, sessionStore.permissions))
 
-const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt'] as const
+const sortKeys = ['id', 'title', 'isPinned', 'isPublic', 'createdAt', 'updatedAt', 'publishedAt'] as const
 type StaffPageSortKey = (typeof sortKeys)[number]
 
 const filterFields: StaffFilterField[] = [
@@ -65,7 +69,8 @@ const filterFields: StaffFilterField[] = [
   { key: 'body', label: '本文', type: 'string' },
   { key: 'notes', label: 'スタッフ用メモ', type: 'string' },
   { key: 'createdAt', label: '作成日時', type: 'string' },
-  { key: 'updatedAt', label: '更新日時', type: 'string' }
+  { key: 'updatedAt', label: '更新日時', type: 'string' },
+  { key: 'publishedAt', label: '公開日時', type: 'string' }
 ]
 
 const isFilterKey = createIsFilterKey(filterFields)
@@ -77,7 +82,8 @@ const columns: StaffDataGridColumn[] = [
   { key: 'documents', label: '関連する配布資料' },
   { key: 'body', label: '本文' },
   { key: 'isPinned', label: '固定', sortable: true, align: 'center' },
-  { key: 'isPublic', label: '公開', sortable: true, align: 'center' },
+  { key: 'isPublic', label: '公開状態', sortable: true, align: 'center' },
+  { key: 'publishedAt', label: '公開日時', sortable: true },
   { key: 'notes', label: 'スタッフ用メモ' },
   { key: 'createdAt', label: '作成日時', sortable: true },
   { key: 'updatedAt', label: '更新日時', sortable: true }
@@ -101,18 +107,35 @@ const rawRows = computed<StaffDataGridRow[]>(() =>
     body: page.body,
     isPinned: page.isPinned,
     isPublic: page.isPublic,
+    publishStatus: resolveStaffPagePublishStatus(page),
     createdAt: page.createdAt,
     updatedAt: page.updatedAt,
+    publishedAt: page.publishedAt,
     notes: page.notes
   }))
 )
+
+function toPublishStatus(value: unknown): StaffPagePublishStatus {
+  if (value === 'scheduled' || value === 'published' || value === 'unpublished') {
+    return value
+  }
+  throw new Error(`Unexpected staff page publication status: ${String(value)}`)
+}
+
+function publishStatusTone(value: unknown) {
+  return staffPagePublishStatusTones[toPublishStatus(value)]
+}
+
+function publishStatusLabel(value: unknown) {
+  return staffPagePublishStatusLabels[toPublishStatus(value)]
+}
 
 function resolveSortValue(row: StaffDataGridRow, key: StaffPageSortKey) {
   if (key === 'isPinned') {
     return row.isPinned ? '1' : '0'
   }
   if (key === 'isPublic') {
-    return row.isPublic ? '1' : '0'
+    return String({ unpublished: 0, scheduled: 1, published: 2 }[toPublishStatus(row.publishStatus)])
   }
   return String(row[key] ?? '').toLowerCase()
 }
@@ -310,8 +333,20 @@ async function handleReload() {
             <YesNo :value="value === true" />
           </template>
 
-          <template #cell-isPublic="{ value }">
-            <YesNo :value="value === true" />
+          <template #cell-isPublic="{ row }">
+            <StatusBadge :tone="publishStatusTone(row.publishStatus)" size="sm">
+              {{ publishStatusLabel(row.publishStatus) }}
+            </StatusBadge>
+          </template>
+
+          <template #cell-publishedAt="{ value, row }">
+            <span>{{
+              row.publishStatus === 'unpublished'
+                ? '-'
+                : typeof value === 'string' && value
+                  ? formatDateTimeTable(value)
+                  : '-'
+            }}</span>
           </template>
 
           <template #cell-createdAt="{ value }">

@@ -89,6 +89,24 @@ export const mockPageDetail = {
   isLimited: false,
   createdAt: '2026-01-10T09:00:00Z',
   updatedAt: '2026-01-15T12:00:00Z',
+  publishedAt: '2026-01-10T09:00:00Z',
+  documents: []
+}
+
+/** Staff notice that is public but whose publish time is still in the future. */
+export const mockScheduledStaffPage = {
+  id: 'page-scheduled',
+  title: '予約公開のお知らせ',
+  body: '公開予定日時になったら表示されるお知らせです。',
+  notes: 'スタッフ用メモ',
+  createdAt: '2026-01-10T09:00:00Z',
+  updatedAt: '2026-01-15T12:00:00Z',
+  publishedAt: '2099-01-15T10:00:00Z',
+  isPinned: false,
+  isPublic: true,
+  mailScheduled: true,
+  viewableTags: [],
+  documentIds: [],
   documents: []
 }
 

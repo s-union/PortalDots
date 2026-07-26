@@ -11,6 +11,21 @@ function createTestEnv(authToken = 'test-token') {
   }
 }
 
+async function enqueue(env: ReturnType<typeof createTestEnv>, payload: unknown): Promise<Response> {
+  return app.request(
+    '/enqueue',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-token'
+      },
+      body: JSON.stringify(payload)
+    },
+    env as never
+  )
+}
+
 const validPayload = {
   jobId: 'job-1',
   template: 'markdown-notice',
@@ -22,6 +37,14 @@ const validPayload = {
 }
 
 describe('/enqueue', () => {
+  it('returns a generic error when AUTH_TOKEN is missing', async () => {
+    const env = createTestEnv('')
+    const res = await enqueue(env, validPayload)
+
+    expect(res.status).toBe(500)
+    expect(await res.text()).not.toContain('AUTH_TOKEN')
+  })
+
   it('returns 401 without authorization', async () => {
     const env = createTestEnv()
     const res = await app.request(
@@ -142,7 +165,7 @@ describe('/enqueue', () => {
     expect(env.HIGH_QUEUE.send).toHaveBeenCalledWith(
       expect.objectContaining({
         jobId: 'job-1',
-        messageId: 'job-1:0',
+        messageId: expect.stringMatching(/^job-1:0:[0-9a-f]{64}$/),
         chunkIndex: 0,
         chunkCount: 1
       })
@@ -190,45 +213,96 @@ describe('/enqueue', () => {
     expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(3)
   })
 
-  it('skips enqueue for duplicate jobId', async () => {
+  it('rejects a recipient list above the producer limit', async () => {
     const env = createTestEnv()
-    env.DB.jobs.set('job-1', { status: 'queued', chunkCount: 1 })
-    const res = await app.request(
-      '/enqueue',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer test-token'
-        },
-        body: JSON.stringify(validPayload)
-      },
-      env as never
-    )
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as { status: string; existingStatus: string }
-    expect(body.status).toBe('duplicate')
-    expect(body.existingStatus).toBe('queued')
+    const recipients = Array.from({ length: 501 }, (_, i) => `user${i}@example.com`)
+    const res = await enqueue(env, { ...validPayload, to: recipients })
+
+    expect(res.status).toBe(400)
     expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
   })
 
-  it('marks job as enqueue_failed when queue send fails', async () => {
+  it('marks job as enqueue_failed and records no chunk when queue send fails', async () => {
     const env = createTestEnv()
     env.NORMAL_QUEUE.send.mockRejectedValue(new Error('queue unavailable'))
-    const res = await app.request(
-      '/enqueue',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer test-token'
-        },
-        body: JSON.stringify(validPayload)
-      },
-      env as never
-    )
+    const res = await enqueue(env, validPayload)
     expect(res.status).toBe(500)
-    expect(env.DB.jobs.get('job-1')?.status).toBe('enqueue_failed')
-    expect(env.DB.chunks.get('job-1:0')?.status).toBe('enqueue_failed')
+    expect(await env.DB.jobStatus('job-1')).toBe('enqueue_failed')
+    // A chunk row must never claim acceptance the queue did not grant.
+    expect(await env.DB.chunkMessageIds()).toEqual([])
+  })
+})
+
+describe('/enqueue retries', () => {
+  const recipients = Array.from({ length: 120 }, (_, i) => `user${i}@example.com`)
+  const bulkPayload = { ...validPayload, to: recipients }
+
+  it('sends every chunk when the previous attempt only inserted the job row', async () => {
+    const env = createTestEnv()
+    // Previous attempt inserted the job row, then died before sending anything.
+    await env.DB.seedJob({ jobId: 'job-1', status: 'pending', chunkCount: 3, recipientsCount: 120 })
+
+    const res = await enqueue(env, bulkPayload)
+
+    expect(res.status).toBe(200)
+    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(3)
+    expect(await env.DB.jobStatus('job-1')).toBe('queued')
+  })
+
+  it('sends only the chunks the queue never accepted', async () => {
+    const env = createTestEnv()
+    env.NORMAL_QUEUE.send
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('queue unavailable'))
+
+    const failed = await enqueue(env, bulkPayload)
+    expect(failed.status).toBe(500)
+    expect(await env.DB.jobStatus('job-1')).toBe('enqueue_failed')
+    expect(await env.DB.chunkMessageIds()).toEqual([
+      expect.stringMatching(/^job-1:0:[0-9a-f]{64}$/),
+      expect.stringMatching(/^job-1:1:[0-9a-f]{64}$/)
+    ])
+
+    env.NORMAL_QUEUE.send.mockReset()
+    const retried = await enqueue(env, bulkPayload)
+
+    expect(retried.status).toBe(200)
+    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(1)
+    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messageId: expect.stringMatching(/^job-1:2:[0-9a-f]{64}$/),
+        chunkIndex: 2,
+        to: recipients.slice(100)
+      })
+    )
+    expect(await env.DB.jobStatus('job-1')).toBe('queued')
+  })
+
+  it('is a no-op for a job whose chunks are all queued', async () => {
+    const env = createTestEnv()
+    expect((await enqueue(env, bulkPayload)).status).toBe(200)
+    env.NORMAL_QUEUE.send.mockClear()
+
+    const res = await enqueue(env, bulkPayload)
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { success: boolean; status: string; messageCount: number }
+    expect(body).toMatchObject({ success: true, status: 'queued', messageCount: 3 })
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+  })
+
+  it('rejects a changed recipient chunk for an existing job', async () => {
+    const env = createTestEnv()
+    expect((await enqueue(env, bulkPayload)).status).toBe(200)
+    env.NORMAL_QUEUE.send.mockClear()
+
+    const changedRecipients = [...recipients]
+    changedRecipients[0] = 'replacement@example.com'
+    const res = await enqueue(env, { ...bulkPayload, to: changedRecipients })
+
+    expect(res.status).toBe(409)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+    expect(await env.DB.jobStatus('job-1')).toBe('queued')
   })
 })
