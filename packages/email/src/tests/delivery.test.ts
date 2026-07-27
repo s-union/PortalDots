@@ -32,7 +32,7 @@ describe('enqueue → consumer delivery pipeline', () => {
           .mockResolvedValueOnce(undefined)
           .mockRejectedValueOnce(new Error('queue unavailable'))
       },
-      DB: db,
+      DB: db.drizzle,
       AUTH_TOKEN: 'test-token'
     }
 
@@ -70,7 +70,7 @@ describe('enqueue → consumer delivery pipeline', () => {
         retryAll: vi.fn(),
         ackAll: vi.fn()
       }
-      await queueHandler(batch as never, { DB: db, EMAIL: { send: emailSend } } as never)
+      await queueHandler(batch.messages as never, { DB: db.drizzle, EMAIL: { send: emailSend } } as never)
     }
 
     await consume(firstAttemptMessages)

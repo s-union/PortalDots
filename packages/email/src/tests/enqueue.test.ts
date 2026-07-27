@@ -3,11 +3,13 @@ import { app } from '../enqueue'
 import { TestD1Database } from './helpers/d1'
 
 function createTestEnv(authToken = 'test-token') {
+  const testDb = new TestD1Database()
   return {
     HIGH_QUEUE: { send: vi.fn() },
     NORMAL_QUEUE: { send: vi.fn() },
-    DB: new TestD1Database(),
-    AUTH_TOKEN: authToken
+    DB: testDb.drizzle,
+    AUTH_TOKEN: authToken,
+    testDb
   }
 }
 
@@ -227,9 +229,9 @@ describe('/enqueue', () => {
     env.NORMAL_QUEUE.send.mockRejectedValue(new Error('queue unavailable'))
     const res = await enqueue(env, validPayload)
     expect(res.status).toBe(500)
-    expect(await env.DB.jobStatus('job-1')).toBe('enqueue_failed')
+    expect(await env.testDb.jobStatus('job-1')).toBe('enqueue_failed')
     // A chunk row must never claim acceptance the queue did not grant.
-    expect(await env.DB.chunkMessageIds()).toEqual([])
+    expect(await env.testDb.chunkMessageIds()).toEqual([])
   })
 })
 
@@ -240,13 +242,13 @@ describe('/enqueue retries', () => {
   it('sends every chunk when the previous attempt only inserted the job row', async () => {
     const env = createTestEnv()
     // Previous attempt inserted the job row, then died before sending anything.
-    await env.DB.seedJob({ jobId: 'job-1', status: 'pending', chunkCount: 3, recipientsCount: 120 })
+    await env.testDb.seedJob({ jobId: 'job-1', status: 'pending', chunkCount: 3, recipientsCount: 120 })
 
     const res = await enqueue(env, bulkPayload)
 
     expect(res.status).toBe(200)
     expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(3)
-    expect(await env.DB.jobStatus('job-1')).toBe('queued')
+    expect(await env.testDb.jobStatus('job-1')).toBe('queued')
   })
 
   it('sends only the chunks the queue never accepted', async () => {
@@ -258,8 +260,8 @@ describe('/enqueue retries', () => {
 
     const failed = await enqueue(env, bulkPayload)
     expect(failed.status).toBe(500)
-    expect(await env.DB.jobStatus('job-1')).toBe('enqueue_failed')
-    expect(await env.DB.chunkMessageIds()).toEqual([
+    expect(await env.testDb.jobStatus('job-1')).toBe('enqueue_failed')
+    expect(await env.testDb.chunkMessageIds()).toEqual([
       expect.stringMatching(/^job-1:0:[0-9a-f]{64}$/),
       expect.stringMatching(/^job-1:1:[0-9a-f]{64}$/)
     ])
@@ -276,7 +278,7 @@ describe('/enqueue retries', () => {
         to: recipients.slice(100)
       })
     )
-    expect(await env.DB.jobStatus('job-1')).toBe('queued')
+    expect(await env.testDb.jobStatus('job-1')).toBe('queued')
   })
 
   it('is a no-op for a job whose chunks are all queued', async () => {
@@ -303,6 +305,6 @@ describe('/enqueue retries', () => {
 
     expect(res.status).toBe(409)
     expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
-    expect(await env.DB.jobStatus('job-1')).toBe('queued')
+    expect(await env.testDb.jobStatus('job-1')).toBe('queued')
   })
 })

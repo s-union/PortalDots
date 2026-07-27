@@ -12,8 +12,8 @@ import { TestD1Database } from './helpers/d1'
 
 interface MessageLike {
   body: unknown
-  ack: () => void
-  retry: () => void
+  ack: () => Promise<void>
+  retry: () => Promise<void>
 }
 
 function createMessageBatch(messages: MessageLike[]) {
@@ -26,10 +26,10 @@ function createMessageBatch(messages: MessageLike[]) {
   }
 }
 
-function createEnv(emailSend = vi.fn().mockResolvedValue({ messageId: 'msg-1' }), db = new TestD1Database()) {
+function createEnv(emailSend = vi.fn().mockResolvedValue(undefined), db = new TestD1Database()) {
   return {
-    DB: db,
-    EMAIL: { send: emailSend as SendEmail['send'] }
+    DB: db.drizzle,
+    EMAIL: { send: emailSend }
   }
 }
 
@@ -64,7 +64,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv(emailSend) as never)
+    await queueHandler(batch.messages as never, createEnv(emailSend) as never)
     expect(emailSend).toHaveBeenCalledWith({
       to: ['a@example.com', 'b@example.com'],
       from: 'sender@example.com',
@@ -100,7 +100,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv(emailSend) as never)
+    await queueHandler(batch.messages as never, createEnv(emailSend) as never)
     expect(retry).toHaveBeenCalled()
     expect(ack).not.toHaveBeenCalled()
   })
@@ -129,7 +129,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv() as never)
+    await queueHandler(batch.messages as never, createEnv() as never)
     expect(ack).toHaveBeenCalled()
     expect(vi.mocked(renderTemplate)).not.toHaveBeenCalled()
   })
@@ -149,7 +149,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv() as never)
+    await queueHandler(batch.messages as never, createEnv() as never)
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
     expect(vi.mocked(renderTemplate)).not.toHaveBeenCalled()
@@ -183,7 +183,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
     expect(emailSend).not.toHaveBeenCalled()
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
@@ -217,7 +217,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
     expect(emailSend).not.toHaveBeenCalled()
     expect(retry).toHaveBeenCalled()
     expect(ack).not.toHaveBeenCalled()
@@ -255,7 +255,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
     expect(emailSend).toHaveBeenCalledTimes(1)
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
@@ -290,7 +290,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
     expect(await db.jobStatus('job-1')).toBe('sent')
     expect(retry).toHaveBeenCalled()
     expect(ack).not.toHaveBeenCalled()
@@ -326,7 +326,7 @@ describe('email queue consumer', () => {
       }
     ])
 
-    await queueHandler(batch as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
     expect(emailSend).toHaveBeenCalledTimes(1)
     // Proof the bookkeeping really failed, so the ack below is the "sent but
     // unrecorded" path rather than an ordinary success.

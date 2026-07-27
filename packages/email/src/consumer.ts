@@ -1,24 +1,20 @@
-import { and, count, eq, inArray, notInArray, or } from 'drizzle-orm'
-import { createDb, type EmailDb } from './db/client'
-import { emailJobChunks, emailJobs, type ChunkStatus, type JobStatus } from './db/schema'
+import { type EmailDb } from './db/client'
+import {
+  ensureMessageRecord,
+  getMessageStatus,
+  markMessageFailed,
+  markMessageSent,
+  tryClaimChunk
+} from './db/repository'
+import type { MailTransport, QueueMessage } from './ports'
 import { renderTemplate } from './templates'
 import type { EmailJob } from './enqueue'
 
 const PROCESSING_STALE_AFTER_MS = 15 * 60 * 1000
 
-interface MessageStatus {
-  jobStatus: JobStatus
-  chunkStatus: ChunkStatus
-  updatedAt: string
-}
-
 export interface ConsumerEnv {
-  DB: D1Database
-  EMAIL: SendEmail
-}
-
-function nowIso(): string {
-  return new Date().toISOString()
+  DB: EmailDb
+  EMAIL: MailTransport
 }
 
 function isStringRecord(value: unknown): value is Record<string, string> {
@@ -78,60 +74,18 @@ function isStaleProcessing(updatedAt: string): boolean {
   return Number.isFinite(updatedAtMs) && Date.now() - updatedAtMs > PROCESSING_STALE_AFTER_MS
 }
 
-async function ensureMessageRecord(db: EmailDb, job: EmailJob): Promise<void> {
-  const now = nowIso()
-  await db
-    .insert(emailJobs)
-    .values({
-      jobId: job.jobId,
-      // 'pending': this message was accepted by the queue, but nothing here proves
-      // the producer got the job's other chunks onto the queue.
-      status: 'pending',
-      template: job.template,
-      priority: job.priority,
-      subject: job.subject,
-      recipientsCount: job.to.length,
-      chunkCount: job.chunkCount,
-      createdAt: now,
-      updatedAt: now
-    })
-    .onConflictDoNothing()
-  await db
-    .insert(emailJobChunks)
-    .values({
-      messageId: job.messageId,
-      jobId: job.jobId,
-      chunkIndex: job.chunkIndex,
-      chunkCount: job.chunkCount,
-      status: 'queued',
-      recipientsCount: job.to.length,
-      createdAt: now,
-      updatedAt: now
-    })
-    .onConflictDoNothing()
-}
-
-async function getMessageStatus(db: EmailDb, job: EmailJob): Promise<MessageStatus> {
-  const row = await db
-    .select({
-      jobStatus: emailJobs.status,
-      chunkStatus: emailJobChunks.status,
-      updatedAt: emailJobChunks.updatedAt
-    })
-    .from(emailJobs)
-    .innerJoin(emailJobChunks, eq(emailJobChunks.jobId, emailJobs.jobId))
-    .where(and(eq(emailJobs.jobId, job.jobId), eq(emailJobChunks.messageId, job.messageId)))
-    .get()
-
-  if (!row) {
-    throw new Error(`Email message record is missing: ${job.messageId}`)
-  }
-  return row
-}
-
 async function claimMessage(db: EmailDb, job: EmailJob): Promise<'claimed' | 'skip' | 'retry'> {
-  await ensureMessageRecord(db, job)
-  const status = await getMessageStatus(db, job)
+  await ensureMessageRecord(db, {
+    jobId: job.jobId,
+    messageId: job.messageId,
+    chunkIndex: job.chunkIndex,
+    chunkCount: job.chunkCount,
+    template: job.template,
+    priority: job.priority,
+    subject: job.subject,
+    recipientsCount: job.to.length
+  })
+  const status = await getMessageStatus(db, job.jobId, job.messageId)
   if (status.chunkStatus === 'sent') {
     return 'skip'
   }
@@ -139,83 +93,33 @@ async function claimMessage(db: EmailDb, job: EmailJob): Promise<'claimed' | 'sk
     return 'retry'
   }
 
-  const result = await db
-    .update(emailJobChunks)
-    .set({ status: 'processing', updatedAt: nowIso(), lastError: null })
-    .where(
-      and(
-        eq(emailJobChunks.messageId, job.messageId),
-        or(
-          inArray(emailJobChunks.status, ['queued', 'enqueue_failed']),
-          and(eq(emailJobChunks.status, 'processing'), eq(emailJobChunks.updatedAt, status.updatedAt))
-        )
-      )
-    )
-
-  return result.meta.changes === 1 ? 'claimed' : 'retry'
+  const claimed = await tryClaimChunk(db, job.messageId, status.updatedAt)
+  return claimed ? 'claimed' : 'retry'
 }
 
-async function markMessageSent(db: EmailDb, job: EmailJob): Promise<void> {
-  const now = nowIso()
-  await db
-    .update(emailJobChunks)
-    .set({ status: 'sent', updatedAt: now, lastError: null })
-    .where(eq(emailJobChunks.messageId, job.messageId))
-  const [jobRow, sentChunks] = await Promise.all([
-    db.select({ chunkCount: emailJobs.chunkCount }).from(emailJobs).where(eq(emailJobs.jobId, job.jobId)).get(),
-    db
-      .select({ count: count(emailJobChunks.messageId) })
-      .from(emailJobChunks)
-      .where(and(eq(emailJobChunks.jobId, job.jobId), eq(emailJobChunks.status, 'sent')))
-      .get()
-  ])
-  if (!jobRow || sentChunks?.count !== jobRow.chunkCount) {
-    return
-  }
-  await db
-    .update(emailJobs)
-    .set({ status: 'sent', updatedAt: now, lastError: null })
-    .where(and(eq(emailJobs.jobId, job.jobId), notInArray(emailJobs.status, ['sent'])))
-}
-
-async function markMessageFailed(db: EmailDb, job: EmailJob, error: unknown): Promise<void> {
-  const message = error instanceof Error ? error.message : 'Unknown send error'
-  const now = nowIso()
-  await db.batch([
-    db
-      .update(emailJobChunks)
-      .set({ status: 'enqueue_failed', updatedAt: now, lastError: message })
-      .where(and(eq(emailJobChunks.messageId, job.messageId), notInArray(emailJobChunks.status, ['sent']))),
-    db
-      .update(emailJobs)
-      .set({ status: 'enqueue_failed', updatedAt: now, lastError: message })
-      .where(and(eq(emailJobs.jobId, job.jobId), notInArray(emailJobs.status, ['processing', 'sent'])))
-  ])
-}
-
-export async function queueHandler(batch: MessageBatch<unknown>, env: ConsumerEnv): Promise<void> {
-  const db = createDb(env.DB)
-  for (const message of batch.messages) {
+export async function queueHandler(messages: readonly QueueMessage[], env: ConsumerEnv): Promise<void> {
+  const db = env.DB
+  for (const message of messages) {
     try {
       const job = parseEmailJob(message.body)
       if (!job) {
         console.error('Invalid email job payload')
-        message.ack()
+        await message.ack()
         continue
       }
 
       if (job.to.length === 0) {
-        message.ack()
+        await message.ack()
         continue
       }
 
       const claim = await claimMessage(db, job)
       if (claim === 'skip') {
-        message.ack()
+        await message.ack()
         continue
       }
       if (claim === 'retry') {
-        message.retry()
+        await message.retry()
         continue
       }
 
@@ -239,22 +143,28 @@ export async function queueHandler(batch: MessageBatch<unknown>, env: ConsumerEn
       })
 
       try {
-        await markMessageSent(db, job)
+        await markMessageSent(db, job.jobId, job.messageId)
       } catch (error) {
         console.error('Failed to mark email job as sent:', error)
       }
-      message.ack()
+      await message.ack()
     } catch (error) {
       console.error('Failed to process email job:', error)
       const job = parseEmailJob(message.body)
       if (job) {
         try {
-          await markMessageFailed(db, job, error)
+          await markMessageFailed(db, job.jobId, job.messageId, error)
         } catch (markError) {
           console.error('Failed to mark email job as failed:', markError)
         }
       }
-      message.retry()
+      try {
+        await message.retry()
+      } catch (retryError) {
+        // A retry() failure here must not throw out of the loop: that would abort
+        // processing of the remaining messages in this batch.
+        console.error('Failed to retry email job:', retryError)
+      }
     }
   }
 }
