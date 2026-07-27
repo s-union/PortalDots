@@ -1,4 +1,4 @@
-package cloudflareemail
+package emailqueue
 
 import (
 	"context"

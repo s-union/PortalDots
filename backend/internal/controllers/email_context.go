@@ -1,9 +1,9 @@
 package controllers
 
-import "github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+import "github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 
 type EmailContext struct {
-	EmailSender  cloudflareemail.Sender
+	EmailSender  emailqueue.Sender
 	From         string
 	AdminName    string
 	ContactEmail string

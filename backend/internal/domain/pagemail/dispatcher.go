@@ -8,7 +8,7 @@ import (
 
 	"github.com/s-union/PortalDots/backend/internal/domain/activitylog"
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 const (
@@ -29,7 +29,7 @@ type Dispatcher struct {
 	schedules  Repository
 	pages      page.Repository
 	builder    *Builder
-	sender     cloudflareemail.Sender
+	sender     emailqueue.Sender
 	activities activitylog.Repository
 	interval   time.Duration
 	now        func() time.Time
@@ -40,7 +40,7 @@ func NewDispatcher(
 	schedules Repository,
 	pages page.Repository,
 	builder *Builder,
-	sender cloudflareemail.Sender,
+	sender emailqueue.Sender,
 	activities activitylog.Repository,
 	interval time.Duration,
 ) *Dispatcher {
@@ -156,7 +156,7 @@ func (d *Dispatcher) dispatch(ctx context.Context, schedule Schedule) error {
 	return nil
 }
 
-func logQueuedMail(schedule Schedule, job cloudflareemail.EmailJob, allowDangerously bool) {
+func logQueuedMail(schedule Schedule, job emailqueue.EmailJob, allowDangerously bool) {
 	attrs := []any{
 		"kind", "queued_mail",
 		"source", "scheduled_page",

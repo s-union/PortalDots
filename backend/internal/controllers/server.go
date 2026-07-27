@@ -27,7 +27,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/middlewares"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/platform/email"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"golang.org/x/time/rate"
 )
 
@@ -73,7 +73,7 @@ type authHandlers struct {
 	pendingRegistrations       pendingregistration.Repository
 	passwordResetTokens        *passwordResetTokenStore
 	authVerificationTokens     *authVerificationTokenStore
-	emailSender                cloudflareemail.Sender
+	emailSender                emailqueue.Sender
 	mockRegistrationVerifyMail bool
 	portalUnivemailDomainPart  string
 	registrationVerifyTTL      time.Duration
@@ -91,7 +91,7 @@ type staffVerifyHandlers struct {
 	sharedDeps
 	users        useradmin.Repository
 	appName      string
-	emailSender  cloudflareemail.Sender
+	emailSender  emailqueue.Sender
 	from         string
 	adminName    string
 	contactEmail string
@@ -228,7 +228,7 @@ func NewServer(cfg config.Config) *echo.Echo {
 
 func NewServerWithDependencies(
 	cfg config.Config,
-	emailSender cloudflareemail.Sender,
+	emailSender emailqueue.Sender,
 	activities activitylog.Repository,
 	answers answer.Repository,
 	authenticator auth.Authenticator,

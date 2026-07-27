@@ -23,13 +23,13 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 type SharedDependencies struct {
 	Activities  activitylog.Repository
 	Contacts    contact.Repository
-	EmailSender cloudflareemail.Sender
+	EmailSender emailqueue.Sender
 	MailHistory mailhistory.Repository
 	Sessions    session.Store
 	Users       useradmin.Repository

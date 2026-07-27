@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 func (h *authHandlers) enqueueRegistrationVerifyMail(ctx context.Context, recipientEmail, verifyURL string) error {
@@ -28,10 +28,10 @@ func (h *authHandlers) enqueueRegistrationVerifyMail(ctx context.Context, recipi
 	))
 
 	jobID := fmt.Sprintf("reg-%d", time.Now().UnixNano())
-	return h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	return h.emailSender.Enqueue(ctx, emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "registration-verify",
-		Priority: cloudflareemail.PriorityHigh,
+		Priority: emailqueue.PriorityHigh,
 		From:     h.from,
 		To:       recipients,
 		Subject:  subject,
@@ -78,10 +78,10 @@ func (h *authHandlers) enqueueParticipantVerifyLinkMail(
 	))
 
 	jobID := fmt.Sprintf("verify-%d", time.Now().UnixNano())
-	return h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	return h.emailSender.Enqueue(ctx, emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityHigh,
+		Priority: emailqueue.PriorityHigh,
 		From:     h.from,
 		To:       recipients,
 		Subject:  subject,
@@ -115,10 +115,10 @@ func (h *authHandlers) enqueuePasswordChangedMail(ctx context.Context, userID st
 	))
 
 	jobID := fmt.Sprintf("pwd-chg-%d", time.Now().UnixNano())
-	return h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	return h.emailSender.Enqueue(ctx, emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
+		Priority: emailqueue.PriorityNormal,
 		From:     h.from,
 		To:       recipients,
 		Subject:  subject,
@@ -163,10 +163,10 @@ func (h *authHandlers) enqueuePasswordResetStartMail(
 	))
 
 	jobID := fmt.Sprintf("pwd-rst-%d", time.Now().UnixNano())
-	return h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	return h.emailSender.Enqueue(ctx, emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityHigh,
+		Priority: emailqueue.PriorityHigh,
 		From:     h.from,
 		To:       recipients,
 		Subject:  subject,

@@ -14,7 +14,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 func TestListStaffMailsReturnsEmptyWhenNoProducer(t *testing.T) {
@@ -33,7 +33,7 @@ func TestListStaffMailsReturnsEmptyWhenNoProducer(t *testing.T) {
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		mailHistory: mailhistory.NewMemoryRepository(),
 		email: EmailContext{
-			EmailSender: cloudflareemail.NewNoopSender(),
+			EmailSender: emailqueue.NewNoopSender(),
 		},
 	}
 
@@ -83,7 +83,7 @@ func TestListStaffMailsRejectsNonAdminStaff(t *testing.T) {
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		mailHistory: mailhistory.NewMemoryRepository(),
 		email: EmailContext{
-			EmailSender: cloudflareemail.NewNoopSender(),
+			EmailSender: emailqueue.NewNoopSender(),
 		},
 	}
 
@@ -126,7 +126,7 @@ func TestEnqueueStaffMailSucceedsWithNoopSenderWhenNoProducer(t *testing.T) {
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		mailHistory: mailhistory.NewMemoryRepository(),
 		email: EmailContext{
-			EmailSender: cloudflareemail.NewNoopSender(),
+			EmailSender: emailqueue.NewNoopSender(),
 		},
 	}
 
@@ -165,7 +165,7 @@ func TestEnqueueStaffMailSucceedsWithNoopSenderWhenNoProducer(t *testing.T) {
 	if got.JobId == "" {
 		t.Fatal("expected jobId to be populated")
 	}
-	if got.Subject != "件名" || got.Body != "本文" || got.Priority != string(cloudflareemail.PriorityNormal) || len(got.Recipients) != 1 || got.Recipients[0] != "demo@example.com" || got.CreatedAt == "" {
+	if got.Subject != "件名" || got.Body != "本文" || got.Priority != string(emailqueue.PriorityNormal) || len(got.Recipients) != 1 || got.Recipients[0] != "demo@example.com" || got.CreatedAt == "" {
 		t.Fatalf("unexpected response: %#v", got)
 	}
 }
@@ -186,7 +186,7 @@ func TestEnqueueStaffMailRejectsNonAdminStaff(t *testing.T) {
 		circles:     circle.NewStaticCatalog(cfg.Circles, cfg.AuthUser, cfg.Users),
 		mailHistory: mailhistory.NewMemoryRepository(),
 		email: EmailContext{
-			EmailSender: cloudflareemail.NewNoopSender(),
+			EmailSender: emailqueue.NewNoopSender(),
 		},
 	}
 

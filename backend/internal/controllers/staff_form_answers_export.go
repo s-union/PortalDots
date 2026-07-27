@@ -14,7 +14,7 @@ import (
 	backendform "github.com/s-union/PortalDots/backend/internal/domain/form"
 	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
@@ -201,10 +201,10 @@ func (h *staffFormHandlers) enqueueStaffFormAnswerMail(ctx context.Context, crea
 	}
 
 	jobID := "staff-form-answer-" + uuidv7.MustString()
-	if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(ctx, emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
+		Priority: emailqueue.PriorityNormal,
 		From:     h.email.From,
 		To:       recipients,
 		Subject:  subject,

@@ -20,7 +20,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
@@ -320,10 +320,10 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 			contactAttachmentDescription(attachment),
 		)
 		confirmationJobID := "contact-confirm-" + uuidv7.MustString()
-		if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+		if err := h.emailSender.Enqueue(c.Request().Context(), emailqueue.EmailJob{
 			JobId:    confirmationJobID,
 			Template: "markdown-notice",
-			Priority: cloudflareemail.PriorityNormal,
+			Priority: emailqueue.PriorityNormal,
 			From:     h.from,
 			To:       confirmationRecipients,
 			Subject:  confirmationSubject,
@@ -350,10 +350,10 @@ func (h *authHandlers) submitContact(c *echo.Context) error {
 		downloadURL := strings.TrimRight(h.appURL, "/") + "/v1/contact/attachments/" + url.PathEscape(rawToken)
 		staffMailBody += fmt.Sprintf("\n\n添付ファイル: %s\nダウンロード: %s", attachment.Filename, downloadURL)
 	}
-	if err := h.emailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+	if err := h.emailSender.Enqueue(c.Request().Context(), emailqueue.EmailJob{
 		JobId:       jobID,
 		Template:    "markdown-notice",
-		Priority:    cloudflareemail.PriorityNormal,
+		Priority:    emailqueue.PriorityNormal,
 		From:        h.from,
 		To:          []string{category.Email},
 		Subject:     request.Subject,

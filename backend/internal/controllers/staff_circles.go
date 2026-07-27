@@ -12,7 +12,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 type staffCircleResponse struct {
@@ -705,10 +705,10 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c *echo.Context) error {
 	}
 
 	jobID := fmt.Sprintf("circle-%d", time.Now().UnixNano())
-	if err := h.email.EmailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(c.Request().Context(), emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
+		Priority: emailqueue.PriorityNormal,
 		From:     h.email.From,
 		To:       recipientEmails,
 		Subject:  request.Subject,
@@ -731,10 +731,10 @@ func (h *staffCircleHandlers) sendStaffCircleMail(c *echo.Context) error {
 		staffRecipients := normalizeRecipients([]string{h.email.ContactEmail})
 		if len(staffRecipients) > 0 {
 			staffCopyJobID := fmt.Sprintf("circle-staff-copy-%d", time.Now().UnixNano())
-			if err := h.email.EmailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+			if err := h.email.EmailSender.Enqueue(c.Request().Context(), emailqueue.EmailJob{
 				JobId:    staffCopyJobID,
 				Template: "markdown-notice",
-				Priority: cloudflareemail.PriorityNormal,
+				Priority: emailqueue.PriorityNormal,
 				From:     h.email.From,
 				To:       staffRecipients,
 				Subject:  "[スタッフ控え] " + request.Subject,

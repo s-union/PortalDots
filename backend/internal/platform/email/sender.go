@@ -4,7 +4,7 @@ package email
 import (
 	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 // NewSender builds the sender every part of the application delivers mail
@@ -13,10 +13,10 @@ import (
 //
 // One instance is shared by the HTTP handlers and the background dispatchers so
 // that mail sent outside a request still shows up in the mail history.
-func NewSender(cfg config.Config, history mailhistory.Repository) cloudflareemail.Sender {
-	var sender cloudflareemail.Sender = cloudflareemail.NewNoopSender()
+func NewSender(cfg config.Config, history mailhistory.Repository) emailqueue.Sender {
+	var sender emailqueue.Sender = emailqueue.NewNoopSender()
 	if ProducerEnabled(cfg) {
-		sender = cloudflareemail.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
+		sender = emailqueue.NewProducerClient(cfg.EmailProducerURL, cfg.EmailProducerToken)
 	}
 
 	return mailhistory.NewRecordingSender(history, sender)
