@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 type capturingSender struct {
-	job cloudflareemail.EmailJob
+	job emailqueue.EmailJob
 }
 
-func (s *capturingSender) Enqueue(_ context.Context, job cloudflareemail.EmailJob) error {
+func (s *capturingSender) Enqueue(_ context.Context, job emailqueue.EmailJob) error {
 	s.job = job
 	return nil
 }
@@ -22,7 +22,7 @@ func TestRecordingSenderSeparatesHistoryBodyFromDeliveredBody(t *testing.T) {
 	repository := NewMemoryRepository()
 	next := &capturingSender{}
 	sender := NewRecordingSender(repository, next)
-	job := cloudflareemail.EmailJob{
+	job := emailqueue.EmailJob{
 		JobId:       "contact-job",
 		Body:        "body with bearer token",
 		HistoryBody: "body without bearer token",

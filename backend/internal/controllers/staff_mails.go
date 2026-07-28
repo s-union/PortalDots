@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 type staffMailResponse struct {
@@ -101,10 +101,10 @@ func (h *staffAdminHandlers) enqueueStaffMail(c *echo.Context) error {
 	}
 
 	jobID := fmt.Sprintf("staff-%d", time.Now().UnixNano())
-	if err := h.email.EmailSender.Enqueue(c.Request().Context(), cloudflareemail.EmailJob{
+	if err := h.email.EmailSender.Enqueue(c.Request().Context(), emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
+		Priority: emailqueue.PriorityNormal,
 		From:     h.email.From,
 		To:       recipients,
 		Subject:  request.Subject,
@@ -136,7 +136,7 @@ func (h *staffAdminHandlers) enqueueStaffMail(c *echo.Context) error {
 	return c.JSON(http.StatusCreated, staffMailResponse{
 		JobId:      jobID,
 		Template:   "markdown-notice",
-		Priority:   string(cloudflareemail.PriorityNormal),
+		Priority:   string(emailqueue.PriorityNormal),
 		Subject:    request.Subject,
 		Body:       request.Body,
 		Recipients: recipients,

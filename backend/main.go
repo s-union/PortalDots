@@ -14,7 +14,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/platform/database"
 	"github.com/s-union/PortalDots/backend/internal/platform/email"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 // pageMailInterval is how often the scheduled announcement mail of a page is
@@ -116,7 +116,7 @@ func run(ctx context.Context, cfg config.Config) error {
 func newPageMailDispatcher(
 	cfg config.Config,
 	dependencies database.Dependencies,
-	emailSender cloudflareemail.Sender,
+	emailSender emailqueue.Sender,
 ) *pagemail.Dispatcher {
 	builder := pagemail.NewBuilder(
 		dependencies.Circles,

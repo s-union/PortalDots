@@ -7,13 +7,13 @@ import (
 
 	"github.com/s-union/PortalDots/backend/internal/domain/circle"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
 func enqueueCircleNotificationMail(
 	ctx context.Context,
-	emailSender cloudflareemail.Sender,
+	emailSender emailqueue.Sender,
 	users useradmin.Repository,
 	members []circle.CircleMember,
 	circleID string,
@@ -34,12 +34,12 @@ func enqueueCircleNotificationMail(
 		return "", false, nil
 	}
 
-	priority := cloudflareemail.PriorityHigh
+	priority := emailqueue.PriorityHigh
 	if source == "circle_status" {
-		priority = cloudflareemail.PriorityNormal
+		priority = emailqueue.PriorityNormal
 	}
 	jobID := source + "-" + uuidv7.MustString()
-	if err := emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	if err := emailSender.Enqueue(ctx, emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
 		Priority: priority,

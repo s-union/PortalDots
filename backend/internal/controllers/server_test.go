@@ -21,7 +21,7 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/externalid"
 )
 
@@ -197,9 +197,9 @@ func TestSubmitContactQueuesConfirmationAndStaffCopy(t *testing.T) {
 }
 
 func TestSubmitContactKeepsAttachmentTokenOutOfConfirmationAndLogs(t *testing.T) {
-	var jobs []cloudflareemail.EmailJob
+	var jobs []emailqueue.EmailJob
 	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		var job cloudflareemail.EmailJob
+		var job emailqueue.EmailJob
 		if err := json.NewDecoder(request.Body).Decode(&job); err != nil {
 			t.Fatalf("decode email job: %v", err)
 		}
@@ -242,7 +242,7 @@ func TestSubmitContactKeepsAttachmentTokenOutOfConfirmationAndLogs(t *testing.T)
 		t.Fatalf("queued jobs = %d, want confirmation and staff jobs", len(jobs))
 	}
 
-	var confirmation, staff cloudflareemail.EmailJob
+	var confirmation, staff emailqueue.EmailJob
 	for _, job := range jobs {
 		if strings.HasPrefix(job.JobId, "contact-confirm-") {
 			confirmation = job
@@ -268,7 +268,7 @@ func TestSubmitContactCleansUpHistoryWhenStaffMailEnqueueFails(t *testing.T) {
 	t.Parallel()
 
 	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
-		var job cloudflareemail.EmailJob
+		var job emailqueue.EmailJob
 		if err := json.NewDecoder(request.Body).Decode(&job); err != nil {
 			t.Fatalf("decode email job: %v", err)
 		}
@@ -1224,7 +1224,7 @@ func TestStartRegistrationLogsVerifyURLWhenInsecure(t *testing.T) {
 }
 
 func TestStartRegistrationUsesEmailProducerWhenConfiguredInDemoMode(t *testing.T) {
-	var received cloudflareemail.EmailJob
+	var received emailqueue.EmailJob
 	var authHeader string
 	producer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader = r.Header.Get("Authorization")
@@ -1265,7 +1265,7 @@ func TestStartRegistrationUsesEmailProducerWhenConfiguredInDemoMode(t *testing.T
 	if received.Template != "registration-verify" {
 		t.Fatalf("expected registration template, got %#v", received)
 	}
-	if received.Priority != cloudflareemail.PriorityHigh {
+	if received.Priority != emailqueue.PriorityHigh {
 		t.Fatalf("expected high priority, got %#v", received)
 	}
 	if received.From != "noreply@example.ac.jp" {

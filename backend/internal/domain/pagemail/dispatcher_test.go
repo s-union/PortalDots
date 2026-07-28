@@ -13,17 +13,17 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 const testActorUserID = "0195ec00-0098-7000-8000-000000000001"
 
 type fakeSender struct {
 	err  error
-	jobs []cloudflareemail.EmailJob
+	jobs []emailqueue.EmailJob
 }
 
-func (s *fakeSender) Enqueue(_ context.Context, job cloudflareemail.EmailJob) error {
+func (s *fakeSender) Enqueue(_ context.Context, job emailqueue.EmailJob) error {
 	if s.err != nil {
 		return s.err
 	}

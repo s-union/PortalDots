@@ -10,7 +10,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/page"
 	"github.com/s-union/PortalDots/backend/internal/domain/participationtype"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 // MailConfig holds the sender information shared by every announcement email.
@@ -53,20 +53,20 @@ func NewBuilder(
 // The returned job has no recipients when the page reaches nobody, which is a
 // legitimate outcome; an error means the recipients could not be determined at
 // all and the caller must not treat the mail as handled.
-func (b *Builder) Build(ctx context.Context, currentPage page.Page, jobID string) (cloudflareemail.EmailJob, error) {
+func (b *Builder) Build(ctx context.Context, currentPage page.Page, jobID string) (emailqueue.EmailJob, error) {
 	recipients, err := b.recipients(ctx, currentPage.ViewableTags)
 	if err != nil {
-		return cloudflareemail.EmailJob{}, err
+		return emailqueue.EmailJob{}, err
 	}
 	if len(recipients) == 0 {
-		return cloudflareemail.EmailJob{}, nil
+		return emailqueue.EmailJob{}, nil
 	}
 
 	body := currentPage.Body + b.documentsSection(currentPage)
-	return cloudflareemail.EmailJob{
+	return emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "markdown-notice",
-		Priority: cloudflareemail.PriorityNormal,
+		Priority: emailqueue.PriorityNormal,
 		From:     b.config.From,
 		To:       recipients,
 		Subject:  currentPage.Title,

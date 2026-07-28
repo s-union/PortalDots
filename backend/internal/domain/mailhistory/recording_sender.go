@@ -3,22 +3,22 @@ package mailhistory
 import (
 	"context"
 
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 type RecordingSender struct {
 	repository Repository
-	next       cloudflareemail.Sender
+	next       emailqueue.Sender
 }
 
-func NewRecordingSender(repository Repository, next cloudflareemail.Sender) RecordingSender {
+func NewRecordingSender(repository Repository, next emailqueue.Sender) RecordingSender {
 	return RecordingSender{
 		repository: repository,
 		next:       next,
 	}
 }
 
-func (s RecordingSender) Enqueue(ctx context.Context, job cloudflareemail.EmailJob) error {
+func (s RecordingSender) Enqueue(ctx context.Context, job emailqueue.EmailJob) error {
 	recordedJob := job
 	if job.HistoryBody != "" {
 		recordedJob.Body = job.HistoryBody

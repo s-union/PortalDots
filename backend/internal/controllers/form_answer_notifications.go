@@ -8,7 +8,7 @@ import (
 
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
@@ -26,10 +26,10 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 			body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 		}
 
-		if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+		if err := h.email.EmailSender.Enqueue(ctx, emailqueue.EmailJob{
 			JobId:    "form-answer-" + uuidv7.MustString(),
 			Template: "markdown-notice",
-			Priority: cloudflareemail.PriorityNormal,
+			Priority: emailqueue.PriorityNormal,
 			From:     h.email.From,
 			To:       memberRecipients,
 			Subject:  subject,
@@ -59,10 +59,10 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 					body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
 				}
 
-				if err := h.email.EmailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+				if err := h.email.EmailSender.Enqueue(ctx, emailqueue.EmailJob{
 					JobId:    "form-answer-staff-copy-" + uuidv7.MustString(),
 					Template: "markdown-notice",
-					Priority: cloudflareemail.PriorityNormal,
+					Priority: emailqueue.PriorityNormal,
 					From:     h.email.From,
 					To:       staffRecipients,
 					Subject:  subject,

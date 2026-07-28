@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 type PostgresRepository struct {
@@ -17,7 +17,7 @@ func NewPostgresRepository(pool *pgxpool.Pool) *PostgresRepository {
 	return &PostgresRepository{pool: pool}
 }
 
-func (r *PostgresRepository) Record(ctx context.Context, job cloudflareemail.EmailJob) error {
+func (r *PostgresRepository) Record(ctx context.Context, job emailqueue.EmailJob) error {
 	_, err := r.pool.Exec(ctx, `
 INSERT INTO outbound_mails (
     job_id,
@@ -77,7 +77,7 @@ ORDER BY created_at DESC, job_id DESC
 		); err != nil {
 			return nil, err
 		}
-		entry.Priority = cloudflareemail.Priority(priority)
+		entry.Priority = emailqueue.Priority(priority)
 		entry.CreatedAt = pgutil.FormatTimestamptz(createdAt)
 		entries = append(entries, entry)
 	}

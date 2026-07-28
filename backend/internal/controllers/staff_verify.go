@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
 )
 
@@ -184,10 +184,10 @@ func (h *staffVerifyHandlers) enqueueStaffVerifyCodeMail(
 		verifyCode,
 	))
 	jobID := "staff-auth-" + uuidv7.MustString()
-	if err := h.emailSender.Enqueue(ctx, cloudflareemail.EmailJob{
+	if err := h.emailSender.Enqueue(ctx, emailqueue.EmailJob{
 		JobId:    jobID,
 		Template: "staff-auth-notice",
-		Priority: cloudflareemail.PriorityHigh,
+		Priority: emailqueue.PriorityHigh,
 		From:     h.from,
 		To:       normalizedRecipients,
 		Subject:  subject,

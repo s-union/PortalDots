@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
 type Entry struct {
 	JobID      string
 	Template   string
-	Priority   cloudflareemail.Priority
+	Priority   emailqueue.Priority
 	From       string
 	Subject    string
 	Body       string
@@ -20,7 +20,7 @@ type Entry struct {
 }
 
 type Repository interface {
-	Record(ctx context.Context, job cloudflareemail.EmailJob) error
+	Record(ctx context.Context, job emailqueue.EmailJob) error
 	List(ctx context.Context) ([]Entry, error)
 	Delete(ctx context.Context, jobID string) error
 }
@@ -36,7 +36,7 @@ func NewMemoryRepository() *MemoryRepository {
 	}
 }
 
-func (r *MemoryRepository) Record(_ context.Context, job cloudflareemail.EmailJob) error {
+func (r *MemoryRepository) Record(_ context.Context, job emailqueue.EmailJob) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

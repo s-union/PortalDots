@@ -24,7 +24,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
-	"github.com/s-union/PortalDots/backend/internal/shared/cloudflareemail"
+	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/testutil/dbtest"
 )
 
@@ -308,7 +308,7 @@ func newIntegrationEnv(t *testing.T, stubStatus int) *integrationEnv {
 
 	sender := mailhistory.NewRecordingSender(
 		mailhistory.NewPostgresRepository(pool),
-		cloudflareemail.NewProducerClient(server.URL, "test-token"),
+		emailqueue.NewProducerClient(server.URL, "test-token"),
 	)
 
 	return &integrationEnv{
@@ -402,7 +402,7 @@ type enqueueRequest struct {
 	method string
 	path   string
 	auth   string
-	job    cloudflareemail.EmailJob
+	job    emailqueue.EmailJob
 }
 
 type enqueueStub struct {
@@ -412,7 +412,7 @@ type enqueueStub struct {
 }
 
 func (s *enqueueStub) handle(w http.ResponseWriter, r *http.Request) {
-	var job cloudflareemail.EmailJob
+	var job emailqueue.EmailJob
 	if err := json.NewDecoder(r.Body).Decode(&job); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
