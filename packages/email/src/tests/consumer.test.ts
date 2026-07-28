@@ -105,6 +105,36 @@ describe('email queue consumer', () => {
     expect(ack).not.toHaveBeenCalled()
   })
 
+  it('rejects when retry scheduling fails', async () => {
+    const ack = vi.fn()
+    const retryError = new Error('Retry failed')
+    const retry = vi.fn().mockRejectedValue(retryError)
+    const emailSend = vi.fn().mockRejectedValue(new Error('Send failed'))
+
+    const batch = createMessageBatch([
+      {
+        body: {
+          jobId: 'job-1',
+          messageId: 'job-1:0',
+          chunkIndex: 0,
+          chunkCount: 1,
+          template: 'markdown-notice',
+          priority: 'normal',
+          to: ['a@example.com'],
+          from: 'sender@example.com',
+          subject: 'Test',
+          body: 'Test body',
+          variables: {}
+        },
+        ack,
+        retry
+      }
+    ])
+
+    await expect(queueHandler(batch.messages as never, createEnv(emailSend) as never)).rejects.toBe(retryError)
+    expect(ack).not.toHaveBeenCalled()
+  })
+
   it('acks empty to array immediately', async () => {
     const ack = vi.fn()
     const retry = vi.fn()

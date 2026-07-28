@@ -158,13 +158,7 @@ export async function queueHandler(messages: readonly QueueMessage[], env: Consu
           console.error('Failed to mark email job as failed:', markError)
         }
       }
-      try {
-        await message.retry()
-      } catch (retryError) {
-        // A retry() failure here must not throw out of the loop: that would abort
-        // processing of the remaining messages in this batch.
-        console.error('Failed to retry email job:', retryError)
-      }
+      await message.retry()
     }
   }
 }
