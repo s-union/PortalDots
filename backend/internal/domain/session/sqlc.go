@@ -49,6 +49,7 @@ func (s *SQLCStore) Create(ctx context.Context, user *auth.User) (string, Sessio
 		StaffAuthorized:    false,
 		StaffVerifyCode:    "",
 		StaffVerifyExpires: pgutil.Timestamptz(time.Time{}),
+		ReauthorizedAt:     pgutil.Timestamptz(time.Time{}),
 	})
 	if err != nil {
 		return "", Session{}, err
@@ -88,6 +89,7 @@ func (s *SQLCStore) Get(ctx context.Context, id string) (Session, bool) {
 		StaffAuthorized:    sessionRow.StaffAuthorized,
 		StaffVerifyCode:    sessionRow.StaffVerifyCode,
 		StaffVerifyExpires: sessionRow.StaffVerifyExpires.Time,
+		ReauthorizedAt:     sessionRow.ReauthorizedAt.Time,
 		User:               &user,
 	}, true
 }
@@ -146,16 +148,23 @@ func (s *SQLCStore) Update(ctx context.Context, id string, update func(*Session)
 		return false
 	}
 
+	previous := current
 	update(&current)
 
-	err := s.queries.UpdateSession(ctx, dbgen.UpdateSessionParams{
-		ID:                 id,
-		CurrentCircleID:    pgutil.OptionalString(current.CurrentCircleID),
-		StaffAuthorized:    current.StaffAuthorized,
-		StaffVerifyCode:    current.StaffVerifyCode,
-		StaffVerifyExpires: pgutil.Timestamptz(current.StaffVerifyExpires),
+	updated, err := s.queries.UpdateSession(ctx, dbgen.UpdateSessionParams{
+		SetCurrentCircleID:    current.CurrentCircleID != previous.CurrentCircleID,
+		CurrentCircleID:       pgutil.OptionalString(current.CurrentCircleID),
+		SetStaffAuthorized:    current.StaffAuthorized != previous.StaffAuthorized,
+		StaffAuthorized:       current.StaffAuthorized,
+		SetStaffVerifyCode:    current.StaffVerifyCode != previous.StaffVerifyCode,
+		StaffVerifyCode:       current.StaffVerifyCode,
+		SetStaffVerifyExpires: !current.StaffVerifyExpires.Equal(previous.StaffVerifyExpires),
+		StaffVerifyExpires:    pgutil.Timestamptz(current.StaffVerifyExpires),
+		SetReauthorizedAt:     !current.ReauthorizedAt.Equal(previous.ReauthorizedAt),
+		ReauthorizedAt:        pgutil.Timestamptz(current.ReauthorizedAt),
+		ID:                    id,
 	})
-	return err == nil
+	return err == nil && updated > 0
 }
 
 func (s *SQLCStore) isExpired(updatedAt time.Time) bool {

@@ -275,10 +275,8 @@ func (h *workspaceHandlers) getCurrentCircleDetail(c *echo.Context) error {
 		return internalError(c)
 	}
 
-	if circleValue.SubmittedAt != nil && circleValue.SubmittedAt.Before(time.Now()) {
-		if currentSession.ReauthorizedAt.IsZero() || time.Since(currentSession.ReauthorizedAt) > 2*time.Hour {
-			return errorJSON(c, http.StatusForbidden, "reauth_required")
-		}
+	if circleReauthorizationRequired(circleValue, currentSession, time.Now()) {
+		return errorJSON(c, http.StatusForbidden, "reauth_required")
 	}
 
 	return h.respondWithCircleRegistration(c, currentSession.User, circleValue)
@@ -327,15 +325,17 @@ func (h *workspaceHandlers) authCurrentCircle(c *echo.Context) error {
 		return internalError(c)
 	}
 
-	h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
+	if !h.sessions.Update(c.Request().Context(), sessionID, func(next *session.Session) {
 		next.ReauthorizedAt = time.Now()
-	})
+	}) {
+		return internalError(c)
+	}
 
 	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *workspaceHandlers) updateCurrentCircle(c *echo.Context) error {
-	_, currentSession, ok := h.getSession(c)
+	sessionID, currentSession, ok := h.getSession(c)
 	if !ok || currentSession.User == nil {
 		return errorJSON(c, http.StatusUnauthorized, "unauthenticated")
 	}
@@ -397,6 +397,11 @@ func (h *workspaceHandlers) updateCurrentCircle(c *echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
+	currentSession, err = h.refreshCircleMutationSession(c, sessionID, currentSession)
+	if err != nil {
+		return err
+	}
+
 	updated, err := h.circles.UpdateForUser(c.Request().Context(), currentSession.User, currentSession.CurrentCircleID, circle.UpdateCircleParams{
 		Name:          req.Name,
 		NameYomi:      req.NameYomi,
@@ -430,6 +435,11 @@ func (h *workspaceHandlers) deleteCurrentCircle(c *echo.Context) error {
 		return errorJSON(c, http.StatusNotFound, "no_current_circle")
 	}
 
+	currentSession, err := h.refreshCircleMutationSession(c, sessionID, currentSession)
+	if err != nil {
+		return err
+	}
+
 	if err := h.circles.DeleteForUser(c.Request().Context(), currentSession.User, currentSession.CurrentCircleID); errors.Is(err, circle.ErrForbidden) {
 		return errorJSON(c, http.StatusForbidden, "forbidden")
 	} else if errors.Is(err, circle.ErrNotFound) {
@@ -443,6 +453,39 @@ func (h *workspaceHandlers) deleteCurrentCircle(c *echo.Context) error {
 	})
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *workspaceHandlers) refreshCircleMutationSession(c *echo.Context, sessionID string, currentSession session.Session) (session.Session, error) {
+	if sessionID != "" {
+		refreshed, ok := h.sessions.Get(c.Request().Context(), sessionID)
+		if !ok || refreshed.User == nil {
+			return session.Session{}, errorJSON(c, http.StatusUnauthorized, "unauthenticated")
+		}
+		if refreshed.CurrentCircleID != currentSession.CurrentCircleID {
+			return session.Session{}, errorJSON(c, http.StatusNotFound, "no_current_circle")
+		}
+		currentSession = refreshed
+	}
+
+	circleValue, err := h.circles.GetUserCircle(c.Request().Context(), currentSession.User, currentSession.CurrentCircleID)
+	if errors.Is(err, circle.ErrNotFound) || errors.Is(err, circle.ErrForbidden) {
+		return session.Session{}, errorJSON(c, http.StatusNotFound, "circle_not_found")
+	}
+	if err != nil {
+		return session.Session{}, internalError(c)
+	}
+	if circleReauthorizationRequired(circleValue, currentSession, time.Now()) {
+		return session.Session{}, errorJSON(c, http.StatusForbidden, "reauth_required")
+	}
+
+	return currentSession, nil
+}
+
+func circleReauthorizationRequired(circleValue circle.Circle, currentSession session.Session, now time.Time) bool {
+	if circleValue.SubmittedAt == nil || !circleValue.SubmittedAt.Before(now) {
+		return false
+	}
+	return currentSession.ReauthorizedAt.IsZero() || now.Sub(currentSession.ReauthorizedAt) > 2*time.Hour
 }
 
 func (h *workspaceHandlers) submitCurrentCircle(c *echo.Context) error {

@@ -235,6 +235,10 @@ func (r *SQLCRepository) FindUploadByAnswerAndQuestion(ctx context.Context, answ
 }
 
 func (r *SQLCRepository) AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+	if questionID == "" {
+		return Upload{}, false
+	}
+
 	currentAnswer, found := r.Get(ctx, formID, circleID)
 	if !found {
 		currentAnswer = r.Create(ctx, formID, circleID, "", map[string][]string{})
@@ -247,6 +251,10 @@ func (r *SQLCRepository) AddUpload(ctx context.Context, formID, circleID, questi
 }
 
 func (r *SQLCRepository) AddUploadToAnswer(ctx context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+	if questionID == "" {
+		return Upload{}, false
+	}
+
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return Upload{}, false
@@ -254,18 +262,35 @@ func (r *SQLCRepository) AddUploadToAnswer(ctx context.Context, answerID, questi
 	defer tx.Rollback(ctx)
 
 	queries := r.queries.WithTx(tx)
-	answerRow, err := queries.GetAnswerByID(ctx, answerID)
+	answerRow, err := queries.GetAnswerByIDForUpdate(ctx, answerID)
 	if err != nil {
 		return Upload{}, false
 	}
+	if _, err := queries.LockAnswerUploadCircle(ctx, answerRow.CircleID); err != nil {
+		return Upload{}, false
+	}
 
-	if questionID != "" {
-		if _, err := queries.DeleteAnswerUploadsByAnswerAndQuestion(ctx, dbgen.DeleteAnswerUploadsByAnswerAndQuestionParams{
-			AnswerID:   answerID,
-			QuestionID: optionalString(questionID),
-		}); err != nil {
-			return Upload{}, false
-		}
+	retainedAnswerBytes, err := queries.GetAnswerUploadBytesExcludingQuestion(ctx, dbgen.GetAnswerUploadBytesExcludingQuestionParams{
+		AnswerID:   answerID,
+		QuestionID: optionalString(questionID),
+	})
+	if err != nil || retainedAnswerBytes+int64(len(content)) > MaxTotalUploadBytes {
+		return Upload{}, false
+	}
+	retainedCircleBytes, err := queries.GetCircleAnswerUploadBytesExcludingQuestion(ctx, dbgen.GetCircleAnswerUploadBytesExcludingQuestionParams{
+		CircleID:   answerRow.CircleID,
+		AnswerID:   answerID,
+		QuestionID: optionalString(questionID),
+	})
+	if err != nil || retainedCircleBytes+int64(len(content)) > MaxTotalUploadBytes {
+		return Upload{}, false
+	}
+
+	if _, err := queries.DeleteAnswerUploadsByAnswerAndQuestion(ctx, dbgen.DeleteAnswerUploadsByAnswerAndQuestionParams{
+		AnswerID:   answerID,
+		QuestionID: optionalString(questionID),
+	}); err != nil {
+		return Upload{}, false
 	}
 
 	row, err := queries.CreateAnswerUpload(ctx, dbgen.CreateAnswerUploadParams{

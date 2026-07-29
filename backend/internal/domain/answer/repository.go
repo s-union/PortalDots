@@ -32,6 +32,9 @@ type Upload struct {
 	Content    []byte
 }
 
+// MaxTotalUploadBytes bounds durable uploads stored for one answer or circle.
+const MaxTotalUploadBytes int64 = 5 * 1024 * 1024
+
 type Repository interface {
 	Get(ctx context.Context, formID, circleID string) (Answer, bool)
 	Find(ctx context.Context, answerID string) (Answer, bool)
@@ -249,6 +252,10 @@ func (r *MemoryRepository) FindUploadByAnswerAndQuestion(_ context.Context, answ
 }
 
 func (r *MemoryRepository) AddUpload(_ context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+	if questionID == "" {
+		return Upload{}, false
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -262,6 +269,10 @@ func (r *MemoryRepository) AddUpload(_ context.Context, formID, circleID, questi
 }
 
 func (r *MemoryRepository) AddUploadToAnswer(_ context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+	if questionID == "" {
+		return Upload{}, false
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -323,12 +334,34 @@ func (r *MemoryRepository) addUploadLocked(answerID, questionID, filename, mimeT
 		CreatedAt:  time.Now().UTC().Format(time.RFC3339),
 		Content:    append([]byte(nil), content...),
 	}
+	var retainedAnswerBytes int64
+	var retainedCircleBytes int64
+	for storedAnswerID, storedUploads := range r.uploads {
+		storedAnswer, found := r.answers[storedAnswerID]
+		if !found || storedAnswer.CircleID != currentAnswer.CircleID {
+			continue
+		}
+		for _, storedUpload := range storedUploads {
+			if storedAnswerID == answerID && storedUpload.QuestionID == questionID {
+				continue
+			}
+			retainedCircleBytes += storedUpload.SizeBytes
+			if storedAnswerID == answerID {
+				retainedAnswerBytes += storedUpload.SizeBytes
+			}
+		}
+	}
+	if retainedAnswerBytes+upload.SizeBytes > MaxTotalUploadBytes ||
+		retainedCircleBytes+upload.SizeBytes > MaxTotalUploadBytes {
+		return Upload{}, false
+	}
+
 	r.nextUpload++
 
 	filteredUploads := make([]Upload, 0, len(r.uploads[answerID])+1)
 	filteredUploads = append(filteredUploads, upload)
 	for _, storedUpload := range r.uploads[answerID] {
-		if storedUpload.QuestionID == questionID && questionID != "" {
+		if storedUpload.QuestionID == questionID {
 			continue
 		}
 		filteredUploads = append(filteredUploads, storedUpload)
