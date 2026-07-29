@@ -233,6 +233,39 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 	if !validPublishedAt {
 		return validationError(c, publishedAtErrors)
 	}
+	mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), pageValue.ID)
+	if err != nil {
+		return internalError(c)
+	}
+	mailChanged := staffPageMailWouldChange(pageValue, request, publishedAt)
+	if mailScheduled && (mailChanged || request.SendEmails != nil) {
+		if !canSendPageEmails(currentSession.User) {
+			return errorJSON(c, http.StatusForbidden, "forbidden")
+		}
+		if mailChanged && request.SendEmails == nil {
+			return validationError(c, map[string][]string{
+				"sendEmails": {"予約済みメールに影響する編集には、メール配信の再承認が必要です"},
+			})
+		}
+	}
+	mailScheduleHandled := false
+	if mailScheduled && mailChanged {
+		if err := h.schedulePageMail(c.Request().Context(), currentSession.User.ID, pageValue.ID, *request.SendEmails); err != nil {
+			return internalError(c)
+		}
+		mailScheduleHandled = true
+		if !*request.SendEmails {
+			mailScheduled, err = h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), pageValue.ID)
+			if err != nil {
+				return internalError(c)
+			}
+			if mailScheduled {
+				return validationError(c, map[string][]string{
+					"sendEmails": {"メール配信処理が開始されているため、お知らせを更新できません"},
+				})
+			}
+		}
+	}
 
 	updated, found := h.pages.Update(c.Request().Context(),
 		c.Param("pageID"),
@@ -261,14 +294,14 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 	)
 	// An operator without the mail capability must not be able to create,
 	// retarget or silence a pending announcement mail by editing the page.
-	if canSendPageEmails(currentSession.User) && request.SendEmails != nil {
+	if canSendPageEmails(currentSession.User) && request.SendEmails != nil && !mailScheduleHandled {
 		if err := h.schedulePageMail(c.Request().Context(), currentSession.User.ID, updated.ID, *request.SendEmails); err != nil {
 			return internalError(c)
 		}
 	}
 
 	response := mapStaffPageSummary(updated, h.pageDocuments(updated.DocumentIDs, true))
-	mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), updated.ID)
+	mailScheduled, err = h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), updated.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -510,6 +543,15 @@ func (h *staffPageHandlers) validateStaffPageDocumentIDs(documentIDs []string, e
 	}
 
 	return nil
+}
+
+func staffPageMailWouldChange(currentPage backendpage.Page, request mutateStaffPageRequest, publishedAt time.Time) bool {
+	return currentPage.Title != request.Title ||
+		currentPage.Body != request.Body ||
+		currentPage.IsPublic != request.IsPublic ||
+		!slices.Equal(currentPage.ViewableTags, request.ViewableTags) ||
+		!slices.Equal(currentPage.DocumentIDs, request.DocumentIDs) ||
+		currentPage.PublishedAt != publishedAt.UTC().Format(time.RFC3339)
 }
 
 // schedulePageMail records or clears the intent to send the announcement email

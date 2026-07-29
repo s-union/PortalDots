@@ -5470,7 +5470,9 @@ func TestStaffFormsExportExcludesParticipationForm(t *testing.T) {
 func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 	t.Parallel()
 
-	server := NewServer(testStaffConfig())
+	cfg := testStaffConfig()
+	cfg.AuthUser.Roles = []string{"admin", "forms_manager"}
+	server := NewServer(cfg)
 	cookies := map[string]*http.Cookie{}
 
 	loginAsStaff(t, server, cookies)
@@ -5498,12 +5500,12 @@ func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
 		t.Fatalf("unmarshal staff user detail: %v", err)
 	}
-	if len(detail.Roles) != 1 || detail.Roles[0] != "admin" {
+	if !slices.Equal(detail.Roles, []string{"admin", "forms_manager"}) {
 		t.Fatalf("unexpected staff user detail: %#v", detail)
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/users/0195ec00-0098-7000-8000-000000000001/roles", map[string]any{
-		"roles": []string{"admin", "forms_manager"},
+		"roles": []string{"admin"},
 	})
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -5513,7 +5515,7 @@ func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &updated); err != nil {
 		t.Fatalf("unmarshal updated staff user: %v", err)
 	}
-	if len(updated.Roles) != 2 || updated.Roles[1] != "forms_manager" {
+	if !slices.Equal(updated.Roles, []string{"admin"}) {
 		t.Fatalf("unexpected updated staff user: %#v", updated)
 	}
 
@@ -5526,7 +5528,7 @@ func TestStaffUsersListDetailAndUpdateRoles(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &bootstrap); err != nil {
 		t.Fatalf("unmarshal bootstrap after role update: %v", err)
 	}
-	if len(bootstrap.Roles) != 2 || bootstrap.Roles[1] != "forms_manager" {
+	if !slices.Equal(bootstrap.Roles, []string{"admin"}) {
 		t.Fatalf("expected updated roles in session bootstrap, got %#v", bootstrap.Roles)
 	}
 }

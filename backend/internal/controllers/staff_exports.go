@@ -218,7 +218,7 @@ func writeCSV(rows [][]string) ([]byte, error) {
 	for _, row := range rows {
 		externalRow := make([]string, len(row))
 		for index, value := range row {
-			externalRow[index] = externalid.RewriteURLPathUUIDs(externalid.MaybeEncodeUUIDString(value))
+			externalRow[index] = neutralizeCSVCell(externalid.RewriteURLPathUUIDs(externalid.MaybeEncodeUUIDString(value)))
 		}
 		if err := writer.Write(externalRow); err != nil {
 			return nil, err
@@ -230,6 +230,19 @@ func writeCSV(rows [][]string) ([]byte, error) {
 	}
 
 	return buffer.Bytes(), nil
+}
+
+func neutralizeCSVCell(value string) string {
+	if value == "" {
+		return value
+	}
+
+	switch value[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "'" + value
+	default:
+		return value
+	}
 }
 
 func staffFormRowsWithCircles(forms []form.Form, circleNames map[string]string) [][]string {

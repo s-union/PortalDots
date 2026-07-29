@@ -82,7 +82,7 @@ func (h *staffMastersHandlers) listStaffTags(c *echo.Context) error {
 }
 
 func (h *staffMastersHandlers) downloadStaffTagsCSV(c *echo.Context) error {
-	if _, _, status, ok := h.requireStaffCapability(c, canReadTags); !ok {
+	if _, _, status, ok := h.requireStaffCapability(c, canExportTags); !ok {
 		return statusError(c, status)
 	}
 
@@ -313,7 +313,7 @@ func staffPlaceFilterResolver(item staffPlaceResponse) func(string) (string, boo
 }
 
 func (h *staffMastersHandlers) downloadStaffPlacesCSV(c *echo.Context) error {
-	if _, _, status, ok := h.requireStaffCapability(c, canReadPlaces); !ok {
+	if _, _, status, ok := h.requireStaffCapability(c, canExportPlaces); !ok {
 		return statusError(c, status)
 	}
 
