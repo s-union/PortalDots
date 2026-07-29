@@ -262,6 +262,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     staff_authorized boolean NOT NULL DEFAULT false,
     staff_verify_code text NOT NULL DEFAULT '',
     staff_verify_expires timestamptz,
+    reauthorized_at timestamptz,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
