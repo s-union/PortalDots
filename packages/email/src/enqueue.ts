@@ -39,8 +39,11 @@ export type Env = {
   AUTH_TOKEN: string
 }
 
-const MAX_RECIPIENTS_PER_MESSAGE = 50
-// deliberate: cap queue subrequests at ten per producer request
+const MAX_RECIPIENTS_PER_MESSAGE = 1
+const MAX_MESSAGES_PER_QUEUE_BATCH = 100
+const MAX_QUEUE_MESSAGE_BYTES = 128_000
+// Deliberate buffer below Cloudflare Queues' 256 KB serialized batch limit.
+const MAX_QUEUE_BATCH_BYTES = 200_000
 const MAX_RECIPIENTS_PER_JOB = 500
 const MAX_BODY_BYTES = 1024 * 1024
 const knownTemplates = ['markdown-notice', 'registration-verify', 'staff-auth-notice'] as const
@@ -78,10 +81,93 @@ const auth = createMiddleware<{ Bindings: Env }>((c, next) => {
   return bearerAuth<{ Bindings: Env }>({ token })(c, next)
 })
 
-async function chunkMessageId(jobId: string, chunkIndex: number, recipients: string[]): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(recipients)))
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
   const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
-  return `${jobId}:${chunkIndex}:${hash}`
+  return hash
+}
+
+async function payloadDigest(payload: DispatchPayload, chunks: string[][]): Promise<string> {
+  const variables = Object.entries(payload.variables).sort(([left], [right]) => {
+    if (left < right) return -1
+    if (left > right) return 1
+    return 0
+  })
+  return sha256Hex(
+    JSON.stringify({
+      version: 1,
+      template: payload.template,
+      priority: payload.priority,
+      from: payload.from,
+      subject: payload.subject,
+      body: payload.body,
+      variables,
+      recipients: payload.to,
+      chunking: {
+        recipientsPerMessage: MAX_RECIPIENTS_PER_MESSAGE,
+        chunks
+      }
+    })
+  )
+}
+
+function chunkMessageId(jobId: string, chunkIndex: number, digest: string): string {
+  return `${jobId}:${chunkIndex}:${digest}`
+}
+
+function encodedQueueMessageSize(message: EmailJob): number {
+  return new TextEncoder().encode(JSON.stringify(message)).byteLength
+}
+
+function encodedQueueBatchEntrySize(message: EmailJob): number {
+  return new TextEncoder().encode(JSON.stringify({ body: message })).byteLength
+}
+
+interface QueueBatch {
+  messages: EmailJob[]
+  batchable: boolean
+}
+
+function queueBatches(messages: readonly EmailJob[]): QueueBatch[] {
+  const batches: QueueBatch[] = []
+  let current: EmailJob[] = []
+  let currentBytes = 0
+  const flush = () => {
+    if (current.length > 0) {
+      batches.push({ messages: current, batchable: true })
+      current = []
+      currentBytes = 0
+    }
+  }
+
+  for (const message of messages) {
+    const messageBytes = encodedQueueBatchEntrySize(message)
+    if (messageBytes > MAX_QUEUE_BATCH_BYTES) {
+      flush()
+      batches.push({ messages: [message], batchable: false })
+      continue
+    }
+    if (
+      current.length === MAX_MESSAGES_PER_QUEUE_BATCH ||
+      (current.length > 0 && currentBytes + messageBytes > MAX_QUEUE_BATCH_BYTES)
+    ) {
+      flush()
+    }
+    current.push(message)
+    currentBytes += messageBytes
+  }
+  flush()
+  return batches
+}
+
+async function sendQueueMessages(queue: JobQueue<EmailJob>, batch: QueueBatch): Promise<void> {
+  if (batch.batchable && queue.sendBatch) {
+    await queue.sendBatch(batch.messages)
+    return
+  }
+  for (const message of batch.messages) {
+    await queue.send(message)
+  }
 }
 
 interface DispatchResult {
@@ -101,11 +187,31 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
   const queue = payload.priority === 'high' ? env.HIGH_QUEUE : env.NORMAL_QUEUE
   const chunks = chunkArray(payload.to, MAX_RECIPIENTS_PER_MESSAGE)
   const db = env.DB
+  const digest = await payloadDigest(payload, chunks)
+  const messages = chunks.map(
+    (recipients, chunkIndex): EmailJob => ({
+      jobId: payload.jobId,
+      messageId: chunkMessageId(payload.jobId, chunkIndex, digest),
+      chunkIndex,
+      chunkCount: chunks.length,
+      template: payload.template,
+      priority: payload.priority,
+      from: payload.from,
+      to: recipients,
+      subject: payload.subject,
+      body: payload.body,
+      variables: payload.variables
+    })
+  )
+  if (messages.some((message) => encodedQueueMessageSize(message) > MAX_QUEUE_MESSAGE_BYTES)) {
+    throw new HTTPException(413, { message: 'Email queue message is too large' })
+  }
 
   await ensureJobRecord(db, {
     jobId: payload.jobId,
     template: payload.template,
     priority: payload.priority,
+    payloadDigest: digest,
     subject: payload.subject,
     recipientsCount: payload.to.length,
     chunkCount: chunks.length
@@ -113,44 +219,44 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
 
   try {
     const shape = await getJobShape(db, payload.jobId)
-    if (!shape || shape.recipientsCount !== payload.to.length || shape.chunkCount !== chunks.length) {
-      throw new HTTPException(409, { message: 'Email job recipient set changed' })
+    if (
+      !shape ||
+      shape.template !== payload.template ||
+      shape.priority !== payload.priority ||
+      shape.subject !== payload.subject ||
+      shape.recipientsCount !== payload.to.length ||
+      shape.chunkCount !== chunks.length
+    ) {
+      throw new HTTPException(409, { message: 'Email job payload changed' })
     }
-    const messageIds = await Promise.all(
-      chunks.map((recipients, index) => chunkMessageId(payload.jobId, index, recipients))
-    )
+    if (shape.payloadDigest !== digest) {
+      throw new HTTPException(409, { message: 'Email job payload changed' })
+    }
     const accepted = await listAcceptedChunks(db, payload.jobId)
-    let sentCount = 0
-    for (const [index, recipients] of chunks.entries()) {
-      const messageId = messageIds[index]
-      const acceptedMessageId = accepted.get(index)
-      if (acceptedMessageId !== undefined && acceptedMessageId !== messageId) {
-        throw new HTTPException(409, { message: 'Recipients changed for an accepted email chunk' })
+
+    const pending: EmailJob[] = []
+    for (const message of messages) {
+      const acceptedMessageId = accepted.get(message.chunkIndex)
+      if (acceptedMessageId !== undefined && acceptedMessageId !== message.messageId) {
+        throw new HTTPException(409, { message: 'Email job payload changed for an accepted chunk' })
       }
       if (acceptedMessageId !== undefined) {
         continue
       }
-      await queue.send({
-        jobId: payload.jobId,
-        messageId,
-        chunkIndex: index,
-        chunkCount: chunks.length,
-        template: payload.template,
-        priority: payload.priority,
-        from: payload.from,
-        to: recipients,
-        subject: payload.subject,
-        body: payload.body,
-        variables: payload.variables
-      })
-      await createChunkRecord(db, {
-        messageId,
-        jobId: payload.jobId,
-        chunkIndex: index,
-        chunkCount: chunks.length,
-        recipientsCount: recipients.length
-      })
-      sentCount++
+      pending.push(message)
+    }
+
+    for (const batch of queueBatches(pending)) {
+      await sendQueueMessages(queue, batch)
+      for (const message of batch.messages) {
+        await createChunkRecord(db, {
+          messageId: message.messageId,
+          jobId: message.jobId,
+          chunkIndex: message.chunkIndex,
+          chunkCount: message.chunkCount,
+          recipientsCount: message.to.length
+        })
+      }
     }
     await markJobQueued(db, payload.jobId)
 
@@ -159,7 +265,7 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
       template: payload.template,
       priority: payload.priority,
       messageCount: chunks.length,
-      sentCount,
+      sentCount: pending.length,
       recipientsCount: payload.to.length
     })
 

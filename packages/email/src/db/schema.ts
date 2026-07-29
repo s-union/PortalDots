@@ -19,6 +19,7 @@ export const emailJobs = sqliteTable(
     status: text('status', { enum: jobStatuses }).notNull(),
     template: text('template').notNull(),
     priority: text('priority', { enum: priorities }).notNull(),
+    payloadDigest: text('payload_digest').notNull().default(''),
     subject: text('subject').notNull(),
     recipientsCount: integer('recipients_count').notNull(),
     chunkCount: integer('chunk_count').notNull(),

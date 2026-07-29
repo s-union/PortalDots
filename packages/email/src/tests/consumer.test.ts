@@ -39,7 +39,7 @@ describe('email queue consumer', () => {
     vi.mocked(renderTemplate).mockResolvedValue({ html: '<h1>Test</h1>', text: 'Test' })
   })
 
-  it('sends to all pending recipients', async () => {
+  it('hides legacy multi-recipient jobs behind BCC', async () => {
     const ack = vi.fn()
     const retry = vi.fn()
     const emailSend = vi.fn()
@@ -66,7 +66,8 @@ describe('email queue consumer', () => {
 
     await queueHandler(batch.messages as never, createEnv(emailSend) as never)
     expect(emailSend).toHaveBeenCalledWith({
-      to: ['a@example.com', 'b@example.com'],
+      to: ['a@example.com'],
+      bcc: ['b@example.com'],
       from: 'sender@example.com',
       subject: 'Test',
       html: '<h1>Test</h1>',

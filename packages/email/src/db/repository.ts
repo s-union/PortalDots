@@ -12,6 +12,7 @@ export async function ensureJobRecord(
     jobId: string
     template: string
     priority: 'high' | 'normal'
+    payloadDigest: string
     subject: string
     recipientsCount: number
     chunkCount: number
@@ -27,9 +28,26 @@ export async function ensureJobRecord(
 export async function getJobShape(
   db: EmailDb,
   jobId: string
-): Promise<{ recipientsCount: number; chunkCount: number } | undefined> {
+): Promise<
+  | {
+      template: string
+      priority: 'high' | 'normal'
+      payloadDigest: string
+      subject: string
+      recipientsCount: number
+      chunkCount: number
+    }
+  | undefined
+> {
   return db
-    .select({ recipientsCount: emailJobs.recipientsCount, chunkCount: emailJobs.chunkCount })
+    .select({
+      template: emailJobs.template,
+      priority: emailJobs.priority,
+      recipientsCount: emailJobs.recipientsCount,
+      chunkCount: emailJobs.chunkCount,
+      payloadDigest: emailJobs.payloadDigest,
+      subject: emailJobs.subject
+    })
     .from(emailJobs)
     .where(eq(emailJobs.jobId, jobId))
     .get()
@@ -95,6 +113,7 @@ export async function ensureMessageRecord(
     chunkCount: number
     template: string
     priority: 'high' | 'normal'
+    payloadDigest?: string
     subject: string
     recipientsCount: number
   }
@@ -107,6 +126,7 @@ export async function ensureMessageRecord(
       status: 'pending',
       template: job.template,
       priority: job.priority,
+      payloadDigest: job.payloadDigest ?? '',
       subject: job.subject,
       recipientsCount: job.recipientsCount,
       chunkCount: job.chunkCount,

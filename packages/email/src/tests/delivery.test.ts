@@ -93,21 +93,24 @@ describe('enqueue → consumer delivery pipeline', () => {
       env as never
     )
     expect(retryResponse.status).toBe(200)
-    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(1)
+    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(118)
 
-    const retryMessage = {
-      body: env.NORMAL_QUEUE.send.mock.calls[0][0],
+    const retryMessages = env.NORMAL_QUEUE.send.mock.calls.map(([body]) => ({
+      body,
       ack: vi.fn(),
       retry: vi.fn()
-    }
-    await consume([retryMessage])
+    }))
+    await consume(retryMessages)
 
     expect(await db.jobStatus('job-1')).toBe('sent')
-    const deliveredRecipients = emailSend.mock.calls.flatMap(([message]) => message.to as string[])
+    const deliveredRecipients = emailSend.mock.calls.flatMap(([message]) => [
+      ...(message.to as string[]),
+      ...((message.bcc as string[] | undefined) ?? [])
+    ])
     expect(deliveredRecipients).toHaveLength(payload.to.length)
     expect(new Set(deliveredRecipients).size).toBe(payload.to.length)
     expect(deliveredRecipients).toEqual(payload.to)
-    for (const message of [...firstAttemptMessages, retryMessage]) {
+    for (const message of [...firstAttemptMessages, ...retryMessages]) {
       expect(message.ack).toHaveBeenCalled()
       expect(message.retry).not.toHaveBeenCalled()
     }
@@ -116,7 +119,7 @@ describe('enqueue → consumer delivery pipeline', () => {
     const chunks = await db.drizzle
       .select({ messageId: emailJobChunks.messageId, status: emailJobChunks.status })
       .from(emailJobChunks)
-    expect(chunks).toHaveLength(3)
+    expect(chunks).toHaveLength(120)
     expect(chunks.every((chunk) => chunk.status === 'sent')).toBe(true)
   })
 })

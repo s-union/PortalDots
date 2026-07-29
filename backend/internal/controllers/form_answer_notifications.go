@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/s-union/PortalDots/backend/internal/domain/answer"
+	"github.com/s-union/PortalDots/backend/internal/domain/staffpermission"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 	"github.com/s-union/PortalDots/backend/internal/shared/uuidv7"
@@ -51,7 +52,7 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 	if formValue.CreatedByUserID != "" {
 		creator, err := h.users.Find(formValue.CreatedByUserID)
 		if err == nil {
-			staffRecipients := normalizeRecipients(useradmin.MailRecipients(creator))
+			staffRecipients := currentFormAnswerMailRecipients(creator)
 			if len(staffRecipients) > 0 {
 				subject := fmt.Sprintf("【スタッフ用控え】申請「%s」を承りました", formValue.Name)
 				body := answerValue.Body
@@ -82,6 +83,22 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 			}
 		}
 	}
+}
+
+// currentFormAnswerMailRecipients returns addresses for users who can still
+// read form answers. Form ownership is historical, so it must not grant a
+// notification entitlement after staff access is removed.
+func currentFormAnswerMailRecipients(userValue useradmin.User) []string {
+	if !hasCurrentFormAnswerAccess(userValue) {
+		return nil
+	}
+	return normalizeRecipients(useradmin.MailRecipients(userValue))
+}
+
+func hasCurrentFormAnswerAccess(userValue useradmin.User) bool {
+	check := staffCapabilityChecks["formAnswers.read"]
+	return staffpermission.HasAny(userValue.Roles, check.roles...) ||
+		staffpermission.HasAny(userValue.Permissions, check.permissions...)
 }
 
 func (h *workspaceHandlers) workspaceFormAnswerMailRecipients(targetCircleID string) []string {

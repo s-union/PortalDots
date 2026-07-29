@@ -122,6 +122,7 @@ export class TestD1Database implements D1Database {
       ...job,
       template: 'markdown-notice',
       priority: 'normal',
+      payloadDigest: '',
       subject: 'Test Subject',
       recipientsCount: job.recipientsCount ?? job.chunkCount,
       createdAt: now,

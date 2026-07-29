@@ -126,9 +126,10 @@ export async function queueHandler(messages: readonly QueueMessage[], env: Consu
       // Render template once per message
       const { html, text } = await renderTemplate(job.template, job.variables)
 
-      // Send all pending recipients in one call (enqueue guarantees max 50)
+      const [visibleRecipient, ...blindCopyRecipients] = job.to
       await env.EMAIL.send({
-        to: job.to,
+        to: [visibleRecipient],
+        ...(blindCopyRecipients.length > 0 ? { bcc: blindCopyRecipients } : {}),
         from: job.from,
         subject: job.subject,
         html,
