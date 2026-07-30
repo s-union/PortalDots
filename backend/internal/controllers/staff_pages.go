@@ -248,22 +248,25 @@ func (h *staffPageHandlers) updateStaffPage(c *echo.Context) error {
 			})
 		}
 	}
+	// Cancelling a pending mail must take effect before the page update is
+	// attempted, so an update that fails afterward cannot leave a mail
+	// schedule for content that was never persisted. Scheduling (or
+	// re-scheduling) a mail has no such ordering requirement: it is handled
+	// once the update is known to have succeeded, below.
 	mailScheduleHandled := false
-	if mailScheduled && mailChanged {
-		if err := h.schedulePageMail(c.Request().Context(), currentSession.User.ID, pageValue.ID, *request.SendEmails); err != nil {
+	if mailScheduled && mailChanged && !*request.SendEmails {
+		if err := h.schedulePageMail(c.Request().Context(), currentSession.User.ID, pageValue.ID, false); err != nil {
 			return internalError(c)
 		}
 		mailScheduleHandled = true
-		if !*request.SendEmails {
-			mailScheduled, err = h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), pageValue.ID)
-			if err != nil {
-				return internalError(c)
-			}
-			if mailScheduled {
-				return validationError(c, map[string][]string{
-					"sendEmails": {"メール配信処理が開始されているため、お知らせを更新できません"},
-				})
-			}
+		mailScheduled, err = h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), pageValue.ID)
+		if err != nil {
+			return internalError(c)
+		}
+		if mailScheduled {
+			return validationError(c, map[string][]string{
+				"sendEmails": {"メール配信処理が開始されているため、お知らせを更新できません"},
+			})
 		}
 	}
 

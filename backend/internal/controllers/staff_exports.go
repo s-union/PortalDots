@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v5"
@@ -238,7 +239,14 @@ func neutralizeCSVCell(value string) string {
 	}
 
 	switch value[0] {
-	case '=', '+', '-', '@', '\t', '\r':
+	case '=', '+', '-', '@', '\t', '\r', '\n':
+		if value[0] == '-' {
+			// A legitimate negative number must not be corrupted by the
+			// formula-injection guard below.
+			if _, err := strconv.ParseFloat(value, 64); err == nil {
+				return value
+			}
+		}
 		return "'" + value
 	default:
 		return value

@@ -2,6 +2,8 @@ package answer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"slices"
 	"sync"
 	"time"
@@ -32,8 +34,9 @@ type Upload struct {
 	Content    []byte
 }
 
-// MaxTotalUploadBytes bounds durable uploads stored for one answer or circle.
-const MaxTotalUploadBytes int64 = 5 * 1024 * 1024
+// ErrInvalidQuestionID is returned by AddUpload/AddUploadToAnswer when no
+// question ID is given.
+var ErrInvalidQuestionID = errors.New("invalid question id")
 
 type Repository interface {
 	Get(ctx context.Context, formID, circleID string) (Answer, bool)
@@ -49,8 +52,8 @@ type Repository interface {
 	ListUploadsByAnswer(ctx context.Context, answerID string) []Upload
 	FindUpload(ctx context.Context, formID, circleID, uploadID string) (Upload, bool)
 	FindUploadByAnswerAndQuestion(ctx context.Context, answerID, questionID string) (Upload, bool)
-	AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool)
-	AddUploadToAnswer(ctx context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool)
+	AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, error)
+	AddUploadToAnswer(ctx context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, error)
 }
 
 type MemoryRepository struct {
@@ -251,9 +254,9 @@ func (r *MemoryRepository) FindUploadByAnswerAndQuestion(_ context.Context, answ
 	return Upload{}, false
 }
 
-func (r *MemoryRepository) AddUpload(_ context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+func (r *MemoryRepository) AddUpload(_ context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, error) {
 	if questionID == "" {
-		return Upload{}, false
+		return Upload{}, ErrInvalidQuestionID
 	}
 
 	r.mu.Lock()
@@ -268,9 +271,9 @@ func (r *MemoryRepository) AddUpload(_ context.Context, formID, circleID, questi
 	return r.addUploadLocked(answerID, questionID, filename, mimeType, content)
 }
 
-func (r *MemoryRepository) AddUploadToAnswer(_ context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+func (r *MemoryRepository) AddUploadToAnswer(_ context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, error) {
 	if questionID == "" {
-		return Upload{}, false
+		return Upload{}, ErrInvalidQuestionID
 	}
 
 	r.mu.Lock()
@@ -316,10 +319,10 @@ func (r *MemoryRepository) updateLocked(answerID, body string, details map[strin
 	return cloneAnswer(answer), true
 }
 
-func (r *MemoryRepository) addUploadLocked(answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+func (r *MemoryRepository) addUploadLocked(answerID, questionID, filename, mimeType string, content []byte) (Upload, error) {
 	currentAnswer, ok := r.answers[answerID]
 	if !ok {
-		return Upload{}, false
+		return Upload{}, fmt.Errorf("answer not found: %s", answerID)
 	}
 
 	upload := Upload{
@@ -334,28 +337,6 @@ func (r *MemoryRepository) addUploadLocked(answerID, questionID, filename, mimeT
 		CreatedAt:  time.Now().UTC().Format(time.RFC3339),
 		Content:    append([]byte(nil), content...),
 	}
-	var retainedAnswerBytes int64
-	var retainedCircleBytes int64
-	for storedAnswerID, storedUploads := range r.uploads {
-		storedAnswer, found := r.answers[storedAnswerID]
-		if !found || storedAnswer.CircleID != currentAnswer.CircleID {
-			continue
-		}
-		for _, storedUpload := range storedUploads {
-			if storedAnswerID == answerID && storedUpload.QuestionID == questionID {
-				continue
-			}
-			retainedCircleBytes += storedUpload.SizeBytes
-			if storedAnswerID == answerID {
-				retainedAnswerBytes += storedUpload.SizeBytes
-			}
-		}
-	}
-	if retainedAnswerBytes+upload.SizeBytes > MaxTotalUploadBytes ||
-		retainedCircleBytes+upload.SizeBytes > MaxTotalUploadBytes {
-		return Upload{}, false
-	}
-
 	r.nextUpload++
 
 	filteredUploads := make([]Upload, 0, len(r.uploads[answerID])+1)
@@ -368,7 +349,7 @@ func (r *MemoryRepository) addUploadLocked(answerID, questionID, filename, mimeT
 	}
 	r.uploads[answerID] = filteredUploads
 
-	return cloneUpload(upload, false), true
+	return cloneUpload(upload, false), nil
 }
 
 func (r *MemoryRepository) latestAnswerID(formID, circleID string) (string, bool) {

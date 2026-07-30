@@ -250,8 +250,8 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c *echo.Context) error {
 
 	mimeType := http.DetectContentType(content)
 
-	upload, created := h.answers.AddUpload(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
-	if !created {
+	upload, err := h.answers.AddUpload(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
+	if err != nil {
 		return internalError(c)
 	}
 
@@ -326,8 +326,8 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c *echo.Context) error {
 
 	mimeType := http.DetectContentType(content)
 
-	upload, created := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
-	if !created {
+	upload, err := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
+	if err != nil {
 		return internalError(c)
 	}
 

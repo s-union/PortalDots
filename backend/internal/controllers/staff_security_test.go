@@ -171,7 +171,7 @@ func TestWriteCSVNeutralizesFormulaCells(t *testing.T) {
 
 	data, err := writeCSV([][]string{
 		{"header"},
-		{"=formula", "+formula", "-formula", "@formula", "\tformula", "\rformula", "safe", ""},
+		{"=formula", "+formula", "-formula", "@formula", "\tformula", "\rformula", "\nformula", "-cmd", "-5", "-3.14", "safe", ""},
 	})
 	if err != nil {
 		t.Fatalf("writeCSV() error = %v", err)
@@ -183,7 +183,7 @@ func TestWriteCSVNeutralizesFormulaCells(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read generated CSV: %v", err)
 	}
-	want := []string{"'=formula", "'+formula", "'-formula", "'@formula", "'\tformula", "'\rformula", "safe", ""}
+	want := []string{"'=formula", "'+formula", "'-formula", "'@formula", "'\tformula", "'\rformula", "'\nformula", "'-cmd", "-5", "-3.14", "safe", ""}
 	if len(rows) != 2 || !slices.Equal(rows[1], want) {
 		t.Fatalf("formula-neutralized row = %#v, want %#v", rows, want)
 	}

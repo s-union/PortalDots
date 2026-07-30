@@ -18,12 +18,6 @@ FROM answers
 WHERE id = $1
 FOR UPDATE;
 
--- name: LockAnswerUploadCircle :one
-SELECT id
-FROM circles
-WHERE id = $1
-FOR UPDATE;
-
 -- name: ListAnswersByCircle :many
 SELECT id, form_id, circle_id, body, updated_at, created_at
 FROM answers
@@ -98,18 +92,6 @@ LIMIT 1;
 DELETE FROM answer_uploads
 WHERE answer_id = $1
   AND question_id = $2;
-
--- name: GetAnswerUploadBytesExcludingQuestion :one
-SELECT COALESCE(SUM(size_bytes), 0)::bigint
-FROM answer_uploads
-WHERE answer_id = $1
-  AND question_id IS DISTINCT FROM $2;
-
--- name: GetCircleAnswerUploadBytesExcludingQuestion :one
-SELECT COALESCE(SUM(size_bytes), 0)::bigint
-FROM answer_uploads
-WHERE circle_id = $1
-  AND NOT (answer_id = $2 AND question_id IS NOT DISTINCT FROM $3);
 
 -- name: CreateAnswerUpload :one
 INSERT INTO answer_uploads (answer_id, form_id, circle_id, question_id, filename, mime_type, content, size_bytes)

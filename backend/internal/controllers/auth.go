@@ -21,13 +21,7 @@ type loginRequest struct {
 }
 
 func trustedClientSignal(c *echo.Context) string {
-	remoteAddr := strings.TrimSpace(c.Request().RemoteAddr)
-	if host, _, err := net.SplitHostPort(remoteAddr); err == nil {
-		if ip := net.ParseIP(host); ip != nil {
-			return ip.String()
-		}
-	}
-	if ip := net.ParseIP(remoteAddr); ip != nil {
+	if ip := net.ParseIP(strings.TrimSpace(c.RealIP())); ip != nil {
 		return ip.String()
 	}
 	return "unknown"

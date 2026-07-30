@@ -52,17 +52,26 @@ func TestLoginAttemptKeyNormalizesAndSeparatesAccounts(t *testing.T) {
 	}
 }
 
-func TestTrustedClientSignalIgnoresForwardedHeaders(t *testing.T) {
+func TestTrustedClientSignalRespectsConfiguredTrustBoundary(t *testing.T) {
 	t.Parallel()
 
+	// Mirrors the IPExtractor configured in NewServerWithDependencies: a
+	// reverse proxy terminates TLS in front of the API, so only forwarded
+	// headers from a trusted hop are believed.
 	e := echo.New()
-	request := httptest.NewRequest("POST", "/v1/auth/login", nil)
-	request.RemoteAddr = "192.0.2.10:54321"
-	request.Header.Set(echo.HeaderXForwardedFor, "198.51.100.25")
-	request.Header.Set(echo.HeaderXRealIP, "203.0.113.30")
+	e.IPExtractor = echo.ExtractIPFromXFFHeader()
 
-	signal := trustedClientSignal(e.NewContext(request, httptest.NewRecorder()))
-	if signal != "192.0.2.10" {
-		t.Fatalf("trustedClientSignal() = %q; want direct peer address", signal)
+	untrusted := httptest.NewRequest("POST", "/v1/auth/login", nil)
+	untrusted.RemoteAddr = "198.51.100.10:54321"
+	untrusted.Header.Set(echo.HeaderXForwardedFor, "203.0.113.30")
+	if signal := trustedClientSignal(e.NewContext(untrusted, httptest.NewRecorder())); signal != "198.51.100.10" {
+		t.Fatalf("trustedClientSignal() = %q; want direct peer address for an untrusted proxy hop", signal)
+	}
+
+	trusted := httptest.NewRequest("POST", "/v1/auth/login", nil)
+	trusted.RemoteAddr = "127.0.0.1:54321"
+	trusted.Header.Set(echo.HeaderXForwardedFor, "203.0.113.30")
+	if signal := trustedClientSignal(e.NewContext(trusted, httptest.NewRecorder())); signal != "203.0.113.30" {
+		t.Fatalf("trustedClientSignal() = %q; want header address for a trusted proxy hop", signal)
 	}
 }

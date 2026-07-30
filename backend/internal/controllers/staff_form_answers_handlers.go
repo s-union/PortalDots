@@ -334,8 +334,8 @@ func (h *staffFormHandlers) uploadStaffFormAnswerFile(c *echo.Context) error {
 
 	mimeType := http.DetectContentType(content)
 
-	upload, ok := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
-	if !ok {
+	upload, err := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
+	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "upload_failed")
 	}
 

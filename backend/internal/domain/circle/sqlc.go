@@ -428,6 +428,10 @@ func (c *SQLCCatalog) CreateForUser(ctx context.Context, user *auth.User, params
 }
 
 func (c *SQLCCatalog) UpdateForUser(ctx context.Context, user *auth.User, circleID string, params UpdateCircleParams) (Circle, error) {
+	if user == nil {
+		return Circle{}, ErrForbidden
+	}
+
 	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,
@@ -477,6 +481,10 @@ func (c *SQLCCatalog) UpdateForUser(ctx context.Context, user *auth.User, circle
 }
 
 func (c *SQLCCatalog) DeleteForUser(ctx context.Context, user *auth.User, circleID string) error {
+	if user == nil {
+		return ErrForbidden
+	}
+
 	isLeader, err := c.queries.IsCircleLeader(ctx, dbgen.IsCircleLeaderParams{
 		CircleID: circleID,
 		UserID:   user.ID,

@@ -239,7 +239,7 @@ CREATE TABLE IF NOT EXISTS answer_uploads (
     answer_id uuid NOT NULL REFERENCES answers(id) ON DELETE CASCADE,
     form_id uuid NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
     circle_id uuid NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
-    question_id uuid REFERENCES form_questions(id) ON DELETE SET NULL,
+    question_id uuid REFERENCES form_questions(id) ON DELETE CASCADE,
     filename text NOT NULL,
     mime_type text NOT NULL,
     content bytea NOT NULL,
