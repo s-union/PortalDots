@@ -246,6 +246,27 @@ describe('/enqueue', () => {
     }
   })
 
+  it('records chunk rows in D1 statements proportional to the number of queue batches, not recipients', async () => {
+    const fewerRecipientsEnv = createTestEnv()
+    fewerRecipientsEnv.NORMAL_QUEUE.sendBatch = vi.fn().mockResolvedValue(undefined)
+    const moreRecipientsEnv = createTestEnv()
+    moreRecipientsEnv.NORMAL_QUEUE.sendBatch = vi.fn().mockResolvedValue(undefined)
+
+    // Both recipient counts span exactly two 100-message queue batches, so the
+    // D1 statement count must be identical even though the recipient count
+    // nearly doubles: chunk rows are written once per batch, not once per recipient.
+    const fewerRecipients = Array.from({ length: 101 }, (_, i) => `user${i}@example.com`)
+    const moreRecipients = Array.from({ length: 200 }, (_, i) => `user${i}@example.com`)
+
+    const fewerRes = await enqueue(fewerRecipientsEnv, { ...validPayload, to: fewerRecipients })
+    const moreRes = await enqueue(moreRecipientsEnv, { ...validPayload, jobId: 'job-2', to: moreRecipients })
+
+    expect(fewerRes.status).toBe(200)
+    expect(moreRes.status).toBe(200)
+    expect(fewerRecipientsEnv.testDb.statementCount).toBe(moreRecipientsEnv.testDb.statementCount)
+    expect(fewerRecipientsEnv.testDb.statementCount).toBeLessThan(10)
+  })
+
   it('keeps serialized queue batches below the provider byte limit', async () => {
     const env = createTestEnv()
     const sendBatch = vi.fn<(messages: readonly EmailJob[]) => Promise<void>>().mockResolvedValue(undefined)

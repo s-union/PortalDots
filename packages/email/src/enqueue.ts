@@ -7,7 +7,7 @@ import { sValidator } from '@hono/standard-validator'
 import * as z from 'zod'
 import { type EmailDb } from './db/client'
 import {
-  createChunkRecord,
+  createChunkRecords,
   ensureJobRecord,
   getJobShape,
   listAcceptedChunks,
@@ -123,18 +123,17 @@ function encodedQueueBatchEntrySize(message: EmailJob): number {
   return new TextEncoder().encode(JSON.stringify({ body: message })).byteLength
 }
 
-interface QueueBatch {
-  messages: EmailJob[]
-  batchable: boolean
-}
-
-function queueBatches(messages: readonly EmailJob[]): QueueBatch[] {
-  const batches: QueueBatch[] = []
+// Every surviving message is well under MAX_QUEUE_BATCH_BYTES here: dispatchJob
+// already rejects (413) any message whose raw JSON exceeds MAX_QUEUE_MESSAGE_BYTES
+// (128,000), and the `{"body":…}` batch-entry wrapper only adds a few bytes, so a
+// single entry can never exceed MAX_QUEUE_BATCH_BYTES (200,000) on its own.
+function queueBatches(messages: readonly EmailJob[]): EmailJob[][] {
+  const batches: EmailJob[][] = []
   let current: EmailJob[] = []
   let currentBytes = 0
   const flush = () => {
     if (current.length > 0) {
-      batches.push({ messages: current, batchable: true })
+      batches.push(current)
       current = []
       currentBytes = 0
     }
@@ -142,11 +141,6 @@ function queueBatches(messages: readonly EmailJob[]): QueueBatch[] {
 
   for (const message of messages) {
     const messageBytes = encodedQueueBatchEntrySize(message)
-    if (messageBytes > MAX_QUEUE_BATCH_BYTES) {
-      flush()
-      batches.push({ messages: [message], batchable: false })
-      continue
-    }
     if (
       current.length === MAX_MESSAGES_PER_QUEUE_BATCH ||
       (current.length > 0 && currentBytes + messageBytes > MAX_QUEUE_BATCH_BYTES)
@@ -160,12 +154,12 @@ function queueBatches(messages: readonly EmailJob[]): QueueBatch[] {
   return batches
 }
 
-async function sendQueueMessages(queue: JobQueue<EmailJob>, batch: QueueBatch): Promise<void> {
-  if (batch.batchable && queue.sendBatch) {
-    await queue.sendBatch(batch.messages)
+async function sendQueueMessages(queue: JobQueue<EmailJob>, messages: EmailJob[]): Promise<void> {
+  if (queue.sendBatch) {
+    await queue.sendBatch(messages)
     return
   }
-  for (const message of batch.messages) {
+  for (const message of messages) {
     await queue.send(message)
   }
 }
@@ -248,15 +242,16 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
 
     for (const batch of queueBatches(pending)) {
       await sendQueueMessages(queue, batch)
-      for (const message of batch.messages) {
-        await createChunkRecord(db, {
+      await createChunkRecords(
+        db,
+        batch.map((message) => ({
           messageId: message.messageId,
           jobId: message.jobId,
           chunkIndex: message.chunkIndex,
           chunkCount: message.chunkCount,
           recipientsCount: message.to.length
-        })
-      }
+        }))
+      )
     }
     await markJobQueued(db, payload.jobId)
 

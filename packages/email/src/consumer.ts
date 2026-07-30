@@ -126,6 +126,14 @@ export async function queueHandler(messages: readonly QueueMessage[], env: Consu
       // Render template once per message
       const { html, text } = await renderTemplate(job.template, job.variables)
 
+      // Split `to` into a visible first recipient plus bcc for the rest. New jobs
+      // always carry exactly one recipient per message (see MAX_RECIPIENTS_PER_MESSAGE
+      // in enqueue.ts), so `blindCopyRecipients` is empty for them. This split only
+      // matters for legacy messages still in the queue from the old multi-recipient
+      // producer: for those, the first address is disclosed in `To:` to the rest of
+      // the recipients until the queue drains. That is a deliberate, bounded
+      // trade-off — do not "fix" it by moving every recipient to `bcc`, since an
+      // empty `To:` header is not a safe change here.
       const [visibleRecipient, ...blindCopyRecipients] = job.to
       await env.EMAIL.send({
         to: [visibleRecipient],

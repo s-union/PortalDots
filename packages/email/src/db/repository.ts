@@ -61,20 +61,25 @@ export async function listAcceptedChunks(db: EmailDb, jobId: string): Promise<Ma
   return new Map(rows.map((row) => [row.chunkIndex, row.messageId]))
 }
 
-export async function createChunkRecord(
+/**
+ * Record every accepted chunk of a queue batch in a single multi-row insert,
+ * instead of one D1 round trip per chunk, to keep the subrequest count for a
+ * bulk job proportional to the number of queue batches rather than recipients.
+ */
+export async function createChunkRecords(
   db: EmailDb,
-  chunk: {
+  chunks: {
     messageId: string
     jobId: string
     chunkIndex: number
     chunkCount: number
     recipientsCount: number
-  }
+  }[]
 ): Promise<void> {
   const now = nowIso()
   await db
     .insert(emailJobChunks)
-    .values({ ...chunk, status: 'queued', createdAt: now, updatedAt: now })
+    .values(chunks.map((chunk) => ({ ...chunk, status: 'queued' as const, createdAt: now, updatedAt: now })))
     .onConflictDoNothing({ target: emailJobChunks.messageId })
 }
 
