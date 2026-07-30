@@ -1,6 +1,19 @@
 packages:
   - frontend
   - packages/*
+overrides:
+  # Advisory fixes for versions pulled in transitively below what their
+  # declared parent ranges allow.
+  hono: 4.12.27
+  '@hono/node-server': 2.0.5
+  postcss: 8.5.18
+  # Only esbuild 0.18.20 was vulnerable, and it is reached solely through
+  # drizzle-kit's deprecated @esbuild-kit/core-utils. Scoping the override
+  # there leaves every other consumer, notably vite, on the esbuild it
+  # resolves for itself.
+  '@esbuild-kit/core-utils>esbuild': 0.25.12
+  js-yaml: 4.3.0
+  brace-expansion: 2.1.2
 allowBuilds:
   esbuild: true
   msw: true
@@ -40,3 +53,12 @@ minimumReleaseAgeExclude:
   - hono-email@0.8.0
   - '@hono-email/preview@0.8.0'
   - '@hono-email/tailwind-plugin@0.8.0'
+  - '@cloudflare/vite-plugin@1.49.0'
+  - '@cloudflare/workerd-darwin-64@1.20260730.1'
+  - '@cloudflare/workerd-darwin-arm64@1.20260730.1'
+  - '@cloudflare/workerd-linux-64@1.20260730.1'
+  - '@cloudflare/workerd-linux-arm64@1.20260730.1'
+  - '@cloudflare/workerd-windows-64@1.20260730.1'
+  - miniflare@4.20260730.0
+  - workerd@1.20260730.1
+  - wrangler@4.116.0
