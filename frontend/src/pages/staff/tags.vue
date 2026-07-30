@@ -26,7 +26,7 @@ import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
 import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import { useOrderedItems } from '@/lib/useStaffDataTable'
-import { canDeleteTags } from '@/features/staff/access/capabilities'
+import { canDeleteTags, canExportTags } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { deleteStaffTag, useStaffTagsQuery } from '@/features/staff/masters/tags'
 import { buildDeleteStaffTagConfirmMessage } from '@/features/staff/masters/messages'
@@ -47,6 +47,7 @@ const staffListParams = computed(() => ({
 const tagsQuery = useStaffTagsQuery(enabled, staffListParams)
 const exportHref = computed(() => buildApiUrl('/staff/tags/export'))
 const canDelete = computed(() => canDeleteTags(sessionStore.roles, sessionStore.permissions))
+const canExport = computed(() => canExportTags(sessionStore.roles, sessionStore.permissions))
 const isEditorOpen = ref(false)
 const selectedTagId = ref('')
 const deletingTagId = ref('')
@@ -243,7 +244,7 @@ async function handleReload() {
                 <FaIcon name="plus" fixed-width />
                 新規タグ
               </BaseButton>
-              <CsvExportLink :href="exportHref">CSVで出力(タグ別企画一覧)</CsvExportLink>
+              <CsvExportLink v-if="canExport" :href="exportHref">CSVで出力(タグ別企画一覧)</CsvExportLink>
             </ToolbarRow>
           </template>
 

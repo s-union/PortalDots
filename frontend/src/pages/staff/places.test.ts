@@ -297,4 +297,37 @@ describe('StaffPlacesPage', () => {
     expect(placesWasCalled).toBe(true)
     expect(wrapper.text()).toContain('1号館')
   })
+
+  it('hides the CSV export link for a read-only staff user', async () => {
+    server.use(http.get('/v1/staff/places', () => HttpResponse.json([])))
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      permissions: ['staff.places.read'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/places', component: StaffPlacesPage }
+      ]
+    })
+    await router.push('/staff/places')
+    await router.isReady()
+
+    const wrapper = mount(StaffPlacesPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(wrapper.find('a[href$="/v1/staff/places/export"]').exists()).toBe(false)
+  })
 })
