@@ -6,7 +6,7 @@ settings:
 
 overrides:
   hono: 4.12.27
-  '@hono/node-server': 2.0.5
+  '@hono/node-server': 2.0.10
   postcss: 8.5.18
   '@esbuild-kit/core-utils>esbuild': 0.25.12
   js-yaml: 4.3.0
@@ -808,8 +808,8 @@ packages:
     peerDependencies:
       hono-email: '>=0.4.0 <1.0.0'
 
-  '@hono/node-server@2.0.5':
-    resolution: {integrity: sha512-yQFvDmyDo3y6rEOJZDUYPJ49DIKTPpIk4kGvm40xx4Ejne0Pu9a1+exxPN+C1UppWK/WGZX9F++/Xs231tE86g==}
+  '@hono/node-server@2.0.10':
+    resolution: {integrity: sha512-ZcnNVhKTmyDJeg0UlnZjvM73JBsTAuhrH/J4fjwGOw59PwOW51r4J+p6CsKZWXdKSme4MFqU62CZMOsdDrU4CA==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: 4.12.27
@@ -5165,7 +5165,7 @@ snapshots:
 
   '@hono-email/preview@0.8.0(@hono-email/tailwind-plugin@0.8.0(esbuild@0.28.1)(hono-email@0.8.0(hono@4.12.27))(rolldown@1.1.5)(rollup@4.62.3)(vite@8.1.4(@types/node@24.13.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)))(@types/node@24.13.1)(hono-email@0.8.0(hono@4.12.27))(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0)':
     dependencies:
-      '@hono/node-server': 2.0.5(hono@4.12.27)
+      '@hono/node-server': 2.0.10(hono@4.12.27)
       '@tailwindcss/vite': 4.3.2(vite@6.4.3(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.0))
       citty: 0.1.6
       hono: 4.12.27
@@ -5202,7 +5202,7 @@ snapshots:
       - vite
       - webpack
 
-  '@hono/node-server@2.0.5(hono@4.12.27)':
+  '@hono/node-server@2.0.10(hono@4.12.27)':
     dependencies:
       hono: 4.12.27
 
