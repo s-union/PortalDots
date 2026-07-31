@@ -12,13 +12,16 @@ type CfEnv = {
 }
 
 function adaptQueue(queue: Queue<EmailJob>): JobQueue<EmailJob> {
-  return { send: (message) => queue.send(message).then(() => undefined) }
+  return {
+    send: (message) => queue.send(message).then(() => undefined),
+    sendBatch: (messages) => queue.sendBatch(messages.map((body) => ({ body }))).then(() => undefined)
+  }
 }
 
 function adaptMailTransport(email: SendEmail): MailTransport {
   return {
-    send: ({ to, from, subject, html, text }: OutgoingMessage) =>
-      email.send({ from, to, subject, html, text }).then(() => undefined)
+    send: ({ to, bcc, from, subject, html, text }: OutgoingMessage) =>
+      email.send({ from, to, bcc, subject, html, text }).then(() => undefined)
   }
 }
 

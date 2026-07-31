@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const maxTrackedLoginAttempts = 10_000
+
 type loginAttempt struct {
 	count       int
 	lastFail    time.Time
@@ -26,40 +28,69 @@ func NewLoginAttemptTracker(maxAttempts int, lockoutDuration time.Duration) *Log
 	}
 }
 
-func (t *LoginAttemptTracker) IsLocked(ip string) (bool, time.Time) {
+func (t *LoginAttemptTracker) IsLocked(key string) (bool, time.Time) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	attempt, ok := t.attempts[ip]
+	attempt, ok := t.attempts[key]
 	if !ok || attempt.lockedUntil == nil {
 		return false, time.Time{}
 	}
 	if time.Now().Before(*attempt.lockedUntil) {
 		return true, *attempt.lockedUntil
 	}
-	delete(t.attempts, ip)
+	delete(t.attempts, key)
 	return false, time.Time{}
 }
 
-func (t *LoginAttemptTracker) RecordFailure(ip string) {
+func (t *LoginAttemptTracker) RecordFailure(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	attempt, ok := t.attempts[ip]
+	now := time.Now()
+	attempt, ok := t.attempts[key]
 	if !ok {
+		t.makeRoom(now)
 		attempt = &loginAttempt{}
-		t.attempts[ip] = attempt
+		t.attempts[key] = attempt
 	}
 	attempt.count++
-	attempt.lastFail = time.Now()
+	attempt.lastFail = now
 	if attempt.count >= t.maxAttempts {
-		lockedUntil := time.Now().Add(t.lockoutDuration)
+		lockedUntil := now.Add(t.lockoutDuration)
 		attempt.lockedUntil = &lockedUntil
 	}
 }
 
-func (t *LoginAttemptTracker) RecordSuccess(ip string) {
+func (t *LoginAttemptTracker) RecordSuccess(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	delete(t.attempts, ip)
+	delete(t.attempts, key)
+}
+
+func (t *LoginAttemptTracker) makeRoom(now time.Time) {
+	if len(t.attempts) < maxTrackedLoginAttempts {
+		return
+	}
+
+	for key, attempt := range t.attempts {
+		lockExpired := attempt.lockedUntil != nil && !now.Before(*attempt.lockedUntil)
+		inactive := attempt.lockedUntil == nil && now.Sub(attempt.lastFail) >= t.lockoutDuration
+		if lockExpired || inactive {
+			delete(t.attempts, key)
+		}
+	}
+	if len(t.attempts) < maxTrackedLoginAttempts {
+		return
+	}
+
+	var oldestKey string
+	var oldestFailure time.Time
+	for key, attempt := range t.attempts {
+		if oldestKey == "" || attempt.lastFail.Before(oldestFailure) {
+			oldestKey = key
+			oldestFailure = attempt.lastFail
+		}
+	}
+	delete(t.attempts, oldestKey)
 }

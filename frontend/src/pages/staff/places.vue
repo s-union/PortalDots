@@ -25,7 +25,7 @@ import { useStaffDataGridFilters } from '@/lib/useStaffDataGridFilters'
 import type { StaffFilterMode, StaffFilterQuery } from '@/lib/staffFilterSchema'
 import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '@/lib/staffDataGridHelpers'
 import { useOrderedItems } from '@/lib/useStaffDataTable'
-import { canDeletePlaces } from '@/features/staff/access/capabilities'
+import { canDeletePlaces, canExportPlaces } from '@/features/staff/access/capabilities'
 import {
   buildDeleteStaffPlaceConfirmMessage,
   deleteStaffPlace,
@@ -51,6 +51,7 @@ const staffListParams = computed(() => ({
 const placesQuery = useStaffPlacesQuery(enabled, staffListParams)
 const exportHref = computed(() => buildStaffPlacesExportUrl())
 const canDelete = computed(() => canDeletePlaces(sessionStore.roles, sessionStore.permissions))
+const canExport = computed(() => canExportPlaces(sessionStore.roles, sessionStore.permissions))
 const isEditorOpen = ref(false)
 const selectedPlaceId = ref('')
 const deletingPlaceId = ref('')
@@ -255,7 +256,7 @@ async function handleReload() {
                 <FaIcon name="plus" fixed-width />
                 新規場所
               </BaseButton>
-              <CsvExportLink :href="exportHref">CSVで出力(場所別企画一覧)</CsvExportLink>
+              <CsvExportLink v-if="canExport" :href="exportHref">CSVで出力(場所別企画一覧)</CsvExportLink>
             </ToolbarRow>
           </template>
 

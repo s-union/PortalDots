@@ -29,9 +29,11 @@ export type StaffCapability =
   | 'tags.read'
   | 'tags.edit'
   | 'tags.delete'
+  | 'tags.export'
   | 'places.read'
   | 'places.edit'
   | 'places.delete'
+  | 'places.export'
   | 'contactCategories.read'
   | 'contactCategories.edit'
   | 'contactCategories.delete'
@@ -317,6 +319,13 @@ export function canDeleteTags(roles: string[], permissions: string[] = []) {
   )
 }
 
+export function canExportTags(roles: string[], permissions: string[] = []) {
+  return (
+    hasAnyRole(roles, 'admin', 'content_manager') ||
+    hasAnyPermission(permissions, 'staff.tags', 'staff.tags.read,export')
+  )
+}
+
 export function canReadPlaces(roles: string[], permissions: string[] = []) {
   return (
     hasAnyRole(roles, 'admin', 'content_manager') ||
@@ -342,6 +351,13 @@ export function canDeletePlaces(roles: string[], permissions: string[] = []) {
   return (
     hasAnyRole(roles, 'admin', 'content_manager') ||
     hasAnyPermission(permissions, 'staff.places', 'staff.places.read,edit,delete')
+  )
+}
+
+export function canExportPlaces(roles: string[], permissions: string[] = []) {
+  return (
+    hasAnyRole(roles, 'admin', 'content_manager') ||
+    hasAnyPermission(permissions, 'staff.places', 'staff.places.read,export')
   )
 }
 
@@ -377,19 +393,14 @@ export function canDeleteContactCategories(roles: string[], permissions: string[
   )
 }
 
+// Aggregate exports include every resource represented by their files, so a
+// caller must hold each corresponding export capability before receiving one.
 export function canUseStaffExports(roles: string[], permissions: string[] = []) {
   return (
-    hasAnyRole(roles, 'admin', 'content_manager', 'forms_manager') ||
-    hasAnyPermission(
-      permissions,
-      'staff.pages',
-      'staff.pages.read,export',
-      'staff.documents',
-      'staff.documents.read,export',
-      'staff.forms',
-      'staff.forms.read,export',
-      'staff.forms.answers.read,export'
-    )
+    canExportPages(roles, permissions) &&
+    canExportDocuments(roles, permissions) &&
+    canExportForms(roles, permissions) &&
+    canExportFormAnswers(roles, permissions)
   )
 }
 
@@ -480,12 +491,16 @@ export function canAccessStaffCapability(capability: StaffCapability, roles: str
       return canEditTags(roles, permissions)
     case 'tags.delete':
       return canDeleteTags(roles, permissions)
+    case 'tags.export':
+      return canExportTags(roles, permissions)
     case 'places.read':
       return canReadPlaces(roles, permissions)
     case 'places.edit':
       return canEditPlaces(roles, permissions)
     case 'places.delete':
       return canDeletePlaces(roles, permissions)
+    case 'places.export':
+      return canExportPlaces(roles, permissions)
     case 'contactCategories.read':
       return canReadContactCategories(roles, permissions)
     case 'contactCategories.edit':

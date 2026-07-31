@@ -2,6 +2,7 @@ package answer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -234,38 +235,44 @@ func (r *SQLCRepository) FindUploadByAnswerAndQuestion(ctx context.Context, answ
 	return mapUploadFileByQuestionRow(row), true
 }
 
-func (r *SQLCRepository) AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+func (r *SQLCRepository) AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, error) {
+	if questionID == "" {
+		return Upload{}, ErrInvalidQuestionID
+	}
+
 	currentAnswer, found := r.Get(ctx, formID, circleID)
 	if !found {
 		currentAnswer = r.Create(ctx, formID, circleID, "", map[string][]string{})
 		if currentAnswer.ID == "" {
-			return Upload{}, false
+			return Upload{}, fmt.Errorf("create answer for upload: form %s, circle %s", formID, circleID)
 		}
 	}
 
 	return r.AddUploadToAnswer(ctx, currentAnswer.ID, questionID, filename, mimeType, content)
 }
 
-func (r *SQLCRepository) AddUploadToAnswer(ctx context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, bool) {
+func (r *SQLCRepository) AddUploadToAnswer(ctx context.Context, answerID, questionID, filename, mimeType string, content []byte) (Upload, error) {
+	if questionID == "" {
+		return Upload{}, ErrInvalidQuestionID
+	}
+
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return Upload{}, false
+		return Upload{}, err
 	}
 	defer tx.Rollback(ctx)
 
 	queries := r.queries.WithTx(tx)
-	answerRow, err := queries.GetAnswerByID(ctx, answerID)
+	answerRow, err := queries.GetAnswerByIDForUpdate(ctx, answerID)
 	if err != nil {
-		return Upload{}, false
+		return Upload{}, err
 	}
 
-	if questionID != "" {
-		if _, err := queries.DeleteAnswerUploadsByAnswerAndQuestion(ctx, dbgen.DeleteAnswerUploadsByAnswerAndQuestionParams{
-			AnswerID:   answerID,
-			QuestionID: optionalString(questionID),
-		}); err != nil {
-			return Upload{}, false
-		}
+	if _, err := queries.DeleteAnswerUploadsByAnswerAndQuestion(ctx, dbgen.DeleteAnswerUploadsByAnswerAndQuestionParams{
+		AnswerID:   answerID,
+		QuestionID: optionalString(questionID),
+	}); err != nil {
+		return Upload{}, err
 	}
 
 	row, err := queries.CreateAnswerUpload(ctx, dbgen.CreateAnswerUploadParams{
@@ -279,11 +286,11 @@ func (r *SQLCRepository) AddUploadToAnswer(ctx context.Context, answerID, questi
 		SizeBytes:  int64(len(content)),
 	})
 	if err != nil {
-		return Upload{}, false
+		return Upload{}, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return Upload{}, false
+		return Upload{}, err
 	}
 
 	return Upload{
@@ -296,7 +303,7 @@ func (r *SQLCRepository) AddUploadToAnswer(ctx context.Context, answerID, questi
 		MimeType:   row.MimeType,
 		SizeBytes:  row.SizeBytes,
 		CreatedAt:  pgutil.FormatTimestamptz(row.CreatedAt),
-	}, true
+	}, nil
 }
 
 func (r *SQLCRepository) loadAnswer(ctx context.Context, id, formID, circleID, body string, createdAt, updatedAt pgtype.Timestamptz) (Answer, bool) {

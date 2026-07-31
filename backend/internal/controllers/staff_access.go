@@ -163,6 +163,10 @@ var staffCapabilityChecks = map[string]capabilityCheck{
 		roles:       []string{"admin", "content_manager"},
 		permissions: []string{"staff.tags", "staff.tags.read,edit,delete"},
 	},
+	"tags.export": {
+		roles:       []string{"admin", "content_manager"},
+		permissions: []string{"staff.tags", "staff.tags.read,export"},
+	},
 	"places.read": {
 		roles:       []string{"admin", "content_manager"},
 		permissions: []string{"staff.places", "staff.places.read,edit,delete", "staff.places.read,edit", "staff.places.read,export", "staff.places.read"},
@@ -174,6 +178,10 @@ var staffCapabilityChecks = map[string]capabilityCheck{
 	"places.delete": {
 		roles:       []string{"admin", "content_manager"},
 		permissions: []string{"staff.places", "staff.places.read,edit,delete"},
+	},
+	"places.export": {
+		roles:       []string{"admin", "content_manager"},
+		permissions: []string{"staff.places", "staff.places.read,export"},
 	},
 	"contactCategories.read": {
 		roles:       []string{"admin", "content_manager"},
@@ -190,10 +198,6 @@ var staffCapabilityChecks = map[string]capabilityCheck{
 	"mailQueue.use": {
 		roles:       []string{"admin"},
 		permissions: []string{},
-	},
-	"exports.use": {
-		roles:       []string{"admin", "content_manager", "forms_manager"},
-		permissions: []string{"staff.pages", "staff.pages.read,export", "staff.documents", "staff.documents.read,export", "staff.forms", "staff.forms.read,export", "staff.forms.answers.read,export"},
 	},
 	"activityLogs.read": {
 		roles:       []string{"admin"},
@@ -255,9 +259,11 @@ func canExportFormAnswers(user *auth.User) bool {
 func canReadTags(user *auth.User) bool     { return canAccessCapability(user, "tags.read") }
 func canEditTags(user *auth.User) bool     { return canAccessCapability(user, "tags.edit") }
 func canDeleteTags(user *auth.User) bool   { return canAccessCapability(user, "tags.delete") }
+func canExportTags(user *auth.User) bool   { return canAccessCapability(user, "tags.export") }
 func canReadPlaces(user *auth.User) bool   { return canAccessCapability(user, "places.read") }
 func canEditPlaces(user *auth.User) bool   { return canAccessCapability(user, "places.edit") }
 func canDeletePlaces(user *auth.User) bool { return canAccessCapability(user, "places.delete") }
+func canExportPlaces(user *auth.User) bool { return canAccessCapability(user, "places.export") }
 func canReadContactCategories(user *auth.User) bool {
 	return canAccessCapability(user, "contactCategories.read")
 }
@@ -267,8 +273,17 @@ func canEditContactCategories(user *auth.User) bool {
 func canDeleteContactCategories(user *auth.User) bool {
 	return canAccessCapability(user, "contactCategories.delete")
 }
-func canUseMailQueue(user *auth.User) bool     { return canAccessCapability(user, "mailQueue.use") }
-func canUseStaffExports(user *auth.User) bool  { return canAccessCapability(user, "exports.use") }
+func canUseMailQueue(user *auth.User) bool { return canAccessCapability(user, "mailQueue.use") }
+
+// Aggregate exports include every resource represented by their files, so a
+// caller must hold each corresponding export capability before receiving one.
+func canUseStaffExports(user *auth.User) bool {
+	return canExportPages(user) &&
+		canExportDocuments(user) &&
+		canExportForms(user) &&
+		canExportFormAnswers(user)
+}
+
 func canViewActivityLogs(user *auth.User) bool { return canAccessCapability(user, "activityLogs.read") }
 func canListManagedCircles(user *auth.User) bool {
 	return canReadCircles(user) ||

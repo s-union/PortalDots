@@ -82,6 +82,8 @@ export class TestD1Database implements D1Database {
   private readonly sqlite = new DatabaseSync(':memory:')
   private broken = false
   readonly drizzle: EmailDb = createDb(this)
+  /** Number of prepared statements run against the database, for asserting subrequest counts stay bounded. */
+  statementCount = 0
 
   constructor() {
     for (const statements of migrationStatements()) {
@@ -122,6 +124,7 @@ export class TestD1Database implements D1Database {
       ...job,
       template: 'markdown-notice',
       priority: 'normal',
+      payloadDigest: '',
       subject: 'Test Subject',
       recipientsCount: job.recipientsCount ?? job.chunkCount,
       createdAt: now,
@@ -145,6 +148,7 @@ export class TestD1Database implements D1Database {
     if (this.broken) {
       throw new Error('D1 unavailable')
     }
+    this.statementCount++
     return this.sqlite.prepare(query)
   }
 

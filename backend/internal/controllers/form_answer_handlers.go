@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v5"
-	"github.com/s-union/PortalDots/backend/internal/domain/formquestion"
 )
 
 func (h *workspaceHandlers) getFormAnswer(c *echo.Context) error {
@@ -201,15 +200,11 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c *echo.Context) error {
 	questions = filterWorkspaceFormQuestions(questions)
 
 	questionID := strings.TrimSpace(c.FormValue("questionId"))
-	uploadQuestion := formquestion.Question{}
-	if len(questions) > 0 {
-		var found bool
-		uploadQuestion, found = findUploadQuestion(questions, questionID)
-		if !found {
-			return validationError(c, map[string][]string{
-				"questionId": {"アップロード先の設問が不正です"},
-			})
-		}
+	uploadQuestion, found := findUploadQuestion(questions, questionID)
+	if !found {
+		return validationError(c, map[string][]string{
+			"questionId": {"アップロード先の設問が不正です"},
+		})
 	}
 
 	fileHeader, err := c.FormFile("file")
@@ -247,18 +242,16 @@ func (h *workspaceHandlers) uploadFormAnswerFile(c *echo.Context) error {
 		})
 	}
 
-	if len(questions) > 0 {
-		if uploadValidationMessage := validateUploadExtension(uploadQuestion, filename); uploadValidationMessage != "" {
-			return validationError(c, map[string][]string{
-				"file": {uploadValidationMessage},
-			})
-		}
+	if uploadValidationMessage := validateUploadExtension(uploadQuestion, filename); uploadValidationMessage != "" {
+		return validationError(c, map[string][]string{
+			"file": {uploadValidationMessage},
+		})
 	}
 
 	mimeType := http.DetectContentType(content)
 
-	upload, created := h.answers.AddUpload(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
-	if !created {
+	upload, err := h.answers.AddUpload(c.Request().Context(), currentForm.ID, currentSession.CurrentCircleID, questionID, filename, mimeType, content)
+	if err != nil {
 		return internalError(c)
 	}
 
@@ -283,15 +276,11 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c *echo.Context) error {
 	questions = filterWorkspaceFormQuestions(questions)
 
 	questionID := strings.TrimSpace(c.FormValue("questionId"))
-	uploadQuestion := formquestion.Question{}
-	if len(questions) > 0 {
-		var uploadQuestionFound bool
-		uploadQuestion, uploadQuestionFound = findUploadQuestion(questions, questionID)
-		if !uploadQuestionFound {
-			return validationError(c, map[string][]string{
-				"questionId": {"アップロード先の設問が不正です"},
-			})
-		}
+	uploadQuestion, found := findUploadQuestion(questions, questionID)
+	if !found {
+		return validationError(c, map[string][]string{
+			"questionId": {"アップロード先の設問が不正です"},
+		})
 	}
 
 	fileHeader, err := c.FormFile("file")
@@ -329,18 +318,16 @@ func (h *workspaceHandlers) uploadFormAnswerFileByID(c *echo.Context) error {
 		})
 	}
 
-	if len(questions) > 0 {
-		if uploadValidationMessage := validateUploadExtension(uploadQuestion, filename); uploadValidationMessage != "" {
-			return validationError(c, map[string][]string{
-				"file": {uploadValidationMessage},
-			})
-		}
+	if uploadValidationMessage := validateUploadExtension(uploadQuestion, filename); uploadValidationMessage != "" {
+		return validationError(c, map[string][]string{
+			"file": {uploadValidationMessage},
+		})
 	}
 
 	mimeType := http.DetectContentType(content)
 
-	upload, created := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
-	if !created {
+	upload, err := h.answers.AddUploadToAnswer(c.Request().Context(), answerValue.ID, questionID, filename, mimeType, content)
+	if err != nil {
 		return internalError(c)
 	}
 

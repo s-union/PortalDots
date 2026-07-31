@@ -166,18 +166,27 @@ func (h *staffUserHandlers) updateStaffUserRoles(c *echo.Context) error {
 		return validationError(c, validationErrors)
 	}
 
-	if currentSession.User != nil && currentSession.User.ID == c.Param("userID") && !rolesGrantUserManagement(roles) {
-		return validationError(c, map[string][]string{
-			"roles": {"自分自身からユーザー管理権限を外すことはできません"},
-		})
-	}
-
 	targetUser, err := h.users.Find(c.Param("userID"))
 	if errors.Is(err, useradmin.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
 	if err != nil {
 		return internalError(c)
+	}
+
+	if currentSession.User != nil && currentSession.User.ID == targetUser.ID {
+		for _, role := range roles {
+			if !slices.Contains(targetUser.Roles, role) {
+				return validationError(c, map[string][]string{
+					"roles": {"自分自身に新しいロールを付与することはできません"},
+				})
+			}
+		}
+		if !rolesGrantUserManagement(roles) {
+			return validationError(c, map[string][]string{
+				"roles": {"自分自身からユーザー管理権限を外すことはできません"},
+			})
+		}
 	}
 
 	if !slices.Contains(currentSession.User.Roles, "admin") {

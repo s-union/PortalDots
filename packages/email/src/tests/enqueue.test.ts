@@ -1,12 +1,16 @@
 import { describe, it, expect, vi } from 'vitest'
-import { app } from '../enqueue'
+import { app, type EmailJob } from '../enqueue'
 import { TestD1Database } from './helpers/d1'
 
 function createTestEnv(authToken = 'test-token') {
   const testDb = new TestD1Database()
+  const createQueue = () => ({
+    send: vi.fn(),
+    sendBatch: undefined as ((messages: readonly EmailJob[]) => Promise<void>) | undefined
+  })
   return {
-    HIGH_QUEUE: { send: vi.fn() },
-    NORMAL_QUEUE: { send: vi.fn() },
+    HIGH_QUEUE: createQueue(),
+    NORMAL_QUEUE: createQueue(),
     DB: testDb.drizzle,
     AUTH_TOKEN: authToken,
     testDb
@@ -35,7 +39,11 @@ const validPayload = {
   to: ['recipient@example.com'],
   subject: 'Test Subject',
   body: 'Test Body',
-  variables: { appName: 'Test' }
+  variables: { appName: 'Test', adminName: 'Admin' }
+}
+
+function encodedQueueMessageSize(message: EmailJob): number {
+  return new TextEncoder().encode(JSON.stringify(message)).byteLength
 }
 
 describe('/enqueue', () => {
@@ -194,7 +202,7 @@ describe('/enqueue', () => {
     expect(env.HIGH_QUEUE.send).not.toHaveBeenCalled()
   })
 
-  it('splits recipients into chunks of 50', async () => {
+  it('creates one queue message per recipient', async () => {
     const env = createTestEnv()
     const recipients = Array.from({ length: 120 }, (_, i) => `user${i}@example.com`)
     const res = await app.request(
@@ -211,8 +219,102 @@ describe('/enqueue', () => {
     )
     expect(res.status).toBe(200)
     const body = (await res.json()) as { messageCount: number }
-    expect(body.messageCount).toBe(3)
-    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(3)
+    expect(body.messageCount).toBe(120)
+    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(120)
+    for (const [message] of env.NORMAL_QUEUE.send.mock.calls) {
+      expect(message.to).toHaveLength(1)
+    }
+  })
+
+  it('uses queue batches of at most 100 one-recipient messages', async () => {
+    const env = createTestEnv()
+    const sendBatch = vi.fn<(messages: readonly EmailJob[]) => Promise<void>>().mockResolvedValue(undefined)
+    env.NORMAL_QUEUE.sendBatch = sendBatch
+    const recipients = Array.from({ length: 120 }, (_, i) => `user${i}@example.com`)
+
+    const res = await enqueue(env, { ...validPayload, to: recipients })
+
+    expect(res.status).toBe(200)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+    expect(sendBatch).toHaveBeenCalledTimes(2)
+    expect(sendBatch.mock.calls[0][0]).toHaveLength(100)
+    expect(sendBatch.mock.calls[1][0]).toHaveLength(20)
+    for (const [messages] of sendBatch.mock.calls) {
+      for (const message of messages) {
+        expect(message.to).toHaveLength(1)
+      }
+    }
+  })
+
+  it('records chunk rows in D1 statements proportional to the number of queue batches, not recipients', async () => {
+    const fewerRecipientsEnv = createTestEnv()
+    fewerRecipientsEnv.NORMAL_QUEUE.sendBatch = vi.fn().mockResolvedValue(undefined)
+    const moreRecipientsEnv = createTestEnv()
+    moreRecipientsEnv.NORMAL_QUEUE.sendBatch = vi.fn().mockResolvedValue(undefined)
+
+    // Both recipient counts span exactly two 100-message queue batches, so the
+    // D1 statement count must be identical even though the recipient count
+    // nearly doubles: chunk rows are written once per batch, not once per recipient.
+    const fewerRecipients = Array.from({ length: 101 }, (_, i) => `user${i}@example.com`)
+    const moreRecipients = Array.from({ length: 200 }, (_, i) => `user${i}@example.com`)
+
+    const fewerRes = await enqueue(fewerRecipientsEnv, { ...validPayload, to: fewerRecipients })
+    const moreRes = await enqueue(moreRecipientsEnv, { ...validPayload, jobId: 'job-2', to: moreRecipients })
+
+    expect(fewerRes.status).toBe(200)
+    expect(moreRes.status).toBe(200)
+    expect(fewerRecipientsEnv.testDb.statementCount).toBe(moreRecipientsEnv.testDb.statementCount)
+    expect(fewerRecipientsEnv.testDb.statementCount).toBeLessThan(10)
+  })
+
+  it('keeps serialized queue batches below the provider byte limit', async () => {
+    const env = createTestEnv()
+    const sendBatch = vi.fn<(messages: readonly EmailJob[]) => Promise<void>>().mockResolvedValue(undefined)
+    env.NORMAL_QUEUE.sendBatch = sendBatch
+    const recipients = ['first@example.com', 'second@example.com', 'third@example.com']
+
+    const res = await enqueue(env, { ...validPayload, to: recipients, body: 'x'.repeat(80_000) })
+
+    expect(res.status).toBe(200)
+    expect(sendBatch).toHaveBeenCalledTimes(2)
+    expect(sendBatch.mock.calls[0][0]).toHaveLength(2)
+    expect(sendBatch.mock.calls[1][0]).toHaveLength(1)
+  })
+
+  it('accepts an individual queue message at exactly 128 KB and rejects one byte more', async () => {
+    const calibrationEnv = createTestEnv()
+    expect((await enqueue(calibrationEnv, validPayload)).status).toBe(200)
+    const calibrationMessage = calibrationEnv.NORMAL_QUEUE.send.mock.calls[0][0]
+    const bodyLength = 128_000 - encodedQueueMessageSize(calibrationMessage) + validPayload.body.length
+
+    const boundaryEnv = createTestEnv()
+    const boundaryResponse = await enqueue(boundaryEnv, { ...validPayload, body: 'x'.repeat(bodyLength) })
+    expect(boundaryResponse.status).toBe(200)
+    expect(encodedQueueMessageSize(boundaryEnv.NORMAL_QUEUE.send.mock.calls[0][0])).toBe(128_000)
+
+    const oversizedEnv = createTestEnv()
+    const oversizedResponse = await enqueue(oversizedEnv, {
+      ...validPayload,
+      body: 'x'.repeat(bodyLength + 1)
+    })
+    expect(oversizedResponse.status).toBe(413)
+    expect(oversizedEnv.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+    expect(await oversizedEnv.testDb.jobStatus(validPayload.jobId)).toBeUndefined()
+  })
+
+  it('counts body content duplicated in template variables toward the individual message limit', async () => {
+    const env = createTestEnv()
+    const duplicatedBody = 'x'.repeat(70_000)
+
+    const res = await enqueue(env, {
+      ...validPayload,
+      body: duplicatedBody,
+      variables: { ...validPayload.variables, body: duplicatedBody }
+    })
+
+    expect(res.status).toBe(413)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+    expect(await env.testDb.jobStatus(validPayload.jobId)).toBeUndefined()
   })
 
   it('rejects a recipient list above the producer limit', async () => {
@@ -241,13 +343,15 @@ describe('/enqueue retries', () => {
 
   it('sends every chunk when the previous attempt only inserted the job row', async () => {
     const env = createTestEnv()
-    // Previous attempt inserted the job row, then died before sending anything.
-    await env.testDb.seedJob({ jobId: 'job-1', status: 'pending', chunkCount: 3, recipientsCount: 120 })
+    env.NORMAL_QUEUE.send.mockRejectedValueOnce(new Error('queue unavailable'))
+    expect((await enqueue(env, bulkPayload)).status).toBe(500)
+    expect(await env.testDb.chunkMessageIds()).toEqual([])
+    env.NORMAL_QUEUE.send.mockReset()
 
     const res = await enqueue(env, bulkPayload)
 
     expect(res.status).toBe(200)
-    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(3)
+    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(120)
     expect(await env.testDb.jobStatus('job-1')).toBe('queued')
   })
 
@@ -261,24 +365,46 @@ describe('/enqueue retries', () => {
     const failed = await enqueue(env, bulkPayload)
     expect(failed.status).toBe(500)
     expect(await env.testDb.jobStatus('job-1')).toBe('enqueue_failed')
-    expect(await env.testDb.chunkMessageIds()).toEqual([
-      expect.stringMatching(/^job-1:0:[0-9a-f]{64}$/),
-      expect.stringMatching(/^job-1:1:[0-9a-f]{64}$/)
-    ])
+    // The fallback queue adapter failed before its batch was confirmed, so none
+    // of the attempted messages may be recorded as accepted.
+    expect(await env.testDb.chunkMessageIds()).toEqual([])
 
     env.NORMAL_QUEUE.send.mockReset()
     const retried = await enqueue(env, bulkPayload)
 
     expect(retried.status).toBe(200)
-    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(1)
+    expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(120)
     expect(env.NORMAL_QUEUE.send).toHaveBeenCalledWith(
       expect.objectContaining({
         messageId: expect.stringMatching(/^job-1:2:[0-9a-f]{64}$/),
         chunkIndex: 2,
-        to: recipients.slice(100)
+        to: [recipients[2]]
       })
     )
     expect(await env.testDb.jobStatus('job-1')).toBe('queued')
+  })
+
+  it('retries only the unaccepted queue batch', async () => {
+    const env = createTestEnv()
+    const sendBatch = vi
+      .fn<(messages: readonly EmailJob[]) => Promise<void>>()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('queue unavailable'))
+    env.NORMAL_QUEUE.sendBatch = sendBatch
+
+    const failed = await enqueue(env, bulkPayload)
+
+    expect(failed.status).toBe(500)
+    expect(await env.testDb.chunkMessageIds()).toHaveLength(100)
+
+    sendBatch.mockReset()
+    sendBatch.mockResolvedValue(undefined)
+    const retried = await enqueue(env, bulkPayload)
+
+    expect(retried.status).toBe(200)
+    expect(sendBatch).toHaveBeenCalledTimes(1)
+    expect(sendBatch.mock.calls[0][0]).toHaveLength(20)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
   })
 
   it('is a no-op for a job whose chunks are all queued', async () => {
@@ -290,7 +416,7 @@ describe('/enqueue retries', () => {
 
     expect(res.status).toBe(200)
     const body = (await res.json()) as { success: boolean; status: string; messageCount: number }
-    expect(body).toMatchObject({ success: true, status: 'queued', messageCount: 3 })
+    expect(body).toMatchObject({ success: true, status: 'queued', messageCount: 120 })
     expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
   })
 
@@ -306,5 +432,68 @@ describe('/enqueue retries', () => {
     expect(res.status).toBe(409)
     expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
     expect(await env.testDb.jobStatus('job-1')).toBe('queued')
+  })
+
+  it.each([
+    ['template', { template: 'staff-auth-notice' }],
+    ['priority', { priority: 'high' }],
+    ['sender', { from: 'replacement@example.com' }],
+    ['subject', { subject: 'Changed subject' }],
+    ['body', { body: 'Changed body' }],
+    ['variables', { variables: { ...bulkPayload.variables, adminName: 'Replacement' } }]
+  ])('rejects changed %s for an existing job', async (_field, change) => {
+    const env = createTestEnv()
+    expect((await enqueue(env, bulkPayload)).status).toBe(200)
+    env.NORMAL_QUEUE.send.mockClear()
+    env.HIGH_QUEUE.send.mockClear()
+
+    const res = await enqueue(env, { ...bulkPayload, ...change })
+
+    expect(res.status).toBe(409)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+    expect(env.HIGH_QUEUE.send).not.toHaveBeenCalled()
+  })
+
+  it('treats reordered variable keys as the same canonical payload', async () => {
+    const env = createTestEnv()
+    expect((await enqueue(env, bulkPayload)).status).toBe(200)
+    env.NORMAL_QUEUE.send.mockClear()
+
+    const res = await enqueue(env, {
+      ...bulkPayload,
+      variables: { adminName: bulkPayload.variables.adminName, appName: bulkPayload.variables.appName }
+    })
+
+    expect(res.status).toBe(200)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+  })
+
+  it('rejects a changed payload before resuming a partial retry', async () => {
+    const env = createTestEnv()
+    env.NORMAL_QUEUE.send
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('queue unavailable'))
+    expect((await enqueue(env, bulkPayload)).status).toBe(500)
+
+    env.NORMAL_QUEUE.send.mockClear()
+    const res = await enqueue(env, { ...bulkPayload, body: 'Changed body' })
+
+    expect(res.status).toBe(409)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unbound legacy job identity', async () => {
+    const env = createTestEnv()
+    await env.testDb.seedJob({
+      jobId: 'job-1',
+      status: 'enqueue_failed',
+      chunkCount: 120,
+      recipientsCount: 120
+    })
+    const res = await enqueue(env, bulkPayload)
+
+    expect(res.status).toBe(409)
+    expect(env.NORMAL_QUEUE.send).not.toHaveBeenCalled()
   })
 })

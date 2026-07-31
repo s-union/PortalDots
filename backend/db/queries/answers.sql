@@ -12,6 +12,12 @@ FROM answers
 WHERE id = $1
 LIMIT 1;
 
+-- name: GetAnswerByIDForUpdate :one
+SELECT id, form_id, circle_id, body, updated_at, created_at
+FROM answers
+WHERE id = $1
+FOR UPDATE;
+
 -- name: ListAnswersByCircle :many
 SELECT id, form_id, circle_id, body, updated_at, created_at
 FROM answers

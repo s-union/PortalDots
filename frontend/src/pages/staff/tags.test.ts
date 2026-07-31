@@ -191,4 +191,37 @@ describe('StaffTagsPage', () => {
     expect(tagsWasCalled).toBe(true)
     expect(wrapper.text()).toContain('飲食')
   })
+
+  it('hides the CSV export link for a read-only staff user', async () => {
+    server.use(http.get('/v1/staff/tags', () => HttpResponse.json([])))
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: [],
+      permissions: ['staff.tags.read'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff', component: { template: '<div>staff</div>' } },
+        { path: '/staff/tags', component: StaffTagsPage }
+      ]
+    })
+    await router.push('/staff/tags')
+    await router.isReady()
+
+    const wrapper = mount(StaffTagsPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    expect(wrapper.find('a[href$="/v1/staff/tags/export"]').exists()).toBe(false)
+  })
 })

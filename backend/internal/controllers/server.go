@@ -257,6 +257,7 @@ func NewServerWithDependencies(
 	}
 
 	e := echo.New()
+	e.IPExtractor = echo.ExtractIPFromXFFHeader()
 	e.Pre(contactRequestBodyLimit())
 	allowedOrigin := cfg.AppURL
 	if origin, err := cfg.AppOrigin(); err == nil {

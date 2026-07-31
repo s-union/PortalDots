@@ -18,6 +18,8 @@ import {
   canExportFormAnswers,
   canExportForms,
   canExportPages,
+  canExportPlaces,
+  canExportTags,
   canManageParticipationTypes,
   canManagePortalSettings,
   canReadCircles,
@@ -136,10 +138,34 @@ describe('staff capabilities', () => {
     expect(canEditFormAnswers([], ['staff.forms.answers.read,edit'])).toBe(true)
     expect(canExportFormAnswers([], ['staff.forms.answers.read,export'])).toBe(true)
 
-    expect(canUseStaffExports([], ['staff.pages.read,export'])).toBe(true)
-    expect(canUseStaffExports([], ['staff.documents.read,export'])).toBe(true)
-    expect(canUseStaffExports([], ['staff.forms.answers.read,export'])).toBe(true)
     expect(canUseMailQueue([], ['staff.pages.read,edit,send_emails'])).toBe(false)
+  })
+
+  it('requires every export capability for the aggregate staff exports', () => {
+    const allExportPermissions = [
+      'staff.pages.read,export',
+      'staff.documents.read,export',
+      'staff.forms.read,export',
+      'staff.forms.answers.read,export'
+    ]
+
+    expect(canUseStaffExports(['admin'])).toBe(true)
+    expect(canUseStaffExports(['content_manager'])).toBe(false)
+    expect(canUseStaffExports(['forms_manager'])).toBe(false)
+    expect(canUseStaffExports([], allExportPermissions.slice(0, 1))).toBe(false)
+    expect(canUseStaffExports([], allExportPermissions)).toBe(true)
+  })
+
+  it('gates tags and places export CSV links on the export capability', () => {
+    expect(canExportTags([], ['staff.tags.read'])).toBe(false)
+    expect(canExportTags([], ['staff.tags.read,export'])).toBe(true)
+    expect(canExportTags(['admin'])).toBe(true)
+    expect(canExportTags(['content_manager'])).toBe(true)
+
+    expect(canExportPlaces([], ['staff.places.read'])).toBe(false)
+    expect(canExportPlaces([], ['staff.places.read,export'])).toBe(true)
+    expect(canExportPlaces(['admin'])).toBe(true)
+    expect(canExportPlaces(['content_manager'])).toBe(true)
   })
 
   it('resolves capability checks through the central dispatcher', () => {
