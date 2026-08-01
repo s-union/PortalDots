@@ -138,7 +138,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
       <slot name="toolbar" />
     </div>
 
-    <div class="grid-controls flex flex-wrap items-center gap-1 border-y border-border bg-base p-2 text-[0.9rem]">
+    <div class="grid-controls flex flex-wrap items-center gap-1 border-y border-border bg-page p-2 text-[0.9rem]">
       <div class="grid-controls__group inline-flex items-center gap-0.5">
         <button
           class="grid-controls__button inline-flex h-8 w-8 items-center justify-center rounded-[0.45rem] text-body transition hover:bg-primary-light hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"

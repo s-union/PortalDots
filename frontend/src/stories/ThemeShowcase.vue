@@ -10,7 +10,7 @@ const { primaryLabel, showDanger, showSuccess } = defineProps<{
 </script>
 
 <template>
-  <div class="bg-base p-8 text-body">
+  <div class="bg-page p-8 text-body">
     <!-- Buttons -->
     <section class="mb-8">
       <h2 class="mb-4 text-xl font-semibold">ボタン (.btn)</h2>
