@@ -145,7 +145,7 @@ export const surfaceVariants = cva('rounded border border-border bg-surface', {
 export type SurfaceVariantProps = VariantProps<typeof surfaceVariants>
 
 export const navMenuLinkVariants = cva(
-  'relative flex items-center px-6 py-[1.2rem] text-[15px] no-underline transition-colors duration-[0.15s] hover:bg-surface-light hover:no-underline',
+  'relative flex items-center px-6 py-[1.2rem] text-base no-underline transition-colors duration-[0.15s] hover:bg-surface-light hover:no-underline',
   {
     variants: {
       active: {

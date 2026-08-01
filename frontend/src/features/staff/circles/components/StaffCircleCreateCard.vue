@@ -83,7 +83,7 @@ function handleSubmit() {
           <FormField label="使用場所" label-class="font-medium">
             <select
               v-model="form.placeIds"
-              class="min-h-24 rounded border bg-form-control px-4 py-3 text-base text-body outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/30"
+              class="min-h-24 rounded border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/30"
               name="placeIds"
               multiple
             >

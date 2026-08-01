@@ -209,7 +209,7 @@ const previewProps = computed<Record<string, unknown>>(() => {
 })
 
 const inputClass =
-  'w-full rounded border border-border bg-form-control px-3 py-2 text-base text-body outline-none transition focus:border-primary focus:focus-ring-primary'
+  'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary'
 </script>
 
 <template>

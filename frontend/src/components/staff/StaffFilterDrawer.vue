@@ -154,7 +154,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
 
           <div class="grid gap-2 min-[860px]:grid-cols-[10rem_1fr]">
             <select
-              class="rounded border border-border bg-surface px-3 py-2 text-base text-body"
+              class="rounded border border-border bg-surface px-3 py-2 text-body"
               :value="query.operator"
               :disabled="loading"
               :aria-label="resolveLabel(query.keyName) + 'の条件'"
@@ -167,7 +167,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
 
             <template v-if="resolveType(query.keyName) === 'bool'">
               <select
-                class="rounded border border-border bg-surface px-3 py-2 text-base text-body"
+                class="rounded border border-border bg-surface px-3 py-2 text-body"
                 :value="normalizedBoolValue(query.value)"
                 :disabled="loading"
                 :aria-label="resolveLabel(query.keyName) + 'の値'"
@@ -179,7 +179,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
             </template>
             <template v-else>
               <input
-                class="rounded border border-border bg-surface px-3 py-2 text-base text-body"
+                class="rounded border border-border bg-surface px-3 py-2 text-body"
                 type="text"
                 :value="query.value"
                 :disabled="loading"
@@ -195,7 +195,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
     <section class="space-y-3">
       <FormField label="条件を追加" label-class="font-medium">
         <select
-          class="rounded border border-border bg-surface px-3 py-2 text-base text-body"
+          class="rounded border border-border bg-surface px-3 py-2 text-body"
           :disabled="loading"
           @change="onAddField"
         >

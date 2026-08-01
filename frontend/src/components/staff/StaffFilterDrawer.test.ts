@@ -24,6 +24,10 @@ describe('StaffFilterDrawer', () => {
     const operatorSelect = selects[0]
     const addSelect = selects[1]
 
+    expect(operatorSelect.classes()).not.toContain('text-base')
+    expect(wrapper.get('input[type="text"]').classes()).not.toContain('text-base')
+    expect(addSelect.classes()).not.toContain('text-base')
+
     await operatorSelect.setValue('not like')
     await wrapper.get('input[type="text"]').setValue('demo')
     await wrapper.get('button[title="条件を削除"]').trigger('click')

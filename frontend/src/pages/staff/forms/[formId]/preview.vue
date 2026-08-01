@@ -189,7 +189,7 @@ function handlePreviewSubmit() {
 
                 <input
                   v-if="question.type === 'text'"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-body"
                   type="text"
                   :value="questionValue(question.id)"
                   placeholder="一行入力"
@@ -197,7 +197,7 @@ function handlePreviewSubmit() {
                 />
                 <textarea
                   v-else-if="question.type === 'textarea'"
-                  class="min-h-32 rounded border border-border bg-form-control px-4 py-3 text-base text-body"
+                  class="min-h-32 rounded border border-border bg-form-control px-4 py-3 text-body"
                   :value="questionValue(question.id)"
                   placeholder="複数行入力"
                   @input="updateQuestionValue(question.id, textareaValue($event))"
@@ -211,7 +211,7 @@ function handlePreviewSubmit() {
                 />
                 <select
                   v-else-if="question.type === 'number' && questionNumberOptions(question) !== null"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-body"
                   :value="questionValue(question.id)"
                   @change="updateQuestionValue(question.id, selectValue($event))"
                 >
@@ -222,7 +222,7 @@ function handlePreviewSubmit() {
                 </select>
                 <input
                   v-else-if="question.type === 'number'"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-body"
                   :value="questionValue(question.id)"
                   type="number"
                   :min="question.numberMin ?? undefined"
@@ -231,7 +231,7 @@ function handlePreviewSubmit() {
                 />
                 <select
                   v-else-if="question.type === 'select'"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-body"
                   :value="questionValue(question.id)"
                   @change="updateQuestionValue(question.id, selectValue($event))"
                 >
@@ -274,7 +274,7 @@ function handlePreviewSubmit() {
                 >
                   <div class="grid gap-3">
                     <input
-                      class="block w-full text-base text-body file:mr-4 file:rounded file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white"
+                      class="block w-full text-body file:mr-4 file:rounded file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white"
                       type="file"
                       @change="handleUploadChange(question, $event)"
                     />
