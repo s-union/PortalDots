@@ -49,7 +49,7 @@ const renderedHtml = computed(() => {
 </script>
 
 <template>
-  <div class="page-markdown text-[15px] text-body" v-html="renderedHtml" />
+  <div class="page-markdown text-base text-body" v-html="renderedHtml" />
 </template>
 
 <style scoped>
@@ -84,34 +84,35 @@ const renderedHtml = computed(() => {
   color: var(--color-body);
 }
 
+/* Keep a clear descending scale while leaving h5/h6 no smaller than the body text. */
 .page-markdown:deep(h1) {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+  font-size: 1.75rem;
+  line-height: 1.3;
   margin-bottom: 1rem;
 }
 
 .page-markdown:deep(h2) {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+  font-size: 1.5rem;
+  line-height: 1.35;
   margin-bottom: 0.75rem;
 }
 
 .page-markdown:deep(h3) {
-  font-size: 1rem;
-  line-height: 1.5rem;
+  font-size: 1.25rem;
+  line-height: 1.4;
   margin-bottom: 0.75rem;
 }
 
 .page-markdown:deep(h4) {
-  font-size: 0.9375rem;
-  line-height: 1.5rem;
+  font-size: 1.125rem;
+  line-height: 1.5;
   margin-bottom: 0.5rem;
 }
 
 .page-markdown:deep(h5),
 .page-markdown:deep(h6) {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.6;
   margin-bottom: 0.5rem;
 }
 
