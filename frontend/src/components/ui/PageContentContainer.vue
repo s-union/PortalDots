@@ -9,7 +9,7 @@ const { class: className, size = 'default' } = defineProps<{
 const sizeClass = {
   default: 'max-w-[1024px]',
   narrow: 'max-w-[880px]',
-  full: ''
+  full: 'px-0 max-[1000px]:px-0'
 } as const
 </script>
 

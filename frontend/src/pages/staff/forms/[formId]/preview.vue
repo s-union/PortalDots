@@ -118,7 +118,7 @@ function handlePreviewSubmit() {
 </script>
 
 <template>
-  <PageLayout fullWidth class="space-y-0 pb-6 max-[1000px]:px-0">
+  <PageLayout fullWidth class="space-y-0 pb-6">
     <div v-if="previewQuery.isPending.value" class="mt-6 px-6 max-[1000px]:px-4">
       <LoadingState />
     </div>
