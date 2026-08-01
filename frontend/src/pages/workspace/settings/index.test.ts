@@ -118,8 +118,9 @@ describe('UserSettingsPage', () => {
 
     const nameLabel = wrapper.findAll('p').find((paragraph) => paragraph.text() === '名前')
     expect(nameLabel?.classes()).toContain('mb-0')
-    expect(nameLabel?.classes()).toContain('md:min-h-[2.85rem]')
-    expect(nameLabel?.classes()).toContain('md:items-center')
+    expect(nameLabel?.classes()).not.toContain('md:min-h-[2.85rem]')
+    expect(wrapper.get('[data-testid="settings-name-row"]').classes()).toContain('md:items-center')
+    expect(wrapper.get('input[name="name"]').classes()).toContain('md:col-start-2')
 
     await wrapper.get('input[name="name"]').setValue('Updated User')
     await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと ゆーざー')
