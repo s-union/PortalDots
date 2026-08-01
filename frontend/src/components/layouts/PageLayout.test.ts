@@ -16,5 +16,7 @@ describe('PageLayout', () => {
     expect(wrapper.text()).toContain('ページ本文')
     expect(wrapper.classes()).toContain('custom-layout')
     expect(wrapper.classes()).toContain('space-y-6')
+    expect(wrapper.classes()).toContain('px-6')
+    expect(wrapper.classes()).toContain('max-[1000px]:px-4')
   })
 })

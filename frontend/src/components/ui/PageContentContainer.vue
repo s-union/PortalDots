@@ -14,7 +14,7 @@ const sizeClass = {
 </script>
 
 <template>
-  <section :class="cn('mx-auto w-full space-y-6 max-[1000px]:px-4', sizeClass[size], className)">
+  <section :class="cn('mx-auto w-full space-y-6 px-6 max-[1000px]:px-4', sizeClass[size], className)">
     <slot />
   </section>
 </template>
