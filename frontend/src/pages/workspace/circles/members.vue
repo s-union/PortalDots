@@ -181,7 +181,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
                 type="text"
                 readonly
                 aria-label="招待URL"
-                class="flex-1 font-mono text-base"
+                class="flex-1 font-mono text-xs"
               />
               <button
                 :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"

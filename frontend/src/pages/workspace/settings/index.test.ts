@@ -175,9 +175,7 @@ describe('UserSettingsPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('認証情報')
-    const currentPasswordGroup = wrapper.get('input[name="currentPassword"]').element.closest('label')
-      ?.parentElement?.parentElement
-    expect(currentPasswordGroup?.querySelector('a[href="/password/reset"]')).not.toBeNull()
+    expect(wrapper.get('a[href="/password/reset"]').text()).toContain('パスワードをお忘れの場合はこちら')
 
     await wrapper.get('input[name="currentPassword"]').setValue('password')
     await wrapper.get('input[name="newPassword"]').setValue('newpass123')

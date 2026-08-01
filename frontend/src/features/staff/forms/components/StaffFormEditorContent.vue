@@ -107,7 +107,7 @@ const {
                   >
                     {{ formQuery.data.value.description }}
                   </p>
-                  <p class="mt-3 text-base text-muted-2">※ タイトルと説明を変更するには「設定」タブへ</p>
+                  <p class="mt-3 text-xs text-muted-2">※ タイトルと説明を変更するには「設定」タブへ</p>
                 </div>
 
                 <EmptyState

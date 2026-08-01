@@ -129,7 +129,7 @@ const dangerButtonClass = buttonVariants({ variant: 'dangerOutline', size: 'lg',
               />
               <span class="grid gap-1">
                 <span class="font-medium">{{ getRoleDisplayName(role) }}</span>
-                <span class="text-base leading-6 text-muted">{{ roleDescriptions[role] }}</span>
+                <span class="text-xs leading-6 text-muted">{{ roleDescriptions[role] }}</span>
               </span>
             </label>
           </div>

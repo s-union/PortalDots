@@ -75,7 +75,7 @@ const {
               @blur="markTouched('name')"
               @input="markTouched('name')"
             />
-            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('name')" :message="getFieldError('name')" />
           </div>
         </div>
@@ -97,7 +97,7 @@ const {
               @blur="markTouched('nameYomi')"
               @input="markTouched('nameYomi')"
             />
-            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('nameYomi')" :message="getFieldError('nameYomi')" />
           </div>
         </div>
@@ -118,7 +118,7 @@ const {
               @blur="markTouched('contactEmail')"
               @input="markTouched('contactEmail')"
             />
-            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('contactEmail')" :message="getFieldError('contactEmail')" />
           </div>
         </div>
@@ -139,7 +139,7 @@ const {
               @blur="markTouched('phoneNumber')"
               @input="markTouched('phoneNumber')"
             />
-            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('phoneNumber')" :message="getFieldError('phoneNumber')" />
           </div>
         </div>

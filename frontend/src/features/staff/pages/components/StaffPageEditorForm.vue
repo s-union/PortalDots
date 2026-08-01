@@ -99,7 +99,7 @@ function handleDocumentChange(documentId: string, event: Event) {
         name="body"
       />
       <FormError v-if="fieldErrors?.body" id="staff-page-body-error" :message="fieldErrors.body" />
-      <p id="staff-page-body-helper" class="text-base text-muted">
+      <p id="staff-page-body-helper" class="text-xs text-muted">
         Markdown で入力できます。表、取り消し線、タスクリスト、脚注は GFM として表示されます。
       </p>
     </div>
@@ -144,7 +144,7 @@ function handleDocumentChange(documentId: string, event: Event) {
           />
           <span>
             <strong class="text-body">{{ document.name }}</strong>
-            <span class="block text-base text-muted">{{ document.description || '説明なし' }}</span>
+            <span class="block text-xs text-muted">{{ document.description || '説明なし' }}</span>
           </span>
         </label>
       </div>
@@ -175,7 +175,7 @@ function handleDocumentChange(documentId: string, event: Event) {
 
     <div class="grid gap-1">
       <CheckboxField v-model="form.sendEmails" label="公開時にメールで配信する" name="sendEmails" />
-      <p class="text-base text-muted">
+      <p class="text-xs text-muted">
         公開日時になったタイミングでメールを配信します。公開日時が空欄または過去の日時の場合は、保存後1分以内に配信します。
         予約中のメール配信は、チェックを外して保存するとキャンセルされます。
       </p>

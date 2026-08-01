@@ -129,7 +129,7 @@ onMounted(() => {
           <ErrorState v-if="submitErrorMessage" :message="submitErrorMessage" />
           <div class="grid gap-2">
             <label class="font-semibold text-body" for="reset-password">新しいパスワード</label>
-            <p class="text-base text-muted">8文字以上で入力してください</p>
+            <p class="text-xs text-muted">8文字以上で入力してください</p>
             <input
               id="reset-password"
               v-model="form.password"
@@ -142,7 +142,7 @@ onMounted(() => {
           </div>
           <div class="grid gap-2">
             <label class="font-semibold text-body" for="reset-password-confirmation">新しいパスワード（確認）</label>
-            <p class="text-base text-muted">確認のため、パスワードをもう一度入力してください</p>
+            <p class="text-xs text-muted">確認のため、パスワードをもう一度入力してください</p>
             <input
               id="reset-password-confirmation"
               v-model="form.passwordConfirmation"

@@ -89,7 +89,7 @@ async function handleSubmit() {
               <span class="text-base text-muted">@{{ univemailDomainPart }}</span>
             </div>
           </label>
-          <p class="text-base text-muted">
+          <p class="text-xs text-muted">
             {{ studentIdLabel }} は入力したメールアドレスの @ より前の部分として扱われます。
           </p>
           <FormError v-if="getFieldError('univemailLocalPart')" :message="getFieldError('univemailLocalPart')" />
