@@ -184,7 +184,7 @@ function questionNumberOptions(currentQuestion: FormQuestion): number[] | null {
   </select>
 
   <div v-else-if="question.type === 'radio'" class="grid gap-2">
-    <label v-for="option in question.options" :key="option" class="flex items-center gap-3 text-sm text-body">
+    <label v-for="option in question.options" :key="option" class="flex items-center gap-3 text-base text-body">
       <input
         :checked="String(draftValue()) === option"
         :disabled="disabled"
@@ -198,7 +198,7 @@ function questionNumberOptions(currentQuestion: FormQuestion): number[] | null {
   </div>
 
   <div v-else-if="question.type === 'checkbox'" class="grid gap-2">
-    <label v-for="option in question.options" :key="option" class="flex items-center gap-3 text-sm text-body">
+    <label v-for="option in question.options" :key="option" class="flex items-center gap-3 text-base text-body">
       <input
         :checked="isChecked(option)"
         :disabled="disabled"
@@ -210,14 +210,14 @@ function questionNumberOptions(currentQuestion: FormQuestion): number[] | null {
   </div>
 
   <div v-else-if="question.type === 'upload'" class="grid gap-4">
-    <div v-if="questionUploads(answer, question.id).length === 0" class="text-sm text-muted">
+    <div v-if="questionUploads(answer, question.id).length === 0" class="text-base text-muted">
       まだファイルはアップロードされていません。
     </div>
     <ul v-else class="grid gap-3">
       <li
         v-for="upload in questionUploads(answer, question.id)"
         :key="upload.id"
-        class="flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+        class="flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-form-control px-4 py-3 text-base text-body"
       >
         <div>
           <p>{{ upload.filename }}</p>

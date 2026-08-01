@@ -63,7 +63,7 @@ onMounted(() => {
       <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">メール認証</h1>
       </SurfaceCardBand>
-      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+      <div class="space-y-4 px-6 py-6 text-base leading-7 text-body">
         <p v-if="verifyMutation.isPending.value" class="text-muted">認証URLを確認しています...</p>
         <ErrorState v-if="verificationErrorMessage" :message="verificationErrorMessage" />
         <template v-else-if="verificationCompleted !== null">
@@ -76,7 +76,7 @@ onMounted(() => {
           </p>
           <div class="pt-2 text-center">
             <RouterLink
-              class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline"
+              class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-base text-white transition hover:bg-primary-hover hover:no-underline"
               to="/email/verify"
             >
               認証状況を確認する

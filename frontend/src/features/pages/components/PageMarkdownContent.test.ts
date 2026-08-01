@@ -12,6 +12,7 @@ describe('PageMarkdownContent', () => {
 
     expect(wrapper.text()).toContain('見出し')
     expect(wrapper.text()).toContain('項目')
+    expect(wrapper.classes()).toContain('text-[15px]')
   })
 
   it('sanitizes unsafe link protocols', () => {

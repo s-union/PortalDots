@@ -33,7 +33,7 @@ const visibleSteps = computed(() =>
       >
         {{ step.order }}
       </span>
-      <span class="text-xs" :class="step.step === currentStep ? 'font-bold text-body' : 'text-muted'">
+      <span class="text-base" :class="step.step === currentStep ? 'font-bold text-body' : 'text-muted'">
         {{ step.label }}
       </span>
     </li>

@@ -25,7 +25,7 @@ const { chooseTheme, hasUnsavedChanges, saveTheme, selectedTheme, tabs, themeOpt
             />
             <span class="font-semibold text-body">{{ option.label }}</span
             ><br />
-            <span class="text-sm text-muted">{{ option.description }}</span>
+            <span class="text-base text-muted">{{ option.description }}</span>
           </label>
         </div>
       </SettingsRow>

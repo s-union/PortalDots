@@ -24,7 +24,7 @@ const titleClass = computed(() =>
 )
 const metaClass = computed(() => (legacy ? 'text-base text-muted' : 'mt-2 text-sm text-muted'))
 const bodyClass = computed(() =>
-  legacy ? 'mt-1 text-base leading-[1.7] text-muted' : 'mt-3 text-sm leading-7 text-body'
+  legacy ? 'mt-1 text-base leading-[1.7] text-muted' : 'mt-3 text-base leading-7 text-body'
 )
 </script>
 

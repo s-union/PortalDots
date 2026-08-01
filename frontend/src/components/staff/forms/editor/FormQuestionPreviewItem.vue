@@ -209,7 +209,7 @@ const previewProps = computed<Record<string, unknown>>(() => {
 })
 
 const inputClass =
-  'w-full rounded border border-border bg-form-control px-3 py-2 text-sm text-body outline-none transition focus:border-primary focus:focus-ring-primary'
+  'w-full rounded border border-border bg-form-control px-3 py-2 text-base text-body outline-none transition focus:border-primary focus:focus-ring-primary'
 </script>
 
 <template>
@@ -264,19 +264,19 @@ const inputClass =
       class="border-t border-border px-6 py-4"
       style="background: var(--color-surface-light); box-shadow: inset 0 0.2rem 0.8rem -0.6rem var(--color-box-shadow)"
     >
-      <p class="mb-4 border-b border-border pb-2 text-sm font-bold text-body">{{ typeMeta.label }}</p>
+      <p class="mb-4 border-b border-border pb-2 text-base font-bold text-body">{{ typeMeta.label }}</p>
 
       <div class="space-y-3">
         <div v-if="showRequired" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-1 text-sm text-body sm:text-right">回答必須か</span>
-          <label class="flex items-center gap-2 text-sm text-body">
+          <span class="pt-1 text-base text-body sm:text-right">回答必須か</span>
+          <label class="flex items-center gap-2 text-base text-body">
             <input type="checkbox" :checked="edit.isRequired" @change="handleRequiredChange" />
             <span>この設問への回答は必須</span>
           </label>
         </div>
 
         <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-sm text-body sm:text-right">{{ nameLabel }}</span>
+          <span class="pt-2 text-base text-body sm:text-right">{{ nameLabel }}</span>
           <input
             :class="inputClass"
             :value="edit.name"
@@ -287,7 +287,7 @@ const inputClass =
         </div>
 
         <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-sm text-body sm:text-right">説明</span>
+          <span class="pt-2 text-base text-body sm:text-right">説明</span>
           <textarea
             :class="inputClass + ' min-h-24'"
             :value="edit.description"
@@ -297,7 +297,7 @@ const inputClass =
         </div>
 
         <div v-if="showOptions" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-sm text-body sm:text-right">選択肢</span>
+          <span class="pt-2 text-base text-body sm:text-right">選択肢</span>
           <div>
             <textarea
               :class="inputClass + ' min-h-24'"
@@ -311,7 +311,7 @@ const inputClass =
         </div>
 
         <div v-if="showNumberMin && numberMinLabel" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-sm text-body sm:text-right">{{ numberMinLabel }}</span>
+          <span class="pt-2 text-base text-body sm:text-right">{{ numberMinLabel }}</span>
           <input
             :class="inputClass"
             :value="edit.numberMin ?? ''"
@@ -323,7 +323,7 @@ const inputClass =
         </div>
 
         <div v-if="showNumberMax && numberMaxLabel" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-sm text-body sm:text-right">{{ numberMaxLabel }}</span>
+          <span class="pt-2 text-base text-body sm:text-right">{{ numberMaxLabel }}</span>
           <input
             :class="inputClass"
             :value="edit.numberMax ?? ''"
@@ -335,7 +335,7 @@ const inputClass =
         </div>
 
         <div v-if="showAllowedTypes" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-sm text-body sm:text-right">
+          <span class="pt-2 text-base text-body sm:text-right">
             許可される拡張子<br /><code class="text-xs">|</code>区切りで指定
           </span>
           <div>
@@ -357,7 +357,7 @@ const inputClass =
             <div class="flex flex-wrap gap-2">
               <slot name="move-actions" />
             </div>
-            <button class="text-sm text-danger hover:underline" type="button" @click="handleDeleteClick">
+            <button class="text-base text-danger hover:underline" type="button" @click="handleDeleteClick">
               この項目を削除
             </button>
           </div>

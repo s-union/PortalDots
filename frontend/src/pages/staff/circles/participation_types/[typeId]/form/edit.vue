@@ -132,7 +132,7 @@ async function handleSave() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">公開設定</p>
+              <p class="text-base font-semibold text-body">公開設定</p>
               <p class="text-xs text-muted-2">この設定がオンで、かつ受付期間内のときに参加登録画面を表示します。</p>
             </div>
             <div class="grid gap-4">
@@ -147,7 +147,7 @@ async function handleSave() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">受付期間</p>
+              <p class="text-base font-semibold text-body">受付期間</p>
               <p class="text-xs text-muted-2">参加登録画面の表示期間を日時で管理します。</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
@@ -164,7 +164,7 @@ async function handleSave() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">参加登録前に表示する内容</p>
+              <p class="text-base font-semibold text-body">参加登録前に表示する内容</p>
               <p class="text-xs text-muted-2">
                 規約や注意事項などを Markdown で入力できます。参加登録ページ冒頭に表示します。
               </p>
@@ -185,7 +185,7 @@ async function handleSave() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">提出後メッセージ</p>
+              <p class="text-base font-semibold text-body">提出後メッセージ</p>
               <p class="text-xs text-muted-2">提出完了後の画面と、自動送信メールに表示するメッセージです。</p>
             </div>
             <div class="grid gap-2">

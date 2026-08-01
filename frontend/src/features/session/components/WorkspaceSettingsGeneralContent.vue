@@ -34,7 +34,7 @@ const {
     <SettingsSection title="一般設定" :title-outside="true">
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">
+          <p class="text-base font-semibold text-body">
             {{ publicConfigQuery.data.value?.portalStudentIdName ?? '学生番号' }}
           </p>
           <div class="grid gap-2">
@@ -44,7 +44,7 @@ const {
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">
+          <p class="text-base font-semibold text-body">
             {{ publicConfigQuery.data.value?.portalUnivemailName ?? '学生用メールアドレス' }}
           </p>
           <div class="grid gap-2">
@@ -60,7 +60,7 @@ const {
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">名前</p>
+          <p class="text-base font-semibold text-body">名前</p>
           <div class="grid gap-2">
             <input
               v-model="form.name"
@@ -73,14 +73,14 @@ const {
               @blur="markTouched('name')"
               @input="markTouched('name')"
             />
-            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('name')" :message="getFieldError('name')" />
           </div>
         </div>
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">名前(よみ)</p>
+          <p class="text-base font-semibold text-body">名前(よみ)</p>
           <div class="grid gap-2">
             <input
               v-model="form.nameYomi"
@@ -93,14 +93,14 @@ const {
               @blur="markTouched('nameYomi')"
               @input="markTouched('nameYomi')"
             />
-            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('nameYomi')" :message="getFieldError('nameYomi')" />
           </div>
         </div>
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">連絡先メールアドレス</p>
+          <p class="text-base font-semibold text-body">連絡先メールアドレス</p>
           <div class="grid gap-2">
             <input
               v-model="form.contactEmail"
@@ -112,14 +112,14 @@ const {
               @blur="markTouched('contactEmail')"
               @input="markTouched('contactEmail')"
             />
-            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('contactEmail')" :message="getFieldError('contactEmail')" />
           </div>
         </div>
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-sm font-semibold text-body">連絡先電話番号</p>
+          <p class="text-base font-semibold text-body">連絡先電話番号</p>
           <div class="grid gap-2">
             <input
               v-model="form.phoneNumber"
@@ -131,7 +131,7 @@ const {
               @blur="markTouched('phoneNumber')"
               @input="markTouched('phoneNumber')"
             />
-            <p v-if="isInCircle" class="text-xs text-muted">企画に所属しているため修正できません。</p>
+            <p v-if="isInCircle" class="text-base text-muted">企画に所属しているため修正できません。</p>
             <FormError v-if="getFieldError('phoneNumber')" :message="getFieldError('phoneNumber')" />
           </div>
         </div>
@@ -139,8 +139,8 @@ const {
       <SettingsRow>
         <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <div class="space-y-1">
-            <p class="text-sm font-semibold text-body">認証情報</p>
-            <p class="text-xs leading-6 text-muted">
+            <p class="text-base font-semibold text-body">認証情報</p>
+            <p class="text-base leading-6 text-muted">
               <a :href="forgotPasswordHref" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
             </p>
           </div>

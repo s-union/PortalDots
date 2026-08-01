@@ -89,7 +89,7 @@ async function handleSubmit() {
   <PageLayout spacious>
     <ListPanel legacy title="お問い合わせ">
       <PanelBody tag="form" spacious class="grid gap-5" @submit.prevent="handleSubmit">
-        <p class="text-sm leading-7 text-body">
+        <p class="text-base leading-7 text-body">
           お問い合わせへの返信は
           <strong>{{ sessionStore.user?.contactEmail || '未設定のメールアドレス' }}</strong>
           に送信されます。メールアドレスは
@@ -119,7 +119,7 @@ async function handleSubmit() {
         <div v-if="sessionStore.currentCircle" class="grid gap-2">
           <FormField label="返信内容の共有先">
             <label
-              class="flex items-start gap-3 rounded border border-border bg-surface-light px-4 py-3 text-sm text-body"
+              class="flex items-start gap-3 rounded border border-border bg-surface-light px-4 py-3 text-base text-body"
             >
               <input
                 v-model="form.ccSubleader"
@@ -130,7 +130,7 @@ async function handleSubmit() {
               />
               <span>
                 <span class="block font-medium">副責任者にもメールで共有する（CC）</span>
-                <span class="mt-1 block text-xs leading-6 text-muted-2">
+                <span class="mt-1 block text-base leading-6 text-muted-2">
                   チェックを外すと送信者のみに確認メールが送信されます。
                 </span>
               </span>

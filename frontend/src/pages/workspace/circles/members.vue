@@ -159,7 +159,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
             {{ detailQuery.data.value?.participationTypeName ?? '企画' }} 参加登録
             <small class="ml-2 text-sm font-normal text-muted"> (ステップ 2 / 3) </small>
           </h1>
-          <p v-if="detailQuery.data.value" class="text-sm text-muted">
+          <p v-if="detailQuery.data.value" class="text-base text-muted">
             {{ detailQuery.data.value.name }}
           </p>
         </div>
@@ -170,10 +170,10 @@ async function handleRemoveMember(userId: string, displayName: string) {
     <SettingsSection title="招待リンク">
       <SettingsRow>
         <div class="grid gap-3">
-          <p class="text-sm text-muted">
+          <p class="text-base text-muted">
             あなたの企画「{{ detailQuery.data.value?.name ?? '' }}」の学園祭係(副責任者)に、このURLを共有してください。
           </p>
-          <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>
+          <div v-if="detailQuery.isPending.value" class="text-base text-muted">読み込み中...</div>
           <template v-else>
             <div class="flex items-center gap-2">
               <input
@@ -181,7 +181,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
                 type="text"
                 readonly
                 aria-label="招待URL"
-                class="flex-1 font-mono text-xs"
+                class="flex-1 font-mono text-base"
               />
               <button
                 :class="buttonVariants({ variant: 'primaryInverse', size: 'md', weight: 'bold' })"
@@ -191,7 +191,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
                 {{ copySuccess ? 'コピー完了!' : 'URLを共有' }}
               </button>
             </div>
-            <p v-if="invitationQrError" class="text-sm text-warning">{{ invitationQrError }}</p>
+            <p v-if="invitationQrError" class="text-base text-warning">{{ invitationQrError }}</p>
             <div v-if="invitationQrDataUrl" class="flex justify-center">
               <img :src="invitationQrDataUrl" alt="招待URLのQRコード" class="h-44 w-44" />
             </div>
@@ -216,7 +216,7 @@ async function handleRemoveMember(userId: string, displayName: string) {
     <SettingsSection title="メンバー一覧">
       <LoadingMessage v-if="membersQuery.isPending.value" />
 
-      <div v-else-if="membersQuery.data.value?.length === 0" class="px-6 py-6 text-sm text-muted">
+      <div v-else-if="membersQuery.data.value?.length === 0" class="px-6 py-6 text-base text-muted">
         メンバーがいません。
       </div>
 
@@ -252,12 +252,12 @@ async function handleRemoveMember(userId: string, displayName: string) {
     </SettingsSection>
 
     <div v-if="detailQuery.data.value?.isLeader && detailQuery.data.value.submittedAt === null" class="space-y-3">
-      <p v-if="memberRequirementMessage" class="text-sm text-danger">
+      <p v-if="memberRequirementMessage" class="text-base text-danger">
         {{ memberRequirementMessage }}
       </p>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <RouterLink
-          class="inline-flex rounded border border-border bg-surface px-4 py-3 text-sm font-semibold text-body transition hover:bg-surface-light hover:no-underline"
+          class="inline-flex rounded border border-border bg-surface px-4 py-3 text-base font-semibold text-body transition hover:bg-surface-light hover:no-underline"
           to="/workspace/circles/detail"
         >
           企画情報の編集

@@ -29,8 +29,8 @@ const {
       <SettingsRow>
         <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
           <div class="space-y-1">
-            <p class="text-sm font-semibold text-body">認証情報</p>
-            <p class="text-xs leading-6 text-muted">
+            <p class="text-base font-semibold text-body">認証情報</p>
+            <p class="text-base leading-6 text-muted">
               <a :href="forgotPasswordHref" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
             </p>
           </div>

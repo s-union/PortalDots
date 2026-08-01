@@ -49,7 +49,7 @@ const renderedHtml = computed(() => {
 </script>
 
 <template>
-  <div class="page-markdown text-body" v-html="renderedHtml" />
+  <div class="page-markdown text-[15px] text-body" v-html="renderedHtml" />
 </template>
 
 <style scoped>
@@ -57,7 +57,6 @@ const renderedHtml = computed(() => {
    (markdownClassNames) so お知らせ reads the same in-app and in mail.
    Colors are mapped to theme tokens (email hex → CSS var) for dark mode. */
 .page-markdown {
-  font-size: 0.9375rem;
   line-height: 1.7;
 }
 

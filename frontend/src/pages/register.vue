@@ -63,7 +63,7 @@ async function handleSubmit() {
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー登録</h1>
       </SurfaceCardBand>
 
-      <form class="space-y-5 px-6 py-6 text-sm leading-7 text-body" @submit.prevent="handleSubmit">
+      <form class="space-y-5 px-6 py-6 text-base leading-7 text-body" @submit.prevent="handleSubmit">
         <p>{{ appName }} に登録する大学メールアドレスを入力してください。</p>
         <p>認証URLを送信後、名前や連絡先、パスワードの設定へ進みます。</p>
 
@@ -86,10 +86,10 @@ async function handleSubmit() {
                 @blur="markTouched('univemailLocalPart')"
                 @input="markTouched('univemailLocalPart')"
               />
-              <span class="text-sm text-muted">@{{ univemailDomainPart }}</span>
+              <span class="text-base text-muted">@{{ univemailDomainPart }}</span>
             </div>
           </label>
-          <p class="text-xs text-muted">
+          <p class="text-base text-muted">
             {{ studentIdLabel }} は入力したメールアドレスの @ より前の部分として扱われます。
           </p>
           <FormError v-if="getFieldError('univemailLocalPart')" :message="getFieldError('univemailLocalPart')" />
@@ -97,7 +97,7 @@ async function handleSubmit() {
 
         <div class="pt-2 text-center">
           <button
-            class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
+            class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-base font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
             :disabled="isSubmitting"
             type="submit"
           >

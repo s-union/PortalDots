@@ -11,14 +11,14 @@ const emit = defineEmits<{
 <template>
   <div class="flex h-full min-h-0 flex-col bg-surface-2">
     <div class="border-b border-border bg-surface px-4 py-4">
-      <p class="text-sm font-medium text-body">設問を追加</p>
+      <p class="text-base font-medium text-body">設問を追加</p>
     </div>
 
     <div class="flex-1 overflow-y-auto">
       <button
         v-for="type in allowedQuestionTypes"
         :key="type"
-        class="relative flex w-full items-center gap-3 border-0 bg-transparent px-4 py-3 text-left text-sm text-body transition-colors hover:bg-surface-light"
+        class="relative flex w-full items-center gap-3 border-0 bg-transparent px-4 py-3 text-left text-base text-body transition-colors hover:bg-surface-light"
         type="button"
         @click="emit('addQuestion', type)"
       >

@@ -24,7 +24,7 @@ const {
         <FaIcon :name="icon" className="text-4xl" />
       </div>
       <p class="mt-5 text-lg font-medium text-body">{{ title }}</p>
-      <p v-if="description" class="mt-2 text-sm text-muted">
+      <p v-if="description" class="mt-2 text-base text-muted">
         {{ description }}
       </p>
     </div>

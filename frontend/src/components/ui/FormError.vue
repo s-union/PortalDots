@@ -6,5 +6,5 @@ const { message, id } = defineProps<{
 </script>
 
 <template>
-  <p v-if="message" :id="id" class="text-xs text-danger">{{ message }}</p>
+  <p v-if="message" :id="id" class="text-base text-danger">{{ message }}</p>
 </template>

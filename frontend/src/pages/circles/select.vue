@@ -80,7 +80,7 @@ watch(
     >
       <LoadingMessage v-if="circlesQuery.isPending.value" />
 
-      <PanelBody v-else-if="(circlesQuery.data.value?.length ?? 0) === 0" class="text-sm leading-7 text-muted">
+      <PanelBody v-else-if="(circlesQuery.data.value?.length ?? 0) === 0" class="text-base leading-7 text-muted">
         該当する企画はありません。
       </PanelBody>
 
@@ -101,7 +101,7 @@ watch(
             @click="handleSelectCircle(circle.id)"
           >
             <p class="text-base font-semibold text-body">{{ circle.name }}</p>
-            <p class="mt-2 text-sm text-muted">{{ circle.groupName }} / {{ circle.participationTypeName }}</p>
+            <p class="mt-2 text-base text-muted">{{ circle.groupName }} / {{ circle.participationTypeName }}</p>
           </button>
         </div>
       </template>
@@ -126,8 +126,8 @@ watch(
           class="rounded-lg border border-border bg-background px-5 py-5 transition hover:border-primary hover:bg-primary-light sm:px-6 sm:py-6"
         >
           <p class="text-base font-semibold text-body">{{ participationType.name }}</p>
-          <p class="mt-2 text-sm text-primary">{{ formatDateTime(participationType.form.closeAt) }} まで受付</p>
-          <p class="mt-2 text-sm leading-6 text-muted">{{ participationType.description }}</p>
+          <p class="mt-2 text-base text-primary">{{ formatDateTime(participationType.form.closeAt) }} まで受付</p>
+          <p class="mt-2 text-base leading-6 text-muted">{{ participationType.description }}</p>
         </RouterLink>
       </PanelBody>
     </ListPanel>

@@ -26,6 +26,7 @@ describe('NavMenuLink', () => {
 
     expect(wrapper.getComponent(RouterLinkStub).props('to')).toBe('/staff')
     expect(wrapper.text()).toContain('スタッフ')
+    expect(wrapper.classes()).toContain('text-[15px]')
     const faIcon = wrapper.findComponent(FaIconStub)
     expect(faIcon.exists()).toBe(true)
     expect(faIcon.props('iconClass')).toBe('fas fa-user')

@@ -10,7 +10,7 @@ const { message = '読み込み中...', class: className } = defineProps<{
 
 <template>
   <SurfaceCard :class="cn(className)">
-    <div class="px-6 py-5 text-sm text-muted">
+    <div class="px-6 py-5 text-base text-muted">
       {{ message }}
     </div>
   </SurfaceCard>

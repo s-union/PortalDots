@@ -17,7 +17,7 @@ const {
     :class="
       cn(
         'rounded border border-danger bg-danger-light text-danger',
-        compact ? 'px-4 py-3 text-sm' : 'px-6 py-5',
+        compact ? 'px-4 py-3 text-base' : 'px-6 py-5',
         className
       )
     "

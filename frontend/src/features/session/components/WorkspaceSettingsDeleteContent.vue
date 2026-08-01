@@ -19,7 +19,7 @@ const deleteAccountButtonClass = cn(
   <TabbedSettingsPage :tabs="tabs">
     <SettingsSection title="アカウント削除" :title-outside="true">
       <div class="px-6 py-8 text-center">
-        <div class="mx-auto max-w-2xl space-y-4 text-sm leading-7 text-body">
+        <div class="mx-auto max-w-2xl space-y-4 text-base leading-7 text-body">
           <p>{{ blockedReason }}</p>
           <p v-if="belongsToCircle" class="text-muted">詳細については運営までお問い合わせください。</p>
           <AlertMessage v-if="errorMessage" tone="danger">

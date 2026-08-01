@@ -138,21 +138,23 @@ function handlePreviewSubmit() {
         <header class="space-y-4">
           <div>
             <h1 class="text-3xl font-semibold text-body">{{ previewQuery.data.value.name }}</h1>
-            <p class="mt-3 text-sm text-muted">
+            <p class="mt-3 text-base text-muted">
               受付期間 : {{ formatDateTime(previewQuery.data.value.openAt) }}〜{{
                 formatDateTime(previewQuery.data.value.closeAt)
               }}
             </p>
-            <p v-if="!previewQuery.data.value.isOpen" class="mt-1 text-sm font-semibold text-danger">受付期間外です</p>
+            <p v-if="!previewQuery.data.value.isOpen" class="mt-1 text-base font-semibold text-danger">
+              受付期間外です
+            </p>
           </div>
 
-          <p v-if="previewQuery.data.value.description" class="whitespace-pre-wrap text-sm leading-7 text-body">
+          <p v-if="previewQuery.data.value.description" class="whitespace-pre-wrap text-base leading-7 text-body">
             {{ previewQuery.data.value.description }}
           </p>
 
           <div
             v-if="isLimitedPublic"
-            class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
+            class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-base text-body"
           >
             <span
               class="mr-2 inline-flex rounded border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"
@@ -168,7 +170,7 @@ function handlePreviewSubmit() {
           <template v-for="question in previewQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5 last:border-b-0">
               <h2 class="text-lg font-semibold text-body">{{ question.name }}</h2>
-              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
+              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-base leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
@@ -176,18 +178,18 @@ function handlePreviewSubmit() {
             <div v-else class="border-b border-border px-6 py-5 last:border-b-0">
               <div class="grid gap-3">
                 <div>
-                  <p class="text-sm font-semibold text-body">
+                  <p class="text-base font-semibold text-body">
                     {{ question.name }}
                     <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
                   </p>
-                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
 
                 <input
                   v-if="question.type === 'text'"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
                   type="text"
                   :value="questionValue(question.id)"
                   placeholder="一行入力"
@@ -195,7 +197,7 @@ function handlePreviewSubmit() {
                 />
                 <textarea
                   v-else-if="question.type === 'textarea'"
-                  class="min-h-32 rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+                  class="min-h-32 rounded border border-border bg-form-control px-4 py-3 text-base text-body"
                   :value="questionValue(question.id)"
                   placeholder="複数行入力"
                   @input="updateQuestionValue(question.id, textareaValue($event))"
@@ -209,7 +211,7 @@ function handlePreviewSubmit() {
                 />
                 <select
                   v-else-if="question.type === 'number' && questionNumberOptions(question) !== null"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
                   :value="questionValue(question.id)"
                   @change="updateQuestionValue(question.id, selectValue($event))"
                 >
@@ -220,7 +222,7 @@ function handlePreviewSubmit() {
                 </select>
                 <input
                   v-else-if="question.type === 'number'"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
                   :value="questionValue(question.id)"
                   type="number"
                   :min="question.numberMin ?? undefined"
@@ -229,7 +231,7 @@ function handlePreviewSubmit() {
                 />
                 <select
                   v-else-if="question.type === 'select'"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
                   :value="questionValue(question.id)"
                   @change="updateQuestionValue(question.id, selectValue($event))"
                 >
@@ -240,7 +242,7 @@ function handlePreviewSubmit() {
                   <label
                     v-for="option in question.options"
                     :key="option"
-                    class="flex items-center gap-3 text-sm text-body"
+                    class="flex items-center gap-3 text-base text-body"
                   >
                     <input
                       :name="question.id"
@@ -256,7 +258,7 @@ function handlePreviewSubmit() {
                   <label
                     v-for="option in question.options"
                     :key="option"
-                    class="flex items-center gap-3 text-sm text-body"
+                    class="flex items-center gap-3 text-base text-body"
                   >
                     <input
                       :checked="checkboxValue(question.id).includes(option)"
@@ -268,15 +270,15 @@ function handlePreviewSubmit() {
                 </div>
                 <div
                   v-else-if="question.type === 'upload'"
-                  class="rounded border border-dashed border-border bg-form-control px-4 py-6 text-sm text-muted"
+                  class="rounded border border-dashed border-border bg-form-control px-4 py-6 text-base text-muted"
                 >
                   <div class="grid gap-3">
                     <input
-                      class="block w-full text-sm text-body file:mr-4 file:rounded file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white"
+                      class="block w-full text-base text-body file:mr-4 file:rounded file:border-0 file:bg-primary file:px-4 file:py-2 file:font-semibold file:text-white"
                       type="file"
                       @change="handleUploadChange(question, $event)"
                     />
-                    <p v-if="uploadFileNames[question.id]" class="text-sm text-body">
+                    <p v-if="uploadFileNames[question.id]" class="text-base text-body">
                       選択中: {{ uploadFileNames[question.id] }}
                     </p>
                     <p v-else>ファイル選択欄が表示されます。</p>
@@ -290,7 +292,7 @@ function handlePreviewSubmit() {
         <div class="space-y-3">
           <div
             v-if="submitNoticeVisible"
-            class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
+            class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-base text-body"
           >
             プレビューのため送信は行われません。
           </div>

@@ -20,10 +20,10 @@ const { title, lead, body, notes = [], actions } = defineProps<Props>()
 
 function actionClasses(variant: Action['variant'] = 'secondary') {
   if (variant === 'primary') {
-    return 'inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-white transition hover:bg-primary-hover'
+    return 'inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-base font-bold text-white transition hover:bg-primary-hover'
   }
 
-  return 'inline-flex items-center justify-center rounded-lg border border-border px-5 py-2.5 text-sm font-semibold text-body transition hover:bg-surface-light'
+  return 'inline-flex items-center justify-center rounded-lg border border-border px-5 py-2.5 text-base font-semibold text-body transition hover:bg-surface-light'
 }
 </script>
 
@@ -34,7 +34,7 @@ function actionClasses(variant: Action['variant'] = 'secondary') {
         <h2 class="text-2xl font-bold text-body">{{ title }}</h2>
       </SurfaceCardBand>
 
-      <div class="space-y-4 px-6 py-6 text-sm leading-7">
+      <div class="space-y-4 px-6 py-6 text-base leading-7">
         <p class="text-base font-semibold text-body">{{ lead }}</p>
         <p class="text-muted">{{ body }}</p>
 

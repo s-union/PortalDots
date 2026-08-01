@@ -143,17 +143,17 @@ function handleFileChange(questionId: string, file: File | null) {
           </template>
         </SurfaceHeader>
         <div class="px-6 py-5">
-          <p class="whitespace-pre-wrap text-sm leading-7 text-body">
+          <p class="whitespace-pre-wrap text-base leading-7 text-body">
             {{ answerQuery.data.value.form.description }}
           </p>
         </div>
       </SurfaceCard>
 
-      <section class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1">
+      <section class="rounded border border-border bg-surface px-6 py-5 text-base text-muted shadow-lv1">
         最終更新日時 : {{ formatDateTime(answerQuery.data.value.answer.updatedAt) }}
       </section>
 
-      <section class="rounded border border-border bg-surface-light px-6 py-5 text-sm text-muted shadow-lv1">
+      <section class="rounded border border-border bg-surface-light px-6 py-5 text-base text-muted shadow-lv1">
         {{ notificationMessage }}
       </section>
 
@@ -179,7 +179,7 @@ function handleFileChange(questionId: string, file: File | null) {
           <template v-for="question in answerQuery.data.value.form.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
               <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
-              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
+              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-base leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
@@ -187,11 +187,11 @@ function handleFileChange(questionId: string, file: File | null) {
             <div v-else class="border-b border-border px-6 py-5">
               <div class="grid gap-3">
                 <div>
-                  <p class="text-sm font-semibold text-body">
+                  <p class="text-base font-semibold text-body">
                     {{ question.name }}
                     <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger"> 必須 </span>
                   </p>
-                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
@@ -255,7 +255,7 @@ function handleFileChange(questionId: string, file: File | null) {
           >
             <RouterLink
               :to="`/staff/forms/${formId}/answers/${sibling.id}/edit`"
-              class="flex items-center justify-between gap-4 text-sm text-body"
+              class="flex items-center justify-between gap-4 text-base text-body"
             >
               <span>作成 {{ formatDateTime(sibling.createdAt) }} / {{ formatDateTimeUpdated(sibling.updatedAt) }}</span>
               <span class="text-xs text-muted-2">{{ sibling.uploadCount }} files</span>

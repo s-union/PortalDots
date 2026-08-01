@@ -51,18 +51,18 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
       <template v-for="question in form.questions" :key="question.id">
         <div v-if="question.type === 'heading'" class="border-b border-border px-4 py-4 last:border-b-0">
           <h4 class="text-base font-semibold text-body">{{ question.name }}</h4>
-          <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+          <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
             {{ question.description }}
           </p>
         </div>
         <div v-else class="border-b border-border px-4 py-4 last:border-b-0">
-          <p class="text-sm font-semibold text-body">{{ question.name }}</p>
-          <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+          <p class="text-base font-semibold text-body">{{ question.name }}</p>
+          <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
             {{ question.description }}
           </p>
 
           <div v-if="question.type === 'upload'" class="mt-3 grid gap-3">
-            <p v-if="answerUploads(question.id).length === 0" class="text-sm text-muted-2">
+            <p v-if="answerUploads(question.id).length === 0" class="text-base text-muted-2">
               添付ファイルはありません。
             </p>
             <UploadFileRow
@@ -74,13 +74,15 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
             />
           </div>
 
-          <p v-else-if="question.type === 'checkbox'" class="mt-3 text-sm leading-7 text-body">
+          <p v-else-if="question.type === 'checkbox'" class="mt-3 text-base leading-7 text-body">
             {{ answerDetails(question.id).join(', ') || '未入力' }}
           </p>
 
-          <pre v-else-if="question.type === 'textarea'" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-body">{{
-            answerDetails(question.id)[0] ?? ''
-          }}</pre>
+          <pre
+            v-else-if="question.type === 'textarea'"
+            class="mt-3 whitespace-pre-wrap text-base leading-7 text-body"
+            >{{ answerDetails(question.id)[0] ?? '' }}</pre
+          >
 
           <PageMarkdownContent
             v-else-if="question.type === 'markdown'"
@@ -88,21 +90,21 @@ const totalUploads = computed(() => form.answer?.uploads.length ?? 0)
             :source="answerDetails(question.id)[0] ?? ''"
           />
 
-          <p v-else class="mt-3 text-sm leading-7 text-body">
+          <p v-else class="mt-3 text-base leading-7 text-body">
             {{ answerDetails(question.id)[0] ?? '未入力' }}
           </p>
         </div>
       </template>
     </div>
-    <p v-else class="px-6 py-5 text-sm text-muted-2">まだ回答はありません。</p>
+    <p v-else class="px-6 py-5 text-base text-muted-2">まだ回答はありません。</p>
 
     <div class="border-t border-border px-6 py-5">
       <div class="flex items-center justify-between gap-4">
-        <h4 class="text-sm font-medium text-body">添付ファイル</h4>
+        <h4 class="text-base font-medium text-body">添付ファイル</h4>
         <span class="text-xs text-muted-2"> {{ totalUploads }} 件 </span>
       </div>
 
-      <p v-if="totalUploads === 0" class="mt-3 text-sm text-muted-2">添付ファイルはまだありません。</p>
+      <p v-if="totalUploads === 0" class="mt-3 text-base text-muted-2">添付ファイルはまだありません。</p>
 
       <ul v-else class="mt-3 grid gap-3">
         <li v-for="upload in form.answer?.uploads" :key="upload.id">

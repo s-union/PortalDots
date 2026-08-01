@@ -120,7 +120,9 @@ function resolveRequestStatus(status: FormStatusTab) {
     </form>
 
     <div v-if="searchQuery.trim() !== ''" class="mt-3">
-      <button class="text-sm font-semibold text-muted" type="button" @click="handleSearchReset">検索をリセット</button>
+      <button class="text-base font-semibold text-muted" type="button" @click="handleSearchReset">
+        検索をリセット
+      </button>
     </div>
   </div>
 
@@ -129,7 +131,7 @@ function resolveRequestStatus(status: FormStatusTab) {
     class="rounded border border-border bg-surface p-10 text-center text-muted shadow-lv1"
   >
     <p class="text-base">{{ searchQuery.trim() === '' ? 'このリストは空です' : '検索結果が見つかりませんでした' }}</p>
-    <p class="mt-2 text-sm">
+    <p class="mt-2 text-base">
       {{
         searchQuery.trim() !== ''
           ? '入力するキーワードを変えて、再度検索をお試しください。'

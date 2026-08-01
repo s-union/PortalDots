@@ -157,12 +157,12 @@ async function handleDelete() {
         <SettingsRow>
           <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">参加種別名</p>
+              <p class="text-base font-semibold text-body">参加種別名</p>
               <p class="text-xs text-muted-2">
                 一般ユーザーに表示する名称です。模擬店や展示など、参加区分を分かりやすく入力します。
               </p>
             </div>
-            <label class="grid gap-2 text-sm text-body">
+            <label class="grid gap-2 text-base text-body">
               <span>参加種別名</span>
               <input
                 v-model="form.name"
@@ -180,7 +180,7 @@ async function handleDelete() {
         <SettingsRow>
           <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">説明</p>
+              <p class="text-base font-semibold text-body">説明</p>
               <p class="text-xs text-muted-2">参加登録画面の案内として一般ユーザーに表示します。</p>
             </div>
             <FormField label="説明">
@@ -192,13 +192,13 @@ async function handleDelete() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">必要人数</p>
+              <p class="text-base font-semibold text-body">必要人数</p>
               <p class="text-xs text-muted-2">
                 企画責任者を含む参加登録可能人数の下限と上限です。個人参加のみなら 1 を指定します。
               </p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-base text-body">
                 <span>最低人数</span>
                 <input
                   v-model.number="form.usersCountMin"
@@ -211,7 +211,7 @@ async function handleDelete() {
                 />
                 <FormError v-if="getFieldError('usersCountMin')" :message="getFieldError('usersCountMin')" />
               </label>
-              <label class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-base text-body">
                 <span>最大人数</span>
                 <input
                   v-model.number="form.usersCountMax"
@@ -231,7 +231,7 @@ async function handleDelete() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">付与タグ</p>
+              <p class="text-base font-semibold text-body">付与タグ</p>
               <p class="text-xs text-muted-2">
                 この設定を保存した後に作成される企画へ、自動で追加するタグを改行またはカンマ区切りで入力します。
               </p>

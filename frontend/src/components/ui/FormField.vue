@@ -16,8 +16,8 @@ const errorString = computed(() => (typeof error === 'string' ? error : undefine
 </script>
 
 <template>
-  <div class="grid gap-2 text-sm text-body">
-    <label v-if="as !== 'div'" class="grid gap-2 text-sm text-body">
+  <div class="grid gap-2 text-base text-body">
+    <label v-if="as !== 'div'" class="grid gap-2 text-base text-body">
       <span :class="labelClass">
         {{ label }}
         <span v-if="required" class="text-danger">*</span>
@@ -31,7 +31,7 @@ const errorString = computed(() => (typeof error === 'string' ? error : undefine
       </label>
       <slot />
     </template>
-    <span v-if="helper" :id="id ? `${id}-helper` : undefined" class="text-xs text-muted">{{ helper }}</span>
+    <span v-if="helper" :id="id ? `${id}-helper` : undefined" class="text-base text-muted">{{ helper }}</span>
     <FormError v-if="errorString" :id="id ? `${id}-error` : undefined" :message="errorString!" />
   </div>
 </template>

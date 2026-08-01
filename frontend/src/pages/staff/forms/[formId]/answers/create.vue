@@ -138,7 +138,7 @@ async function handleCreateAnswer() {
           </div>
         </div>
 
-        <p v-if="errorMessage" class="mt-4 text-sm text-danger">{{ errorMessage }}</p>
+        <p v-if="errorMessage" class="mt-4 text-base text-danger">{{ errorMessage }}</p>
       </section>
 
       <section v-if="selectedCircleId.length > 0" class="rounded border border-border bg-surface shadow-lv1">
@@ -146,7 +146,7 @@ async function handleCreateAnswer() {
           <h2 class="text-lg font-semibold text-body">以前の回答を閲覧・変更</h2>
         </div>
 
-        <div v-if="selectedCircleAnswers.length === 0" class="px-6 py-5 text-sm text-muted-2">
+        <div v-if="selectedCircleAnswers.length === 0" class="px-6 py-5 text-base text-muted-2">
           この企画の回答はまだありません。
         </div>
 
@@ -156,7 +156,7 @@ async function handleCreateAnswer() {
             :key="answer.id"
             class="border-b border-border px-6 py-5 last:border-b-0"
           >
-            <RouterLink :to="`/staff/forms/${formId}/answers/${answer.id}/edit`" class="grid gap-2 text-sm text-body">
+            <RouterLink :to="`/staff/forms/${formId}/answers/${answer.id}/edit`" class="grid gap-2 text-base text-body">
               <span class="font-semibold">作成 {{ formatDateTime(answer.createdAt) }} / 回答ID : {{ answer.id }}</span>
               <span class="text-muted-2">最終更新 {{ formatDateTime(answer.updatedAt) }}</span>
               <span class="line-clamp-2 whitespace-pre-wrap text-muted">

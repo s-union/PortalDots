@@ -105,7 +105,7 @@ function handlePermissionChange(event: Event, permissionName: string) {
 
       <SettingsSection title="対象ユーザー">
         <SettingsRow>
-          <p class="text-sm font-medium text-body">保持ロール</p>
+          <p class="text-base font-medium text-body">保持ロール</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <span
               v-for="role in detailQuery.data.value.user.roles"
@@ -128,11 +128,11 @@ function handlePermissionChange(event: Event, permissionName: string) {
           <SettingsRow>
             <div class="space-y-6">
               <section v-for="group in groupedDefinitions" :key="group.group" class="space-y-3">
-                <h3 class="text-sm font-semibold text-body">{{ group.group }}</h3>
+                <h3 class="text-base font-semibold text-body">{{ group.group }}</h3>
                 <label
                   v-for="permission in group.items"
                   :key="permission.name"
-                  class="flex gap-3 rounded border border-border px-4 py-4 text-sm text-body"
+                  class="flex gap-3 rounded border border-border px-4 py-4 text-base text-body"
                 >
                   <input
                     :checked="selectedPermissions.includes(permission.name)"

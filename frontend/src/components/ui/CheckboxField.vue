@@ -12,7 +12,7 @@ const { label, disabled, name, id, ariaInvalid, ariaDescribedBy } = defineProps<
 </script>
 
 <template>
-  <label class="flex items-center gap-3 text-sm text-body">
+  <label class="flex items-center gap-3 text-base text-body">
     <input
       :id="id"
       v-model="model"

@@ -11,7 +11,7 @@ const { title, description } = defineProps<{
       <h2 class="text-2xl font-semibold text-body">
         {{ title }}
       </h2>
-      <p v-if="description" class="mt-3 text-sm leading-7 text-muted">
+      <p v-if="description" class="mt-3 text-base leading-7 text-muted">
         {{ description }}
       </p>
     </div>
