@@ -9,8 +9,10 @@ const { tabs } = defineProps<{
 </script>
 
 <template>
-  <PageLayout fullWidth>
+  <PageLayout fullWidth class="px-0 max-[1000px]:px-0">
     <TabStrip :tabs="tabs" />
-    <slot />
+    <div class="px-6 max-[1000px]:px-4">
+      <slot />
+    </div>
   </PageLayout>
 </template>

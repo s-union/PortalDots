@@ -12,6 +12,12 @@ describe('TabStrip', () => {
     expect(wrapper.text()).toContain('タブ1')
     expect(wrapper.text()).toContain('タブ2')
     expect(wrapper.text()).toContain('タブ3')
+    expect(wrapper.classes()).not.toContain('px-6')
+    expect(wrapper.classes()).not.toContain('max-[860px]:px-2')
+
+    const tabList = wrapper.get('.min-w-full')
+    expect(tabList.classes()).toContain('w-max')
+    expect(tabList.classes()).toContain('justify-center')
   })
 
   it('renders an anchor tag when href is provided', () => {
