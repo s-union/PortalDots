@@ -18,7 +18,7 @@ const { tabs } = defineProps<{
         :is="tab.to ? RouterLink : tab.href ? 'a' : 'span'"
         :to="tab.to"
         :href="tab.href"
-        :class="tabStripItemVariants({ active: tab.active })"
+        :class="[tabStripItemVariants({ active: tab.active }), (tab.to || tab.href) && 'cursor-pointer']"
       >
         <!-- Active indicator: bottom 4px bar (replaces ::before pseudo-element) -->
         <span v-if="tab.active" class="absolute inset-x-0 bottom-0 h-1 rounded-t bg-primary" aria-hidden="true" />
