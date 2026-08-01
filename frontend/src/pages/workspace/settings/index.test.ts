@@ -116,6 +116,11 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
+    const nameLabel = wrapper.findAll('p').find((paragraph) => paragraph.text() === '名前')
+    expect(nameLabel?.classes()).toContain('mb-0')
+    expect(nameLabel?.classes()).toContain('md:min-h-[2.85rem]')
+    expect(nameLabel?.classes()).toContain('md:items-center')
+
     await wrapper.get('input[name="name"]').setValue('Updated User')
     await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと ゆーざー')
     await wrapper.get('input[name="contactEmail"]').setValue('updated@example.com')

@@ -34,7 +34,7 @@ const {
     <SettingsSection title="一般設定" :title-outside="true">
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-base font-semibold text-body">
+          <p class="mb-0 text-base font-semibold text-body md:flex md:min-h-[2.85rem] md:items-center md:self-start">
             {{ publicConfigQuery.data.value?.portalStudentIdName ?? '学生番号' }}
           </p>
           <div class="grid gap-2">
@@ -44,7 +44,7 @@ const {
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-base font-semibold text-body">
+          <p class="mb-0 text-base font-semibold text-body md:flex md:min-h-[2.85rem] md:items-center md:self-start">
             {{ publicConfigQuery.data.value?.portalUnivemailName ?? '学生用メールアドレス' }}
           </p>
           <div class="grid gap-2">
@@ -60,7 +60,9 @@ const {
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-base font-semibold text-body">名前</p>
+          <p class="mb-0 text-base font-semibold text-body md:flex md:min-h-[2.85rem] md:items-center md:self-start">
+            名前
+          </p>
           <div class="grid gap-2">
             <input
               v-model="form.name"
@@ -80,7 +82,9 @@ const {
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-base font-semibold text-body">名前(よみ)</p>
+          <p class="mb-0 text-base font-semibold text-body md:flex md:min-h-[2.85rem] md:items-center md:self-start">
+            名前(よみ)
+          </p>
           <div class="grid gap-2">
             <input
               v-model="form.nameYomi"
@@ -100,7 +104,9 @@ const {
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-base font-semibold text-body">連絡先メールアドレス</p>
+          <p class="mb-0 text-base font-semibold text-body md:flex md:min-h-[2.85rem] md:items-center md:self-start">
+            連絡先メールアドレス
+          </p>
           <div class="grid gap-2">
             <input
               v-model="form.contactEmail"
@@ -119,7 +125,9 @@ const {
       </SettingsRow>
       <SettingsRow>
         <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <p class="text-base font-semibold text-body">連絡先電話番号</p>
+          <p class="mb-0 text-base font-semibold text-body md:flex md:min-h-[2.85rem] md:items-center md:self-start">
+            連絡先電話番号
+          </p>
           <div class="grid gap-2">
             <input
               v-model="form.phoneNumber"
