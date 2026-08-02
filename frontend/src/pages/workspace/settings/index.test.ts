@@ -121,6 +121,8 @@ describe('UserSettingsPage', () => {
     expect(nameLabel?.classes()).not.toContain('md:min-h-[2.85rem]')
     expect(wrapper.get('[data-testid="settings-name-row"]').classes()).toContain('md:items-center')
     expect(wrapper.get('input[name="name"]').classes()).toContain('md:col-start-2')
+    expect(wrapper.get('[data-testid="settings-auth-row"]').classes()).toContain('md:items-center')
+    expect(wrapper.get('input[name="currentPassword"]').classes()).toContain('md:col-start-2')
 
     await wrapper.get('input[name="name"]').setValue('Updated User')
     await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと ゆーざー')

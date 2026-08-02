@@ -160,24 +160,32 @@ const {
         </div>
       </SettingsRow>
       <SettingsRow>
-        <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+        <div
+          class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2"
+          data-testid="settings-auth-row"
+        >
           <div class="space-y-1">
             <p class="text-base font-semibold text-body">認証情報</p>
             <p class="text-base leading-6 text-muted">
               <a :href="forgotPasswordHref" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
             </p>
           </div>
-          <div class="grid gap-2">
+          <div class="grid gap-2 md:contents">
             <input
               v-model="form.currentPassword"
               aria-label="現在のパスワード"
+              class="md:col-start-2"
               name="currentPassword"
               type="password"
               :class="{ 'border-danger': getFieldError('currentPassword') }"
               @blur="markTouched('currentPassword')"
               @input="markTouched('currentPassword')"
             />
-            <FormError v-if="getFieldError('currentPassword')" :message="getFieldError('currentPassword')" />
+            <FormError
+              v-if="getFieldError('currentPassword')"
+              class="md:col-start-2"
+              :message="getFieldError('currentPassword')"
+            />
           </div>
         </div>
       </SettingsRow>

@@ -21,7 +21,7 @@ export const MONO_FAMILY = "'SF Mono', SFMono-Regular, Menlo, Consolas, 'Courier
 
 // Design tokens mirrored from frontend/src/styles/app.css's `@theme` block,
 // plus two brand-blue tints used by the dot ornaments and dotted rules.
-export const PAGE_BACKGROUND = '#f3f4fa' // --color-base
+export const PAGE_BACKGROUND = '#f3f4fa' // --color-page
 export const INK = '#22292f' // --color-body
 export const MUTED = '#586169' // --color-muted (light mode)
 export const BRAND = '#0a65db' // --color-primary

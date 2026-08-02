@@ -13,6 +13,18 @@ describe('PageMarkdownContent', () => {
     expect(wrapper.text()).toContain('見出し')
     expect(wrapper.text()).toContain('項目')
     expect(wrapper.classes()).toContain('text-base')
+    expect(wrapper.attributes('data-heading-scale')).toBe('embedded')
+  })
+
+  it('uses the page heading scale when requested', () => {
+    const wrapper = mount(PageMarkdownContent, {
+      props: {
+        source: '# 見出し',
+        headingScale: 'page'
+      }
+    })
+
+    expect(wrapper.attributes('data-heading-scale')).toBe('page')
   })
 
   it('sanitizes unsafe link protocols', () => {

@@ -47,7 +47,7 @@ const pageQuery = usePageDetailQuery(pageId)
       </section>
 
       <div class="rounded bg-surface px-6 py-8 shadow-lv1">
-        <PageMarkdownContent :source="pageQuery.data.value.body" />
+        <PageMarkdownContent heading-scale="page" :source="pageQuery.data.value.body" />
       </div>
 
       <ListPanel v-if="pageQuery.data.value.documents.length > 0" legacy title="関連する配布資料" overflow-hidden>
