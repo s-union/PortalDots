@@ -16,8 +16,8 @@ const errorString = computed(() => (typeof error === 'string' ? error : undefine
 </script>
 
 <template>
-  <div class="grid gap-2 text-sm text-body">
-    <label v-if="as !== 'div'" class="grid gap-2 text-sm text-body">
+  <div class="grid gap-2 text-base text-body">
+    <label v-if="as !== 'div'" class="grid gap-2 text-base text-body">
       <span :class="labelClass">
         {{ label }}
         <span v-if="required" class="text-danger">*</span>

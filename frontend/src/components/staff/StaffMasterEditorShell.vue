@@ -38,7 +38,7 @@ const emit = defineEmits<{
   <div class="space-y-6 p-6">
     <header class="space-y-3">
       <h2 class="text-2xl font-semibold text-body">{{ title }}</h2>
-      <div class="text-sm text-muted">{{ description }}</div>
+      <div class="text-base text-muted">{{ description }}</div>
     </header>
 
     <form class="space-y-6" @submit.prevent="emit('save')">

@@ -37,7 +37,7 @@ const {
 </script>
 
 <template>
-  <div class="min-h-screen bg-base text-body">
+  <div class="min-h-screen bg-page text-body">
     <!-- Fixed Navbar: height 5rem (h-20), z-[9980] — matches $z-index-navbar -->
     <header
       class="navbar fixed right-0 top-0 z-[9980] flex h-20 items-center gap-4 bg-surface-2 px-6 shadow-lv1"

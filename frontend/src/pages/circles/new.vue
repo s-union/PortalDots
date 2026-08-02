@@ -160,8 +160,8 @@ async function handleSubmit() {
       <SurfaceCardBand borderless>
         <CircleRegistrationSteps :current-step="1" :requires-member-step="requiresMemberStep" />
         <h1 class="mt-3 text-2xl font-semibold text-body">企画参加登録</h1>
-        <p class="mt-2 text-sm text-muted">参加登録する企画の情報を入力してください。</p>
-        <p v-if="requestedParticipationTypeId" class="mt-2 text-sm text-muted">
+        <p class="mt-2 text-base text-muted">参加登録する企画の情報を入力してください。</p>
+        <p v-if="requestedParticipationTypeId" class="mt-2 text-base text-muted">
           URL パラメータで指定された参加種別を自動選択しています。
         </p>
       </SurfaceCardBand>
@@ -172,7 +172,7 @@ async function handleSubmit() {
     </AlertMessage>
 
     <SettingsSection v-if="canCreateCircleRegistration && registrationFormDescription" title="必ずお読みください">
-      <div class="px-6 py-6 whitespace-pre-wrap text-sm leading-7 text-body">
+      <div class="px-6 py-6 whitespace-pre-wrap text-base leading-7 text-body">
         {{ registrationFormDescription }}
       </div>
     </SettingsSection>
@@ -214,7 +214,7 @@ async function handleSubmit() {
 
           <div
             v-if="selectedParticipationType"
-            class="rounded border border-border bg-form-control px-4 py-3 text-sm text-body"
+            class="rounded border border-border bg-form-control px-4 py-3 text-base text-body"
           >
             <p class="font-semibold">{{ selectedParticipationType.name }}</p>
             <p class="mt-1 text-muted">{{ selectedParticipationType.description }}</p>
@@ -282,7 +282,7 @@ async function handleSubmit() {
             />
           </FormField>
 
-          <p v-if="!canChangeGroupName" class="text-sm text-muted">
+          <p v-if="!canChangeGroupName" class="text-base text-muted">
             既に登録済みの企画があるため、団体名は既存企画から引き継がれます。
           </p>
 
@@ -293,9 +293,11 @@ async function handleSubmit() {
       </SettingsRow>
 
       <SettingsRow>
-        <div v-if="form.participationTypeId === ''" class="text-sm text-muted">先に参加種別を選択してください。</div>
+        <div v-if="form.participationTypeId === ''" class="text-base text-muted">先に参加種別を選択してください。</div>
 
-        <div v-else-if="registrationFormQuery.isPending.value" class="text-sm text-muted">フォームを読み込み中...</div>
+        <div v-else-if="registrationFormQuery.isPending.value" class="text-base text-muted">
+          フォームを読み込み中...
+        </div>
 
         <div v-else-if="registrationFormQuery.data.value" class="grid gap-0">
           <template v-for="(question, index) in questions" :key="question.id">
@@ -305,7 +307,7 @@ async function handleSubmit() {
               :class="index < questions.length - 1 ? 'border-b border-border' : ''"
             >
               <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
-              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
@@ -313,18 +315,18 @@ async function handleSubmit() {
             <div v-else class="px-6 py-5" :class="index < questions.length - 1 ? 'border-b border-border' : ''">
               <div class="grid gap-3">
                 <div>
-                  <p class="text-sm font-semibold text-body">
+                  <p class="text-base font-semibold text-body">
                     {{ question.name }}
                     <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
                   </p>
-                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
 
                 <div
                   v-if="question.type === 'upload'"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-sm text-muted"
+                  class="rounded border border-border bg-form-control px-4 py-3 text-base text-muted"
                 >
                   添付ファイルは企画作成後の編集画面でアップロードできます。
                 </div>

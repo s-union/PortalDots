@@ -162,27 +162,27 @@ async function handleDelete(answerId: string, groupName: string) {
                 </BaseButton>
                 <a
                   :href="exportUrl"
-                  class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+                  class="rounded border border-border px-4 py-2 text-base text-body transition hover:bg-surface-light"
                 >
                   CSV 出力
                 </a>
                 <RouterLink
                   :to="`/staff/forms/${formId}/answers/uploads`"
-                  class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+                  class="rounded border border-border px-4 py-2 text-base text-body transition hover:bg-surface-light"
                 >
                   ファイルを一括ダウンロード
                 </RouterLink>
                 <RouterLink
                   v-if="showNotAnsweredLink"
                   :to="`/staff/forms/${formId}/not_answered`"
-                  class="rounded border border-border px-4 py-2 text-sm text-body transition hover:bg-surface-light"
+                  class="rounded border border-border px-4 py-2 text-base text-body transition hover:bg-surface-light"
                 >
                   未提出企画を表示
                 </RouterLink>
               </div>
             </template>
           </SurfaceHeader>
-          <div class="border-t border-border px-6 py-5 text-sm text-body">
+          <div class="border-t border-border px-6 py-5 text-base text-body">
             <div class="grid gap-2">
               <p>
                 公開設定 :

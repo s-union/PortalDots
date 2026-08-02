@@ -50,14 +50,14 @@ const {
 </script>
 
 <template>
-  <PageLayout fullWidth class="space-y-0 pb-6 max-[1000px]:px-0">
+  <PageLayout fullWidth class="space-y-0 pb-6">
     <LoadingState v-if="formQuery.isPending.value" class="mx-6 mt-6 max-[1000px]:mx-4" />
 
     <template v-else-if="formQuery.data.value">
       <TabStrip :tabs="staffFormTabs" />
 
       <div
-        class="fixed bottom-0 left-0 right-0 z-[9975] border-t border-danger bg-danger-light px-6 py-3 text-center text-sm text-danger shadow-lv1 min-[1001px]:hidden"
+        class="fixed bottom-0 left-0 right-0 z-[9975] border-t border-danger bg-danger-light px-6 py-3 text-center text-base text-danger shadow-lv1 min-[1001px]:hidden"
       >
         フォームエディターは、パソコンのみ対応しています。
       </div>
@@ -68,7 +68,7 @@ const {
             <header
               class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border bg-surface-2 px-6 max-[1000px]:px-4"
             >
-              <div class="w-40 shrink-0 text-sm font-medium text-body">フォームエディター</div>
+              <div class="w-40 shrink-0 text-base font-medium text-body">フォームエディター</div>
               <div class="min-h-5 flex-1 text-center text-sm" :class="statusToneClass">
                 {{ statusMessage }}
               </div>
@@ -103,7 +103,7 @@ const {
                   </h1>
                   <p
                     v-if="formQuery.data.value.description"
-                    class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted"
+                    class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted"
                   >
                     {{ formQuery.data.value.description }}
                   </p>

@@ -88,7 +88,7 @@ function handleDocumentChange(documentId: string, event: Event) {
       />
     </FormField>
 
-    <div class="grid gap-2 text-sm text-body">
+    <div class="grid gap-2 text-base text-body">
       <label for="staff-page-body" class="font-medium">本文</label>
       <MarkdownEditorField
         id="staff-page-body"
@@ -129,7 +129,7 @@ function handleDocumentChange(documentId: string, event: Event) {
       />
     </FormField>
 
-    <fieldset class="grid gap-2 text-sm text-body">
+    <fieldset class="grid gap-2 text-base text-body">
       <legend class="font-medium">関連する配布資料</legend>
       <InfoBox v-if="documentsLoading" class="text-muted"> 配布資料を読み込み中... </InfoBox>
       <InfoBox v-else-if="availableDocuments.length === 0" class="text-muted">

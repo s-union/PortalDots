@@ -83,7 +83,7 @@ async function handleSubmit() {
         />
       </div>
 
-      <label class="inline-flex items-center gap-2 text-sm text-body">
+      <label class="inline-flex items-center gap-2 text-base text-body">
         <input v-model="form.remember" name="remember" type="checkbox" />
         ログインしたままにする
       </label>
@@ -94,7 +94,7 @@ async function handleSubmit() {
 
       <div>
         <button
-          class="w-full rounded border border-primary bg-primary px-4 py-3 text-sm text-white transition hover:bg-primary-hover"
+          class="w-full rounded border border-primary bg-primary px-4 py-3 text-base text-white transition hover:bg-primary-hover"
           :disabled="isSubmitting"
           type="submit"
         >
@@ -104,7 +104,7 @@ async function handleSubmit() {
 
       <p>
         <RouterLink
-          class="block w-full rounded border border-border bg-surface px-4 py-3 text-center text-sm text-body transition hover:bg-surface-light hover:no-underline"
+          class="block w-full rounded border border-border bg-surface px-4 py-3 text-center text-base text-body transition hover:bg-surface-light hover:no-underline"
           to="/register"
         >
           はじめての方は新規ユーザー登録

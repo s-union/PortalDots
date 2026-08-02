@@ -147,7 +147,7 @@ async function handleCreateForm() {
           label="公開設定"
           helper="フォームの内容を公開した場合でも、上記の受付期間内ではない場合、ユーザーはフォームに回答したり、回答内容を編集したりできません。"
         >
-          <span class="flex items-center gap-3 text-sm text-body">
+          <span class="flex items-center gap-3 text-base text-body">
             <input v-model="form.isPublic" name="isPublic" type="checkbox" />
             公開する
           </span>
@@ -161,7 +161,7 @@ async function handleCreateForm() {
         </FormField>
 
         <details class="rounded border border-border bg-surface-light">
-          <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-body">フォームの説明</summary>
+          <summary class="cursor-pointer px-4 py-3 text-base font-semibold text-body">フォームの説明</summary>
           <div class="border-t border-border px-4 py-4">
             <FormField label="フォームの説明">
               <MarkdownEditorField v-model="form.description" min-height-class="min-h-32" name="description" />
@@ -170,7 +170,7 @@ async function handleCreateForm() {
         </details>
 
         <details class="rounded border border-border bg-surface-light">
-          <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-body">回答後に表示する内容</summary>
+          <summary class="cursor-pointer px-4 py-3 text-base font-semibold text-body">回答後に表示する内容</summary>
           <div class="border-t border-border px-4 py-4">
             <FormField
               label="フォームに回答した方に向けて表示するメッセージを設定できます。この内容は、回答したユーザーに自動で送信されるメールにも表示されます。"

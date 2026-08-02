@@ -13,7 +13,7 @@ const { borderless } = defineProps<{
         <h2 v-if="$slots.title" class="text-lg font-semibold text-body">
           <slot name="title" />
         </h2>
-        <div v-if="$slots.description" class="mt-2 text-sm leading-7 text-muted">
+        <div v-if="$slots.description" class="mt-2 text-base leading-7 text-muted">
           <slot name="description" />
         </div>
       </div>

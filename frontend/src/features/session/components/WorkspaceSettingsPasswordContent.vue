@@ -27,54 +27,49 @@ const {
   <TabbedSettingsPage :tabs="tabs">
     <SettingsSection title="パスワード変更" :title-outside="true">
       <SettingsRow>
-        <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-          <div class="space-y-1">
-            <p class="text-sm font-semibold text-body">認証情報</p>
-            <p class="text-xs leading-6 text-muted">
+        <div class="grid gap-4">
+          <div class="grid gap-2">
+            <FormField label="現在のパスワード">
+              <input
+                v-model="passwordForm.currentPassword"
+                name="currentPassword"
+                type="password"
+                :class="{ 'border-danger': getFieldError('currentPassword') }"
+                @blur="markTouched('currentPassword')"
+                @input="markTouched('currentPassword')"
+              />
+            </FormField>
+            <FormError v-if="getFieldError('currentPassword')" :message="getFieldError('currentPassword')" />
+            <p class="text-base leading-6 text-muted">
               <a :href="forgotPasswordHref" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
             </p>
           </div>
-          <div class="grid gap-4">
-            <div class="grid gap-2">
-              <FormField label="現在のパスワード">
-                <input
-                  v-model="passwordForm.currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  :class="{ 'border-danger': getFieldError('currentPassword') }"
-                  @blur="markTouched('currentPassword')"
-                  @input="markTouched('currentPassword')"
-                />
-              </FormField>
-              <FormError v-if="getFieldError('currentPassword')" :message="getFieldError('currentPassword')" />
-            </div>
-            <div class="grid gap-2">
-              <FormField label="新しいパスワード">
-                <input
-                  v-model="passwordForm.newPassword"
-                  name="newPassword"
-                  placeholder="8文字以上（英字・数字を含む）"
-                  type="password"
-                  :class="{ 'border-danger': getFieldError('newPassword') }"
-                  @blur="markTouched('newPassword')"
-                  @input="markTouched('newPassword')"
-                />
-              </FormField>
-              <FormError v-if="getFieldError('newPassword')" :message="getFieldError('newPassword')" />
-            </div>
-            <div class="grid gap-2">
-              <FormField label="新しいパスワード(確認)">
-                <input
-                  v-model="passwordForm.confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  :class="{ 'border-danger': getFieldError('confirmPassword') }"
-                  @blur="markTouched('confirmPassword')"
-                  @input="markTouched('confirmPassword')"
-                />
-              </FormField>
-              <FormError v-if="getFieldError('confirmPassword')" :message="getFieldError('confirmPassword')" />
-            </div>
+          <div class="grid gap-2">
+            <FormField label="新しいパスワード">
+              <input
+                v-model="passwordForm.newPassword"
+                name="newPassword"
+                placeholder="8文字以上（英字・数字を含む）"
+                type="password"
+                :class="{ 'border-danger': getFieldError('newPassword') }"
+                @blur="markTouched('newPassword')"
+                @input="markTouched('newPassword')"
+              />
+            </FormField>
+            <FormError v-if="getFieldError('newPassword')" :message="getFieldError('newPassword')" />
+          </div>
+          <div class="grid gap-2">
+            <FormField label="新しいパスワード(確認)">
+              <input
+                v-model="passwordForm.confirmPassword"
+                name="confirmPassword"
+                type="password"
+                :class="{ 'border-danger': getFieldError('confirmPassword') }"
+                @blur="markTouched('confirmPassword')"
+                @input="markTouched('confirmPassword')"
+              />
+            </FormField>
+            <FormError v-if="getFieldError('confirmPassword')" :message="getFieldError('confirmPassword')" />
           </div>
         </div>
       </SettingsRow>

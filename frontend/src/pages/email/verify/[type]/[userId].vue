@@ -125,7 +125,7 @@ onMounted(() => {
       <SurfaceCardBand>
         <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">ユーザー登録を続ける</h1>
       </SurfaceCardBand>
-      <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+      <div class="space-y-4 px-6 py-6 text-base leading-7 text-body">
         <p v-if="verifyMutation.isPending.value" class="text-muted">認証URLを確認しています...</p>
         <ErrorState v-if="verificationErrorMessage" :message="verificationErrorMessage" />
         <template v-else-if="verification">
@@ -248,7 +248,7 @@ onMounted(() => {
 
             <ActionsFooter align="end">
               <button
-                class="rounded border border-primary bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
+                class="rounded border border-primary bg-primary px-6 py-3 text-base font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
                 :disabled="completeMutation.isPending.value"
                 type="submit"
               >

@@ -146,9 +146,9 @@ function handleKeydown(event: KeyboardEvent) {
         </button>
       </span>
     </div>
-    <p v-else class="text-sm text-muted">{{ emptyMessage }}</p>
+    <p v-else class="text-base text-muted">{{ emptyMessage }}</p>
 
-    <label class="grid gap-2 text-sm text-body">
+    <label class="grid gap-2 text-base text-body">
       <input
         :id="id"
         v-model="searchQuery"
@@ -170,7 +170,7 @@ function handleKeydown(event: KeyboardEvent) {
         <button
           v-for="tag in suggestedTags"
           :key="tag"
-          class="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1.5 text-sm text-body transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1.5 text-base text-body transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="disabled"
           type="button"
           @click="addTag(tag)"
@@ -179,7 +179,7 @@ function handleKeydown(event: KeyboardEvent) {
         </button>
         <button
           v-if="customCandidate"
-          class="inline-flex items-center rounded-full border border-dashed border-primary/40 bg-primary-light px-3 py-1.5 text-sm text-primary transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex items-center rounded-full border border-dashed border-primary/40 bg-primary-light px-3 py-1.5 text-base text-primary transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="disabled"
           type="button"
           @click="addTag(customCandidate)"

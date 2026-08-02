@@ -9,12 +9,12 @@ const { class: className, size = 'default' } = defineProps<{
 const sizeClass = {
   default: 'max-w-[1024px]',
   narrow: 'max-w-[880px]',
-  full: ''
+  full: 'px-0 max-[1000px]:px-0'
 } as const
 </script>
 
 <template>
-  <section :class="cn('mx-auto w-full space-y-6 max-[1000px]:px-4', sizeClass[size], className)">
+  <section :class="cn('mx-auto w-full space-y-6 px-6 max-[1000px]:px-4', sizeClass[size], className)">
     <slot />
   </section>
 </template>

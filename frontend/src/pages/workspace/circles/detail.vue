@@ -205,7 +205,7 @@ function downloadHref(questionId: string) {
               {{ detailQuery.data.value?.participationTypeName ?? '企画' }} 参加登録
               <small class="ml-2 text-sm font-normal text-muted"> (ステップ 1 / {{ totalSteps }}) </small>
             </h1>
-            <p v-if="detailQuery.data.value" class="text-sm text-muted">
+            <p v-if="detailQuery.data.value" class="text-base text-muted">
               {{ detailQuery.data.value.name }}
               <span class="mx-1">/</span>
               {{ detailQuery.data.value.submittedAt ? '提出済み' : '未提出' }}
@@ -216,7 +216,7 @@ function downloadHref(questionId: string) {
       </SurfaceCardBand>
     </SurfaceCard>
 
-    <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>
+    <div v-if="detailQuery.isPending.value" class="text-base text-muted">読み込み中...</div>
 
     <template v-else-if="detailQuery.data.value">
       <AlertMessage v-if="detailQuery.data.value.submittedAt === null" tone="info">
@@ -235,7 +235,7 @@ function downloadHref(questionId: string) {
       </AlertMessage>
 
       <SettingsSection v-if="formDescription" title="必ずお読みください">
-        <div class="px-6 py-6 whitespace-pre-wrap text-sm leading-7 text-body">
+        <div class="px-6 py-6 whitespace-pre-wrap text-base leading-7 text-body">
           {{ formDescription }}
         </div>
       </SettingsSection>
@@ -320,7 +320,7 @@ function downloadHref(questionId: string) {
               />
             </FormField>
 
-            <p v-if="!detailQuery.data.value.canChangeGroupName" class="text-sm text-muted">
+            <p v-if="!detailQuery.data.value.canChangeGroupName" class="text-base text-muted">
               団体名は既存企画から引き継がれているため、この画面では変更できません。
             </p>
 
@@ -332,13 +332,13 @@ function downloadHref(questionId: string) {
       </SettingsSection>
 
       <SettingsSection title="参加登録フォーム">
-        <div v-if="questions.length === 0" class="px-6 py-5 text-sm text-muted">追加の設問はありません。</div>
+        <div v-if="questions.length === 0" class="px-6 py-5 text-base text-muted">追加の設問はありません。</div>
 
         <div class="grid gap-0">
           <template v-for="question in questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
               <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
-              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
@@ -346,11 +346,11 @@ function downloadHref(questionId: string) {
             <div v-else class="border-b border-border px-6 py-5">
               <div class="grid gap-3">
                 <div>
-                  <p class="text-sm font-semibold text-body">
+                  <p class="text-base font-semibold text-body">
                     {{ question.name }}
                     <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
                   </p>
-                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
@@ -395,14 +395,14 @@ function downloadHref(questionId: string) {
 
               <div class="flex flex-wrap gap-3">
                 <RouterLink
-                  class="inline-flex rounded border border-border bg-surface px-4 py-3 text-sm font-semibold text-body transition hover:bg-surface-light hover:no-underline"
+                  class="inline-flex rounded border border-border bg-surface px-4 py-3 text-base font-semibold text-body transition hover:bg-surface-light hover:no-underline"
                   to="/workspace/circles/members"
                 >
                   メンバーを招待
                 </RouterLink>
                 <button
                   v-if="canEdit"
-                  class="rounded border border-border bg-surface px-4 py-3 text-sm font-semibold text-body transition hover:bg-surface-light"
+                  class="rounded border border-border bg-surface px-4 py-3 text-base font-semibold text-body transition hover:bg-surface-light"
                   :disabled="updateMutation.isPending.value"
                   type="button"
                   @click="handleSave"
@@ -425,6 +425,8 @@ function downloadHref(questionId: string) {
       </SettingsSection>
     </template>
 
-    <div v-else class="rounded border border-border px-6 py-6 text-sm text-muted">企画情報を取得できませんでした。</div>
+    <div v-else class="rounded border border-border px-6 py-6 text-base text-muted">
+      企画情報を取得できませんでした。
+    </div>
   </PageLayout>
 </template>

@@ -80,13 +80,13 @@ function extractApiMessage(error: unknown) {
 <template>
   <PageLayout spacious>
     <SurfaceCard>
-      <PanelBody spacious class="space-y-4 text-sm leading-7 text-body">
+      <PanelBody spacious class="space-y-4 text-base leading-7 text-body">
         <h1 class="text-2xl font-semibold text-body">企画招待を受け入れる</h1>
 
         <div v-if="circleQuery.data.value" class="rounded border border-border bg-surface-light px-4 py-3">
           <p class="text-xs text-muted-2">招待元企画</p>
           <p class="mt-1 text-lg font-semibold text-body">{{ circleQuery.data.value.name }}</p>
-          <p class="text-sm text-muted">
+          <p class="text-base text-muted">
             {{ circleQuery.data.value.groupName }} / {{ circleQuery.data.value.participationTypeName }}
           </p>
         </div>

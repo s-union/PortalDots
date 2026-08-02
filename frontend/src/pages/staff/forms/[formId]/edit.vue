@@ -173,7 +173,7 @@ async function handleDeleteForm() {
     <article v-else-if="formQuery.data.value" class="space-y-6">
       <div class="space-y-1 px-1">
         <h2 class="text-3xl font-semibold text-body">設定</h2>
-        <p v-if="isParticipationForm" class="mt-3 text-sm text-muted">
+        <p v-if="isParticipationForm" class="mt-3 text-base text-muted">
           このフォームは参加登録フォームです。基本設定は参加種別画面で管理し、ここでは設問編集のみ行えます。
         </p>
       </div>
@@ -235,10 +235,10 @@ async function handleDeleteForm() {
         <SettingsRow>
           <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">フォーム名</p>
+              <p class="text-base font-semibold text-body">フォーム名</p>
               <p class="text-xs text-muted-2">一覧と回答画面で表示する名称です。必須項目です。</p>
             </div>
-            <label class="grid gap-2 text-sm text-body">
+            <label class="grid gap-2 text-base text-body">
               <span>フォーム名</span>
               <input
                 v-model="editForm.name"
@@ -258,7 +258,7 @@ async function handleDeleteForm() {
         <SettingsRow>
           <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">フォームの説明</p>
+              <p class="text-base font-semibold text-body">フォームの説明</p>
               <p class="text-xs text-muted-2">フォームの説明を入力します。</p>
             </div>
             <FormField label="説明">
@@ -275,11 +275,11 @@ async function handleDeleteForm() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">受付期間</p>
+              <p class="text-base font-semibold text-body">受付期間</p>
               <p class="text-xs text-muted-2">受付開始日時と受付終了日時を指定します。</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-base text-body">
                 <span>開始日時</span>
                 <input
                   v-model="openAtInput"
@@ -292,7 +292,7 @@ async function handleDeleteForm() {
                 <FormError v-if="getFieldError('openAt') && !isParticipationForm" :message="getFieldError('openAt')" />
               </label>
 
-              <label class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-base text-body">
                 <span>締切日時</span>
                 <input
                   v-model="closeAtInput"
@@ -314,7 +314,7 @@ async function handleDeleteForm() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">公開設定</p>
+              <p class="text-base font-semibold text-body">公開設定</p>
               <p class="text-xs text-muted-2">受付期間外では、公開中でもユーザーは回答や編集を行えません。</p>
             </div>
             <div class="flex flex-wrap gap-4">
@@ -331,11 +331,11 @@ async function handleDeleteForm() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">回答条件</p>
+              <p class="text-base font-semibold text-body">回答条件</p>
               <p class="text-xs text-muted-2">回答数上限と回答可能タグを設定します。</p>
             </div>
             <div class="grid gap-4">
-              <label class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-base text-body">
                 <span>最大回答数</span>
                 <input
                   v-model.number="editForm.maxAnswers"
@@ -368,7 +368,7 @@ async function handleDeleteForm() {
         <SettingsRow>
           <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-body">回答完了メッセージ</p>
+              <p class="text-base font-semibold text-body">回答完了メッセージ</p>
               <p class="text-xs text-muted-2">提出後に表示する補足文言です。未設定なら既定メッセージを使います。</p>
             </div>
             <FormField label="回答完了メッセージ">
@@ -386,7 +386,7 @@ async function handleDeleteForm() {
           <div class="space-y-4">
             <p
               v-if="isParticipationForm"
-              class="rounded border border-border bg-surface-light px-4 py-3 text-sm text-muted"
+              class="rounded border border-border bg-surface-light px-4 py-3 text-base text-muted"
             >
               参加登録フォームの公開設定・受付期間・人数条件は参加種別画面から変更してください。
             </p>

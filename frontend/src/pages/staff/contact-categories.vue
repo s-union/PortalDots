@@ -56,7 +56,7 @@ function handleDeleted() {
   <PageLayout>
     <StaffSideWindowContainer :is-open="isEditorOpen">
       <DataCard class="divide-y divide-border">
-        <div class="px-6 py-5 text-sm leading-7 text-muted">
+        <div class="px-6 py-5 text-base leading-7 text-muted">
           ここでメールアドレスを設定するとポータルからのお問い合わせを振り分けることができます。
         </div>
 

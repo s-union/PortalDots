@@ -27,9 +27,11 @@ const meta = {
   component: PageMarkdownContent,
   tags: ['autodocs'],
   argTypes: {
+    headingScale: { control: 'select', options: ['embedded', 'page'] },
     source: { control: 'text' }
   },
   args: {
+    headingScale: 'embedded',
     source: richMarkdown
   }
 } satisfies Meta<typeof PageMarkdownContent>
@@ -37,7 +39,13 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const RichContent: Story = {}
+export const Embedded: Story = {}
+
+export const Page: Story = {
+  args: {
+    headingScale: 'page'
+  }
+}
 
 export const Empty: Story = {
   args: {

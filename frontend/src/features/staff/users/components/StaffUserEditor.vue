@@ -120,7 +120,7 @@ const dangerButtonClass = buttonVariants({ variant: 'dangerOutline', size: 'lg',
       <SettingsSection title="ユーザー種別">
         <SettingsRow>
           <div class="grid gap-3">
-            <label v-for="role in manageableRoles" :key="role" class="flex items-start gap-3 text-sm text-body">
+            <label v-for="role in manageableRoles" :key="role" class="flex items-start gap-3 text-base text-body">
               <input
                 :checked="isRoleChecked(role)"
                 :name="role"
@@ -144,7 +144,7 @@ const dangerButtonClass = buttonVariants({ variant: 'dangerOutline', size: 'lg',
 
     <SettingsSection title="本人確認">
       <SettingsRow>
-        <div class="space-y-3 text-sm text-body">
+        <div class="space-y-3 text-base text-body">
           <p>スタッフは本人確認を完了できます。</p>
           <p class="text-muted">
             現在の状態:
@@ -166,7 +166,7 @@ const dangerButtonClass = buttonVariants({ variant: 'dangerOutline', size: 'lg',
 
     <SettingsSection title="危険な操作">
       <SettingsRow>
-        <div class="space-y-3 text-sm text-body">
+        <div class="space-y-3 text-base text-body">
           <p>このユーザーを削除すると、関連するデータにも影響する場合があります。</p>
           <p class="text-muted">削除前に本当に対象ユーザーであることを確認してください。</p>
         </div>

@@ -27,7 +27,7 @@ const bundleHref = buildApiUrl('/staff/exports/bundle.zip')
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 class="text-base font-medium text-body">Summary CSV</h3>
-              <p class="mt-2 text-sm leading-7 text-muted">全企画のリソース一覧を 1 ファイルの CSV で取得します。</p>
+              <p class="mt-2 text-base leading-7 text-muted">全企画のリソース一覧を 1 ファイルの CSV で取得します。</p>
             </div>
             <BaseButton variant="primary" size="lg" weight="bold" :href="summaryHref"> CSV をダウンロード </BaseButton>
           </div>
@@ -37,7 +37,7 @@ const bundleHref = buildApiUrl('/staff/exports/bundle.zip')
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 class="text-base font-medium text-body">Bundle ZIP</h3>
-              <p class="mt-2 text-sm leading-7 text-muted">
+              <p class="mt-2 text-base leading-7 text-muted">
                 pages / documents / forms / answers を個別 CSV に分けた ZIP を取得します。
               </p>
             </div>

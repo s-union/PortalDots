@@ -116,6 +116,14 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
+    const nameLabel = wrapper.findAll('p').find((paragraph) => paragraph.text() === '名前')
+    expect(nameLabel?.classes()).toContain('mb-0')
+    expect(nameLabel?.classes()).not.toContain('md:min-h-[2.85rem]')
+    expect(wrapper.get('[data-testid="settings-name-row"]').classes()).toContain('md:items-center')
+    expect(wrapper.get('input[name="name"]').classes()).toContain('md:col-start-2')
+    expect(wrapper.get('[data-testid="settings-auth-row"]').classes()).toContain('md:items-center')
+    expect(wrapper.get('input[name="currentPassword"]').classes()).toContain('md:col-start-2')
+
     await wrapper.get('input[name="name"]').setValue('Updated User')
     await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと ゆーざー')
     await wrapper.get('input[name="contactEmail"]').setValue('updated@example.com')
@@ -168,6 +176,9 @@ describe('UserSettingsPage', () => {
       }
     })
     await flushPromises()
+
+    expect(wrapper.text()).not.toContain('認証情報')
+    expect(wrapper.get('a[href="/password/reset"]').text()).toContain('パスワードをお忘れの場合はこちら')
 
     await wrapper.get('input[name="currentPassword"]').setValue('password')
     await wrapper.get('input[name="newPassword"]').setValue('newpass123')

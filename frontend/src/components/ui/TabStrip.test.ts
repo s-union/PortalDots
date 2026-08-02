@@ -12,6 +12,12 @@ describe('TabStrip', () => {
     expect(wrapper.text()).toContain('タブ1')
     expect(wrapper.text()).toContain('タブ2')
     expect(wrapper.text()).toContain('タブ3')
+    expect(wrapper.classes()).not.toContain('px-6')
+    expect(wrapper.classes()).not.toContain('max-[860px]:px-2')
+
+    const tabList = wrapper.get('.min-w-full')
+    expect(tabList.classes()).toContain('w-max')
+    expect(tabList.classes()).toContain('justify-center')
   })
 
   it('renders an anchor tag when href is provided', () => {
@@ -23,6 +29,7 @@ describe('TabStrip', () => {
     const anchor = wrapper.find('a')
     expect(anchor.exists()).toBe(true)
     expect(anchor.attributes('href')).toBe('/some-page')
+    expect(anchor.classes()).toContain('cursor-pointer')
   })
 
   it('renders a span tag when href is not provided', () => {
@@ -31,7 +38,9 @@ describe('TabStrip', () => {
         tabs: [{ label: 'リンクなし' }]
       }
     })
-    expect(wrapper.find('span').exists()).toBe(true)
+    const tab = wrapper.find('span')
+    expect(tab.exists()).toBe(true)
+    expect(tab.classes()).not.toContain('cursor-pointer')
     expect(wrapper.find('a').exists()).toBe(false)
   })
 
@@ -47,6 +56,7 @@ describe('TabStrip', () => {
     const link = wrapper.findComponent(RouterLinkStub)
     expect(link.exists()).toBe(true)
     expect(link.props('to')).toBe('/settings')
+    expect(link.classes()).toContain('cursor-pointer')
   })
 
   it('shows active indicator for active tab', () => {

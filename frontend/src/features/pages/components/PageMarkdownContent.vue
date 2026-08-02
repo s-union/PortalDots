@@ -7,8 +7,9 @@ import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 
-const { source } = defineProps<{
+const { source, headingScale = 'embedded' } = defineProps<{
   source: string
+  headingScale?: 'embedded' | 'page'
 }>()
 
 const sanitizeSchema = {
@@ -49,15 +50,14 @@ const renderedHtml = computed(() => {
 </script>
 
 <template>
-  <div class="page-markdown text-body" v-html="renderedHtml" />
+  <div class="page-markdown text-base text-body" :data-heading-scale="headingScale" v-html="renderedHtml" />
 </template>
 
 <style scoped>
-/* Typography mirrors packages/email/src/templates/markdown-notice.tsx
-   (markdownClassNames) so お知らせ reads the same in-app and in mail.
-   Colors are mapped to theme tokens (email hex → CSS var) for dark mode. */
+/* Colors and block structure mirror packages/email/src/templates/markdown-notice.tsx.
+   Heading sizes intentionally use context-specific app scales to preserve the
+   hierarchy of the surrounding page or embedded card. */
 .page-markdown {
-  font-size: 0.9375rem;
   line-height: 1.7;
 }
 
@@ -85,35 +85,56 @@ const renderedHtml = computed(() => {
   color: var(--color-body);
 }
 
+/* Embedded content stays below surrounding card and form headings. */
 .page-markdown:deep(h1) {
   font-size: 1.25rem;
-  line-height: 1.75rem;
+  line-height: 1.4;
   margin-bottom: 1rem;
 }
 
 .page-markdown:deep(h2) {
   font-size: 1.125rem;
-  line-height: 1.75rem;
+  line-height: 1.5;
   margin-bottom: 0.75rem;
+}
+
+.page-markdown:deep(h3),
+.page-markdown:deep(h4),
+.page-markdown:deep(h5),
+.page-markdown:deep(h6) {
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .page-markdown:deep(h3) {
-  font-size: 1rem;
-  line-height: 1.5rem;
   margin-bottom: 0.75rem;
 }
 
-.page-markdown:deep(h4) {
-  font-size: 0.9375rem;
-  line-height: 1.5rem;
+.page-markdown:deep(h4),
+.page-markdown:deep(h5),
+.page-markdown:deep(h6) {
   margin-bottom: 0.5rem;
 }
 
-.page-markdown:deep(h5),
-.page-markdown:deep(h6) {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  margin-bottom: 0.5rem;
+/* Standalone notice pages retain the larger, descending heading scale. */
+.page-markdown[data-heading-scale='page']:deep(h1) {
+  font-size: 1.75rem;
+  line-height: 1.3;
+}
+
+.page-markdown[data-heading-scale='page']:deep(h2) {
+  font-size: 1.5rem;
+  line-height: 1.35;
+}
+
+.page-markdown[data-heading-scale='page']:deep(h3) {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+.page-markdown[data-heading-scale='page']:deep(h4) {
+  font-size: 1.125rem;
+  line-height: 1.5;
 }
 
 .page-markdown:deep(ul),

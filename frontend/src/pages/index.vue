@@ -301,7 +301,7 @@ const circleStatusItems = computed(() => {
           </ListItemLink>
         </div>
         <RouterLink
-          class="block border-t border-border px-6 py-6 text-center text-sm font-semibold text-primary transition hover:bg-form-control hover:no-underline"
+          class="block border-t border-border px-6 py-4 text-center text-base font-semibold text-primary transition hover:bg-form-control hover:no-underline"
           :to="pagesIndexPath"
         >
           他のお知らせを見る
@@ -338,7 +338,7 @@ const circleStatusItems = computed(() => {
           </ListItemLink>
         </div>
         <RouterLink
-          class="block border-t border-border px-6 py-6 text-center text-sm font-semibold text-primary transition hover:bg-form-control hover:no-underline"
+          class="block border-t border-border px-6 py-4 text-center text-base font-semibold text-primary transition hover:bg-form-control hover:no-underline"
           :to="documentsIndexPath"
         >
           他の配布資料を見る

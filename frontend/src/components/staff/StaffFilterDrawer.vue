@@ -132,7 +132,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
 
       <div
         v-if="queries.length === 0"
-        class="rounded border border-dashed border-border bg-surface-light p-4 text-sm text-muted"
+        class="rounded border border-dashed border-border bg-surface-light p-4 text-base text-muted"
       >
         条件が未設定です。「条件を追加」で絞り込み項目を選択してください。
       </div>
@@ -140,7 +140,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
       <div v-else class="space-y-3">
         <div v-for="query in queries" :key="query.id" class="rounded border border-border bg-surface p-4">
           <div class="mb-2 flex items-center justify-between gap-2">
-            <div class="text-sm font-medium text-body">{{ resolveLabel(query.keyName) }}</div>
+            <div class="text-base font-medium text-body">{{ resolveLabel(query.keyName) }}</div>
             <IconActionButton
               type="button"
               title="条件を削除"
@@ -154,7 +154,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
 
           <div class="grid gap-2 min-[860px]:grid-cols-[10rem_1fr]">
             <select
-              class="rounded border border-border bg-surface px-3 py-2 text-sm text-body"
+              class="rounded border border-border bg-surface px-3 py-2 text-body"
               :value="query.operator"
               :disabled="loading"
               :aria-label="resolveLabel(query.keyName) + 'の条件'"
@@ -167,7 +167,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
 
             <template v-if="resolveType(query.keyName) === 'bool'">
               <select
-                class="rounded border border-border bg-surface px-3 py-2 text-sm text-body"
+                class="rounded border border-border bg-surface px-3 py-2 text-body"
                 :value="normalizedBoolValue(query.value)"
                 :disabled="loading"
                 :aria-label="resolveLabel(query.keyName) + 'の値'"
@@ -179,7 +179,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
             </template>
             <template v-else>
               <input
-                class="rounded border border-border bg-surface px-3 py-2 text-sm text-body"
+                class="rounded border border-border bg-surface px-3 py-2 text-body"
                 type="text"
                 :value="query.value"
                 :disabled="loading"
@@ -195,7 +195,7 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
     <section class="space-y-3">
       <FormField label="条件を追加" label-class="font-medium">
         <select
-          class="rounded border border-border bg-surface px-3 py-2 text-sm text-body"
+          class="rounded border border-border bg-surface px-3 py-2 text-body"
           :disabled="loading"
           @change="onAddField"
         >
@@ -208,8 +208,8 @@ function handleTextValueChange(event: Event, query: StaffFilterQuery) {
     </section>
 
     <section class="space-y-3">
-      <div class="text-sm font-medium text-body">条件の結合</div>
-      <div class="flex items-center gap-4 text-sm text-body">
+      <div class="text-base font-medium text-body">条件の結合</div>
+      <div class="flex items-center gap-4 text-base text-body">
         <label class="inline-flex items-center gap-2">
           <input
             type="radio"

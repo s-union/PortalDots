@@ -74,7 +74,7 @@ function uploadNames(questionId: string) {
             {{ detailQuery.data.value?.participationTypeName ?? '企画' }} 参加登録
             <small class="ml-2 text-sm font-normal text-muted"> (ステップ {{ totalSteps }} / {{ totalSteps }}) </small>
           </h1>
-          <p v-if="detailQuery.data.value" class="text-sm text-muted">
+          <p v-if="detailQuery.data.value" class="text-base text-muted">
             {{ detailQuery.data.value.name }}
           </p>
         </div>
@@ -82,11 +82,11 @@ function uploadNames(questionId: string) {
       </SurfaceCardBand>
     </SurfaceCard>
 
-    <div v-if="detailQuery.isPending.value" class="text-sm text-muted">読み込み中...</div>
+    <div v-if="detailQuery.isPending.value" class="text-base text-muted">読み込み中...</div>
 
     <template v-else-if="detailQuery.data.value">
       <SurfaceCard>
-        <div class="grid gap-4 px-6 py-6 text-sm text-body">
+        <div class="grid gap-4 px-6 py-6 text-base text-body">
           <div>
             <p class="font-semibold">参加登録の提出</p>
             <p class="mt-1 text-muted">
@@ -126,17 +126,17 @@ function uploadNames(questionId: string) {
           <template v-for="question in detailQuery.data.value.questions" :key="question.id">
             <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
               <h4 class="text-base font-semibold text-body">{{ question.name }}</h4>
-              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                 {{ question.description }}
               </p>
             </div>
 
             <div v-else class="border-b border-border px-6 py-5">
-              <p class="text-sm font-semibold text-body">{{ question.name }}</p>
-              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+              <p class="text-base font-semibold text-body">{{ question.name }}</p>
+              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                 {{ question.description }}
               </p>
-              <ul v-if="question.type === 'upload'" class="mt-3 list-disc space-y-1 pl-5 text-sm text-body">
+              <ul v-if="question.type === 'upload'" class="mt-3 list-disc space-y-1 pl-5 text-base text-body">
                 <li v-for="name in uploadNames(question.id)" :key="name">{{ name }}</li>
                 <li v-if="uploadNames(question.id).length === 0" class="list-none text-muted">未アップロード</li>
               </ul>
@@ -145,7 +145,7 @@ function uploadNames(questionId: string) {
                 class="mt-3 rounded border border-border bg-surface p-3"
                 :source="answerText(question.id)"
               />
-              <p v-else class="mt-3 whitespace-pre-wrap text-sm text-body">
+              <p v-else class="mt-3 whitespace-pre-wrap text-base text-body">
                 {{ answerText(question.id) }}
               </p>
             </div>
@@ -153,7 +153,7 @@ function uploadNames(questionId: string) {
         </div>
       </SurfaceCard>
 
-      <p v-else class="text-sm text-muted">追加の設問はありません。</p>
+      <p v-else class="text-base text-muted">追加の設問はありません。</p>
 
       <AlertMessage v-if="errorMessage" tone="danger">
         {{ errorMessage }}
@@ -161,7 +161,7 @@ function uploadNames(questionId: string) {
 
       <div class="flex flex-wrap justify-end gap-3">
         <RouterLink
-          class="inline-flex rounded border border-border bg-surface px-4 py-3 text-sm font-semibold text-body transition hover:bg-surface-light hover:no-underline"
+          class="inline-flex rounded border border-border bg-surface px-4 py-3 text-base font-semibold text-body transition hover:bg-surface-light hover:no-underline"
           :to="requiresMemberStep ? '/workspace/circles/members' : '/workspace/circles/detail'"
         >
           {{ requiresMemberStep ? '「メンバーを招待」へもどる' : '企画情報の編集' }}

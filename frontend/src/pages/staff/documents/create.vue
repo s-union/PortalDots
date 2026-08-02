@@ -97,7 +97,7 @@ async function handleCreateDocument() {
 
         <CheckboxField v-model="form.isPublic" label="公開する" name="isPublic" />
 
-        <label class="grid gap-2 text-sm text-body">
+        <label class="grid gap-2 text-base text-body">
           <span class="font-medium">閲覧可能なタグ</span>
           <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
           <p class="text-xs text-muted">空欄なら全員に公開、指定すると一致する企画タグだけに限定公開します。</p>

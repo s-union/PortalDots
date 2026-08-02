@@ -40,7 +40,7 @@
 
   /* Text / backgrounds — renamed for Tailwind-generated utilities */
   --color-body: rgb(34, 41, 47);
-  --color-base: rgb(243, 244, 250);
+  --color-page: rgb(243, 244, 250);
   --color-surface: rgb(255, 255, 255);
   --color-surface-2: rgb(255, 255, 255);
   --color-surface-3: rgb(255, 255, 255);
@@ -102,7 +102,7 @@
   body {
     margin: 0;
     min-width: 320px;
-    background: var(--color-base);
+    background: var(--color-page);
     color: var(--color-body);
     font-weight: 400;
   }
@@ -199,7 +199,7 @@
   --color-muted-light: rgba(142, 142, 142, 0.1);
   --color-border: rgba(255, 255, 255, 0.12);
   --color-border-form: rgb(62, 63, 66);
-  --color-base: rgb(0, 0, 0);
+  --color-page: rgb(0, 0, 0);
   --color-surface-light: rgba(255, 255, 255, 0.075);
   --color-surface: rgb(30, 30, 30);
   --color-surface-2: rgb(46, 46, 46);
@@ -236,7 +236,7 @@
     --color-muted-light: rgba(142, 142, 142, 0.1);
     --color-border: rgba(255, 255, 255, 0.12);
     --color-border-form: rgb(62, 63, 66);
-    --color-base: rgb(0, 0, 0);
+    --color-page: rgb(0, 0, 0);
     --color-surface-light: rgba(255, 255, 255, 0.075);
     --color-surface: rgb(30, 30, 30);
     --color-surface-2: rgb(46, 46, 46);
@@ -287,17 +287,17 @@
 }
 
 /* Focus shadow — matches $box-shadow-focus-primary / $box-shadow-focus-danger
-   Inner ring uses bg-base (not bg-surface) */
+   Inner ring uses bg-page (not bg-surface) */
 @utility focus-ring-primary {
   box-shadow:
     0 0 0 1.5px var(--color-focus-primary),
-    inset 0 0 0 2px var(--color-base);
+    inset 0 0 0 2px var(--color-page);
 }
 
 @utility focus-ring-danger {
   box-shadow:
     0 0 0 1.5px var(--color-focus-danger),
-    inset 0 0 0 2px var(--color-base);
+    inset 0 0 0 2px var(--color-page);
 }
 
 /* ========================================================================
@@ -353,7 +353,7 @@
     border-color: var(--color-primary);
     box-shadow:
       0 0 0 1.5px var(--color-focus-primary),
-      inset 0 0 0 2px var(--color-base);
+      inset 0 0 0 2px var(--color-page);
   }
 
   input[disabled],

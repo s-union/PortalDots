@@ -66,9 +66,9 @@ const emit = defineEmits<{
             >
               {{ appModeLabel }}
             </span>
-            <p v-if="isDemoMode" class="text-sm leading-6 text-muted">デモサイト</p>
+            <p v-if="isDemoMode" class="text-base leading-6 text-muted">デモサイト</p>
           </div>
-          <p v-if="topDescription !== ''" class="mt-3 text-sm text-muted">{{ topDescription }}</p>
+          <p v-if="topDescription !== ''" class="mt-3 text-base text-muted">{{ topDescription }}</p>
         </div>
 
         <div v-if="modeSwitchTarget && isAuthenticated" class="border-b border-border px-6 py-4">
@@ -88,7 +88,7 @@ const emit = defineEmits<{
         </nav>
 
         <div v-if="isAuthenticated || modeSwitchTarget" class="mt-auto border-t border-border px-6 py-6">
-          <p v-if="isAuthenticated" class="text-sm text-muted text-center">{{ authLabel }}</p>
+          <p v-if="isAuthenticated" class="text-base text-muted text-center">{{ authLabel }}</p>
           <div v-if="statusBadges.length > 0" class="mt-3 flex flex-wrap gap-2">
             <span
               v-for="badge in statusBadges"

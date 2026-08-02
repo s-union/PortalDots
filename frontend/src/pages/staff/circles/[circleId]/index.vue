@@ -233,7 +233,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
               >
                 <textarea v-model="form.notes" class="min-h-24" name="notes" />
               </FormField>
-              <div class="grid gap-2 text-sm text-body">
+              <div class="grid gap-2 text-base text-body">
                 <span class="font-medium">登録受理状況</span>
                 <div class="flex gap-4">
                   <label class="flex items-center gap-2">
@@ -253,7 +253,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
               <FormField v-if="form.status === 'rejected'" label="不受理理由" label-class="font-medium">
                 <MarkdownEditorField v-model="form.statusReason" min-height-class="min-h-16" name="statusReason" />
               </FormField>
-              <label class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-base text-body">
                 <span class="font-medium">使用場所</span>
                 <select v-model="form.placeIds" name="placeIds" multiple>
                   <option v-for="place in placesQuery.data.value ?? []" :key="place.id" :value="place.id">
@@ -320,7 +320,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
 
                 <button
                   v-if="!member.isLeader"
-                  class="rounded border border-danger px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
+                  class="rounded border border-danger px-4 py-2 text-base font-semibold text-danger transition hover:bg-danger-light disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="deleteMemberMutation.isPending.value"
                   type="button"
                   @click="handleDeleteMember(member.userId, member.displayName)"
@@ -331,7 +331,7 @@ async function handleDeleteMember(userId: string, displayName: string) {
             </div>
 
             <form class="grid gap-3" @submit.prevent="handleAddMember">
-              <label class="grid gap-2 text-sm text-body">
+              <label class="grid gap-2 text-base text-body">
                 <span class="font-medium">ユーザーを追加</span>
                 <span class="text-xs text-muted">学籍番号または連絡先メールアドレスを入力して所属させます。</span>
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">

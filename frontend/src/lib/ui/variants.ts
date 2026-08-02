@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 
-export const alertVariants = cva('rounded border px-4 py-3 text-sm', {
+export const alertVariants = cva('rounded border px-4 py-3 text-base', {
   variants: {
     tone: {
       danger: 'border-danger bg-danger-light text-danger',
@@ -73,9 +73,9 @@ export const buttonVariants = cva(
       size: {
         xs: 'px-4 py-2 text-xs',
         sm: 'px-2 py-[0.2rem] text-[0.9rem]',
-        md: 'px-4 py-2 text-sm',
-        lg: 'px-4 py-3 text-sm',
-        wide: 'px-8 py-3 text-sm'
+        md: 'px-4 py-2 text-base',
+        lg: 'px-4 py-3 text-base',
+        wide: 'px-8 py-3 text-base'
       },
       weight: {
         normal: 'font-normal',
@@ -145,7 +145,7 @@ export const surfaceVariants = cva('rounded border border-border bg-surface', {
 export type SurfaceVariantProps = VariantProps<typeof surfaceVariants>
 
 export const navMenuLinkVariants = cva(
-  'relative flex items-center px-6 py-[1.2rem] text-sm no-underline transition-colors duration-[0.15s] hover:bg-surface-light hover:no-underline',
+  'relative flex items-center px-6 py-[1.2rem] text-base no-underline transition-colors duration-[0.15s] hover:bg-surface-light hover:no-underline',
   {
     variants: {
       active: {

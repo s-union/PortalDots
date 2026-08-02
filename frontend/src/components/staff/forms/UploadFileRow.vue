@@ -15,8 +15,8 @@ const {
 
 const containerClasses =
   variant === 'highlight'
-    ? 'flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-surface-light px-4 py-3 text-sm text-body'
-    : 'flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-surface px-4 py-3 text-sm text-body'
+    ? 'flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-surface-light px-4 py-3 text-base text-body'
+    : 'flex flex-wrap items-center justify-between gap-3 rounded border border-border bg-surface px-4 py-3 text-base text-body'
 
 const downloadClasses =
   variant === 'highlight'

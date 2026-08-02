@@ -83,11 +83,11 @@ const remainingAnswerCount = computed(() => {
           <header class="space-y-4">
             <div>
               <h1 class="text-3xl font-semibold text-body">{{ form.name }}</h1>
-              <p class="mt-3 text-sm text-muted">
+              <p class="mt-3 text-base text-muted">
                 受付期間 : {{ formatDateTime(form.openAt) }}〜{{ formatDateTime(form.closeAt) }}
               </p>
-              <p v-if="!form.isOpen" class="mt-1 text-sm font-semibold text-danger">受付期間外です</p>
-              <p v-if="form.maxAnswers > 1" class="mt-1 text-sm text-muted">
+              <p v-if="!form.isOpen" class="mt-1 text-base font-semibold text-danger">受付期間外です</p>
+              <p v-if="form.maxAnswers > 1" class="mt-1 text-base text-muted">
                 1企画あたり {{ form.maxAnswers }} 件まで回答できます。
               </p>
             </div>
@@ -110,7 +110,7 @@ const remainingAnswerCount = computed(() => {
 
           <div
             v-if="selectedAnswer?.updatedAt"
-            class="rounded border border-border bg-surface px-6 py-5 text-sm text-muted shadow-lv1"
+            class="rounded border border-border bg-surface px-6 py-5 text-base text-muted shadow-lv1"
           >
             回答の最終更新日時 : {{ formatDateTime(selectedAnswer.updatedAt) }}
           </div>
@@ -129,15 +129,15 @@ const remainingAnswerCount = computed(() => {
           <section v-if="answers.length > 0" class="rounded border border-border bg-surface px-6 py-5 shadow-lv1">
             <div class="grid gap-3">
               <div>
-                <p class="text-sm font-semibold text-body">以前の回答を閲覧・変更</p>
-                <p v-if="form.isOpen" class="mt-1 text-sm text-muted">受付期間内に限り、回答の変更ができます</p>
+                <p class="text-base font-semibold text-body">以前の回答を閲覧・変更</p>
+                <p v-if="form.isOpen" class="mt-1 text-base text-muted">受付期間内に限り、回答の変更ができます</p>
               </div>
               <div class="flex flex-wrap gap-3">
                 <button
                   v-for="answer in answers"
                   :key="answer.id"
                   type="button"
-                  class="rounded border px-4 py-2 text-sm transition"
+                  class="rounded border px-4 py-2 text-base transition"
                   :class="
                     selectedAnswerId === answer.id
                       ? 'border-primary bg-primary-light text-primary'
@@ -157,11 +157,11 @@ const remainingAnswerCount = computed(() => {
           >
             <div class="grid gap-3">
               <div>
-                <p class="text-sm font-semibold text-body">回答を新規作成</p>
-                <p v-if="remainingAnswerCount > 0" class="mt-1 text-sm text-muted">
+                <p class="text-base font-semibold text-body">回答を新規作成</p>
+                <p v-if="remainingAnswerCount > 0" class="mt-1 text-base text-muted">
                   貴企画はこの申請を、あと{{ remainingAnswerCount }}つ新規作成できます
                 </p>
-                <p v-else class="mt-1 text-sm text-muted">
+                <p v-else class="mt-1 text-base text-muted">
                   回答数上限({{
                     form.maxAnswers
                   }}つ)に達したため、これ以上新規作成できません。以前の回答の編集は上記より可能です。
@@ -181,7 +181,7 @@ const remainingAnswerCount = computed(() => {
           </section>
 
           <SurfaceCard overflow-hidden>
-            <div v-if="selectedAnswer" class="border-b border-border px-6 py-5 text-sm text-body">
+            <div v-if="selectedAnswer" class="border-b border-border px-6 py-5 text-base text-body">
               <p class="font-semibold">
                 {{ form.isOpen ? '回答を編集' : '回答を閲覧' }} — 回答ID : {{ selectedAnswer.id }}
               </p>
@@ -206,7 +206,7 @@ const remainingAnswerCount = computed(() => {
               <template v-for="question in form.questions" :key="question.id">
                 <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5 last:border-b-0">
                   <h2 class="text-lg font-semibold text-body">{{ question.name }}</h2>
-                  <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">
+                  <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-base leading-7 text-muted">
                     {{ question.description }}
                   </p>
                 </div>
@@ -214,11 +214,11 @@ const remainingAnswerCount = computed(() => {
                 <div v-else class="border-b border-border px-6 py-5 last:border-b-0">
                   <div class="grid gap-3">
                     <div>
-                      <p class="text-sm font-semibold text-body">
+                      <p class="text-base font-semibold text-body">
                         {{ question.name }}
                         <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
                       </p>
-                      <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted">
+                      <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
                         {{ question.description }}
                       </p>
                     </div>

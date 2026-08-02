@@ -35,7 +35,7 @@ const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers')
 
     <article v-else-if="answersQuery.data.value" class="space-y-6">
       <section class="rounded border border-border bg-surface p-6 shadow-lv1">
-        <div class="space-y-4 text-sm leading-7 text-body">
+        <div class="space-y-4 text-base leading-7 text-body">
           <h1 class="text-xl font-semibold text-body">アップロードファイルの一括ダウンロード</h1>
           <p class="text-sm text-muted">{{ answersQuery.data.value.form.name }}</p>
           <p>

@@ -57,7 +57,7 @@ async function handleRequest(type: 'email' | 'univemail') {
     <SurfaceCardBand>
       <h1 class="text-[1.333rem] font-semibold leading-[1.4] text-body">まだユーザー登録は完了していません！</h1>
     </SurfaceCardBand>
-    <div class="space-y-4 px-6 py-6 text-sm leading-7 text-body">
+    <div class="space-y-4 px-6 py-6 text-base leading-7 text-body">
       <p v-if="statusQuery.data.value">
         <strong>{{ statusQuery.data.value.displayName }}</strong> としてログイン中です。
       </p>
@@ -79,7 +79,7 @@ async function handleRequest(type: 'email' | 'univemail') {
       <div class="flex items-center justify-between gap-3">
         <div>
           <h2 class="text-lg font-semibold text-body">{{ item.label }}</h2>
-          <p class="mt-1 text-sm text-muted">{{ item.address }}</p>
+          <p class="mt-1 text-base text-muted">{{ item.address }}</p>
         </div>
         <span
           class="rounded px-3 py-1 text-xs font-semibold"
@@ -92,7 +92,7 @@ async function handleRequest(type: 'email' | 'univemail') {
 
     <div class="space-y-4 px-6 py-6">
       <button
-        class="rounded border border-primary bg-primary px-4 py-2 text-sm text-white transition hover:bg-primary-hover disabled:opacity-60"
+        class="rounded border border-primary bg-primary px-4 py-2 text-base text-white transition hover:bg-primary-hover disabled:opacity-60"
         :disabled="item.verified || requestMutation.isPending.value"
         type="button"
         @click="handleRequest(item.type)"
@@ -102,7 +102,7 @@ async function handleRequest(type: 'email' | 'univemail') {
 
       <div
         v-if="requestResult?.type === item.type"
-        class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-sm text-body"
+        class="rounded border border-primary/20 bg-primary-light px-4 py-3 text-base text-body"
       >
         <p>{{ requestResult.message }}</p>
       </div>
@@ -111,7 +111,7 @@ async function handleRequest(type: 'email' | 'univemail') {
 
   <div class="flex justify-center">
     <RouterLink
-      class="rounded border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-body transition hover:bg-surface-light"
+      class="rounded border border-border bg-surface px-5 py-2.5 text-base font-semibold text-body transition hover:bg-surface-light"
       to="/"
     >
       トップページに戻る

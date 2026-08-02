@@ -56,7 +56,7 @@ async function handleSubmit() {
       </SurfaceCardBand>
       <form
         id="password-reset-form"
-        class="space-y-5 px-6 py-6 text-sm leading-7 text-body"
+        class="space-y-5 px-6 py-6 text-base leading-7 text-body"
         @submit.prevent="handleSubmit"
       >
         <p>{{ appName }}へのログインに使用していた学籍番号または連絡先メールアドレスを入力してください。</p>
@@ -73,7 +73,7 @@ async function handleSubmit() {
     </SurfaceCard>
     <div class="pt-2 text-center">
       <button
-        class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-sm text-white transition hover:bg-primary-hover hover:no-underline disabled:opacity-60"
+        class="inline-flex rounded border border-primary bg-primary px-8 py-3 text-base text-white transition hover:bg-primary-hover hover:no-underline disabled:opacity-60"
         :disabled="resetMutation.isPending.value"
         form="password-reset-form"
         type="submit"

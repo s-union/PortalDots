@@ -60,7 +60,7 @@ function handleSubmit() {
           <FormField label="スタッフ用メモ" label-class="font-medium">
             <FormTextarea v-model="form.notes" name="notes" class="min-h-24" />
           </FormField>
-          <div class="grid gap-2 text-sm text-body">
+          <div class="grid gap-2 text-base text-body">
             <span class="font-medium">登録受理状況</span>
             <div class="flex gap-4">
               <label class="flex items-center gap-2">
@@ -83,7 +83,7 @@ function handleSubmit() {
           <FormField label="使用場所" label-class="font-medium">
             <select
               v-model="form.placeIds"
-              class="min-h-24 rounded border bg-form-control px-4 py-3 text-sm text-body outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/30"
+              class="min-h-24 rounded border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:ring-1 focus:ring-primary/30"
               name="placeIds"
               multiple
             >
