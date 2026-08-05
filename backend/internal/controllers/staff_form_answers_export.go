@@ -91,6 +91,15 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c *echo.Context) e
 		}
 	}
 
+	circles, err := h.circles.ListForStaff(c.Request().Context())
+	if err != nil {
+		return errorJSON(c, http.StatusInternalServerError, "export_failed")
+	}
+	circleNames := make(map[string]string, len(circles))
+	for _, currentCircle := range circles {
+		circleNames[currentCircle.ID] = currentCircle.Name
+	}
+
 	tempFile, err := os.CreateTemp("", "staff-form-answer-uploads-*.zip")
 	if err != nil {
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
@@ -102,7 +111,11 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c *echo.Context) e
 
 	archive := zip.NewWriter(tempFile)
 	created := 0
+	usedEntryNames := make(map[string]int)
+	usedCircleDirs := make(map[string]bool)
 	for _, currentAnswer := range h.answers.ListByForm(c.Request().Context(), formValue.ID) {
+		circleName := circleNames[currentAnswer.CircleID]
+		circleDir := uniqueArchiveCircleDirectory(circleName, externalid.MustEncodeUUIDString(currentAnswer.CircleID), usedCircleDirs)
 		for _, upload := range h.answers.ListUploadsByAnswer(c.Request().Context(), currentAnswer.ID) {
 			if _, ok := uploadQuestions[upload.QuestionID]; !ok {
 				continue
@@ -112,14 +125,13 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c *echo.Context) e
 				continue
 			}
 
-			filename := fmt.Sprintf(
-				"%s/%s-%s-%s",
-				externalid.MustEncodeUUIDString(currentAnswer.CircleID),
-				externalid.MustEncodeUUIDString(currentAnswer.ID),
-				externalid.MustEncodeUUIDString(upload.QuestionID),
-				sanitizeArchiveFilename(fileUpload.Filename),
-			)
-			writer, err := archive.Create(filename)
+			entryName := uniqueArchiveEntryName(usedEntryNames, archiveEntryPath(
+				circleDir,
+				circleName,
+				uploadQuestions[upload.QuestionID].Name,
+				fileUpload.Filename,
+			))
+			writer, err := archive.Create(entryName)
 			if err != nil {
 				archive.Close()
 				return errorJSON(c, http.StatusInternalServerError, "export_failed")
@@ -142,9 +154,9 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c *echo.Context) e
 		return errorJSON(c, http.StatusInternalServerError, "export_failed")
 	}
 
-	filename := fmt.Sprintf("%s-answer-uploads.zip", externalid.MustEncodeUUIDString(formValue.ID))
+	filename := fmt.Sprintf("%s-answer-uploads.zip", sanitizeArchiveFilename(formValue.Name))
 	c.Response().Header().Set(echo.HeaderContentType, "application/zip")
-	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename))
+	c.Response().Header().Set(echo.HeaderContentDisposition, attachmentContentDisposition(filename))
 	return c.Stream(http.StatusOK, "application/zip", tempFile)
 }
 
@@ -177,11 +189,59 @@ func sanitizeArchiveFilename(filename string) string {
 		return "upload.bin"
 	}
 	replacer := strings.NewReplacer("/", "_", "\\", "_")
-	sanitized := strings.TrimSpace(replacer.Replace(base))
+	sanitized := strings.Map(func(r rune) rune {
+		switch r {
+		case '\r', '\n', 0:
+			return -1
+		default:
+			return r
+		}
+	}, base)
+	sanitized = strings.TrimSpace(replacer.Replace(sanitized))
 	if sanitized == "" || sanitized == "." || sanitized == ".." {
 		return "upload.bin"
 	}
 	return sanitized
+}
+
+// uniqueArchiveCircleDirectory returns a single ZIP path segment for a circle.
+// It keeps the sanitised circle name when possible and falls back to the
+// encoded circle ID for blank names; duplicate names are disambiguated with the
+// encoded circle ID so two circles can share a name without colliding.
+func uniqueArchiveCircleDirectory(circleName, encodedCircleID string, used map[string]bool) string {
+	dir := sanitizeArchiveFilename(circleName)
+	if strings.TrimSpace(circleName) == "" {
+		dir = encodedCircleID
+	}
+	for used[dir] {
+		dir = dir + "_" + encodedCircleID
+	}
+	used[dir] = true
+	return dir
+}
+
+// archiveEntryPath builds the ZIP entry name for one uploaded file so it is
+// readable after unzipping: <circleName>_<questionName>_<originalFilename>.
+func archiveEntryPath(circleDir, circleName, questionName, originalFilename string) string {
+	return fmt.Sprintf(
+		"%s/%s_%s_%s",
+		circleDir,
+		sanitizeArchiveFilename(circleName),
+		sanitizeArchiveFilename(questionName),
+		sanitizeArchiveFilename(originalFilename),
+	)
+}
+
+// uniqueArchiveEntryName deduplicates ZIP entry names with a counter kept
+// before the file extension, preserving the extension on every duplicate.
+func uniqueArchiveEntryName(used map[string]int, name string) string {
+	count := used[name]
+	used[name] = count + 1
+	if count == 0 {
+		return name
+	}
+	ext := filepath.Ext(name)
+	return fmt.Sprintf("%s-%d%s", strings.TrimSuffix(name, ext), count, ext)
 }
 
 func (h *staffFormHandlers) shouldNotifyStaffFormAnswer(formID string, isPublic bool) bool {
