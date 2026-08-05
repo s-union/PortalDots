@@ -67,7 +67,7 @@ async function handleCreatePage() {
       sendEmails: form.value.sendEmails,
       publishedAt: form.value.publishedAt
     })
-    await router.push(`/staff/pages/${created.id}`)
+    await router.replace(`/staff/pages/${created.id}`)
   } catch (error) {
     errorMessage.value = extractStaffPageValidationMessage(error)
     publishedAtError.value = extractStaffPagePublishedAtError(error)

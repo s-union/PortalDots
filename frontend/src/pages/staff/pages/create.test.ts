@@ -120,4 +120,31 @@ describe('StaffPageCreatePage', () => {
 
     expect(createdRequestBody).toMatchObject({ publishedAt: null })
   })
+
+  it('does not redirect when the create fails', async () => {
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([])),
+      http.get('/v1/staff/documents', () => HttpResponse.json([])),
+      http.post('/v1/staff/pages', () =>
+        HttpResponse.json(
+          {
+            message: '入力内容を確認してください。',
+            errors: { title: ['お知らせのタイトルは必須です'] }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
+    const { router, wrapper } = await mountCreatePage()
+
+    await wrapper.get('input[name="title"]').setValue('新規お知らせ')
+    await wrapper.get('textarea[name="body"]').setValue('新規本文です。')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('お知らせのタイトルは必須です')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/pages/create')
+  })
 })

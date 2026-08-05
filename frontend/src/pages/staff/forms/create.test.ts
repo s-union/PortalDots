@@ -123,4 +123,61 @@ describe('StaffFormCreatePage', () => {
     expect(String(createdRequestBody?.closeAt)).toMatch(/^2026-03-30T/)
     expect(router.currentRoute.value.fullPath).toBe('/staff/forms/0195ec00-00a1-7000-8000-000000000001/editor')
   })
+
+  it('does not redirect when the create fails', async () => {
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([])),
+      http.post('/v1/staff/forms', () =>
+        HttpResponse.json(
+          {
+            message: '入力内容を確認してください。',
+            errors: { name: ['フォーム名は必須です'] }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/forms', component: { template: '<div>forms</div>' } },
+        { path: '/staff/forms/create', component: StaffFormCreatePage },
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } }
+      ]
+    })
+    await router.push('/staff/forms/create')
+    await router.isReady()
+
+    const wrapper = mount(StaffFormCreatePage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    await wrapper.get('input[name="name"]').setValue('追加ヒアリング')
+    await wrapper.get('input[name="openAt"]').setValue('2026-03-15T09:00')
+    await wrapper.get('input[name="closeAt"]').setValue('2026-03-30T18:45')
+    await wrapper.get('input[name="maxAnswers"]').setValue('3')
+    await wrapper.get('button[type="submit"]').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('フォーム名は必須です')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/forms/create')
+  })
 })
