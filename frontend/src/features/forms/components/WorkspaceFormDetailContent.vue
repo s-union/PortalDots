@@ -4,7 +4,8 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
-import { updateDraftValue } from '@/features/forms/answers'
+import { isFormAnswerDraftDirty, updateDraftValue } from '@/features/forms/answers'
+import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useWorkspaceFormDetailPage } from '@/features/forms/composables/useWorkspaceFormDetailPage'
 import { computed, defineAsyncComponent } from 'vue'
 const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
@@ -71,6 +72,9 @@ const remainingAnswerCount = computed(() => {
   }
   return Math.max(form.value.maxAnswers - answers.value.length, 0)
 })
+useUnsavedChangesGuard(
+  computed(() => isFormAnswerDraftDirty(draft.value, selectedAnswer.value, form?.value?.questions ?? []))
+)
 </script>
 
 <template>

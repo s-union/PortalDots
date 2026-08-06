@@ -15,9 +15,11 @@ import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import {
   buildFormAnswerUploadDownloadUrlByAnswer,
+  isFormAnswerDraftDirty,
   updateDraftValue,
   useFormAnswerEditorDraft
 } from '@/features/forms/answers'
+import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   buildDeleteStaffFormAnswerConfirmMessage,
@@ -52,6 +54,10 @@ const errorMessage = ref('')
 const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
+const isDirty = computed(() =>
+  isFormAnswerDraftDirty(draft.value, answerQuery.data.value?.answer, answerQuery.data.value?.form.questions ?? [])
+)
+const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
 const notificationMessage = computed(() => {
   const form = answerQuery.data.value?.form
   if (!form) {
@@ -93,6 +99,7 @@ async function handleDeleteAnswer() {
 
   try {
     await deleteAnswerMutation.mutateAsync(answerId.value)
+    clearUnsavedChangesGuard()
     await router.push(`/staff/forms/${encodeURIComponent(formId.value)}/answers`)
   } catch (error) {
     errorMessage.value = extractStaffFormAnswerValidationMessage(error)
