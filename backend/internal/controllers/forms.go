@@ -42,7 +42,7 @@ type formDetailResponse struct {
 	AnswerableTags           []string            `json:"answerableTags"`
 	ConfirmationMessage      string              `json:"confirmationMessage"`
 	CreatedByUserID          string              `json:"createdByUserId"`
-	StaffNotificationUserIDs []string            `json:"staffNotificationUserIds,omitempty"`
+	StaffNotificationUserIDs []string            `json:"-"`
 	Questions                []staffFormQuestion `json:"questions"`
 }
 
