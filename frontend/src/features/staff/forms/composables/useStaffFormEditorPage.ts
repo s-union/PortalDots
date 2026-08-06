@@ -175,6 +175,7 @@ export function useStaffFormEditorPage(
         maxAnswers: form.maxAnswers,
         answerableTags: form.answerableTags,
         confirmationMessage: form.confirmationMessage,
+        staffNotificationUserIds: form.staffNotificationUserIds,
         isPublic: true
       })
       markSaved()
@@ -204,6 +205,7 @@ export function useStaffFormEditorPage(
         maxAnswers: form.maxAnswers,
         answerableTags: form.answerableTags,
         confirmationMessage: form.confirmationMessage,
+        staffNotificationUserIds: form.staffNotificationUserIds,
         isPublic: false
       })
       markSaved()

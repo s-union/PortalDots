@@ -17,7 +17,13 @@ export const mockStaffUser = {
   ...mockUser,
   id: 'staff-1',
   displayName: 'スタッフ 一郎',
-  studentId: 'S99999999'
+  studentId: 'S99999999',
+  loginIds: ['ichiro@example.ac.jp'],
+  roles: ['staff'],
+  isVerified: true,
+  isEmailVerified: true,
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z'
 }
 
 export const mockCircle = {

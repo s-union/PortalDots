@@ -537,6 +537,7 @@ export const staffFormSummarySchema = z.object({
   maxAnswers: z.number(),
   answerableTags: stringArraySchema,
   confirmationMessage: z.string(),
+  staffNotificationUserIds: stringArraySchema.default([]),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
   createdAt: z.string().default(''),

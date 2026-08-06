@@ -109,6 +109,13 @@ describe('StaffFormCreatePage', () => {
       throw new Error('required tag button not found')
     }
     await requiredTagButton.trigger('click')
+    await wrapper.get('input[name="staffNotificationUserIds"]').setValue('鈴木')
+    await flushPromises()
+    const staffUserButton = wrapper.findAll('button').find((button) => button.text().includes('鈴木 二郎'))
+    if (!staffUserButton) {
+      throw new Error('staff user button not found')
+    }
+    await staffUserButton.trigger('click')
     await wrapper.get('textarea[name="confirmationMessage"]').setValue('回答ありがとうございました。')
     await wrapper.get('button[type="submit"]').trigger('submit')
     await flushPromises()
@@ -116,7 +123,8 @@ describe('StaffFormCreatePage', () => {
     expect(createdRequestBody).toMatchObject({
       maxAnswers: 3,
       answerableTags: ['展示', '必須'],
-      confirmationMessage: '回答ありがとうございました。'
+      confirmationMessage: '回答ありがとうございました。',
+      staffNotificationUserIds: ['staff-user-1']
     })
     expect(createdRequestBody).not.toHaveProperty('circleId')
     expect(String(createdRequestBody?.openAt)).toMatch(/^2026-03-15T/)

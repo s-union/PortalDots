@@ -40,6 +40,7 @@ export interface CreateStaffFormPayload {
   maxAnswers: number
   answerableTags: string[]
   confirmationMessage: string
+  staffNotificationUserIds: string[]
   isPublic: boolean
 }
 

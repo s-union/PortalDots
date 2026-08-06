@@ -9,6 +9,7 @@ import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
+import StaffUserPicker from '@/components/staff/StaffUserPicker.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
@@ -158,6 +159,13 @@ async function handleCreateForm() {
           helper="空欄の場合、企画に所属するユーザー全員がフォームに回答できます。タグを指定した場合、指定したタグのうち、1つ以上該当する企画がフォームに回答できます。"
         >
           <StaffTagPicker v-model="form.answerableTags" :available-tags="availableTags" name="answerableTags" />
+        </FormField>
+
+        <FormField
+          label="スタッフ用控えの送信先"
+          helper="回答があったときに「スタッフ用控え」のメールを送信するスタッフを選択します。未指定の場合、フォーム作成者が送信先になります。"
+        >
+          <StaffUserPicker v-model="form.staffNotificationUserIds" name="staffNotificationUserIds" />
         </FormField>
 
         <details class="rounded border border-border bg-surface-light">
