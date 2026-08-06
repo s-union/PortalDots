@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
@@ -133,6 +133,10 @@ function setupDefaultHandlers(options: { createShouldSucceed?: boolean } = {}) {
 }
 
 describe('CircleCreatePage', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   function setupSession(options: { canCreateCircleRegistration?: boolean } = {}) {
     const { canCreateCircleRegistration = true } = options
     const pinia = createPinia()
@@ -471,5 +475,72 @@ describe('CircleCreatePage', () => {
 
     expect(wrapper.text()).toContain('企画名を入力してください')
     expect(router.currentRoute.value.path).toBe('/circles/new')
+  })
+
+  it('warns before leaving when the form has unsaved input', async () => {
+    setupDefaultHandlers()
+
+    const pinia = setupSession()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
+        { path: '/circles/new', component: CircleCreatePage },
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } }
+      ]
+    })
+    await router.push('/circles/new')
+    await router.isReady()
+
+    const App = { template: '<router-view />' }
+    const wrapper = mount(App, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await flushPromises()
+
+    await router.push('/')
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(router.currentRoute.value.path).toBe('/circles/new')
+  })
+
+  it('does not warn when navigating away after a successful submit', async () => {
+    setupDefaultHandlers()
+
+    const pinia = setupSession()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div>home</div>' } },
+        { path: '/circles/new', component: CircleCreatePage },
+        { path: '/workspace/circles/members', component: { template: '<div>members</div>' } }
+      ]
+    })
+    await router.push('/circles/new')
+    await router.isReady()
+
+    const App = { template: '<router-view />' }
+    const wrapper = mount(App, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+    await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('input[name="nameYomi"]').setValue('てすときかく')
+    await wrapper.get('input[name="groupName"]').setValue('テスト大学')
+    await wrapper.get('input[name="groupNameYomi"]').setValue('てすとだいがく')
+    await wrapper.get('button[type="button"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/workspace/circles/members')
+    expect(confirmSpy).not.toHaveBeenCalled()
   })
 })

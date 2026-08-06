@@ -25,9 +25,11 @@ import {
 import {
   buildFormAnswerUploadDownloadUrl,
   extractValidationMessage as extractAnswerValidationMessage,
+  isFormAnswerDraftDirty,
   useFormAnswerEditorDraft,
   useFormAnswerUploadMutation
 } from '@/features/forms/answers'
+import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { extractValidationMessage } from '@/lib/api/validation'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
@@ -80,6 +82,22 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
+
+const isDirty = computed(() => {
+  const detail = detailQuery.data.value
+  if (!detail) {
+    return false
+  }
+  const basicInfoChanged =
+    form.name !== detail.name ||
+    form.nameYomi !== detail.nameYomi ||
+    form.groupName !== detail.groupName ||
+    form.groupNameYomi !== detail.groupNameYomi ||
+    form.participationTypeId !== detail.participationTypeId ||
+    form.notes !== detail.notes
+  return basicInfoChanged || isFormAnswerDraftDirty(draft.value, detail.answer ?? null, questions.value)
+})
+const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
 
 watch(
   () => detailQuery.data.value,
@@ -149,6 +167,7 @@ async function handleDelete() {
 
   try {
     await deleteMutation.mutateAsync()
+    clearUnsavedChangesGuard()
     await router.push('/')
   } catch {
     errorMessage.value = '企画の削除に失敗しました。リーダーのみ削除できます。'
