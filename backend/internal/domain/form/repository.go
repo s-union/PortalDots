@@ -9,20 +9,21 @@ import (
 )
 
 type Form struct {
-	ID                  string
-	CircleID            string
-	Name                string
-	Description         string
-	IsPublic            bool
-	IsOpen              bool
-	OpenAt              string
-	CloseAt             string
-	CreatedAt           string
-	UpdatedAt           string
-	MaxAnswers          int32
-	AnswerableTags      []string
-	ConfirmationMessage string
-	CreatedByUserID     string
+	ID                       string
+	CircleID                 string
+	Name                     string
+	Description              string
+	IsPublic                 bool
+	IsOpen                   bool
+	OpenAt                   string
+	CloseAt                  string
+	CreatedAt                string
+	UpdatedAt                string
+	MaxAnswers               int32
+	AnswerableTags           []string
+	ConfirmationMessage      string
+	CreatedByUserID          string
+	StaffNotificationUserIDs []string
 }
 
 type Repository interface {
@@ -31,9 +32,9 @@ type Repository interface {
 	FindByCircle(circleID, formID string) (Form, bool)
 	FindByCircleForStaff(circleID, formID string) (Form, bool)
 	FindByIDForStaff(formID string) (Form, bool)
-	Create(circleID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string, createdByUserID string) Form
-	Update(circleID, formID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string) (Form, bool)
-	UpdateByID(formID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string) (Form, bool)
+	Create(circleID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string, createdByUserID string, staffNotificationUserIDs []string) Form
+	Update(circleID, formID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string, staffNotificationUserIDs []string) (Form, bool)
+	UpdateByID(formID, name, description string, isPublic bool, openAt, closeAt string, maxAnswers int32, answerableTags []string, confirmationMessage string, staffNotificationUserIDs []string) (Form, bool)
 	Delete(circleID, formID string) bool
 }
 
@@ -56,20 +57,21 @@ func NewStaticRepository(cfg []config.Form) *StaticRepository {
 		}
 
 		forms = append(forms, Form{
-			ID:                  item.ID,
-			CircleID:            item.CircleID,
-			Name:                item.Name,
-			Description:         item.Description,
-			IsPublic:            item.IsPublic,
-			IsOpen:              item.IsOpen,
-			OpenAt:              item.OpenAt,
-			CloseAt:             item.CloseAt,
-			CreatedAt:           createdAt,
-			UpdatedAt:           updatedAt,
-			MaxAnswers:          item.MaxAnswers,
-			AnswerableTags:      append([]string{}, item.AnswerableTags...),
-			ConfirmationMessage: item.ConfirmationMessage,
-			CreatedByUserID:     item.CreatedByUserID,
+			ID:                       item.ID,
+			CircleID:                 item.CircleID,
+			Name:                     item.Name,
+			Description:              item.Description,
+			IsPublic:                 item.IsPublic,
+			IsOpen:                   item.IsOpen,
+			OpenAt:                   item.OpenAt,
+			CloseAt:                  item.CloseAt,
+			CreatedAt:                createdAt,
+			UpdatedAt:                updatedAt,
+			MaxAnswers:               item.MaxAnswers,
+			AnswerableTags:           append([]string{}, item.AnswerableTags...),
+			ConfirmationMessage:      item.ConfirmationMessage,
+			CreatedByUserID:          item.CreatedByUserID,
+			StaffNotificationUserIDs: append([]string{}, item.StaffNotificationUserIDs...),
 		})
 	}
 
@@ -154,25 +156,27 @@ func (r *StaticRepository) Create(
 	answerableTags []string,
 	confirmationMessage string,
 	createdByUserID string,
+	staffNotificationUserIDs []string,
 ) Form {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	form := Form{
-		ID:                  uuidv7.MustString(),
-		CircleID:            circleID,
-		Name:                name,
-		Description:         description,
-		IsPublic:            isPublic,
-		OpenAt:              openAt,
-		CloseAt:             closeAt,
-		CreatedAt:           now,
-		UpdatedAt:           now,
-		MaxAnswers:          maxAnswers,
-		AnswerableTags:      append([]string{}, answerableTags...),
-		ConfirmationMessage: confirmationMessage,
-		CreatedByUserID:     createdByUserID,
+		ID:                       uuidv7.MustString(),
+		CircleID:                 circleID,
+		Name:                     name,
+		Description:              description,
+		IsPublic:                 isPublic,
+		OpenAt:                   openAt,
+		CloseAt:                  closeAt,
+		CreatedAt:                now,
+		UpdatedAt:                now,
+		MaxAnswers:               maxAnswers,
+		AnswerableTags:           append([]string{}, answerableTags...),
+		ConfirmationMessage:      confirmationMessage,
+		CreatedByUserID:          createdByUserID,
+		StaffNotificationUserIDs: append([]string{}, staffNotificationUserIDs...),
 	}
 
 	if form.OpenAt == "" {
@@ -200,6 +204,7 @@ func (r *StaticRepository) Update(
 	maxAnswers int32,
 	answerableTags []string,
 	confirmationMessage string,
+	staffNotificationUserIDs []string,
 ) (Form, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -219,6 +224,7 @@ func (r *StaticRepository) Update(
 		r.forms[index].MaxAnswers = maxAnswers
 		r.forms[index].AnswerableTags = append([]string{}, answerableTags...)
 		r.forms[index].ConfirmationMessage = confirmationMessage
+		r.forms[index].StaffNotificationUserIDs = append([]string{}, staffNotificationUserIDs...)
 		r.forms[index].IsOpen = isOpenWindow(openAt, closeAt)
 
 		return cloneFormWithComputedStatus(r.forms[index]), true
@@ -237,6 +243,7 @@ func (r *StaticRepository) UpdateByID(
 	maxAnswers int32,
 	answerableTags []string,
 	confirmationMessage string,
+	staffNotificationUserIDs []string,
 ) (Form, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -256,6 +263,7 @@ func (r *StaticRepository) UpdateByID(
 		r.forms[index].MaxAnswers = maxAnswers
 		r.forms[index].AnswerableTags = append([]string{}, answerableTags...)
 		r.forms[index].ConfirmationMessage = confirmationMessage
+		r.forms[index].StaffNotificationUserIDs = append([]string{}, staffNotificationUserIDs...)
 		r.forms[index].IsOpen = isOpenWindow(openAt, closeAt)
 
 		return cloneFormWithComputedStatus(r.forms[index]), true

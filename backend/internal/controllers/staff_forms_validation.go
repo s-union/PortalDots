@@ -33,6 +33,7 @@ func bindAndValidateStaffForm(c *echo.Context, circleRequired bool) (mutateStaff
 	request.CloseAt = strings.TrimSpace(request.CloseAt)
 	request.ConfirmationMessage = strings.TrimSpace(request.ConfirmationMessage)
 	request.AnswerableTags = normalizeTags(request.AnswerableTags)
+	request.StaffNotificationUserIDs = normalizeUserIDs(request.StaffNotificationUserIDs)
 
 	errors := map[string][]string{}
 	if circleRequired && request.CircleID == "" {
@@ -71,6 +72,23 @@ func normalizeTags(tags []string) []string {
 	return normalized
 }
 
+func normalizeUserIDs(userIDs []string) []string {
+	normalized := make([]string, 0, len(userIDs))
+	seen := make(map[string]struct{}, len(userIDs))
+	for _, userID := range userIDs {
+		trimmed := strings.TrimSpace(userID)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		normalized = append(normalized, trimmed)
+	}
+	return normalized
+}
+
 func validateStaffFormQuestionRequest(request *updateStaffFormQuestionRequest) map[string][]string {
 	errors := map[string][]string{}
 	if !slices.Contains(formquestion.AllowedQuestionTypes, request.Type) {
@@ -102,4 +120,19 @@ func normalizeQuestionOptions(options []string) []string {
 		normalized = append(normalized, trimmed)
 	}
 	return normalized
+}
+
+// validateStaffNotificationUsers returns validation errors when a configured
+// staff-copy recipient does not reference an existing user. Access is not
+// checked here: recipients are re-checked against the current formAnswers.read
+// entitlement whenever an answer mail is sent.
+func (h *staffFormHandlers) validateStaffNotificationUsers(c *echo.Context, userIDs []string) map[string][]string {
+	for _, userID := range userIDs {
+		if _, err := h.users.Find(userID); err != nil {
+			return map[string][]string{
+				"staffNotificationUserIds": {"送信先に指定されたユーザーが存在しません"},
+			}
+		}
+	}
+	return map[string][]string{}
 }

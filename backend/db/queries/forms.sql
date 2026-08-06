@@ -35,8 +35,8 @@ WHERE id = $1
 LIMIT 1;
 
 -- name: CreateForm :one
-INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_by_user_id)
-VALUES (uuidv7(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+INSERT INTO forms (id, circle_id, name, description, is_public, is_open, open_at, close_at, max_answers, answerable_tags, confirmation_message, created_by_user_id, staff_notification_user_ids)
+VALUES (uuidv7(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING *;
 
 -- name: UpdateForm :one
@@ -50,7 +50,8 @@ SET name = $3,
     updated_at = now(),
     max_answers = $9,
     answerable_tags = $10,
-    confirmation_message = $11
+    confirmation_message = $11,
+    staff_notification_user_ids = $12
 WHERE circle_id = $1
   AND id = $2
 RETURNING *;
@@ -66,7 +67,8 @@ SET name = $2,
     updated_at = now(),
     max_answers = $8,
     answerable_tags = $9,
-    confirmation_message = $10
+    confirmation_message = $10,
+    staff_notification_user_ids = $11
 WHERE id = $1
 RETURNING *;
 

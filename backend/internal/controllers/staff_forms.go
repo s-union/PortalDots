@@ -13,20 +13,21 @@ import (
 )
 
 type staffFormSummaryResponse struct {
-	Circle              staffManagedCircleResponse `json:"circle"`
-	ID                  string                     `json:"id"`
-	Name                string                     `json:"name"`
-	Description         string                     `json:"description"`
-	OpenAt              string                     `json:"openAt"`
-	CloseAt             string                     `json:"closeAt"`
-	IsPublic            bool                       `json:"isPublic"`
-	IsOpen              bool                       `json:"isOpen"`
-	CreatedAt           string                     `json:"createdAt"`
-	UpdatedAt           string                     `json:"updatedAt"`
-	MaxAnswers          int32                      `json:"maxAnswers"`
-	AnswerableTags      []string                   `json:"answerableTags"`
-	ConfirmationMessage string                     `json:"confirmationMessage"`
-	IsParticipationForm bool                       `json:"isParticipationForm"`
+	Circle                   staffManagedCircleResponse `json:"circle"`
+	ID                       string                     `json:"id"`
+	Name                     string                     `json:"name"`
+	Description              string                     `json:"description"`
+	OpenAt                   string                     `json:"openAt"`
+	CloseAt                  string                     `json:"closeAt"`
+	IsPublic                 bool                       `json:"isPublic"`
+	IsOpen                   bool                       `json:"isOpen"`
+	CreatedAt                string                     `json:"createdAt"`
+	UpdatedAt                string                     `json:"updatedAt"`
+	MaxAnswers               int32                      `json:"maxAnswers"`
+	AnswerableTags           []string                   `json:"answerableTags"`
+	ConfirmationMessage      string                     `json:"confirmationMessage"`
+	StaffNotificationUserIDs []string                   `json:"staffNotificationUserIds"`
+	IsParticipationForm      bool                       `json:"isParticipationForm"`
 }
 
 type staffFormAnswerResponse struct {
@@ -39,20 +40,21 @@ type staffFormAnswerResponse struct {
 }
 
 type staffFormDetailResponse struct {
-	Circle              staffManagedCircleResponse `json:"circle"`
-	ID                  string                     `json:"id"`
-	Name                string                     `json:"name"`
-	Description         string                     `json:"description"`
-	OpenAt              string                     `json:"openAt"`
-	CloseAt             string                     `json:"closeAt"`
-	IsPublic            bool                       `json:"isPublic"`
-	IsOpen              bool                       `json:"isOpen"`
-	MaxAnswers          int32                      `json:"maxAnswers"`
-	AnswerableTags      []string                   `json:"answerableTags"`
-	ConfirmationMessage string                     `json:"confirmationMessage"`
-	IsParticipationForm bool                       `json:"isParticipationForm"`
-	Questions           []staffFormQuestion        `json:"questions"`
-	Answer              *staffFormAnswerResponse   `json:"answer"`
+	Circle                   staffManagedCircleResponse `json:"circle"`
+	ID                       string                     `json:"id"`
+	Name                     string                     `json:"name"`
+	Description              string                     `json:"description"`
+	OpenAt                   string                     `json:"openAt"`
+	CloseAt                  string                     `json:"closeAt"`
+	IsPublic                 bool                       `json:"isPublic"`
+	IsOpen                   bool                       `json:"isOpen"`
+	MaxAnswers               int32                      `json:"maxAnswers"`
+	AnswerableTags           []string                   `json:"answerableTags"`
+	ConfirmationMessage      string                     `json:"confirmationMessage"`
+	StaffNotificationUserIDs []string                   `json:"staffNotificationUserIds"`
+	IsParticipationForm      bool                       `json:"isParticipationForm"`
+	Questions                []staffFormQuestion        `json:"questions"`
+	Answer                   *staffFormAnswerResponse   `json:"answer"`
 }
 
 type staffFormQuestion struct {
@@ -92,15 +94,16 @@ type reorderStaffFormQuestionsRequest struct {
 }
 
 type mutateStaffFormRequest struct {
-	CircleID            string   `json:"circleId"`
-	Name                string   `json:"name"`
-	Description         string   `json:"description"`
-	OpenAt              string   `json:"openAt"`
-	CloseAt             string   `json:"closeAt"`
-	IsPublic            bool     `json:"isPublic"`
-	MaxAnswers          int32    `json:"maxAnswers"`
-	AnswerableTags      []string `json:"answerableTags"`
-	ConfirmationMessage string   `json:"confirmationMessage"`
+	CircleID                 string   `json:"circleId"`
+	Name                     string   `json:"name"`
+	Description              string   `json:"description"`
+	OpenAt                   string   `json:"openAt"`
+	CloseAt                  string   `json:"closeAt"`
+	IsPublic                 bool     `json:"isPublic"`
+	MaxAnswers               int32    `json:"maxAnswers"`
+	AnswerableTags           []string `json:"answerableTags"`
+	ConfirmationMessage      string   `json:"confirmationMessage"`
+	StaffNotificationUserIDs []string `json:"staffNotificationUserIds"`
 }
 
 func (h *staffFormHandlers) listStaffForms(c *echo.Context) error {
@@ -204,6 +207,9 @@ func (h *staffFormHandlers) createStaffForm(c *echo.Context) error {
 	if !valid {
 		return validationError(c, validationErrors)
 	}
+	if validationErrors := h.validateStaffNotificationUsers(c, request.StaffNotificationUserIDs); len(validationErrors) > 0 {
+		return validationError(c, validationErrors)
+	}
 	currentCircle := circle.Circle{}
 	if request.CircleID != "" {
 		foundCircle, err := h.circles.Find(c.Request().Context(), request.CircleID)
@@ -224,6 +230,7 @@ func (h *staffFormHandlers) createStaffForm(c *echo.Context) error {
 		request.AnswerableTags,
 		request.ConfirmationMessage,
 		currentSession.User.ID,
+		request.StaffNotificationUserIDs,
 	)
 	if created.ID == "" {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_form")
@@ -253,6 +260,9 @@ func (h *staffFormHandlers) updateStaffForm(c *echo.Context) error {
 	if !valid {
 		return validationError(c, validationErrors)
 	}
+	if validationErrors := h.validateStaffNotificationUsers(c, request.StaffNotificationUserIDs); len(validationErrors) > 0 {
+		return validationError(c, validationErrors)
+	}
 
 	formValue, currentCircle, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
@@ -272,6 +282,7 @@ func (h *staffFormHandlers) updateStaffForm(c *echo.Context) error {
 		request.MaxAnswers,
 		request.AnswerableTags,
 		request.ConfirmationMessage,
+		request.StaffNotificationUserIDs,
 	)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")
@@ -340,6 +351,7 @@ func (h *staffFormHandlers) copyStaffForm(c *echo.Context) error {
 		source.AnswerableTags,
 		source.ConfirmationMessage,
 		currentSession.User.ID,
+		source.StaffNotificationUserIDs,
 	)
 	if copied.ID == "" {
 		return errorJSON(c, http.StatusInternalServerError, "copy_failed")

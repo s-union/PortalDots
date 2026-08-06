@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v5"
+	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
+	"github.com/s-union/PortalDots/backend/internal/platform/config"
 )
 
 func TestParseRFC3339Field(t *testing.T) {
@@ -203,5 +205,58 @@ func TestNormalizeQuestionOptions(t *testing.T) {
 	want := []string{"A", "B"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected options: %#v", got)
+	}
+}
+
+func TestNormalizeUserIDs(t *testing.T) {
+	t.Parallel()
+
+	got := normalizeUserIDs([]string{" user-1 ", "", "user-2", "user-1", "user-2"})
+	want := []string{"user-1", "user-2"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("unexpected user IDs: %#v", got)
+	}
+}
+
+func TestValidateStaffNotificationUsers(t *testing.T) {
+	t.Parallel()
+
+	users := useradmin.NewStaticRepository(config.AuthUser{ID: "auth-user"}, []config.User{
+		{ID: "staff-a", ContactEmail: "staff-a@example.com"},
+		{ID: "staff-b", ContactEmail: "staff-b@example.com"},
+	})
+	h := &staffFormHandlers{users: users}
+
+	if errors := h.validateStaffNotificationUsers(nil, []string{"staff-a", "staff-b"}); len(errors) != 0 {
+		t.Fatalf("expected valid recipients to pass, got %#v", errors)
+	}
+
+	errors := h.validateStaffNotificationUsers(nil, []string{"staff-a", "missing-user"})
+	if !reflect.DeepEqual(errors["staffNotificationUserIds"], []string{"送信先に指定されたユーザーが存在しません"}) {
+		t.Fatalf("unexpected errors: %#v", errors)
+	}
+}
+
+func TestBindAndValidateStaffFormNormalizesRecipients(t *testing.T) {
+	t.Parallel()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{
+		"circleId": "circle-1",
+		"name": "参加申請",
+		"openAt": "2026-04-01T09:00:00Z",
+		"closeAt": "2026-04-02T09:00:00Z",
+		"maxAnswers": 1,
+		"staffNotificationUserIds": [" staff-a ", "", "staff-b", "staff-a"]
+	}`))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+
+	request, errors, ok := bindAndValidateStaffForm(e.NewContext(req, rec), true)
+	if !ok {
+		t.Fatalf("expected request to be valid, got %#v", errors)
+	}
+	if !reflect.DeepEqual(request.StaffNotificationUserIDs, []string{"staff-a", "staff-b"}) {
+		t.Fatalf("unexpected recipients: %#v", request.StaffNotificationUserIDs)
 	}
 }

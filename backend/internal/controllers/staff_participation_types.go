@@ -213,6 +213,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c *echo.Context) erro
 		[]string{},
 		request.FormConfirmationMessage,
 		currentSession.User.ID,
+		[]string{},
 	)
 	if formValue.ID == "" {
 		return internalError(c)
@@ -273,6 +274,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c *echo.Context) erro
 		1,
 		[]string{},
 		request.FormConfirmationMessage,
+		[]string{},
 	)
 	if !ok {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")

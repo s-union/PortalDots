@@ -1146,6 +1146,10 @@ paths:
                         type: string
                     confirmationMessage:
                       type: string
+                    staffNotificationUserIds:
+                      type: array
+                      items:
+                        type: string
                     isPublic:
                       type: boolean
                     isOpen:
@@ -1197,6 +1201,10 @@ paths:
                     type: string
                 confirmationMessage:
                   type: string
+                staffNotificationUserIds:
+                  type: array
+                  items:
+                    type: string
                 isPublic:
                   type: boolean
       responses:
@@ -1229,6 +1237,10 @@ paths:
                       type: string
                   confirmationMessage:
                     type: string
+                  staffNotificationUserIds:
+                    type: array
+                    items:
+                      type: string
                   isPublic:
                     type: boolean
                   isOpen:
@@ -2761,6 +2773,10 @@ paths:
                       type: string
                   confirmationMessage:
                     type: string
+                  staffNotificationUserIds:
+                    type: array
+                    items:
+                      type: string
                   isPublic:
                     type: boolean
                   isOpen:
@@ -2888,6 +2904,10 @@ paths:
                     type: string
                 confirmationMessage:
                   type: string
+                staffNotificationUserIds:
+                  type: array
+                  items:
+                    type: string
                 isPublic:
                   type: boolean
       responses:
@@ -2999,6 +3019,10 @@ paths:
                       type: string
                   confirmationMessage:
                     type: string
+                  staffNotificationUserIds:
+                    type: array
+                    items:
+                      type: string
                   isPublic:
                     type: boolean
                   isOpen:
