@@ -22,12 +22,14 @@ import (
 type staffTagResponse struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
+	Color     string `json:"color"`
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`
 }
 
 type mutateStaffTagRequest struct {
-	Name string `json:"name"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
 }
 
 type staffPlaceResponse struct {
@@ -162,6 +164,9 @@ func (h *staffMastersHandlers) createStaffTag(c *echo.Context) error {
 	if request.Name == "" {
 		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
+	if !tag.IsValidColor(request.Color) {
+		return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
+	}
 	existingTags, err := h.tags.List()
 	if err != nil {
 		return internalError(c)
@@ -172,7 +177,7 @@ func (h *staffMastersHandlers) createStaffTag(c *echo.Context) error {
 		}
 	}
 
-	created, err := h.tags.Create(request.Name)
+	created, err := h.tags.Create(request.Name, tag.NormalizeColor(request.Color))
 	if err != nil {
 		return internalError(c)
 	}
@@ -194,6 +199,9 @@ func (h *staffMastersHandlers) updateStaffTag(c *echo.Context) error {
 	if request.Name == "" {
 		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
+	if !tag.IsValidColor(request.Color) {
+		return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
+	}
 	tagID := c.Param("tagID")
 	existingTags, err := h.tags.List()
 	if err != nil {
@@ -205,7 +213,7 @@ func (h *staffMastersHandlers) updateStaffTag(c *echo.Context) error {
 		}
 	}
 
-	updated, err := h.tags.Update(tagID, request.Name)
+	updated, err := h.tags.Update(tagID, request.Name, tag.NormalizeColor(request.Color))
 	if errors.Is(err, tag.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "tag_not_found")
 	}
@@ -563,6 +571,7 @@ func mapStaffTag(item tag.Tag) staffTagResponse {
 	return staffTagResponse{
 		ID:        item.ID,
 		Name:      item.Name,
+		Color:     item.Color,
 		CreatedAt: item.CreatedAt,
 		UpdatedAt: item.UpdatedAt,
 	}

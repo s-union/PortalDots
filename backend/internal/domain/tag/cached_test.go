@@ -18,22 +18,23 @@ func (m *mockRepository) List() ([]Tag, error) {
 	return m.items, nil
 }
 
-func (m *mockRepository) Create(name string) (Tag, error) {
+func (m *mockRepository) Create(name, color string) (Tag, error) {
 	if m.createErr != nil {
 		return Tag{}, m.createErr
 	}
-	tag := Tag{ID: "new-id", Name: name}
+	tag := Tag{ID: "new-id", Name: name, Color: color}
 	m.items = append(m.items, tag)
 	return tag, nil
 }
 
-func (m *mockRepository) Update(id, name string) (Tag, error) {
+func (m *mockRepository) Update(id, name, color string) (Tag, error) {
 	if m.updateErr != nil {
 		return Tag{}, m.updateErr
 	}
 	for i, item := range m.items {
 		if item.ID == id {
 			m.items[i].Name = name
+			m.items[i].Color = color
 			return m.items[i], nil
 		}
 	}
@@ -91,7 +92,7 @@ func TestCachedRepository_CreateInvalidatesCache(t *testing.T) {
 		t.Fatalf("expected 1 call, got %d", mock.listCallCount)
 	}
 
-	_, err := repo.Create("new-tag")
+	_, err := repo.Create("new-tag", "gray")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -109,7 +110,7 @@ func TestCachedRepository_UpdateInvalidatesCache(t *testing.T) {
 	repo := NewCachedRepository(mock)
 
 	_, _ = repo.List()
-	_, _ = repo.Update("1", "updated")
+	_, _ = repo.Update("1", "updated", "gray")
 	_, _ = repo.List()
 
 	if mock.listCallCount != 2 {
@@ -136,7 +137,7 @@ func TestCachedRepository_CreateError(t *testing.T) {
 	mock := &mockRepository{createErr: errors.New("create failed")}
 	repo := NewCachedRepository(mock)
 
-	_, err := repo.Create("tag")
+	_, err := repo.Create("tag", "gray")
 	if err == nil {
 		t.Fatal("expected error")
 	}

@@ -34,8 +34,8 @@ func (r *CachedRepository) List() ([]Tag, error) {
 	return tags, nil
 }
 
-func (r *CachedRepository) Create(name string) (Tag, error) {
-	tag, err := r.inner.Create(name)
+func (r *CachedRepository) Create(name, color string) (Tag, error) {
+	tag, err := r.inner.Create(name, color)
 	if err != nil {
 		return Tag{}, err
 	}
@@ -43,8 +43,8 @@ func (r *CachedRepository) Create(name string) (Tag, error) {
 	return tag, nil
 }
 
-func (r *CachedRepository) Update(id, name string) (Tag, error) {
-	tag, err := r.inner.Update(id, name)
+func (r *CachedRepository) Update(id, name, color string) (Tag, error) {
+	tag, err := r.inner.Update(id, name, color)
 	if err != nil {
 		return Tag{}, err
 	}

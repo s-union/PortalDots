@@ -1638,12 +1638,15 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [id, name]
+                  required: [id, name, color]
                   properties:
                     id:
                       type: string
                     name:
                       type: string
+                    color:
+                      type: string
+                      enum: [gray, red, orange, green, blue, purple]
         "401":
           description: Unauthenticated
         "403":
@@ -1662,6 +1665,9 @@ paths:
                 name:
                   type: string
                   minLength: 1
+                color:
+                  type: string
+                  enum: [gray, red, orange, green, blue, purple]
       responses:
         "201":
           description: Created tag
@@ -1669,12 +1675,15 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name]
+                required: [id, name, color]
                 properties:
                   id:
                     type: string
                   name:
                     type: string
+                  color:
+                    type: string
+                    enum: [gray, red, orange, green, blue, purple]
         "401":
           description: Unauthenticated
         "403":
@@ -1702,6 +1711,9 @@ paths:
                 name:
                   type: string
                   minLength: 1
+                color:
+                  type: string
+                  enum: [gray, red, orange, green, blue, purple]
       responses:
         "200":
           description: Updated tag
@@ -1709,12 +1721,15 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id, name]
+                required: [id, name, color]
                 properties:
                   id:
                     type: string
                   name:
                     type: string
+                  color:
+                    type: string
+                    enum: [gray, red, orange, green, blue, purple]
         "401":
           description: Unauthenticated
         "403":

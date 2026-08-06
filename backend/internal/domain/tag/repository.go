@@ -13,18 +13,40 @@ import (
 
 var ErrNotFound = errors.New("tag not found")
 
+const DefaultColor = "gray"
+
+var validColors = []string{"gray", "red", "orange", "green", "blue", "purple"}
+
 type Tag struct {
 	ID        string
 	Name      string
+	Color     string
 	CreatedAt string
 	UpdatedAt string
 }
 
 type Repository interface {
 	List() ([]Tag, error)
-	Create(name string) (Tag, error)
-	Update(id, name string) (Tag, error)
+	Create(name, color string) (Tag, error)
+	Update(id, name, color string) (Tag, error)
 	Delete(id string) error
+}
+
+// NormalizeColor trims and lower-cases a colour token, falling back to the
+// default when empty so rows created before colour existed keep working.
+func NormalizeColor(color string) string {
+	color = strings.ToLower(strings.TrimSpace(color))
+	if color == "" {
+		return DefaultColor
+	}
+	return color
+}
+
+// IsValidColor reports whether color is one of the palette tokens stored in
+// the tags table. Unknown tokens are rejected server-side before touching the
+// database.
+func IsValidColor(color string) bool {
+	return slices.Contains(validColors, NormalizeColor(color))
 }
 
 type MemoryRepository struct {
@@ -39,6 +61,7 @@ func NewMemoryRepository(cfg []config.Tag) *MemoryRepository {
 		items = append(items, Tag{
 			ID:        item.ID,
 			Name:      item.Name,
+			Color:     NormalizeColor(item.Color),
 			CreatedAt: item.CreatedAt,
 			UpdatedAt: item.UpdatedAt,
 		})
@@ -59,7 +82,7 @@ func (r *MemoryRepository) List() ([]Tag, error) {
 	return slices.Clone(r.items), nil
 }
 
-func (r *MemoryRepository) Create(name string) (Tag, error) {
+func (r *MemoryRepository) Create(name, color string) (Tag, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -67,6 +90,7 @@ func (r *MemoryRepository) Create(name string) (Tag, error) {
 	created := Tag{
 		ID:        uuidv7.MustString(),
 		Name:      name,
+		Color:     NormalizeColor(color),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -79,7 +103,7 @@ func (r *MemoryRepository) Create(name string) (Tag, error) {
 	return created, nil
 }
 
-func (r *MemoryRepository) Update(id, name string) (Tag, error) {
+func (r *MemoryRepository) Update(id, name, color string) (Tag, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -89,6 +113,7 @@ func (r *MemoryRepository) Update(id, name string) (Tag, error) {
 		}
 		updated := r.items[index]
 		updated.Name = name
+		updated.Color = NormalizeColor(color)
 		updated.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 		r.items = append(r.items[:index], r.items[index+1:]...)
 		insertAt, _ := slices.BinarySearchFunc(r.items, updated, func(item Tag, target Tag) int {
