@@ -17,6 +17,7 @@ import StaffFilterDrawer, { type StaffFilterField } from '@/components/staff/Sta
 import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import StaffTagEditor from '@/components/staff/StaffTagEditor.vue'
+import TagChip from '@/components/ui/TagChip.vue'
 import ToolbarRow from '@/components/ui/ToolbarRow.vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import { resolveRowId } from '@/lib/dataGridHelpers'
@@ -85,6 +86,7 @@ const rawRows = computed<StaffDataGridRow[]>(() =>
     id: tag.id,
     tagNumber: String(tagOrderMap.value.get(tag.id) ?? 0),
     name: tag.name,
+    color: tag.color,
     createdAt: tag.createdAt,
     updatedAt: tag.updatedAt
   }))
@@ -265,8 +267,8 @@ async function handleReload() {
             </div>
           </template>
 
-          <template #cell-name="{ value }">
-            <span class="font-medium text-body">{{ value }}</span>
+          <template #cell-name="{ row, value }">
+            <TagChip :name="String(value)" :color="String(row.color ?? '')" />
           </template>
 
           <template #cell-createdAt="{ value }">
