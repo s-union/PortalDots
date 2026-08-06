@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import ToastProvider from '@/components/ui/ToastProvider.vue'
 import { cn } from '@/lib/ui/cn'
 import { useAppShell } from '@/app/composables/useAppShell'
 
@@ -122,5 +124,8 @@ const {
         />
       </div>
     </nav>
+
+    <ToastProvider />
+    <ConfirmDialog />
   </div>
 </template>
