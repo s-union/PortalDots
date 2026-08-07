@@ -91,9 +91,28 @@ export const LongContent: Story = {
         <p>ここに長いコンテンツが入ります。モーダルの本文が画面の高さを超えると、本文領域だけがスクロールし、背景のページはスクロールしないことを確認してください。</p>
         <p>スクロールロックは複数のモーダルを重ねても、最後のモーダルが閉じるまで背景がスクロールしないことを保証します。</p>
         <p>長い本文を入れて、タイトルとフッターのボタンが常に見えていることを確認します。</p>
+        <p>ヘッダーとフッターは固定されたままで、本文領域だけがスクロールすることを確認してください。</p>
         <template #footer>
           <BaseButton variant="secondary" type="button" @click="isOpen = false">キャンセル</BaseButton>
           <BaseButton variant="primary" type="button" @click="isOpen = false">同意する</BaseButton>
+        </template>
+      </Modal>
+    `
+  })
+}
+
+export const WithoutHeader: Story = {
+  render: () => ({
+    components: { Modal, BaseButton },
+    setup() {
+      const isOpen = ref(true)
+      return { isOpen }
+    },
+    template: `
+      <Modal v-model:open="isOpen" aria-label="操作の確認">
+        <p>ヘッダーを省略すると、ダイアログのアクセシブルネームは本文テキストか aria-label から決まります。</p>
+        <template #footer>
+          <BaseButton variant="primary" type="button" @click="isOpen = false">閉じる</BaseButton>
         </template>
       </Modal>
     `

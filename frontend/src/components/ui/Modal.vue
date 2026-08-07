@@ -11,6 +11,7 @@ import { computed, nextTick, onBeforeUnmount, ref, useId, useSlots, watch } from
 const props = withDefaults(
   defineProps<{
     title?: string
+    ariaLabel?: string
     closeOnBackdrop?: boolean
   }>(),
   {
@@ -26,6 +27,25 @@ const titleId = useId()
 const bodyId = useId()
 
 const hasHeader = computed(() => props.title !== undefined || slots.header !== undefined)
+
+// A dialog must always carry an accessible name. Prefer the header text, then
+// an explicit aria-label, then the body text as a last resort so a nameless
+// dialog is impossible.
+const ariaLabelledby = computed(() => {
+  if (hasHeader.value) {
+    return titleId
+  }
+  return props.ariaLabel ? undefined : bodyId
+})
+
+const ariaLabel = computed(() => (hasHeader.value ? undefined : props.ariaLabel))
+
+const ariaDescribedby = computed(() => {
+  if (!slots.default || ariaLabelledby.value === bodyId) {
+    return undefined
+  }
+  return bodyId
+})
 
 let previouslyFocused: HTMLElement | null = null
 
@@ -83,19 +103,35 @@ function restoreFocus() {
 
 watch(
   open,
-  async (isOpen) => {
+  async (isOpen, _previous, onCleanup) => {
+    // Mark the pending open as stale if the watcher re-runs (e.g. the model
+    // flips back to false) or the component unmounts while we wait for the DOM
+    // flush, so a stale callback cannot showModal() or lock the scroll.
+    let stale = false
+    onCleanup(() => {
+      stale = true
+    })
+
     if (isOpen) {
       captureFocusedElement()
       await nextTick()
+      // Re-validate after the flush: the model may have flipped back to false,
+      // the dialog may have been disposed, or the DOM may have been detached.
+      if (stale || !open.value) {
+        return
+      }
       const dialog = dialogEl.value
-      if (dialog && !dialog.open) {
+      if (!dialog || !dialog.isConnected) {
+        return
+      }
+      if (!dialog.open) {
         dialog.showModal()
       }
       lockScroll()
       focusInsideDialog()
     } else {
       const dialog = dialogEl.value
-      if (dialog && dialog.open) {
+      if (dialog?.open) {
         dialog.close()
       }
       unlockScroll()
@@ -133,6 +169,7 @@ onBeforeUnmount(() => {
     dialog.close()
   }
   unlockScroll()
+  restoreFocus()
 })
 </script>
 
@@ -141,26 +178,25 @@ onBeforeUnmount(() => {
     <dialog
       ref="dialogEl"
       tabindex="-1"
-      class="m-auto w-[min(90vw,32rem)] rounded-lg border-0 bg-surface p-0 text-body shadow-lv4"
-      :aria-labelledby="hasHeader ? titleId : undefined"
-      :aria-describedby="slots.default ? bodyId : undefined"
+      class="m-auto flex max-h-[min(70vh,70dvh)] w-[min(90vw,32rem)] flex-col rounded-lg border-0 bg-surface p-0 text-body shadow-lv4"
+      :aria-labelledby="ariaLabelledby"
+      :aria-label="ariaLabel"
+      :aria-describedby="ariaDescribedby"
       @click="handleBackdropClick"
       @keydown="handleKeydown"
       @close="handleNativeClose"
     >
-      <div class="max-h-[min(70vh,70dvh)] overflow-y-auto">
-        <header v-if="hasHeader" :id="titleId" class="border-b border-border px-6 py-4">
-          <slot name="header">
-            <h2 class="text-lg font-semibold text-body">{{ title }}</h2>
-          </slot>
-        </header>
-        <div :id="bodyId" class="px-6 py-4">
-          <slot />
-        </div>
-        <footer v-if="slots.footer" class="flex justify-end gap-2 border-t border-border px-6 py-4">
-          <slot name="footer" />
-        </footer>
+      <header v-if="hasHeader" :id="titleId" class="shrink-0 border-b border-border px-6 py-4">
+        <slot name="header">
+          <h2 class="text-lg font-semibold text-body">{{ title }}</h2>
+        </slot>
+      </header>
+      <div :id="bodyId" class="min-h-0 grow overflow-y-auto overscroll-contain px-6 py-4">
+        <slot />
       </div>
+      <footer v-if="slots.footer" class="flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4">
+        <slot name="footer" />
+      </footer>
     </dialog>
   </Teleport>
 </template>

@@ -14,7 +14,8 @@ function mountToast() {
         success: () => api.success('保存しました'),
         info: () => api.info('お知らせがあります'),
         error: () => api.error('エラーが発生しました'),
-        persistent: () => api.success('消えない通知', { duration: 0 })
+        persistent: () => api.success('消えない通知', { duration: 0 }),
+        long: () => api.info('これは改行のない長い未分割のメッセージです。'.repeat(10))
       }
     },
     template: `
@@ -23,6 +24,7 @@ function mountToast() {
         <button id="info" type="button" @click="info">情報</button>
         <button id="error" type="button" @click="error">エラー</button>
         <button id="persistent" type="button" @click="persistent">消えない通知</button>
+        <button id="long" type="button" @click="long">長いメッセージ</button>
       </div>
     `
   })
@@ -124,5 +126,14 @@ describe('ToastProvider', () => {
     await flushPromises()
 
     expect(wrapper.findAll('[role="status"]')).toHaveLength(0)
+  })
+
+  it('wraps long unbroken messages instead of overflowing horizontally', async () => {
+    const wrapper = mountToast()
+    await wrapper.get('#long').trigger('click')
+
+    const message = wrapper.get('[role="status"] p')
+    expect(message.classes()).toContain('min-w-0')
+    expect(message.classes()).toContain('break-words')
   })
 })

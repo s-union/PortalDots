@@ -10,6 +10,7 @@ const Demo = defineComponent({
       <button type="button" @click="info">情報</button>
       <button type="button" @click="error">エラー</button>
       <button type="button" @click="persistent">消えない通知</button>
+      <button type="button" @click="long">長いメッセージ</button>
       <button type="button" @click="clearAll">すべて閉じる</button>
     </div>
   `,
@@ -20,6 +21,12 @@ const Demo = defineComponent({
       info: () => toast.info('新しいお知らせがあります'),
       error: () => toast.error('エラーが発生しました'),
       persistent: () => toast.success('消えない通知', { duration: 0 }),
+      long: () =>
+        toast.info(
+          'これは改行のない長い未分割のメッセージです。画面からはみ出さずに折り返されることを確認してください。'.repeat(
+            6
+          )
+        ),
       clearAll: () => {
         for (const toastItem of toasts.value) {
           dismissToast(toastItem.id)
@@ -46,6 +53,13 @@ export const AllTypes: Story = {
 }
 
 export const Interactive: Story = {
+  render: () => ({
+    components: { ToastProvider, Demo },
+    template: `<ToastProvider><Demo /></ToastProvider>`
+  })
+}
+
+export const LongMessage: Story = {
   render: () => ({
     components: { ToastProvider, Demo },
     template: `<ToastProvider><Demo /></ToastProvider>`

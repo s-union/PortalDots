@@ -146,4 +146,43 @@ describe('ConfirmDialog', () => {
     expect(result.value).toBe(false)
     expect(pendingConfirm.value).toBeNull()
   })
+
+  it('gives the dialog an accessible name from the message when no title is provided', async () => {
+    const result = ref<boolean | null>(null)
+    const Demo = defineComponent({
+      setup() {
+        const api = useConfirm()
+        return {
+          ask: () => {
+            void api.confirm({ message: 'タイトルなしの確認' }).then((value) => {
+              result.value = value
+            })
+          }
+        }
+      },
+      template: `<button id="ask" type="button" @click="ask">確認する</button>`
+    })
+    const wrapper = mount(
+      defineComponent({
+        components: { ConfirmDialog, Demo },
+        template: `
+          <div>
+            <ConfirmDialog />
+            <Demo />
+          </div>
+        `
+      }),
+      { attachTo: document.body }
+    )
+    wrappers.push(wrapper)
+
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    const dialog = getDialog()
+    const labelledBy = dialog.getAttribute('aria-labelledby')
+    expect(labelledBy).toBeTruthy()
+    const nameElement = labelledBy ? document.getElementById(labelledBy) : null
+    expect(nameElement?.textContent).toContain('タイトルなしの確認')
+  })
 })

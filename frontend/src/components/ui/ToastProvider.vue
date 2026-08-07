@@ -32,7 +32,7 @@ const toastIconName: Record<ToastType, IconName> = {
       :class="toastToneClass[toast.type]"
     >
       <FaIcon :name="toastIconName[toast.type]" class-name="mt-1 text-base" />
-      <p class="my-0 grow text-base">{{ toast.message }}</p>
+      <p class="my-0 min-w-0 grow break-words text-base">{{ toast.message }}</p>
       <button
         type="button"
         class="mt-0.5 rounded text-base leading-none opacity-60 transition hover:opacity-100"

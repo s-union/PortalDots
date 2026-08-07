@@ -1,5 +1,5 @@
-import { defineComponent, ref } from 'vue'
-import { afterEach, describe, expect, it } from 'vitest'
+import { defineComponent, nextTick, ref } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import Modal from './Modal.vue'
 
@@ -144,5 +144,135 @@ describe('Modal', () => {
 
     expect(getElement(labelledBy as string).textContent).toContain('タイトル')
     expect(getElement(describedBy as string).textContent).toContain('本文')
+  })
+
+  it('falls back to the body text as the accessible name when there is no header', async () => {
+    const wrapper = mount(
+      defineComponent({
+        components: { Modal },
+        setup: () => ({ isOpen: ref(true) }),
+        template: `<Modal v-model:open="isOpen"><p>操作内容を確認してください</p></Modal>`
+      }),
+      { attachTo: document.body }
+    )
+    wrappers.push(wrapper)
+    await flushPromises()
+
+    const dialog = getDialog()
+    const labelledBy = dialog.getAttribute('aria-labelledby')
+    expect(labelledBy).toBeTruthy()
+    expect(getElement(labelledBy as string).textContent).toContain('操作内容を確認してください')
+    expect(dialog.getAttribute('aria-label')).toBeNull()
+    expect(dialog.getAttribute('aria-describedby')).toBeNull()
+  })
+
+  it('uses aria-label as the accessible name when provided and there is no header', async () => {
+    const wrapper = mount(
+      defineComponent({
+        components: { Modal },
+        setup: () => ({ isOpen: ref(true) }),
+        template: `<Modal v-model:open="isOpen" aria-label="警告の確認"><p>本文</p></Modal>`
+      }),
+      { attachTo: document.body }
+    )
+    wrappers.push(wrapper)
+    await flushPromises()
+
+    const dialog = getDialog()
+    expect(dialog.getAttribute('aria-label')).toBe('警告の確認')
+    expect(dialog.getAttribute('aria-labelledby')).toBeNull()
+    expect(dialog.getAttribute('aria-describedby')).toBeTruthy()
+  })
+
+  it('scrolls only the body region and keeps the header and footer fixed', async () => {
+    const wrapper = mountModal()
+    await wrapper.get('#trigger').trigger('click')
+    await flushPromises()
+
+    const dialog = getDialog()
+    const header = dialog.querySelector('header')
+    const footer = dialog.querySelector('footer')
+    const body = getElement('body-text').parentElement
+
+    expect(header).not.toBeNull()
+    expect(footer).not.toBeNull()
+    expect(body).not.toBeNull()
+    expect(dialog.className).toContain('flex-col')
+    expect(dialog.className).toContain('max-h-')
+    expect(header?.className).toContain('shrink-0')
+    expect(footer?.className).toContain('shrink-0')
+    expect(body?.className).toContain('min-h-0')
+    expect(body?.className).toContain('overflow-y-auto')
+    expect(body?.className).toContain('overscroll-contain')
+  })
+
+  it('does not show the dialog or lock the scroll when toggled open and closed in the same tick', async () => {
+    const showModalSpy = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
+    const isOpen = ref(false)
+    const wrapper = mount(
+      defineComponent({
+        components: { Modal },
+        setup: () => ({ isOpen }),
+        template: `<Modal v-model:open="isOpen" title="タイトル"><p>本文</p></Modal>`
+      }),
+      { attachTo: document.body }
+    )
+    wrappers.push(wrapper)
+
+    isOpen.value = true
+    isOpen.value = false
+    await flushPromises()
+
+    expect(showModalSpy).not.toHaveBeenCalled()
+    expect(getDialog().hasAttribute('open')).toBe(false)
+    expect(document.documentElement.style.overflow).toBe('')
+    showModalSpy.mockRestore()
+  })
+
+  it('does not leak the scroll lock when unmounted while the open flush is pending', async () => {
+    const isOpen = ref(false)
+    const wrapper = mount(
+      defineComponent({
+        components: { Modal },
+        setup: () => ({ isOpen }),
+        template: `<Modal v-model:open="isOpen" title="タイトル"><p>本文</p></Modal>`
+      }),
+      { attachTo: document.body }
+    )
+    wrappers.push(wrapper)
+
+    isOpen.value = true
+    await nextTick()
+    wrapper.unmount()
+    await flushPromises()
+
+    expect(document.documentElement.style.overflow).toBe('')
+  })
+
+  it('restores focus to the previously focused element when unmounted while open', async () => {
+    const externalTrigger = document.createElement('button')
+    externalTrigger.textContent = '外部トリガー'
+    document.body.appendChild(externalTrigger)
+    externalTrigger.focus()
+
+    const wrapper = mount(
+      defineComponent({
+        components: { Modal },
+        setup() {
+          const isOpen = ref(true)
+          return { isOpen }
+        },
+        template: `<Modal v-model:open="isOpen" title="タイトル"><p>本文</p></Modal>`
+      }),
+      { attachTo: document.body }
+    )
+    wrappers.push(wrapper)
+    await flushPromises()
+    expect(getDialog().contains(document.activeElement)).toBe(true)
+
+    wrapper.unmount()
+    await flushPromises()
+
+    expect(document.activeElement).toBe(externalTrigger)
   })
 })
