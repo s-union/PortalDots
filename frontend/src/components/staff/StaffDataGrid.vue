@@ -225,14 +225,15 @@ function rowKey(row: Record<string, unknown>, index: number) {
       <div
         class="grid-controls__summary ml-2 border-l border-border pl-2 whitespace-nowrap text-body max-[860px]:basis-full max-[860px]:border-l-0 max-[860px]:pl-0 min-[861px]:ml-auto"
       >
-        <template v-if="total > 0">
-          <template v-if="filterActive && effectiveTotalUnfiltered > total">
+        <template v-if="filterActive && effectiveTotalUnfiltered > total">
+          <template v-if="total === 0">0件 / 全 {{ formatCount(effectiveTotalUnfiltered) }} 件</template>
+          <template v-else>
             {{ startIndex }}〜{{ endIndex }}件目・{{ formatCount(total) }} 件 / 全
             {{ formatCount(effectiveTotalUnfiltered) }} 件 (ページ{{ page }} / {{ totalPages }})
           </template>
-          <template v-else>
-            {{ startIndex }}〜{{ endIndex }}件目・全{{ total }}件 (ページ{{ page }} / {{ totalPages }})
-          </template>
+        </template>
+        <template v-else-if="total > 0">
+          {{ startIndex }}〜{{ endIndex }}件目・全{{ total }}件 (ページ{{ page }} / {{ totalPages }})
         </template>
         <template v-else>0件</template>
       </div>

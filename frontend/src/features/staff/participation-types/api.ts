@@ -96,11 +96,11 @@ export async function fetchStaffParticipationTypeCircles(
 export async function fetchAllStaffParticipationTypeCircles(
   typeId: string,
   params?: StaffListQueryParamsInput
-): Promise<{ items: StaffParticipationTypeCircle[]; totalUnfiltered: number }> {
+): Promise<{ items: StaffParticipationTypeCircle[]; totalUnfiltered?: number }> {
   const pageSize = 100
   let page = 1
   const allItems: StaffParticipationTypeCircle[] = []
-  let totalUnfiltered = 0
+  let totalUnfiltered: number | undefined
 
   while (true) {
     const current = await fetchStaffParticipationTypeCircles(typeId, page, pageSize, params)

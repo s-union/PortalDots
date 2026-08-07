@@ -6,7 +6,7 @@ export interface PaginatedResult<T> {
   page: number
   pageSize: number
   total: number
-  totalUnfiltered: number
+  totalUnfiltered?: number
 }
 
 export function parsePaginatedResult<T>(

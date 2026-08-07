@@ -50,6 +50,7 @@ const allRows = computed<StaffDataGridRow[]>(() =>
 const rows = computed<StaffDataGridRow[]>(() => allRows.value)
 
 const total = computed(() => activityLogs.value?.total ?? 0)
+const overallTotal = computed(() => activityLogs.value?.totalUnfiltered ?? total.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 
 function setFirstPage() {
@@ -92,7 +93,7 @@ function setLastPage() {
         <form class="flex items-center gap-2" @submit.prevent>
           <input v-model="searchQuery" aria-label="アクティビティログを検索" type="search" />
         </form>
-        <p class="text-sm text-muted">現在の表示件数: {{ rows.length }} / 全{{ total }}件</p>
+        <p class="text-sm text-muted">現在の表示件数: {{ rows.length }} / 全{{ overallTotal }}件</p>
       </ToolbarRow>
     </template>
 
