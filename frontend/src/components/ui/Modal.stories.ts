@@ -78,3 +78,24 @@ export const CustomHeader: Story = {
     `
   })
 }
+
+export const LongContent: Story = {
+  render: () => ({
+    components: { Modal, BaseButton },
+    setup() {
+      const isOpen = ref(true)
+      return { isOpen }
+    },
+    template: `
+      <Modal v-model:open="isOpen" title="利用規約">
+        <p>ここに長いコンテンツが入ります。モーダルの本文が画面の高さを超えると、本文領域だけがスクロールし、背景のページはスクロールしないことを確認してください。</p>
+        <p>スクロールロックは複数のモーダルを重ねても、最後のモーダルが閉じるまで背景がスクロールしないことを保証します。</p>
+        <p>長い本文を入れて、タイトルとフッターのボタンが常に見えていることを確認します。</p>
+        <template #footer>
+          <BaseButton variant="secondary" type="button" @click="isOpen = false">キャンセル</BaseButton>
+          <BaseButton variant="primary" type="button" @click="isOpen = false">同意する</BaseButton>
+        </template>
+      </Modal>
+    `
+  })
+}

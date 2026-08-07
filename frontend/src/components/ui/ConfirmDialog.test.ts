@@ -2,7 +2,7 @@ import { defineComponent, ref } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import ConfirmDialog from './ConfirmDialog.vue'
-import { useConfirm } from './useConfirm'
+import { dismissConfirm, pendingConfirm, useConfirm } from './useConfirm'
 
 const wrappers: VueWrapper[] = []
 
@@ -27,7 +27,12 @@ function mountConfirm() {
   const wrapper = mount(
     defineComponent({
       components: { ConfirmDialog, Demo },
-      template: `<ConfirmDialog><Demo /></ConfirmDialog>`
+      template: `
+        <div>
+          <ConfirmDialog />
+          <Demo />
+        </div>
+      `
     }),
     { attachTo: document.body }
   )
@@ -56,6 +61,9 @@ afterEach(() => {
     wrapper.unmount()
   }
   wrappers.length = 0
+  if (pendingConfirm.value) {
+    dismissConfirm(false)
+  }
   document.body.innerHTML = ''
 })
 
@@ -109,5 +117,33 @@ describe('ConfirmDialog', () => {
     await flushPromises()
 
     expect(result.value).toBe(false)
+  })
+
+  it('works when mounted as a sibling of the consumer', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    const dialog = getDialog()
+    expect(dialog.hasAttribute('open')).toBe(true)
+
+    findButton('はい').click()
+    await flushPromises()
+
+    expect(result.value).toBe(true)
+  })
+
+  it('resolves false when unmounted while a confirmation is pending', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    expect(getDialog().hasAttribute('open')).toBe(true)
+
+    wrapper.unmount()
+    await flushPromises()
+
+    expect(result.value).toBe(false)
+    expect(pendingConfirm.value).toBeNull()
   })
 })

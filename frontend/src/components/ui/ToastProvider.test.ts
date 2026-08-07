@@ -1,7 +1,7 @@
 import { defineComponent } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { DEFAULT_TOAST_DURATION, useToast } from './useToast'
+import { DEFAULT_TOAST_DURATION, dismissToast, toasts, useToast } from './useToast'
 import ToastProvider from './ToastProvider.vue'
 
 const wrappers: VueWrapper[] = []
@@ -29,7 +29,12 @@ function mountToast() {
   const wrapper = mount(
     defineComponent({
       components: { ToastProvider, Demo },
-      template: `<ToastProvider><Demo /></ToastProvider>`
+      template: `
+        <div>
+          <ToastProvider />
+          <Demo />
+        </div>
+      `
     })
   )
   wrappers.push(wrapper)
@@ -42,6 +47,10 @@ afterEach(() => {
     wrapper.unmount()
   }
   wrappers.length = 0
+  for (const toast of toasts.value) {
+    dismissToast(toast.id)
+  }
+  toasts.value = []
 })
 
 describe('ToastProvider', () => {
@@ -72,7 +81,7 @@ describe('ToastProvider', () => {
     expect(toast.attributes('aria-live')).toBe('assertive')
   })
 
-  it('stacks multiple toasts at once', async () => {
+  it('works when mounted as a sibling of the consumer', async () => {
     const wrapper = mountToast()
     await wrapper.get('#success').trigger('click')
     await wrapper.get('#info').trigger('click')

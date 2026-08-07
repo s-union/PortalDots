@@ -46,3 +46,10 @@ export const Default: Story = {
     template: `<ConfirmDialog><Demo /></ConfirmDialog>`
   })
 }
+
+export const Danger: Story = {
+  render: () => ({
+    components: { ConfirmDialog, Demo },
+    template: `<ConfirmDialog><Demo /></ConfirmDialog>`
+  })
+}
