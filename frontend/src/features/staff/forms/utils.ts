@@ -14,6 +14,7 @@ export function createDefaultStaffFormPayload(): CreateStaffFormPayload {
     maxAnswers: 1,
     answerableTags: [],
     confirmationMessage: '',
+    staffNotificationUserIds: [],
     isPublic: false
   }
 }

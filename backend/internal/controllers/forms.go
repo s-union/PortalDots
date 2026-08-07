@@ -29,20 +29,21 @@ type formSummaryResponse struct {
 }
 
 type formDetailResponse struct {
-	ID                  string              `json:"id"`
-	Name                string              `json:"name"`
-	Description         string              `json:"description"`
-	OpenAt              string              `json:"openAt"`
-	CloseAt             string              `json:"closeAt"`
-	IsPublic            bool                `json:"isPublic"`
-	IsOpen              bool                `json:"isOpen"`
-	CurrentCircleStatus string              `json:"currentCircleStatus"`
-	MaxAnswers          int32               `json:"maxAnswers"`
-	HasAnswer           bool                `json:"hasAnswer,omitempty"`
-	AnswerableTags      []string            `json:"answerableTags"`
-	ConfirmationMessage string              `json:"confirmationMessage"`
-	CreatedByUserID     string              `json:"createdByUserId"`
-	Questions           []staffFormQuestion `json:"questions"`
+	ID                       string              `json:"id"`
+	Name                     string              `json:"name"`
+	Description              string              `json:"description"`
+	OpenAt                   string              `json:"openAt"`
+	CloseAt                  string              `json:"closeAt"`
+	IsPublic                 bool                `json:"isPublic"`
+	IsOpen                   bool                `json:"isOpen"`
+	CurrentCircleStatus      string              `json:"currentCircleStatus"`
+	MaxAnswers               int32               `json:"maxAnswers"`
+	HasAnswer                bool                `json:"hasAnswer,omitempty"`
+	AnswerableTags           []string            `json:"answerableTags"`
+	ConfirmationMessage      string              `json:"confirmationMessage"`
+	CreatedByUserID          string              `json:"createdByUserId"`
+	StaffNotificationUserIDs []string            `json:"-"`
+	Questions                []staffFormQuestion `json:"questions"`
 }
 
 func (h *workspaceHandlers) listForms(c *echo.Context) error {
@@ -269,19 +270,20 @@ func (h *workspaceHandlers) buildWorkspaceFormDetailResponse(
 	_, answered := h.answers.Get(ctx, formValue.ID, currentCircleID)
 
 	return formDetailResponse{
-		ID:                  formValue.ID,
-		Name:                formValue.Name,
-		Description:         formValue.Description,
-		OpenAt:              formValue.OpenAt,
-		CloseAt:             formValue.CloseAt,
-		IsPublic:            formValue.IsPublic,
-		IsOpen:              formValue.IsOpen,
-		CurrentCircleStatus: currentCircle.Status,
-		MaxAnswers:          formValue.MaxAnswers,
-		HasAnswer:           answered,
-		AnswerableTags:      slices.Clone(formValue.AnswerableTags),
-		ConfirmationMessage: formValue.ConfirmationMessage,
-		CreatedByUserID:     formValue.CreatedByUserID,
-		Questions:           questions,
+		ID:                       formValue.ID,
+		Name:                     formValue.Name,
+		Description:              formValue.Description,
+		OpenAt:                   formValue.OpenAt,
+		CloseAt:                  formValue.CloseAt,
+		IsPublic:                 formValue.IsPublic,
+		IsOpen:                   formValue.IsOpen,
+		CurrentCircleStatus:      currentCircle.Status,
+		MaxAnswers:               formValue.MaxAnswers,
+		HasAnswer:                answered,
+		AnswerableTags:           slices.Clone(formValue.AnswerableTags),
+		ConfirmationMessage:      formValue.ConfirmationMessage,
+		CreatedByUserID:          formValue.CreatedByUserID,
+		StaffNotificationUserIDs: slices.Clone(formValue.StaffNotificationUserIDs),
+		Questions:                questions,
 	}
 }

@@ -15,7 +15,7 @@ import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   buildDeleteStaffParticipationTypeConfirmMessage,
@@ -41,6 +41,7 @@ const tagsQuery = useStaffTagsQuery(enabled)
 const updateMutation = useUpdateStaffParticipationTypeMutation(typeId)
 const deleteMutation = useDeleteStaffParticipationTypeMutation(typeId)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 
 const form = ref({
   name: '',
@@ -238,7 +239,12 @@ async function handleDelete() {
             </div>
             <div class="grid gap-3">
               <FormField label="付与タグ">
-                <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
+                <StaffTagPicker
+                  v-model="form.tags"
+                  :available-tags="availableTags"
+                  :tag-colors="tagColors"
+                  name="tags"
+                />
               </FormField>
               <p class="text-xs text-muted-2">候補から追加しつつ、必要なら未登録タグもそのまま追加できます。</p>
             </div>

@@ -20,6 +20,7 @@ const tagMutationHandlers = [
     HttpResponse.json({
       id: 'tag-new',
       name: '新しいタグ',
+      color: 'blue',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z'
     })
@@ -28,6 +29,7 @@ const tagMutationHandlers = [
     HttpResponse.json({
       id: 'tag-1',
       name: '更新されたタグ',
+      color: 'green',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z'
     })
@@ -47,6 +49,22 @@ export const EditExisting: Story = {
     tag: {
       id: toTagId('tag-1'),
       name: '文化系',
+      color: 'blue',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+  },
+  parameters: {
+    msw: { handlers: tagMutationHandlers }
+  }
+}
+
+export const EditExistingPurple: Story = {
+  args: {
+    tag: {
+      id: toTagId('tag-2'),
+      name: '音楽系',
+      color: 'purple',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z'
     }

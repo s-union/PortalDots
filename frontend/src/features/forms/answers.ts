@@ -362,30 +362,62 @@ export function useFormAnswerEditorDraft(
   watch(
     [() => toValue(answer), () => toValue(questions)],
     ([currentAnswer, currentQuestions]) => {
-      const nextDraft: FormAnswerDraft = {}
-      if (currentQuestions.length === 0) {
-        nextDraft['legacy-body'] = currentAnswer?.body ?? ''
-        draft.value = nextDraft
-        return
-      }
-
-      for (const question of currentQuestions) {
-        if (question.type === 'heading' || question.type === 'upload') {
-          continue
-        }
-        const values = currentAnswer?.details[question.id] ?? []
-        if (question.type === 'checkbox') {
-          nextDraft[question.id] = [...values]
-          continue
-        }
-        nextDraft[question.id] = values[0] ?? ''
-      }
-      draft.value = nextDraft
+      draft.value = buildFormAnswerDraft(currentAnswer, currentQuestions)
     },
     { immediate: true }
   )
 
   return draft
+}
+
+function buildFormAnswerDraft(answer: FormAnswer | null | undefined, questions: FormQuestion[]): FormAnswerDraft {
+  const draft: FormAnswerDraft = {}
+  if (questions.length === 0) {
+    draft['legacy-body'] = answer?.body ?? ''
+    return draft
+  }
+
+  for (const question of questions) {
+    if (question.type === 'heading' || question.type === 'upload') {
+      continue
+    }
+    const values = answer?.details[question.id] ?? []
+    if (question.type === 'checkbox') {
+      draft[question.id] = [...values]
+      continue
+    }
+    draft[question.id] = values[0] ?? ''
+  }
+  return draft
+}
+
+export function isFormAnswerDraftDirty(
+  draft: FormAnswerDraft,
+  answer: FormAnswer | null | undefined,
+  questions: FormQuestion[]
+): boolean {
+  return !formAnswerDraftsEqual(draft, buildFormAnswerDraft(answer, questions))
+}
+
+function formAnswerDraftsEqual(a: FormAnswerDraft, b: FormAnswerDraft): boolean {
+  const aKeys = Object.keys(a)
+  const bKeys = Object.keys(b)
+  if (aKeys.length !== bKeys.length) {
+    return false
+  }
+  return aKeys.every((key) => {
+    const aValue = a[key]
+    const bValue = b[key]
+    if (Array.isArray(aValue) || Array.isArray(bValue)) {
+      return (
+        Array.isArray(aValue) &&
+        Array.isArray(bValue) &&
+        aValue.length === bValue.length &&
+        aValue.every((item, index) => item === bValue[index])
+      )
+    }
+    return aValue === bValue
+  })
 }
 
 export function extractValidationMessage(error: unknown) {

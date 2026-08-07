@@ -49,40 +49,66 @@ func (h *workspaceHandlers) enqueueWorkspaceFormAnswerMail(
 		}
 	}
 
-	if formValue.CreatedByUserID != "" {
-		creator, err := h.users.Find(formValue.CreatedByUserID)
-		if err == nil {
-			staffRecipients := currentFormAnswerMailRecipients(creator)
-			if len(staffRecipients) > 0 {
-				subject := fmt.Sprintf("【スタッフ用控え】申請「%s」を承りました", formValue.Name)
-				body := answerValue.Body
-				if formValue.ConfirmationMessage != "" {
-					body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
-				}
+	if formValue.CreatedByUserID != "" || len(formValue.StaffNotificationUserIDs) > 0 {
+		staffRecipients := h.staffFormAnswerMailRecipients(formValue)
+		if len(staffRecipients) > 0 {
+			subject := fmt.Sprintf("【スタッフ用控え】申請「%s」を承りました", formValue.Name)
+			body := answerValue.Body
+			if formValue.ConfirmationMessage != "" {
+				body = strings.TrimSpace(body + "\n\n" + formValue.ConfirmationMessage)
+			}
 
-				if err := h.email.EmailSender.Enqueue(ctx, emailqueue.EmailJob{
-					JobId:    "form-answer-staff-copy-" + uuidv7.MustString(),
-					Template: "markdown-notice",
-					Priority: emailqueue.PriorityNormal,
-					From:     h.email.From,
-					To:       staffRecipients,
-					Subject:  subject,
-					Body:     body,
-					Variables: map[string]string{
-						"subject":      subject,
-						"body":         body,
-						"appName":      h.email.AppName,
-						"appURL":       h.email.AppURL,
-						"adminName":    h.email.AdminName,
-						"contactEmail": h.email.ContactEmail,
-						"preview":      subject,
-					},
-				}); err != nil {
-					slog.WarnContext(ctx, "failed to enqueue form answer staff copy email", "error", err)
-				}
+			if err := h.email.EmailSender.Enqueue(ctx, emailqueue.EmailJob{
+				JobId:    "form-answer-staff-copy-" + uuidv7.MustString(),
+				Template: "markdown-notice",
+				Priority: emailqueue.PriorityNormal,
+				From:     h.email.From,
+				To:       staffRecipients,
+				Subject:  subject,
+				Body:     body,
+				Variables: map[string]string{
+					"subject":      subject,
+					"body":         body,
+					"appName":      h.email.AppName,
+					"appURL":       h.email.AppURL,
+					"adminName":    h.email.AdminName,
+					"contactEmail": h.email.ContactEmail,
+					"preview":      subject,
+				},
+			}); err != nil {
+				slog.WarnContext(ctx, "failed to enqueue form answer staff copy email", "error", err)
 			}
 		}
 	}
+}
+
+// staffFormAnswerMailRecipients returns current addresses for the form's
+// configured staff-copy recipients, falling back to the form creator when none
+// are configured. Every user is re-checked for current formAnswers.read access
+// at send time; form ownership is historical, so it must not grant a
+// notification entitlement after staff access is removed.
+func (h *workspaceHandlers) staffFormAnswerMailRecipients(formValue formDetailResponse) []string {
+	userIDs := formValue.StaffNotificationUserIDs
+	if len(userIDs) == 0 {
+		if formValue.CreatedByUserID == "" {
+			return nil
+		}
+		userIDs = []string{formValue.CreatedByUserID}
+	}
+
+	recipients := make([]string, 0, len(userIDs))
+	for _, userID := range userIDs {
+		if userID == "" {
+			continue
+		}
+		userValue, err := h.users.Find(userID)
+		if err != nil {
+			continue
+		}
+		recipients = append(recipients, currentFormAnswerMailRecipients(userValue)...)
+	}
+
+	return normalizeRecipients(recipients)
 }
 
 // currentFormAnswerMailRecipients returns addresses for users who can still

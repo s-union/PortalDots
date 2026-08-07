@@ -31,6 +31,7 @@ const publishedAtHelper = computed(() =>
 
 const {
   availableTags,
+  tagColors = {},
   availableDocuments,
   documentsLoading,
   errorMessage,
@@ -41,6 +42,7 @@ const {
   onBlurField
 } = defineProps<{
   availableTags: string[]
+  tagColors?: Record<string, string>
   availableDocuments: StaffPageDocument[]
   documentsLoading: boolean
   errorMessage?: string
@@ -125,6 +127,7 @@ function handleDocumentChange(documentId: string, event: Event) {
         v-model="form.viewableTags"
         aria-describedby="staff-page-tags-input-helper"
         :available-tags="availableTags"
+        :tag-colors="tagColors"
         name="viewableTags"
       />
     </FormField>

@@ -71,29 +71,31 @@ type StaffRoutes struct {
 	UpdateStaffContactCategory echo.HandlerFunc
 	DeleteStaffContactCategory echo.HandlerFunc
 	// Forms
-	ListStaffForms                    echo.HandlerFunc
-	CreateStaffForm                   echo.HandlerFunc
-	DownloadStaffFormsCSV             echo.HandlerFunc
-	GetStaffForm                      echo.HandlerFunc
-	PreviewStaffForm                  echo.HandlerFunc
-	UpdateStaffForm                   echo.HandlerFunc
-	CopyStaffForm                     echo.HandlerFunc
-	DeleteStaffForm                   echo.HandlerFunc
-	ListStaffFormAnswers              echo.HandlerFunc
-	CreateStaffFormAnswer             echo.HandlerFunc
-	DownloadStaffFormAnswersCSV       echo.HandlerFunc
-	ListStaffFormNotAnsweredCircles   echo.HandlerFunc
-	DownloadStaffFormAnswerUploadsZIP echo.HandlerFunc
-	GetStaffFormAnswer                echo.HandlerFunc
-	UpdateStaffFormAnswer             echo.HandlerFunc
-	DeleteStaffFormAnswer             echo.HandlerFunc
-	UploadStaffFormAnswerFile         echo.HandlerFunc
-	DownloadStaffFormAnswerUpload     echo.HandlerFunc
-	CreateStaffFormQuestion           echo.HandlerFunc
-	UpdateStaffFormQuestion           echo.HandlerFunc
-	DeleteStaffFormQuestion           echo.HandlerFunc
-	ReorderStaffFormQuestions         echo.HandlerFunc
-	DownloadStaffFormUpload           echo.HandlerFunc
+	ListStaffForms                     echo.HandlerFunc
+	CreateStaffForm                    echo.HandlerFunc
+	DownloadStaffFormsCSV              echo.HandlerFunc
+	GetStaffForm                       echo.HandlerFunc
+	PreviewStaffForm                   echo.HandlerFunc
+	UpdateStaffForm                    echo.HandlerFunc
+	CopyStaffForm                      echo.HandlerFunc
+	DeleteStaffForm                    echo.HandlerFunc
+	ListStaffFormAnswers               echo.HandlerFunc
+	CreateStaffFormAnswer              echo.HandlerFunc
+	DownloadStaffFormAnswersCSV        echo.HandlerFunc
+	ListStaffFormNotAnsweredCircles    echo.HandlerFunc
+	DownloadStaffFormAnswerUploadsZIP  echo.HandlerFunc
+	GetStaffFormAnswer                 echo.HandlerFunc
+	UpdateStaffFormAnswer              echo.HandlerFunc
+	DeleteStaffFormAnswer              echo.HandlerFunc
+	UploadStaffFormAnswerFile          echo.HandlerFunc
+	DownloadStaffFormAnswerUpload      echo.HandlerFunc
+	CreateStaffFormQuestion            echo.HandlerFunc
+	UpdateStaffFormQuestion            echo.HandlerFunc
+	DeleteStaffFormQuestion            echo.HandlerFunc
+	ReorderStaffFormQuestions          echo.HandlerFunc
+	DownloadStaffFormUpload            echo.HandlerFunc
+	SearchStaffFormRecipientCandidates echo.HandlerFunc
+	GetStaffFormRecipientCandidate     echo.HandlerFunc
 	// Participation Types
 	ListStaffParticipationTypes              echo.HandlerFunc
 	CreateStaffParticipationType             echo.HandlerFunc
@@ -261,6 +263,8 @@ func RegisterStaffRoutes(v1 *echo.Group, r StaffRoutes, middlewares ...echo.Midd
 	staff.DELETE("/forms/:formID/questions/:questionID", r.DeleteStaffFormQuestion, RequireCapability(canEditForms))
 	staff.PUT("/forms/:formID/questions/order", r.ReorderStaffFormQuestions, RequireCapability(canEditForms))
 	staff.GET("/forms/:formID/uploads/:uploadID/file", r.DownloadStaffFormUpload, RequireCapability(canReadForms))
+	staff.GET("/forms/recipient-candidates", r.SearchStaffFormRecipientCandidates, RequireCapability(canEditForms))
+	staff.GET("/forms/recipient-candidates/:userID", r.GetStaffFormRecipientCandidate, RequireCapability(canEditForms))
 	staff.GET("/participation-types", r.ListStaffParticipationTypes, RequireCapability(canReadParticipationTypes))
 	staff.POST("/participation-types", r.CreateStaffParticipationType, RequireCapability(canManageParticipationTypes))
 	staff.GET("/participation-types/:typeID", r.GetStaffParticipationType, RequireCapability(canReadParticipationTypes))

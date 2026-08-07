@@ -42,6 +42,7 @@ const formBase: StaffFormDetail = {
   maxAnswers: 1,
   answerableTags: [],
   confirmationMessage: '申請が完了しました。',
+  staffNotificationUserIds: [],
   isPublic: true,
   isOpen: true,
   createdAt: '2026-01-01T00:00:00Z',

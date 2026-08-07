@@ -13,20 +13,21 @@ import (
 
 func (h *staffFormHandlers) mapStaffFormSummary(formValue backendform.Form, circleValue staffManagedCircleResponse) staffFormSummaryResponse {
 	return staffFormSummaryResponse{
-		Circle:              circleValue,
-		ID:                  formValue.ID,
-		Name:                formValue.Name,
-		Description:         formValue.Description,
-		OpenAt:              formValue.OpenAt,
-		CloseAt:             formValue.CloseAt,
-		IsPublic:            formValue.IsPublic,
-		IsOpen:              formValue.IsOpen,
-		CreatedAt:           formValue.CreatedAt,
-		UpdatedAt:           formValue.UpdatedAt,
-		MaxAnswers:          formValue.MaxAnswers,
-		AnswerableTags:      slices.Clone(formValue.AnswerableTags),
-		ConfirmationMessage: formValue.ConfirmationMessage,
-		IsParticipationForm: h.isParticipationForm(formValue.ID),
+		Circle:                   circleValue,
+		ID:                       formValue.ID,
+		Name:                     formValue.Name,
+		Description:              formValue.Description,
+		OpenAt:                   formValue.OpenAt,
+		CloseAt:                  formValue.CloseAt,
+		IsPublic:                 formValue.IsPublic,
+		IsOpen:                   formValue.IsOpen,
+		CreatedAt:                formValue.CreatedAt,
+		UpdatedAt:                formValue.UpdatedAt,
+		MaxAnswers:               formValue.MaxAnswers,
+		AnswerableTags:           slices.Clone(formValue.AnswerableTags),
+		ConfirmationMessage:      formValue.ConfirmationMessage,
+		StaffNotificationUserIDs: slices.Clone(formValue.StaffNotificationUserIDs),
+		IsParticipationForm:      h.isParticipationForm(formValue.ID),
 	}
 }
 

@@ -20,18 +20,28 @@ type Story = StoryObj<typeof meta>
 
 const availableTags = ['文化系', 'スポーツ系', '音楽系', '芸術系', 'IT系', '食品系']
 
+const tagColors = {
+  文化系: 'blue',
+  スポーツ系: 'green',
+  音楽系: 'purple',
+  芸術系: 'orange',
+  IT系: 'red',
+  食品系: 'orange'
+}
+
 export const Empty: Story = {
   args: { modelValue: [], availableTags },
   render: () => ({
     components: { StaffTagPicker },
     setup() {
       const selectedTags = ref<string[]>([])
-      return { selectedTags, availableTags }
+      return { selectedTags, availableTags, tagColors }
     },
     template: `
       <StaffTagPicker
         v-model="selectedTags"
         :available-tags="availableTags"
+        :tag-colors="tagColors"
         placeholder="タグ名を入力して追加"
         empty-message="タグは未選択です。"
       />
@@ -45,12 +55,13 @@ export const WithSelectedTags: Story = {
     components: { StaffTagPicker },
     setup() {
       const selectedTags = ref(['文化系', 'IT系'])
-      return { selectedTags, availableTags }
+      return { selectedTags, availableTags, tagColors }
     },
     template: `
       <StaffTagPicker
         v-model="selectedTags"
         :available-tags="availableTags"
+        :tag-colors="tagColors"
       />
     `
   })
@@ -62,12 +73,13 @@ export const Disabled: Story = {
     components: { StaffTagPicker },
     setup() {
       const selectedTags = ref(['文化系', 'スポーツ系'])
-      return { selectedTags, availableTags }
+      return { selectedTags, availableTags, tagColors }
     },
     template: `
       <StaffTagPicker
         v-model="selectedTags"
         :available-tags="availableTags"
+        :tag-colors="tagColors"
         :disabled="true"
       />
     `
@@ -80,12 +92,13 @@ export const NoCustomTags: Story = {
     components: { StaffTagPicker },
     setup() {
       const selectedTags = ref<string[]>([])
-      return { selectedTags, availableTags }
+      return { selectedTags, availableTags, tagColors }
     },
     template: `
       <StaffTagPicker
         v-model="selectedTags"
         :available-tags="availableTags"
+        :tag-colors="tagColors"
         :allow-custom="false"
         placeholder="既存のタグから選択してください"
       />
@@ -99,12 +112,13 @@ export const WithSearch: Story = {
     components: { StaffTagPicker },
     setup() {
       const selectedTags = ref<string[]>([])
-      return { selectedTags, availableTags }
+      return { selectedTags, availableTags, tagColors }
     },
     template: `
       <StaffTagPicker
         v-model="selectedTags"
         :available-tags="availableTags"
+        :tag-colors="tagColors"
       />
     `
   }),

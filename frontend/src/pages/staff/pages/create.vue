@@ -10,7 +10,7 @@ import { useRouter } from 'vue-router'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
 import {
   extractStaffPagePublishedAtError,
@@ -35,6 +35,7 @@ const errorMessage = ref('')
 const publishedAtError = ref('')
 
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
 
 const { fieldErrors, validateAll, markTouched } = useFormValidation({
@@ -93,6 +94,7 @@ async function focusFirstInvalidField() {
           <StaffPageEditorForm
             v-model="form"
             :available-tags="availableTags"
+            :tag-colors="tagColors"
             :available-documents="availableDocuments"
             :documents-loading="documentsQuery.isPending.value"
             :error-message="errorMessage"

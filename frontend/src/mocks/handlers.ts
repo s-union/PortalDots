@@ -196,6 +196,16 @@ export const staffHandlers = [
       recipients: [{ id: 'user-1', displayName: '山田 太郎', loginIds: ['s12345678@example.ac.jp'], isLeader: true }]
     })
   ),
+  http.get(`${BASE}/staff/forms/recipient-candidates`, () =>
+    HttpResponse.json({
+      items: [mockStaffUser2],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      totalUnfiltered: 1
+    })
+  ),
+  http.get(`${BASE}/staff/forms/recipient-candidates/{userID}`, () => HttpResponse.json(mockStaffUser2)),
   http.get(`${BASE}/staff/forms`, () =>
     HttpResponse.json([
       {

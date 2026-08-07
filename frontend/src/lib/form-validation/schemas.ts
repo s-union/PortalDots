@@ -244,7 +244,8 @@ export type StaffPageFormData = z.infer<typeof staffPageFormSchema>
  * Staff tag form schema
  */
 export const staffTagFormSchema = z.object({
-  name: requiredTextSchema('タグ名')
+  name: requiredTextSchema('タグ名'),
+  color: z.enum(['gray', 'red', 'orange', 'green', 'blue', 'purple'])
 })
 
 export type StaffTagFormData = z.infer<typeof staffTagFormSchema>

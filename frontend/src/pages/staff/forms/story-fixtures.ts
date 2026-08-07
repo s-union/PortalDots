@@ -81,6 +81,7 @@ export const staffFormStoryDetail = {
   maxAnswers: 2,
   answerableTags: ['展示', '屋内'],
   confirmationMessage: '回答ありがとうございました。内容を確認して必要に応じて連絡します。',
+  staffNotificationUserIds: [],
   isPublic: true,
   isOpen: true,
   createdAt: '2026-03-01T12:00:00Z',
