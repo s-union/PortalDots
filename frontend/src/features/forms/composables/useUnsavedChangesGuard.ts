@@ -15,8 +15,12 @@ export interface UnsavedChangesGuardControls {
  * for confirmation before in-app navigation away. Both are removed as soon as
  * the state becomes clean or the component unmounts.
  *
- * `clear()` marks the page as clean regardless of the source, so call it right
- * before a post-submit redirect the guard must not block.
+ * `clear()` suppresses the guard for the current dirty state, so call it right
+ * before a post-submit redirect the guard must not block. The guard re-arms
+ * itself as soon as `isDirty` turns dirty again.
+ *
+ * The in-app confirmation currently uses `window.confirm`; follow-up
+ * https://github.com/s-union/PortalDots/pull/495 moves it to `useConfirm()`.
  */
 export function useUnsavedChangesGuard(
   isDirty: MaybeRefOrGetter<boolean>,
@@ -38,7 +42,13 @@ export function useUnsavedChangesGuard(
 
   const stopWatching = watch(
     () => toValue(isDirty),
-    (dirty) => {
+    (dirty, wasDirty) => {
+      // A fresh round of edits (false -> true) re-arms the guard even after a
+      // previous clear(), so pages that stay mounted after a save keep
+      // protecting the user on later edits.
+      if (dirty && !wasDirty) {
+        isCleared.value = false
+      }
       if (dirty && !isCleared.value) {
         window.addEventListener('beforeunload', handleBeforeUnload)
       } else {

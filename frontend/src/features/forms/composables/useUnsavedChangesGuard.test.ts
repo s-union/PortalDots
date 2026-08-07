@@ -122,4 +122,24 @@ describe('useUnsavedChangesGuard', () => {
     await router.push('/other')
     expect(confirmSpy).not.toHaveBeenCalled()
   })
+
+  it('re-arms the guard for a fresh round of edits after clear()', async () => {
+    const { dirty, clear, router } = await mountHarness()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    dirty.value = true
+    await nextTick()
+    clear.value()
+    await nextTick()
+
+    dirty.value = false
+    await nextTick()
+    dirty.value = true
+    await nextTick()
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(true)
+
+    await router.push('/other')
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(router.currentRoute.value.path).toBe('/')
+  })
 })
