@@ -8,18 +8,30 @@ import StaffSideWindow from '@/components/staff/StaffSideWindow.vue'
 import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContainer.vue'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import TagChip from '@/components/ui/TagChip.vue'
 import ToolbarRow from '@/components/ui/ToolbarRow.vue'
 import { buttonVariants } from '@/lib/ui/variants'
-import { canAccessCircleMail, canDeleteCircles, canEditCircles } from '@/features/staff/access/capabilities'
+import {
+  canAccessCircleMail,
+  canDeleteCircles,
+  canEditCircles,
+  canReadTags
+} from '@/features/staff/access/capabilities'
 import { useStaffCirclesAllPage } from '@/features/staff/circles/composables/useStaffCirclesAllPage'
 import { statusTone, statusLabel } from '@/features/staff/circles/helpers/circleFilters'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import { useSessionStore } from '@/features/session/store'
 import FaIcon from '@/components/ui/FaIcon.vue'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
+
+const tagsQuery = useStaffTagsQuery(
+  computed(() => enabled.value && canReadTags(sessionStore.roles, sessionStore.permissions))
+)
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 
 const {
   allCirclesQuery,
@@ -191,7 +203,7 @@ const gridRows = computed<StaffDataGridRow[]>(() => pagedRows.value.map((circle)
 
           <template #cell-tags="{ value }">
             <div class="flex flex-wrap gap-1">
-              <StatusBadge v-for="tag in value as string[]" :key="tag" tone="muted" size="sm">{{ tag }}</StatusBadge>
+              <TagChip v-for="tag in value as string[]" :key="tag" :name="tag" :color="tagColors[tag]" size="sm" />
             </div>
           </template>
 

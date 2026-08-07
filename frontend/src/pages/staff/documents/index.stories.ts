@@ -30,7 +30,8 @@ const meta = {
             ],
             page: 1,
             pageSize: 20,
-            total: 1
+            total: 1,
+            totalUnfiltered: 1
           })
         )
       ]

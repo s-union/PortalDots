@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +20,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
@@ -3098,6 +3100,125 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 	}
 }
 
+func TestStaffTagsColorValidation(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "色付きタグ", "color": "red"})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var createdTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &createdTag); err != nil {
+		t.Fatalf("unmarshal created tag: %v", err)
+	}
+	if createdTag.Color != "red" {
+		t.Fatalf("expected created tag color red, got %q", createdTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "不正な色", "color": "neon"})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	for _, invalidColor := range []string{"", "  "} {
+		recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "空文字の色", "color": invalidColor})
+		if recorder.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("expected create with color %q to be rejected, got %d, body=%s", invalidColor, recorder.Code, recorder.Body.String())
+		}
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "green"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var updatedTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &updatedTag); err != nil {
+		t.Fatalf("unmarshal updated tag: %v", err)
+	}
+	if updatedTag.Color != "green" {
+		t.Fatalf("expected updated tag color green, got %q", updatedTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var preservedTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &preservedTag); err != nil {
+		t.Fatalf("unmarshal preserved tag: %v", err)
+	}
+	if preservedTag.Color != "green" {
+		t.Fatalf("expected color-less update to keep green, got %q", preservedTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "blue"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var blueTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &blueTag); err != nil {
+		t.Fatalf("unmarshal blue tag: %v", err)
+	}
+	if blueTag.Color != "blue" {
+		t.Fatalf("expected tag color blue, got %q", blueTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var latestTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &latestTag); err != nil {
+		t.Fatalf("unmarshal latest tag: %v", err)
+	}
+	if latestTag.Color != "blue" {
+		t.Fatalf("expected color-less update to keep the latest colour blue, got %q", latestTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "teal"})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	for _, invalidColor := range []string{"", "  "} {
+		recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": invalidColor})
+		if recorder.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("expected update with color %q to be rejected, got %d, body=%s", invalidColor, recorder.Code, recorder.Body.String())
+		}
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "色指定なし"})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var defaultTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &defaultTag); err != nil {
+		t.Fatalf("unmarshal default tag: %v", err)
+	}
+	if defaultTag.Color != "gray" {
+		t.Fatalf("expected default tag color gray, got %q", defaultTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/tags", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var tags []staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &tags); err != nil {
+		t.Fatalf("unmarshal tags: %v", err)
+	}
+	for _, current := range tags {
+		if !tag.IsValidColor(current.Color) {
+			t.Fatalf("listed tag %q has invalid color %q", current.Name, current.Color)
+		}
+	}
+}
+
 func TestListFormsUsesCurrentCircleTagsAndClosedVisibility(t *testing.T) {
 	t.Parallel()
 
@@ -4322,6 +4443,290 @@ func TestStaffFormUpdateAndUploadDownload(t *testing.T) {
 	}
 	if recorder.Body.String() != "layout content" {
 		t.Fatalf("unexpected downloaded content: %q", recorder.Body.String())
+	}
+}
+
+func TestStaffFormRecipientCandidatesPermissionMatrix(t *testing.T) {
+	t.Parallel()
+
+	formsManagerConfig := func() config.Config {
+		cfg := testConfig()
+		cfg.AuthUser = config.AuthUser{
+			ID:          "0195ec00-0092-7000-8000-000000000001",
+			LoginIDs:    []string{"forms@example.com"},
+			DisplayName: "Forms User",
+			Password:    "password",
+			Roles:       []string{"forms_manager"},
+		}
+		return cfg
+	}
+
+	t.Run("forms manager can search and fetch recipient candidates", func(t *testing.T) {
+		server := NewServer(formsManagerConfig())
+		cookies := map[string]*http.Cookie{}
+
+		recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+			"loginId":  "forms@example.com",
+			"password": "password",
+		})
+		if recorder.Code != http.StatusNoContent {
+			t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+		}
+		authorizeStaff(t, server, cookies)
+
+		recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates", nil)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+		}
+
+		recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates/0195ec00-0092-7000-8000-000000000001", nil)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("forms manager cannot list staff users", func(t *testing.T) {
+		server := NewServer(formsManagerConfig())
+		cookies := map[string]*http.Cookie{}
+
+		recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+			"loginId":  "forms@example.com",
+			"password": "password",
+		})
+		if recorder.Code != http.StatusNoContent {
+			t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+		}
+		authorizeStaff(t, server, cookies)
+
+		recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/users", nil)
+		if recorder.Code != http.StatusForbidden {
+			t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+		}
+	})
+
+	t.Run("user without forms edit cannot access recipient candidates", func(t *testing.T) {
+		cfg := testConfig()
+		cfg.AuthUser = config.AuthUser{
+			ID:          "0195ec00-0099-7000-8000-000000000001",
+			LoginIDs:    []string{"independent@example.com"},
+			DisplayName: "Independent User",
+			Password:    "password",
+			Roles:       []string{"participant"},
+		}
+		server := NewServer(cfg)
+		cookies := map[string]*http.Cookie{}
+
+		recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/auth/login", map[string]string{
+			"loginId":  "independent@example.com",
+			"password": "password",
+		})
+		if recorder.Code != http.StatusNoContent {
+			t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+		}
+
+		recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates", nil)
+		if recorder.Code != http.StatusForbidden {
+			t.Fatalf("expected status %d, got %d, body=%s", http.StatusForbidden, recorder.Code, recorder.Body.String())
+		}
+	})
+}
+
+func TestStaffFormRecipientCandidatesSearchAndDetail(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.Users = append(cfg.Users,
+		config.User{
+			ID:           "0195ec00-0096-7000-8000-000000000001",
+			LoginIDs:     []string{"recipient@example.com"},
+			DisplayName:  "Recipient User",
+			Permissions:  []string{"staff.forms.answers.read"},
+			ContactEmail: "recipient@example.com",
+		},
+		config.User{
+			ID:          "0195ec00-0097-7000-8000-000000000001",
+			LoginIDs:    []string{"manager@example.com"},
+			DisplayName: "Form Manager",
+			Roles:       []string{"forms_manager"},
+		},
+		config.User{
+			ID:          "0195ec00-0059-7000-8000-000000000001",
+			LoginIDs:    []string{"normal@example.com"},
+			DisplayName: "Normal User",
+			Roles:       []string{"participant"},
+		},
+	)
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	var result models.PaginatedResponse[staffFormRecipientCandidateResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &result); err != nil {
+		t.Fatalf("unmarshal recipient candidates response: %v", err)
+	}
+	eligibleIDs := []string{
+		"0195ec00-0098-7000-8000-000000000001", // admin auth user
+		"0195ec00-0096-7000-8000-000000000001", // staff.forms.answers.read
+		"0195ec00-0097-7000-8000-000000000001", // forms_manager role
+	}
+	if len(result.Items) != len(eligibleIDs) {
+		t.Fatalf("expected %d eligible candidates, got %#v", len(eligibleIDs), result.Items)
+	}
+	for _, candidate := range result.Items {
+		if !slices.Contains(eligibleIDs, candidate.ID) {
+			t.Fatalf("unexpected candidate in recipient search: %#v", candidate)
+		}
+	}
+	if result.TotalUnfiltered != len(eligibleIDs) {
+		t.Fatalf("expected %d unfiltered candidates, got %d", len(eligibleIDs), result.TotalUnfiltered)
+	}
+	if !slices.ContainsFunc(result.Items, func(candidate staffFormRecipientCandidateResponse) bool {
+		return candidate.ID == "0195ec00-0096-7000-8000-000000000001" && candidate.ContactEmail == "recipient@example.com" && candidate.DisplayName == "Recipient User"
+	}) {
+		t.Fatalf("expected recipient candidate with contact email, got %#v", result.Items)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates?query=recipient", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var filteredResult models.PaginatedResponse[staffFormRecipientCandidateResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &filteredResult); err != nil {
+		t.Fatalf("unmarshal filtered recipient candidates response: %v", err)
+	}
+	if filteredResult.Total != 1 || filteredResult.TotalUnfiltered != len(eligibleIDs) {
+		t.Fatalf("expected 1 filtered candidate out of %d, got total=%d totalUnfiltered=%d", len(eligibleIDs), filteredResult.Total, filteredResult.TotalUnfiltered)
+	}
+
+	var raw struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &raw); err != nil {
+		t.Fatalf("unmarshal recipient candidates raw response: %v", err)
+	}
+	for _, item := range raw.Items {
+		if _, hasRoles := item["roles"]; hasRoles {
+			t.Fatalf("expected minimal recipient candidate fields, got %#v", item)
+		}
+		if _, hasPhone := item["phoneNumber"]; hasPhone {
+			t.Fatalf("expected minimal recipient candidate fields, got %#v", item)
+		}
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates/0195ec00-0096-7000-8000-000000000001", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var detail staffFormRecipientCandidateResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal recipient candidate detail: %v", err)
+	}
+	if detail.DisplayName != "Recipient User" || detail.ContactEmail != "recipient@example.com" {
+		t.Fatalf("unexpected recipient candidate detail: %#v", detail)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates/0195ec00-0059-7000-8000-000000000001", nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates/0195ec00-0055-7000-8000-000000000001", nil)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNotFound, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestStaffFormUpdateRecipientOmissionPreservesAndEmptyArrayClears(t *testing.T) {
+	t.Parallel()
+
+	cfg := testStaffConfig()
+	cfg.Users = append(cfg.Users, config.User{
+		ID:           "0195ec00-0096-7000-8000-000000000001",
+		LoginIDs:     []string{"recipient@example.com"},
+		DisplayName:  "Recipient User",
+		Permissions:  []string{"staff.forms.answers.read"},
+		ContactEmail: "recipient@example.com",
+	})
+	server := NewServer(cfg)
+	cookies := map[string]*http.Cookie{}
+
+	now := testNowUTC()
+	openAt := formatRFC3339(now, -24*time.Hour)
+	closeAt := formatRFC3339(now, 24*time.Hour)
+	recipientID := "0195ec00-0096-7000-8000-000000000001"
+	formPath := "/v1/staff/forms/0195ec00-0014-7000-8000-000000000001"
+
+	loginAsStaff(t, server, cookies)
+	selectCircle(t, server, cookies, "0195ec00-0022-7000-8000-000000000001")
+	authorizeStaff(t, server, cookies)
+
+	basePayload := map[string]any{
+		"name":                "更新後フォーム",
+		"description":         "更新後の説明です。",
+		"openAt":              openAt,
+		"closeAt":             closeAt,
+		"maxAnswers":          4,
+		"answerableTags":      []string{"展示"},
+		"confirmationMessage": "更新完了です。",
+		"isPublic":            false,
+	}
+
+	setRecipients := maps.Clone(basePayload)
+	setRecipients["staffNotificationUserIds"] = []string{recipientID}
+	recorder := doJSONRequest(t, server, cookies, http.MethodPut, formPath, setRecipients)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, formPath, nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var detail staffFormDetailResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal staff form detail: %v", err)
+	}
+	if !slices.Equal(detail.StaffNotificationUserIDs, []string{recipientID}) {
+		t.Fatalf("expected recipients to be set, got %#v", detail.StaffNotificationUserIDs)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, formPath, basePayload)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, formPath, nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal staff form detail: %v", err)
+	}
+	if !slices.Equal(detail.StaffNotificationUserIDs, []string{recipientID}) {
+		t.Fatalf("expected recipients preserved when field omitted, got %#v", detail.StaffNotificationUserIDs)
+	}
+
+	clearRecipients := maps.Clone(basePayload)
+	clearRecipients["staffNotificationUserIds"] = []string{}
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, formPath, clearRecipients)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, formPath, nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &detail); err != nil {
+		t.Fatalf("unmarshal staff form detail: %v", err)
+	}
+	if len(detail.StaffNotificationUserIDs) != 0 {
+		t.Fatalf("expected recipients cleared by explicit empty array, got %#v", detail.StaffNotificationUserIDs)
 	}
 }
 

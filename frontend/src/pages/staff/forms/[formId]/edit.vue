@@ -9,6 +9,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime, formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
+import StaffUserPicker from '@/components/staff/StaffUserPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -24,7 +25,7 @@ import {
   useStaffFormDetailQuery,
   useUpdateStaffFormMutation
 } from '@/features/staff/forms/queries'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
@@ -61,6 +62,7 @@ const editForm = ref({
   maxAnswers: 1,
   answerableTags: [] as string[],
   confirmationMessage: '',
+  staffNotificationUserIds: [] as string[],
   isPublic: true
 })
 
@@ -72,6 +74,7 @@ const { getFieldError, validateAll, markTouched } = useFormValidation({
 const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTabs(formId.value, 'edit') : []))
 const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 
 const openAtInput = computed({
   get: () => formatDateTimeLocalValue(editForm.value.openAt),
@@ -105,6 +108,7 @@ watch(
       maxAnswers: value.maxAnswers,
       answerableTags: [...value.answerableTags],
       confirmationMessage: value.confirmationMessage,
+      staffNotificationUserIds: [...value.staffNotificationUserIds],
       isPublic: value.isPublic
     }
   },
@@ -128,6 +132,7 @@ async function handleSaveForm() {
       maxAnswers: Math.max(1, Number(editForm.value.maxAnswers) || 1),
       answerableTags: editForm.value.answerableTags,
       confirmationMessage: editForm.value.confirmationMessage,
+      staffNotificationUserIds: editForm.value.staffNotificationUserIds,
       isPublic: editForm.value.isPublic
     })
   } catch (error) {
@@ -357,11 +362,26 @@ async function handleDeleteForm() {
                 <StaffTagPicker
                   v-model="editForm.answerableTags"
                   :available-tags="availableTags"
+                  :tag-colors="tagColors"
                   :disabled="isParticipationForm"
                   name="answerableTags"
                 />
               </FormField>
             </div>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow v-if="!isParticipationForm">
+          <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+            <div class="space-y-1">
+              <p class="text-base font-semibold text-body">スタッフ用控えの送信先</p>
+              <p class="text-xs text-muted-2">
+                回答があったときに「スタッフ用控え」のメールを送信するスタッフを選択します。未指定の場合、フォーム作成者が送信先になります。
+              </p>
+            </div>
+            <FormField label="スタッフ用控えの送信先">
+              <StaffUserPicker v-model="editForm.staffNotificationUserIds" name="staffNotificationUserIds" />
+            </FormField>
           </div>
         </SettingsRow>
 

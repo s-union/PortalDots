@@ -145,7 +145,8 @@ export const paginatedResultSchema = <TItem extends z.ZodType>(itemSchema: TItem
     items: z.array(itemSchema),
     page: z.number(),
     pageSize: z.number(),
-    total: z.number()
+    total: z.number(),
+    totalUnfiltered: z.number().optional()
   })
 
 export const pageSummarySchema = z.object({
@@ -370,6 +371,7 @@ export const staffActivityLogSchema = z.object({
 export const staffTagSchema = z.object({
   id: tagIdSchema,
   name: z.string(),
+  color: z.enum(['gray', 'red', 'orange', 'green', 'blue', 'purple']).default('gray'),
   createdAt: z.string().default(''),
   updatedAt: z.string().default('')
 })
@@ -415,6 +417,13 @@ export const staffUserSchema = z.object({
   isEmailVerified: z.boolean().default(false),
   createdAt: z.string().default(''),
   updatedAt: z.string().default('')
+})
+
+export const staffFormRecipientCandidateSchema = z.object({
+  id: userIdSchema,
+  displayName: z.string(),
+  loginIds: stringArraySchema,
+  contactEmail: z.string().default('')
 })
 
 export const staffCircleSchema = z.object({
@@ -537,6 +546,7 @@ export const staffFormSummarySchema = z.object({
   maxAnswers: z.number(),
   answerableTags: stringArraySchema,
   confirmationMessage: z.string(),
+  staffNotificationUserIds: stringArraySchema.default([]),
   isPublic: z.boolean(),
   isOpen: z.boolean(),
   createdAt: z.string().default(''),

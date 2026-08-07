@@ -122,6 +122,8 @@ function navigateToEdit(userId: string) {
         :page="page"
         :page-size="resolvedPageSize"
         :total="total"
+        :total-unfiltered="permissionsQuery.data.value?.totalUnfiltered"
+        :filter-active="searchQuery.length > 0"
         :loading="isBusy"
         table-label="スタッフ権限一覧"
         empty-message="権限管理対象のユーザーは見つかりませんでした。"

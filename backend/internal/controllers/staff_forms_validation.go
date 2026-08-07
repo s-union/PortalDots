@@ -33,6 +33,10 @@ func bindAndValidateStaffForm(c *echo.Context, circleRequired bool) (mutateStaff
 	request.CloseAt = strings.TrimSpace(request.CloseAt)
 	request.ConfirmationMessage = strings.TrimSpace(request.ConfirmationMessage)
 	request.AnswerableTags = normalizeTags(request.AnswerableTags)
+	if request.StaffNotificationUserIDs != nil {
+		normalized := normalizeUserIDs(*request.StaffNotificationUserIDs)
+		request.StaffNotificationUserIDs = &normalized
+	}
 
 	errors := map[string][]string{}
 	if circleRequired && request.CircleID == "" {
@@ -71,6 +75,23 @@ func normalizeTags(tags []string) []string {
 	return normalized
 }
 
+func normalizeUserIDs(userIDs []string) []string {
+	normalized := make([]string, 0, len(userIDs))
+	seen := make(map[string]struct{}, len(userIDs))
+	for _, userID := range userIDs {
+		trimmed := strings.TrimSpace(userID)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		normalized = append(normalized, trimmed)
+	}
+	return normalized
+}
+
 func validateStaffFormQuestionRequest(request *updateStaffFormQuestionRequest) map[string][]string {
 	errors := map[string][]string{}
 	if !slices.Contains(formquestion.AllowedQuestionTypes, request.Type) {
@@ -102,4 +123,26 @@ func normalizeQuestionOptions(options []string) []string {
 		normalized = append(normalized, trimmed)
 	}
 	return normalized
+}
+
+// validateStaffNotificationUsers returns validation errors when a configured
+// staff-copy recipient does not reference an existing user or no longer holds
+// the formAnswers.read entitlement. Recipients are additionally re-checked
+// against the current entitlement whenever an answer mail is sent, so a user
+// de-privileged after the form was saved is still skipped at send time.
+func (h *staffFormHandlers) validateStaffNotificationUsers(c *echo.Context, userIDs []string) map[string][]string {
+	for _, userID := range userIDs {
+		userValue, err := h.users.Find(userID)
+		if err != nil {
+			return map[string][]string{
+				"staffNotificationUserIds": {"送信先に指定されたユーザーが存在しません"},
+			}
+		}
+		if !hasCurrentFormAnswerAccess(userValue) {
+			return map[string][]string{
+				"staffNotificationUserIds": {"送信先に指定されたユーザーにはフォーム回答の閲覧権限がありません"},
+			}
+		}
+	}
+	return map[string][]string{}
 }

@@ -5,9 +5,19 @@ import { parseWithSchema, parseArrayWithSchema, staffTagSchema } from '@/lib/api
 import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useStaffMasterMutation } from './shared'
+import { type TagColor } from '@/lib/tagColor'
 import * as z from 'zod'
 
 export type StaffTag = z.infer<typeof staffTagSchema>
+
+export interface StaffTagMutationInput {
+  name: string
+  color: TagColor
+}
+
+export function staffTagColorMap(tags: StaffTag[]): Record<string, string> {
+  return Object.fromEntries(tags.map((tag) => [tag.name, tag.color]))
+}
 
 export async function fetchStaffTags(params?: StaffListQueryParamsInput) {
   return $api.queryData(
@@ -24,13 +34,13 @@ export async function fetchStaffTags(params?: StaffListQueryParamsInput) {
   )
 }
 
-export async function createStaffTag(name: string, csrfToken: string) {
+export async function createStaffTag(input: StaffTagMutationInput, csrfToken: string) {
   return $api.mutationData(
     'post',
     '/staff/tags',
     {
       headers: createJsonHeaders(csrfToken),
-      body: { name }
+      body: input
     },
     parseStaffTag,
     {
@@ -42,14 +52,14 @@ export async function createStaffTag(name: string, csrfToken: string) {
   )
 }
 
-export async function updateStaffTag(tagId: string, name: string, csrfToken: string) {
+export async function updateStaffTag(tagId: string, input: StaffTagMutationInput, csrfToken: string) {
   return $api.mutationData(
     'put',
     '/staff/tags/{tagID}',
     {
       headers: createJsonHeaders(csrfToken),
       params: { path: { tagID: tagId } },
-      body: { name }
+      body: input
     },
     parseStaffTag,
     {
@@ -97,11 +107,15 @@ export function useStaffTagsQuery(enabled: MaybeRefOrGetter<boolean>, params?: S
 }
 
 export const useCreateStaffTagMutation = () =>
-  useStaffMasterMutation((name: string, csrfToken: string) => createStaffTag(name, csrfToken), ['staff', 'tags'])
+  useStaffMasterMutation(
+    (input: StaffTagMutationInput, csrfToken: string) => createStaffTag(input, csrfToken),
+    ['staff', 'tags']
+  )
 
 export const useUpdateStaffTagMutation = () =>
   useStaffMasterMutation(
-    (payload: StaffTag, csrfToken: string) => updateStaffTag(payload.id, payload.name, csrfToken),
+    (payload: StaffTag, csrfToken: string) =>
+      updateStaffTag(payload.id, { name: payload.name, color: payload.color }, csrfToken),
     ['staff', 'tags']
   )
 

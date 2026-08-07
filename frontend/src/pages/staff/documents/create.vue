@@ -16,7 +16,7 @@ import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 import FormField from '@/components/ui/FormField.vue'
 import CheckboxField from '@/components/ui/CheckboxField.vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import {
   extractStaffDocumentValidationMessage,
   useCreateStaffDocumentMutation,
@@ -26,6 +26,7 @@ import {
 const createDocumentMutation = useCreateStaffDocumentMutation()
 const tagsQuery = useStaffTagsQuery(true)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 const form = useStaffDocumentForm()
 const errorMessage = ref('')
 const router = useRouter()
@@ -90,7 +91,12 @@ async function handleCreateDocument() {
 
         <label class="grid gap-2 text-base text-body">
           <span class="font-medium">閲覧可能なタグ</span>
-          <StaffTagPicker v-model="form.viewableTags" :available-tags="availableTags" name="viewableTags" />
+          <StaffTagPicker
+            v-model="form.viewableTags"
+            :available-tags="availableTags"
+            :tag-colors="tagColors"
+            name="viewableTags"
+          />
           <p class="text-xs text-muted">空欄なら全員に公開、指定すると一致する企画タグだけに限定公開します。</p>
         </label>
 

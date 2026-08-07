@@ -10,6 +10,7 @@ const meta = {
     page: { control: 'number' },
     pageSize: { control: 'number' },
     total: { control: 'number' },
+    totalUnfiltered: { control: 'number' },
     filterActive: { control: 'boolean' },
     showFilterButton: { control: 'boolean' }
   }
@@ -45,6 +46,21 @@ export const Default: Story = {
     pageSize: 20,
     total: 3,
     loading: false
+  }
+}
+
+export const Unfiltered: Story = {
+  name: 'Unfiltered (single count)',
+  args: {
+    rows,
+    columns,
+    page: 1,
+    pageSize: 20,
+    total: 1203,
+    totalUnfiltered: 1203,
+    loading: false,
+    showFilterButton: true,
+    filterActive: false
   }
 }
 
@@ -84,6 +100,21 @@ export const WithFilterButton: Story = {
   }
 }
 
+export const FilteredWithTotal: Story = {
+  name: 'Filtered (total / unfiltered total)',
+  args: {
+    rows: rows.slice(0, 1),
+    columns,
+    page: 2,
+    pageSize: 20,
+    total: 42,
+    totalUnfiltered: 1203,
+    loading: false,
+    showFilterButton: true,
+    filterActive: true
+  }
+}
+
 export const WithActiveFilter: Story = {
   args: {
     rows: rows.slice(0, 1),
@@ -91,6 +122,7 @@ export const WithActiveFilter: Story = {
     page: 1,
     pageSize: 20,
     total: 1,
+    totalUnfiltered: 3,
     loading: false,
     showFilterButton: true,
     filterActive: true

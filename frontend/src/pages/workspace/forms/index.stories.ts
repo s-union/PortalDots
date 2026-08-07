@@ -22,7 +22,8 @@ const meta = {
             items: [mockForm, { ...mockForm, id: 'form-2', name: '第2回申請フォーム', hasAnswer: true }],
             page: 1,
             pageSize: 20,
-            total: 2
+            total: 2,
+            totalUnfiltered: 2
           })
         )
       ]
@@ -45,7 +46,9 @@ export const NoForms: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/forms', () => HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 }))
+        http.get('/v1/forms', () =>
+          HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0, totalUnfiltered: 0 })
+        )
       ]
     }
   }
@@ -87,7 +90,8 @@ export const MixedStatus: Story = {
             ],
             page: 1,
             pageSize: 20,
-            total: 3
+            total: 3,
+            totalUnfiltered: 3
           })
         )
       ]

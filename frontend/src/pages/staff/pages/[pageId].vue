@@ -14,7 +14,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
 import {
   extractStaffPagePublishedAtError,
@@ -55,6 +55,7 @@ const { fieldErrors, validateAll, markTouched } = useFormValidation({
 })
 
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
 
 const editorFieldErrors = computed(() =>
@@ -175,6 +176,7 @@ async function handleDeletePage() {
           <StaffPageEditorForm
             v-model="form"
             :available-tags="availableTags"
+            :tag-colors="tagColors"
             :available-documents="availableDocuments"
             :documents-loading="documentsQuery.isPending.value"
             :error-message="errorMessage"

@@ -120,11 +120,13 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c *echo.Context)
 		return internalError(c)
 	}
 
+	unfilteredCount := 0
 	filtered := make([]staffCircleResponse, 0)
 	for _, currentCircle := range circles {
 		if currentCircle.ParticipationTypeID != participationType.ID {
 			continue
 		}
+		unfilteredCount++
 		item := mapStaffCircle(currentCircle)
 		if !matchesStaffCircleSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffCircleFilterResolver(item), filterQueries, filterMode) {
 			continue
@@ -135,7 +137,7 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c *echo.Context)
 		return strings.Compare(a.Name, b.Name)
 	})
 
-	return c.JSON(http.StatusOK, paginateItems(filtered, readPagination(c)))
+	return c.JSON(http.StatusOK, paginateItems(filtered, readPagination(c), unfilteredCount))
 }
 
 func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c *echo.Context) error {
@@ -213,6 +215,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c *echo.Context) erro
 		[]string{},
 		request.FormConfirmationMessage,
 		currentSession.User.ID,
+		[]string{},
 	)
 	if formValue.ID == "" {
 		return internalError(c)
@@ -263,6 +266,11 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c *echo.Context) erro
 		return validationError(c, validationErrors)
 	}
 
+	existingForm, found := h.forms.FindByIDForStaff(item.FormID)
+	if !found {
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
+	}
+
 	updatedForm, ok := h.forms.UpdateByID(
 		item.FormID,
 		"企画参加登録",
@@ -273,6 +281,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c *echo.Context) erro
 		1,
 		[]string{},
 		request.FormConfirmationMessage,
+		existingForm.StaffNotificationUserIDs,
 	)
 	if !ok {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")

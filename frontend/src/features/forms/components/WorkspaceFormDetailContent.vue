@@ -4,7 +4,8 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
-import { updateDraftValue } from '@/features/forms/answers'
+import { isFormAnswerDraftDirty, updateDraftValue } from '@/features/forms/answers'
+import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useWorkspaceFormDetailPage } from '@/features/forms/composables/useWorkspaceFormDetailPage'
 import { computed, defineAsyncComponent } from 'vue'
 const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
@@ -33,7 +34,7 @@ const {
   answers,
   circleNotApprovedMessage,
   confirmationMessage,
-  createAnswer,
+  createAnswer: createAnswerOriginal,
   createAnswerMutation,
   draft,
   errorMessage,
@@ -49,7 +50,7 @@ const {
   markAnswerTouched,
   resolveUploadDownloadHref,
   saveAnswer,
-  selectAnswer,
+  selectAnswer: selectAnswerOriginal,
   selectedAnswer,
   selectedAnswerId,
   selectedFiles,
@@ -71,6 +72,28 @@ const remainingAnswerCount = computed(() => {
   }
   return Math.max(form.value.maxAnswers - answers.value.length, 0)
 })
+const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
+const { confirmBeforeSwitching } = useUnsavedChangesGuard(
+  computed(
+    () =>
+      isFormAnswerDraftDirty(draft.value, selectedAnswer.value, form?.value?.questions ?? []) ||
+      hasUnuploadedFiles.value
+  )
+)
+
+async function selectAnswer(answerId: string) {
+  if (answerId === selectedAnswerId.value || !confirmBeforeSwitching()) {
+    return
+  }
+  await selectAnswerOriginal(answerId)
+}
+
+async function createAnswer() {
+  if (!confirmBeforeSwitching()) {
+    return
+  }
+  await createAnswerOriginal()
+}
 </script>
 
 <template>

@@ -69,6 +69,22 @@
   --color-emphasis-gray: rgb(34, 41, 47);
   --color-fg-emphasis-gray: rgb(255, 255, 255);
 
+  /* Tag palette — colour tokens for 企画タグ; light theme values.
+     Text tokens are darkened so every label keeps a >= 4.5:1 ratio against
+     the tinted chip background on the lightest surface (white / surface-light). */
+  --color-tag-gray: rgb(88, 97, 105);
+  --color-tag-gray-light: rgba(88, 97, 105, 0.12);
+  --color-tag-red: rgb(179, 42, 45);
+  --color-tag-red-light: rgba(190, 45, 48, 0.12);
+  --color-tag-orange: rgb(150, 75, 10);
+  --color-tag-orange-light: rgba(175, 88, 12, 0.14);
+  --color-tag-green: rgb(16, 111, 53);
+  --color-tag-green-light: rgba(18, 125, 60, 0.12);
+  --color-tag-blue: rgb(18, 95, 186);
+  --color-tag-blue-light: rgba(20, 105, 205, 0.12);
+  --color-tag-purple: rgb(120, 60, 185);
+  --color-tag-purple-light: rgba(120, 60, 185, 0.14);
+
   /* Focus */
   --color-focus-primary: hsla(214, 91%, 45%, 1);
   --color-focus-danger: rgba(200, 50, 52, 0.25);
@@ -218,6 +234,18 @@
   --color-top-alert-border: rgba(28, 28, 28, 0.16);
   --color-emphasis-gray: rgb(100, 100, 100);
   --color-fg-emphasis-gray: rgb(255, 255, 255);
+  --color-tag-gray: rgb(183, 183, 183);
+  --color-tag-gray-light: rgba(160, 160, 160, 0.18);
+  --color-tag-red: rgb(238, 168, 170);
+  --color-tag-red-light: rgba(226, 118, 120, 0.22);
+  --color-tag-orange: rgb(241, 181, 124);
+  --color-tag-orange-light: rgba(235, 155, 80, 0.22);
+  --color-tag-green: rgb(124, 208, 156);
+  --color-tag-green-light: rgba(75, 189, 119, 0.22);
+  --color-tag-blue: rgb(158, 191, 245);
+  --color-tag-blue-light: rgba(110, 160, 240, 0.22);
+  --color-tag-purple: rgb(210, 176, 243);
+  --color-tag-purple-light: rgba(185, 135, 235, 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -255,6 +283,18 @@
     --color-top-alert-border: rgba(28, 28, 28, 0.16);
     --color-emphasis-gray: rgb(100, 100, 100);
     --color-fg-emphasis-gray: rgb(255, 255, 255);
+    --color-tag-gray: rgb(183, 183, 183);
+    --color-tag-gray-light: rgba(160, 160, 160, 0.18);
+    --color-tag-red: rgb(238, 168, 170);
+    --color-tag-red-light: rgba(226, 118, 120, 0.22);
+    --color-tag-orange: rgb(241, 181, 124);
+    --color-tag-orange-light: rgba(235, 155, 80, 0.22);
+    --color-tag-green: rgb(124, 208, 156);
+    --color-tag-green-light: rgba(75, 189, 119, 0.22);
+    --color-tag-blue: rgb(158, 191, 245);
+    --color-tag-blue-light: rgba(110, 160, 240, 0.22);
+    --color-tag-purple: rgb(210, 176, 243);
+    --color-tag-purple-light: rgba(185, 135, 235, 0.22);
   }
 }
 

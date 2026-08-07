@@ -18,7 +18,8 @@ const meta = {
             items: [mockStaffUser2],
             page: 1,
             pageSize: 20,
-            total: 1
+            total: 1,
+            totalUnfiltered: 1
           })
         )
       ]
@@ -42,7 +43,8 @@ export const Empty: Story = {
             items: [],
             page: 1,
             pageSize: 20,
-            total: 0
+            total: 0,
+            totalUnfiltered: 0
           })
         )
       ]
@@ -79,7 +81,8 @@ export const UnverifiedUsers: Story = {
             ],
             page: 1,
             pageSize: 20,
-            total: 2
+            total: 2,
+            totalUnfiltered: 2
           })
         )
       ]

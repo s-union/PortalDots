@@ -9,13 +9,14 @@ import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
+import StaffUserPicker from '@/components/staff/StaffUserPicker.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import { createDefaultStaffFormPayload } from '@/features/staff/forms/utils'
 import { extractStaffFormValidationMessage, useCreateStaffFormMutation } from '@/features/staff/forms/queries'
@@ -30,6 +31,7 @@ const form = ref(createDefaultStaffFormPayload())
 const errorMessage = ref('')
 const tagsQuery = useStaffTagsQuery(true)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 
 const { getFieldError, validateAll, markTouched } = useFormValidation({
   schema: staffFormSchema,
@@ -157,7 +159,19 @@ async function handleCreateForm() {
           label="フォームへ回答可能なユーザー"
           helper="空欄の場合、企画に所属するユーザー全員がフォームに回答できます。タグを指定した場合、指定したタグのうち、1つ以上該当する企画がフォームに回答できます。"
         >
-          <StaffTagPicker v-model="form.answerableTags" :available-tags="availableTags" name="answerableTags" />
+          <StaffTagPicker
+            v-model="form.answerableTags"
+            :available-tags="availableTags"
+            :tag-colors="tagColors"
+            name="answerableTags"
+          />
+        </FormField>
+
+        <FormField
+          label="スタッフ用控えの送信先"
+          helper="回答があったときに「スタッフ用控え」のメールを送信するスタッフを選択します。未指定の場合、フォーム作成者が送信先になります。"
+        >
+          <StaffUserPicker v-model="form.staffNotificationUserIds" name="staffNotificationUserIds" />
         </FormField>
 
         <details class="rounded border border-border bg-surface-light">

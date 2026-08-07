@@ -23,7 +23,8 @@ const meta = {
             items: [mockStaffCircle],
             page: Number(url.searchParams.get('page') ?? 1),
             pageSize: Number(url.searchParams.get('pageSize') ?? 25),
-            total: 1
+            total: 1,
+            totalUnfiltered: 1
           })
         }),
         http.delete('/v1/staff/circles/{circleID}', () => new HttpResponse(null, { status: 204 }))
@@ -50,7 +51,8 @@ export const Empty: Story = {
             items: [],
             page: Number(url.searchParams.get('page') ?? 1),
             pageSize: Number(url.searchParams.get('pageSize') ?? 25),
-            total: 0
+            total: 0,
+            totalUnfiltered: 0
           })
         }),
         http.delete('/v1/staff/circles/{circleID}', () => new HttpResponse(null, { status: 204 }))

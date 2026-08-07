@@ -19,8 +19,9 @@ import StaffSideWindowContainer from '@/components/staff/StaffSideWindowContaine
 import ToolbarRow from '@/components/ui/ToolbarRow.vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import { formatDateTimeTable } from '@/lib/format/datetime'
-import { canUseMailQueue } from '@/features/staff/access/capabilities'
+import { canReadTags, canUseMailQueue } from '@/features/staff/access/capabilities'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import {
   buildStaffPagesExportUrl,
   resolveStaffPagePublishStatus,
@@ -38,6 +39,7 @@ import { createIsFilterKey, createMatchesSearch, matchesFilterQueryCore } from '
 import { resolveRowId, resolveTags } from '@/lib/dataGridHelpers'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import TagChip from '@/components/ui/TagChip.vue'
 import YesNo from '@/components/ui/YesNo.vue'
 
 const router = useRouter()
@@ -53,6 +55,10 @@ const staffListParams = computed(() => ({
   mode: appliedFilterMode.value
 }))
 const pagesQuery = useStaffPagesQuery(staffListParams, enabled)
+const tagsQuery = useStaffTagsQuery(
+  computed(() => enabled.value && canReadTags(sessionStore.roles, sessionStore.permissions))
+)
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 const patchPinMutation = usePatchStaffPagePinByIdMutation()
 const deletePageMutation = useDeleteStaffPageByIdMutation()
 const exportHref = computed(() => buildStaffPagesExportUrl())
@@ -308,7 +314,7 @@ async function handleReload() {
           <template #cell-viewableTags="{ value }">
             <div class="flex flex-wrap gap-1">
               <template v-for="tag in resolveTags(value)" :key="tag">
-                <StatusBadge tone="accent">{{ tag }}</StatusBadge>
+                <TagChip :name="tag" :color="tagColors[tag]" />
               </template>
               <span v-if="resolveTags(value).length === 0" class="text-muted">全体に公開</span>
             </div>

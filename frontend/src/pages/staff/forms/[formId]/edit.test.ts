@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useSessionStore } from '@/features/session/store'
+import { mockStaffUser, mockStaffUser2 } from '@/mocks/data'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/server'
 import StaffFormEditPage from './edit.vue'
@@ -30,6 +31,7 @@ describe('StaffFormEditPage', () => {
     let updatedName = '展示チェックフォーム'
     let updatedMaxAnswers = 2
     let updatedTags = ['展示']
+    let updatedRecipients = ['staff-user-1']
     let updatedConfirmationMessage = '回答ありがとうございました。'
     let updatedRequestBody: Record<string, unknown> | null = null
 
@@ -39,6 +41,17 @@ describe('StaffFormEditPage', () => {
           { id: 'tag-exhibit', name: '展示' },
           { id: 'tag-required', name: '必須' }
         ])
+      ),
+      http.get('/v1/staff/forms/recipient-candidates', () =>
+        HttpResponse.json({
+          items: [mockStaffUser, mockStaffUser2],
+          page: 1,
+          pageSize: 20,
+          total: 2
+        })
+      ),
+      http.get('/v1/staff/forms/recipient-candidates/{userID}', ({ request }) =>
+        HttpResponse.json(request.url.includes('staff-1') ? mockStaffUser : mockStaffUser2)
       ),
       http.get('/v1/staff/forms/form-circle-b-1', () =>
         HttpResponse.json({
@@ -51,6 +64,7 @@ describe('StaffFormEditPage', () => {
           maxAnswers: updatedMaxAnswers,
           answerableTags: updatedTags,
           confirmationMessage: updatedConfirmationMessage,
+          staffNotificationUserIds: updatedRecipients,
           isPublic: true,
           isOpen: true,
           createdAt: '2026-03-01T12:00:00Z',
@@ -71,6 +85,7 @@ describe('StaffFormEditPage', () => {
         updatedName = '更新後フォーム'
         updatedMaxAnswers = 3
         updatedTags = ['展示', '必須']
+        updatedRecipients = (updatedRequestBody?.staffNotificationUserIds as string[]) ?? updatedRecipients
         updatedConfirmationMessage = '送信が完了しました。'
         return HttpResponse.json({
           circle: { id: 'circle-b', name: 'デモ企画B' },
@@ -82,6 +97,7 @@ describe('StaffFormEditPage', () => {
           maxAnswers: updatedMaxAnswers,
           answerableTags: updatedTags,
           confirmationMessage: updatedConfirmationMessage,
+          staffNotificationUserIds: updatedRecipients,
           isPublic: true,
           isOpen: true,
           createdAt: '2026-03-01T12:00:00Z',
@@ -123,6 +139,7 @@ describe('StaffFormEditPage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('展示チェックフォーム')
+    expect(wrapper.text()).toContain('鈴木 二郎')
 
     await wrapper.get('input[name="name"]').setValue('更新後フォーム')
     await wrapper.get('input[name="openAt"]').setValue('2026-03-02T09:30')

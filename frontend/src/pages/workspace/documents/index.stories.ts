@@ -25,7 +25,8 @@ const meta = {
             ],
             page: 1,
             pageSize: 10,
-            total: 2
+            total: 2,
+            totalUnfiltered: 2
           })
         )
       ]
@@ -48,7 +49,9 @@ export const Empty: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/documents', () => HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0 }))
+        http.get('/v1/documents', () =>
+          HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0, totalUnfiltered: 0 })
+        )
       ]
     }
   }

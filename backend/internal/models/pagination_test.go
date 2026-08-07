@@ -38,23 +38,23 @@ func TestPaginateItemsHandlesBounds(t *testing.T) {
 	result := PaginateItems(items, PaginationParams{
 		Page:     3,
 		PageSize: 2,
-	})
-	if len(result.Items) != 1 || result.Items[0] != 3 || result.Total != 3 || result.Page != 2 || result.PageSize != 2 {
+	}, 42)
+	if len(result.Items) != 1 || result.Items[0] != 3 || result.Total != 3 || result.Page != 2 || result.PageSize != 2 || result.TotalUnfiltered != 42 {
 		t.Fatalf("expected out-of-range pagination to use the last page, got %#v", result)
 	}
 
 	result = PaginateItems(items, PaginationParams{
 		Page:     1,
 		PageSize: 2,
-	})
-	if len(result.Items) != 2 || result.Items[0] != 1 || result.Items[1] != 2 {
+	}, 42)
+	if len(result.Items) != 2 || result.Items[0] != 1 || result.Items[1] != 2 || result.TotalUnfiltered != 42 {
 		t.Fatalf("unexpected first page result: %#v", result)
 	}
 
 	result = PaginateItems(items, PaginationParams{
 		Page:     2,
 		PageSize: 2,
-	})
+	}, 42)
 	if len(result.Items) != 1 || result.Items[0] != 3 {
 		t.Fatalf("unexpected second page result: %#v", result)
 	}
@@ -80,18 +80,21 @@ func TestPaginateItemsNormalizesInvalidParameters(t *testing.T) {
 	result := PaginateItems(items, PaginationParams{
 		Page:     0,
 		PageSize: 0,
-	})
+	}, 42)
 	if result.Page != DefaultPage || result.PageSize != DefaultPageSize {
 		t.Fatalf("expected defaults for invalid pagination, got %#v", result)
 	}
 	if len(result.Items) != len(items) {
 		t.Fatalf("expected all items on normalized first page, got %#v", result)
 	}
+	if result.TotalUnfiltered != 42 {
+		t.Fatalf("expected totalUnfiltered to be preserved, got %#v", result)
+	}
 
 	result = PaginateItems(items, PaginationParams{
 		Page:     1,
 		PageSize: MaxPageSize + 10,
-	})
+	}, 42)
 	if result.PageSize != MaxPageSize {
 		t.Fatalf("expected page size to be clamped, got %#v", result)
 	}

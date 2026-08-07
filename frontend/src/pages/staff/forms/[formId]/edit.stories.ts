@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormEditPage from './edit.vue'
-import { mockSessionBootstrapStaff } from '@/mocks/data'
+import { mockSessionBootstrapStaff, mockStaffUser, mockStaffUser2 } from '@/mocks/data'
 import { staffFormStoryDetail } from '../story-fixtures'
 
 const meta = {
@@ -23,6 +23,17 @@ const meta = {
             { id: 'tag-indoor', name: '屋内', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
             { id: 'tag-required', name: '必須', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
           ])
+        ),
+        http.get('/v1/staff/forms/recipient-candidates', () =>
+          HttpResponse.json({
+            items: [mockStaffUser, mockStaffUser2],
+            page: 1,
+            pageSize: 20,
+            total: 2
+          })
+        ),
+        http.get('/v1/staff/forms/recipient-candidates/{userID}', ({ request }) =>
+          HttpResponse.json(request.url.includes('staff-2') ? mockStaffUser2 : mockStaffUser)
         ),
         http.get('/v1/staff/forms/{formID}', () => HttpResponse.json(staffFormStoryDetail)),
         http.put('/v1/staff/forms/{formID}', () =>
@@ -51,6 +62,35 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
+
+export const WithStaffRecipients: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
+        http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
+        http.get('/v1/staff/tags', () => HttpResponse.json([])),
+        http.get('/v1/staff/forms/recipient-candidates', () =>
+          HttpResponse.json({
+            items: [mockStaffUser, mockStaffUser2],
+            page: 1,
+            pageSize: 20,
+            total: 2
+          })
+        ),
+        http.get('/v1/staff/forms/recipient-candidates/{userID}', ({ request }) =>
+          HttpResponse.json(request.url.includes('staff-2') ? mockStaffUser2 : mockStaffUser)
+        ),
+        http.get('/v1/staff/forms/{formID}', () =>
+          HttpResponse.json({
+            ...staffFormStoryDetail,
+            staffNotificationUserIds: ['staff-1', 'staff-2']
+          })
+        )
+      ]
+    }
+  }
+}
 
 export const ParticipationForm: Story = {
   parameters: {
