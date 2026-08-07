@@ -25,6 +25,7 @@ const {
   page,
   pageSize,
   total,
+  totalUnfiltered,
   loading = false,
   sortKey = '',
   sortDirection = 'asc',
@@ -39,6 +40,7 @@ const {
   page: number
   pageSize: number
   total: number
+  totalUnfiltered?: number
   loading?: boolean
   sortKey?: string
   sortDirection?: 'asc' | 'desc'
@@ -63,7 +65,12 @@ const emit = defineEmits<{
 const totalPages = computed(() => calculateTotalPages(total, pageSize))
 const startIndex = computed(() => (total === 0 ? 0 : (page - 1) * pageSize + 1))
 const endIndex = computed(() => Math.min(page * pageSize, total))
+const effectiveTotalUnfiltered = computed(() => totalUnfiltered ?? total)
 const positiveIntegerSchema = z.coerce.number().int().positive()
+
+function formatCount(value: number) {
+  return value.toLocaleString('ja-JP')
+}
 
 function handleSort(column: StaffDataGridColumn) {
   if (!column.sortable) {
@@ -219,7 +226,12 @@ function rowKey(row: Record<string, unknown>, index: number) {
         class="grid-controls__summary ml-2 border-l border-border pl-2 whitespace-nowrap text-body max-[860px]:basis-full max-[860px]:border-l-0 max-[860px]:pl-0 min-[861px]:ml-auto"
       >
         <template v-if="total > 0">
-          {{ startIndex }}〜{{ endIndex }}件目・全{{ total }}件 (ページ{{ page }} / {{ totalPages }})
+          <template v-if="filterActive && effectiveTotalUnfiltered > total">
+            {{ formatCount(total) }} 件 / 全 {{ formatCount(effectiveTotalUnfiltered) }} 件
+          </template>
+          <template v-else>
+            {{ startIndex }}〜{{ endIndex }}件目・全{{ total }}件 (ページ{{ page }} / {{ totalPages }})
+          </template>
         </template>
         <template v-else>0件</template>
       </div>

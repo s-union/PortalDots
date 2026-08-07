@@ -101,4 +101,51 @@ describe('StaffDataGrid', () => {
     expect(wrapper.emitted('filter')).toBeTruthy()
     expect(wrapper.text()).toContain('絞り込み')
   })
+
+  it('shows filtered count and unfiltered total when a filter is active', () => {
+    const wrapper = mount(StaffDataGrid, {
+      props: {
+        rows,
+        columns,
+        page: 1,
+        pageSize: 20,
+        total: 42,
+        totalUnfiltered: 1203,
+        filterActive: true
+      }
+    })
+
+    expect(wrapper.text()).toContain('42 件 / 全 1,203 件')
+  })
+
+  it('keeps the single-count summary when no filter is active', () => {
+    const wrapper = mount(StaffDataGrid, {
+      props: {
+        rows,
+        columns,
+        page: 1,
+        pageSize: 20,
+        total: 1203
+      }
+    })
+
+    expect(wrapper.text()).toContain('1〜20件目・全1203件')
+    expect(wrapper.text()).not.toContain('件 / 全')
+  })
+
+  it('keeps the single-count summary when totalUnfiltered is absent', () => {
+    const wrapper = mount(StaffDataGrid, {
+      props: {
+        rows,
+        columns,
+        page: 1,
+        pageSize: 20,
+        total: 1203,
+        filterActive: true
+      }
+    })
+
+    expect(wrapper.text()).toContain('1〜20件目・全1203件')
+    expect(wrapper.text()).not.toContain('件 / 全')
+  })
 })

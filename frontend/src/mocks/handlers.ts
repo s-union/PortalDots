@@ -47,7 +47,8 @@ export const publicHandlers = [
       items: [mockPage, { ...mockPage, id: 'page-2', title: '2つ目のお知らせ', isNew: false }],
       page: 1,
       pageSize: 10,
-      total: 2
+      total: 2,
+      totalUnfiltered: 2
     })
   ),
   http.get(`${BASE}/public/pages/{pageID}`, () => HttpResponse.json(mockPageDetail)),
@@ -123,7 +124,8 @@ export const formsHandlers = [
       items: [mockForm, { ...mockForm, id: 'form-2', name: '第2回申請フォーム', hasAnswer: true }],
       page: 1,
       pageSize: 20,
-      total: 2
+      total: 2,
+      totalUnfiltered: 2
     })
   ),
   http.get(`${BASE}/forms/{formID}`, () =>
@@ -143,7 +145,8 @@ export const pagesHandlers = [
       items: [mockPage, { ...mockPage, id: 'page-2', title: '2つ目のお知らせ', isNew: false }],
       page: 1,
       pageSize: 10,
-      total: 2
+      total: 2,
+      totalUnfiltered: 2
     })
   ),
   http.get(`${BASE}/pages/{pageID}`, () => HttpResponse.json(mockPageDetail))
@@ -267,7 +270,8 @@ export const staffHandlers = [
       ],
       page: 1,
       pageSize: 20,
-      total: 1
+      total: 1,
+      totalUnfiltered: 1
     })
   ),
   http.get(`${BASE}/staff/pages/{pageID}`, () =>
@@ -297,7 +301,8 @@ export const staffHandlers = [
       ],
       page: 1,
       pageSize: 20,
-      total: 1
+      total: 1,
+      totalUnfiltered: 1
     })
   ),
   http.get(`${BASE}/staff/users`, () =>
@@ -305,7 +310,8 @@ export const staffHandlers = [
       items: [mockStaffUser2],
       page: 1,
       pageSize: 20,
-      total: 1
+      total: 1,
+      totalUnfiltered: 1
     })
   ),
   http.get(`${BASE}/staff/users/{userID}`, () => HttpResponse.json(mockStaffUser2)),
@@ -314,7 +320,8 @@ export const staffHandlers = [
       items: [],
       page: 1,
       pageSize: 20,
-      total: 0
+      total: 0,
+      totalUnfiltered: 0
     })
   ),
   http.get(`${BASE}/staff/permissions/{userID}`, () =>
@@ -349,7 +356,8 @@ export const staffHandlers = [
       items: [mockActivityLog],
       page: 1,
       pageSize: 20,
-      total: 1
+      total: 1,
+      totalUnfiltered: 1
     })
   ),
   http.get(`${BASE}/staff/mails`, () => HttpResponse.json([mockMail])),
@@ -360,7 +368,8 @@ export const staffHandlers = [
       items: [mockPlace],
       page: 1,
       pageSize: 20,
-      total: 1
+      total: 1,
+      totalUnfiltered: 1
     })
   ),
   http.get(`${BASE}/staff/contact-categories`, () =>
@@ -368,7 +377,8 @@ export const staffHandlers = [
       items: [mockContactCategory],
       page: 1,
       pageSize: 20,
-      total: 1
+      total: 1,
+      totalUnfiltered: 1
     })
   ),
   http.get(`${BASE}/staff/settings`, () =>
