@@ -129,4 +129,97 @@ describe('StaffFormAnswerCreatePage', () => {
 
     expect(router.currentRoute.value.fullPath).toBe('/staff/forms/form-circle-b-1/answers/answer-created/edit')
   })
+
+  it('does not redirect when the create fails', async () => {
+    server.use(
+      http.get('/v1/staff/forms/form-circle-b-1/answers', () =>
+        HttpResponse.json({
+          form: {
+            id: 'form-circle-b-1',
+            name: '展示チェックフォーム',
+            description: '展示レイアウトと機材使用申請を提出してください。',
+            openAt: '2026-03-02T00:00:00Z',
+            closeAt: '2026-03-22T23:59:59Z',
+            maxAnswers: 2,
+            answerableTags: ['展示'],
+            confirmationMessage: '回答ありがとうございました。',
+            isPublic: true,
+            isOpen: true,
+            createdAt: '2026-03-01T10:00:00Z',
+            updatedAt: '2026-03-01T10:00:00Z',
+            isParticipationForm: false,
+            questions: [],
+            answer: null
+          },
+          answers: [],
+          circles: [
+            {
+              id: 'circle-a',
+              name: 'デモ企画A',
+              groupName: 'Aブロック',
+              participationTypeName: '模擬店'
+            }
+          ],
+          notAnsweredCircles: []
+        })
+      ),
+      http.post('/v1/staff/forms/form-circle-b-1/answers', () =>
+        HttpResponse.json(
+          {
+            message: '入力内容を確認してください。',
+            errors: { body: ['回答を保存できませんでした'] }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-b', name: 'デモ企画B' },
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/forms/:formId/answers', component: { template: '<div>index</div>' } },
+        { path: '/staff/forms/:formId/editor', component: { template: '<div>editor</div>' } },
+        { path: '/staff/forms/:formId/edit', component: { template: '<div>edit tab</div>' } },
+        { path: '/staff/forms/:formId/answers/create', component: StaffFormAnswerCreatePage },
+        { path: '/staff/forms/:formId/answers/:answerId/edit', component: { template: '<div>edit</div>' } }
+      ]
+    })
+    await router.push('/staff/forms/form-circle-b-1/answers/create?circle=circle-a')
+    await router.isReady()
+
+    const wrapper = mount(StaffFormAnswerCreatePage, {
+      global: {
+        plugins: [
+          pinia,
+          router,
+          [
+            VueQueryPlugin,
+            {
+              queryClient: new QueryClient({
+                defaultOptions: { queries: { retry: false } }
+              })
+            }
+          ]
+        ]
+      }
+    })
+
+    await flushPromises()
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('回答を保存できませんでした')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/forms/form-circle-b-1/answers/create?circle=circle-a')
+  })
 })

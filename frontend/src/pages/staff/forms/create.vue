@@ -66,7 +66,7 @@ async function handleCreateForm() {
       ...form.value,
       maxAnswers: Math.max(1, Number(form.value.maxAnswers) || 1)
     })
-    await router.push(`/staff/forms/${encodeURIComponent(created.id)}/editor`)
+    await router.replace(`/staff/forms/${encodeURIComponent(created.id)}/editor`)
   } catch (error) {
     errorMessage.value = extractStaffFormValidationMessage(error)
   }

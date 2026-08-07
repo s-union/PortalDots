@@ -6,6 +6,7 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -28,7 +29,7 @@ const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => t
 const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 const form = useStaffDocumentForm()
 const errorMessage = ref('')
-const successMessage = ref('')
+const router = useRouter()
 
 function handleFileChange(event: Event) {
   const target = event.target
@@ -41,10 +42,9 @@ function handleFileChange(event: Event) {
 
 async function handleCreateDocument() {
   errorMessage.value = ''
-  successMessage.value = ''
 
   try {
-    await createDocumentMutation.mutateAsync({
+    const document = await createDocumentMutation.mutateAsync({
       name: form.value.name,
       description: form.value.description,
       notes: form.value.notes,
@@ -53,16 +53,7 @@ async function handleCreateDocument() {
       viewableTags: form.value.viewableTags,
       file: form.value.file
     })
-    form.value = {
-      name: '',
-      description: '',
-      notes: '',
-      isPublic: true,
-      isImportant: false,
-      viewableTags: [],
-      file: null
-    }
-    successMessage.value = '配布資料を作成しました。'
+    await router.replace(`/staff/documents/${encodeURIComponent(document.id)}/edit`)
   } catch (error) {
     errorMessage.value = extractStaffDocumentValidationMessage(error)
   }
@@ -113,7 +104,6 @@ async function handleCreateDocument() {
           現在の upload は DB 保存です。外部ストレージ連携はまだ実装していません。
         </AlertMessage>
 
-        <AlertMessage v-if="successMessage" tone="info">{{ successMessage }}</AlertMessage>
         <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
 
         <ActionsFooter align="end">

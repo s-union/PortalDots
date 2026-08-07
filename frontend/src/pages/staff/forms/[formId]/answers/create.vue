@@ -75,11 +75,13 @@ async function handleCreateAnswer() {
 
   try {
     const created = await createAnswerMutation.mutateAsync(staffAnswerDraftToPayload(selectedCircleId.value, '', {}))
-    await router.push(`/staff/forms/${encodeURIComponent(formId.value)}/answers/${encodeURIComponent(created.id)}/edit`)
+    await router.replace(
+      `/staff/forms/${encodeURIComponent(formId.value)}/answers/${encodeURIComponent(created.id)}/edit`
+    )
   } catch (error) {
     const existingAnswerId = extractExistingAnswerId(error)
     if (existingAnswerId) {
-      await router.push(
+      await router.replace(
         `/staff/forms/${encodeURIComponent(formId.value)}/answers/${encodeURIComponent(existingAnswerId)}/edit`
       )
       return

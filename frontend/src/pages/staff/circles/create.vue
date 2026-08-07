@@ -41,7 +41,7 @@ async function handleCreateCircle() {
       statusReason: form.value.statusReason,
       placeIds: form.value.placeIds
     })
-    await router.push(`/staff/circles/${encodeURIComponent(circle.id)}`)
+    await router.replace(`/staff/circles/${encodeURIComponent(circle.id)}`)
   } catch (error) {
     errorMessage.value = extractStaffCircleValidationMessage(error)
   }

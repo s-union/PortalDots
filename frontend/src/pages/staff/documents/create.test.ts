@@ -26,7 +26,7 @@ describe('StaffDocumentCreatePage', () => {
     vi.restoreAllMocks()
   })
 
-  it('creates a staff document and resets form', async () => {
+  it('creates a staff document and redirects to its edit page', async () => {
     let postReceived = false
     let receivedName = ''
 
@@ -82,7 +82,7 @@ describe('StaffDocumentCreatePage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/staff/documents/create', component: StaffDocumentCreatePage },
-        { path: '/staff/documents', component: { template: '<div>documents</div>' } }
+        { path: '/staff/documents/:documentId/edit', component: { template: '<div>edit</div>' } }
       ]
     })
     await router.push('/staff/documents/create')
@@ -110,7 +110,60 @@ describe('StaffDocumentCreatePage', () => {
 
     expect(postReceived).toBe(true)
     expect(receivedName).toBe('設営チェックシート')
-    expect(wrapper.text()).toContain('配布資料を作成しました。')
-    expect(wrapper.get('input[name="name"]').element).toHaveProperty('value', '')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/documents/0195ec00-00a2-7000-8000-000000000001/edit')
+  })
+
+  it('does not redirect when the create fails', async () => {
+    server.use(
+      http.get('/v1/staff/tags', () => HttpResponse.json([])),
+      http.post('/v1/staff/documents', () =>
+        HttpResponse.json(
+          {
+            message: '入力内容を確認してください。',
+            errors: { name: ['配布資料名は必須です'] }
+          },
+          { status: 422 }
+        )
+      )
+    )
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      user: {
+        id: 'staff-user',
+        displayName: 'Staff User'
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/staff/documents/create', component: StaffDocumentCreatePage },
+        { path: '/staff/documents/:documentId/edit', component: { template: '<div>edit</div>' } }
+      ]
+    })
+    await router.push('/staff/documents/create')
+    await router.isReady()
+
+    const wrapper = mount(StaffDocumentCreatePage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    await wrapper.get('input[name="name"]').setValue('設営チェックシート')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('配布資料名は必須です')
+    expect(router.currentRoute.value.fullPath).toBe('/staff/documents/create')
   })
 })
