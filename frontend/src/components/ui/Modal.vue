@@ -1,3 +1,10 @@
+<script lang="ts">
+// Scroll lock is shared across every open Modal so stacked dialogs restore
+// scrolling only after the last one closes. Declared at module scope because a
+// `<script setup>` top-level binding is per-instance.
+let scrollLockCount = 0
+</script>
+
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId, useSlots, watch } from 'vue'
 
@@ -22,11 +29,15 @@ const hasHeader = computed(() => props.title !== undefined || slots.header !== u
 
 let previouslyFocused: HTMLElement | null = null
 
-// Scroll lock is shared across every open Modal so stacked dialogs restore
-// scrolling only after the last one closes.
-let scrollLockCount = 0
+// Whether this instance is holding a scroll lock. Guards the shared counter so
+// a never-opened instance cannot decrement a lock held by a stacked dialog.
+let isScrollLocked = false
 
 function lockScroll() {
+  if (isScrollLocked) {
+    return
+  }
+  isScrollLocked = true
   scrollLockCount += 1
   if (scrollLockCount === 1) {
     document.documentElement.style.overflow = 'hidden'
@@ -34,6 +45,10 @@ function lockScroll() {
 }
 
 function unlockScroll() {
+  if (!isScrollLocked) {
+    return
+  }
+  isScrollLocked = false
   scrollLockCount = Math.max(0, scrollLockCount - 1)
   if (scrollLockCount === 0) {
     document.documentElement.style.overflow = ''
