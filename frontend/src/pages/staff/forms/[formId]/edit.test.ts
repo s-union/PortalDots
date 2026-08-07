@@ -42,7 +42,7 @@ describe('StaffFormEditPage', () => {
           { id: 'tag-required', name: '必須' }
         ])
       ),
-      http.get('/v1/staff/users', () =>
+      http.get('/v1/staff/forms/recipient-candidates', () =>
         HttpResponse.json({
           items: [mockStaffUser, mockStaffUser2],
           page: 1,
@@ -50,7 +50,7 @@ describe('StaffFormEditPage', () => {
           total: 2
         })
       ),
-      http.get('/v1/staff/users/{userID}', ({ request }) =>
+      http.get('/v1/staff/forms/recipient-candidates/{userID}', ({ request }) =>
         HttpResponse.json(request.url.includes('staff-1') ? mockStaffUser : mockStaffUser2)
       ),
       http.get('/v1/staff/forms/form-circle-b-1', () =>

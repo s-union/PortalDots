@@ -417,6 +417,13 @@ export const staffUserSchema = z.object({
   updatedAt: z.string().default('')
 })
 
+export const staffFormRecipientCandidateSchema = z.object({
+  id: userIdSchema,
+  displayName: z.string(),
+  loginIds: stringArraySchema,
+  contactEmail: z.string().default('')
+})
+
 export const staffCircleSchema = z.object({
   id: circleIdSchema,
   name: z.string(),

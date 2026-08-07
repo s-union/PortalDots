@@ -262,7 +262,30 @@ func TestBindAndValidateStaffFormNormalizesRecipients(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected request to be valid, got %#v", errors)
 	}
-	if !reflect.DeepEqual(request.StaffNotificationUserIDs, []string{"staff-a", "staff-b"}) {
+	if request.StaffNotificationUserIDs == nil || !reflect.DeepEqual(*request.StaffNotificationUserIDs, []string{"staff-a", "staff-b"}) {
 		t.Fatalf("unexpected recipients: %#v", request.StaffNotificationUserIDs)
+	}
+}
+
+func TestBindAndValidateStaffFormOmittedRecipientsStaysNil(t *testing.T) {
+	t.Parallel()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{
+		"circleId": "circle-1",
+		"name": "参加申請",
+		"openAt": "2026-04-01T09:00:00Z",
+		"closeAt": "2026-04-02T09:00:00Z",
+		"maxAnswers": 1
+	}`))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+
+	request, errors, ok := bindAndValidateStaffForm(e.NewContext(req, rec), true)
+	if !ok {
+		t.Fatalf("expected request to be valid, got %#v", errors)
+	}
+	if request.StaffNotificationUserIDs != nil {
+		t.Fatalf("expected omitted recipients to stay nil so the update path preserves them, got %#v", *request.StaffNotificationUserIDs)
 	}
 }

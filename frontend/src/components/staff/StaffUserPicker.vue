@@ -2,7 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { toUserId } from '@/lib/api/schema'
-import { fetchStaffUser, useStaffUsersQuery, type StaffUser } from '@/features/staff/users/api'
+import {
+  fetchStaffFormRecipientCandidate,
+  useStaffFormRecipientCandidatesQuery,
+  type StaffFormRecipientCandidate
+} from '@/features/staff/forms/api'
 
 const {
   modelValue,
@@ -31,9 +35,9 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref(initialSearchQuery)
-const selectedUsers = ref<StaffUser[]>([])
+const selectedUsers = ref<StaffFormRecipientCandidate[]>([])
 
-const usersQuery = useStaffUsersQuery(
+const usersQuery = useStaffFormRecipientCandidatesQuery(
   computed(() => !disabled),
   computed(() => ({
     page: 1,
@@ -57,7 +61,7 @@ watch(
     })
 
     void (async () => {
-      const existing = new Map<string, StaffUser>(selectedUsers.value.map((user) => [user.id, user]))
+      const existing = new Map<string, StaffFormRecipientCandidate>(selectedUsers.value.map((user) => [user.id, user]))
       const results = await Promise.all(userIDs.map((userID) => existing.get(userID) ?? loadUser(userID)))
       if (!cancelled) {
         selectedUsers.value = results
@@ -67,26 +71,15 @@ watch(
   { immediate: true }
 )
 
-async function loadUser(userID: string): Promise<StaffUser> {
+async function loadUser(userID: string): Promise<StaffFormRecipientCandidate> {
   try {
-    return await fetchStaffUser(userID)
+    return await fetchStaffFormRecipientCandidate(userID)
   } catch {
     return {
       id: toUserId(userID),
-      lastName: '',
-      lastNameReading: '',
-      firstName: '',
-      firstNameReading: '',
       displayName: userID,
       loginIds: [],
-      contactEmail: '',
-      univemail: '',
-      phoneNumber: '',
-      roles: [],
-      isVerified: false,
-      isEmailVerified: false,
-      createdAt: '',
-      updatedAt: ''
+      contactEmail: ''
     }
   }
 }
@@ -95,7 +88,7 @@ function updateSelectedUsers(nextIDs: string[]) {
   emit('update:modelValue', nextIDs)
 }
 
-function addUser(user: StaffUser) {
+function addUser(user: StaffFormRecipientCandidate) {
   if (disabled || selectedUserIDs.value.has(user.id)) {
     return
   }

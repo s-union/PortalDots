@@ -94,16 +94,16 @@ type reorderStaffFormQuestionsRequest struct {
 }
 
 type mutateStaffFormRequest struct {
-	CircleID                 string   `json:"circleId"`
-	Name                     string   `json:"name"`
-	Description              string   `json:"description"`
-	OpenAt                   string   `json:"openAt"`
-	CloseAt                  string   `json:"closeAt"`
-	IsPublic                 bool     `json:"isPublic"`
-	MaxAnswers               int32    `json:"maxAnswers"`
-	AnswerableTags           []string `json:"answerableTags"`
-	ConfirmationMessage      string   `json:"confirmationMessage"`
-	StaffNotificationUserIDs []string `json:"staffNotificationUserIds"`
+	CircleID                 string    `json:"circleId"`
+	Name                     string    `json:"name"`
+	Description              string    `json:"description"`
+	OpenAt                   string    `json:"openAt"`
+	CloseAt                  string    `json:"closeAt"`
+	IsPublic                 bool      `json:"isPublic"`
+	MaxAnswers               int32     `json:"maxAnswers"`
+	AnswerableTags           []string  `json:"answerableTags"`
+	ConfirmationMessage      string    `json:"confirmationMessage"`
+	StaffNotificationUserIDs *[]string `json:"staffNotificationUserIds"`
 }
 
 func (h *staffFormHandlers) listStaffForms(c *echo.Context) error {
@@ -207,8 +207,12 @@ func (h *staffFormHandlers) createStaffForm(c *echo.Context) error {
 	if !valid {
 		return validationError(c, validationErrors)
 	}
-	if validationErrors := h.validateStaffNotificationUsers(c, request.StaffNotificationUserIDs); len(validationErrors) > 0 {
-		return validationError(c, validationErrors)
+	recipientIDs := []string{}
+	if request.StaffNotificationUserIDs != nil {
+		recipientIDs = *request.StaffNotificationUserIDs
+		if validationErrors := h.validateStaffNotificationUsers(c, recipientIDs); len(validationErrors) > 0 {
+			return validationError(c, validationErrors)
+		}
 	}
 	currentCircle := circle.Circle{}
 	if request.CircleID != "" {
@@ -230,7 +234,7 @@ func (h *staffFormHandlers) createStaffForm(c *echo.Context) error {
 		request.AnswerableTags,
 		request.ConfirmationMessage,
 		currentSession.User.ID,
-		request.StaffNotificationUserIDs,
+		recipientIDs,
 	)
 	if created.ID == "" {
 		return errorJSON(c, http.StatusInternalServerError, "failed_to_create_form")
@@ -260,9 +264,6 @@ func (h *staffFormHandlers) updateStaffForm(c *echo.Context) error {
 	if !valid {
 		return validationError(c, validationErrors)
 	}
-	if validationErrors := h.validateStaffNotificationUsers(c, request.StaffNotificationUserIDs); len(validationErrors) > 0 {
-		return validationError(c, validationErrors)
-	}
 
 	formValue, currentCircle, found := h.findManagedStaffForm(c.Param("formID"), true)
 	if !found {
@@ -270,6 +271,14 @@ func (h *staffFormHandlers) updateStaffForm(c *echo.Context) error {
 	}
 	if h.isParticipationForm(formValue.ID) {
 		return errorJSON(c, http.StatusBadRequest, "participation_form_locked")
+	}
+
+	recipientIDs := formValue.StaffNotificationUserIDs
+	if request.StaffNotificationUserIDs != nil {
+		recipientIDs = *request.StaffNotificationUserIDs
+		if validationErrors := h.validateStaffNotificationUsers(c, recipientIDs); len(validationErrors) > 0 {
+			return validationError(c, validationErrors)
+		}
 	}
 
 	updated, found := h.forms.UpdateByID(
@@ -282,7 +291,7 @@ func (h *staffFormHandlers) updateStaffForm(c *echo.Context) error {
 		request.MaxAnswers,
 		request.AnswerableTags,
 		request.ConfirmationMessage,
-		request.StaffNotificationUserIDs,
+		recipientIDs,
 	)
 	if !found {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")

@@ -99,8 +99,8 @@ describe('StaffUserPicker', () => {
 
   it('loads and renders the display name of each selected user', async () => {
     server.use(
-      http.get('/v1/staff/users/staff-1', () => HttpResponse.json(mockStaffUser)),
-      http.get('/v1/staff/users/staff-2', () => HttpResponse.json(mockStaffUser2))
+      http.get('/v1/staff/forms/recipient-candidates/staff-1', () => HttpResponse.json(mockStaffUser)),
+      http.get('/v1/staff/forms/recipient-candidates/staff-2', () => HttpResponse.json(mockStaffUser2))
     )
 
     const wrapper = mountPicker(['staff-1', 'staff-2'])

@@ -24,7 +24,7 @@ const meta = {
             { id: 'tag-required', name: '必須', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' }
           ])
         ),
-        http.get('/v1/staff/users', () =>
+        http.get('/v1/staff/forms/recipient-candidates', () =>
           HttpResponse.json({
             items: [mockStaffUser, mockStaffUser2],
             page: 1,
@@ -32,7 +32,7 @@ const meta = {
             total: 2
           })
         ),
-        http.get('/v1/staff/users/{userID}', ({ request }) =>
+        http.get('/v1/staff/forms/recipient-candidates/{userID}', ({ request }) =>
           HttpResponse.json(request.url.includes('staff-2') ? mockStaffUser2 : mockStaffUser)
         ),
         http.get('/v1/staff/forms/{formID}', () => HttpResponse.json(staffFormStoryDetail)),
@@ -70,7 +70,7 @@ export const WithStaffRecipients: Story = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/tags', () => HttpResponse.json([])),
-        http.get('/v1/staff/users', () =>
+        http.get('/v1/staff/forms/recipient-candidates', () =>
           HttpResponse.json({
             items: [mockStaffUser, mockStaffUser2],
             page: 1,
@@ -78,7 +78,7 @@ export const WithStaffRecipients: Story = {
             total: 2
           })
         ),
-        http.get('/v1/staff/users/{userID}', ({ request }) =>
+        http.get('/v1/staff/forms/recipient-candidates/{userID}', ({ request }) =>
           HttpResponse.json(request.url.includes('staff-2') ? mockStaffUser2 : mockStaffUser)
         ),
         http.get('/v1/staff/forms/{formID}', () =>

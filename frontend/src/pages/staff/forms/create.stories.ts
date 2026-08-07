@@ -15,7 +15,7 @@ const meta = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/tags', () => HttpResponse.json([mockTag])),
-        http.get('/v1/staff/users', () =>
+        http.get('/v1/staff/forms/recipient-candidates', () =>
           HttpResponse.json({
             items: [mockStaffUser, mockStaffUser2],
             page: 1,

@@ -2908,6 +2908,8 @@ paths:
                   type: array
                   items:
                     type: string
+                  description: >-
+                    省略時は既存の送信先を維持し、空配列を指定すると送信先を解除する
                 isPublic:
                   type: boolean
       responses:
@@ -3327,6 +3329,113 @@ paths:
           description: Current circle is not selected
         "422":
           description: Validation error
+  /staff/forms/recipient-candidates:
+    get:
+      operationId: getStaffFormRecipientCandidates
+      summary: Search users eligible as staff-copy notification recipients
+      description: >-
+        Returns minimal user information for users who hold the
+        `formAnswers.read` entitlement. Unlike `/staff/users`, this endpoint is
+        available to `forms_manager` and only exposes the fields needed to
+        pick notification recipients.
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: 名前・ログインID・連絡先メールアドレスで絞り込む
+      responses:
+        "200":
+          description: Eligible staff-copy recipient candidates
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, page, pageSize, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, displayName, loginIds, contactEmail]
+                      properties:
+                        id:
+                          type: string
+                        displayName:
+                          type: string
+                        loginIds:
+                          type: array
+                          items:
+                            type: string
+                        contactEmail:
+                          type: string
+                  page:
+                    type: integer
+                  pageSize:
+                    type: integer
+                  total:
+                    type: integer
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
+        "409":
+          description: Current circle is not selected
+  /staff/forms/recipient-candidates/{userID}:
+    get:
+      operationId: getStaffFormRecipientCandidate
+      summary: Return minimal information for a staff-copy recipient
+      description: >-
+        Returns minimal user information for a user holding the
+        `formAnswers.read` entitlement. Returns 404 when the user does not
+        exist or is no longer eligible.
+      parameters:
+        - in: path
+          name: userID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Staff-copy recipient candidate
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, displayName, loginIds, contactEmail]
+                properties:
+                  id:
+                    type: string
+                  displayName:
+                    type: string
+                  loginIds:
+                    type: array
+                    items:
+                      type: string
+                  contactEmail:
+                    type: string
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Staff verification is required
+        "404":
+          description: User not found or not eligible as a recipient
   /staff/forms/{formID}/answers:
     get:
       operationId: getStaffFormAnswers

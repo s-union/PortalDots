@@ -33,7 +33,10 @@ func bindAndValidateStaffForm(c *echo.Context, circleRequired bool) (mutateStaff
 	request.CloseAt = strings.TrimSpace(request.CloseAt)
 	request.ConfirmationMessage = strings.TrimSpace(request.ConfirmationMessage)
 	request.AnswerableTags = normalizeTags(request.AnswerableTags)
-	request.StaffNotificationUserIDs = normalizeUserIDs(request.StaffNotificationUserIDs)
+	if request.StaffNotificationUserIDs != nil {
+		normalized := normalizeUserIDs(*request.StaffNotificationUserIDs)
+		request.StaffNotificationUserIDs = &normalized
+	}
 
 	errors := map[string][]string{}
 	if circleRequired && request.CircleID == "" {

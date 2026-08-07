@@ -18,7 +18,7 @@ const meta = {
   parameters: {
     msw: {
       handlers: [
-        http.get('/v1/staff/users', ({ request }) => {
+        http.get('/v1/staff/forms/recipient-candidates', ({ request }) => {
           const url = new URL(request.url)
           const query = (url.searchParams.get('query') ?? '').trim().toLowerCase()
           const items = query
@@ -28,7 +28,7 @@ const meta = {
             : allUsers
           return HttpResponse.json({ items, page: 1, pageSize: 20, total: items.length })
         }),
-        http.get('/v1/staff/users/{userID}', ({ params }) =>
+        http.get('/v1/staff/forms/recipient-candidates/{userID}', ({ params }) =>
           HttpResponse.json(params.userID === 'staff-2' ? mockStaffUser2 : mockStaffUser)
         )
       ]
