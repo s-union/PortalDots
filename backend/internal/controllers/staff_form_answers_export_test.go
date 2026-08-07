@@ -52,6 +52,36 @@ func TestSanitizeArchiveFilename(t *testing.T) {
 			want:     "evil.pdf",
 		},
 		{
+			name:     "removes carriage return and line feed",
+			filename: "evil\r\n.pdf",
+			want:     "evil.pdf",
+		},
+		{
+			name:     "neutralizes drive letter prefix",
+			filename: "C:",
+			want:     "C_",
+		},
+		{
+			name:     "neutralizes drive-relative prefix",
+			filename: "C:evil.txt",
+			want:     "C_evil.txt",
+		},
+		{
+			name:     "neutralizes drive path with mixed separators",
+			filename: `C:\Windows\evil.txt`,
+			want:     "C__Windows_evil.txt",
+		},
+		{
+			name:     "neutralizes alternate data stream",
+			filename: "evil.txt:hidden",
+			want:     "evil.txt_hidden",
+		},
+		{
+			name:     "neutralizes unc path",
+			filename: `\\server\share\evil.txt`,
+			want:     "__server_share_evil.txt",
+		},
+		{
 			name:     "handles empty filename",
 			filename: "   ",
 			want:     "upload.bin",
@@ -117,6 +147,14 @@ func TestUniqueArchiveCircleDirectory(t *testing.T) {
 			t.Fatalf("got %q, want %q", got, "id1")
 		}
 	})
+
+	t.Run("drive letter name is neutralized", func(t *testing.T) {
+		t.Parallel()
+		used := map[string]bool{}
+		if got := uniqueArchiveCircleDirectory("C:", "id1", used); got != "C_" {
+			t.Fatalf("got %q, want %q", got, "C_")
+		}
+	})
 }
 
 func TestArchiveEntryPath(t *testing.T) {
@@ -133,13 +171,13 @@ func TestArchiveEntryPath(t *testing.T) {
 
 	t.Run("cannot escape archive layout", func(t *testing.T) {
 		t.Parallel()
-		got := archiveEntryPath("食品", "質問\x00名", "../../../evil.pdf")
+		got := archiveEntryPath("食品", "質問\x00:名", "../../../evil:名称.txt")
 		segments := strings.Split(got, "/")
 		if len(segments) != 2 {
 			t.Fatalf("expected exactly one directory component, got %#v", segments)
 		}
 		for _, segment := range segments {
-			if strings.HasPrefix(segment, "..") || strings.Contains(segment, "\x00") {
+			if strings.HasPrefix(segment, "..") || strings.Contains(segment, "\x00") || strings.Contains(segment, ":") {
 				t.Fatalf("entry segment escapes archive layout: %q", segment)
 			}
 		}

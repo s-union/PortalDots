@@ -187,12 +187,16 @@ func staffAnswerExportValue(
 	}
 }
 
+// sanitizeArchiveFilename returns a single archive path segment derived from
+// filename. Slashes, backslashes and colons are replaced so the result can
+// never be read as a path separator, a Windows drive/volume prefix, or an NTFS
+// alternate data stream when extracted on Windows.
 func sanitizeArchiveFilename(filename string) string {
 	base := strings.TrimSpace(filepath.Base(filepath.Clean(filename)))
 	if base == "" || base == "." || base == ".." {
 		return "upload.bin"
 	}
-	replacer := strings.NewReplacer("/", "_", "\\", "_")
+	replacer := strings.NewReplacer("/", "_", "\\", "_", ":", "_")
 	sanitized := strings.Map(func(r rune) rune {
 		switch r {
 		case '\r', '\n', 0:
