@@ -102,7 +102,8 @@ const circlesSortKeys = ['id', 'name', 'groupName', 'status'] as const
 const circlesSortKeySchema = z.enum(circlesSortKeys)
 type StaffParticipationTypeCirclesSortKey = (typeof circlesSortKeys)[number]
 
-const circlesRows = computed(() => allCirclesQuery.data.value ?? [])
+const circlesRows = computed(() => allCirclesQuery.data.value?.items ?? [])
+const circlesTotalUnfiltered = computed(() => allCirclesQuery.data.value?.totalUnfiltered)
 
 const filteredRows = computed(() => {
   return circlesRows.value
@@ -394,6 +395,7 @@ function resolveCircleSortValue(circle: StaffParticipationTypeCircle, key: Staff
             :page="circlesPage"
             :page-size="circlesPageSize"
             :total="sortedRows.length"
+            :total-unfiltered="circlesTotalUnfiltered"
             :loading="allCirclesQuery.isPending.value"
             :sort-key="circlesSortKey"
             :sort-direction="circlesSortDirection"

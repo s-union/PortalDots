@@ -26,7 +26,8 @@ const meta = {
             items: [mockPage, { ...mockPage, id: 'page-2', title: '2つ目のお知らせ', isNew: false }],
             page: 1,
             pageSize: 10,
-            total: 2
+            total: 2,
+            totalUnfiltered: 2
           })
         )
       ]
@@ -53,7 +54,9 @@ export const Empty: Story = {
             user: null
           })
         ),
-        http.get('/v1/public/pages', () => HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0 }))
+        http.get('/v1/public/pages', () =>
+          HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0, totalUnfiltered: 0 })
+        )
       ]
     }
   }
@@ -96,7 +99,8 @@ export const LimitedAndLongText: Story = {
             ],
             page: 1,
             pageSize: 10,
-            total: 2
+            total: 2,
+            totalUnfiltered: 2
           })
         )
       ]

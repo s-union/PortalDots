@@ -53,18 +53,21 @@ func (h *workspaceHandlers) listPages(c *echo.Context) error {
 		return statusError(c, status)
 	}
 
-	pages := h.pages.ListForCircle(c.Request().Context(), circleTags, c.QueryParam("query"))
+	query := c.QueryParam("query")
+	pages := h.pages.ListForCircle(c.Request().Context(), circleTags, query)
 	pagination := readPagesPagination(c)
 	total := len(pages)
 	totalUnfiltered := total
 	if h.pages.SupportsPagination(c.Request().Context()) {
-		total = h.pages.CountForCircle(c.Request().Context(), circleTags, c.QueryParam("query"))
-		totalUnfiltered = h.pages.CountForCircle(c.Request().Context(), circleTags, "")
+		total = h.pages.CountForCircle(c.Request().Context(), circleTags, query)
+		if query != "" {
+			totalUnfiltered = h.pages.CountForCircle(c.Request().Context(), circleTags, "")
+		}
 		page, pageSize := models.NormalizePagination(pagination, total)
 		pagination.Page = page
 		pagination.PageSize = pageSize
-		pages = h.pages.ListForCirclePaginated(c.Request().Context(), circleTags, c.QueryParam("query"), pageSize, (page-1)*pageSize)
-	} else {
+		pages = h.pages.ListForCirclePaginated(c.Request().Context(), circleTags, query, pageSize, (page-1)*pageSize)
+	} else if query != "" {
 		totalUnfiltered = len(h.pages.ListForCircle(c.Request().Context(), circleTags, ""))
 	}
 

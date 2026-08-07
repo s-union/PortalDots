@@ -105,7 +105,7 @@ export const FilteredWithTotal: Story = {
   args: {
     rows: rows.slice(0, 1),
     columns,
-    page: 1,
+    page: 2,
     pageSize: 20,
     total: 42,
     totalUnfiltered: 1203,

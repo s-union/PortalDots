@@ -227,7 +227,8 @@ function rowKey(row: Record<string, unknown>, index: number) {
       >
         <template v-if="total > 0">
           <template v-if="filterActive && effectiveTotalUnfiltered > total">
-            {{ formatCount(total) }} 件 / 全 {{ formatCount(effectiveTotalUnfiltered) }} 件
+            {{ startIndex }}〜{{ endIndex }}件目・{{ formatCount(total) }} 件 / 全
+            {{ formatCount(effectiveTotalUnfiltered) }} 件 (ページ{{ page }} / {{ totalPages }})
           </template>
           <template v-else>
             {{ startIndex }}〜{{ endIndex }}件目・全{{ total }}件 (ページ{{ page }} / {{ totalPages }})

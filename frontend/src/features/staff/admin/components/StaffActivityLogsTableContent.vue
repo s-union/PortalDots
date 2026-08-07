@@ -76,7 +76,7 @@ function setLastPage() {
     :page="page"
     :page-size="pageSize"
     :total="total"
-    :total-unfiltered="activityLogs?.totalUnfiltered ?? 0"
+    :total-unfiltered="activityLogs?.totalUnfiltered"
     :filter-active="searchQuery.length > 0"
     empty-message="まだ活動ログはありません。"
     table-label="アクティビティログ一覧"
