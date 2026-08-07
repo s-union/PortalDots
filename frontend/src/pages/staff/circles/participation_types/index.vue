@@ -13,7 +13,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
@@ -39,6 +39,7 @@ const createMutation = useCreateStaffParticipationTypeMutation()
 const form = useStaffParticipationTypeForm()
 const errorMessage = ref('')
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 
 const { getFieldError, validateAll, markTouched } = useFormValidation({
   schema: staffParticipationTypeFormSchema,
@@ -156,7 +157,7 @@ async function handleCreate() {
           </FormField>
         </div>
         <FormField label="付与タグ">
-          <StaffTagPicker v-model="form.tags" :available-tags="availableTags" name="tags" />
+          <StaffTagPicker v-model="form.tags" :available-tags="availableTags" :tag-colors="tagColors" name="tags" />
         </FormField>
         <div class="grid gap-4 md:grid-cols-2">
           <FormField label="受付開始日時" :error="getFieldError('openAt')">

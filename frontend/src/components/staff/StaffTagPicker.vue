@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
+import { cn } from '@/lib/ui/cn'
+import { tagColorClass } from '@/lib/tagColor'
 
 const {
   modelValue,
   availableTags,
+  tagColors = {},
   disabled = false,
   name = 'tagSearch',
   placeholder = 'タグ名を入力して追加',
@@ -16,6 +19,7 @@ const {
 } = defineProps<{
   modelValue: string[]
   availableTags: string[]
+  tagColors?: Record<string, string>
   disabled?: boolean
   name?: string
   placeholder?: string
@@ -132,11 +136,13 @@ function handleKeydown(event: KeyboardEvent) {
       <span
         v-for="tag in modelValue"
         :key="tag"
-        class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-light px-3 py-1 text-sm text-primary"
+        :class="
+          cn('inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm', tagColorClass(tagColors[tag]))
+        "
       >
         <span>{{ tag }}</span>
         <button
-          class="inline-flex h-5 w-5 items-center justify-center rounded-full text-primary/70 transition hover:bg-primary/15 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          class="inline-flex h-5 w-5 items-center justify-center rounded-full text-current opacity-70 transition hover:bg-current/15 hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="disabled"
           type="button"
           :title="`${tag} を外す`"
@@ -170,7 +176,12 @@ function handleKeydown(event: KeyboardEvent) {
         <button
           v-for="tag in suggestedTags"
           :key="tag"
-          class="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1.5 text-base text-body transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          :class="
+            cn(
+              'inline-flex items-center rounded-full border px-3 py-1.5 text-base transition disabled:cursor-not-allowed disabled:opacity-60',
+              tagColorClass(tagColors[tag])
+            )
+          "
           :disabled="disabled"
           type="button"
           @click="addTag(tag)"

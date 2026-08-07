@@ -22,12 +22,14 @@ import (
 type staffTagResponse struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
+	Color     string `json:"color"`
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`
 }
 
 type mutateStaffTagRequest struct {
-	Name string `json:"name"`
+	Name  string  `json:"name"`
+	Color *string `json:"color"`
 }
 
 type staffPlaceResponse struct {
@@ -162,6 +164,13 @@ func (h *staffMastersHandlers) createStaffTag(c *echo.Context) error {
 	if request.Name == "" {
 		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
+	color := tag.DefaultColor
+	if request.Color != nil {
+		if !tag.IsValidColor(*request.Color) {
+			return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
+		}
+		color = tag.NormalizeColor(*request.Color)
+	}
 	existingTags, err := h.tags.List()
 	if err != nil {
 		return internalError(c)
@@ -172,7 +181,7 @@ func (h *staffMastersHandlers) createStaffTag(c *echo.Context) error {
 		}
 	}
 
-	created, err := h.tags.Create(request.Name)
+	created, err := h.tags.Create(request.Name, color)
 	if err != nil {
 		return internalError(c)
 	}
@@ -199,13 +208,21 @@ func (h *staffMastersHandlers) updateStaffTag(c *echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
+	var color *string
+	if request.Color != nil {
+		if !tag.IsValidColor(*request.Color) {
+			return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
+		}
+		normalized := tag.NormalizeColor(*request.Color)
+		color = &normalized
+	}
 	for _, existing := range existingTags {
 		if existing.ID != tagID && strings.EqualFold(existing.Name, request.Name) {
 			return validationError(c, map[string][]string{"name": {"同じ名前のタグがすでに存在します"}})
 		}
 	}
 
-	updated, err := h.tags.Update(tagID, request.Name)
+	updated, err := h.tags.Update(tagID, request.Name, color)
 	if errors.Is(err, tag.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "tag_not_found")
 	}
@@ -563,6 +580,7 @@ func mapStaffTag(item tag.Tag) staffTagResponse {
 	return staffTagResponse{
 		ID:        item.ID,
 		Name:      item.Name,
+		Color:     item.Color,
 		CreatedAt: item.CreatedAt,
 		UpdatedAt: item.UpdatedAt,
 	}

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"github.com/s-union/PortalDots/backend/internal/domain/tag"
 	"github.com/s-union/PortalDots/backend/internal/models"
 	"github.com/s-union/PortalDots/backend/internal/platform/config"
 	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
@@ -3096,6 +3097,125 @@ func TestStaffMasterDataCRUD(t *testing.T) {
 	recorder = doJSONRequest(t, server, cookies, http.MethodDelete, "/v1/staff/contact-categories/"+createdCategory.ID, nil)
 	if recorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusNoContent, recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestStaffTagsColorValidation(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(testStaffConfig())
+	cookies := map[string]*http.Cookie{}
+	loginAsStaff(t, server, cookies)
+	authorizeStaff(t, server, cookies)
+
+	recorder := doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "色付きタグ", "color": "red"})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var createdTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &createdTag); err != nil {
+		t.Fatalf("unmarshal created tag: %v", err)
+	}
+	if createdTag.Color != "red" {
+		t.Fatalf("expected created tag color red, got %q", createdTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "不正な色", "color": "neon"})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	for _, invalidColor := range []string{"", "  "} {
+		recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "空文字の色", "color": invalidColor})
+		if recorder.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("expected create with color %q to be rejected, got %d, body=%s", invalidColor, recorder.Code, recorder.Body.String())
+		}
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "green"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var updatedTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &updatedTag); err != nil {
+		t.Fatalf("unmarshal updated tag: %v", err)
+	}
+	if updatedTag.Color != "green" {
+		t.Fatalf("expected updated tag color green, got %q", updatedTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var preservedTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &preservedTag); err != nil {
+		t.Fatalf("unmarshal preserved tag: %v", err)
+	}
+	if preservedTag.Color != "green" {
+		t.Fatalf("expected color-less update to keep green, got %q", preservedTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "blue"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var blueTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &blueTag); err != nil {
+		t.Fatalf("unmarshal blue tag: %v", err)
+	}
+	if blueTag.Color != "blue" {
+		t.Fatalf("expected tag color blue, got %q", blueTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var latestTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &latestTag); err != nil {
+		t.Fatalf("unmarshal latest tag: %v", err)
+	}
+	if latestTag.Color != "blue" {
+		t.Fatalf("expected color-less update to keep the latest colour blue, got %q", latestTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "teal"})
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	for _, invalidColor := range []string{"", "  "} {
+		recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": invalidColor})
+		if recorder.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("expected update with color %q to be rejected, got %d, body=%s", invalidColor, recorder.Code, recorder.Body.String())
+		}
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "色指定なし"})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusCreated, recorder.Code, recorder.Body.String())
+	}
+	var defaultTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &defaultTag); err != nil {
+		t.Fatalf("unmarshal default tag: %v", err)
+	}
+	if defaultTag.Color != "gray" {
+		t.Fatalf("expected default tag color gray, got %q", defaultTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/tags", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var tags []staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &tags); err != nil {
+		t.Fatalf("unmarshal tags: %v", err)
+	}
+	for _, current := range tags {
+		if !tag.IsValidColor(current.Color) {
+			t.Fatalf("listed tag %q has invalid color %q", current.Name, current.Color)
+		}
 	}
 }
 

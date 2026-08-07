@@ -370,6 +370,7 @@ export const staffActivityLogSchema = z.object({
 export const staffTagSchema = z.object({
   id: tagIdSchema,
   name: z.string(),
+  color: z.enum(['gray', 'red', 'orange', 'green', 'blue', 'purple']).default('gray'),
   createdAt: z.string().default(''),
   updatedAt: z.string().default('')
 })

@@ -25,7 +25,7 @@ import {
   useStaffFormDetailQuery,
   useUpdateStaffFormMutation
 } from '@/features/staff/forms/queries'
-import { useStaffTagsQuery } from '@/features/staff/masters/tags'
+import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
@@ -74,6 +74,7 @@ const { getFieldError, validateAll, markTouched } = useFormValidation({
 const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTabs(formId.value, 'edit') : []))
 const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
+const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 
 const openAtInput = computed({
   get: () => formatDateTimeLocalValue(editForm.value.openAt),
@@ -361,6 +362,7 @@ async function handleDeleteForm() {
                 <StaffTagPicker
                   v-model="editForm.answerableTags"
                   :available-tags="availableTags"
+                  :tag-colors="tagColors"
                   :disabled="isParticipationForm"
                   name="answerableTags"
                 />

@@ -3,6 +3,7 @@ package tag
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
 )
@@ -26,6 +27,7 @@ func (r *SQLCRepository) List() ([]Tag, error) {
 		tags = append(tags, Tag{
 			ID:        row.ID,
 			Name:      row.Name,
+			Color:     row.Color,
 			CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
 			UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
 		})
@@ -34,24 +36,10 @@ func (r *SQLCRepository) List() ([]Tag, error) {
 	return tags, nil
 }
 
-func (r *SQLCRepository) Create(name string) (Tag, error) {
-	row, err := r.queries.CreateTag(context.Background(), name)
-	if err != nil {
-		return Tag{}, err
-	}
-
-	return Tag{
-		ID:        row.ID,
-		Name:      row.Name,
-		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
-		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
-	}, nil
-}
-
-func (r *SQLCRepository) Update(id, name string) (Tag, error) {
-	row, err := r.queries.UpdateTag(context.Background(), dbgen.UpdateTagParams{
-		ID:   id,
-		Name: name,
+func (r *SQLCRepository) Create(name, color string) (Tag, error) {
+	row, err := r.queries.CreateTag(context.Background(), dbgen.CreateTagParams{
+		Name:  name,
+		Color: color,
 	})
 	if err != nil {
 		return Tag{}, err
@@ -60,6 +48,30 @@ func (r *SQLCRepository) Update(id, name string) (Tag, error) {
 	return Tag{
 		ID:        row.ID,
 		Name:      row.Name,
+		Color:     row.Color,
+		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
+	}, nil
+}
+
+func (r *SQLCRepository) Update(id, name string, color *string) (Tag, error) {
+	var colorValue pgtype.Text
+	if color != nil {
+		colorValue = pgtype.Text{String: *color, Valid: true}
+	}
+	row, err := r.queries.UpdateTag(context.Background(), dbgen.UpdateTagParams{
+		ID:    id,
+		Name:  name,
+		Color: colorValue,
+	})
+	if err != nil {
+		return Tag{}, err
+	}
+
+	return Tag{
+		ID:        row.ID,
+		Name:      row.Name,
+		Color:     row.Color,
 		CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
 		UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
 	}, nil

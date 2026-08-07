@@ -156,6 +156,7 @@ type Form struct {
 type Tag struct {
 	ID        string
 	Name      string
+	Color     string
 	CreatedAt string
 	UpdatedAt string
 }

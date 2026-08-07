@@ -58,6 +58,7 @@ export const mockCircle = {
 export const mockTag = {
   id: 'tag-1',
   name: '文化系',
+  color: 'blue',
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z'
 }
