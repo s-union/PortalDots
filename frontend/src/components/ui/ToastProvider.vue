@@ -1,55 +1,7 @@
 <script setup lang="ts">
 import type { IconName } from '@fortawesome/fontawesome-svg-core'
-import { onBeforeUnmount, provide, ref } from 'vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
-import { DEFAULT_TOAST_DURATION, toastInjectionKey, type ToastOptions, type ToastType } from './useToast'
-
-interface ToastItem {
-  id: number
-  type: ToastType
-  message: string
-  duration: number
-}
-
-const toasts = ref<ToastItem[]>([])
-const timers = new Map<number, ReturnType<typeof setTimeout>>()
-let nextId = 1
-
-function push(type: ToastType, message: string, options?: ToastOptions) {
-  const duration = options?.duration ?? DEFAULT_TOAST_DURATION
-  const id = nextId++
-  toasts.value.push({ id, type, message, duration })
-  if (duration > 0) {
-    timers.set(
-      id,
-      setTimeout(() => dismiss(id), duration)
-    )
-  }
-  return id
-}
-
-function dismiss(id: number) {
-  const timer = timers.get(id)
-  if (timer) {
-    clearTimeout(timer)
-    timers.delete(id)
-  }
-  toasts.value = toasts.value.filter((toast) => toast.id !== id)
-}
-
-provide(toastInjectionKey, {
-  success: (message, options) => push('success', message, options),
-  error: (message, options) => push('error', message, options),
-  info: (message, options) => push('info', message, options),
-  dismiss
-})
-
-onBeforeUnmount(() => {
-  for (const timer of timers.values()) {
-    clearTimeout(timer)
-  }
-  timers.clear()
-})
+import { dismissToast, toasts, type ToastType } from './useToast'
 
 const toastToneClass: Record<ToastType, string> = {
   success: 'border-success bg-success-light text-success',
@@ -85,7 +37,7 @@ const toastIconName: Record<ToastType, IconName> = {
         type="button"
         class="mt-0.5 rounded text-base leading-none opacity-60 transition hover:opacity-100"
         aria-label="通知を閉じる"
-        @click="dismiss(toast.id)"
+        @click="dismissToast(toast.id)"
       >
         <FaIcon name="times" class-name="text-sm" />
       </button>
