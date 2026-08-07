@@ -213,6 +213,7 @@ func (h *staffCircleHandlers) createStaffParticipationType(c *echo.Context) erro
 		[]string{},
 		request.FormConfirmationMessage,
 		currentSession.User.ID,
+		[]string{},
 	)
 	if formValue.ID == "" {
 		return internalError(c)
@@ -263,6 +264,11 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c *echo.Context) erro
 		return validationError(c, validationErrors)
 	}
 
+	existingForm, found := h.forms.FindByIDForStaff(item.FormID)
+	if !found {
+		return errorJSON(c, http.StatusNotFound, "form_not_found")
+	}
+
 	updatedForm, ok := h.forms.UpdateByID(
 		item.FormID,
 		"企画参加登録",
@@ -273,6 +279,7 @@ func (h *staffCircleHandlers) updateStaffParticipationType(c *echo.Context) erro
 		1,
 		[]string{},
 		request.FormConfirmationMessage,
+		existingForm.StaffNotificationUserIDs,
 	)
 	if !ok {
 		return errorJSON(c, http.StatusNotFound, "form_not_found")

@@ -97,6 +97,7 @@ func (r *SQLCRepository) Create(
 	answerableTags []string,
 	confirmationMessage string,
 	createdByUserID string,
+	staffNotificationUserIDs []string,
 ) Form {
 	openAtValue, err := time.Parse(time.RFC3339, openAt)
 	if err != nil {
@@ -108,17 +109,18 @@ func (r *SQLCRepository) Create(
 	}
 
 	row, err := r.queries.CreateForm(context.Background(), dbgen.CreateFormParams{
-		CircleID:            optionalString(circleID),
-		Name:                name,
-		Description:         description,
-		IsPublic:            isPublic,
-		IsOpen:              isOpenAt(time.Now().UTC(), openAtValue.UTC(), closeAtValue.UTC()),
-		OpenAt:              pgutil.Timestamptz(openAtValue),
-		CloseAt:             pgutil.Timestamptz(closeAtValue),
-		MaxAnswers:          maxAnswers,
-		AnswerableTags:      answerableTags,
-		ConfirmationMessage: confirmationMessage,
-		CreatedByUserID:     optionalString(createdByUserID),
+		CircleID:                 optionalString(circleID),
+		Name:                     name,
+		Description:              description,
+		IsPublic:                 isPublic,
+		IsOpen:                   isOpenAt(time.Now().UTC(), openAtValue.UTC(), closeAtValue.UTC()),
+		OpenAt:                   pgutil.Timestamptz(openAtValue),
+		CloseAt:                  pgutil.Timestamptz(closeAtValue),
+		MaxAnswers:               maxAnswers,
+		AnswerableTags:           answerableTags,
+		ConfirmationMessage:      confirmationMessage,
+		CreatedByUserID:          optionalString(createdByUserID),
+		StaffNotificationUserIds: emptyIfNil(staffNotificationUserIDs),
 	})
 	if err != nil {
 		return Form{}
@@ -138,6 +140,7 @@ func (r *SQLCRepository) Update(
 	maxAnswers int32,
 	answerableTags []string,
 	confirmationMessage string,
+	staffNotificationUserIDs []string,
 ) (Form, bool) {
 	openAtValue, err := time.Parse(time.RFC3339, openAt)
 	if err != nil {
@@ -149,17 +152,18 @@ func (r *SQLCRepository) Update(
 	}
 
 	row, err := r.queries.UpdateForm(context.Background(), dbgen.UpdateFormParams{
-		CircleID:            optionalString(circleID),
-		ID:                  formID,
-		Name:                name,
-		Description:         description,
-		IsPublic:            isPublic,
-		IsOpen:              isOpenAt(time.Now().UTC(), openAtValue.UTC(), closeAtValue.UTC()),
-		OpenAt:              pgutil.Timestamptz(openAtValue),
-		CloseAt:             pgutil.Timestamptz(closeAtValue),
-		MaxAnswers:          maxAnswers,
-		AnswerableTags:      answerableTags,
-		ConfirmationMessage: confirmationMessage,
+		CircleID:                 optionalString(circleID),
+		ID:                       formID,
+		Name:                     name,
+		Description:              description,
+		IsPublic:                 isPublic,
+		IsOpen:                   isOpenAt(time.Now().UTC(), openAtValue.UTC(), closeAtValue.UTC()),
+		OpenAt:                   pgutil.Timestamptz(openAtValue),
+		CloseAt:                  pgutil.Timestamptz(closeAtValue),
+		MaxAnswers:               maxAnswers,
+		AnswerableTags:           answerableTags,
+		ConfirmationMessage:      confirmationMessage,
+		StaffNotificationUserIds: emptyIfNil(staffNotificationUserIDs),
 	})
 	if err != nil {
 		return Form{}, false
@@ -178,6 +182,7 @@ func (r *SQLCRepository) UpdateByID(
 	maxAnswers int32,
 	answerableTags []string,
 	confirmationMessage string,
+	staffNotificationUserIDs []string,
 ) (Form, bool) {
 	openAtValue, err := time.Parse(time.RFC3339, openAt)
 	if err != nil {
@@ -189,16 +194,17 @@ func (r *SQLCRepository) UpdateByID(
 	}
 
 	row, err := r.queries.UpdateAnyFormByID(context.Background(), dbgen.UpdateAnyFormByIDParams{
-		ID:                  formID,
-		Name:                name,
-		Description:         description,
-		IsPublic:            isPublic,
-		IsOpen:              isOpenAt(time.Now().UTC(), openAtValue.UTC(), closeAtValue.UTC()),
-		OpenAt:              pgutil.Timestamptz(openAtValue),
-		CloseAt:             pgutil.Timestamptz(closeAtValue),
-		MaxAnswers:          maxAnswers,
-		AnswerableTags:      answerableTags,
-		ConfirmationMessage: confirmationMessage,
+		ID:                       formID,
+		Name:                     name,
+		Description:              description,
+		IsPublic:                 isPublic,
+		IsOpen:                   isOpenAt(time.Now().UTC(), openAtValue.UTC(), closeAtValue.UTC()),
+		OpenAt:                   pgutil.Timestamptz(openAtValue),
+		CloseAt:                  pgutil.Timestamptz(closeAtValue),
+		MaxAnswers:               maxAnswers,
+		AnswerableTags:           answerableTags,
+		ConfirmationMessage:      confirmationMessage,
+		StaffNotificationUserIds: emptyIfNil(staffNotificationUserIDs),
 	})
 	if err != nil {
 		return Form{}, false
@@ -234,6 +240,7 @@ func mapStaffListRowToForm(row dbgen.Form) Form {
 		row.AnswerableTags,
 		row.ConfirmationMessage,
 		row.CreatedByUserID,
+		row.StaffNotificationUserIds,
 	)
 }
 
@@ -252,6 +259,7 @@ func mapStaffDetailRowToForm(row dbgen.Form) Form {
 		row.AnswerableTags,
 		row.ConfirmationMessage,
 		row.CreatedByUserID,
+		row.StaffNotificationUserIds,
 	)
 }
 
@@ -270,6 +278,7 @@ func mapAnyStaffDetailRowToForm(row dbgen.Form) Form {
 		row.AnswerableTags,
 		row.ConfirmationMessage,
 		row.CreatedByUserID,
+		row.StaffNotificationUserIds,
 	)
 }
 
@@ -288,6 +297,7 @@ func mapCreateRowToForm(row dbgen.Form) Form {
 		row.AnswerableTags,
 		row.ConfirmationMessage,
 		row.CreatedByUserID,
+		row.StaffNotificationUserIds,
 	)
 }
 
@@ -306,6 +316,7 @@ func mapUpdateRowToForm(row dbgen.Form) Form {
 		row.AnswerableTags,
 		row.ConfirmationMessage,
 		row.CreatedByUserID,
+		row.StaffNotificationUserIds,
 	)
 }
 
@@ -324,6 +335,7 @@ func mapUpdateAnyRowToForm(row dbgen.Form) Form {
 		row.AnswerableTags,
 		row.ConfirmationMessage,
 		row.CreatedByUserID,
+		row.StaffNotificationUserIds,
 	)
 }
 
@@ -341,26 +353,28 @@ func buildForm(
 	answerableTags []string,
 	confirmationMessage string,
 	createdByUserID *string,
+	staffNotificationUserIDs []string,
 ) Form {
 	openAt := pgutil.FormatTimestamptz(openAtValue)
 	closeAt := pgutil.FormatTimestamptz(closeAtValue)
 	createdAt := pgutil.FormatTimestamptz(createdAtValue)
 	updatedAt := pgutil.FormatTimestamptz(updatedAtValue)
 	return Form{
-		ID:                  id,
-		CircleID:            derefString(circleID),
-		Name:                name,
-		Description:         description,
-		IsPublic:            isPublic,
-		IsOpen:              isOpenWindow(openAt, closeAt),
-		OpenAt:              openAt,
-		CloseAt:             closeAt,
-		CreatedAt:           createdAt,
-		UpdatedAt:           updatedAt,
-		MaxAnswers:          maxAnswers,
-		AnswerableTags:      append([]string{}, answerableTags...),
-		ConfirmationMessage: confirmationMessage,
-		CreatedByUserID:     derefString(createdByUserID),
+		ID:                       id,
+		CircleID:                 derefString(circleID),
+		Name:                     name,
+		Description:              description,
+		IsPublic:                 isPublic,
+		IsOpen:                   isOpenWindow(openAt, closeAt),
+		OpenAt:                   openAt,
+		CloseAt:                  closeAt,
+		CreatedAt:                createdAt,
+		UpdatedAt:                updatedAt,
+		MaxAnswers:               maxAnswers,
+		AnswerableTags:           append([]string{}, answerableTags...),
+		ConfirmationMessage:      confirmationMessage,
+		CreatedByUserID:          derefString(createdByUserID),
+		StaffNotificationUserIDs: append([]string{}, staffNotificationUserIDs...),
 	}
 }
 
@@ -370,6 +384,13 @@ func optionalString(value string) *string {
 	}
 	s := value
 	return &s
+}
+
+func emptyIfNil(values []string) []string {
+	if values == nil {
+		return []string{}
+	}
+	return values
 }
 
 func derefString(value *string) string {

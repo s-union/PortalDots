@@ -9,6 +9,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime, formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
+import StaffUserPicker from '@/components/staff/StaffUserPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -61,6 +62,7 @@ const editForm = ref({
   maxAnswers: 1,
   answerableTags: [] as string[],
   confirmationMessage: '',
+  staffNotificationUserIds: [] as string[],
   isPublic: true
 })
 
@@ -105,6 +107,7 @@ watch(
       maxAnswers: value.maxAnswers,
       answerableTags: [...value.answerableTags],
       confirmationMessage: value.confirmationMessage,
+      staffNotificationUserIds: [...value.staffNotificationUserIds],
       isPublic: value.isPublic
     }
   },
@@ -128,6 +131,7 @@ async function handleSaveForm() {
       maxAnswers: Math.max(1, Number(editForm.value.maxAnswers) || 1),
       answerableTags: editForm.value.answerableTags,
       confirmationMessage: editForm.value.confirmationMessage,
+      staffNotificationUserIds: editForm.value.staffNotificationUserIds,
       isPublic: editForm.value.isPublic
     })
   } catch (error) {
@@ -362,6 +366,20 @@ async function handleDeleteForm() {
                 />
               </FormField>
             </div>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow v-if="!isParticipationForm">
+          <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+            <div class="space-y-1">
+              <p class="text-base font-semibold text-body">スタッフ用控えの送信先</p>
+              <p class="text-xs text-muted-2">
+                回答があったときに「スタッフ用控え」のメールを送信するスタッフを選択します。未指定の場合、フォーム作成者が送信先になります。
+              </p>
+            </div>
+            <FormField label="スタッフ用控えの送信先">
+              <StaffUserPicker v-model="editForm.staffNotificationUserIds" name="staffNotificationUserIds" />
+            </FormField>
           </div>
         </SettingsRow>
 

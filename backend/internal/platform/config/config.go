@@ -136,20 +136,21 @@ type Document struct {
 }
 
 type Form struct {
-	ID                  string
-	CircleID            string
-	Name                string
-	Description         string
-	IsPublic            bool
-	IsOpen              bool
-	OpenAt              string
-	CloseAt             string
-	CreatedAt           string
-	UpdatedAt           string
-	MaxAnswers          int32
-	AnswerableTags      []string
-	ConfirmationMessage string
-	CreatedByUserID     string
+	ID                       string
+	CircleID                 string
+	Name                     string
+	Description              string
+	IsPublic                 bool
+	IsOpen                   bool
+	OpenAt                   string
+	CloseAt                  string
+	CreatedAt                string
+	UpdatedAt                string
+	MaxAnswers               int32
+	AnswerableTags           []string
+	ConfirmationMessage      string
+	CreatedByUserID          string
+	StaffNotificationUserIDs []string
 }
 
 type Tag struct {

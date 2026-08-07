@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormCreatePage from './create.vue'
-import { mockSessionBootstrapStaff, mockTag } from '@/mocks/data'
+import { mockSessionBootstrapStaff, mockStaffUser, mockStaffUser2, mockTag } from '@/mocks/data'
 
 const meta = {
   title: 'Pages/Staff/Forms/Create New',
@@ -15,6 +15,14 @@ const meta = {
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
         http.get('/v1/staff/tags', () => HttpResponse.json([mockTag])),
+        http.get('/v1/staff/forms/recipient-candidates', () =>
+          HttpResponse.json({
+            items: [mockStaffUser, mockStaffUser2],
+            page: 1,
+            pageSize: 20,
+            total: 2
+          })
+        ),
         http.post('/v1/staff/forms', () =>
           HttpResponse.json({
             circle: { id: '', name: '' },
