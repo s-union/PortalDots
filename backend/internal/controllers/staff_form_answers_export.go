@@ -111,11 +111,16 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c *echo.Context) e
 
 	archive := zip.NewWriter(tempFile)
 	created := 0
-	usedEntryNames := make(map[string]int)
+	usedEntryNames := make(map[string]bool)
 	usedCircleDirs := make(map[string]bool)
+	circleDirs := make(map[string]string)
 	for _, currentAnswer := range h.answers.ListByForm(c.Request().Context(), formValue.ID) {
-		circleName := circleNames[currentAnswer.CircleID]
-		circleDir := uniqueArchiveCircleDirectory(circleName, externalid.MustEncodeUUIDString(currentAnswer.CircleID), usedCircleDirs)
+		encodedCircleID := externalid.MustEncodeUUIDString(currentAnswer.CircleID)
+		circleDir, ok := circleDirs[encodedCircleID]
+		if !ok {
+			circleDir = uniqueArchiveCircleDirectory(circleNames[currentAnswer.CircleID], encodedCircleID, usedCircleDirs)
+			circleDirs[encodedCircleID] = circleDir
+		}
 		for _, upload := range h.answers.ListUploadsByAnswer(c.Request().Context(), currentAnswer.ID) {
 			if _, ok := uploadQuestions[upload.QuestionID]; !ok {
 				continue
@@ -127,7 +132,6 @@ func (h *staffFormHandlers) downloadStaffFormAnswerUploadsZIP(c *echo.Context) e
 
 			entryName := uniqueArchiveEntryName(usedEntryNames, archiveEntryPath(
 				circleDir,
-				circleName,
 				uploadQuestions[upload.QuestionID].Name,
 				fileUpload.Filename,
 			))
@@ -221,27 +225,34 @@ func uniqueArchiveCircleDirectory(circleName, encodedCircleID string, used map[s
 }
 
 // archiveEntryPath builds the ZIP entry name for one uploaded file so it is
-// readable after unzipping: <circleName>_<questionName>_<originalFilename>.
-func archiveEntryPath(circleDir, circleName, questionName, originalFilename string) string {
+// readable after unzipping: <circleDir>/<questionName>_<originalFilename>.
+func archiveEntryPath(circleDir, questionName, originalFilename string) string {
 	return fmt.Sprintf(
-		"%s/%s_%s_%s",
+		"%s/%s_%s",
 		circleDir,
-		sanitizeArchiveFilename(circleName),
 		sanitizeArchiveFilename(questionName),
 		sanitizeArchiveFilename(originalFilename),
 	)
 }
 
-// uniqueArchiveEntryName deduplicates ZIP entry names with a counter kept
-// before the file extension, preserving the extension on every duplicate.
-func uniqueArchiveEntryName(used map[string]int, name string) string {
-	count := used[name]
-	used[name] = count + 1
-	if count == 0 {
+// uniqueArchiveEntryName registers name as used and returns it, appending a
+// counter before the extension when the name is already taken. The counter
+// advances past any candidate that is already used, so an original file named
+// e.g. 資料-1.pdf never collides with a generated 資料-1.pdf.
+func uniqueArchiveEntryName(used map[string]bool, name string) string {
+	if !used[name] {
+		used[name] = true
 		return name
 	}
 	ext := filepath.Ext(name)
-	return fmt.Sprintf("%s-%d%s", strings.TrimSuffix(name, ext), count, ext)
+	stem := strings.TrimSuffix(name, ext)
+	for count := 1; ; count++ {
+		candidate := fmt.Sprintf("%s-%d%s", stem, count, ext)
+		if !used[candidate] {
+			used[candidate] = true
+			return candidate
+		}
+	}
 }
 
 func (h *staffFormHandlers) shouldNotifyStaffFormAnswer(formID string, isPublic bool) bool {
