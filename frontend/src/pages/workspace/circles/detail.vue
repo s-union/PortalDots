@@ -82,6 +82,7 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
+const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
 
 const isDirty = computed(() => {
   const detail = detailQuery.data.value
@@ -95,7 +96,11 @@ const isDirty = computed(() => {
     form.groupNameYomi !== detail.groupNameYomi ||
     form.participationTypeId !== detail.participationTypeId ||
     form.notes !== detail.notes
-  return basicInfoChanged || isFormAnswerDraftDirty(draft.value, detail.answer ?? null, questions.value)
+  return (
+    basicInfoChanged ||
+    isFormAnswerDraftDirty(draft.value, detail.answer ?? null, questions.value) ||
+    hasUnuploadedFiles.value
+  )
 })
 const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
 

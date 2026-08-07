@@ -72,8 +72,13 @@ const remainingAnswerCount = computed(() => {
   }
   return Math.max(form.value.maxAnswers - answers.value.length, 0)
 })
+const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
 useUnsavedChangesGuard(
-  computed(() => isFormAnswerDraftDirty(draft.value, selectedAnswer.value, form?.value?.questions ?? []))
+  computed(
+    () =>
+      isFormAnswerDraftDirty(draft.value, selectedAnswer.value, form?.value?.questions ?? []) ||
+      hasUnuploadedFiles.value
+  )
 )
 </script>
 

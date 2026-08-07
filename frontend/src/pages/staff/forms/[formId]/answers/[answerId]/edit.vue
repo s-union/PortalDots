@@ -54,8 +54,11 @@ const errorMessage = ref('')
 const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
-const isDirty = computed(() =>
-  isFormAnswerDraftDirty(draft.value, answerQuery.data.value?.answer, answerQuery.data.value?.form.questions ?? [])
+const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
+const isDirty = computed(
+  () =>
+    isFormAnswerDraftDirty(draft.value, answerQuery.data.value?.answer, answerQuery.data.value?.form.questions ?? []) ||
+    hasUnuploadedFiles.value
 )
 const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
 const notificationMessage = computed(() => {
