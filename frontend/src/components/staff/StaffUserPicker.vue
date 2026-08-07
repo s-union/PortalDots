@@ -12,7 +12,8 @@ const {
   emptyMessage = 'スタッフは未選択です。',
   id,
   ariaInvalid,
-  ariaDescribedBy
+  ariaDescribedBy,
+  initialSearchQuery = ''
 } = defineProps<{
   modelValue: string[]
   disabled?: boolean
@@ -22,13 +23,14 @@ const {
   id?: string
   ariaInvalid?: boolean
   ariaDescribedBy?: string
+  initialSearchQuery?: string
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [string[]]
 }>()
 
-const searchQuery = ref('')
+const searchQuery = ref(initialSearchQuery)
 const selectedUsers = ref<StaffUser[]>([])
 
 const usersQuery = useStaffUsersQuery(
@@ -48,14 +50,19 @@ const suggestions = computed(() =>
 
 watch(
   () => modelValue,
-  async (userIDs) => {
-    const existing = new Map<string, StaffUser>(selectedUsers.value.map((user) => [user.id, user]))
-    const next: StaffUser[] = []
-    for (const userID of userIDs) {
-      const cached = existing.get(userID)
-      next.push(cached ?? (await loadUser(userID)))
-    }
-    selectedUsers.value = next
+  (userIDs, _oldValue, onInvalidate) => {
+    let cancelled = false
+    onInvalidate(() => {
+      cancelled = true
+    })
+
+    void (async () => {
+      const existing = new Map<string, StaffUser>(selectedUsers.value.map((user) => [user.id, user]))
+      const results = await Promise.all(userIDs.map((userID) => existing.get(userID) ?? loadUser(userID)))
+      if (!cancelled) {
+        selectedUsers.value = results
+      }
+    })()
   },
   { immediate: true }
 )
@@ -138,6 +145,7 @@ function handleKeydown(event: KeyboardEvent) {
         <span>{{ user.displayName }}</span>
         <button
           class="inline-flex h-5 w-5 items-center justify-center rounded-full text-primary/70 transition hover:bg-primary/15 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          :aria-label="`${user.displayName} を外す`"
           :disabled="disabled"
           type="button"
           :title="`${user.displayName} を外す`"
@@ -149,7 +157,7 @@ function handleKeydown(event: KeyboardEvent) {
     </div>
     <p v-else class="text-base text-muted">{{ emptyMessage }}</p>
 
-    <label class="grid gap-2 text-base text-body">
+    <div class="grid gap-2">
       <input
         :id="id"
         v-model="searchQuery"
@@ -163,7 +171,7 @@ function handleKeydown(event: KeyboardEvent) {
         type="text"
         @keydown="handleKeydown"
       />
-    </label>
+    </div>
 
     <div v-if="suggestions.length > 0" class="rounded border border-border bg-surface-light p-3">
       <p class="text-xs font-medium text-muted-2">候補</p>

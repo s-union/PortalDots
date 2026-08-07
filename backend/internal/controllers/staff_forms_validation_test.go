@@ -222,8 +222,9 @@ func TestValidateStaffNotificationUsers(t *testing.T) {
 	t.Parallel()
 
 	users := useradmin.NewStaticRepository(config.AuthUser{ID: "auth-user"}, []config.User{
-		{ID: "staff-a", ContactEmail: "staff-a@example.com"},
-		{ID: "staff-b", ContactEmail: "staff-b@example.com"},
+		{ID: "staff-a", ContactEmail: "staff-a@example.com", Permissions: []string{"staff.forms.answers.read"}},
+		{ID: "staff-b", ContactEmail: "staff-b@example.com", Permissions: []string{"staff.forms.answers.read"}},
+		{ID: "staff-c", ContactEmail: "staff-c@example.com"},
 	})
 	h := &staffFormHandlers{users: users}
 
@@ -233,6 +234,11 @@ func TestValidateStaffNotificationUsers(t *testing.T) {
 
 	errors := h.validateStaffNotificationUsers(nil, []string{"staff-a", "missing-user"})
 	if !reflect.DeepEqual(errors["staffNotificationUserIds"], []string{"送信先に指定されたユーザーが存在しません"}) {
+		t.Fatalf("unexpected errors: %#v", errors)
+	}
+
+	errors = h.validateStaffNotificationUsers(nil, []string{"staff-a", "staff-c"})
+	if !reflect.DeepEqual(errors["staffNotificationUserIds"], []string{"送信先に指定されたユーザーにはフォーム回答の閲覧権限がありません"}) {
 		t.Fatalf("unexpected errors: %#v", errors)
 	}
 }

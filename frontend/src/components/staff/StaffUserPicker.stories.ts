@@ -4,6 +4,8 @@ import { mockStaffUser, mockStaffUser2 } from '@/mocks/data'
 import { http, HttpResponse } from 'msw'
 import StaffUserPicker from './StaffUserPicker.vue'
 
+const allUsers = [mockStaffUser, mockStaffUser2]
+
 const meta = {
   title: 'UI/Staff/StaffUserPicker',
   component: StaffUserPicker,
@@ -16,16 +18,18 @@ const meta = {
   parameters: {
     msw: {
       handlers: [
-        http.get('/v1/staff/users', () =>
-          HttpResponse.json({
-            items: [mockStaffUser, mockStaffUser2],
-            page: 1,
-            pageSize: 20,
-            total: 2
-          })
-        ),
-        http.get('/v1/staff/users/{userID}', ({ request }) =>
-          HttpResponse.json(request.url.includes('staff-2') ? mockStaffUser2 : mockStaffUser)
+        http.get('/v1/staff/users', ({ request }) => {
+          const url = new URL(request.url)
+          const query = (url.searchParams.get('query') ?? '').trim().toLowerCase()
+          const items = query
+            ? allUsers.filter((user) =>
+                [user.displayName, ...(user.loginIds ?? [])].some((field) => field.toLowerCase().includes(query))
+              )
+            : allUsers
+          return HttpResponse.json({ items, page: 1, pageSize: 20, total: items.length })
+        }),
+        http.get('/v1/staff/users/{userID}', ({ params }) =>
+          HttpResponse.json(params.userID === 'staff-2' ? mockStaffUser2 : mockStaffUser)
         )
       ]
     }
@@ -49,6 +53,34 @@ export const Empty: Story = {
         placeholder="スタッフを検索して追加"
         empty-message="スタッフは未選択です。"
       />
+    `
+  })
+}
+
+export const MidSearchWithResults: Story = {
+  args: { modelValue: [], initialSearchQuery: '鈴木' },
+  render: () => ({
+    components: { StaffUserPicker },
+    setup() {
+      const selectedUserIDs = ref<string[]>([])
+      return { selectedUserIDs }
+    },
+    template: `
+      <StaffUserPicker v-model="selectedUserIDs" initial-search-query="鈴木" />
+    `
+  })
+}
+
+export const NoResults: Story = {
+  args: { modelValue: [], initialSearchQuery: '存在しない' },
+  render: () => ({
+    components: { StaffUserPicker },
+    setup() {
+      const selectedUserIDs = ref<string[]>([])
+      return { selectedUserIDs }
+    },
+    template: `
+      <StaffUserPicker v-model="selectedUserIDs" initial-search-query="存在しない" />
     `
   })
 }

@@ -67,6 +67,21 @@ describe('StaffUserPicker', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([[['staff-user-1']]])
   })
 
+  it('shows suggestions matching the initial search query', async () => {
+    const wrapper = mount(StaffUserPicker, {
+      props: {
+        modelValue: [],
+        name: 'staffNotificationUserIds',
+        initialSearchQuery: '鈴木'
+      },
+      global: { plugins: [createQueryPlugin()] }
+    })
+    await flushPromises()
+
+    const suggestionButton = wrapper.findAll('button').find((button) => button.text().includes('鈴木 二郎'))
+    expect(suggestionButton).toBeDefined()
+  })
+
   it('removes a selected user', async () => {
     const wrapper = mountPicker(['staff-user-1'])
     await flushPromises()

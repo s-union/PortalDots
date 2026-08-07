@@ -123,14 +123,21 @@ func normalizeQuestionOptions(options []string) []string {
 }
 
 // validateStaffNotificationUsers returns validation errors when a configured
-// staff-copy recipient does not reference an existing user. Access is not
-// checked here: recipients are re-checked against the current formAnswers.read
-// entitlement whenever an answer mail is sent.
+// staff-copy recipient does not reference an existing user or no longer holds
+// the formAnswers.read entitlement. Recipients are additionally re-checked
+// against the current entitlement whenever an answer mail is sent, so a user
+// de-privileged after the form was saved is still skipped at send time.
 func (h *staffFormHandlers) validateStaffNotificationUsers(c *echo.Context, userIDs []string) map[string][]string {
 	for _, userID := range userIDs {
-		if _, err := h.users.Find(userID); err != nil {
+		userValue, err := h.users.Find(userID)
+		if err != nil {
 			return map[string][]string{
 				"staffNotificationUserIds": {"送信先に指定されたユーザーが存在しません"},
+			}
+		}
+		if !hasCurrentFormAnswerAccess(userValue) {
+			return map[string][]string{
+				"staffNotificationUserIds": {"送信先に指定されたユーザーにはフォーム回答の閲覧権限がありません"},
 			}
 		}
 	}
