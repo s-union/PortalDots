@@ -17,7 +17,8 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import { useCreateCircleMutation, useParticipationTypeRegistrationFormQuery } from '@/features/circles/queries'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
-import { useFormAnswerEditorDraft } from '@/features/forms/answers'
+import { isFormAnswerDraftDirty, useFormAnswerEditorDraft } from '@/features/forms/answers'
+import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage } from '@/lib/api/validation'
 import { useFormValidation, circleRegistrationFormSchema, buildFormAnswerSchema } from '@/lib/form-validation'
@@ -35,6 +36,18 @@ const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateC
 const participationTypesQuery = useParticipationTypesQuery(canCreateCircleRegistration)
 
 const form = reactive({
+  name: '',
+  nameYomi: '',
+  groupName: '',
+  groupNameYomi: '',
+  participationTypeId: '',
+  notes: ''
+})
+
+// Snapshot of the values the server auto-fills (URL participation type, group
+// name for existing leaders). Only user edits beyond this snapshot count as
+// unsaved input.
+const formBaseline = ref({
   name: '',
   nameYomi: '',
   groupName: '',
@@ -75,6 +88,35 @@ const {
   markTouched: markAnswerTouched
 } = useFormValidation({ schema: answerSchema, form: draft })
 
+const isDirty = computed(() => {
+  const basicInfoChanged =
+    form.name !== formBaseline.value.name ||
+    form.nameYomi !== formBaseline.value.nameYomi ||
+    form.groupName !== formBaseline.value.groupName ||
+    form.groupNameYomi !== formBaseline.value.groupNameYomi ||
+    form.participationTypeId !== formBaseline.value.participationTypeId ||
+    form.notes !== formBaseline.value.notes
+  return basicInfoChanged || isFormAnswerDraftDirty(draft.value, null, questions.value)
+})
+const { clear: clearUnsavedChangesGuard, confirmBeforeSwitching } = useUnsavedChangesGuard(isDirty)
+const answerDraftDirty = () => isFormAnswerDraftDirty(draft.value, null, questions.value)
+
+// Changing the participation type swaps the question set and rebuilds the
+// draft, discarding any answers typed under the current set. Only that draft
+// is at risk (basic info is kept), so the switch confirms on the draft alone.
+function handleParticipationTypeChange(event: Event) {
+  const nextId = (event.target as HTMLSelectElement).value
+  if (nextId === form.participationTypeId) {
+    return
+  }
+  if (!confirmBeforeSwitching(answerDraftDirty)) {
+    ;(event.target as HTMLSelectElement).value = form.participationTypeId
+    return
+  }
+  form.participationTypeId = nextId
+  markTouched('participationTypeId')
+}
+
 const canChangeGroupName = computed(() => registrationFormQuery.data.value?.canChangeGroupName ?? true)
 const requiresMemberStep = computed(() => {
   if (selectedParticipationType.value) {
@@ -101,6 +143,7 @@ watch(
     }
 
     form.participationTypeId = requestedId
+    formBaseline.value.participationTypeId = requestedId
   },
   { immediate: true }
 )
@@ -113,9 +156,11 @@ watch(
     }
     if (!form.groupName || !canChangeGroupName.value) {
       form.groupName = registration.groupName
+      formBaseline.value.groupName = registration.groupName
     }
     if (!form.groupNameYomi || !canChangeGroupName.value) {
       form.groupNameYomi = registration.groupNameYomi
+      formBaseline.value.groupNameYomi = registration.groupNameYomi
     }
   },
   { immediate: true }
@@ -147,6 +192,7 @@ async function handleSubmit() {
       notes: form.notes,
       details: draft.value
     })
+    clearUnsavedChangesGuard()
     await router.push(requiresMemberStep.value ? '/workspace/circles/members' : '/workspace/circles/confirm')
   } catch (error) {
     errorMessage.value = extractValidationMessage(error, '企画の作成に失敗しました。入力内容をご確認ください。')
@@ -199,11 +245,11 @@ async function handleSubmit() {
             required
           >
             <select
-              v-model="form.participationTypeId"
+              :value="form.participationTypeId"
               name="participationTypeId"
               :class="{ 'border-danger': getFieldError('participationTypeId') }"
               @blur="markTouched('participationTypeId')"
-              @change="markTouched('participationTypeId')"
+              @change="handleParticipationTypeChange"
             >
               <option value="">選択してください</option>
               <option v-for="pt in participationTypesQuery.data.value ?? []" :key="pt.id" :value="pt.id">

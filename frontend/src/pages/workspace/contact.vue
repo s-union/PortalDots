@@ -18,6 +18,7 @@ import {
   useSubmitContactMutation
 } from '@/features/contact/api'
 import { useSessionStore } from '@/features/session/store'
+import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useFormValidation, contactFormSchema } from '@/lib/form-validation'
 import { cn } from '@/lib/ui/cn'
 import { buttonVariants } from '@/lib/ui/variants'
@@ -49,6 +50,10 @@ const { getFieldError, markTouched, validateAll } = useFormValidation({
   schema: contactFormSchema,
   form: computed(() => form)
 })
+
+useUnsavedChangesGuard(
+  computed(() => form.categoryId !== '' || form.ccSubleader !== true || form.body !== '' || selectedFile.value !== null)
+)
 
 // Clear the stale server-side error whenever the user changes or removes the attachment.
 watch(selectedFile, () => {
