@@ -5,6 +5,7 @@ export const UNSAVED_CHANGES_CONFIRM_MESSAGE = '入力内容が保存されて�
 
 export interface UnsavedChangesGuardControls {
   clear: () => void
+  confirmBeforeSwitching: (dirty?: MaybeRefOrGetter<boolean>) => boolean
 }
 
 /**
@@ -18,6 +19,14 @@ export interface UnsavedChangesGuardControls {
  * `clear()` suppresses the guard for the current dirty state, so call it right
  * before a post-submit redirect the guard must not block. The guard re-arms
  * itself as soon as `isDirty` turns dirty again.
+ *
+ * Same-page context switches that rebuild the form from a different source
+ * (e.g. switching the selected answer via a route query) also discard unsaved
+ * input. Call `confirmBeforeSwitching()` before performing such a switch; it
+ * returns whether the switch may proceed and asks via `window.confirm` when
+ * the guard is active. Pass a narrower `dirty` condition when only part of the
+ * page's input is at risk (e.g. a draft that a different question set would
+ * rebuild).
  *
  * The in-app confirmation currently uses `window.confirm`; follow-up
  * https://github.com/s-union/PortalDots/pull/495 moves it to `useConfirm()`.
@@ -70,10 +79,17 @@ export function useUnsavedChangesGuard(
     window.removeEventListener('beforeunload', handleBeforeUnload)
   }
 
+  function confirmBeforeSwitching(dirty: MaybeRefOrGetter<boolean> = isDirty): boolean {
+    if (isCleared.value || !toValue(dirty)) {
+      return true
+    }
+    return window.confirm(message)
+  }
+
   onUnmounted(() => {
     stopWatching()
     window.removeEventListener('beforeunload', handleBeforeUnload)
   })
 
-  return { clear }
+  return { clear, confirmBeforeSwitching }
 }

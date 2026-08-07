@@ -7,10 +7,13 @@ import { useUnsavedChangesGuard, UNSAVED_CHANGES_CONFIRM_MESSAGE } from './useUn
 function createHarness() {
   const dirty = ref(false)
   const clear = ref<() => void>(() => undefined)
+  const confirmBeforeSwitching = ref<() => boolean>(() => true)
 
   const GuardHost = defineComponent({
     setup() {
-      clear.value = useUnsavedChangesGuard(dirty).clear
+      const controls = useUnsavedChangesGuard(dirty)
+      clear.value = controls.clear
+      confirmBeforeSwitching.value = controls.confirmBeforeSwitching
       return () => h('div')
     }
   })
@@ -27,7 +30,7 @@ function createHarness() {
     ]
   })
 
-  return { dirty, clear, App, router }
+  return { dirty, clear, confirmBeforeSwitching, App, router }
 }
 
 async function mountHarness() {
@@ -141,5 +144,51 @@ describe('useUnsavedChangesGuard', () => {
     await router.push('/other')
     expect(confirmSpy).toHaveBeenCalled()
     expect(router.currentRoute.value.path).toBe('/')
+  })
+
+  it('confirmBeforeSwitching returns true and asks nothing while clean', async () => {
+    const { dirty, confirmBeforeSwitching } = await mountHarness()
+    const confirmSpy = vi.spyOn(window, 'confirm')
+
+    dirty.value = false
+    await nextTick()
+    expect(confirmBeforeSwitching.value()).toBe(true)
+    expect(confirmSpy).not.toHaveBeenCalled()
+  })
+
+  it('confirmBeforeSwitching asks for confirmation while dirty', async () => {
+    const { dirty, confirmBeforeSwitching } = await mountHarness()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    dirty.value = true
+    await nextTick()
+    expect(confirmBeforeSwitching.value()).toBe(false)
+    expect(confirmSpy).toHaveBeenCalledWith(UNSAVED_CHANGES_CONFIRM_MESSAGE)
+
+    confirmSpy.mockReturnValue(true)
+    expect(confirmBeforeSwitching.value()).toBe(true)
+  })
+
+  it('confirmBeforeSwitching lets a dirty switch proceed after clear()', async () => {
+    const { dirty, clear, confirmBeforeSwitching } = await mountHarness()
+    const confirmSpy = vi.spyOn(window, 'confirm')
+
+    dirty.value = true
+    await nextTick()
+    clear.value()
+    await nextTick()
+
+    expect(confirmBeforeSwitching.value()).toBe(true)
+    expect(confirmSpy).not.toHaveBeenCalled()
+  })
+
+  it('confirmBeforeSwitching honours a narrower dirty condition', async () => {
+    const { dirty, confirmBeforeSwitching } = await mountHarness()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    dirty.value = true
+    await nextTick()
+    expect(confirmBeforeSwitching.value(() => false)).toBe(true)
+    expect(confirmSpy).not.toHaveBeenCalled()
   })
 })
