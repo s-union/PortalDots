@@ -56,12 +56,16 @@ func (h *workspaceHandlers) listPages(c *echo.Context) error {
 	pages := h.pages.ListForCircle(c.Request().Context(), circleTags, c.QueryParam("query"))
 	pagination := readPagesPagination(c)
 	total := len(pages)
+	totalUnfiltered := total
 	if h.pages.SupportsPagination(c.Request().Context()) {
 		total = h.pages.CountForCircle(c.Request().Context(), circleTags, c.QueryParam("query"))
+		totalUnfiltered = h.pages.CountForCircle(c.Request().Context(), circleTags, "")
 		page, pageSize := models.NormalizePagination(pagination, total)
 		pagination.Page = page
 		pagination.PageSize = pageSize
 		pages = h.pages.ListForCirclePaginated(c.Request().Context(), circleTags, c.QueryParam("query"), pageSize, (page-1)*pageSize)
+	} else {
+		totalUnfiltered = len(h.pages.ListForCircle(c.Request().Context(), circleTags, ""))
 	}
 
 	readPageIDs := listReadPageIDSet(c.Request().Context(), h.pages, currentSession.User.ID, pages)
@@ -73,14 +77,15 @@ func (h *workspaceHandlers) listPages(c *echo.Context) error {
 
 	if h.pages.SupportsPagination(c.Request().Context()) {
 		return c.JSON(http.StatusOK, models.PaginatedResponse[pageSummaryResponse]{
-			Items:    response,
-			Page:     pagination.Page,
-			PageSize: pagination.PageSize,
-			Total:    total,
+			Items:           response,
+			Page:            pagination.Page,
+			PageSize:        pagination.PageSize,
+			Total:           total,
+			TotalUnfiltered: totalUnfiltered,
 		})
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+	return c.JSON(http.StatusOK, paginateItems(response, pagination, totalUnfiltered))
 }
 
 func (h *workspaceHandlers) getPage(c *echo.Context) error {

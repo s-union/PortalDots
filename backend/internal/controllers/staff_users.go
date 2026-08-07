@@ -49,6 +49,11 @@ func (h *staffUserHandlers) listStaffUsers(c *echo.Context) error {
 		return statusError(c, status)
 	}
 
+	unfilteredUsers, err := h.users.List()
+	if err != nil {
+		return internalError(c)
+	}
+
 	query := escapeIlikePattern(c.QueryParam("query"))
 	users, err := h.users.ListByQuery(query)
 	if err != nil {
@@ -81,7 +86,7 @@ func (h *staffUserHandlers) listStaffUsers(c *echo.Context) error {
 		response = append(response, mapStaffUser(currentUser))
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+	return c.JSON(http.StatusOK, paginateItems(response, pagination, len(unfilteredUsers)))
 }
 
 func (h *staffUserHandlers) getStaffUser(c *echo.Context) error {

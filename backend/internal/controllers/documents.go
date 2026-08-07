@@ -60,7 +60,7 @@ func (h *workspaceHandlers) listDocuments(c *echo.Context) error {
 	}
 
 	pagination := readDocumentsPagination(c)
-	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+	return c.JSON(http.StatusOK, paginateItems(response, pagination, len(documents)))
 }
 
 func (h *workspaceHandlers) getDocument(c *echo.Context) error {

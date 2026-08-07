@@ -13,6 +13,6 @@ func readPagination(c *echo.Context) models.PaginationParams {
 
 // paginateItems applies pagination to a slice and returns a paginated response.
 // This is a convenience wrapper around models.PaginateItems.
-func paginateItems[T any](items []T, pagination models.PaginationParams) models.PaginatedResponse[T] {
-	return models.PaginateItems(items, pagination)
+func paginateItems[T any](items []T, pagination models.PaginationParams, totalUnfiltered int) models.PaginatedResponse[T] {
+	return models.PaginateItems(items, pagination, totalUnfiltered)
 }

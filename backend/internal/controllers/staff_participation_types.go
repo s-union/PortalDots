@@ -120,11 +120,13 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c *echo.Context)
 		return internalError(c)
 	}
 
+	unfilteredCount := 0
 	filtered := make([]staffCircleResponse, 0)
 	for _, currentCircle := range circles {
 		if currentCircle.ParticipationTypeID != participationType.ID {
 			continue
 		}
+		unfilteredCount++
 		item := mapStaffCircle(currentCircle)
 		if !matchesStaffCircleSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffCircleFilterResolver(item), filterQueries, filterMode) {
 			continue
@@ -135,7 +137,7 @@ func (h *staffCircleHandlers) listStaffParticipationTypeCircles(c *echo.Context)
 		return strings.Compare(a.Name, b.Name)
 	})
 
-	return c.JSON(http.StatusOK, paginateItems(filtered, readPagination(c)))
+	return c.JSON(http.StatusOK, paginateItems(filtered, readPagination(c), unfilteredCount))
 }
 
 func (h *staffCircleHandlers) downloadStaffParticipationTypeCirclesCSV(c *echo.Context) error {

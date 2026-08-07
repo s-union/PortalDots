@@ -131,12 +131,16 @@ func (h *publicHomeHandlers) listPublicPages(c *echo.Context) error {
 	pages := h.pages.ListGuest(c.Request().Context(), c.QueryParam("query"))
 	pagination := readPagesPagination(c)
 	total := len(pages)
+	totalUnfiltered := total
 	if h.pages.SupportsPagination(c.Request().Context()) {
 		total = h.pages.CountGuest(c.Request().Context(), c.QueryParam("query"))
+		totalUnfiltered = h.pages.CountGuest(c.Request().Context(), "")
 		page, pageSize := models.NormalizePagination(pagination, total)
 		pagination.Page = page
 		pagination.PageSize = pageSize
 		pages = h.pages.ListGuestPaginated(c.Request().Context(), c.QueryParam("query"), pageSize, (page-1)*pageSize)
+	} else {
+		totalUnfiltered = len(h.pages.ListGuest(c.Request().Context(), ""))
 	}
 
 	response := make([]pageSummaryResponse, 0, len(pages))
@@ -155,14 +159,15 @@ func (h *publicHomeHandlers) listPublicPages(c *echo.Context) error {
 
 	if h.pages.SupportsPagination(c.Request().Context()) {
 		return c.JSON(http.StatusOK, models.PaginatedResponse[pageSummaryResponse]{
-			Items:    response,
-			Page:     pagination.Page,
-			PageSize: pagination.PageSize,
-			Total:    total,
+			Items:           response,
+			Page:            pagination.Page,
+			PageSize:        pagination.PageSize,
+			Total:           total,
+			TotalUnfiltered: totalUnfiltered,
 		})
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+	return c.JSON(http.StatusOK, paginateItems(response, pagination, totalUnfiltered))
 }
 
 func (h *publicHomeHandlers) getPublicPage(c *echo.Context) error {
