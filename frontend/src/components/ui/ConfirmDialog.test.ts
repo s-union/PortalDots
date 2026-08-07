@@ -1,0 +1,188 @@
+import { defineComponent, ref } from 'vue'
+import { afterEach, describe, expect, it } from 'vitest'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import ConfirmDialog from './ConfirmDialog.vue'
+import { dismissConfirm, pendingConfirm, useConfirm } from './useConfirm'
+
+const wrappers: VueWrapper[] = []
+
+function mountConfirm() {
+  const result = ref<boolean | null>(null)
+  const Demo = defineComponent({
+    setup() {
+      const api = useConfirm()
+      return {
+        ask: () => {
+          void api
+            .confirm({ title: '確認', message: '続行しますか？', confirmText: 'はい', cancelText: 'いいえ' })
+            .then((value) => {
+              result.value = value
+            })
+        }
+      }
+    },
+    template: `<button id="ask" type="button" @click="ask">確認する</button>`
+  })
+
+  const wrapper = mount(
+    defineComponent({
+      components: { ConfirmDialog, Demo },
+      template: `
+        <div>
+          <ConfirmDialog />
+          <Demo />
+        </div>
+      `
+    }),
+    { attachTo: document.body }
+  )
+  wrappers.push(wrapper)
+  return { wrapper, result }
+}
+
+function getDialog(): HTMLDialogElement {
+  const dialog = document.body.querySelector('dialog')
+  if (!(dialog instanceof HTMLDialogElement)) {
+    throw new Error('dialog element not found in document body')
+  }
+  return dialog
+}
+
+function findButton(label: string): HTMLButtonElement {
+  const button = [...getDialog().querySelectorAll('button')].find((candidate) => candidate.textContent?.includes(label))
+  if (!(button instanceof HTMLButtonElement)) {
+    throw new Error(`confirm button "${label}" not found`)
+  }
+  return button
+}
+
+afterEach(() => {
+  for (const wrapper of wrappers) {
+    wrapper.unmount()
+  }
+  wrappers.length = 0
+  if (pendingConfirm.value) {
+    dismissConfirm(false)
+  }
+  document.body.innerHTML = ''
+})
+
+describe('ConfirmDialog', () => {
+  it('resolves true when the confirm button is clicked', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    const dialog = getDialog()
+    expect(dialog.hasAttribute('open')).toBe(true)
+    expect(dialog.textContent).toContain('続行しますか？')
+
+    findButton('はい').click()
+    await flushPromises()
+
+    expect(result.value).toBe(true)
+    expect(getDialog().hasAttribute('open')).toBe(false)
+  })
+
+  it('resolves false when the cancel button is clicked', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    findButton('いいえ').click()
+    await flushPromises()
+
+    expect(result.value).toBe(false)
+    expect(getDialog().hasAttribute('open')).toBe(false)
+  })
+
+  it('resolves false when closed with Escape', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    getDialog().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+
+    expect(result.value).toBe(false)
+    expect(getDialog().hasAttribute('open')).toBe(false)
+  })
+
+  it('resolves false when the backdrop is clicked', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    getDialog().dispatchEvent(new MouseEvent('click', { bubbles: false }))
+    await flushPromises()
+
+    expect(result.value).toBe(false)
+  })
+
+  it('works when mounted as a sibling of the consumer', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    const dialog = getDialog()
+    expect(dialog.hasAttribute('open')).toBe(true)
+
+    findButton('はい').click()
+    await flushPromises()
+
+    expect(result.value).toBe(true)
+  })
+
+  it('resolves false when unmounted while a confirmation is pending', async () => {
+    const { wrapper, result } = mountConfirm()
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    expect(getDialog().hasAttribute('open')).toBe(true)
+
+    wrapper.unmount()
+    await flushPromises()
+
+    expect(result.value).toBe(false)
+    expect(pendingConfirm.value).toBeNull()
+  })
+
+  it('gives the dialog an accessible name from the message when no title is provided', async () => {
+    const result = ref<boolean | null>(null)
+    const Demo = defineComponent({
+      setup() {
+        const api = useConfirm()
+        return {
+          ask: () => {
+            void api.confirm({ message: 'タイトルなしの確認' }).then((value) => {
+              result.value = value
+            })
+          }
+        }
+      },
+      template: `<button id="ask" type="button" @click="ask">確認する</button>`
+    })
+    const wrapper = mount(
+      defineComponent({
+        components: { ConfirmDialog, Demo },
+        template: `
+          <div>
+            <ConfirmDialog />
+            <Demo />
+          </div>
+        `
+      }),
+      { attachTo: document.body }
+    )
+    wrappers.push(wrapper)
+
+    await wrapper.get('#ask').trigger('click')
+    await flushPromises()
+
+    const dialog = getDialog()
+    const labelledBy = dialog.getAttribute('aria-labelledby')
+    expect(labelledBy).toBeTruthy()
+    const nameElement = labelledBy ? document.getElementById(labelledBy) : null
+    expect(nameElement?.textContent).toContain('タイトルなしの確認')
+  })
+})
