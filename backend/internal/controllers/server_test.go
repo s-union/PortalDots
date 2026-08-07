@@ -3124,6 +3124,13 @@ func TestStaffTagsColorValidation(t *testing.T) {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	}
 
+	for _, invalidColor := range []string{"", "  "} {
+		recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "空文字の色", "color": invalidColor})
+		if recorder.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("expected create with color %q to be rejected, got %d, body=%s", invalidColor, recorder.Code, recorder.Body.String())
+		}
+	}
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "green"})
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
@@ -3148,9 +3155,40 @@ func TestStaffTagsColorValidation(t *testing.T) {
 		t.Fatalf("expected color-less update to keep green, got %q", preservedTag.Color)
 	}
 
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "blue"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var blueTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &blueTag); err != nil {
+		t.Fatalf("unmarshal blue tag: %v", err)
+	}
+	if blueTag.Color != "blue" {
+		t.Fatalf("expected tag color blue, got %q", blueTag.Color)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var latestTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &latestTag); err != nil {
+		t.Fatalf("unmarshal latest tag: %v", err)
+	}
+	if latestTag.Color != "blue" {
+		t.Fatalf("expected color-less update to keep the latest colour blue, got %q", latestTag.Color)
+	}
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "teal"})
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
+	}
+
+	for _, invalidColor := range []string{"", "  "} {
+		recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": invalidColor})
+		if recorder.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("expected update with color %q to be rejected, got %d, body=%s", invalidColor, recorder.Code, recorder.Body.String())
+		}
 	}
 
 	recorder = doJSONRequest(t, server, cookies, http.MethodPost, "/v1/staff/tags", map[string]any{"name": "色指定なし"})

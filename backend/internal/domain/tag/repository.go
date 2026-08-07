@@ -28,7 +28,10 @@ type Tag struct {
 type Repository interface {
 	List() ([]Tag, error)
 	Create(name, color string) (Tag, error)
-	Update(id, name, color string) (Tag, error)
+	// Update sets name and, when color is non-nil, color. A nil color leaves
+	// the stored colour untouched so omitted fields never roll back concurrent
+	// updates.
+	Update(id, name string, color *string) (Tag, error)
 	Delete(id string) error
 }
 
@@ -43,10 +46,13 @@ func NormalizeColor(color string) string {
 }
 
 // IsValidColor reports whether color is one of the palette tokens stored in
-// the tags table. Unknown tokens are rejected server-side before touching the
-// database.
+// the tags table. An empty or whitespace-only value is rejected: the default
+// only applies when the field is omitted from a request, never when it is
+// sent explicitly. Unknown tokens are rejected server-side before touching
+// the database.
 func IsValidColor(color string) bool {
-	return slices.Contains(validColors, NormalizeColor(color))
+	color = strings.TrimSpace(color)
+	return color != "" && slices.Contains(validColors, NormalizeColor(color))
 }
 
 type MemoryRepository struct {
@@ -103,7 +109,7 @@ func (r *MemoryRepository) Create(name, color string) (Tag, error) {
 	return created, nil
 }
 
-func (r *MemoryRepository) Update(id, name, color string) (Tag, error) {
+func (r *MemoryRepository) Update(id, name string, color *string) (Tag, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -113,7 +119,9 @@ func (r *MemoryRepository) Update(id, name, color string) (Tag, error) {
 		}
 		updated := r.items[index]
 		updated.Name = name
-		updated.Color = NormalizeColor(color)
+		if color != nil {
+			updated.Color = NormalizeColor(*color)
+		}
 		updated.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 		r.items = append(r.items[:index], r.items[index+1:]...)
 		insertAt, _ := slices.BinarySearchFunc(r.items, updated, func(item Tag, target Tag) int {

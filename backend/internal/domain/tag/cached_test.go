@@ -27,14 +27,16 @@ func (m *mockRepository) Create(name, color string) (Tag, error) {
 	return tag, nil
 }
 
-func (m *mockRepository) Update(id, name, color string) (Tag, error) {
+func (m *mockRepository) Update(id, name string, color *string) (Tag, error) {
 	if m.updateErr != nil {
 		return Tag{}, m.updateErr
 	}
 	for i, item := range m.items {
 		if item.ID == id {
 			m.items[i].Name = name
-			m.items[i].Color = color
+			if color != nil {
+				m.items[i].Color = *color
+			}
 			return m.items[i], nil
 		}
 	}
@@ -110,7 +112,7 @@ func TestCachedRepository_UpdateInvalidatesCache(t *testing.T) {
 	repo := NewCachedRepository(mock)
 
 	_, _ = repo.List()
-	_, _ = repo.Update("1", "updated", "gray")
+	_, _ = repo.Update("1", "updated", ptr("gray"))
 	_, _ = repo.List()
 
 	if mock.listCallCount != 2 {

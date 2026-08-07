@@ -43,7 +43,7 @@ func (r *CachedRepository) Create(name, color string) (Tag, error) {
 	return tag, nil
 }
 
-func (r *CachedRepository) Update(id, name, color string) (Tag, error) {
+func (r *CachedRepository) Update(id, name string, color *string) (Tag, error) {
 	tag, err := r.inner.Update(id, name, color)
 	if err != nil {
 		return Tag{}, err

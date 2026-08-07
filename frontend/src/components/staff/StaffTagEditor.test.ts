@@ -113,4 +113,28 @@ describe('StaffTagEditor', () => {
       'purple'
     ])
   })
+
+  it('groups the colour radios in a fieldset with a legend', () => {
+    const wrapper = mountEditor()
+
+    const fieldset = wrapper.find('fieldset')
+    expect(fieldset.exists()).toBe(true)
+    expect(fieldset.find('legend').text()).toContain('タグの色')
+
+    const radios = wrapper.findAll('input[name="color"]')
+    expect(radios.length).toBe(6)
+    for (const radio of radios) {
+      expect(radio.element.closest('label')).not.toBeNull()
+    }
+  })
+
+  it('does not nest radio labels inside another label', () => {
+    const wrapper = mountEditor()
+
+    const labels = wrapper.findAll('label')
+    expect(labels.length).toBeGreaterThan(0)
+    for (const label of labels) {
+      expect(label.find('label').exists()).toBe(false)
+    }
+  })
 })

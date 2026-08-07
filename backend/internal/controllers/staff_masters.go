@@ -208,19 +208,13 @@ func (h *staffMastersHandlers) updateStaffTag(c *echo.Context) error {
 	if err != nil {
 		return internalError(c)
 	}
-	color := tag.DefaultColor
+	var color *string
 	if request.Color != nil {
 		if !tag.IsValidColor(*request.Color) {
 			return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
 		}
-		color = tag.NormalizeColor(*request.Color)
-	} else {
-		for _, existing := range existingTags {
-			if existing.ID == tagID {
-				color = existing.Color
-				break
-			}
-		}
+		normalized := tag.NormalizeColor(*request.Color)
+		color = &normalized
 	}
 	for _, existing := range existingTags {
 		if existing.ID != tagID && strings.EqualFold(existing.Name, request.Name) {

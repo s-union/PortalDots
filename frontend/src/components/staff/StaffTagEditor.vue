@@ -91,7 +91,12 @@ const { errorMessage, successMessage, handleSave, handleDelete, isSaving, isDele
       />
     </FormField>
 
-    <FormField label="タグの色" label-class="font-medium" helper="タグ一覧や絞り込みでタグを色分けして表示します。">
+    <FormField
+      as="fieldset"
+      label="タグの色"
+      label-class="font-medium"
+      helper="タグ一覧や絞り込みでタグを色分けして表示します。"
+    >
       <div class="flex flex-wrap gap-2">
         <label
           v-for="option in colorOptions"

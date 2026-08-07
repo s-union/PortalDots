@@ -3,6 +3,7 @@ package tag
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
 )
@@ -53,11 +54,15 @@ func (r *SQLCRepository) Create(name, color string) (Tag, error) {
 	}, nil
 }
 
-func (r *SQLCRepository) Update(id, name, color string) (Tag, error) {
+func (r *SQLCRepository) Update(id, name string, color *string) (Tag, error) {
+	var colorValue pgtype.Text
+	if color != nil {
+		colorValue = pgtype.Text{String: *color, Valid: true}
+	}
 	row, err := r.queries.UpdateTag(context.Background(), dbgen.UpdateTagParams{
 		ID:    id,
 		Name:  name,
-		Color: color,
+		Color: colorValue,
 	})
 	if err != nil {
 		return Tag{}, err
