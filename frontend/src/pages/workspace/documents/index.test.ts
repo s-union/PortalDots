@@ -45,10 +45,11 @@ describe('DocumentsIndexPage', () => {
             ],
             page: 2,
             pageSize: 10,
-            total: 21
+            total: 21,
+            totalUnfiltered: 21
           })
         }
-        return HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0 })
+        return HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0, totalUnfiltered: 0 })
       })
     )
 

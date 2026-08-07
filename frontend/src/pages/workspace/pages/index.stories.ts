@@ -22,7 +22,8 @@ const meta = {
             items: [mockPage, { ...mockPage, id: 'page-2', title: '2つ目のお知らせ', isNew: false }],
             page: 1,
             pageSize: 10,
-            total: 2
+            total: 2,
+            totalUnfiltered: 2
           })
         )
       ]
@@ -45,7 +46,9 @@ export const Empty: Story = {
             currentCircle: { id: 'circle-1', name: 'テストサークル' }
           })
         ),
-        http.get('/v1/pages', () => HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0 }))
+        http.get('/v1/pages', () =>
+          HttpResponse.json({ items: [], page: 1, pageSize: 10, total: 0, totalUnfiltered: 0 })
+        )
       ]
     }
   }

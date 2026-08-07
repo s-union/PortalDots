@@ -62,7 +62,8 @@ describe('StaffPermissionsPage', () => {
           ],
           page: 1,
           pageSize: 20,
-          total: 2
+          total: 2,
+          totalUnfiltered: 2
         })
       )
     )

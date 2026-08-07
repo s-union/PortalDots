@@ -17,7 +17,8 @@ const meta = {
             items: [mockPlace, { ...mockPlace, id: 'place-2', name: 'サブステージ', type: 2 }],
             page: 1,
             pageSize: 20,
-            total: 2
+            total: 2,
+            totalUnfiltered: 2
           })
         ),
         http.post('/v1/staff/places', () => HttpResponse.json(mockPlace)),

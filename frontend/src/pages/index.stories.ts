@@ -56,7 +56,9 @@ export const Authenticated: Story = {
         ),
         http.get('/v1/circles/current', () => HttpResponse.json(null)),
         http.get('/v1/circles/current/detail', () => new HttpResponse(null, { status: 404 })),
-        http.get('/v1/forms', () => HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 }))
+        http.get('/v1/forms', () =>
+          HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0, totalUnfiltered: 0 })
+        )
       ]
     }
   }
@@ -75,7 +77,9 @@ export const StaffUser: Story = {
         http.get('/v1/circles', () => HttpResponse.json([])),
         http.get('/v1/circles/current', () => HttpResponse.json(null)),
         http.get('/v1/circles/current/detail', () => new HttpResponse(null, { status: 404 })),
-        http.get('/v1/forms', () => HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 }))
+        http.get('/v1/forms', () =>
+          HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0, totalUnfiltered: 0 })
+        )
       ]
     }
   }

@@ -4584,10 +4584,25 @@ func TestStaffFormRecipientCandidatesSearchAndDetail(t *testing.T) {
 			t.Fatalf("unexpected candidate in recipient search: %#v", candidate)
 		}
 	}
+	if result.TotalUnfiltered != len(eligibleIDs) {
+		t.Fatalf("expected %d unfiltered candidates, got %d", len(eligibleIDs), result.TotalUnfiltered)
+	}
 	if !slices.ContainsFunc(result.Items, func(candidate staffFormRecipientCandidateResponse) bool {
 		return candidate.ID == "0195ec00-0096-7000-8000-000000000001" && candidate.ContactEmail == "recipient@example.com" && candidate.DisplayName == "Recipient User"
 	}) {
 		t.Fatalf("expected recipient candidate with contact email, got %#v", result.Items)
+	}
+
+	recorder = doJSONRequest(t, server, cookies, http.MethodGet, "/v1/staff/forms/recipient-candidates?query=recipient", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var filteredResult models.PaginatedResponse[staffFormRecipientCandidateResponse]
+	if err := json.Unmarshal(recorder.Body.Bytes(), &filteredResult); err != nil {
+		t.Fatalf("unmarshal filtered recipient candidates response: %v", err)
+	}
+	if filteredResult.Total != 1 || filteredResult.TotalUnfiltered != len(eligibleIDs) {
+		t.Fatalf("expected 1 filtered candidate out of %d, got total=%d totalUnfiltered=%d", len(eligibleIDs), filteredResult.Total, filteredResult.TotalUnfiltered)
 	}
 
 	var raw struct {

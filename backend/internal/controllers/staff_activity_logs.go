@@ -42,7 +42,7 @@ func (h *staffAdminHandlers) listStaffActivityLogs(c *echo.Context) error {
 		response = append(response, item)
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+	return c.JSON(http.StatusOK, paginateItems(response, pagination, len(logs)))
 }
 
 func matchesStaffActivityLogSearch(item staffActivityLogResponse, query string) bool {

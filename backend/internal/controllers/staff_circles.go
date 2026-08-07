@@ -105,7 +105,7 @@ func (h *staffCircleHandlers) listStaffCircles(c *echo.Context) error {
 		response = append(response, item)
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+	return c.JSON(http.StatusOK, paginateItems(response, pagination, len(circles)))
 }
 
 func (h *staffCircleHandlers) listAllStaffCircles(c *echo.Context) error {

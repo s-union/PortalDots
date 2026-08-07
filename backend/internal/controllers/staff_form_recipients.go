@@ -47,7 +47,21 @@ func (h *staffFormHandlers) searchStaffFormRecipientCandidates(c *echo.Context) 
 		candidates = append(candidates, mapStaffFormRecipientCandidate(userValue))
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(candidates, readPagination(c)))
+	totalUnfiltered := len(candidates)
+	if c.QueryParam("query") != "" {
+		unfilteredUsers, err := h.users.List()
+		if err != nil {
+			return internalError(c)
+		}
+		totalUnfiltered = 0
+		for _, userValue := range unfilteredUsers {
+			if hasCurrentFormAnswerAccess(userValue) {
+				totalUnfiltered++
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, paginateItems(candidates, readPagination(c), totalUnfiltered))
 }
 
 func (h *staffFormHandlers) getStaffFormRecipientCandidate(c *echo.Context) error {

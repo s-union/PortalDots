@@ -81,7 +81,16 @@ func (h *staffUserHandlers) listStaffUsers(c *echo.Context) error {
 		response = append(response, mapStaffUser(currentUser))
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(response, pagination))
+	totalUnfiltered := len(users)
+	if c.QueryParam("query") != "" || len(filterQueries) > 0 {
+		unfilteredUsers, err := h.users.List()
+		if err != nil {
+			return internalError(c)
+		}
+		totalUnfiltered = len(unfilteredUsers)
+	}
+
+	return c.JSON(http.StatusOK, paginateItems(response, pagination, totalUnfiltered))
 }
 
 func (h *staffUserHandlers) getStaffUser(c *echo.Context) error {

@@ -93,14 +93,19 @@ export async function fetchStaffParticipationTypeCircles(
   )
 }
 
-export async function fetchAllStaffParticipationTypeCircles(typeId: string, params?: StaffListQueryParamsInput) {
+export async function fetchAllStaffParticipationTypeCircles(
+  typeId: string,
+  params?: StaffListQueryParamsInput
+): Promise<{ items: StaffParticipationTypeCircle[]; totalUnfiltered?: number }> {
   const pageSize = 100
   let page = 1
   const allItems: StaffParticipationTypeCircle[] = []
+  let totalUnfiltered: number | undefined
 
   while (true) {
     const current = await fetchStaffParticipationTypeCircles(typeId, page, pageSize, params)
     allItems.push(...current.items)
+    totalUnfiltered = current.totalUnfiltered
 
     const totalPages = Math.max(1, Math.ceil(current.total / current.pageSize))
     if (page >= totalPages) {
@@ -109,7 +114,7 @@ export async function fetchAllStaffParticipationTypeCircles(typeId: string, para
     page += 1
   }
 
-  return allItems
+  return { items: allItems, totalUnfiltered }
 }
 
 export async function createStaffParticipationType(payload: MutateStaffParticipationTypePayload, csrfToken: string) {

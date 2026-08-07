@@ -70,7 +70,8 @@ describe('StaffParticipationTypeCirclesPage', () => {
           })),
           page: 1,
           pageSize,
-          total: 2
+          total: 2,
+          totalUnfiltered: 2
         })
       })
     )

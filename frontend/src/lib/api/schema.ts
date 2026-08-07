@@ -145,7 +145,8 @@ export const paginatedResultSchema = <TItem extends z.ZodType>(itemSchema: TItem
     items: z.array(itemSchema),
     page: z.number(),
     pageSize: z.number(),
-    total: z.number()
+    total: z.number(),
+    totalUnfiltered: z.number().optional()
   })
 
 export const pageSummarySchema = z.object({

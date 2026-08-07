@@ -20,10 +20,11 @@ type PaginationParams struct {
 
 // PaginatedResponse represents a paginated API response.
 type PaginatedResponse[T any] struct {
-	Items    []T `json:"items"`
-	Page     int `json:"page"`
-	PageSize int `json:"pageSize"`
-	Total    int `json:"total"`
+	Items           []T `json:"items"`
+	Page            int `json:"page"`
+	PageSize        int `json:"pageSize"`
+	Total           int `json:"total"`
+	TotalUnfiltered int `json:"totalUnfiltered"`
 }
 
 // ReadPagination extracts pagination parameters from a request query string.
@@ -41,17 +42,20 @@ func ReadPagination(c *echo.Context) PaginationParams {
 }
 
 // PaginateItems applies pagination to a slice and returns a paginated response.
-func PaginateItems[T any](items []T, pagination PaginationParams) PaginatedResponse[T] {
+// totalUnfiltered is the permission-scoped count of items the current user would
+// see with no filters applied; it may differ from len(items) when the slice is filtered.
+func PaginateItems[T any](items []T, pagination PaginationParams, totalUnfiltered int) PaginatedResponse[T] {
 	total := len(items)
 	page, pageSize := NormalizePagination(pagination, total)
 
 	start := (page - 1) * pageSize
 	if start >= total {
 		return PaginatedResponse[T]{
-			Items:    []T{},
-			Page:     page,
-			PageSize: pageSize,
-			Total:    total,
+			Items:           []T{},
+			Page:            page,
+			PageSize:        pageSize,
+			Total:           total,
+			TotalUnfiltered: totalUnfiltered,
 		}
 	}
 
@@ -61,10 +65,11 @@ func PaginateItems[T any](items []T, pagination PaginationParams) PaginatedRespo
 	}
 
 	return PaginatedResponse[T]{
-		Items:    items[start:end],
-		Page:     page,
-		PageSize: pageSize,
-		Total:    total,
+		Items:           items[start:end],
+		Page:            page,
+		PageSize:        pageSize,
+		Total:           total,
+		TotalUnfiltered: totalUnfiltered,
 	}
 }
 

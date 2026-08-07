@@ -51,11 +51,13 @@ func (h *staffPermissionHandlers) listStaffPermissions(c *echo.Context) error {
 		return internalError(c)
 	}
 
+	unfilteredCount := 0
 	items := make([]staffPermissionUserSummaryResponse, 0, len(users))
 	for _, currentUser := range users {
 		if !isPermissionManagementTarget(currentUser) {
 			continue
 		}
+		unfilteredCount++
 		item := mapStaffPermissionUserSummary(currentSession, currentUser)
 		if !matchesStaffPermissionSearch(item, c.QueryParam("query")) {
 			continue
@@ -63,7 +65,7 @@ func (h *staffPermissionHandlers) listStaffPermissions(c *echo.Context) error {
 		items = append(items, item)
 	}
 
-	return c.JSON(http.StatusOK, paginateItems(items, readPagination(c)))
+	return c.JSON(http.StatusOK, paginateItems(items, readPagination(c), unfilteredCount))
 }
 
 func matchesStaffPermissionSearch(item staffPermissionUserSummaryResponse, query string) bool {
