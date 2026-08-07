@@ -3136,6 +3136,18 @@ func TestStaffTagsColorValidation(t *testing.T) {
 		t.Fatalf("expected updated tag color green, got %q", updatedTag.Color)
 	}
 
+	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body=%s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	var preservedTag staffTagResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &preservedTag); err != nil {
+		t.Fatalf("unmarshal preserved tag: %v", err)
+	}
+	if preservedTag.Color != "green" {
+		t.Fatalf("expected color-less update to keep green, got %q", preservedTag.Color)
+	}
+
 	recorder = doJSONRequest(t, server, cookies, http.MethodPut, "/v1/staff/tags/"+createdTag.ID, map[string]any{"name": "色付きタグ", "color": "teal"})
 	if recorder.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected status %d, got %d, body=%s", http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())

@@ -51,7 +51,7 @@ const { errorMessage, successMessage, handleSave, handleDelete, isSaving, isDele
   deleteMutation,
   resetFields: () => {
     name.value = tag?.name ?? ''
-    color.value = (tag?.color as TagColor) ?? 'gray'
+    color.value = tag?.color ?? 'gray'
   },
   validate: () => validateAll(),
   buildCreatePayload: () => ({ name: name.value, color: color.value }),

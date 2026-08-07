@@ -28,8 +28,8 @@ type staffTagResponse struct {
 }
 
 type mutateStaffTagRequest struct {
-	Name  string `json:"name"`
-	Color string `json:"color"`
+	Name  string  `json:"name"`
+	Color *string `json:"color"`
 }
 
 type staffPlaceResponse struct {
@@ -164,8 +164,12 @@ func (h *staffMastersHandlers) createStaffTag(c *echo.Context) error {
 	if request.Name == "" {
 		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
-	if !tag.IsValidColor(request.Color) {
-		return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
+	color := tag.DefaultColor
+	if request.Color != nil {
+		if !tag.IsValidColor(*request.Color) {
+			return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
+		}
+		color = tag.NormalizeColor(*request.Color)
 	}
 	existingTags, err := h.tags.List()
 	if err != nil {
@@ -177,7 +181,7 @@ func (h *staffMastersHandlers) createStaffTag(c *echo.Context) error {
 		}
 	}
 
-	created, err := h.tags.Create(request.Name, tag.NormalizeColor(request.Color))
+	created, err := h.tags.Create(request.Name, color)
 	if err != nil {
 		return internalError(c)
 	}
@@ -199,13 +203,24 @@ func (h *staffMastersHandlers) updateStaffTag(c *echo.Context) error {
 	if request.Name == "" {
 		return validationError(c, map[string][]string{"name": {"タグ名を入力してください"}})
 	}
-	if !tag.IsValidColor(request.Color) {
-		return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
-	}
 	tagID := c.Param("tagID")
 	existingTags, err := h.tags.List()
 	if err != nil {
 		return internalError(c)
+	}
+	color := tag.DefaultColor
+	if request.Color != nil {
+		if !tag.IsValidColor(*request.Color) {
+			return validationError(c, map[string][]string{"color": {"タグの色が正しくありません"}})
+		}
+		color = tag.NormalizeColor(*request.Color)
+	} else {
+		for _, existing := range existingTags {
+			if existing.ID == tagID {
+				color = existing.Color
+				break
+			}
+		}
 	}
 	for _, existing := range existingTags {
 		if existing.ID != tagID && strings.EqualFold(existing.Name, request.Name) {
@@ -213,7 +228,7 @@ func (h *staffMastersHandlers) updateStaffTag(c *echo.Context) error {
 		}
 	}
 
-	updated, err := h.tags.Update(tagID, request.Name, tag.NormalizeColor(request.Color))
+	updated, err := h.tags.Update(tagID, request.Name, color)
 	if errors.Is(err, tag.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "tag_not_found")
 	}

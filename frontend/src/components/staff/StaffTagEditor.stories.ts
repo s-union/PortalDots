@@ -58,3 +58,18 @@ export const EditExisting: Story = {
     msw: { handlers: tagMutationHandlers }
   }
 }
+
+export const EditExistingPurple: Story = {
+  args: {
+    tag: {
+      id: toTagId('tag-2'),
+      name: '音楽系',
+      color: 'purple',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+  },
+  parameters: {
+    msw: { handlers: tagMutationHandlers }
+  }
+}
