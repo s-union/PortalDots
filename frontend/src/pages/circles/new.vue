@@ -98,7 +98,24 @@ const isDirty = computed(() => {
     form.notes !== formBaseline.value.notes
   return basicInfoChanged || isFormAnswerDraftDirty(draft.value, null, questions.value)
 })
-const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
+const { clear: clearUnsavedChangesGuard, confirmBeforeSwitching } = useUnsavedChangesGuard(isDirty)
+const answerDraftDirty = () => isFormAnswerDraftDirty(draft.value, null, questions.value)
+
+// Changing the participation type swaps the question set and rebuilds the
+// draft, discarding any answers typed under the current set. Only that draft
+// is at risk (basic info is kept), so the switch confirms on the draft alone.
+function handleParticipationTypeChange(event: Event) {
+  const nextId = (event.target as HTMLSelectElement).value
+  if (nextId === form.participationTypeId) {
+    return
+  }
+  if (!confirmBeforeSwitching(answerDraftDirty)) {
+    ;(event.target as HTMLSelectElement).value = form.participationTypeId
+    return
+  }
+  form.participationTypeId = nextId
+  markTouched('participationTypeId')
+}
 
 const canChangeGroupName = computed(() => registrationFormQuery.data.value?.canChangeGroupName ?? true)
 const requiresMemberStep = computed(() => {
@@ -228,11 +245,11 @@ async function handleSubmit() {
             required
           >
             <select
-              v-model="form.participationTypeId"
+              :value="form.participationTypeId"
               name="participationTypeId"
               :class="{ 'border-danger': getFieldError('participationTypeId') }"
               @blur="markTouched('participationTypeId')"
-              @change="markTouched('participationTypeId')"
+              @change="handleParticipationTypeChange"
             >
               <option value="">選択してください</option>
               <option v-for="pt in participationTypesQuery.data.value ?? []" :key="pt.id" :value="pt.id">

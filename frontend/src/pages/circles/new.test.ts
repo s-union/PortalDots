@@ -543,4 +543,118 @@ describe('CircleCreatePage', () => {
     expect(router.currentRoute.value.path).toBe('/workspace/circles/members')
     expect(confirmSpy).not.toHaveBeenCalled()
   })
+
+  function setupParticipationSwitchHandlers() {
+    server.use(
+      http.get('/v1/participation-types', () => HttpResponse.json(twoParticipationTypes)),
+      http.get('/v1/participation-types/pt-exhibit/registration-form', () =>
+        HttpResponse.json({
+          ...registrationFormFixture,
+          questions: [
+            {
+              id: 'question-exhibit',
+              name: '出店内容',
+              description: '',
+              type: 'text',
+              isRequired: true,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: [],
+              priority: 1,
+              createdAt: '2026-01-01T00:00:00Z',
+              updatedAt: '2026-01-01T00:00:00Z'
+            }
+          ]
+        })
+      ),
+      http.get('/v1/participation-types/pt-food/registration-form', () =>
+        HttpResponse.json({
+          ...registrationFormFixture,
+          participationTypeId: 'pt-food',
+          participationTypeName: '模擬店',
+          formId: 'form-pt-food',
+          usersCountMin: 2,
+          usersCountMax: 6
+        })
+      ),
+      http.get('/v1/session/bootstrap', () =>
+        HttpResponse.json({
+          csrfToken: 'csrf-token',
+          currentCircle: { id: 'new-circle', name: 'テスト企画' },
+          featureFlags: [],
+          roles: ['participant'],
+          user: { id: 'demo-user', displayName: 'Demo User' }
+        })
+      )
+    )
+  }
+
+  function setupParticipationSwitchPage() {
+    const pinia = setupSession()
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/circles/new', component: CircleCreatePage }]
+    })
+    return { pinia, router }
+  }
+
+  function mountParticipationSwitchPage(
+    pinia: ReturnType<typeof setupSession>,
+    router: ReturnType<typeof createRouter>
+  ) {
+    return mount(CircleCreatePage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+  }
+
+  function findExhibitQuestionInput(wrapper: ReturnType<typeof mount>) {
+    const inputs = wrapper.findAll('input[type="text"]').filter((item) => !item.element.hasAttribute('readonly'))
+    const input = inputs[inputs.length - 1]
+    if (!input) {
+      throw new Error('Exhibit question input was not rendered')
+    }
+    return input
+  }
+
+  it('warns and keeps the participation type and draft when switching while dirty', async () => {
+    setupParticipationSwitchHandlers()
+    const { pinia, router } = setupParticipationSwitchPage()
+    const wrapper = mountParticipationSwitchPage(pinia, router)
+    await flushPromises()
+
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+
+    const questionInput = findExhibitQuestionInput(wrapper)
+    await questionInput.setValue('展示ブースで出店します')
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-food')
+    await flushPromises()
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect((wrapper.get('select[name="participationTypeId"]').element as HTMLSelectElement).value).toBe('pt-exhibit')
+    expect((findExhibitQuestionInput(wrapper).element as HTMLInputElement).value).toBe('展示ブースで出店します')
+  })
+
+  it('switches participation type after confirming while the draft is dirty', async () => {
+    setupParticipationSwitchHandlers()
+    const { pinia, router } = setupParticipationSwitchPage()
+    const wrapper = mountParticipationSwitchPage(pinia, router)
+    await flushPromises()
+
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
+    await flushPromises()
+
+    const questionInput = findExhibitQuestionInput(wrapper)
+    await questionInput.setValue('展示ブースで出店します')
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-food')
+    await flushPromises()
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect((wrapper.get('select[name="participationTypeId"]').element as HTMLSelectElement).value).toBe('pt-food')
+  })
 })

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -116,6 +116,10 @@ const savedUploads = [
 ]
 
 describe('FormDetailPage', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('renders Laravel-like question fields and saves an answer', async () => {
     let savedDetails: Record<string, string | string[]> = {}
     // SavedUploads は初期状態から存在する（元のテストと同じ挙動）
@@ -602,5 +606,379 @@ describe('FormDetailPage', () => {
       throw new Error('Create button was not rendered')
     }
     expect((createButton.element as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  function setupMultiAnswerHandlers() {
+    server.use(
+      http.get('/v1/forms/:formId', () =>
+        HttpResponse.json({
+          id: 'form-circle-a-1',
+          name: '搬入確認フォーム',
+          description: '搬入予定時刻と責任者情報を提出してください。',
+          openAt: '2026-03-01T00:00:00Z',
+          closeAt: '2026-03-20T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: [],
+          confirmationMessage: '',
+          isPublic: true,
+          isOpen: true,
+          currentCircleStatus: 'approved',
+          hasAnswer: true,
+          questions: [
+            {
+              id: 'question-text',
+              name: '搬入責任者',
+              description: '当日の責任者氏名',
+              type: 'text',
+              isRequired: true,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: [],
+              priority: 1,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            }
+          ]
+        })
+      ),
+      http.get('/v1/forms/:formId/answers', () =>
+        HttpResponse.json({
+          answers: [
+            {
+              id: 'answer-1',
+              body: '最初の回答',
+              updatedAt: '2026-03-05T10:00:00Z',
+              details: { 'question-text': ['山田'] },
+              uploads: []
+            },
+            {
+              id: 'answer-2',
+              body: '2番目の回答',
+              updatedAt: '2026-03-06T10:00:00Z',
+              details: { 'question-text': ['佐藤'] },
+              uploads: []
+            }
+          ]
+        })
+      ),
+      http.get('/v1/forms/:formId/answers/:answerId', ({ params }) => {
+        const isSecond = params.answerId === 'answer-2'
+        return HttpResponse.json({
+          answer: {
+            id: params.answerId,
+            body: isSecond ? '2番目の回答' : '最初の回答',
+            updatedAt: isSecond ? '2026-03-06T10:00:00Z' : '2026-03-05T10:00:00Z',
+            details: { 'question-text': [isSecond ? '佐藤' : '山田'] },
+            uploads: []
+          }
+        })
+      })
+    )
+  }
+
+  function findEditableTextInput(wrapper: ReturnType<typeof mount>) {
+    const input = wrapper.findAll('input[type="text"]').find((item) => !item.element.hasAttribute('readonly'))
+    if (!input) {
+      throw new Error('Editable text input was not rendered')
+    }
+    return input
+  }
+
+  function findAnswerButton(wrapper: ReturnType<typeof mount>, answerId: string) {
+    const button = wrapper.findAll('button[type="button"]').find((item) => item.text().includes(`回答ID : ${answerId}`))
+    if (!button) {
+      throw new Error(`Answer button for ${answerId} was not rendered`)
+    }
+    return button
+  }
+
+  function findCreateAnswerButton(wrapper: ReturnType<typeof mount>) {
+    const button = wrapper.findAll('button[type="button"]').find((item) => item.text().includes('新しい回答を作成'))
+    if (!button) {
+      throw new Error('Create answer button was not rendered')
+    }
+    return button
+  }
+
+  it('warns and keeps the current answer when switching to another answer while the draft is dirty', async () => {
+    setupMultiAnswerHandlers()
+
+    const pinia = setupSession()
+    const router = makeRouter()
+    await router.push('/workspace/forms/form-circle-a-1?answer=answer-1')
+    await router.isReady()
+
+    const wrapper = mount(FormDetailPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await findEditableTextInput(wrapper).setValue('未保存の編集')
+
+    await findAnswerButton(wrapper, 'answer-2').trigger('click')
+    await flushPromises()
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(router.currentRoute.value.query.answer).toBe('answer-1')
+    expect((findEditableTextInput(wrapper).element as HTMLInputElement).value).toBe('未保存の編集')
+  })
+
+  it('switches to another answer after confirming while the draft is dirty', async () => {
+    setupMultiAnswerHandlers()
+
+    const pinia = setupSession()
+    const router = makeRouter()
+    await router.push('/workspace/forms/form-circle-a-1?answer=answer-1')
+    await router.isReady()
+
+    const wrapper = mount(FormDetailPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await findEditableTextInput(wrapper).setValue('未保存の編集')
+
+    await findAnswerButton(wrapper, 'answer-2').trigger('click')
+
+    expect(confirmSpy).toHaveBeenCalled()
+    await vi.waitFor(
+      () => {
+        expect(router.currentRoute.value.query.answer).toBe('answer-2')
+      },
+      { timeout: 5000 }
+    )
+    await vi.waitFor(
+      () => {
+        expect((findEditableTextInput(wrapper).element as HTMLInputElement).value).toBe('佐藤')
+      },
+      { timeout: 5000 }
+    )
+  })
+
+  it('warns and does not create a new answer while the draft is dirty', async () => {
+    let createCalled = false
+    server.use(
+      http.get('/v1/forms/:formId', () =>
+        HttpResponse.json({
+          id: 'form-circle-a-1',
+          name: '搬入確認フォーム',
+          description: '搬入予定時刻と責任者情報を提出してください。',
+          openAt: '2026-03-01T00:00:00Z',
+          closeAt: '2026-03-20T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: [],
+          confirmationMessage: '',
+          isPublic: true,
+          isOpen: true,
+          currentCircleStatus: 'approved',
+          hasAnswer: true,
+          questions: [
+            {
+              id: 'question-text',
+              name: '搬入責任者',
+              description: '当日の責任者氏名',
+              type: 'text',
+              isRequired: true,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: [],
+              priority: 1,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            }
+          ]
+        })
+      ),
+      http.get('/v1/forms/:formId/answers', () =>
+        HttpResponse.json({
+          answers: [
+            {
+              id: 'answer-1',
+              body: '最初の回答',
+              updatedAt: '2026-03-05T10:00:00Z',
+              details: { 'question-text': ['山田'] },
+              uploads: []
+            }
+          ]
+        })
+      ),
+      http.get('/v1/forms/:formId/answers/:answerId', () =>
+        HttpResponse.json({
+          answer: {
+            id: 'answer-1',
+            body: '最初の回答',
+            updatedAt: '2026-03-05T10:00:00Z',
+            details: { 'question-text': ['山田'] },
+            uploads: []
+          }
+        })
+      ),
+      http.post('/v1/forms/:formId/answers', () => {
+        createCalled = true
+        return HttpResponse.json(
+          {
+            answer: {
+              id: 'answer-2',
+              body: '新しい回答',
+              updatedAt: '2026-03-07T10:00:00Z',
+              details: {},
+              uploads: []
+            }
+          },
+          { status: 201 }
+        )
+      })
+    )
+
+    const pinia = setupSession()
+    const router = makeRouter()
+    await router.push('/workspace/forms/form-circle-a-1')
+    await router.isReady()
+
+    const wrapper = mount(FormDetailPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await findEditableTextInput(wrapper).setValue('未保存の編集')
+
+    await findCreateAnswerButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(createCalled).toBe(false)
+    expect((findEditableTextInput(wrapper).element as HTMLInputElement).value).toBe('未保存の編集')
+  })
+
+  it('creates a new answer after confirming while the draft is dirty', async () => {
+    let createCalled = false
+    server.use(
+      http.get('/v1/forms/:formId', () =>
+        HttpResponse.json({
+          id: 'form-circle-a-1',
+          name: '搬入確認フォーム',
+          description: '搬入予定時刻と責任者情報を提出してください。',
+          openAt: '2026-03-01T00:00:00Z',
+          closeAt: '2026-03-20T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: [],
+          confirmationMessage: '',
+          isPublic: true,
+          isOpen: true,
+          currentCircleStatus: 'approved',
+          hasAnswer: true,
+          questions: [
+            {
+              id: 'question-text',
+              name: '搬入責任者',
+              description: '当日の責任者氏名',
+              type: 'text',
+              isRequired: true,
+              numberMin: null,
+              numberMax: null,
+              allowedTypes: '',
+              options: [],
+              priority: 1,
+              createdAt: '2026-03-01T00:00:00Z',
+              updatedAt: '2026-03-01T00:00:00Z'
+            }
+          ]
+        })
+      ),
+      http.get('/v1/forms/:formId/answers', () =>
+        HttpResponse.json({
+          answers: createCalled
+            ? [
+                {
+                  id: 'answer-1',
+                  body: '最初の回答',
+                  updatedAt: '2026-03-05T10:00:00Z',
+                  details: { 'question-text': ['山田'] },
+                  uploads: []
+                },
+                {
+                  id: 'answer-2',
+                  body: '新しい回答',
+                  updatedAt: '2026-03-07T10:00:00Z',
+                  details: {},
+                  uploads: []
+                }
+              ]
+            : [
+                {
+                  id: 'answer-1',
+                  body: '最初の回答',
+                  updatedAt: '2026-03-05T10:00:00Z',
+                  details: { 'question-text': ['山田'] },
+                  uploads: []
+                }
+              ]
+        })
+      ),
+      http.get('/v1/forms/:formId/answers/:answerId', ({ params }) =>
+        HttpResponse.json({
+          answer: {
+            id: params.answerId,
+            body: params.answerId === 'answer-2' ? '新しい回答' : '最初の回答',
+            updatedAt: params.answerId === 'answer-2' ? '2026-03-07T10:00:00Z' : '2026-03-05T10:00:00Z',
+            details: params.answerId === 'answer-2' ? {} : { 'question-text': ['山田'] },
+            uploads: []
+          }
+        })
+      ),
+      http.post('/v1/forms/:formId/answers', () => {
+        createCalled = true
+        return HttpResponse.json(
+          {
+            answer: {
+              id: 'answer-2',
+              body: '新しい回答',
+              updatedAt: '2026-03-07T10:00:00Z',
+              details: {},
+              uploads: []
+            }
+          },
+          { status: 201 }
+        )
+      })
+    )
+
+    const pinia = setupSession()
+    const router = makeRouter()
+    await router.push('/workspace/forms/form-circle-a-1')
+    await router.isReady()
+
+    const wrapper = mount(FormDetailPage, {
+      global: { plugins: [pinia, router, createQueryPlugin()] }
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await findEditableTextInput(wrapper).setValue('未保存の編集')
+
+    await findCreateAnswerButton(wrapper).trigger('click')
+
+    expect(confirmSpy).toHaveBeenCalled()
+    await vi.waitFor(
+      () => {
+        expect(createCalled).toBe(true)
+      },
+      { timeout: 5000 }
+    )
+    await vi.waitFor(
+      () => {
+        expect(router.currentRoute.value.query.answer).toBe('answer-2')
+      },
+      { timeout: 5000 }
+    )
   })
 })
