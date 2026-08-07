@@ -1,23 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { app, type EmailJob } from '../enqueue'
-import { TestD1Database } from './helpers/d1'
+import { createEnqueueEnv } from './helpers/enqueue-env'
 
-function createTestEnv(authToken = 'test-token') {
-  const testDb = new TestD1Database()
-  const createQueue = () => ({
-    send: vi.fn(),
-    sendBatch: undefined as ((messages: readonly EmailJob[]) => Promise<void>) | undefined
-  })
-  return {
-    HIGH_QUEUE: createQueue(),
-    NORMAL_QUEUE: createQueue(),
-    DB: testDb.drizzle,
-    AUTH_TOKEN: authToken,
-    testDb
-  }
-}
-
-async function enqueue(env: ReturnType<typeof createTestEnv>, payload: unknown): Promise<Response> {
+async function enqueue(env: ReturnType<typeof createEnqueueEnv>, payload: unknown): Promise<Response> {
   return app.request(
     '/enqueue',
     {
@@ -28,7 +13,7 @@ async function enqueue(env: ReturnType<typeof createTestEnv>, payload: unknown):
       },
       body: JSON.stringify(payload)
     },
-    env as never
+    env
   )
 }
 
@@ -48,7 +33,7 @@ function encodedQueueMessageSize(message: EmailJob): number {
 
 describe('/enqueue', () => {
   it('returns a generic error when AUTH_TOKEN is missing', async () => {
-    const env = createTestEnv('')
+    const env = createEnqueueEnv('')
     const res = await enqueue(env, validPayload)
 
     expect(res.status).toBe(500)
@@ -56,7 +41,7 @@ describe('/enqueue', () => {
   })
 
   it('returns 401 without authorization', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -64,13 +49,13 @@ describe('/enqueue', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(validPayload)
       },
-      env as never
+      env
     )
     expect(res.status).toBe(401)
   })
 
   it('returns 401 with wrong token', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -81,13 +66,13 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify(validPayload)
       },
-      env as never
+      env
     )
     expect(res.status).toBe(401)
   })
 
   it('returns 400 for invalid payload', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -98,13 +83,13 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify({})
       },
-      env as never
+      env
     )
     expect(res.status).toBe(400)
   })
 
   it('returns 400 for invalid from email', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -115,13 +100,13 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify({ ...validPayload, from: 'not-an-email' })
       },
-      env as never
+      env
     )
     expect(res.status).toBe(400)
   })
 
   it('returns 400 for empty to array', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -132,13 +117,13 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify({ ...validPayload, to: [] })
       },
-      env as never
+      env
     )
     expect(res.status).toBe(400)
   })
 
   it('returns 400 for unknown template', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -149,13 +134,13 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify({ ...validPayload, template: 'unknown-template' })
       },
-      env as never
+      env
     )
     expect(res.status).toBe(400)
   })
 
   it('enqueues to HIGH_QUEUE for priority=high', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -166,7 +151,7 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify({ ...validPayload, priority: 'high' })
       },
-      env as never
+      env
     )
     expect(res.status).toBe(200)
     const body = (await res.json()) as { status: string }
@@ -184,7 +169,7 @@ describe('/enqueue', () => {
   })
 
   it('enqueues to NORMAL_QUEUE for default priority', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const res = await app.request(
       '/enqueue',
       {
@@ -195,7 +180,7 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify(validPayload)
       },
-      env as never
+      env
     )
     expect(res.status).toBe(200)
     expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(1)
@@ -203,7 +188,7 @@ describe('/enqueue', () => {
   })
 
   it('creates one queue message per recipient', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const recipients = Array.from({ length: 120 }, (_, i) => `user${i}@example.com`)
     const res = await app.request(
       '/enqueue',
@@ -215,7 +200,7 @@ describe('/enqueue', () => {
         },
         body: JSON.stringify({ ...validPayload, to: recipients })
       },
-      env as never
+      env
     )
     expect(res.status).toBe(200)
     const body = (await res.json()) as { messageCount: number }
@@ -227,7 +212,7 @@ describe('/enqueue', () => {
   })
 
   it('uses queue batches of at most 100 one-recipient messages', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const sendBatch = vi.fn<(messages: readonly EmailJob[]) => Promise<void>>().mockResolvedValue(undefined)
     env.NORMAL_QUEUE.sendBatch = sendBatch
     const recipients = Array.from({ length: 120 }, (_, i) => `user${i}@example.com`)
@@ -247,9 +232,9 @@ describe('/enqueue', () => {
   })
 
   it('records chunk rows in D1 statements proportional to the number of queue batches, not recipients', async () => {
-    const fewerRecipientsEnv = createTestEnv()
+    const fewerRecipientsEnv = createEnqueueEnv()
     fewerRecipientsEnv.NORMAL_QUEUE.sendBatch = vi.fn().mockResolvedValue(undefined)
-    const moreRecipientsEnv = createTestEnv()
+    const moreRecipientsEnv = createEnqueueEnv()
     moreRecipientsEnv.NORMAL_QUEUE.sendBatch = vi.fn().mockResolvedValue(undefined)
 
     // Both recipient counts span exactly two 100-message queue batches, so the
@@ -268,7 +253,7 @@ describe('/enqueue', () => {
   })
 
   it('keeps serialized queue batches below the provider byte limit', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const sendBatch = vi.fn<(messages: readonly EmailJob[]) => Promise<void>>().mockResolvedValue(undefined)
     env.NORMAL_QUEUE.sendBatch = sendBatch
     const recipients = ['first@example.com', 'second@example.com', 'third@example.com']
@@ -282,17 +267,17 @@ describe('/enqueue', () => {
   })
 
   it('accepts an individual queue message at exactly 128 KB and rejects one byte more', async () => {
-    const calibrationEnv = createTestEnv()
+    const calibrationEnv = createEnqueueEnv()
     expect((await enqueue(calibrationEnv, validPayload)).status).toBe(200)
     const calibrationMessage = calibrationEnv.NORMAL_QUEUE.send.mock.calls[0][0]
     const bodyLength = 128_000 - encodedQueueMessageSize(calibrationMessage) + validPayload.body.length
 
-    const boundaryEnv = createTestEnv()
+    const boundaryEnv = createEnqueueEnv()
     const boundaryResponse = await enqueue(boundaryEnv, { ...validPayload, body: 'x'.repeat(bodyLength) })
     expect(boundaryResponse.status).toBe(200)
     expect(encodedQueueMessageSize(boundaryEnv.NORMAL_QUEUE.send.mock.calls[0][0])).toBe(128_000)
 
-    const oversizedEnv = createTestEnv()
+    const oversizedEnv = createEnqueueEnv()
     const oversizedResponse = await enqueue(oversizedEnv, {
       ...validPayload,
       body: 'x'.repeat(bodyLength + 1)
@@ -303,7 +288,7 @@ describe('/enqueue', () => {
   })
 
   it('counts body content duplicated in template variables toward the individual message limit', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const duplicatedBody = 'x'.repeat(70_000)
 
     const res = await enqueue(env, {
@@ -318,7 +303,7 @@ describe('/enqueue', () => {
   })
 
   it('rejects a recipient list above the producer limit', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const recipients = Array.from({ length: 501 }, (_, i) => `user${i}@example.com`)
     const res = await enqueue(env, { ...validPayload, to: recipients })
 
@@ -327,7 +312,7 @@ describe('/enqueue', () => {
   })
 
   it('marks job as enqueue_failed and records no chunk when queue send fails', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     env.NORMAL_QUEUE.send.mockRejectedValue(new Error('queue unavailable'))
     const res = await enqueue(env, validPayload)
     expect(res.status).toBe(500)
@@ -342,7 +327,7 @@ describe('/enqueue retries', () => {
   const bulkPayload = { ...validPayload, to: recipients }
 
   it('sends every chunk when the previous attempt only inserted the job row', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     env.NORMAL_QUEUE.send.mockRejectedValueOnce(new Error('queue unavailable'))
     expect((await enqueue(env, bulkPayload)).status).toBe(500)
     expect(await env.testDb.chunkMessageIds()).toEqual([])
@@ -356,7 +341,7 @@ describe('/enqueue retries', () => {
   })
 
   it('sends only the chunks the queue never accepted', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     env.NORMAL_QUEUE.send
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(undefined)
@@ -385,7 +370,7 @@ describe('/enqueue retries', () => {
   })
 
   it('retries only the unaccepted queue batch', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     const sendBatch = vi
       .fn<(messages: readonly EmailJob[]) => Promise<void>>()
       .mockResolvedValueOnce(undefined)
@@ -408,7 +393,7 @@ describe('/enqueue retries', () => {
   })
 
   it('is a no-op for a job whose chunks are all queued', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     expect((await enqueue(env, bulkPayload)).status).toBe(200)
     env.NORMAL_QUEUE.send.mockClear()
 
@@ -421,7 +406,7 @@ describe('/enqueue retries', () => {
   })
 
   it('rejects a changed recipient chunk for an existing job', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     expect((await enqueue(env, bulkPayload)).status).toBe(200)
     env.NORMAL_QUEUE.send.mockClear()
 
@@ -442,7 +427,7 @@ describe('/enqueue retries', () => {
     ['body', { body: 'Changed body' }],
     ['variables', { variables: { ...bulkPayload.variables, adminName: 'Replacement' } }]
   ])('rejects changed %s for an existing job', async (_field, change) => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     expect((await enqueue(env, bulkPayload)).status).toBe(200)
     env.NORMAL_QUEUE.send.mockClear()
     env.HIGH_QUEUE.send.mockClear()
@@ -455,7 +440,7 @@ describe('/enqueue retries', () => {
   })
 
   it('treats reordered variable keys as the same canonical payload', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     expect((await enqueue(env, bulkPayload)).status).toBe(200)
     env.NORMAL_QUEUE.send.mockClear()
 
@@ -469,7 +454,7 @@ describe('/enqueue retries', () => {
   })
 
   it('rejects a changed payload before resuming a partial retry', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     env.NORMAL_QUEUE.send
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(undefined)
@@ -484,7 +469,7 @@ describe('/enqueue retries', () => {
   })
 
   it('rejects an unbound legacy job identity', async () => {
-    const env = createTestEnv()
+    const env = createEnqueueEnv()
     await env.testDb.seedJob({
       jobId: 'job-1',
       status: 'enqueue_failed',

@@ -1,20 +1,35 @@
 import { describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import type { RouteLocationNormalized } from 'vue-router'
 import { buildCircleSelectorLocation } from '@/app/router/circleSelectorRedirect'
+import { useSessionStore } from '@/features/session/store'
 import { authGuard } from './auth'
 
-function createRoute(path: string, meta: Record<string, unknown> = {}) {
+function createRoute(path: string, meta: RouteLocationNormalized['meta'] = {}): RouteLocationNormalized {
   return {
+    name: undefined,
     path,
+    params: {},
+    query: {},
+    hash: '',
     fullPath: path,
+    matched: [],
+    redirectedFrom: undefined,
     meta
-  } as never
+  }
 }
 
 function createSessionStore(options: { isAuthenticated: boolean; currentCircle: null | { id: string; name: string } }) {
-  return {
-    isAuthenticated: options.isAuthenticated,
-    currentCircle: options.currentCircle
-  } as never
+  setActivePinia(createPinia())
+  const sessionStore = useSessionStore()
+  sessionStore.hydrate({
+    csrfToken: '',
+    currentCircle: options.currentCircle,
+    featureFlags: [],
+    roles: [],
+    user: options.isAuthenticated ? { id: 'user-1', displayName: 'Test User' } : null
+  })
+  return sessionStore
 }
 
 describe('authGuard', () => {

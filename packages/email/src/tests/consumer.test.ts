@@ -9,29 +9,7 @@ import { queueHandler } from '../consumer'
 import { emailJobChunks } from '../db/schema'
 import { renderTemplate } from '../templates'
 import { TestD1Database } from './helpers/d1'
-
-interface MessageLike {
-  body: unknown
-  ack: () => Promise<void>
-  retry: () => Promise<void>
-}
-
-function createMessageBatch(messages: MessageLike[]) {
-  return {
-    messages,
-    queue: 'test-queue',
-    metadata: {},
-    retryAll: vi.fn(),
-    ackAll: vi.fn()
-  }
-}
-
-function createEnv(emailSend = vi.fn().mockResolvedValue(undefined), db = new TestD1Database()) {
-  return {
-    DB: db.drizzle,
-    EMAIL: { send: emailSend }
-  }
-}
+import { createConsumerEnv, createMessageBatch, createQueueMessage } from './helpers/queue'
 
 describe('email queue consumer', () => {
   beforeEach(() => {
@@ -45,8 +23,8 @@ describe('email queue consumer', () => {
     const emailSend = vi.fn()
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -61,10 +39,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv(emailSend) as never)
+    await queueHandler(batch.messages, createConsumerEnv(emailSend))
     expect(emailSend).toHaveBeenCalledWith({
       to: ['a@example.com'],
       bcc: ['b@example.com'],
@@ -82,8 +60,8 @@ describe('email queue consumer', () => {
     const emailSend = vi.fn().mockRejectedValue(new Error('Send failed'))
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -98,10 +76,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv(emailSend) as never)
+    await queueHandler(batch.messages, createConsumerEnv(emailSend))
     expect(retry).toHaveBeenCalled()
     expect(ack).not.toHaveBeenCalled()
   })
@@ -113,8 +91,8 @@ describe('email queue consumer', () => {
     const emailSend = vi.fn().mockRejectedValue(new Error('Send failed'))
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -129,10 +107,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await expect(queueHandler(batch.messages as never, createEnv(emailSend) as never)).rejects.toBe(retryError)
+    await expect(queueHandler(batch.messages, createConsumerEnv(emailSend))).rejects.toBe(retryError)
     expect(ack).not.toHaveBeenCalled()
   })
 
@@ -141,8 +119,8 @@ describe('email queue consumer', () => {
     const retry = vi.fn()
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -157,10 +135,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv() as never)
+    await queueHandler(batch.messages, createConsumerEnv())
     expect(ack).toHaveBeenCalled()
     expect(vi.mocked(renderTemplate)).not.toHaveBeenCalled()
   })
@@ -170,17 +148,17 @@ describe('email queue consumer', () => {
     const retry = vi.fn()
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           template: 'unknown-template'
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv() as never)
+    await queueHandler(batch.messages, createConsumerEnv())
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
     expect(vi.mocked(renderTemplate)).not.toHaveBeenCalled()
@@ -195,8 +173,8 @@ describe('email queue consumer', () => {
     await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'sent' })
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -211,10 +189,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages, createConsumerEnv(emailSend, db))
     expect(emailSend).not.toHaveBeenCalled()
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
@@ -229,8 +207,8 @@ describe('email queue consumer', () => {
     await db.seedChunk({ messageId: 'job-1:0', jobId: 'job-1', chunkIndex: 0, status: 'processing' })
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -245,10 +223,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages, createConsumerEnv(emailSend, db))
     expect(emailSend).not.toHaveBeenCalled()
     expect(retry).toHaveBeenCalled()
     expect(ack).not.toHaveBeenCalled()
@@ -267,8 +245,8 @@ describe('email queue consumer', () => {
       .where(eq(emailJobChunks.messageId, 'job-1:0'))
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -283,10 +261,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages, createConsumerEnv(emailSend, db))
     expect(emailSend).toHaveBeenCalledTimes(1)
     expect(ack).toHaveBeenCalled()
     expect(retry).not.toHaveBeenCalled()
@@ -302,8 +280,8 @@ describe('email queue consumer', () => {
     const emailSend = vi.fn().mockRejectedValue(new Error('Send failed'))
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:1',
           chunkIndex: 1,
@@ -318,10 +296,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages, createConsumerEnv(emailSend, db))
     expect(await db.jobStatus('job-1')).toBe('sent')
     expect(retry).toHaveBeenCalled()
     expect(ack).not.toHaveBeenCalled()
@@ -338,8 +316,8 @@ describe('email queue consumer', () => {
     const emailSend = vi.fn().mockImplementation(() => db.breakWrites())
 
     const batch = createMessageBatch([
-      {
-        body: {
+      createQueueMessage(
+        {
           jobId: 'job-1',
           messageId: 'job-1:0',
           chunkIndex: 0,
@@ -354,10 +332,10 @@ describe('email queue consumer', () => {
         },
         ack,
         retry
-      }
+      )
     ])
 
-    await queueHandler(batch.messages as never, createEnv(emailSend, db) as never)
+    await queueHandler(batch.messages, createConsumerEnv(emailSend, db))
     expect(emailSend).toHaveBeenCalledTimes(1)
     // Proof the bookkeeping really failed, so the ack below is the "sent but
     // unrecorded" path rather than an ordinary success.

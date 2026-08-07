@@ -8,7 +8,8 @@ import { queueHandler } from '../consumer'
 import { emailJobChunks } from '../db/schema'
 import { app } from '../enqueue'
 import { renderTemplate } from '../templates'
-import { TestD1Database } from './helpers/d1'
+import { createEnqueueEnv } from './helpers/enqueue-env'
+import { createConsumerEnv, createMessageBatch, createQueueMessage } from './helpers/queue'
 
 const payload = {
   jobId: 'job-1',
@@ -22,19 +23,11 @@ const payload = {
 
 describe('enqueue → consumer delivery pipeline', () => {
   it('delivers every recipient exactly once across a partial enqueue and retry', async () => {
-    const db = new TestD1Database()
-    const env = {
-      HIGH_QUEUE: { send: vi.fn() },
-      NORMAL_QUEUE: {
-        send: vi
-          .fn()
-          .mockResolvedValueOnce(undefined)
-          .mockResolvedValueOnce(undefined)
-          .mockRejectedValueOnce(new Error('queue unavailable'))
-      },
-      DB: db.drizzle,
-      AUTH_TOKEN: 'test-token'
-    }
+    const env = createEnqueueEnv()
+    env.NORMAL_QUEUE.send
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('queue unavailable'))
 
     const res = await app.request(
       '/enqueue',
@@ -46,37 +39,27 @@ describe('enqueue → consumer delivery pipeline', () => {
         },
         body: JSON.stringify(payload)
       },
-      env as never
+      env
     )
 
     expect(res.status).toBe(500)
     expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(3)
     expect(await res.text()).toContain('Enqueue failed')
 
-    const firstAttemptMessages = env.NORMAL_QUEUE.send.mock.calls.slice(0, 2).map(([body]) => ({
-      body,
-      ack: vi.fn(),
-      retry: vi.fn()
-    }))
+    const firstAttemptMessages = env.NORMAL_QUEUE.send.mock.calls.slice(0, 2).map(([body]) => createQueueMessage(body))
 
     vi.mocked(renderTemplate).mockResolvedValue({ html: '<h1>Rendered</h1>', text: 'Rendered' })
     const emailSend = vi.fn().mockResolvedValue({ messageId: 'msg-1' })
 
     const consume = async (messages: typeof firstAttemptMessages) => {
-      const batch = {
-        messages,
-        queue: 'test-queue',
-        metadata: {},
-        retryAll: vi.fn(),
-        ackAll: vi.fn()
-      }
-      await queueHandler(batch.messages as never, { DB: db.drizzle, EMAIL: { send: emailSend } } as never)
+      const batch = createMessageBatch(messages)
+      await queueHandler(batch.messages, createConsumerEnv(emailSend, env.testDb))
     }
 
     await consume(firstAttemptMessages)
 
     expect(emailSend).toHaveBeenCalledTimes(2)
-    expect(await db.jobStatus('job-1')).toBe('enqueue_failed')
+    expect(await env.testDb.jobStatus('job-1')).toBe('enqueue_failed')
 
     env.NORMAL_QUEUE.send.mockReset()
     env.NORMAL_QUEUE.send.mockResolvedValue(undefined)
@@ -90,19 +73,15 @@ describe('enqueue → consumer delivery pipeline', () => {
         },
         body: JSON.stringify(payload)
       },
-      env as never
+      env
     )
     expect(retryResponse.status).toBe(200)
     expect(env.NORMAL_QUEUE.send).toHaveBeenCalledTimes(118)
 
-    const retryMessages = env.NORMAL_QUEUE.send.mock.calls.map(([body]) => ({
-      body,
-      ack: vi.fn(),
-      retry: vi.fn()
-    }))
+    const retryMessages = env.NORMAL_QUEUE.send.mock.calls.map(([body]) => createQueueMessage(body))
     await consume(retryMessages)
 
-    expect(await db.jobStatus('job-1')).toBe('sent')
+    expect(await env.testDb.jobStatus('job-1')).toBe('sent')
     const deliveredRecipients = emailSend.mock.calls.flatMap(([message]) => [
       ...(message.to as string[]),
       ...((message.bcc as string[] | undefined) ?? [])
@@ -116,7 +95,7 @@ describe('enqueue → consumer delivery pipeline', () => {
     }
 
     expect(vi.mocked(renderTemplate)).toHaveBeenCalledWith('markdown-notice', { appName: 'Test' })
-    const chunks = await db.drizzle
+    const chunks = await env.testDb.drizzle
       .select({ messageId: emailJobChunks.messageId, status: emailJobChunks.status })
       .from(emailJobChunks)
     expect(chunks).toHaveLength(120)
