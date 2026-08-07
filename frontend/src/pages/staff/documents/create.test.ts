@@ -26,7 +26,7 @@ describe('StaffDocumentCreatePage', () => {
     vi.restoreAllMocks()
   })
 
-  it('creates a staff document and resets form', async () => {
+  it('creates a staff document and redirects to its edit page', async () => {
     let postReceived = false
     let receivedName = ''
 
