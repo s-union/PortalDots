@@ -6,7 +6,7 @@ overrides:
   # declared parent ranges allow.
   hono: 4.12.34
   '@hono/node-server': 2.0.10
-  postcss: 8.5.18
+  postcss: 8.5.23
   # Only esbuild 0.18.20 was vulnerable, and it is reached solely through
   # drizzle-kit's deprecated @esbuild-kit/core-utils. Scoping the override
   # there leaves every other consumer, notably vite, on the esbuild it
