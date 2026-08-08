@@ -12,7 +12,7 @@ overrides:
   # there leaves every other consumer, notably vite, on the esbuild it
   # resolves for itself.
   '@esbuild-kit/core-utils>esbuild': 0.25.12
-  js-yaml: 4.3.0
+  js-yaml: 4.3.1
   brace-expansion: 2.1.4
 allowBuilds:
   esbuild: true
