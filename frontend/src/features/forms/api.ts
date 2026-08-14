@@ -1,12 +1,12 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import type * as z from 'zod'
+import type * as v from 'valibot'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import { formDetailSchema, formSummarySchema, parseWithSchema, type formQuestionSchema } from '@/lib/api/schema'
 import { useSessionStore } from '@/features/session/store'
 import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination'
-export type FormSummary = z.infer<typeof formSummarySchema>
-export type FormQuestion = z.infer<typeof formQuestionSchema>
-export type FormDetail = z.infer<typeof formDetailSchema>
+export type FormSummary = v.InferOutput<typeof formSummarySchema>
+export type FormQuestion = v.InferOutput<typeof formQuestionSchema>
+export type FormDetail = v.InferOutput<typeof formDetailSchema>
 
 export interface FormsPagination {
   page: number

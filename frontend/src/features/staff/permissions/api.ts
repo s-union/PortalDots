@@ -6,9 +6,9 @@ import { parseWithSchema, staffPermissionDetailSchema, staffPermissionUserSummar
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useSessionStore } from '@/features/session/store'
-import * as z from 'zod'
+import type * as v from 'valibot'
 
-export type StaffPermissionUserSummary = z.infer<typeof staffPermissionUserSummarySchema>
+export type StaffPermissionUserSummary = v.InferOutput<typeof staffPermissionUserSummarySchema>
 
 export interface StaffPermissionDefinition {
   name: string

@@ -1,6 +1,6 @@
 import { computed, ref, type MaybeRefOrGetter, toValue, watch } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import * as z from 'zod'
+import * as v from 'valibot'
 import { $api, buildApiUrl, createJsonHeaders, postMultipart } from '@/lib/api/client'
 import {
   formAnswerEnvelopeSchema,
@@ -453,8 +453,8 @@ function parseFormAnswerEnvelope(value: unknown): FormAnswerEnvelope {
 
 function parseFormAnswers(value: unknown): FormAnswersResponse {
   return parseWithSchema(
-    z.object({
-      answers: z.array(formAnswerSchema)
+    v.object({
+      answers: v.array(formAnswerSchema)
     }),
     value,
     'form answers'

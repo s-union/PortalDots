@@ -16,14 +16,14 @@ import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import type { MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
-import type * as z from 'zod'
+import type * as v from 'valibot'
 
-export type StaffFormSummary = z.infer<typeof staffFormSummarySchema>
-export type StaffFormDetail = z.infer<typeof staffFormDetailSchema>
-export type StaffFormPreview = z.infer<typeof staffFormPreviewSchema>
+export type StaffFormSummary = v.InferOutput<typeof staffFormSummarySchema>
+export type StaffFormDetail = v.InferOutput<typeof staffFormDetailSchema>
+export type StaffFormPreview = v.InferOutput<typeof staffFormPreviewSchema>
 export type StaffFormUpload = NonNullable<StaffFormDetail['answer']>['uploads'][number]
-export type StaffFormQuestion = z.infer<typeof formQuestionSchema>
-export type StaffFormRecipientCandidate = z.infer<typeof staffFormRecipientCandidateSchema>
+export type StaffFormQuestion = v.InferOutput<typeof formQuestionSchema>
+export type StaffFormRecipientCandidate = v.InferOutput<typeof staffFormRecipientCandidateSchema>
 
 export const allowedQuestionTypes = [
   'heading',

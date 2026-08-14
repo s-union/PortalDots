@@ -1,9 +1,9 @@
-import * as z from 'zod'
+import * as v from 'valibot'
 
-export const formStatusTabSchema = z.enum(['open', 'closed', 'all'])
-export type FormStatusTab = z.infer<typeof formStatusTabSchema>
+export const formStatusTabSchema = v.picklist(['open', 'closed', 'all'])
+export type FormStatusTab = v.InferOutput<typeof formStatusTabSchema>
 
 export function parseFormStatusTab(value: unknown): FormStatusTab {
-  const result = formStatusTabSchema.safeParse(value)
-  return result.success ? result.data : 'open'
+  const result = v.safeParse(formStatusTabSchema, value)
+  return result.success ? result.output : 'open'
 }

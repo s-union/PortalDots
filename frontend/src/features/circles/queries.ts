@@ -1,5 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import * as v from 'valibot'
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import { addCircleMemberInputSchema } from '@/lib/api/schema'
 import { extractValidationMessage } from '@/lib/api/validation'
@@ -244,7 +245,7 @@ export function useAddCircleMemberMutation() {
 
   return useMutation({
     mutationFn: async (input: AddCircleMemberInput) => {
-      const parsed = addCircleMemberInputSchema.parse(input)
+      const parsed = v.parse(addCircleMemberInputSchema, input)
       await $api.noContentMutation(
         'post',
         '/circles/current/members',

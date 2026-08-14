@@ -1,6 +1,6 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import type * as z from 'zod'
+import type * as v from 'valibot'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import {
   parseWithSchema,
@@ -20,11 +20,11 @@ import {
 import { fetchSessionBootstrap } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
 
-export type StaffCircle = z.infer<typeof staffCircleSchema>
-export type StaffManagedCircle = z.infer<typeof staffManagedCircleSchema>
-export type StaffCircleMailForm = z.infer<typeof staffCircleMailFormSchema>
+export type StaffCircle = v.InferOutput<typeof staffCircleSchema>
+export type StaffManagedCircle = v.InferOutput<typeof staffManagedCircleSchema>
+export type StaffCircleMailForm = v.InferOutput<typeof staffCircleMailFormSchema>
 export type StaffCircleMailRecipient = StaffCircleMailForm['recipients'][number]
-export type StaffCircleMember = z.infer<typeof staffCircleMemberSchema>
+export type StaffCircleMember = v.InferOutput<typeof staffCircleMemberSchema>
 
 export interface MutateStaffCirclePayload {
   name: string

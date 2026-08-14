@@ -7,7 +7,7 @@ definePage({
 
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import * as z from 'zod'
+import * as v from 'valibot'
 import IconActionButton from '@/components/ui/IconActionButton.vue'
 import DataCard from '@/components/layouts/DataCard.vue'
 import StaffDataGrid, { type StaffDataGridColumn, type StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
@@ -99,7 +99,7 @@ const filterFields: StaffFilterField[] = [
 ]
 
 const circlesSortKeys = ['id', 'name', 'groupName', 'status'] as const
-const circlesSortKeySchema = z.enum(circlesSortKeys)
+const circlesSortKeySchema = v.picklist(circlesSortKeys)
 type StaffParticipationTypeCirclesSortKey = (typeof circlesSortKeys)[number]
 
 const circlesRows = computed(() => allCirclesQuery.data.value?.items ?? [])
@@ -310,14 +310,14 @@ function statusLabel(status: string) {
 }
 
 function isStaffParticipationTypeCirclesSortKey(value: string): value is StaffParticipationTypeCirclesSortKey {
-  return circlesSortKeySchema.safeParse(value).success
+  return v.safeParse(circlesSortKeySchema, value).success
 }
 
 const circleFilterKeys = ['id', 'name', 'groupName', 'status', 'places'] as const
-const circleFilterKeySchema = z.enum(circleFilterKeys)
+const circleFilterKeySchema = v.picklist(circleFilterKeys)
 
 function isStaffParticipationCircleFilterKey(value: string) {
-  return circleFilterKeySchema.safeParse(value).success
+  return v.safeParse(circleFilterKeySchema, value).success
 }
 
 function sortCirclesRows(

@@ -1,4 +1,4 @@
-import * as z from 'zod'
+import * as v from 'valibot'
 import type { StaffDataGridRow } from '@/components/staff/StaffDataGrid.vue'
 
 export function resolveRowId(row: StaffDataGridRow): string {
@@ -13,9 +13,9 @@ export function resolveText(value: unknown): string {
   return normalized.length > 0 ? normalized : '-'
 }
 
-const tagsSchema = z.array(z.string())
+const tagsSchema = v.array(v.string())
 
 export function resolveTags(value: unknown): string[] {
-  const result = tagsSchema.safeParse(value)
-  return result.success ? result.data : []
+  const result = v.safeParse(tagsSchema, value)
+  return result.success ? result.output : []
 }

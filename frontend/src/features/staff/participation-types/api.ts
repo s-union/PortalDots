@@ -1,6 +1,6 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import type * as z from 'zod'
+import * as v from 'valibot'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { STALE_TIME } from '@/lib/api/cacheConfig'
 import {
@@ -15,8 +15,8 @@ import { resolveStaffListQueryParams, type StaffListQueryParamsInput } from '@/l
 import { parseTagString, formatTags } from '@/lib/tags'
 import { useSessionStore } from '@/features/session/store'
 
-export type StaffParticipationType = z.infer<typeof staffParticipationTypeSchema>
-export type StaffParticipationTypeCircle = z.infer<typeof staffCircleSchema>
+export type StaffParticipationType = v.InferOutput<typeof staffParticipationTypeSchema>
+export type StaffParticipationTypeCircle = v.InferOutput<typeof staffCircleSchema>
 
 export interface MutateStaffParticipationTypePayload {
   name: string

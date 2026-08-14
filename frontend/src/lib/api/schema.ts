@@ -1,4 +1,4 @@
-import * as z from 'zod'
+import * as v from 'valibot'
 import type { FormId, StudentId, CircleId } from '@/lib/types/branded'
 import {
   userIdSchema,
@@ -109,7 +109,7 @@ export type {
   ContactSubmissionId
 } from '@/lib/types/branded'
 
-export const formQuestionTypeSchema = z.enum([
+export const formQuestionTypeSchema = v.picklist([
   'heading',
   'text',
   'textarea',
@@ -121,671 +121,689 @@ export const formQuestionTypeSchema = z.enum([
   'upload'
 ])
 
-export function parseWithSchema<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
-  const parsed = schema.safeParse(value)
+export function parseWithSchema<TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
+  schema: TSchema,
+  value: unknown,
+  label: string
+): v.InferOutput<TSchema> {
+  const parsed = v.safeParse(schema, value)
   if (!parsed.success) {
     throw new Error(`Invalid ${label} response`)
   }
 
-  return parsed.data
+  return parsed.output
 }
 
-export function parseArrayWithSchema<T>(schema: z.ZodType<T>, value: unknown, label: string): T[] {
-  return parseWithSchema(schema.array(), value, label)
+export function parseArrayWithSchema<TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
+  schema: TSchema,
+  value: unknown,
+  label: string
+): v.InferOutput<TSchema>[] {
+  return parseWithSchema(v.array(schema), value, label)
 }
 
-export const stringArraySchema = z.array(z.string())
-const apiRelativePathSchema = z
-  .string()
-  .trim()
-  .regex(/^\/(?!\/)/)
+export const stringArraySchema = v.array(v.string())
+const apiRelativePathSchema = v.pipe(v.string(), v.trim(), v.regex(/^\/(?!\/)/))
 
-export const paginatedResultSchema = <TItem extends z.ZodType>(itemSchema: TItem) =>
-  z.object({
-    items: z.array(itemSchema),
-    page: z.number(),
-    pageSize: z.number(),
-    total: z.number(),
-    totalUnfiltered: z.number().optional()
-  })
-
-export const pageSummarySchema = z.object({
-  id: pageIdSchema,
-  title: z.string(),
-  summary: z.string(),
-  isLimited: z.boolean(),
-  isNew: z.boolean(),
-  isUnread: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string()
+export const formQuestionSchema = v.object({
+  id: questionIdSchema,
+  name: v.string(),
+  description: v.string(),
+  type: formQuestionTypeSchema,
+  isRequired: v.boolean(),
+  isPermanent: v.optional(v.boolean(), false),
+  numberMin: v.nullable(v.number()),
+  numberMax: v.nullable(v.number()),
+  allowedTypes: v.string(),
+  options: stringArraySchema,
+  priority: v.number(),
+  createdAt: v.string(),
+  updatedAt: v.string()
 })
 
-export const pageDocumentSchema = z.object({
+export const paginatedResultSchema = <TItem extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
+  itemSchema: TItem
+) =>
+  v.object({
+    items: v.array(itemSchema),
+    page: v.number(),
+    pageSize: v.number(),
+    total: v.number(),
+    totalUnfiltered: v.optional(v.number())
+  })
+
+export const pageSummarySchema = v.object({
+  id: pageIdSchema,
+  title: v.string(),
+  summary: v.string(),
+  isLimited: v.boolean(),
+  isNew: v.boolean(),
+  isUnread: v.boolean(),
+  createdAt: v.string(),
+  updatedAt: v.string()
+})
+
+export const pageDocumentSchema = v.object({
   id: documentIdSchema,
-  name: z.string(),
-  description: z.string(),
-  isImportant: z.boolean(),
-  extension: z.string(),
-  sizeBytes: z.number(),
-  updatedAt: z.string(),
+  name: v.string(),
+  description: v.string(),
+  isImportant: v.boolean(),
+  extension: v.string(),
+  sizeBytes: v.number(),
+  updatedAt: v.string(),
   downloadUrl: apiRelativePathSchema
 })
 
-export const pageDetailSchema = z.object({
+export const pageDetailSchema = v.object({
   id: pageIdSchema,
-  title: z.string(),
-  body: z.string(),
-  isLimited: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  documents: z.array(pageDocumentSchema)
+  title: v.string(),
+  body: v.string(),
+  isLimited: v.boolean(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  documents: v.array(pageDocumentSchema)
 })
 
-export const selectableCircleSchema = z.object({
+export const selectableCircleSchema = v.object({
   id: circleIdSchema,
-  name: z.string(),
-  groupName: z.string(),
-  participationTypeName: z.string(),
-  submittedAt: z.string().nullable().default(null),
-  status: z.enum(['pending', 'approved', 'rejected']).default('pending')
+  name: v.string(),
+  groupName: v.string(),
+  participationTypeName: v.string(),
+  submittedAt: v.optional(v.nullable(v.string()), null),
+  status: v.optional(v.picklist(['pending', 'approved', 'rejected']), 'pending')
 })
 
-export const circleDetailSchema = z.object({
+export const circleDetailSchema = v.object({
   id: circleIdSchema,
-  name: z.string(),
-  nameYomi: z.string(),
-  groupName: z.string(),
-  groupNameYomi: z.string(),
+  name: v.string(),
+  nameYomi: v.string(),
+  groupName: v.string(),
+  groupNameYomi: v.string(),
   participationTypeId: participationTypeIdSchema,
-  participationTypeName: z.string(),
-  formId: formIdSchema.default('' as FormId),
-  notes: z.string(),
-  leaderDisplayName: z.string().default(''),
-  canChangeGroupName: z.boolean().default(true),
-  isLeader: z.boolean().default(false),
-  lastUpdatedAt: z.string().default(''),
-  usersCountMin: z.number().default(1),
-  usersCountMax: z.number().default(1),
-  memberCount: z.number().default(0),
-  canSubmit: z.boolean().default(false),
-  formDescription: z.string().default(''),
-  confirmationMessage: z.string().default(''),
-  questions: z.array(z.lazy(() => formQuestionSchema)).default([]),
-  answer: z
-    .object({
-      id: answerIdSchema,
-      body: z.string(),
-      updatedAt: z.string(),
-      details: z.record(z.string(), z.array(z.string())),
-      uploads: z.array(
-        z.object({
-          id: uploadIdSchema,
-          questionId: questionIdSchema,
-          filename: z.string(),
-          mimeType: z.string(),
-          sizeBytes: z.number(),
-          createdAt: z.string()
-        })
-      )
-    })
-    .nullable()
-    .default(null),
+  participationTypeName: v.string(),
+  formId: v.optional(formIdSchema, '' as FormId),
+  notes: v.string(),
+  leaderDisplayName: v.optional(v.string(), ''),
+  canChangeGroupName: v.optional(v.boolean(), true),
+  isLeader: v.optional(v.boolean(), false),
+  lastUpdatedAt: v.optional(v.string(), ''),
+  usersCountMin: v.optional(v.number(), 1),
+  usersCountMax: v.optional(v.number(), 1),
+  memberCount: v.optional(v.number(), 0),
+  canSubmit: v.optional(v.boolean(), false),
+  formDescription: v.optional(v.string(), ''),
+  confirmationMessage: v.optional(v.string(), ''),
+  questions: v.optional(v.array(formQuestionSchema), []),
+  answer: v.optional(
+    v.nullable(
+      v.object({
+        id: answerIdSchema,
+        body: v.string(),
+        updatedAt: v.string(),
+        details: v.record(v.string(), v.array(v.string())),
+        uploads: v.array(
+          v.object({
+            id: uploadIdSchema,
+            questionId: questionIdSchema,
+            filename: v.string(),
+            mimeType: v.string(),
+            sizeBytes: v.number(),
+            createdAt: v.string()
+          })
+        )
+      })
+    ),
+    null
+  ),
   invitationToken: invitationTokenSchema,
-  submittedAt: z.string().nullable(),
-  status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  statusReason: z.string().default(''),
-  formCloseAt: z.string().default(''),
-  places: z.array(z.string()).default([])
+  submittedAt: v.nullable(v.string()),
+  status: v.optional(v.picklist(['pending', 'approved', 'rejected']), 'pending'),
+  statusReason: v.optional(v.string(), ''),
+  formCloseAt: v.optional(v.string(), ''),
+  places: v.optional(v.array(v.string()), [])
 })
 
-export const circleMemberSchema = z.object({
+export const circleMemberSchema = v.object({
   userId: userIdSchema,
-  displayName: z.string(),
-  isLeader: z.boolean()
+  displayName: v.string(),
+  isLeader: v.boolean()
 })
 
-export const addCircleMemberInputSchema = z.object({
-  loginId: loginIdSchema.trim().min(1)
+export const addCircleMemberInputSchema = v.object({
+  loginId: v.pipe(v.string(), v.trim(), v.minLength(1))
 })
 
-export const sessionCircleSchema = z.object({
+export const sessionCircleSchema = v.object({
   id: circleIdSchema,
-  name: z.string()
+  name: v.string()
 })
 
-export const sessionUserSchema = z.object({
+export const sessionUserSchema = v.object({
   id: userIdSchema,
-  displayName: z.string(),
-  canDeleteAccount: z.boolean().default(false),
-  canCreateCircleRegistration: z.boolean().default(true),
-  studentId: studentIdSchema.default('' as StudentId),
-  univemail: z.string().default(''),
-  lastName: z.string().default(''),
-  lastNameReading: z.string().default(''),
-  firstName: z.string().default(''),
-  firstNameReading: z.string().default(''),
-  contactEmail: z.string().default(''),
-  phoneNumber: z.string().default('')
+  displayName: v.string(),
+  canDeleteAccount: v.optional(v.boolean(), false),
+  canCreateCircleRegistration: v.optional(v.boolean(), true),
+  studentId: v.optional(studentIdSchema, '' as StudentId),
+  univemail: v.optional(v.string(), ''),
+  lastName: v.optional(v.string(), ''),
+  lastNameReading: v.optional(v.string(), ''),
+  firstName: v.optional(v.string(), ''),
+  firstNameReading: v.optional(v.string(), ''),
+  contactEmail: v.optional(v.string(), ''),
+  phoneNumber: v.optional(v.string(), '')
 })
 
-export const sessionBootstrapSchema = z.object({
+export const sessionBootstrapSchema = v.object({
   csrfToken: csrfTokenSchema,
   featureFlags: stringArraySchema,
   roles: stringArraySchema,
-  permissions: stringArraySchema.optional(),
-  currentCircle: sessionCircleSchema.nullable(),
-  user: sessionUserSchema.nullable()
+  permissions: v.optional(stringArraySchema),
+  currentCircle: v.nullable(sessionCircleSchema),
+  user: v.nullable(sessionUserSchema)
 })
 
-export const documentSummarySchema = z.object({
+export const documentSummarySchema = v.object({
   id: documentIdSchema,
-  name: z.string(),
-  description: z.string(),
-  isImportant: z.boolean(),
-  isNew: z.boolean(),
-  extension: z.string(),
-  sizeBytes: z.number(),
-  updatedAt: z.string(),
+  name: v.string(),
+  description: v.string(),
+  isImportant: v.boolean(),
+  isNew: v.boolean(),
+  extension: v.string(),
+  sizeBytes: v.number(),
+  updatedAt: v.string(),
   downloadUrl: apiRelativePathSchema
 })
 
-export const contactCategorySchema = z.object({
+export const contactCategorySchema = v.object({
   id: categoryIdSchema,
-  name: z.string()
+  name: v.string()
 })
 
-export const contactSubmissionSchema = z.object({
+export const contactSubmissionSchema = v.object({
   id: contactSubmissionIdSchema,
   categoryId: categoryIdSchema,
-  categoryName: z.string(),
-  subject: z.string(),
-  status: z.string(),
-  createdAt: z.string(),
-  attachment: z
-    .object({
-      filename: z.string(),
-      mimeType: z.string(),
-      sizeBytes: z.number()
+  categoryName: v.string(),
+  subject: v.string(),
+  status: v.string(),
+  createdAt: v.string(),
+  attachment: v.optional(
+    v.object({
+      filename: v.string(),
+      mimeType: v.string(),
+      sizeBytes: v.number()
     })
-    .optional()
+  )
 })
 
-export const staffStatusSchema = z.object({
-  allowed: z.boolean(),
-  authorized: z.boolean()
+export const staffStatusSchema = v.object({
+  allowed: v.boolean(),
+  authorized: v.boolean()
 })
 
-export const staffVerifyRequestResultSchema = z.object({
-  message: z.string()
+export const staffVerifyRequestResultSchema = v.object({
+  message: v.string()
 })
 
-export const authVerificationStatusItemSchema = z.object({
-  type: z.enum(['email', 'univemail']),
-  label: z.string(),
-  address: z.string(),
-  verified: z.boolean()
+export const authVerificationStatusItemSchema = v.object({
+  type: v.picklist(['email', 'univemail']),
+  label: v.string(),
+  address: v.string(),
+  verified: v.boolean()
 })
 
-export const authVerificationStatusSchema = z.object({
+export const authVerificationStatusSchema = v.object({
   userId: userIdSchema,
-  displayName: z.string(),
-  completed: z.boolean(),
-  items: z.array(authVerificationStatusItemSchema)
+  displayName: v.string(),
+  completed: v.boolean(),
+  items: v.array(authVerificationStatusItemSchema)
 })
 
-export const authVerificationLinkVerifySchema = z.object({
-  completed: z.boolean()
+export const authVerificationLinkVerifySchema = v.object({
+  completed: v.boolean()
 })
 
-export const registrationStartResultSchema = z.object({
-  message: z.string()
+export const registrationStartResultSchema = v.object({
+  message: v.string()
 })
 
-export const passwordResetStartResultSchema = z.object({
-  message: z.string()
+export const passwordResetStartResultSchema = v.object({
+  message: v.string()
 })
 
-export const passwordResetVerificationSchema = z.object({
+export const passwordResetVerificationSchema = v.object({
   userId: userIdSchema,
-  valid: z.boolean()
+  valid: v.boolean()
 })
 
-export const registrationVerificationSchema = z.object({
+export const registrationVerificationSchema = v.object({
   pendingRegistrationId: pendingRegistrationIdSchema,
-  univemail: z.string(),
+  univemail: v.string(),
   studentId: studentIdSchema,
-  verified: z.boolean()
+  verified: v.boolean()
 })
 
-export const staffActivityLogSchema = z.object({
+export const staffActivityLogSchema = v.object({
   id: activityLogIdSchema,
   actorUserId: userIdSchema,
-  action: z.string(),
-  targetType: z.string(),
-  targetId: z.string(),
+  action: v.string(),
+  targetType: v.string(),
+  targetId: v.string(),
   circleId: circleIdSchema,
-  summary: z.string(),
-  createdAt: z.string()
+  summary: v.string(),
+  createdAt: v.string()
 })
 
-export const staffTagSchema = z.object({
+export const staffTagSchema = v.object({
   id: tagIdSchema,
-  name: z.string(),
-  color: z.enum(['gray', 'red', 'orange', 'green', 'blue', 'purple']).default('gray'),
-  createdAt: z.string().default(''),
-  updatedAt: z.string().default('')
+  name: v.string(),
+  color: v.optional(v.picklist(['gray', 'red', 'orange', 'green', 'blue', 'purple']), 'gray'),
+  createdAt: v.optional(v.string(), ''),
+  updatedAt: v.optional(v.string(), '')
 })
 
-export const staffPlaceSchema = z.object({
+export const staffPlaceSchema = v.object({
   id: placeIdSchema,
-  name: z.string(),
-  type: z.number(),
-  notes: z.string(),
-  createdAt: z.string().default(''),
-  updatedAt: z.string().default('')
+  name: v.string(),
+  type: v.number(),
+  notes: v.string(),
+  createdAt: v.optional(v.string(), ''),
+  updatedAt: v.optional(v.string(), '')
 })
 
-export const staffContactCategorySchema = z.object({
+export const staffContactCategorySchema = v.object({
   id: categoryIdSchema,
-  name: z.string(),
-  email: z.string()
+  name: v.string(),
+  email: v.string()
 })
 
-export const staffMailSchema = z.object({
+export const staffMailSchema = v.object({
   jobId: jobIdSchema,
-  template: z.string(),
-  priority: z.enum(['high', 'normal']).default('normal'),
-  subject: z.string(),
-  body: z.string(),
+  template: v.string(),
+  priority: v.optional(v.picklist(['high', 'normal']), 'normal'),
+  subject: v.string(),
+  body: v.string(),
   recipients: stringArraySchema,
-  createdAt: z.string()
+  createdAt: v.string()
 })
 
-export const staffUserSchema = z.object({
+export const staffUserSchema = v.object({
   id: userIdSchema,
-  lastName: z.string().default(''),
-  lastNameReading: z.string().default(''),
-  firstName: z.string().default(''),
-  firstNameReading: z.string().default(''),
-  displayName: z.string(),
+  lastName: v.optional(v.string(), ''),
+  lastNameReading: v.optional(v.string(), ''),
+  firstName: v.optional(v.string(), ''),
+  firstNameReading: v.optional(v.string(), ''),
+  displayName: v.string(),
   loginIds: stringArraySchema,
-  contactEmail: z.string().default(''),
-  univemail: z.string().default(''),
-  phoneNumber: z.string().default(''),
+  contactEmail: v.optional(v.string(), ''),
+  univemail: v.optional(v.string(), ''),
+  phoneNumber: v.optional(v.string(), ''),
   roles: stringArraySchema,
-  isVerified: z.boolean(),
-  isEmailVerified: z.boolean().default(false),
-  createdAt: z.string().default(''),
-  updatedAt: z.string().default('')
+  isVerified: v.boolean(),
+  isEmailVerified: v.optional(v.boolean(), false),
+  createdAt: v.optional(v.string(), ''),
+  updatedAt: v.optional(v.string(), '')
 })
 
-export const staffFormRecipientCandidateSchema = z.object({
+export const staffFormRecipientCandidateSchema = v.object({
   id: userIdSchema,
-  displayName: z.string(),
+  displayName: v.string(),
   loginIds: stringArraySchema,
-  contactEmail: z.string().default('')
+  contactEmail: v.optional(v.string(), '')
 })
 
-export const staffCircleSchema = z.object({
+export const staffCircleSchema = v.object({
   id: circleIdSchema,
-  name: z.string(),
-  nameYomi: z.string(),
-  groupName: z.string(),
-  groupNameYomi: z.string(),
+  name: v.string(),
+  nameYomi: v.string(),
+  groupName: v.string(),
+  groupNameYomi: v.string(),
   participationTypeId: participationTypeIdSchema,
-  participationTypeName: z.string(),
-  tags: z.array(tagIdSchema),
-  notes: z.string(),
-  submittedAt: z.string().nullable(),
-  status: z.enum(['pending', 'approved', 'rejected']),
-  statusReason: z.string(),
-  statusSetAt: z.string().nullable(),
-  statusSetById: userIdSchema.nullable(),
-  places: z.array(z.string())
+  participationTypeName: v.string(),
+  tags: v.array(tagIdSchema),
+  notes: v.string(),
+  submittedAt: v.nullable(v.string()),
+  status: v.picklist(['pending', 'approved', 'rejected']),
+  statusReason: v.string(),
+  statusSetAt: v.nullable(v.string()),
+  statusSetById: v.nullable(userIdSchema),
+  places: v.array(v.string())
 })
 
-export const staffCircleMailRecipientSchema = z.object({
+export const staffCircleMailRecipientSchema = v.object({
   id: userIdSchema,
-  displayName: z.string(),
+  displayName: v.string(),
   loginIds: stringArraySchema,
-  isLeader: z.boolean()
+  isLeader: v.boolean()
 })
 
-export const staffCircleMemberSchema = z.object({
+export const staffCircleMemberSchema = v.object({
   userId: userIdSchema,
-  displayName: z.string(),
+  displayName: v.string(),
   loginIds: stringArraySchema,
-  isLeader: z.boolean()
+  isLeader: v.boolean()
 })
 
-export const staffCircleMailFormSchema = z.object({
+export const staffCircleMailFormSchema = v.object({
   circle: staffCircleSchema,
-  recipients: z.array(staffCircleMailRecipientSchema)
+  recipients: v.array(staffCircleMailRecipientSchema)
 })
 
-export const formQuestionSchema = z.object({
-  id: questionIdSchema,
-  name: z.string(),
-  description: z.string(),
-  type: formQuestionTypeSchema,
-  isRequired: z.boolean(),
-  isPermanent: z.boolean().default(false),
-  numberMin: z.number().nullable(),
-  numberMax: z.number().nullable(),
-  allowedTypes: z.string(),
-  options: stringArraySchema,
-  priority: z.number(),
-  createdAt: z.string(),
-  updatedAt: z.string()
-})
-
-export const formSummarySchema = z.object({
+export const formSummarySchema = v.object({
   id: formIdSchema,
-  name: z.string(),
-  description: z.string(),
-  openAt: z.string(),
-  closeAt: z.string(),
-  maxAnswers: z.number(),
+  name: v.string(),
+  description: v.string(),
+  openAt: v.string(),
+  closeAt: v.string(),
+  maxAnswers: v.number(),
   answerableTags: stringArraySchema,
-  confirmationMessage: z.string(),
-  isPublic: z.boolean(),
-  isOpen: z.boolean(),
-  hasAnswer: z.boolean()
+  confirmationMessage: v.string(),
+  isPublic: v.boolean(),
+  isOpen: v.boolean(),
+  hasAnswer: v.boolean()
 })
 
-export const formDetailSchema = z.object({
+export const formDetailSchema = v.object({
   id: formIdSchema,
-  name: z.string(),
-  description: z.string(),
-  openAt: z.string(),
-  closeAt: z.string(),
-  maxAnswers: z.number(),
+  name: v.string(),
+  description: v.string(),
+  openAt: v.string(),
+  closeAt: v.string(),
+  maxAnswers: v.number(),
   answerableTags: stringArraySchema,
-  confirmationMessage: z.string(),
-  isPublic: z.boolean(),
-  isOpen: z.boolean(),
-  currentCircleStatus: z.enum(['pending', 'approved', 'rejected']),
-  questions: z.array(formQuestionSchema)
+  confirmationMessage: v.string(),
+  isPublic: v.boolean(),
+  isOpen: v.boolean(),
+  currentCircleStatus: v.picklist(['pending', 'approved', 'rejected']),
+  questions: v.array(formQuestionSchema)
 })
 
-export const answerUploadSchema = z.object({
+export const answerUploadSchema = v.object({
   id: uploadIdSchema,
   questionId: questionIdSchema,
-  filename: z.string(),
-  mimeType: z.string(),
-  sizeBytes: z.number(),
-  createdAt: z.string()
+  filename: v.string(),
+  mimeType: v.string(),
+  sizeBytes: v.number(),
+  createdAt: v.string()
 })
 
-export const answerDetailsSchema = z.record(z.string(), z.array(z.string()))
+export const answerDetailsSchema = v.record(v.string(), v.array(v.string()))
 
-export const formAnswerSchema = z.object({
+export const formAnswerSchema = v.object({
   id: answerIdSchema,
-  body: z.string(),
-  updatedAt: z.string(),
+  body: v.string(),
+  updatedAt: v.string(),
   details: answerDetailsSchema,
-  uploads: z.array(answerUploadSchema)
+  uploads: v.array(answerUploadSchema)
 })
 
-export const formAnswerEnvelopeSchema = z.object({
-  answer: formAnswerSchema.nullable()
+export const formAnswerEnvelopeSchema = v.object({
+  answer: v.nullable(formAnswerSchema)
 })
 
-export const staffManagedCircleSchema = z.object({
+export const staffManagedCircleSchema = v.object({
   id: circleIdSchema,
-  name: z.string()
+  name: v.string()
 })
 
-export const staffFormSummarySchema = z.object({
-  circle: staffManagedCircleSchema.default({ id: '' as CircleId, name: '' }),
+const staffFormSummaryEntries = {
+  circle: v.optional(staffManagedCircleSchema, { id: '' as CircleId, name: '' }),
   id: formIdSchema,
-  name: z.string(),
-  description: z.string(),
-  openAt: z.string(),
-  closeAt: z.string(),
-  maxAnswers: z.number(),
+  name: v.string(),
+  description: v.string(),
+  openAt: v.string(),
+  closeAt: v.string(),
+  maxAnswers: v.number(),
   answerableTags: stringArraySchema,
-  confirmationMessage: z.string(),
-  staffNotificationUserIds: stringArraySchema.default([]),
-  isPublic: z.boolean(),
-  isOpen: z.boolean(),
-  createdAt: z.string().default(''),
-  updatedAt: z.string().default(''),
-  isParticipationForm: z.boolean().default(false)
-})
+  confirmationMessage: v.string(),
+  staffNotificationUserIds: v.optional(stringArraySchema, []),
+  isPublic: v.boolean(),
+  isOpen: v.boolean(),
+  createdAt: v.optional(v.string(), ''),
+  updatedAt: v.optional(v.string(), ''),
+  isParticipationForm: v.optional(v.boolean(), false)
+}
+
+export const staffFormSummarySchema = v.object(staffFormSummaryEntries)
 
 export const staffFormUploadSchema = answerUploadSchema
 
-export const staffFormAnswerSchema = z.object({
+export const staffFormAnswerSchema = v.object({
   id: answerIdSchema,
-  body: z.string(),
-  updatedAt: z.string(),
+  body: v.string(),
+  updatedAt: v.string(),
   details: answerDetailsSchema,
-  uploads: z.array(staffFormUploadSchema)
+  uploads: v.array(staffFormUploadSchema)
 })
 
-export const staffFormDetailSchema = staffFormSummarySchema.extend({
-  questions: z.array(formQuestionSchema),
-  answer: staffFormAnswerSchema.nullable()
+export const staffFormDetailSchema = v.object({
+  ...staffFormSummaryEntries,
+  questions: v.array(formQuestionSchema),
+  answer: v.nullable(staffFormAnswerSchema)
 })
 
-export const staffFormPreviewSchema = z.object({
+export const staffFormPreviewSchema = v.object({
   id: formIdSchema,
-  name: z.string(),
-  description: z.string(),
-  openAt: z.string(),
-  closeAt: z.string(),
-  answerableTags: stringArraySchema.nullish().transform((value) => value ?? []),
-  confirmationMessage: z
-    .string()
-    .nullish()
-    .transform((value) => value ?? ''),
-  isPublic: z.boolean(),
-  isOpen: z.boolean(),
-  maxAnswers: z.number(),
-  questions: z.array(formQuestionSchema)
+  name: v.string(),
+  description: v.string(),
+  openAt: v.string(),
+  closeAt: v.string(),
+  answerableTags: v.pipe(
+    v.nullish(stringArraySchema),
+    v.transform((value) => value ?? [])
+  ),
+  confirmationMessage: v.pipe(
+    v.nullish(v.string()),
+    v.transform((value) => value ?? '')
+  ),
+  isPublic: v.boolean(),
+  isOpen: v.boolean(),
+  maxAnswers: v.number(),
+  questions: v.array(formQuestionSchema)
 })
 
-export const staffAnswerCircleSchema = z.object({
+export const staffAnswerCircleSchema = v.object({
   id: circleIdSchema,
-  name: z.string(),
-  groupName: z.string(),
-  participationTypeName: z.string()
+  name: v.string(),
+  groupName: v.string(),
+  participationTypeName: v.string()
 })
 
-export const staffManagedFormAnswerSummarySchema = z.object({
+export const staffManagedFormAnswerSummarySchema = v.object({
   id: answerIdSchema,
   circle: staffAnswerCircleSchema,
-  body: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  uploadCount: z.number(),
+  body: v.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  uploadCount: v.number(),
   details: answerDetailsSchema
 })
 
-export const staffManagedFormAnswerValueSchema = z.object({
+export const staffManagedFormAnswerValueSchema = v.object({
   id: answerIdSchema,
-  body: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  body: v.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
   details: answerDetailsSchema,
-  uploads: z.array(staffFormUploadSchema)
+  uploads: v.array(staffFormUploadSchema)
 })
 
-export const staffFormAnswersIndexSchema = z.object({
+export const staffFormAnswersIndexSchema = v.object({
   form: staffFormDetailSchema,
-  answers: z.array(staffManagedFormAnswerSummarySchema),
-  circles: z.array(staffAnswerCircleSchema),
-  notAnsweredCircles: z.array(staffAnswerCircleSchema)
+  answers: v.array(staffManagedFormAnswerSummarySchema),
+  circles: v.array(staffAnswerCircleSchema),
+  notAnsweredCircles: v.array(staffAnswerCircleSchema)
 })
 
-export const staffManagedFormAnswerDetailSchema = z.object({
+export const staffManagedFormAnswerDetailSchema = v.object({
   form: staffFormDetailSchema,
   circle: staffAnswerCircleSchema,
   answer: staffManagedFormAnswerValueSchema,
-  siblingAnswers: z.array(staffManagedFormAnswerSummarySchema)
+  siblingAnswers: v.array(staffManagedFormAnswerSummarySchema)
 })
 
-export const existingAnswerConflictSchema = z.object({
+export const existingAnswerConflictSchema = v.object({
   existingAnswerId: answerIdSchema
 })
 
-export const staffPageSummarySchema = z.object({
+export const staffPageSummarySchema = v.object({
   id: pageIdSchema,
-  title: z.string(),
-  body: z.string(),
-  notes: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  publishedAt: z.string(),
-  isPinned: z.boolean(),
-  isPublic: z.boolean(),
-  mailScheduled: z.boolean(),
+  title: v.string(),
+  body: v.string(),
+  notes: v.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  publishedAt: v.string(),
+  isPinned: v.boolean(),
+  isPublic: v.boolean(),
+  mailScheduled: v.boolean(),
   viewableTags: stringArraySchema,
-  documentIds: z.array(documentIdSchema),
-  documents: z.array(pageDocumentSchema)
+  documentIds: v.array(documentIdSchema),
+  documents: v.array(pageDocumentSchema)
 })
 
 export const staffPageDocumentSchema = pageDocumentSchema
 
 export const staffPageDetailSchema = staffPageSummarySchema
 
-export const staffDocumentSummarySchema = z.object({
-  circle: staffManagedCircleSchema.default({ id: '' as CircleId, name: '' }),
+const staffDocumentSummaryEntries = {
+  circle: v.optional(staffManagedCircleSchema, { id: '' as CircleId, name: '' }),
   id: documentIdSchema,
-  name: z.string(),
-  description: z.string(),
-  notes: z.string(),
-  isImportant: z.boolean(),
-  filename: z.string(),
-  extension: z.string(),
-  mimeType: z.string(),
-  sizeBytes: z.number(),
-  isPublic: z.boolean(),
+  name: v.string(),
+  description: v.string(),
+  notes: v.string(),
+  isImportant: v.boolean(),
+  filename: v.string(),
+  extension: v.string(),
+  mimeType: v.string(),
+  sizeBytes: v.number(),
+  isPublic: v.boolean(),
   viewableTags: stringArraySchema,
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
   downloadUrl: apiRelativePathSchema
-})
+}
 
-export const staffDocumentDetailSchema = staffDocumentSummarySchema.extend({
-  notes: z.string(),
+export const staffDocumentSummarySchema = v.object(staffDocumentSummaryEntries)
+
+export const staffDocumentDetailSchema = v.object({
+  ...staffDocumentSummaryEntries,
+  notes: v.string(),
   viewableTags: stringArraySchema
 })
 
-export const staffPermissionDefinitionSchema = z.object({
-  name: z.string(),
-  group: z.string(),
-  displayName: z.string(),
-  shortName: z.string(),
-  description: z.string()
+export const staffPermissionDefinitionSchema = v.object({
+  name: v.string(),
+  group: v.string(),
+  displayName: v.string(),
+  shortName: v.string(),
+  description: v.string()
 })
 
-export const staffPermissionUserSummarySchema = z.object({
+export const staffPermissionUserSummarySchema = v.object({
   id: userIdSchema,
-  displayName: z.string(),
+  displayName: v.string(),
   loginIds: stringArraySchema,
   roles: stringArraySchema,
-  permissions: z.array(staffPermissionDefinitionSchema),
-  isEditable: z.boolean()
+  permissions: v.array(staffPermissionDefinitionSchema),
+  isEditable: v.boolean()
 })
 
-export const staffPermissionDetailSchema = z.object({
+export const staffPermissionDetailSchema = v.object({
   user: staffPermissionUserSummarySchema,
-  definedPermissions: z.array(staffPermissionDefinitionSchema),
+  definedPermissions: v.array(staffPermissionDefinitionSchema),
   assignedPermissionNames: stringArraySchema
 })
 
-export const staffParticipationTypeFormSchema = z.object({
+export const staffParticipationTypeFormSchema = v.object({
   id: formIdSchema,
-  name: z.string(),
-  description: z.string(),
-  openAt: z.string(),
-  closeAt: z.string(),
-  isPublic: z.boolean(),
-  isOpen: z.boolean(),
-  maxAnswers: z.number(),
+  name: v.string(),
+  description: v.string(),
+  openAt: v.string(),
+  closeAt: v.string(),
+  isPublic: v.boolean(),
+  isOpen: v.boolean(),
+  maxAnswers: v.number(),
   answerableTags: stringArraySchema,
-  confirmationMessage: z.string()
+  confirmationMessage: v.string()
 })
 
 export const participationTypeFormSchema = staffParticipationTypeFormSchema
 
-export const participationTypeSchema = z.object({
+export const participationTypeSchema = v.object({
   id: participationTypeIdSchema,
-  name: z.string(),
-  description: z.string(),
-  usersCountMin: z.number(),
-  usersCountMax: z.number(),
-  tags: z.array(tagIdSchema),
+  name: v.string(),
+  description: v.string(),
+  usersCountMin: v.number(),
+  usersCountMax: v.number(),
+  tags: v.array(tagIdSchema),
   form: participationTypeFormSchema
 })
 
-export const publicHomeLoginMethodSchema = z.object({
-  roleLabel: z.string(),
-  loginId: z.string(),
-  password: z.string()
+export const publicHomeLoginMethodSchema = v.object({
+  roleLabel: v.string(),
+  loginId: v.string(),
+  password: v.string()
 })
 
-export const publicHomePageSchema = z.object({
+export const publicHomePageSchema = v.object({
   id: pageIdSchema,
-  title: z.string(),
-  summary: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  isLimited: z.boolean(),
-  isNew: z.boolean()
+  title: v.string(),
+  summary: v.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  isLimited: v.boolean(),
+  isNew: v.boolean()
 })
 
-export const publicPinnedPageSchema = z.object({
+export const publicPinnedPageSchema = v.object({
   id: pageIdSchema,
-  title: z.string(),
-  body: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  isLimited: z.boolean(),
-  isNew: z.boolean(),
-  documents: z.array(pageDocumentSchema)
+  title: v.string(),
+  body: v.string(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+  isLimited: v.boolean(),
+  isNew: v.boolean(),
+  documents: v.array(pageDocumentSchema)
 })
 
-export const publicHomeDocumentSchema = z.object({
+export const publicHomeDocumentSchema = v.object({
   id: documentIdSchema,
-  name: z.string(),
-  description: z.string(),
-  isImportant: z.boolean(),
-  isNew: z.boolean(),
-  extension: z.string(),
-  sizeBytes: z.number(),
-  updatedAt: z.string(),
+  name: v.string(),
+  description: v.string(),
+  isImportant: v.boolean(),
+  isNew: v.boolean(),
+  extension: v.string(),
+  sizeBytes: v.number(),
+  updatedAt: v.string(),
   downloadUrl: apiRelativePathSchema
 })
 
-export const publicConfigSchema = z.object({
-  isDemo: z.boolean(),
-  appName: z.string(),
-  portalStudentIdName: z.string(),
-  portalUnivemailName: z.string(),
-  portalUnivemailDomainPart: z.string()
+export const publicConfigSchema = v.object({
+  isDemo: v.boolean(),
+  appName: v.string(),
+  portalStudentIdName: v.string(),
+  portalUnivemailName: v.string(),
+  portalUnivemailDomainPart: v.string()
 })
 
-export const publicHomeSchema = z.object({
-  appName: z.string(),
-  portalDescription: z.string(),
-  portalAdminName: z.string(),
-  portalContactEmail: z.string(),
-  loginMethods: z.array(publicHomeLoginMethodSchema),
-  pinnedPages: z.array(publicPinnedPageSchema),
-  participationTypes: z.array(participationTypeSchema),
-  pages: z.array(publicHomePageSchema),
-  documents: z.array(publicHomeDocumentSchema)
+export const publicHomeSchema = v.object({
+  appName: v.string(),
+  portalDescription: v.string(),
+  portalAdminName: v.string(),
+  portalContactEmail: v.string(),
+  loginMethods: v.array(publicHomeLoginMethodSchema),
+  pinnedPages: v.array(publicPinnedPageSchema),
+  participationTypes: v.array(participationTypeSchema),
+  pages: v.array(publicHomePageSchema),
+  documents: v.array(publicHomeDocumentSchema)
 })
 
-export const staffParticipationTypeSchema = z.object({
+export const staffParticipationTypeSchema = v.object({
   id: participationTypeIdSchema,
-  name: z.string(),
-  description: z.string(),
-  usersCountMin: z.number(),
-  usersCountMax: z.number(),
-  tags: z.array(tagIdSchema),
+  name: v.string(),
+  description: v.string(),
+  usersCountMin: v.number(),
+  usersCountMax: v.number(),
+  tags: v.array(tagIdSchema),
   form: staffParticipationTypeFormSchema
 })

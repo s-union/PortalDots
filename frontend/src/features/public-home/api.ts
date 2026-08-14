@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import * as z from 'zod'
+import * as v from 'valibot'
 import { createJsonHeaders, $api, $apiSuspense } from '@/lib/api/client'
 import { STALE_TIME } from '@/lib/api/cacheConfig'
 import {
@@ -13,8 +13,8 @@ import {
 } from '@/lib/api/schema'
 import { useQuery } from '@tanstack/vue-query'
 
-export type PublicHome = z.infer<typeof publicHomeSchema>
-export type PublicPagesResult = z.infer<ReturnType<typeof paginatedPublicPagesSchema>>
+export type PublicHome = v.InferOutput<typeof publicHomeSchema>
+export type PublicPagesResult = v.InferOutput<ReturnType<typeof paginatedPublicPagesSchema>>
 
 function paginatedPublicPagesSchema() {
   return paginatedResultSchema(publicHomePageSchema)
@@ -92,7 +92,7 @@ export async function fetchPublicDocuments() {
     {
       headers: createJsonHeaders()
     },
-    (value) => parseWithSchema(z.array(publicHomeDocumentSchema), value, 'public documents'),
+    (value) => parseWithSchema(v.array(publicHomeDocumentSchema), value, 'public documents'),
     {
       errorMessage: 'Failed to fetch public documents'
     }
@@ -197,7 +197,7 @@ export function useSuspensePublicDocumentsQuery() {
     {
       headers: createJsonHeaders()
     },
-    (value) => parseWithSchema(z.array(publicHomeDocumentSchema), value, 'public documents'),
+    (value) => parseWithSchema(v.array(publicHomeDocumentSchema), value, 'public documents'),
     {
       queryKey: ['public', 'documents'],
       retry: false

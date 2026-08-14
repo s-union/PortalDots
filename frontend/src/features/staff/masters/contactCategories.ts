@@ -4,9 +4,9 @@ import { STALE_TIME } from '@/lib/api/cacheConfig'
 import { parseWithSchema, parseArrayWithSchema, staffContactCategorySchema } from '@/lib/api/schema'
 import { parseValidationError } from '@/lib/api/validation'
 import { useStaffMasterMutation } from './shared'
-import * as z from 'zod'
+import type * as v from 'valibot'
 
-export type StaffContactCategory = z.infer<typeof staffContactCategorySchema>
+export type StaffContactCategory = v.InferOutput<typeof staffContactCategorySchema>
 
 export async function fetchStaffContactCategories() {
   return $api.queryData(

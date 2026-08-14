@@ -1,12 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { effectScope, reactive, ref, nextTick } from 'vue'
-import * as z from 'zod'
+import * as v from 'valibot'
 import { useFormValidation } from './useFormValidation'
 
-const testSchema = z.object({
-  name: z.string().min(1, '名前を入力してください'),
-  email: z.string().email('メールアドレスの形式が正しくありません'),
-  age: z.number().min(0, '年齢は0以上で入力してください').optional()
+const testSchema = v.object({
+  name: v.pipe(v.string(), v.minLength(1, '名前を入力してください')),
+  email: v.pipe(v.string(), v.email('メールアドレスの形式が正しくありません')),
+  age: v.optional(v.pipe(v.number(), v.minValue(0, '年齢は0以上で入力してください')))
 })
 
 describe('useFormValidation', () => {

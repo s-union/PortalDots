@@ -1,19 +1,19 @@
-import * as z from 'zod'
+import * as v from 'valibot'
 
-const validationErrorSchema = z.object({
-  message: z.string(),
-  errors: z.record(z.string(), z.array(z.string()))
+const validationErrorSchema = v.object({
+  message: v.string(),
+  errors: v.record(v.string(), v.array(v.string()))
 })
 
-export type ValidationError = z.infer<typeof validationErrorSchema>
+export type ValidationError = v.InferOutput<typeof validationErrorSchema>
 
 export function parseValidationError(value: unknown, label: string): ValidationError {
-  const parsed = validationErrorSchema.safeParse(value)
+  const parsed = v.safeParse(validationErrorSchema, value)
   if (!parsed.success) {
     throw new Error(`Invalid ${label} validation error`)
   }
 
-  return parsed.data
+  return parsed.output
 }
 
 export function extractValidationMessage(error: unknown, fallback: string) {
@@ -41,7 +41,7 @@ export function unwrapValidationError(error: unknown): ValidationError | null {
 }
 
 function isValidationError(value: unknown): value is ValidationError {
-  return validationErrorSchema.safeParse(value).success
+  return v.safeParse(validationErrorSchema, value).success
 }
 
 function hasErrorCause(error: Error): error is Error & { cause: unknown } {

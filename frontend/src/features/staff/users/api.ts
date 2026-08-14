@@ -6,9 +6,9 @@ import { parsePaginatedResult, type PaginatedResult } from '@/lib/api/pagination
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
 import { fetchSessionBootstrap } from '@/features/session/api'
 import { useSessionStore } from '@/features/session/store'
-import * as z from 'zod'
+import type * as v from 'valibot'
 
-export type StaffUser = z.infer<typeof staffUserSchema>
+export type StaffUser = v.InferOutput<typeof staffUserSchema>
 
 export const manageableRoles = [
   'participant',

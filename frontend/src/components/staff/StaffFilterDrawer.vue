@@ -4,6 +4,7 @@ import IconActionButton from '@/components/ui/IconActionButton.vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import FormField from '@/components/ui/FormField.vue'
+import * as v from 'valibot'
 import {
   staffFilterOperatorSchema,
   type StaffFilterField,
@@ -92,13 +93,13 @@ function handleOperatorChange(event: Event, query: StaffFilterQuery) {
     return
   }
 
-  const operator = staffFilterOperatorSchema.safeParse(target.value)
+  const operator = v.safeParse(staffFilterOperatorSchema, target.value)
   if (!operator.success) {
     return
   }
 
   emit('updateQuery', query.id, {
-    operator: operator.data
+    operator: operator.output
   })
 }
 
