@@ -87,9 +87,9 @@
       "groupName": "OpenAPI Client Packages"
     },
     {
-      "description": "Keep zod aligned across workspaces (frontend + workers share a lockfile)",
-      "matchPackageNames": ["zod"],
-      "groupName": "zod"
+      "description": "Keep valibot aligned across workspaces (frontend + workers share a lockfile)",
+      "matchPackageNames": ["valibot"],
+      "groupName": "valibot"
     },
     {
       "description": "Group pnpm version updates across mise and packageManager",

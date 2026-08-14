@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import * as z from 'zod'
+import * as v from 'valibot'
 import { $api, buildApiUrl, createJsonHeaders, postMultipart } from '@/lib/api/client'
 import {
   existingAnswerConflictSchema,
@@ -45,7 +45,7 @@ export interface StaffFormAnswersIndex {
 export interface StaffManagedFormAnswerDetail {
   form: StaffFormDetail
   circle: StaffAnswerCircle
-  answer: z.infer<typeof staffManagedFormAnswerValueSchema>
+  answer: v.InferOutput<typeof staffManagedFormAnswerValueSchema>
   siblingAnswers: StaffManagedFormAnswerSummary[]
 }
 
@@ -109,13 +109,13 @@ export async function createStaffFormAnswer(formId: string, payload: MutateStaff
       body: payload
     },
     (value) =>
-      parseWithSchema(z.object({ answer: staffManagedFormAnswerSummarySchema }), value, 'staff form answer').answer,
+      parseWithSchema(v.object({ answer: staffManagedFormAnswerSummarySchema }), value, 'staff form answer').answer,
     {
       errorMessage: 'Failed to create staff form answer',
       errorParsers: {
         409: (error) => {
-          const conflict = existingAnswerConflictSchema.safeParse(error)
-          return conflict.success ? conflict.data : error
+          const conflict = v.safeParse(existingAnswerConflictSchema, error)
+          return conflict.success ? conflict.output : error
         },
         422: (error) => parseValidationError(error, 'staff form answer')
       }
@@ -369,8 +369,8 @@ export function extractExistingAnswerId(error: unknown) {
     return null
   }
 
-  const parsed = existingAnswerConflictSchema.safeParse(error.cause)
-  return parsed.success ? parsed.data.existingAnswerId : null
+  const parsed = v.safeParse(existingAnswerConflictSchema, error.cause)
+  return parsed.success ? parsed.output.existingAnswerId : null
 }
 
 function parseStaffFormAnswersIndex(value: unknown): StaffFormAnswersIndex {

@@ -32,7 +32,7 @@ function vendorChunk(id: string): string | undefined {
           ? 'vendor-vue'
           : id.includes('/node_modules/@tanstack/')
             ? 'vendor-query'
-            : id.includes('/node_modules/zod/')
+            : id.includes('/node_modules/valibot/')
               ? 'vendor-validation'
               : undefined
 }

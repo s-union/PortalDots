@@ -10,7 +10,7 @@ Vue 3 SPA for PortalDots.
 - **Styling**: Tailwind CSS v4
 - **State / data fetching**: Pinia · TanStack Query v5
 - **Routing**: Vue Router v5
-- **Validation**: Zod
+- **Validation**: Valibot
 - **API client**: `@portaldots/api-client` (openapi-fetch + openapi-typescript)
 - **Testing**: Vitest · Playwright
 - **Component explorer**: Storybook 10

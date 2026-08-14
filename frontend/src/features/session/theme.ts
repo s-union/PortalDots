@@ -1,8 +1,8 @@
 import { readonly, shallowRef } from 'vue'
-import * as z from 'zod'
+import * as v from 'valibot'
 
 export const uiThemeValues = ['system', 'light', 'dark'] as const
-const uiThemeSchema = z.enum(uiThemeValues)
+const uiThemeSchema = v.picklist(uiThemeValues)
 
 export type UiTheme = (typeof uiThemeValues)[number]
 
@@ -100,5 +100,5 @@ function persistUiThemeStorage(theme: UiTheme) {
 }
 
 function isUiTheme(value: string): value is UiTheme {
-  return uiThemeSchema.safeParse(value).success
+  return v.safeParse(uiThemeSchema, value).success
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import * as z from 'zod'
+import * as v from 'valibot'
 import { calculateTotalPages } from '@/lib/pagination'
 import { formatDateTime } from '@/lib/format/datetime'
 import FaIcon from '@/components/ui/FaIcon.vue'
@@ -66,7 +66,13 @@ const totalPages = computed(() => calculateTotalPages(total, pageSize))
 const startIndex = computed(() => (total === 0 ? 0 : (page - 1) * pageSize + 1))
 const endIndex = computed(() => Math.min(page * pageSize, total))
 const effectiveTotalUnfiltered = computed(() => totalUnfiltered ?? total)
-const positiveIntegerSchema = z.coerce.number().int().positive()
+const positiveIntegerSchema = v.pipe(
+  v.unknown(),
+  v.transform((val) => Number(val)),
+  v.number(),
+  v.integer(),
+  v.minValue(1)
+)
 
 function formatCount(value: number) {
   return value.toLocaleString('ja-JP')
@@ -85,11 +91,11 @@ function handlePageSizeChange(event: Event) {
     return
   }
 
-  const next = positiveIntegerSchema.safeParse(target.value)
+  const next = v.safeParse(positiveIntegerSchema, target.value)
   if (!next.success) {
     return
   }
-  emit('update:pageSize', next.data)
+  emit('update:pageSize', next.output)
 }
 
 function resolveAlignClass(column: StaffDataGridColumn) {

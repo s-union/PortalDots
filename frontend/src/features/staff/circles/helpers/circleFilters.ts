@@ -1,4 +1,4 @@
-import * as z from 'zod'
+import * as v from 'valibot'
 import type { StaffFilterField, StaffFilterQuery } from '@/lib/staffFilterSchema'
 
 export interface StaffCircleRow {
@@ -69,10 +69,10 @@ const circleFilterKeys = [
   'tags',
   'places'
 ] as const
-const circleFilterKeySchema = z.enum(circleFilterKeys)
+const circleFilterKeySchema = v.picklist(circleFilterKeys)
 
 export function isStaffCircleFilterKey(value: string) {
-  return circleFilterKeySchema.safeParse(value).success
+  return v.safeParse(circleFilterKeySchema, value).success
 }
 
 export function resolveCircleSortValue(circle: StaffCircleRow, key: StaffCircleSortKey) {

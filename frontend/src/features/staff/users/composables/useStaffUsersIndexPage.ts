@@ -6,7 +6,7 @@ import {
   type StaffFilterField,
   type StaffFilterQuery
 } from '@/lib/staffFilterSchema'
-import * as z from 'zod'
+import * as v from 'valibot'
 import { useSessionStore } from '@/features/session/store'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import {
@@ -54,7 +54,7 @@ const staffUserFilterKeys = [
   'isEmailVerified',
   'isVerified'
 ] as const satisfies readonly StaffUserFilterKey[]
-const staffUserFilterKeySchema = z.enum(staffUserFilterKeys)
+const staffUserFilterKeySchema = v.picklist(staffUserFilterKeys)
 
 const filterFields = [
   { key: 'id', label: 'ユーザーID', type: 'string' },
@@ -360,9 +360,9 @@ function toAppliedFilterQueries(queries: StaffFilterQuery[]) {
 }
 
 function isStaffUserFilterKey(value: string): value is StaffUserFilterKey {
-  return staffUserFilterKeySchema.safeParse(value).success
+  return v.safeParse(staffUserFilterKeySchema, value).success
 }
 
 function isStaffUserFilterOperator(value: string): value is StaffUserFilterOperator {
-  return staffFilterOperatorSchema.safeParse(value).success
+  return v.safeParse(staffFilterOperatorSchema, value).success
 }

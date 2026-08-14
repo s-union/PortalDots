@@ -1,10 +1,10 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import type * as z from 'zod'
+import type * as v from 'valibot'
 import { createJsonHeaders, $api } from '@/lib/api/client'
 import { STALE_TIME } from '@/lib/api/cacheConfig'
 import { parseArrayWithSchema, participationTypeSchema } from '@/lib/api/schema'
 
-export type ParticipationType = z.infer<typeof participationTypeSchema>
+export type ParticipationType = v.InferOutput<typeof participationTypeSchema>
 
 export async function fetchParticipationTypes() {
   return $api.queryData(

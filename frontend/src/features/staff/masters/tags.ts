@@ -6,9 +6,9 @@ import { parseValidationError } from '@/lib/api/validation'
 import { buildStaffListRequestParams, type StaffListQueryParamsInput } from '@/lib/staffListQuery'
 import { useStaffMasterMutation } from './shared'
 import { type TagColor } from '@/lib/tagColor'
-import * as z from 'zod'
+import type * as v from 'valibot'
 
-export type StaffTag = z.infer<typeof staffTagSchema>
+export type StaffTag = v.InferOutput<typeof staffTagSchema>
 
 export interface StaffTagMutationInput {
   name: string

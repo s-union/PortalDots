@@ -1,4 +1,4 @@
-import * as z from 'zod'
+import * as v from 'valibot'
 import { paginatedResultSchema, parseWithSchema } from '@/lib/api/schema'
 
 export interface PaginatedResult<T> {
@@ -14,17 +14,16 @@ export function parsePaginatedResult<T>(
   parseItem: (value: unknown) => T,
   label: string
 ): PaginatedResult<T> {
-  const itemSchema = z.unknown().transform((item, ctx) => {
-    try {
-      return parseItem(item)
-    } catch {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Invalid ${label} item`
-      })
-      return z.NEVER
-    }
-  })
+  const itemSchema = v.pipe(
+    v.unknown(),
+    v.transform((item) => {
+      try {
+        return parseItem(item)
+      } catch {
+        throw new Error(`Invalid ${label} item`)
+      }
+    })
+  )
 
-  return parseWithSchema(paginatedResultSchema(itemSchema), value, label)
+  return parseWithSchema(paginatedResultSchema(itemSchema), value, label) as PaginatedResult<T>
 }

@@ -31,7 +31,7 @@ const previewQuery = useStaffFormPreviewQuery(
   formId,
   computed(() => staffStatusQuery.data.value?.authorized === true)
 )
-const isLimitedPublic = computed(() => (previewQuery.data.value?.answerableTags.length ?? 0) > 0)
+const isLimitedPublic = computed(() => (previewQuery.data.value?.answerableTags?.length ?? 0) > 0)
 const previewPageTitle = computed(() => {
   const formName = previewQuery.data.value?.name?.trim()
   return formName ? `${formName} - プレビュー` : 'プレビュー'
@@ -161,7 +161,7 @@ function handlePreviewSubmit() {
             >
               限定公開
             </span>
-            このフォームは、{{ previewQuery.data.value.answerableTags.join(' / ') }}
+            このフォームは、{{ previewQuery.data.value?.answerableTags?.join(' / ') }}
             のタグを持つ企画に限定公開されます。
           </div>
         </header>

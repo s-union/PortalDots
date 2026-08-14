@@ -4,7 +4,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 import { sValidator } from '@hono/standard-validator'
-import * as z from 'zod'
+import * as v from 'valibot'
 import { type EmailDb } from './db/client'
 import {
   createChunkRecords,
@@ -279,18 +279,21 @@ async function dispatchJob(env: Env, payload: DispatchPayload): Promise<Dispatch
   }
 }
 
-const enqueueRequestSchema = z.object({
-  jobId: z.string().min(1),
-  template: z.enum(knownTemplates),
-  priority: z.enum(['high', 'normal']).optional(),
-  from: z.string().email(),
-  to: z.union([z.string().email(), z.array(z.string().email()).min(1).max(MAX_RECIPIENTS_PER_JOB)]),
-  subject: z.string().min(1),
-  body: z.string().optional(),
-  variables: z.record(z.string(), z.string()).default({})
+const enqueueRequestSchema = v.object({
+  jobId: v.pipe(v.string(), v.minLength(1)),
+  template: v.picklist(knownTemplates),
+  priority: v.optional(v.picklist(['high', 'normal'])),
+  from: v.pipe(v.string(), v.email()),
+  to: v.union([
+    v.pipe(v.string(), v.email()),
+    v.pipe(v.array(v.pipe(v.string(), v.email())), v.minLength(1), v.maxLength(MAX_RECIPIENTS_PER_JOB))
+  ]),
+  subject: v.pipe(v.string(), v.minLength(1)),
+  body: v.optional(v.string()),
+  variables: v.optional(v.record(v.string(), v.string()), {})
 })
 
-function toDispatchPayload(body: z.infer<typeof enqueueRequestSchema>): DispatchPayload {
+function toDispatchPayload(body: v.InferOutput<typeof enqueueRequestSchema>): DispatchPayload {
   return {
     jobId: body.jobId,
     template: body.template,
