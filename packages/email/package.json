@@ -16,8 +16,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hono/standard-validator": "^0.3.0",
-    "drizzle-orm": "^0.45.2",
+    "@hono/standard-validator": "0.3.0",
+    "drizzle-orm": "0.45.2",
     "hono": "4.12.34",
     "hono-email": "0.8.0",
     "valibot": "^1.4.2"
@@ -28,9 +28,9 @@
     "@hono-email/preview": "0.8.0",
     "@hono-email/tailwind-plugin": "0.8.0",
     "@tailwindcss/vite": "4.3.2",
-    "drizzle-kit": "^0.31.10",
+    "drizzle-kit": "0.31.10",
     "tailwindcss": "4.3.2",
-    "typescript": "^7.0.2",
+    "typescript": "7.0.2",
     "vite": "8.1.4",
     "vitest": "4.1.10",
     "wrangler": "4.116.0"
