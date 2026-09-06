@@ -111,6 +111,13 @@
       "groupName": "Go Backend Dependencies"
     },
     {
+      "description": "Do not update or pin go directive in go.mod",
+      "matchManagers": ["gomod"],
+      "matchDepNames": ["go"],
+      "matchDepTypes": ["golang"],
+      "enabled": false
+    },
+    {
       "description": "Group non-major GitHub Actions",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch"],
