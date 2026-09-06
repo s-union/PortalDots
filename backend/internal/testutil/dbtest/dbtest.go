@@ -39,36 +39,41 @@ func MigrationsDir(t testing.TB) string {
 func OpenLockedPool(t testing.TB, databaseURL string) *pgxpool.Pool {
 	t.Helper()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	initCtx, initCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer initCancel()
 
-	pool, err := pgxpool.New(ctx, databaseURL)
+	pool, err := pgxpool.New(initCtx, databaseURL)
 	if err != nil {
 		t.Fatalf("open postgres pool: %v", err)
 	}
 	t.Cleanup(pool.Close)
 
-	if err := pool.Ping(ctx); err != nil {
+	if err := pool.Ping(initCtx); err != nil {
 		t.Fatalf("ping postgres: %v", err)
 	}
 
-	lockConn, err := pool.Acquire(ctx)
+	lockConn, err := pool.Acquire(initCtx)
 	if err != nil {
 		t.Fatalf("acquire postgres lock connection: %v", err)
 	}
+
+	lockCtx, lockCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer lockCancel()
+
+	if _, err := lockConn.Exec(lockCtx, `SELECT pg_advisory_lock($1)`, integrationLockKey); err != nil {
+		lockConn.Release()
+		t.Fatalf("lock postgres integration tests: %v", err)
+	}
+
 	t.Cleanup(func() {
-		unlockCtx, unlockCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer lockConn.Release()
+		unlockCtx, unlockCancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer unlockCancel()
 
 		if _, err := lockConn.Exec(unlockCtx, `SELECT pg_advisory_unlock($1)`, integrationLockKey); err != nil {
-			t.Fatalf("unlock postgres integration lock: %v", err)
+			t.Errorf("unlock postgres integration lock: %v", err)
 		}
-		lockConn.Release()
 	})
-
-	if _, err := lockConn.Exec(ctx, `SELECT pg_advisory_lock($1)`, integrationLockKey); err != nil {
-		t.Fatalf("lock postgres integration tests: %v", err)
-	}
 
 	return pool
 }
