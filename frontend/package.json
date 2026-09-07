@@ -50,7 +50,7 @@
     "@storybook/vue3-vite": "10.5.0",
     "@tailwindcss/vite": "4.3.0",
     "@types/node": "24.13.1",
-    "@vitejs/plugin-vue": "6.0.7",
+    "@vitejs/plugin-vue": "6.0.8",
     "@vitest/browser-playwright": "4.1.10",
     "@vitest/coverage-v8": "4.1.10",
     "@vue/test-utils": "2.4.11",
