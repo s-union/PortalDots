@@ -9,10 +9,7 @@ import { onBeforeUnmount, provide, shallowRef } from 'vue'
 import App from '../src/app/App.vue'
 import { defaultHandlers } from '../src/mocks/handlers'
 import { useSessionStore, type SessionBootstrap } from '../src/features/session/store'
-import { initializeFontAwesome } from '../src/lib/icons/fontawesome'
 import '../src/styles/app.css'
-
-initializeFontAwesome()
 
 function isStorybookInternalRequest(request: Request) {
   const url = new URL(request.url)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type ComponentPublicInstance } from 'vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import { formatDateTime } from '@/lib/format/datetime'
 import { questionUploads, type FormAnswer } from '@/features/forms/answers'
@@ -19,7 +19,8 @@ const {
   downloadLabel,
   downloadHref,
   ariaInvalid,
-  ariaDescribedBy
+  ariaDescribedBy,
+  registerInput
 } = defineProps<{
   answer: FormAnswer | null | undefined
   element: Exclude<AnswerFormElement, { control: 'heading' }>
@@ -31,6 +32,7 @@ const {
   downloadLabel?: string
   ariaInvalid?: boolean
   ariaDescribedBy?: string
+  registerInput?: (input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) => void
   downloadHref: (questionId: string) => string
 }>()
 
@@ -79,11 +81,18 @@ function eventTargetChecked(event: Event) {
   const target = event.target
   return target instanceof HTMLInputElement ? target.checked : false
 }
+
+function setInputRef(input: Element | ComponentPublicInstance | null) {
+  if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement || input instanceof HTMLSelectElement) {
+    registerInput?.(input)
+  }
+}
 </script>
 
 <template>
   <input
     v-if="element.control === 'text'"
+    :ref="registerInput && setInputRef"
     :value="String(model)"
     :disabled="disabled"
     :id="element.id"
@@ -98,6 +107,7 @@ function eventTargetChecked(event: Event) {
 
   <textarea
     v-else-if="element.control === 'textarea'"
+    :ref="registerInput && setInputRef"
     :value="String(model)"
     :id="element.id"
     :name="element.id === 'legacy-body' ? 'answer-body' : element.id"
@@ -119,12 +129,14 @@ function eventTargetChecked(event: Event) {
     :name="element.id"
     :aria-invalid="ariaInvalid"
     :aria-described-by="ariaDescribedBy"
+    :register-input="registerInput"
     min-height-class="min-h-32"
     @update:model-value="model = $event"
   />
 
   <input
     v-else-if="element.control === 'number'"
+    :ref="registerInput && setInputRef"
     :value="String(model)"
     :disabled="disabled"
     :id="element.id"
@@ -141,6 +153,7 @@ function eventTargetChecked(event: Event) {
 
   <select
     v-else-if="element.control === 'select'"
+    :ref="registerInput && setInputRef"
     :value="String(model)"
     :disabled="disabled"
     :id="element.id"
@@ -169,6 +182,7 @@ function eventTargetChecked(event: Event) {
     <label v-for="option in element.options" :key="option" class="flex items-center gap-3 text-base text-body">
       <input
         :checked="String(model) === option"
+        :ref="registerInput && setInputRef"
         :disabled="disabled"
         type="radio"
         :name="element.id"
@@ -190,6 +204,7 @@ function eventTargetChecked(event: Event) {
     <label v-for="option in element.options" :key="option" class="flex items-center gap-3 text-base text-body">
       <input
         :checked="isChecked(option)"
+        :ref="registerInput && setInputRef"
         :disabled="disabled"
         type="checkbox"
         :name="element.id"

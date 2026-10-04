@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, defineAsyncComponent, nextTick, ref, useTemplateRef, watch } from 'vue'
 const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { cn } from '@/lib/ui/cn'
@@ -15,7 +15,8 @@ const {
   placeholder = '',
   id,
   ariaInvalid,
-  ariaDescribedBy
+  ariaDescribedBy,
+  registerInput
 } = defineProps<{
   disabled?: boolean
   guideHref?: string
@@ -25,10 +26,17 @@ const {
   id?: string
   ariaInvalid?: boolean
   ariaDescribedBy?: string
+  registerInput?: (input: HTMLTextAreaElement) => void
 }>()
 
 const previewVisible = ref(false)
 const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea')
+
+watch([textareaRef, () => registerInput], ([textarea, register]) => {
+  if (textarea) {
+    register?.(textarea)
+  }
+})
 
 const charCount = computed(() => model.value.length)
 

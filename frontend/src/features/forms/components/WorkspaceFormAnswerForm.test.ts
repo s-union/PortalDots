@@ -54,9 +54,13 @@ function createAnswer(overrides: Partial<FormAnswer> = {}): FormAnswer {
   }
 }
 
-function mountForm(overrides: Partial<InstanceType<typeof WorkspaceFormAnswerForm>['$props']> = {}) {
+function mountForm(
+  overrides: Partial<InstanceType<typeof WorkspaceFormAnswerForm>['$props']> = {},
+  attachTo?: HTMLElement
+) {
   const saveAnswer = vi.fn<(draft: FormAnswerDraft) => Promise<FormAnswer | null>>().mockResolvedValue(null)
   const wrapper = mount(WorkspaceFormAnswerForm, {
+    attachTo,
     props: {
       form: createForm(),
       answer: null,
@@ -317,6 +321,44 @@ describe('WorkspaceFormAnswerForm', () => {
 
     expect(saveAnswer).toHaveBeenCalledWith({ 'q-text': '展示企画' })
   })
+
+  it.each<FormQuestion['type']>(['text', 'textarea', 'markdown', 'number', 'select', 'radio', 'checkbox'])(
+    'focuses the first invalid %s control on submit',
+    async (type) => {
+      const { wrapper, saveAnswer } = mountForm(
+        {
+          form: createForm([
+            createQuestion({ id: toQuestionId('q-optional'), isRequired: false }),
+            createQuestion({ id: toQuestionId('q-required'), type, options: ['机', '椅子'] })
+          ])
+        },
+        document.body
+      )
+
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+
+      expect(saveAnswer).not.toHaveBeenCalled()
+      expect(document.activeElement).toBe(wrapper.get('[name="q-required"]').element)
+    }
+  )
+
+  it.each<FormQuestion['type']>(['radio', 'checkbox'])(
+    'focuses the next available %s option when the first option cannot receive focus',
+    async (type) => {
+      const { wrapper } = mountForm(
+        { form: createForm([createQuestion({ type, options: ['机', '椅子'] })]) },
+        document.body
+      )
+      const inputs = wrapper.findAll<HTMLInputElement>('input')
+      inputs[0].element.disabled = true
+
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+
+      expect(document.activeElement).toBe(inputs[1].element)
+    }
+  )
 
   it('keeps checkbox values as a string array through validation and submission', async () => {
     const { wrapper, saveAnswer } = mountForm({

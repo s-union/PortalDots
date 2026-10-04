@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 @import 'gen-interface-jp/400.css';
-@import 'gen-interface-jp/500.css';
 @import 'gen-interface-jp/600.css';
 
 @custom-variant dark {
@@ -108,6 +107,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     accent-color: var(--color-primary);
+    /* Keep text weights aligned with the regular and semibold font faces. */
+    --font-weight-medium: 400;
     --font-weight-bold: 600;
 
     @variant dark {

@@ -5,7 +5,6 @@ import { pinia } from '@/app/providers/pinia'
 import { router } from '@/app/router'
 import { queryClient } from '@/app/providers/queryClient'
 import { initTemporal } from '@/lib/temporal'
-import { initializeFontAwesome } from '@/lib/icons/fontawesome'
 import { initializeUiTheme } from '@/features/session/theme'
 import '@/styles/app.css'
 
@@ -20,5 +19,3 @@ app.use(router)
 app.use(VueQueryPlugin, { queryClient })
 
 app.mount('#v2-app')
-
-initializeFontAwesome()

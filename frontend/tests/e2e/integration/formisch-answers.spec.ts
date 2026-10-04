@@ -17,6 +17,7 @@ interface QuestionDefinition {
   type: QuestionType
   name: string
   description?: string
+  isRequired?: boolean
   numberMin?: number | null
   numberMax?: number | null
   options?: string[]
@@ -60,6 +61,7 @@ async function openAnswerForm(page: Page, maxAnswers = 1, questions = defaultQue
   expect(created.status()).toBe(201)
   const formId = stringField(await created.json(), 'id')
   const questionIds: Record<string, string> = {}
+  const questionIdsByName: Record<string, string> = {}
 
   for (const [priority, question] of questions.entries()) {
     const added = await page.request.post(`${API_BASE_URL}/v1/staff/forms/${formId}/questions`, {
@@ -69,6 +71,7 @@ async function openAnswerForm(page: Page, maxAnswers = 1, questions = defaultQue
     expect(added.status()).toBe(201)
     const questionId = stringField(await added.json(), 'id')
     questionIds[question.type] = questionId
+    questionIdsByName[question.name] = questionId
     const updated = await page.request.put(`${API_BASE_URL}/v1/staff/forms/${formId}/questions/${questionId}`, {
       headers,
       data: {
@@ -91,7 +94,7 @@ async function openAnswerForm(page: Page, maxAnswers = 1, questions = defaultQue
   await page.goto(`/workspace/forms/${formId}`)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(name)
   await expect(page.getByLabel('企画の説明', { exact: true })).toBeVisible()
-  return { formId, questionIds }
+  return { formId, questionIds, questionIdsByName }
 }
 
 function isAnswerSave(request: Request, formId: string) {
@@ -439,4 +442,140 @@ test('schema-generated controls preserve question order and all answer types thr
   await expect(page.getByRole('checkbox', { name: '机', exact: true })).toBeChecked()
   await expect(page.getByRole('checkbox', { name: '電源', exact: true })).toBeChecked()
   await expect(number).toHaveValue('3')
+})
+
+test('a long form supports keyboard navigation, offscreen validation focus, and saving every answer', async ({
+  page
+}) => {
+  const questions: QuestionDefinition[] = Array.from({ length: 40 }, (_, index) => ({
+    type: 'text',
+    name: index === 0 ? '企画の説明' : `長いフォームの設問 ${index + 1}`
+  }))
+  const { formId, questionIdsByName } = await openAnswerForm(page, 1, questions)
+  const firstInput = page.getByLabel(questions[0].name, { exact: true })
+  const lastInput = page.getByLabel(questions[questions.length - 1].name, { exact: true })
+  const saves: Request[] = []
+  page.on('request', (request) => {
+    if (isAnswerSave(request, formId)) saves.push(request)
+  })
+
+  await test.step('Tab reaches fields below the viewport and the submit footer', async () => {
+    await firstInput.click()
+    await expect(lastInput).not.toBeInViewport()
+    for (const [index, question] of questions.slice(0, -1).entries()) {
+      await expect(page.getByLabel(question.name, { exact: true })).toBeFocused()
+      await page.keyboard.insertText(`回答 ${index + 1}`)
+      await page.keyboard.press('Tab')
+    }
+    await expect(lastInput).toBeFocused()
+    await expect(lastInput).toBeInViewport()
+    await page.keyboard.press('Tab')
+    await expect(submitButton(page)).toBeFocused()
+    await expect(submitButton(page)).toBeInViewport()
+  })
+
+  await test.step('Submitting from the top focuses the invalid field below the viewport', async () => {
+    await firstInput.click()
+    await expect(lastInput).not.toBeInViewport()
+    await firstInput.press('Enter')
+    await expect(lastInput).toBeFocused()
+    await expect(lastInput).toBeInViewport()
+    await expect(page.getByText('長いフォームの設問 40を入力してください', { exact: true })).toBeVisible()
+    expect(saves).toHaveLength(0)
+  })
+
+  await test.step('The corrected form saves all fields and restores them after reload', async () => {
+    await page.keyboard.insertText('回答 40')
+    await expect(page.getByText('長いフォームの設問 40を入力してください', { exact: true })).toHaveCount(0)
+    await page.keyboard.press('Tab')
+    await expect(submitButton(page)).toBeFocused()
+    await expect(submitButton(page)).toBeInViewport()
+    const details = Object.fromEntries(
+      questions.map((question, index) => [questionIdsByName[question.name], [`回答 ${index + 1}`]])
+    )
+    expect(await saveAnswer(page, formId)).toMatchObject({ answer: { details } })
+    expect(saves).toHaveLength(1)
+
+    await page.reload()
+    for (const [index, question] of questions.entries()) {
+      await expect(page.getByLabel(question.name, { exact: true })).toHaveValue(`回答 ${index + 1}`)
+    }
+  })
+})
+
+test('a long form keeps tall controls reachable when scrolling and renders every question for printing', async ({
+  page
+}, testInfo) => {
+  const description = '長い説明文も途中で切れず、入力欄までスクロールして読めることを確認します。'.repeat(16)
+  const questions: QuestionDefinition[] = [
+    ...Array.from(
+      { length: 36 },
+      (_, index): QuestionDefinition => ({
+        type: 'text',
+        name: index === 0 ? '企画の説明' : `スクロール確認 ${index + 1}`,
+        isRequired: false
+      })
+    ),
+    { type: 'textarea', name: '長文入力', description, isRequired: false },
+    { type: 'markdown', name: '装飾付き長文入力', description, isRequired: false },
+    {
+      type: 'checkbox',
+      name: '多くの選択肢',
+      options: Array.from({ length: 24 }, (_, index) => `備品 ${index + 1}`),
+      isRequired: false
+    },
+    { type: 'text', name: '最後の入力欄', isRequired: false }
+  ]
+  const { questionIdsByName } = await openAnswerForm(page, 1, questions)
+  const lastInput = page.getByLabel('最後の入力欄', { exact: true })
+  await page.getByLabel('企画の説明', { exact: true }).click()
+  await expect(lastInput).not.toBeInViewport()
+
+  for (let step = 0; step < 40; step += 1) {
+    await page.mouse.wheel(0, 600)
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+    )
+    const reachedLastInput = await lastInput.evaluate((input) => {
+      const rect = input.getBoundingClientRect()
+      return rect.top >= 0 && rect.bottom <= window.innerHeight
+    })
+    if (reachedLastInput) break
+  }
+  await expect(lastInput).toBeInViewport()
+  await lastInput.click()
+  await expect(lastInput).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(submitButton(page)).toBeFocused()
+  await expect(submitButton(page)).toBeInViewport()
+  await page.screenshot({ path: testInfo.outputPath('mixed-form-footer.png') })
+
+  const textarea = page.getByLabel('長文入力', { exact: true })
+  await textarea.click()
+  await expect(textarea).toBeFocused()
+  await expect(textarea).toBeInViewport()
+  await page.keyboard.insertText('長文入力欄へのフォーカスを確認しました。')
+  await page.screenshot({ path: testInfo.outputPath('mixed-form-textarea.png') })
+  const markdown = page.locator(`textarea[name="${questionIdsByName['装飾付き長文入力']}"]`)
+  await markdown.click()
+  await expect(markdown).toBeFocused()
+  await expect(markdown).toBeInViewport()
+  await page.keyboard.insertText('**Markdown入力欄にも移動できます。**')
+  await page.screenshot({ path: testInfo.outputPath('mixed-form-markdown.png') })
+  await page.getByRole('checkbox', { name: '備品 24', exact: true }).check()
+  await expect(page.getByRole('checkbox', { name: '備品 24', exact: true })).toBeChecked()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+
+  await page.emulateMedia({ media: 'print' })
+  const printedLabels = await page.locator('form label[for]').evaluateAll((labels) =>
+    labels.flatMap((label) => {
+      const range = document.createRange()
+      range.selectNodeContents(label)
+      return Array.from(range.getClientRects()).some((rect) => rect.width > 0 && rect.height > 0)
+        ? [label.textContent?.trim()]
+        : []
+    })
+  )
+  expect(printedLabels).toEqual(questions.map((question) => question.name))
+  await page.pdf({ path: testInfo.outputPath('mixed-form-print.pdf'), format: 'A4', printBackground: true })
 })

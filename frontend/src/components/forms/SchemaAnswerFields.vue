@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Field, type FieldElementProps, type FormStore } from '@formisch/vue'
-import { computed, type ComponentPublicInstance } from 'vue'
+import { Field, type FormStore } from '@formisch/vue'
+import { computed } from 'vue'
 import FormAnswerControl from './FormAnswerControl.vue'
 import FormError from '@/components/ui/FormError.vue'
 import type { FormAnswer } from '@/features/forms/answers'
@@ -30,14 +30,6 @@ function fieldValue(input: unknown): string | string[] {
     return input
   }
   return Array.isArray(input) ? input.filter((item): item is string => typeof item === 'string') : ''
-}
-
-function registerInputs(element: Element | ComponentPublicInstance | null, register: FieldElementProps['ref']) {
-  if (element instanceof HTMLElement) {
-    for (const input of element.querySelectorAll('input, textarea, select')) {
-      register(input)
-    }
-  }
 }
 </script>
 
@@ -83,18 +75,14 @@ function registerInputs(element: Element | ComponentPublicInstance | null, regis
         />
 
         <Field v-else :of="form" :path="[element.id]" v-slot="field">
-          <div
-            :ref="(control) => registerInputs(control, field.props.ref)"
-            @focusin="field.props.onFocus"
-            @focusout="field.props.onBlur"
-            @change="field.props.onChange"
-          >
+          <div @focusin="field.props.onFocus" @focusout="field.props.onBlur" @change="field.props.onChange">
             <FormAnswerControl
               :model-value="fieldValue(field.input)"
               :element="element"
               :answer="answer"
               :disabled="disabled"
               :download-href="downloadHref"
+              :register-input="field.props.ref"
               :aria-invalid="!!field.errors"
               :aria-described-by="
                 [element.description && `${element.id}-description`, field.errors && `${element.id}-error`]
