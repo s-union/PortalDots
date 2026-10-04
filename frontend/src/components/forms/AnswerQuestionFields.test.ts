@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import type { FormQuestion } from '@/features/forms/api'
 import AnswerQuestionFields from './AnswerQuestionFields.vue'
-import type { FormAnswerDraft } from '@/features/forms/answers'
 
 type AnswerQuestionFieldsProps = InstanceType<typeof AnswerQuestionFields>['$props']
 
@@ -26,94 +25,97 @@ function createQuestion(overrides: Partial<FormQuestion>): FormQuestion {
 
 function createProps(
   question: FormQuestion,
-  draft: FormAnswerDraft,
+  modelValue: string | string[],
   answer: AnswerQuestionFieldsProps['answer'] = null
 ) {
   return {
     question,
-    draft,
+    modelValue,
     answer,
     downloadHref: () => '/download/url'
   }
 }
 
 describe('AnswerQuestionFields', () => {
-  it('updates text question draft on input', async () => {
+  it('emits text input changes and renders the parent value', async () => {
     const question = createQuestion({ id: 'question-text', type: 'text' })
-    const draft: FormAnswerDraft = { 'question-text': '' }
 
     const wrapper = mount(AnswerQuestionFields, {
-      props: createProps(question, draft)
+      props: createProps(question, '現在の回答')
     })
 
+    expect(wrapper.get<HTMLInputElement>('input[type="text"]').element.value).toBe('現在の回答')
     await wrapper.get('input[type="text"]').setValue('山田太郎')
 
-    expect(draft['question-text']).toBe('山田太郎')
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['山田太郎'])
+
+    await wrapper.setProps({ modelValue: '別の回答' })
+    expect(wrapper.get<HTMLInputElement>('input[type="text"]').element.value).toBe('別の回答')
   })
 
-  it('toggles checkbox values in draft', async () => {
+  it('emits checkbox changes without mutating the parent array', async () => {
     const question = createQuestion({
       id: 'question-checkbox',
       type: 'checkbox',
       options: ['机', '椅子']
     })
-    const draft: FormAnswerDraft = { 'question-checkbox': [] }
+    const initialValue = ['椅子']
 
     const wrapper = mount(AnswerQuestionFields, {
-      props: createProps(question, draft)
+      props: createProps(question, initialValue)
     })
 
-    const checkboxes = wrapper.findAll('input[type="checkbox"]')
+    const checkboxes = wrapper.findAll<HTMLInputElement>('input[type="checkbox"]')
     expect(checkboxes).toHaveLength(2)
 
     await checkboxes[0].setValue(true)
-    expect(draft['question-checkbox']).toEqual(['机'])
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([['椅子', '机']])
+    expect(initialValue).toEqual(['椅子'])
 
+    await wrapper.setProps({ modelValue: ['椅子', '机'] })
     await checkboxes[0].setValue(false)
-    expect(draft['question-checkbox']).toEqual([])
+    expect(wrapper.emitted('update:modelValue')?.[1]).toEqual([['椅子']])
+
+    await wrapper.setProps({ modelValue: [] })
+    expect(checkboxes.every((checkbox) => !checkbox.element.checked)).toBe(true)
   })
 
-  it('updates select and radio values in draft', async () => {
+  it('emits select and radio input changes', async () => {
     const selectQuestion = createQuestion({
       id: 'question-select',
       type: 'select',
       options: ['A', 'B']
     })
-    const selectDraft: FormAnswerDraft = { 'question-select': '' }
-
     const selectWrapper = mount(AnswerQuestionFields, {
-      props: createProps(selectQuestion, selectDraft)
+      props: createProps(selectQuestion, '')
     })
     await selectWrapper.get('select').setValue('B')
-    expect(selectDraft['question-select']).toBe('B')
+    expect(selectWrapper.emitted('update:modelValue')?.[0]).toEqual(['B'])
 
     const radioQuestion = createQuestion({
       id: 'question-radio',
       type: 'radio',
       options: ['はい', 'いいえ']
     })
-    const radioDraft: FormAnswerDraft = { 'question-radio': '' }
-
     const radioWrapper = mount(AnswerQuestionFields, {
-      props: createProps(radioQuestion, radioDraft)
+      props: createProps(radioQuestion, '')
     })
     const radios = radioWrapper.findAll('input[type="radio"]')
     await radios[1].setValue(true)
 
-    expect(radioDraft['question-radio']).toBe('いいえ')
+    expect(radioWrapper.emitted('update:modelValue')?.[0]).toEqual(['いいえ'])
   })
 
-  it('updates markdown question draft through the markdown editor', async () => {
+  it('emits markdown editor changes', async () => {
     const question = createQuestion({ id: 'question-markdown', type: 'markdown' })
-    const draft: FormAnswerDraft = { 'question-markdown': '' }
 
     const wrapper = mount(AnswerQuestionFields, {
-      props: createProps(question, draft)
+      props: createProps(question, '')
     })
 
     await wrapper.get('textarea[name="question-markdown"]').setValue('**強調** できます')
 
-    expect(draft['question-markdown']).toBe('**強調** できます')
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['**強調** できます'])
   })
 
   it('renders number question as a dropdown from min and max', async () => {
@@ -123,10 +125,8 @@ describe('AnswerQuestionFields', () => {
       numberMin: 2,
       numberMax: 4
     })
-    const draft: FormAnswerDraft = { 'question-number': '' }
-
     const wrapper = mount(AnswerQuestionFields, {
-      props: createProps(question, draft)
+      props: createProps(question, '')
     })
 
     const options = wrapper.findAll('select option')
@@ -134,7 +134,7 @@ describe('AnswerQuestionFields', () => {
 
     await wrapper.get('select').setValue('3')
 
-    expect(draft['question-number']).toBe('3')
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['3'])
   })
 
   it('renders upload list and emits file events', async () => {
@@ -142,7 +142,6 @@ describe('AnswerQuestionFields', () => {
       id: 'question-upload',
       type: 'upload'
     })
-    const draft: FormAnswerDraft = {}
     const answer: NonNullable<AnswerQuestionFieldsProps['answer']> = {
       id: 'answer-1',
       body: '',
@@ -162,7 +161,7 @@ describe('AnswerQuestionFields', () => {
 
     const wrapper = mount(AnswerQuestionFields, {
       props: {
-        ...createProps(question, draft, answer),
+        ...createProps(question, '', answer),
         uploadErrorMessage: 'アップロードに失敗しました'
       }
     })
@@ -191,10 +190,8 @@ describe('AnswerQuestionFields', () => {
       type: 'upload',
       allowedTypes: 'png|jpg|jpeg|gif'
     })
-    const draft: FormAnswerDraft = {}
-
     const wrapper = mount(AnswerQuestionFields, {
-      props: createProps(question, draft)
+      props: createProps(question, '')
     })
 
     expect(wrapper.get('input[type="file"]').attributes('accept')).toBe('.png,.jpg,.jpeg,.gif')
@@ -203,11 +200,9 @@ describe('AnswerQuestionFields', () => {
 
   it('uses custom download label and shows empty state', () => {
     const question = createQuestion({ id: 'question-upload', type: 'upload' })
-    const draft: FormAnswerDraft = {}
-
     const wrapper = mount(AnswerQuestionFields, {
       props: {
-        ...createProps(question, draft),
+        ...createProps(question, ''),
         downloadLabel: 'DL'
       }
     })
@@ -218,11 +213,9 @@ describe('AnswerQuestionFields', () => {
 
   it('shows pending upload label and disables upload button', () => {
     const question = createQuestion({ id: 'question-upload', type: 'upload' })
-    const draft: FormAnswerDraft = {}
-
     const wrapper = mount(AnswerQuestionFields, {
       props: {
-        ...createProps(question, draft),
+        ...createProps(question, ''),
         uploadPending: true
       }
     })
@@ -239,11 +232,9 @@ describe('AnswerQuestionFields', () => {
 
   it('disables controls when disabled is true', () => {
     const question = createQuestion({ id: 'question-text', type: 'text' })
-    const draft: FormAnswerDraft = { 'question-text': '' }
-
     const wrapper = mount(AnswerQuestionFields, {
       props: {
-        ...createProps(question, draft),
+        ...createProps(question, ''),
         disabled: true
       }
     })

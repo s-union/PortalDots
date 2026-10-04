@@ -608,6 +608,96 @@ describe('FormDetailPage', () => {
     expect((createButton.element as HTMLButtonElement).disabled).toBe(false)
   })
 
+  it('preserves edits and a pending submission when a question name is refetched', async () => {
+    let questionName = '搬入責任者'
+    let answer = {
+      id: 'answer-1',
+      body: '',
+      updatedAt: '2026-03-05T10:00:00Z',
+      details: { 'question-text': ['保存済みの回答'] },
+      uploads: []
+    }
+    const saveGate = Promise.withResolvers<void>()
+    const saveRequests = vi.fn()
+    server.use(
+      http.get('/v1/forms/:formId', () =>
+        HttpResponse.json({
+          ...fullFormFixture,
+          description: '',
+          confirmationMessage: '',
+          questions: [{ ...fullFormFixture.questions[0], name: questionName }]
+        })
+      ),
+      http.get('/v1/forms/:formId/answers', () => HttpResponse.json({ answers: [answer] })),
+      http.get('/v1/forms/:formId/answer', () => HttpResponse.json({ answer })),
+      http.get('/v1/forms/:formId/answers/:answerId', () => HttpResponse.json({ answer })),
+      http.put('/v1/forms/:formId/answers/:answerId', async ({ request }) => {
+        saveRequests(await request.json())
+        await saveGate.promise
+        answer = { ...answer, details: { 'question-text': ['送信中の編集'] } }
+        return HttpResponse.json({ answer })
+      })
+    )
+
+    const pinia = setupSession()
+    const router = makeRouter()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    await router.push('/workspace/forms/form-circle-a-1?answer=answer-1')
+    await router.isReady()
+    const wrapper = mount(
+      { template: '<router-view />' },
+      { global: { plugins: [pinia, router, [VueQueryPlugin, { queryClient }]] } }
+    )
+
+    try {
+      await vi.waitFor(() => {
+        expect(wrapper.get<HTMLInputElement>('input[aria-label="搬入責任者"]').element.value).toBe('保存済みの回答')
+      })
+      await wrapper.get('input[aria-label="搬入責任者"]').setValue('未保存の編集')
+
+      questionName = '当日の搬入担当者'
+      await queryClient.refetchQueries({ queryKey: ['forms', 'detail', fullFormFixture.id] })
+      await vi.waitFor(() => {
+        expect(wrapper.find('input[aria-label="当日の搬入担当者"]').exists()).toBe(true)
+      })
+      expect
+        .soft(wrapper.get<HTMLInputElement>('input[aria-label="当日の搬入担当者"]').element.value)
+        .toBe('未保存の編集')
+
+      await wrapper.get('input[aria-label="当日の搬入担当者"]').setValue('送信中の編集')
+      await wrapper.get('form').trigger('submit')
+      await vi.waitFor(() => {
+        expect(saveRequests).toHaveBeenCalledTimes(1)
+        expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(true)
+      })
+
+      questionName = '搬入当日の責任者氏名'
+      await queryClient.refetchQueries({ queryKey: ['forms', 'detail', fullFormFixture.id] })
+      await vi.waitFor(() => {
+        expect(wrapper.find('input[aria-label="搬入当日の責任者氏名"]').exists()).toBe(true)
+      })
+      expect
+        .soft(wrapper.get<HTMLInputElement>('input[aria-label="搬入当日の責任者氏名"]').element.value)
+        .toBe('送信中の編集')
+      expect.soft(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(true)
+      expect(saveRequests).toHaveBeenCalledTimes(1)
+
+      saveGate.resolve()
+      await vi.waitFor(() => {
+        expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(false)
+      })
+      expect(saveRequests).toHaveBeenCalledTimes(1)
+      expect(saveRequests).toHaveBeenCalledWith(
+        expect.objectContaining({ details: { 'question-text': '送信中の編集' } })
+      )
+    } finally {
+      saveGate.resolve()
+      await flushPromises()
+      wrapper.unmount()
+      queryClient.clear()
+    }
+  })
+
   function setupMultiAnswerHandlers() {
     server.use(
       http.get('/v1/forms/:formId', () =>

@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import type { FormQuestion } from '@/features/forms/api'
+import { buildAnswerFormSchema } from '@/features/forms/answer-form-schema'
 import { categoryIdSchema, participationTypeIdSchema } from '@/lib/api/schema'
 
 /**
@@ -310,69 +311,6 @@ export type StaffPlaceFormData = v.InferOutput<typeof staffPlaceFormSchema>
  * heading/upload type questions are excluded from validation.
  */
 export function buildFormAnswerSchema(questions: FormQuestion[]) {
-  const shape: Record<string, v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>> = {}
-
-  for (const question of questions) {
-    if (question.type === 'heading' || question.type === 'upload') {
-      continue
-    }
-
-    const fieldSchema: v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>> = question.type === 'number'
-      ? v.pipe(
-          v.string(),
-          v.rawCheck(({ dataset, addIssue }) => {
-            if (!dataset.typed) return
-            const val = dataset.value
-            if (val === '' && !question.isRequired) return
-            if (val === '') {
-              addIssue({ message: `${question.name}を入力してください` })
-              return
-            }
-            const num = Number(val)
-            if (isNaN(num)) {
-              addIssue({ message: '数値を入力してください' })
-              return
-            }
-            if (question.numberMin !== null && num < question.numberMin) {
-              addIssue({ message: `${question.numberMin}以上の値を入力してください` })
-            }
-            if (question.numberMax !== null && num > question.numberMax) {
-              addIssue({ message: `${question.numberMax}以下の値を入力してください` })
-            }
-          })
-        )
-      : question.type === 'checkbox'
-        ? (() => {
-            const base = v.array(v.string())
-            return question.isRequired ? v.pipe(base, v.minLength(1, `${question.name}を選択してください`)) : base
-          })()
-        : ['text', 'textarea', 'markdown'].includes(question.type)
-          ? v.pipe(
-              v.string(),
-              v.rawCheck(({ dataset, addIssue }) => {
-                if (!dataset.typed) return
-                const val = dataset.value
-                if (val === '' && !question.isRequired) return
-                if (val === '') {
-                  addIssue({ message: `${question.name}を入力してください` })
-                  return
-                }
-                if (question.numberMin !== null && Array.from(val).length < question.numberMin) {
-                  addIssue({ message: `${question.numberMin}文字以上で入力してください` })
-                }
-                if (question.numberMax !== null && Array.from(val).length > question.numberMax) {
-                  addIssue({ message: `${question.numberMax}文字以下で入力してください` })
-                }
-              })
-            )
-          : // Select, radio
-            question.isRequired
-            ? v.pipe(v.string(), v.minLength(1, `${question.name}を入力してください`))
-            : v.string()
-
-    shape[question.id] = fieldSchema
-  }
-
   // Passthrough: allow 'legacy-body' and upload keys not in the schema
-  return v.looseObject(shape)
+  return v.looseObject(buildAnswerFormSchema(questions).entries)
 }

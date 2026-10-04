@@ -14,8 +14,10 @@ import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
 import {
+  answerValue,
   buildFormAnswerUploadDownloadUrlByAnswer,
   isFormAnswerDraftDirty,
+  setAnswerValue,
   updateDraftValue,
   useFormAnswerEditorDraft
 } from '@/features/forms/answers'
@@ -208,7 +210,8 @@ function handleFileChange(questionId: string, file: File | null) {
 
                 <AnswerQuestionFields
                   :answer="answerQuery.data.value.answer"
-                  :draft="draft"
+                  :model-value="answerValue(draft, question)"
+                  @update:model-value="setAnswerValue(draft, question, $event)"
                   :question="question"
                   :selected-file="selectedFiles[question.id]"
                   :upload-button-label="'添付を更新'"

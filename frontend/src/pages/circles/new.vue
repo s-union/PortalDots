@@ -17,7 +17,7 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import { useCreateCircleMutation, useParticipationTypeRegistrationFormQuery } from '@/features/circles/queries'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
-import { isFormAnswerDraftDirty, useFormAnswerEditorDraft } from '@/features/forms/answers'
+import { answerValue, isFormAnswerDraftDirty, setAnswerValue, useFormAnswerEditorDraft } from '@/features/forms/answers'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage } from '@/lib/api/validation'
@@ -381,7 +381,8 @@ async function handleSubmit() {
                   <div @focusout.capture="markAnswerTouched(question.id)">
                     <AnswerQuestionFields
                       :answer="null"
-                      :draft="draft"
+                      :model-value="answerValue(draft, question)"
+                      @update:model-value="setAnswerValue(draft, question, $event)"
                       :question="question"
                       :disabled="createMutation.isPending.value"
                       :upload-button-label="'ファイルを追加'"

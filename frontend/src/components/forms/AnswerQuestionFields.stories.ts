@@ -1,8 +1,7 @@
 import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3-vite'
-import { ref } from 'vue'
+import { shallowRef } from 'vue'
 import AnswerQuestionFields from './AnswerQuestionFields.vue'
 import type { FormQuestion } from '@/features/forms/api'
-import type { FormAnswerDraft } from '@/features/forms/answers'
 import { toQuestionId } from '@/lib/api/schema'
 
 const meta = {
@@ -94,13 +93,13 @@ export const TextInput: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: textQuestion }
+      const value = shallowRef<string | string[]>('')
+      return { value, question: textQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         upload-button-label="アップロード"
         :download-href="() => ''"
@@ -113,13 +112,13 @@ export const Textarea: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: textareaQuestion }
+      const value = shallowRef<string | string[]>('')
+      return { value, question: textareaQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         :download-href="() => ''"
       />
@@ -131,13 +130,13 @@ export const Markdown: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: markdownQuestion }
+      const value = shallowRef<string | string[]>('')
+      return { value, question: markdownQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         :download-href="() => ''"
       />
@@ -149,13 +148,13 @@ export const NumberSelect: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: numberQuestion }
+      const value = shallowRef<string | string[]>('')
+      return { value, question: numberQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         :download-href="() => ''"
       />
@@ -167,13 +166,13 @@ export const Select: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: selectQuestion }
+      const value = shallowRef<string | string[]>('')
+      return { value, question: selectQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         :download-href="() => ''"
       />
@@ -185,13 +184,13 @@ export const Radio: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: radioQuestion }
+      const value = shallowRef<string | string[]>('')
+      return { value, question: radioQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         :download-href="() => ''"
       />
@@ -203,13 +202,13 @@ export const Checkbox: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: checkboxQuestion }
+      const value = shallowRef<string | string[]>([])
+      return { value, question: checkboxQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         upload-button-label="アップロード"
         :download-href="() => ''"
@@ -222,13 +221,13 @@ export const FileUpload: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({})
-      return { draft, question: uploadQuestion }
+      const value = shallowRef<string | string[]>('')
+      return { value, question: uploadQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         :download-href="() => '/v1/forms/form-1/answers/q-7/download'"
       />
@@ -240,13 +239,13 @@ export const Disabled: Story = {
   render: () => ({
     components: { AnswerQuestionFields },
     setup() {
-      const draft = ref<FormAnswerDraft>({ 'text:q-1': '企画名のサンプル' })
-      return { draft, question: textQuestion }
+      const value = shallowRef<string | string[]>('企画名のサンプル')
+      return { value, question: textQuestion }
     },
     template: `
       <AnswerQuestionFields
         :answer="null"
-        :draft="draft"
+        v-model="value"
         :question="question"
         :disabled="true"
         :download-href="() => ''"

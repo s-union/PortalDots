@@ -6,14 +6,14 @@ import {
   extractValidationMessage,
   useCreateFormAnswerMutation,
   useFormAnswerByIdQuery,
-  useFormAnswerEditorDraft,
   useFormAnswerMutation,
   useFormAnswerQuery,
   useFormAnswerUploadMutation,
   useFormAnswersQuery,
-  useUpdateFormAnswerMutation
+  useUpdateFormAnswerMutation,
+  type FormAnswer,
+  type FormAnswerDraft
 } from '@/features/forms/answers'
-import { useFormValidation, buildFormAnswerSchema } from '@/lib/form-validation'
 
 interface UseWorkspaceFormDetailPageOptions {
   formId: MaybeRefOrGetter<string>
@@ -29,21 +29,18 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
   const answersQuery = useFormAnswersQuery(formId)
   const legacyAnswerQuery = useFormAnswerQuery(formId)
   const selectedAnswerQuery = useFormAnswerByIdQuery(formId, selectedAnswerId)
-  const questions = computed(() => formQuery.data.value?.questions ?? [])
   const selectedAnswer = computed(() => {
     if (selectedAnswerId.value) {
-      return selectedAnswerQuery.data.value?.answer ?? null
+      const selected = selectedAnswerQuery.data.value
+      if (selected) {
+        return selected.answer
+      }
+      // The first save selects the new answer before its by-ID query resolves.
+      const savedAnswer = legacyAnswerQuery.data.value?.answer
+      return savedAnswer?.id === selectedAnswerId.value ? savedAnswer : null
     }
     return legacyAnswerQuery.data.value?.answer ?? null
   })
-  const draft = useFormAnswerEditorDraft(selectedAnswer, questions)
-
-  const answerSchema = computed(() => buildFormAnswerSchema(questions.value))
-  const {
-    getFieldError: getAnswerFieldError,
-    validateAll: validateAnswerFields,
-    markTouched: markAnswerTouched
-  } = useFormValidation({ schema: answerSchema, form: draft })
 
   const createAnswerMutation = useCreateFormAnswerMutation(formId)
   const legacyAnswerMutation = useFormAnswerMutation(formId)
@@ -63,17 +60,15 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
     const maxAnswers = formQuery.data.value?.maxAnswers ?? 1
     return answers.value.length >= maxAnswers
   })
-  const isSavingAnswer = computed(() => {
-    if (selectedAnswerId.value) {
-      return answerMutation.isPending.value
-    }
-    return legacyAnswerMutation.isPending.value
-  })
   const circleNotApprovedMessage = '企画が受理されていないため申請できません。'
 
   watch(
     [answers, selectedAnswerId],
     async ([currentAnswers, currentSelectedAnswerId]) => {
+      if (!answersQuery.data.value) {
+        return
+      }
+
       if (currentAnswers.length === 0) {
         if (!currentSelectedAnswerId) {
           return
@@ -93,27 +88,23 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
     { immediate: true }
   )
 
-  async function saveAnswer() {
+  async function saveAnswer(draft: FormAnswerDraft): Promise<FormAnswer | null> {
     if (!isFormWritable.value) {
       if (!isCircleApproved.value) {
         errorMessage.value = circleNotApprovedMessage
       }
-      return
+      return null
     }
     errorMessage.value = ''
 
-    if (!validateAnswerFields()) {
-      return
-    }
-
     try {
-      if (selectedAnswerId.value) {
-        await answerMutation.mutateAsync(draft.value)
-      } else {
-        await legacyAnswerMutation.mutateAsync(draft.value)
-      }
+      const result = selectedAnswerId.value
+        ? await answerMutation.mutateAsync(draft)
+        : await legacyAnswerMutation.mutateAsync(draft)
+      return result.answer
     } catch (error) {
       errorMessage.value = extractValidationMessage(error)
+      return null
     }
   }
 
@@ -196,18 +187,14 @@ export function useWorkspaceFormDetailPage(options: UseWorkspaceFormDetailPageOp
     confirmationMessage,
     createAnswer,
     createAnswerMutation,
-    draft,
     errorMessage,
     form,
     formQuery,
-    getAnswerFieldError,
     handleFileChange,
     hasReachedAnswerLimit,
     isCircleApproved,
     isFormWritable,
     isLimitedPublic,
-    isSavingAnswer,
-    markAnswerTouched,
     resolveUploadDownloadHref,
     saveAnswer,
     selectAnswer,

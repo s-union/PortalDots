@@ -31,6 +31,9 @@ importers:
 
   frontend:
     dependencies:
+      '@formisch/vue':
+        specifier: 1.1.0
+        version: 1.1.0(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2)(valibot@1.4.2(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2))
       '@fortawesome/fontawesome-svg-core':
         specifier: 7.2.0
         version: 7.2.0
@@ -769,6 +772,16 @@ packages:
       '@noble/hashes': ^1.8.0 || ^2.0.0
     peerDependenciesMeta:
       '@noble/hashes':
+        optional: true
+
+  '@formisch/vue@1.1.0':
+    resolution: {integrity: sha512-g7KJlrqviu93qzwYiLDP6RcoWEgzb0ZdpfUPp1EdkjOl+QhUWcniXSZPlbtoa9etb8GR3j8rrC60vsEBs7O8hQ==}
+    peerDependencies:
+      typescript: '>=5 <8'
+      valibot: '>=1.4.1 <2'
+      vue: '>=3.3 <4'
+    peerDependenciesMeta:
+      typescript:
         optional: true
 
   '@fortawesome/fontawesome-common-types@7.2.0':
@@ -5373,6 +5386,13 @@ snapshots:
     optional: true
 
   '@exodus/bytes@1.15.1': {}
+
+  '@formisch/vue@1.1.0(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2)(valibot@1.4.2(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2))(vue@3.5.35(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2))':
+    dependencies:
+      valibot: 1.4.2(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2)
+      vue: 3.5.35(typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2)
+    optionalDependencies:
+      typescript: typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2
 
   '@fortawesome/fontawesome-common-types@7.2.0': {}
 

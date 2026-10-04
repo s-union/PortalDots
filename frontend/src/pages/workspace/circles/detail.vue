@@ -23,9 +23,11 @@ import {
   useUpdateCircleMutation
 } from '@/features/circles/queries'
 import {
+  answerValue,
   buildFormAnswerUploadDownloadUrl,
   extractValidationMessage as extractAnswerValidationMessage,
   isFormAnswerDraftDirty,
+  setAnswerValue,
   useFormAnswerEditorDraft,
   useFormAnswerUploadMutation
 } from '@/features/forms/answers'
@@ -381,7 +383,8 @@ function downloadHref(questionId: string) {
 
                 <AnswerQuestionFields
                   :answer="detailQuery.data.value.answer"
-                  :draft="draft"
+                  :model-value="answerValue(draft, question)"
+                  @update:model-value="setAnswerValue(draft, question, $event)"
                   :question="question"
                   :disabled="!canEdit"
                   :selected-file="selectedFiles[question.id]"

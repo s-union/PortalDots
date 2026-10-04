@@ -1,21 +1,16 @@
 <script setup lang="ts">
-import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
+import WorkspaceFormAnswerForm from './WorkspaceFormAnswerForm.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
-import { isFormAnswerDraftDirty, updateDraftValue } from '@/features/forms/answers'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useWorkspaceFormDetailPage } from '@/features/forms/composables/useWorkspaceFormDetailPage'
-import { computed, defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import { useSessionStore } from '@/features/session/store'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import { buttonVariants } from '@/lib/ui/variants'
-import { textareaValue } from '@/lib/dom'
-import ActionsFooter from '@/components/ui/ActionsFooter.vue'
-import FormError from '@/components/ui/FormError.vue'
-import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import FormField from '@/components/ui/FormField.vue'
 
 const { formId: currentFormId, selectedAnswerId: currentSelectedAnswerId } = defineProps<{
@@ -36,18 +31,14 @@ const {
   confirmationMessage,
   createAnswer: createAnswerOriginal,
   createAnswerMutation,
-  draft,
   errorMessage,
   form,
   formQuery,
-  getAnswerFieldError,
   handleFileChange,
   hasReachedAnswerLimit,
   isCircleApproved,
   isFormWritable,
   isLimitedPublic,
-  isSavingAnswer,
-  markAnswerTouched,
   resolveUploadDownloadHref,
   saveAnswer,
   selectAnswer: selectAnswerOriginal,
@@ -73,13 +64,21 @@ const remainingAnswerCount = computed(() => {
   return Math.max(form.value.maxAnswers - answers.value.length, 0)
 })
 const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
-const { confirmBeforeSwitching } = useUnsavedChangesGuard(
-  computed(
-    () =>
-      isFormAnswerDraftDirty(draft.value, selectedAnswer.value, form?.value?.questions ?? []) ||
-      hasUnuploadedFiles.value
-  )
+const answerDirty = ref(false)
+const answerSchemaKey = computed(() =>
+  JSON.stringify([
+    currentFormId,
+    form.value?.questions.map(({ id, type, isRequired, numberMin, numberMax, options }) => ({
+      id,
+      type,
+      isRequired,
+      numberMin,
+      numberMax,
+      options
+    }))
+  ])
 )
+const { confirmBeforeSwitching } = useUnsavedChangesGuard(computed(() => answerDirty.value || hasUnuploadedFiles.value))
 
 async function selectAnswer(answerId: string) {
   if (answerId === selectedAnswerId.value || !confirmBeforeSwitching()) {
@@ -102,7 +101,7 @@ async function createAnswer() {
       <LoadingState v-if="formQuery.isPending.value" class="mt-6" />
 
       <template v-else-if="form">
-        <form class="space-y-6 py-6" @submit.prevent="saveAnswer">
+        <div class="space-y-6 py-6">
           <header class="space-y-4">
             <div>
               <h1 class="text-3xl font-semibold text-body">{{ form.name }}</h1>
@@ -203,86 +202,22 @@ async function createAnswer() {
             </div>
           </section>
 
-          <SurfaceCard overflow-hidden>
-            <div v-if="selectedAnswer" class="border-b border-border px-6 py-5 text-base text-body">
-              <p class="font-semibold">
-                {{ form.isOpen ? '回答を編集' : '回答を閲覧' }} — 回答ID : {{ selectedAnswer.id }}
-              </p>
-            </div>
-
-            <div class="grid gap-0">
-              <template v-if="form.questions.length === 0">
-                <div class="border-b border-border px-6 py-5 last:border-b-0">
-                  <FormField label="回答">
-                    <textarea
-                      :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
-                      class="min-h-40"
-                      name="answer-body"
-                      :disabled="!isFormWritable"
-                      placeholder="回答内容を入力してください"
-                      @input="updateDraftValue(draft, 'legacy-body', textareaValue($event))"
-                    />
-                  </FormField>
-                </div>
-              </template>
-
-              <template v-for="question in form.questions" :key="question.id">
-                <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5 last:border-b-0">
-                  <h2 class="text-lg font-semibold text-body">{{ question.name }}</h2>
-                  <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-base leading-7 text-muted">
-                    {{ question.description }}
-                  </p>
-                </div>
-
-                <div v-else class="border-b border-border px-6 py-5 last:border-b-0">
-                  <div class="grid gap-3">
-                    <div>
-                      <p class="text-base font-semibold text-body">
-                        {{ question.name }}
-                        <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
-                      </p>
-                      <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
-                        {{ question.description }}
-                      </p>
-                    </div>
-
-                    <div @focusout.capture="markAnswerTouched(question.id)">
-                      <AnswerQuestionFields
-                        :answer="selectedAnswer"
-                        :draft="draft"
-                        :question="question"
-                        :disabled="!isFormWritable"
-                        :selected-file="selectedFiles[question.id]"
-                        upload-button-label="ファイルを追加"
-                        :upload-pending="uploadMutation.isPending.value"
-                        :upload-error-message="uploadErrorMessages[question.id]"
-                        :download-label="selectedAnswerId ? 'ダウンロード' : '表示'"
-                        :download-href="(currentQuestion) => resolveUploadDownloadHref(currentQuestion.id)"
-                        @upload="uploadFile"
-                        @file-change="handleFileChange"
-                      />
-                    </div>
-                    <FormError v-if="getAnswerFieldError(question.id)" :message="getAnswerFieldError(question.id)" />
-                  </div>
-                </div>
-              </template>
-            </div>
-          </SurfaceCard>
-
-          <AlertMessage v-if="errorMessage" tone="danger">
-            {{ errorMessage }}
-          </AlertMessage>
-
-          <ActionsFooter align="center">
-            <button
-              :class="buttonVariants({ variant: 'primary', size: 'wide', weight: 'bold' })"
-              :disabled="!isFormWritable || isSavingAnswer"
-              type="submit"
-            >
-              {{ isSavingAnswer ? '送信中...' : '送信' }}
-            </button>
-          </ActionsFooter>
-        </form>
+          <WorkspaceFormAnswerForm
+            :key="answerSchemaKey"
+            v-model:dirty="answerDirty"
+            :form="form"
+            :answer="selectedAnswer"
+            :disabled="!isFormWritable"
+            :save-answer="saveAnswer"
+            :selected-files="selectedFiles"
+            :upload-pending="uploadMutation.isPending.value"
+            :upload-error-messages="uploadErrorMessages"
+            :download-href="resolveUploadDownloadHref"
+            :error-message="errorMessage"
+            @upload="uploadFile"
+            @file-change="handleFileChange"
+          />
+        </div>
       </template>
 
       <ErrorState v-else message="フォームを取得できませんでした。" compact />
