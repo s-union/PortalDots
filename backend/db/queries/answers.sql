@@ -59,6 +59,12 @@ FROM answer_details
 WHERE answer_id = $1
 ORDER BY question_id ASC, position ASC, created_at ASC;
 
+-- name: ListAnswerDetailsByAnswerIDs :many
+SELECT id, answer_id, form_id, circle_id, question_id, value, position, created_at
+FROM answer_details
+WHERE answer_id = ANY($1::uuid[])
+ORDER BY answer_id ASC, question_id ASC, position ASC, created_at ASC;
+
 -- name: DeleteAnswerDetailsByAnswer :execrows
 DELETE FROM answer_details
 WHERE answer_id = $1;
@@ -73,6 +79,12 @@ SELECT id, answer_id, form_id, circle_id, question_id, filename, mime_type, size
 FROM answer_uploads
 WHERE answer_id = $1
 ORDER BY created_at DESC, id DESC;
+
+-- name: ListAnswerUploadsByAnswerIDs :many
+SELECT id, answer_id, form_id, circle_id, question_id, filename, mime_type, size_bytes, created_at
+FROM answer_uploads
+WHERE answer_id = ANY($1::uuid[])
+ORDER BY answer_id ASC, created_at DESC, id DESC;
 
 -- name: GetAnswerUploadFileByID :one
 SELECT id, answer_id, form_id, circle_id, question_id, filename, mime_type, content, size_bytes, created_at

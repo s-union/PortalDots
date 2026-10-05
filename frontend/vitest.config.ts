@@ -5,6 +5,7 @@ import VueRouter from 'vue-router/vite'
 import { fileURLToPath, URL } from 'node:url'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { playwright } from '@vitest/browser-playwright'
+import tailwindcss from '@tailwindcss/vite'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -42,6 +43,7 @@ export default defineConfig({
       {
         extends: true,
         plugins: [
+          tailwindcss(),
           storybookTest({
             configDir: path.join(dirname, '.storybook'),
             storybookScript: 'pnpm storybook --no-open'

@@ -3,6 +3,7 @@ package mailhistory
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
@@ -59,7 +60,52 @@ ORDER BY created_at DESC, job_id DESC
 		return nil, err
 	}
 	defer rows.Close()
+	return readEntries(rows)
+}
 
+func (r *PostgresRepository) ListPage(ctx context.Context, limit int, cursor string) (Page, error) {
+	before, err := decodeCursor(cursor)
+	if err != nil {
+		return Page{}, err
+	}
+	query := `SELECT job_id, template, priority, from_address, subject, body, recipients, created_at FROM outbound_mails`
+	args := []any{limit + 1}
+	if before != nil {
+		query += ` WHERE (created_at, job_id) < ($2, $3)`
+		args = append(args, before.CreatedAt, before.JobID)
+	}
+	query += ` ORDER BY created_at DESC, job_id DESC LIMIT $1`
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return Page{}, err
+	}
+	defer rows.Close()
+	entries, err := readEntries(rows)
+	if err != nil {
+		return Page{}, err
+	}
+	return buildPage(entries, limit)
+}
+
+func (r *PostgresRepository) ListContactHistory(ctx context.Context, userID, circleID string) ([]Entry, error) {
+	// Legacy contacts identify their owner in the structured header, never the free-form body.
+	rows, err := r.pool.Query(ctx, `
+SELECT job_id, template, priority, from_address, subject,
+       split_part(body, E'\n\n', 1), NULL::text[], created_at
+FROM outbound_mails
+WHERE job_id NOT LIKE 'contact-confirm-%'
+  AND contact_user_ids @> ARRAY[$1]::text[]
+  AND contact_circle_ids @> ARRAY[$2]::text[]
+ORDER BY created_at DESC, job_id DESC
+`, userID, circleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return readEntries(rows)
+}
+
+func readEntries(rows pgx.Rows) ([]Entry, error) {
 	entries := []Entry{}
 	for rows.Next() {
 		var entry Entry
@@ -79,6 +125,7 @@ ORDER BY created_at DESC, job_id DESC
 		}
 		entry.Priority = emailqueue.Priority(priority)
 		entry.CreatedAt = pgutil.FormatTimestamptz(createdAt)
+		entry.createdAt = createdAt.Time.UTC()
 		entries = append(entries, entry)
 	}
 	return entries, rows.Err()

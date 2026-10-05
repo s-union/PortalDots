@@ -2,7 +2,9 @@ package tag
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
@@ -65,6 +67,9 @@ func (r *SQLCRepository) Update(id, name string, color *string) (Tag, error) {
 		Color: colorValue,
 	})
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Tag{}, ErrNotFound
+		}
 		return Tag{}, err
 	}
 

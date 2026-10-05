@@ -174,6 +174,31 @@ func TestIntegrationScheduleRearmsSentMailWithNewJob(t *testing.T) {
 	}
 }
 
+func TestIntegrationListActivePageIDsBatchesScheduleLookup(t *testing.T) {
+	env := newIntegrationEnv(t, http.StatusOK)
+	ctx := context.Background()
+	seedIntegrationMember(t, env.pool)
+	seedIntegrationPageWithTags(t, env.pool, integrationPageID, time.Now().Add(-time.Minute), nil)
+	seedIntegrationPageWithTags(t, env.pool, integrationPageID2, time.Now().Add(-time.Minute), nil)
+	if err := env.schedules.Schedule(ctx, integrationPageID, "job-active", integrationUserID); err != nil {
+		t.Fatalf("active Schedule() error = %v", err)
+	}
+	if err := env.schedules.Schedule(ctx, integrationPageID2, "job-sent", integrationUserID); err != nil {
+		t.Fatalf("sent Schedule() error = %v", err)
+	}
+	if err := env.schedules.MarkSent(ctx, integrationPageID2); err != nil {
+		t.Fatalf("MarkSent() error = %v", err)
+	}
+
+	activePageIDs, err := env.schedules.ListActivePageIDs(ctx, []string{integrationPageID2, integrationPageID, integrationPageID3})
+	if err != nil {
+		t.Fatalf("ListActivePageIDs() error = %v", err)
+	}
+	if len(activePageIDs) != 1 || activePageIDs[0] != integrationPageID {
+		t.Fatalf("ListActivePageIDs() = %#v, want only the pending page", activePageIDs)
+	}
+}
+
 func TestIntegrationZeroRecipientMailIsSkippedAndCanBeRearmed(t *testing.T) {
 	env := newIntegrationEnv(t, http.StatusOK)
 	ctx := context.Background()

@@ -3,7 +3,9 @@ package formquestion
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
@@ -73,6 +75,7 @@ func (r *SQLCRepository) Update(ctx context.Context, question Question) (Questio
 
 	row, err := r.queries.UpdateFormQuestion(ctx, dbgen.UpdateFormQuestionParams{
 		ID:           question.ID,
+		FormID:       question.FormID,
 		Name:         question.Name,
 		Description:  question.Description,
 		Type:         question.Type,
@@ -83,6 +86,9 @@ func (r *SQLCRepository) Update(ctx context.Context, question Question) (Questio
 		Options:      options,
 		Priority:     question.Priority,
 	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Question{}, ErrNotFound
+	}
 	if err != nil {
 		return Question{}, err
 	}
@@ -91,7 +97,10 @@ func (r *SQLCRepository) Update(ctx context.Context, question Question) (Questio
 }
 
 func (r *SQLCRepository) Delete(ctx context.Context, formID, questionID string) error {
-	rows, err := r.queries.DeleteFormQuestion(ctx, questionID)
+	rows, err := r.queries.DeleteFormQuestion(ctx, dbgen.DeleteFormQuestionParams{
+		ID:     questionID,
+		FormID: formID,
+	})
 	if err != nil {
 		return err
 	}
@@ -136,6 +145,7 @@ func (r *SQLCRepository) ReplaceOrder(ctx context.Context, formID string, ordere
 
 		if _, err := queries.UpdateFormQuestion(ctx, dbgen.UpdateFormQuestionParams{
 			ID:           question.ID,
+			FormID:       formID,
 			Name:         question.Name,
 			Description:  question.Description,
 			Type:         question.Type,

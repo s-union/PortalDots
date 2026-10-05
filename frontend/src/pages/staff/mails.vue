@@ -5,7 +5,7 @@ definePage({
   meta: staffPageMeta('mailQueue.use')
 })
 
-import { computed } from 'vue'
+import { computed, useTemplateRef, watch } from 'vue'
 import { formatDateTime } from '@/lib/format/datetime'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
@@ -13,11 +13,40 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useStaffMailsQuery } from '@/features/staff/admin/mails'
 import { useSessionStore } from '@/features/session/store'
+import { buttonVariants } from '@/lib/ui/variants'
 
 const sessionStore = useSessionStore()
 const staffStatusQuery = useStaffStatusQuery(computed(() => sessionStore.isAuthenticated))
 const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const mailsQuery = useStaffMailsQuery(enabled)
+const historyEnd = useTemplateRef<HTMLElement>('historyEnd')
+const canObserve = typeof IntersectionObserver !== 'undefined'
+
+function loadMore() {
+  if (mailsQuery.hasNextPage.value && !mailsQuery.isFetching.value) {
+    void mailsQuery.fetchNextPage()
+  }
+}
+
+function retryInitialLoad() {
+  void mailsQuery.refetch()
+}
+
+watch(
+  [historyEnd, () => mailsQuery.data.value.length],
+  ([element], _previous, onCleanup) => {
+    if (!canObserve || !element) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && !mailsQuery.isFetchNextPageError.value) loadMore()
+      },
+      { rootMargin: '400px' }
+    )
+    observer.observe(element)
+    onCleanup(() => observer.disconnect())
+  },
+  { flush: 'post' }
+)
 </script>
 
 <template>
@@ -40,6 +69,17 @@ const mailsQuery = useStaffMailsQuery(enabled)
 
         <div v-if="mailsQuery.isPending.value" class="px-6 py-5 text-base text-muted">読み込み中...</div>
 
+        <div
+          v-else-if="mailsQuery.isError.value && (mailsQuery.data.value?.length ?? 0) === 0"
+          class="grid gap-3 px-6 py-5 text-base text-danger"
+          role="alert"
+        >
+          <p>配信履歴を取得できませんでした。</p>
+          <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="button" @click="retryInitialLoad">
+            再読み込み
+          </button>
+        </div>
+
         <div v-else-if="(mailsQuery.data.value?.length ?? 0) === 0" class="px-6 py-5 text-base text-muted">
           配信履歴はありません。
         </div>
@@ -54,6 +94,16 @@ const mailsQuery = useStaffMailsQuery(enabled)
             <p class="mt-2 text-xs text-muted-2">優先度: {{ mail.priority }}</p>
             <p class="mt-2 text-xs text-muted-2">作成日時: {{ formatDateTime(mail.createdAt) }}</p>
           </article>
+        </div>
+        <div v-if="mailsQuery.hasNextPage.value" ref="historyEnd">
+          <p v-if="mailsQuery.isFetchingNextPage.value" class="px-6 py-5 text-base text-muted" role="status">
+            読み込み中...
+          </p>
+          <div v-else-if="!canObserve || mailsQuery.isFetchNextPageError.value" class="px-6 py-5">
+            <button :class="buttonVariants({ variant: 'secondary', size: 'md' })" type="button" @click="loadMore">
+              {{ mailsQuery.isFetchNextPageError.value ? '再読み込み' : '続きを表示' }}
+            </button>
+          </div>
         </div>
       </SurfaceCard>
     </div>

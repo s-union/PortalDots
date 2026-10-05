@@ -50,6 +50,7 @@ type Repository interface {
 	Delete(ctx context.Context, answerID string) bool
 	ListUploads(ctx context.Context, formID, circleID string) []Upload
 	ListUploadsByAnswer(ctx context.Context, answerID string) []Upload
+	ListUploadsByAnswers(ctx context.Context, answerIDs []string) map[string][]Upload
 	FindUpload(ctx context.Context, formID, circleID, uploadID string) (Upload, bool)
 	FindUploadByAnswerAndQuestion(ctx context.Context, answerID, questionID string) (Upload, bool)
 	AddUpload(ctx context.Context, formID, circleID, questionID, filename, mimeType string, content []byte) (Upload, error)
@@ -224,6 +225,21 @@ func (r *MemoryRepository) ListUploadsByAnswer(_ context.Context, answerID strin
 	defer r.mu.RUnlock()
 
 	return cloneUploads(r.uploads[answerID], false)
+}
+
+func (r *MemoryRepository) ListUploadsByAnswers(_ context.Context, answerIDs []string) map[string][]Upload {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	uploadsByAnswer := make(map[string][]Upload, len(answerIDs))
+	for _, answerID := range answerIDs {
+		if _, alreadyAdded := uploadsByAnswer[answerID]; alreadyAdded {
+			continue
+		}
+		uploadsByAnswer[answerID] = cloneUploads(r.uploads[answerID], false)
+	}
+
+	return uploadsByAnswer
 }
 
 func (r *MemoryRepository) FindUpload(_ context.Context, formID, circleID, uploadID string) (Upload, bool) {

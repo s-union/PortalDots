@@ -11,6 +11,7 @@ import {
   publicHomePageSchema,
   publicHomeSchema
 } from '@/lib/api/schema'
+import { useSessionStore } from '@/features/session/store'
 import { useQuery } from '@tanstack/vue-query'
 
 export type PublicHome = v.InferOutput<typeof publicHomeSchema>
@@ -100,6 +101,8 @@ export async function fetchPublicDocuments() {
 }
 
 export function usePublicHomeQuery(enabled: MaybeRefOrGetter<boolean>) {
+  const sessionStore = useSessionStore()
+
   return $api.useQueryData(
     'get',
     '/public/home',
@@ -108,7 +111,12 @@ export function usePublicHomeQuery(enabled: MaybeRefOrGetter<boolean>) {
     },
     parsePublicHome,
     {
-      queryKey: computed(() => ['public', 'home']),
+      queryKey: computed(() => [
+        'public',
+        'home',
+        sessionStore.user?.id ?? 'guest',
+        sessionStore.currentCircle?.id ?? 'none'
+      ]),
       enabled: computed(() => toValue(enabled)),
       retry: false
     },

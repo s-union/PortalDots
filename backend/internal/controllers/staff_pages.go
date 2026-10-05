@@ -75,14 +75,23 @@ func (h *staffPageHandlers) listStaffPages(c *echo.Context) error {
 	}
 
 	pages := h.pages.ListForStaff(c.Request().Context(), c.QueryParam("query"))
+	pageIDs := make([]string, 0, len(pages))
+	for _, currentPage := range pages {
+		pageIDs = append(pageIDs, currentPage.ID)
+	}
+	activePageIDs, err := h.scheduledPageMails.ListActivePageIDs(c.Request().Context(), pageIDs)
+	if err != nil {
+		return internalError(c)
+	}
+	activePageIDSet := make(map[string]struct{}, len(activePageIDs))
+	for _, pageID := range activePageIDs {
+		activePageIDSet[pageID] = struct{}{}
+	}
+
 	response := make([]staffPageSummaryResponse, 0, len(pages))
 	for _, currentPage := range pages {
 		item := mapStaffPageSummary(currentPage, h.pageDocuments(currentPage.DocumentIDs, true))
-		mailScheduled, err := h.scheduledPageMails.HasActiveSchedule(c.Request().Context(), currentPage.ID)
-		if err != nil {
-			return internalError(c)
-		}
-		item.MailScheduled = mailScheduled
+		_, item.MailScheduled = activePageIDSet[currentPage.ID]
 		if !matchesStaffListFilters(staffPageSummaryFilterResolver(item), filterQueries, filterMode) {
 			continue
 		}

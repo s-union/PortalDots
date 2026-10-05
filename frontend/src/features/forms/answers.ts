@@ -49,6 +49,59 @@ interface UploadAnswerFilePayload {
   file: File
 }
 
+interface FormAnswerMutationContext {
+  circleId: string
+  formId: string
+  answerId?: string
+}
+
+function currentCircleId(sessionStore: ReturnType<typeof useSessionStore>) {
+  return sessionStore.currentCircle?.id ?? 'none'
+}
+
+function formAnswerQueryKey(formId: string, circleId: string) {
+  return ['forms', 'answer', formId, circleId] as const
+}
+
+function formAnswersQueryKey(formId: string, circleId: string) {
+  return ['forms', 'answers', formId, circleId] as const
+}
+
+function formAnswerByIdQueryKey(formId: string, answerId: string, circleId: string) {
+  return ['forms', 'answers', formId, circleId, answerId] as const
+}
+
+function formDetailQueryKey(formId: string, circleId: string) {
+  return ['forms', 'detail', formId, circleId] as const
+}
+
+function formCircleQueryKey(circleId: string) {
+  return ['forms', circleId] as const
+}
+
+function formAnswerMutationContext(
+  sessionStore: ReturnType<typeof useSessionStore>,
+  formId: MaybeRefOrGetter<string>,
+  answerId?: MaybeRefOrGetter<string>
+): FormAnswerMutationContext {
+  return {
+    circleId: currentCircleId(sessionStore),
+    formId: toValue(formId),
+    ...(answerId === undefined ? {} : { answerId: toValue(answerId) })
+  }
+}
+
+async function invalidateFormAnswerQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  target: FormAnswerMutationContext
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: formAnswersQueryKey(target.formId, target.circleId) }),
+    queryClient.invalidateQueries({ queryKey: formDetailQueryKey(target.formId, target.circleId) }),
+    queryClient.invalidateQueries({ queryKey: formCircleQueryKey(target.circleId) })
+  ])
+}
+
 export async function fetchFormAnswer(formId: string) {
   return $api.queryData(
     'get',
@@ -183,6 +236,8 @@ export async function updateFormAnswer(formId: string, answerId: string, draft: 
 }
 
 export function useFormAnswerQuery(formId: MaybeRefOrGetter<string>) {
+  const sessionStore = useSessionStore()
+
   return $api.useQueryData(
     'get',
     '/forms/{formID}/answer',
@@ -196,7 +251,7 @@ export function useFormAnswerQuery(formId: MaybeRefOrGetter<string>) {
     }),
     parseFormAnswerEnvelope,
     {
-      queryKey: computed(() => ['forms', 'answer', toValue(formId)]),
+      queryKey: computed(() => formAnswerQueryKey(toValue(formId), currentCircleId(sessionStore))),
       enabled: computed(() => toValue(formId).trim().length > 0),
       retry: false
     },
@@ -222,7 +277,7 @@ export function useFormAnswersQuery(formId: MaybeRefOrGetter<string>) {
     }),
     parseFormAnswers,
     {
-      queryKey: computed(() => ['forms', 'answers', toValue(formId)]),
+      queryKey: computed(() => formAnswersQueryKey(toValue(formId), currentCircleId(sessionStore))),
       enabled: computed(
         () => sessionStore.isAuthenticated && sessionStore.currentCircle !== null && toValue(formId).trim().length > 0
       ),
@@ -251,7 +306,9 @@ export function useFormAnswerByIdQuery(formId: MaybeRefOrGetter<string>, answerI
     }),
     parseFormAnswerEnvelope,
     {
-      queryKey: computed(() => ['forms', 'answers', toValue(formId), toValue(answerId)]),
+      queryKey: computed(() =>
+        formAnswerByIdQueryKey(toValue(formId), toValue(answerId), currentCircleId(sessionStore))
+      ),
       enabled: computed(
         () =>
           sessionStore.isAuthenticated &&
@@ -275,13 +332,11 @@ export function useFormAnswerMutation(formId: MaybeRefOrGetter<string>) {
     mutationFn: async (draft: FormAnswerDraft) => {
       return upsertFormAnswer(toValue(formId), { ...draft }, sessionStore.csrfToken)
     },
-    onSuccess: async (envelope) => {
-      queryClient.setQueryData(['forms', 'answer', toValue(formId)], envelope)
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['forms', 'answers', toValue(formId)] }),
-        queryClient.invalidateQueries({ queryKey: ['forms', 'detail', toValue(formId)] }),
-        queryClient.invalidateQueries({ queryKey: ['forms', toValue(formId)] })
-      ])
+    onMutate: (): FormAnswerMutationContext => formAnswerMutationContext(sessionStore, formId),
+    onSuccess: async (envelope, _draft, mutationContext) => {
+      if (!mutationContext) return
+      queryClient.setQueryData(formAnswerQueryKey(mutationContext.formId, mutationContext.circleId), envelope)
+      await invalidateFormAnswerQueries(queryClient, mutationContext)
     }
   })
 }
@@ -292,12 +347,10 @@ export function useCreateFormAnswerMutation(formId: MaybeRefOrGetter<string>) {
 
   return useMutation({
     mutationFn: async () => createFormAnswer(toValue(formId), sessionStore.csrfToken),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['forms', 'answers', toValue(formId)] }),
-        queryClient.invalidateQueries({ queryKey: ['forms', 'detail', toValue(formId)] }),
-        queryClient.invalidateQueries({ queryKey: ['forms', toValue(formId)] })
-      ])
+    onMutate: (): FormAnswerMutationContext => formAnswerMutationContext(sessionStore, formId),
+    onSuccess: async (_envelope, _variables, mutationContext) => {
+      if (!mutationContext) return
+      await invalidateFormAnswerQueries(queryClient, mutationContext)
     }
   })
 }
@@ -309,13 +362,16 @@ export function useUpdateFormAnswerMutation(formId: MaybeRefOrGetter<string>, an
   return useMutation({
     mutationFn: async (draft: FormAnswerDraft) =>
       updateFormAnswer(toValue(formId), toValue(answerId), { ...draft }, sessionStore.csrfToken),
-    onSuccess: async (envelope) => {
-      queryClient.setQueryData(['forms', 'answers', toValue(formId), toValue(answerId)], envelope)
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['forms', 'answers', toValue(formId)] }),
-        queryClient.invalidateQueries({ queryKey: ['forms', 'detail', toValue(formId)] }),
-        queryClient.invalidateQueries({ queryKey: ['forms', toValue(formId)] })
-      ])
+    onMutate: (): FormAnswerMutationContext => formAnswerMutationContext(sessionStore, formId, answerId),
+    onSuccess: async (envelope, _draft, mutationContext) => {
+      if (!mutationContext) return
+      if (mutationContext.answerId) {
+        queryClient.setQueryData(
+          formAnswerByIdQueryKey(mutationContext.formId, mutationContext.answerId, mutationContext.circleId),
+          envelope
+        )
+      }
+      await invalidateFormAnswerQueries(queryClient, mutationContext)
     }
   })
 }
@@ -327,13 +383,15 @@ export function useFormAnswerUploadMutation(formId: MaybeRefOrGetter<string>) {
   return useMutation({
     mutationFn: async (payload: UploadAnswerFilePayload) =>
       uploadFormAnswerFile(toValue(formId), payload, sessionStore.csrfToken),
-    onSuccess: async () => {
+    onMutate: (): FormAnswerMutationContext => formAnswerMutationContext(sessionStore, formId),
+    onSuccess: async (_result, _payload, mutationContext) => {
+      if (!mutationContext) return
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ['forms', 'answer', toValue(formId)]
+          queryKey: formAnswerQueryKey(mutationContext.formId, mutationContext.circleId)
         }),
         queryClient.invalidateQueries({
-          queryKey: ['forms', 'answers', toValue(formId)]
+          queryKey: formAnswersQueryKey(mutationContext.formId, mutationContext.circleId)
         })
       ])
     }

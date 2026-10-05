@@ -17,6 +17,22 @@ import {
   type AddCircleMemberInput
 } from './api'
 
+interface CurrentCircleMutationContext {
+  circleId: string
+}
+
+function currentCircleId(sessionStore: ReturnType<typeof useSessionStore>) {
+  return sessionStore.currentCircle?.id ?? 'none'
+}
+
+function currentCircleDetailQueryKey(circleId: string) {
+  return ['circles', 'current', 'detail', circleId] as const
+}
+
+function currentCircleMembersQueryKey(circleId: string) {
+  return ['circles', 'current', 'members', circleId] as const
+}
+
 export function useSelectableCirclesQuery() {
   const sessionStore = useSessionStore()
 
@@ -100,7 +116,7 @@ export function useCurrentCircleDetailQuery() {
   const sessionStore = useSessionStore()
 
   return useQuery({
-    queryKey: ['circles', 'current', 'detail'],
+    queryKey: computed(() => currentCircleDetailQueryKey(currentCircleId(sessionStore))),
     queryFn: () =>
       $api.queryData('get', '/circles/current/detail', { headers: createJsonHeaders() }, parseCircleDetail, {
         errorMessage: '企画情報の取得に失敗しました'
@@ -155,8 +171,10 @@ export function useUpdateCircleMutation() {
         parseCircleDetail,
         { errorMessage: '企画情報の更新に失敗しました' }
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['circles', 'current', 'detail'] })
+    onMutate: (): CurrentCircleMutationContext => ({ circleId: currentCircleId(sessionStore) }),
+    onSuccess: (_updatedCircle, _input, mutationContext) => {
+      if (!mutationContext) return
+      void queryClient.invalidateQueries({ queryKey: currentCircleDetailQueryKey(mutationContext.circleId) })
     }
   })
 }
@@ -198,8 +216,10 @@ export function useSubmitCircleMutation() {
         parseCircleDetail,
         { errorMessage: '参加登録の提出に失敗しました' }
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['circles', 'current', 'detail'] })
+    onMutate: (): CurrentCircleMutationContext => ({ circleId: currentCircleId(sessionStore) }),
+    onSuccess: (_updatedCircle, _input, mutationContext) => {
+      if (!mutationContext) return
+      void queryClient.invalidateQueries({ queryKey: currentCircleDetailQueryKey(mutationContext.circleId) })
     }
   })
 }
@@ -208,7 +228,7 @@ export function useCircleMembersQuery() {
   const sessionStore = useSessionStore()
 
   return useQuery({
-    queryKey: ['circles', 'current', 'members'],
+    queryKey: computed(() => currentCircleMembersQueryKey(currentCircleId(sessionStore))),
     queryFn: () =>
       $api.queryData('get', '/circles/current/members', { headers: createJsonHeaders() }, parseCircleMembers, {
         errorMessage: 'メンバー一覧の取得に失敗しました'
@@ -233,8 +253,10 @@ export function useRemoveMemberMutation() {
         },
         { errorMessage: 'メンバーの削除に失敗しました' }
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['circles', 'current', 'members'] })
+    onMutate: (): CurrentCircleMutationContext => ({ circleId: currentCircleId(sessionStore) }),
+    onSuccess: (_result, _userId, mutationContext) => {
+      if (!mutationContext) return
+      void queryClient.invalidateQueries({ queryKey: currentCircleMembersQueryKey(mutationContext.circleId) })
     }
   })
 }
@@ -256,8 +278,10 @@ export function useAddCircleMemberMutation() {
         { errorMessage: 'メンバーの追加に失敗しました' }
       )
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['circles', 'current', 'members'] })
+    onMutate: (): CurrentCircleMutationContext => ({ circleId: currentCircleId(sessionStore) }),
+    onSuccess: (_result, _input, mutationContext) => {
+      if (!mutationContext) return
+      void queryClient.invalidateQueries({ queryKey: currentCircleMembersQueryKey(mutationContext.circleId) })
     }
   })
 }
@@ -275,8 +299,10 @@ export function useRegenerateInvitationTokenMutation() {
         parseCircleDetail,
         { errorMessage: '招待トークンの再生成に失敗しました' }
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['circles', 'current', 'detail'] })
+    onMutate: (): CurrentCircleMutationContext => ({ circleId: currentCircleId(sessionStore) }),
+    onSuccess: (_updatedCircle, _input, mutationContext) => {
+      if (!mutationContext) return
+      void queryClient.invalidateQueries({ queryKey: currentCircleDetailQueryKey(mutationContext.circleId) })
     }
   })
 }

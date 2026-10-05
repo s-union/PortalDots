@@ -110,7 +110,7 @@ function removeTag(tag: string) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key !== 'Enter') {
+  if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229) {
     return
   }
 

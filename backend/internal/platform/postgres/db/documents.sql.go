@@ -179,7 +179,8 @@ func (q *Queries) GetStaffDocumentByID(ctx context.Context, id string) (GetStaff
 }
 
 const listPublicDocuments = `-- name: ListPublicDocuments :many
-SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
 FROM documents
 WHERE is_public = true
   AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
@@ -196,7 +197,7 @@ type ListPublicDocumentsRow struct {
 	IsImportant  bool
 	Filename     string
 	MimeType     string
-	Content      []byte
+	SizeBytes    int64
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
 }
@@ -220,7 +221,69 @@ func (q *Queries) ListPublicDocuments(ctx context.Context, dollar_1 []string) ([
 			&i.IsImportant,
 			&i.Filename,
 			&i.MimeType,
-			&i.Content,
+			&i.SizeBytes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPublicDocumentsByIDs = `-- name: ListPublicDocumentsByIDs :many
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
+FROM documents
+WHERE id = ANY($1::uuid[])
+  AND is_public = true
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[])
+`
+
+type ListPublicDocumentsByIDsParams struct {
+	Column1 []string
+	Column2 []string
+}
+
+type ListPublicDocumentsByIDsRow struct {
+	ID           string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	SizeBytes    int64
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+func (q *Queries) ListPublicDocumentsByIDs(ctx context.Context, arg ListPublicDocumentsByIDsParams) ([]ListPublicDocumentsByIDsRow, error) {
+	rows, err := q.db.Query(ctx, listPublicDocumentsByIDs, arg.Column1, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublicDocumentsByIDsRow
+	for rows.Next() {
+		var i ListPublicDocumentsByIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Notes,
+			&i.IsPublic,
+			&i.ViewableTags,
+			&i.IsImportant,
+			&i.Filename,
+			&i.MimeType,
+			&i.SizeBytes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -267,7 +330,8 @@ func (q *Queries) ListReadDocumentIDsByUser(ctx context.Context, arg ListReadDoc
 }
 
 const listStaffDocuments = `-- name: ListStaffDocuments :many
-SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
 FROM documents
 ORDER BY updated_at DESC, id DESC
 `
@@ -282,7 +346,7 @@ type ListStaffDocumentsRow struct {
 	IsImportant  bool
 	Filename     string
 	MimeType     string
-	Content      []byte
+	SizeBytes    int64
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
 }
@@ -306,7 +370,62 @@ func (q *Queries) ListStaffDocuments(ctx context.Context) ([]ListStaffDocumentsR
 			&i.IsImportant,
 			&i.Filename,
 			&i.MimeType,
-			&i.Content,
+			&i.SizeBytes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStaffDocumentsByIDs = `-- name: ListStaffDocumentsByIDs :many
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
+FROM documents
+WHERE id = ANY($1::uuid[])
+`
+
+type ListStaffDocumentsByIDsRow struct {
+	ID           string
+	Name         string
+	Description  string
+	Notes        string
+	IsPublic     bool
+	ViewableTags []string
+	IsImportant  bool
+	Filename     string
+	MimeType     string
+	SizeBytes    int64
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+}
+
+func (q *Queries) ListStaffDocumentsByIDs(ctx context.Context, dollar_1 []string) ([]ListStaffDocumentsByIDsRow, error) {
+	rows, err := q.db.Query(ctx, listStaffDocumentsByIDs, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStaffDocumentsByIDsRow
+	for rows.Next() {
+		var i ListStaffDocumentsByIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Notes,
+			&i.IsPublic,
+			&i.ViewableTags,
+			&i.IsImportant,
+			&i.Filename,
+			&i.MimeType,
+			&i.SizeBytes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

@@ -135,6 +135,11 @@ func (h *staffUserHandlers) updateStaffUser(c *echo.Context) error {
 	if errors.Is(err, useradmin.ErrNotFound) {
 		return errorJSON(c, http.StatusNotFound, "user_not_found")
 	}
+	if errors.Is(err, useradmin.ErrContactEmailConflict) {
+		return validationError(c, map[string][]string{
+			"contactEmail": {"入力されたメールアドレスはすでに登録されています"},
+		})
+	}
 	if errors.Is(err, useradmin.ErrConflict) {
 		return validationError(c, map[string][]string{
 			"loginIds": {"入力されたログイン ID はすでに登録されています"},

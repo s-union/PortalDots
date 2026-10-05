@@ -54,12 +54,15 @@ func (h *workspaceHandlers) listPages(c *echo.Context) error {
 	}
 
 	query := c.QueryParam("query")
-	pages := h.pages.ListForCircle(c.Request().Context(), circleTags, query)
 	pagination := readPagesPagination(c)
-	total := len(pages)
-	totalUnfiltered := total
+	var (
+		pages           []backendpage.Page
+		total           int
+		totalUnfiltered int
+	)
 	if h.pages.SupportsPagination(c.Request().Context()) {
 		total = h.pages.CountForCircle(c.Request().Context(), circleTags, query)
+		totalUnfiltered = total
 		if query != "" {
 			totalUnfiltered = h.pages.CountForCircle(c.Request().Context(), circleTags, "")
 		}
@@ -67,8 +70,13 @@ func (h *workspaceHandlers) listPages(c *echo.Context) error {
 		pagination.Page = page
 		pagination.PageSize = pageSize
 		pages = h.pages.ListForCirclePaginated(c.Request().Context(), circleTags, query, pageSize, (page-1)*pageSize)
-	} else if query != "" {
-		totalUnfiltered = len(h.pages.ListForCircle(c.Request().Context(), circleTags, ""))
+	} else {
+		pages = h.pages.ListForCircle(c.Request().Context(), circleTags, query)
+		total = len(pages)
+		totalUnfiltered = total
+		if query != "" {
+			totalUnfiltered = len(h.pages.ListForCircle(c.Request().Context(), circleTags, ""))
+		}
 	}
 
 	readPageIDs := listReadPageIDSet(c.Request().Context(), h.pages, currentSession.User.ID, pages)
@@ -126,27 +134,33 @@ func pageDocuments(
 	publicDownload bool,
 	circleTags []string,
 ) []pageDocumentResponse {
+	if len(documentIDs) == 0 {
+		return []pageDocumentResponse{}
+	}
+
+	documentsByID := make(map[string]backenddocument.Document, len(documentIDs))
+	if forStaff {
+		for _, document := range docs.ListForStaffByIDs(documentIDs) {
+			documentsByID[document.ID] = document
+		}
+	} else {
+		for _, document := range docs.ListPublicByIDs(documentIDs, circleTags) {
+			documentsByID[document.ID] = document
+		}
+	}
+
 	documents := make([]pageDocumentResponse, 0, len(documentIDs))
 	for _, documentID := range documentIDs {
-		var (
-			docValue    backenddocument.Document
-			found       bool
-			downloadURL string
-		)
-
-		if forStaff {
-			docValue, found = docs.FindForStaff(documentID)
-			downloadURL = "/v1/staff/documents/" + documentID
-		} else {
-			docValue, found = docs.FindPublic(documentID, circleTags)
-			if publicDownload {
-				downloadURL = "/v1/public/documents/" + documentID
-			} else {
-				downloadURL = "/v1/documents/" + documentID
-			}
-		}
+		docValue, found := documentsByID[documentID]
 		if !found {
 			continue
+		}
+
+		downloadURL := "/v1/documents/" + documentID
+		if forStaff {
+			downloadURL = "/v1/staff/documents/" + documentID
+		} else if publicDownload {
+			downloadURL = "/v1/public/documents/" + documentID
 		}
 
 		documents = append(documents, pageDocumentResponse{

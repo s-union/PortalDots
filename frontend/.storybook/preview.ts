@@ -273,7 +273,7 @@ const preview: Preview = {
         template: `
           <div v-if="isReady" :key="storyKey">
             <App v-if="renderWithAppShell" />
-            <component :is="StoryComponent" v-bind="storyProps" v-else />
+            <StoryComponent v-bind="storyProps" v-else />
           </div>
         `
       }

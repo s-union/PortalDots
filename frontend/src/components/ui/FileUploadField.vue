@@ -131,6 +131,7 @@ function removeFile() {
       :aria-label="ariaLabel"
       class="sr-only"
       :disabled="disabled"
+      :id="baseId"
       :name="name"
       type="file"
       @change="handleChange"

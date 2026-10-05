@@ -27,6 +27,12 @@ SELECT EXISTS (
       AND status IN ('pending', 'dispatching')
 );
 
+-- name: ListActiveScheduledPageMailPageIDs :many
+SELECT page_id
+FROM scheduled_page_mails
+WHERE page_id = ANY($1::uuid[])
+  AND status IN ('pending', 'dispatching');
+
 -- name: ClaimDueScheduledPageMails :many
 WITH due AS (
     SELECT s.page_id

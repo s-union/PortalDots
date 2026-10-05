@@ -244,6 +244,7 @@ function setInputRef(input: Element | ComponentPublicInstance | null) {
         :aria-label="element.label + 'のアップロード'"
         :disabled="disabled"
         :extensions="element.extensions"
+        :id="element.id"
         :max-size-bytes="element.maxSizeBytes"
         :name="`answer-file-${element.id}`"
       />
