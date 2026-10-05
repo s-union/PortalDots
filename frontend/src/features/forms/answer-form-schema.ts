@@ -14,17 +14,23 @@ export type AnswerFormElement = AnswerFormElementBase &
   (
     | { control: 'text' | 'textarea' | 'markdown' }
     | { control: 'number'; min: number | null; max: number | null }
-    | { control: 'select' | 'radio' | 'checkbox'; options: string[] }
+    | { control: 'select' | 'radio'; options: string[] }
+    | { control: 'checkbox'; options: string[] }
     | { control: 'upload'; extensions: string[] | undefined; maxSizeBytes: number }
     | { control: 'heading' }
   )
+
+export type TextAnswerFormElement = Exclude<AnswerFormElement, { control: 'heading' | 'upload' | 'checkbox' }>
+export type CheckboxAnswerFormElement = Extract<AnswerFormElement, { control: 'checkbox' }>
+export type UploadAnswerFormElement = Extract<AnswerFormElement, { control: 'upload' }>
 
 const MAX_NUMBER_SELECT_OPTIONS = 200
 // Mirrors backend/internal/controllers/form_answer_context.go's maxAnswerUploadBytes.
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 export function buildAnswerFormSchema(questions: FormQuestion[], options: { legacyBody?: boolean } = {}) {
-  const entries: Record<string, v.GenericSchema<string | string[]>> = {}
+  const textEntries: Record<string, v.GenericSchema<string>> = {}
+  const choiceEntries: Record<string, v.GenericSchema<string[]>> = {}
   const elements: AnswerFormElement[] = []
 
   for (const question of questions) {
@@ -64,7 +70,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
               }
             : { ...element, control: 'number', min, max }
         )
-        entries[element.id] = v.pipe(
+        textEntries[element.id] = v.pipe(
           v.string(),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
@@ -94,7 +100,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
         break
       case 'checkbox':
         elements.push({ ...element, control: 'checkbox', options: [...question.options] })
-        entries[element.id] = element.required
+        choiceEntries[element.id] = element.required
           ? v.pipe(v.array(v.string()), v.minLength(1, `${element.label}を選択してください`))
           : v.array(v.string())
         break
@@ -102,7 +108,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
       case 'textarea':
       case 'markdown':
         elements.push({ ...element, control: question.type })
-        entries[element.id] = v.pipe(
+        textEntries[element.id] = v.pipe(
           v.string(),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
@@ -125,7 +131,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
       case 'select':
       case 'radio':
         elements.push({ ...element, control: question.type, options: [...question.options] })
-        entries[element.id] = element.required
+        textEntries[element.id] = element.required
           ? v.pipe(v.string(), v.minLength(1, `${element.label}を入力してください`))
           : v.string()
         break
@@ -135,7 +141,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
   }
 
   if (options.legacyBody && questions.length === 0) {
-    entries['legacy-body'] = v.string()
+    textEntries['legacy-body'] = v.string()
     elements.push({
       id: 'legacy-body',
       control: 'textarea',
@@ -146,25 +152,51 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
     })
   }
 
-  return v.pipe(v.object(entries), v.metadata({ elements }))
+  return v.pipe(v.object({ text: v.object(textEntries), choices: v.object(choiceEntries) }), v.metadata({ elements }))
 }
 
 export type AnswerFormSchema = ReturnType<typeof buildAnswerFormSchema>
+export type AnswerFormInput = v.InferInput<AnswerFormSchema>
 
 export function getAnswerFormElements(schema: AnswerFormSchema): AnswerFormElement[] {
   return v.getMetadata(schema).elements
 }
 
-export function buildAnswerFormInput(schema: AnswerFormSchema, answer: FormAnswer | null): FormAnswerDraft {
-  const input: FormAnswerDraft = {}
+export function buildAnswerFormInput(schema: AnswerFormSchema, answer: FormAnswer | null): AnswerFormInput {
+  const input: AnswerFormInput = { text: {}, choices: {} }
   for (const element of getAnswerFormElements(schema)) {
     if (element.control === 'heading' || element.control === 'upload') continue
     if (element.id === 'legacy-body') {
-      input[element.id] = answer?.body ?? ''
+      input.text[element.id] = answer?.body ?? ''
       continue
     }
     const values = answer?.details[element.id] ?? []
-    input[element.id] = element.control === 'checkbox' ? [...values] : (values[0] ?? '')
+    if (element.control === 'checkbox') {
+      input.choices[element.id] = [...values]
+    } else {
+      input.text[element.id] = values[0] ?? ''
+    }
   }
   return input
+}
+
+export function answerFormInputToDraft(
+  schema: AnswerFormSchema,
+  input: { text: Record<string, string | undefined>; choices: Record<string, string[]> }
+): FormAnswerDraft {
+  const draft: FormAnswerDraft = {}
+  // Preserve question order for the legacy body summary as well as the details payload.
+  for (const element of getAnswerFormElements(schema)) {
+    if (element.control === 'heading' || element.control === 'upload') continue
+    draft[element.id] =
+      element.control === 'checkbox' ? [...(input.choices[element.id] ?? [])] : (input.text[element.id] ?? '')
+  }
+  return draft
+}
+
+export function answerFormStructureKey(schema: AnswerFormSchema): string {
+  return JSON.stringify([
+    Object.keys(schema.entries.text.entries).sort(),
+    Object.keys(schema.entries.choices.entries).sort()
+  ])
 }

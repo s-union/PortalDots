@@ -4,7 +4,20 @@ import type { FormQuestion } from '@/features/forms/api'
 import type { FormAnswer } from '@/features/forms/answers'
 import { toAnswerId, toQuestionId } from '@/lib/api/schema'
 import { buildFormAnswerSchema } from '@/lib/form-validation/schemas'
-import { buildAnswerFormInput, buildAnswerFormSchema, getAnswerFormElements } from './answer-form-schema'
+import {
+  answerFormInputToDraft,
+  buildAnswerFormInput,
+  buildAnswerFormSchema,
+  getAnswerFormElements
+} from './answer-form-schema'
+
+function textInput(value: string) {
+  return { text: { 'question-1': value }, choices: {} }
+}
+
+function choiceInput(value: string[]) {
+  return { text: {}, choices: { 'question-1': value } }
+}
 
 function createQuestion(overrides: Partial<FormQuestion> = {}): FormQuestion {
   return {
@@ -60,11 +73,10 @@ describe('buildAnswerFormSchema', () => {
 
   it.each([3, 300])('keeps number validation when the upper bound is %s', (max) => {
     const schema = buildAnswerFormSchema([createQuestion({ type: 'number', numberMin: 1, numberMax: max })])
-    const messages = (value: string) =>
-      v.safeParse(schema, { 'question-1': value }).issues?.map((issue) => issue.message)
+    const messages = (value: string) => v.safeParse(schema, textInput(value)).issues?.map((issue) => issue.message)
 
-    expect(v.safeParse(schema, { 'question-1': '1' }).success).toBe(true)
-    expect(v.safeParse(schema, { 'question-1': String(max) }).success).toBe(true)
+    expect(v.safeParse(schema, textInput('1')).success).toBe(true)
+    expect(v.safeParse(schema, textInput(String(max))).success).toBe(true)
     expect(messages('')).toEqual(['設問を入力してください'])
     expect(messages('abc')).toEqual(['数値を入力してください'])
     expect(messages('1.5')).toEqual(['整数を入力してください'])
@@ -77,14 +89,12 @@ describe('buildAnswerFormSchema', () => {
     const requiredSchema = buildAnswerFormSchema([question])
     const optionalSchema = buildAnswerFormSchema([{ ...question, isRequired: false }])
 
-    expect(v.safeParse(requiredSchema, { 'question-1': '😀あ' }).success).toBe(true)
-    expect(v.safeParse(requiredSchema, { 'question-1': '😀あ😀' }).success).toBe(true)
-    expect(v.safeParse(requiredSchema, { 'question-1': '😀' }).issues?.[0].message).toBe('2文字以上で入力してください')
-    expect(v.safeParse(requiredSchema, { 'question-1': '😀あ😀い' }).issues?.[0].message).toBe(
-      '3文字以下で入力してください'
-    )
-    expect(v.safeParse(requiredSchema, { 'question-1': '' }).issues?.[0].message).toBe('設問を入力してください')
-    expect(v.safeParse(optionalSchema, { 'question-1': '' }).success).toBe(true)
+    expect(v.safeParse(requiredSchema, textInput('😀あ')).success).toBe(true)
+    expect(v.safeParse(requiredSchema, textInput('😀あ😀')).success).toBe(true)
+    expect(v.safeParse(requiredSchema, textInput('😀')).issues?.[0].message).toBe('2文字以上で入力してください')
+    expect(v.safeParse(requiredSchema, textInput('😀あ😀い')).issues?.[0].message).toBe('3文字以下で入力してください')
+    expect(v.safeParse(requiredSchema, textInput('')).issues?.[0].message).toBe('設問を入力してください')
+    expect(v.safeParse(optionalSchema, textInput('')).success).toBe(true)
   })
 
   it('keeps checkbox values as arrays and requires at least one value when required', () => {
@@ -93,10 +103,10 @@ describe('buildAnswerFormSchema', () => {
     const optionalSchema = buildAnswerFormSchema([{ ...question, isRequired: false }])
 
     expect(getAnswerFormElements(requiredSchema)[0]).toMatchObject({ control: 'checkbox', required: true })
-    expect(v.parse(requiredSchema, { 'question-1': ['机'] })).toEqual({ 'question-1': ['机'] })
-    expect(v.safeParse(requiredSchema, { 'question-1': [] }).issues?.[0].message).toBe('設問を選択してください')
-    expect(v.safeParse(requiredSchema, { 'question-1': '机' }).success).toBe(false)
-    expect(v.safeParse(optionalSchema, { 'question-1': [] }).success).toBe(true)
+    expect(v.parse(requiredSchema, choiceInput(['机']))).toEqual(choiceInput(['机']))
+    expect(v.safeParse(requiredSchema, choiceInput([])).issues?.[0].message).toBe('設問を選択してください')
+    expect(v.safeParse(requiredSchema, { text: {}, choices: { 'question-1': '机' } }).success).toBe(false)
+    expect(v.safeParse(optionalSchema, choiceInput([])).success).toBe(true)
   })
 
   it.each(['select', 'radio'] as const)(
@@ -104,8 +114,8 @@ describe('buildAnswerFormSchema', () => {
     (type) => {
       const schema = buildAnswerFormSchema([createQuestion({ type, options: ['現在の選択肢'] })])
 
-      expect(v.safeParse(schema, { 'question-1': '' }).issues?.[0].message).toBe('設問を入力してください')
-      expect(v.safeParse(schema, { 'question-1': '以前の選択肢' }).success).toBe(true)
+      expect(v.safeParse(schema, textInput('')).issues?.[0].message).toBe('設問を入力してください')
+      expect(v.safeParse(schema, textInput('以前の選択肢')).success).toBe(true)
     }
   )
 
@@ -117,8 +127,12 @@ describe('buildAnswerFormSchema', () => {
     ])
 
     expect(getAnswerFormElements(schema).map((element) => element.id)).toEqual(['heading', 'text', 'upload'])
-    expect(Object.keys(schema.entries)).toEqual(['text'])
-    expect(v.parse(schema, { text: '回答', heading: '対象外', upload: '対象外' })).toEqual({ text: '回答' })
+    expect(Object.keys(schema.entries.text.entries)).toEqual(['text'])
+    expect(Object.keys(schema.entries.choices.entries)).toEqual([])
+    expect(v.parse(schema, { text: { text: '回答', heading: '対象外', upload: '対象外' }, choices: {} })).toEqual({
+      text: { text: '回答' },
+      choices: {}
+    })
     expect(getAnswerFormElements(schema)[2]).toEqual({
       id: 'upload',
       control: 'upload',
@@ -139,7 +153,7 @@ describe('buildAnswerFormSchema', () => {
     const headingSchema = buildAnswerFormSchema([createQuestion({ type: 'heading' })], { legacyBody: true })
 
     expect(getAnswerFormElements(emptySchema)).toEqual([])
-    expect(v.parse(emptySchema, {})).toEqual({})
+    expect(v.parse(emptySchema, { text: {}, choices: {} })).toEqual({ text: {}, choices: {} })
     expect(getAnswerFormElements(legacySchema)).toEqual([
       {
         id: 'legacy-body',
@@ -150,9 +164,12 @@ describe('buildAnswerFormSchema', () => {
         placeholder: '回答内容を入力してください'
       }
     ])
-    expect(v.parse(legacySchema, { 'legacy-body': '' })).toEqual({ 'legacy-body': '' })
-    expect(v.safeParse(legacySchema, { 'legacy-body': [] }).success).toBe(false)
-    expect(Object.keys(headingSchema.entries)).toEqual([])
+    expect(v.parse(legacySchema, { text: { 'legacy-body': '' }, choices: {} })).toEqual({
+      text: { 'legacy-body': '' },
+      choices: {}
+    })
+    expect(v.safeParse(legacySchema, { text: { 'legacy-body': [] }, choices: {} }).success).toBe(false)
+    expect(Object.keys(headingSchema.entries.text.entries)).toEqual([])
   })
 
   it('keeps additional answer keys for existing consumers of the compatibility schema', () => {
@@ -178,18 +195,39 @@ describe('buildAnswerFormInput', () => {
     })
     const input = buildAnswerFormInput(schema, answer)
 
-    expect(input).toEqual({ text: '先頭の回答', checkbox: ['机'], number: '2', empty: '' })
-    expect(input.checkbox).not.toBe(answer.details.checkbox)
-    expect(buildAnswerFormInput(schema, null)).toEqual({ text: '', checkbox: [], number: '', empty: '' })
+    expect(input).toEqual({ text: { text: '先頭の回答', number: '2', empty: '' }, choices: { checkbox: ['机'] } })
+    expect(input.choices.checkbox).not.toBe(answer.details.checkbox)
+    expect(buildAnswerFormInput(schema, null)).toEqual({
+      text: { text: '', number: '', empty: '' },
+      choices: { checkbox: [] }
+    })
   })
 
   it('restores legacy body from the answer only when the schema includes it', () => {
     const answer = createAnswer({ details: { 'legacy-body': ['設問の回答'] } })
 
     expect(buildAnswerFormInput(buildAnswerFormSchema([], { legacyBody: true }), answer)).toEqual({
-      'legacy-body': '保存済みの回答'
+      text: { 'legacy-body': '保存済みの回答' },
+      choices: {}
     })
-    expect(buildAnswerFormInput(buildAnswerFormSchema([], { legacyBody: true }), null)).toEqual({ 'legacy-body': '' })
-    expect(buildAnswerFormInput(buildAnswerFormSchema([]), answer)).toEqual({})
+    expect(buildAnswerFormInput(buildAnswerFormSchema([], { legacyBody: true }), null)).toEqual({
+      text: { 'legacy-body': '' },
+      choices: {}
+    })
+    expect(buildAnswerFormInput(buildAnswerFormSchema([]), answer)).toEqual({ text: {}, choices: {} })
+  })
+})
+
+describe('answerFormInputToDraft', () => {
+  it('flattens grouped values in question order, copies arrays, and excludes unknown keys', () => {
+    const schema = buildAnswerFormSchema([
+      createQuestion({ id: toQuestionId('checkbox'), type: 'checkbox' }),
+      createQuestion({ id: toQuestionId('text') })
+    ])
+    const input = { text: { text: '回答', removed: '対象外' }, choices: { checkbox: ['机'] } }
+    const draft = answerFormInputToDraft(schema, input)
+    expect(draft).toEqual({ checkbox: ['机'], text: '回答' })
+    expect(Object.keys(draft)).toEqual(['checkbox', 'text'])
+    expect(draft.checkbox).not.toBe(input.choices.checkbox)
   })
 })

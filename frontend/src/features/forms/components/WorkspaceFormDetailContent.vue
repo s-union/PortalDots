@@ -65,19 +65,6 @@ const remainingAnswerCount = computed(() => {
 })
 const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
 const answerDirty = ref(false)
-const answerSchemaKey = computed(() =>
-  JSON.stringify([
-    currentFormId,
-    form.value?.questions.map(({ id, type, isRequired, numberMin, numberMax, options }) => ({
-      id,
-      type,
-      isRequired,
-      numberMin,
-      numberMax,
-      options
-    }))
-  ])
-)
 const { confirmBeforeSwitching } = useUnsavedChangesGuard(computed(() => answerDirty.value || hasUnuploadedFiles.value))
 
 async function selectAnswer(answerId: string) {
@@ -203,7 +190,7 @@ async function createAnswer() {
           </section>
 
           <WorkspaceFormAnswerForm
-            :key="answerSchemaKey"
+            :key="currentFormId"
             v-model:dirty="answerDirty"
             :form="form"
             :answer="selectedAnswer"

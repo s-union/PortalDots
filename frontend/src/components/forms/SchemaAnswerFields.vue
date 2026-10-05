@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Field, type FormStore } from '@formisch/vue'
 import { computed } from 'vue'
-import FormAnswerControl from './FormAnswerControl.vue'
+import CheckboxAnswerControl from './CheckboxAnswerControl.vue'
+import TextAnswerControl from './TextAnswerControl.vue'
+import UploadAnswerControl from './UploadAnswerControl.vue'
 import FormError from '@/components/ui/FormError.vue'
 import type { FormAnswer } from '@/features/forms/answers'
 import { getAnswerFormElements, type AnswerFormSchema } from '@/features/forms/answer-form-schema'
@@ -24,13 +26,6 @@ const emit = defineEmits<{
 }>()
 
 const elements = computed(() => getAnswerFormElements(schema))
-
-function fieldValue(input: unknown): string | string[] {
-  if (typeof input === 'string') {
-    return input
-  }
-  return Array.isArray(input) ? input.filter((item): item is string => typeof item === 'string') : ''
-}
 </script>
 
 <template>
@@ -58,9 +53,8 @@ function fieldValue(input: unknown): string | string[] {
           </p>
         </div>
 
-        <FormAnswerControl
+        <UploadAnswerControl
           v-if="element.control === 'upload'"
-          model-value=""
           :element="element"
           :answer="answer"
           :disabled="disabled"
@@ -74,24 +68,35 @@ function fieldValue(input: unknown): string | string[] {
           @file-change="(questionId, file) => emit('fileChange', questionId, file)"
         />
 
-        <Field v-else :of="form" :path="[element.id]" v-slot="field">
-          <div @focusin="field.props.onFocus" @focusout="field.props.onBlur" @change="field.props.onChange">
-            <FormAnswerControl
-              :model-value="fieldValue(field.input)"
-              :element="element"
-              :answer="answer"
-              :disabled="disabled"
-              :download-href="downloadHref"
-              :register-input="field.props.ref"
-              :aria-invalid="!!field.errors"
-              :aria-described-by="
-                [element.description && `${element.id}-description`, field.errors && `${element.id}-error`]
-                  .filter(Boolean)
-                  .join(' ') || undefined
-              "
-              @update:model-value="field.input = $event"
-            />
-          </div>
+        <Field v-else-if="element.control === 'checkbox'" :of="form" :path="['choices', element.id]" v-slot="field">
+          <CheckboxAnswerControl
+            v-model="field.input"
+            :element="element"
+            :disabled="disabled"
+            :field-props="field.props"
+            :aria-invalid="!!field.errors"
+            :aria-described-by="
+              [element.description && `${element.id}-description`, field.errors && `${element.id}-error`]
+                .filter(Boolean)
+                .join(' ') || undefined
+            "
+          />
+          <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" role="alert" />
+        </Field>
+
+        <Field v-else :of="form" :path="['text', element.id]" v-slot="field">
+          <TextAnswerControl
+            v-model="field.input"
+            :element="element"
+            :disabled="disabled"
+            :field-props="field.props"
+            :aria-invalid="!!field.errors"
+            :aria-described-by="
+              [element.description && `${element.id}-description`, field.errors && `${element.id}-error`]
+                .filter(Boolean)
+                .join(' ') || undefined
+            "
+          />
           <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" role="alert" />
         </Field>
       </div>

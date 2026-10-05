@@ -312,5 +312,6 @@ export type StaffPlaceFormData = v.InferOutput<typeof staffPlaceFormSchema>
  */
 export function buildFormAnswerSchema(questions: FormQuestion[]) {
   // Passthrough: allow 'legacy-body' and upload keys not in the schema
-  return v.looseObject(buildAnswerFormSchema(questions).entries)
+  const schema = buildAnswerFormSchema(questions)
+  return v.looseObject({ ...schema.entries.text.entries, ...schema.entries.choices.entries })
 }

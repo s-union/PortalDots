@@ -287,11 +287,11 @@ describe('WorkspaceFormAnswerForm', () => {
     await flushPromises()
     expect(wrapper.text()).not.toContain('企画名を入力してください')
 
-    await input.trigger('focusin')
+    await input.trigger('focus')
     await flushPromises()
     expect(wrapper.text()).not.toContain('企画名を入力してください')
 
-    await input.trigger('focusout')
+    await input.trigger('blur')
     await flushPromises()
     expect(wrapper.text()).toContain('企画名を入力してください')
     expect(saveAnswer).not.toHaveBeenCalled()
@@ -570,6 +570,116 @@ describe('WorkspaceFormAnswerForm', () => {
     expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([false])
   })
 
+  it('preserves edited fields while accepting server changes to untouched fields', async () => {
+    const questions = [
+      createQuestion(),
+      createQuestion({ id: toQuestionId('q-number'), name: '人数', type: 'number' }),
+      createQuestion({ id: toQuestionId('q-checkbox'), name: '備品', type: 'checkbox', options: ['机', '椅子'] })
+    ]
+    const { wrapper } = mountForm({
+      form: createForm(questions),
+      answer: createAnswer({ details: { 'q-text': ['保存済み'], 'q-number': ['3'], 'q-checkbox': ['机'] } })
+    })
+    await wrapper.get('input[type="text"]').setValue('編集中')
+    await wrapper.setProps({
+      answer: createAnswer({ details: { 'q-text': ['保存済み'], 'q-number': ['4'], 'q-checkbox': ['椅子'] } })
+    })
+    expect(wrapper.get<HTMLInputElement>('input[type="text"]').element.value).toBe('編集中')
+    expect(wrapper.get<HTMLInputElement>('input[type="number"]').element.value).toBe('4')
+    expect(wrapper.get<HTMLInputElement>('input[type="checkbox"][value="机"]').element.checked).toBe(false)
+    expect(wrapper.get<HTMLInputElement>('input[type="checkbox"][value="椅子"]').element.checked).toBe(true)
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([true])
+    await wrapper.get('input[type="text"]').setValue('保存済み')
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([false])
+  })
+
+  it('migrates compatible edits when questions are added, removed, or change value kind', async () => {
+    const originalQuestions = [
+      createQuestion(),
+      createQuestion({ id: toQuestionId('q-removed'), name: '削除予定' }),
+      createQuestion({ id: toQuestionId('q-changed'), name: '種別変更予定' }),
+      createQuestion({ id: toQuestionId('q-checkbox'), name: '備品', type: 'checkbox', options: ['机', '椅子'] })
+    ]
+    const { wrapper, saveAnswer } = mountForm({ form: createForm(originalQuestions), answer: createAnswer() })
+    await wrapper.get('input[name="q-text"]').setValue('引き継ぐ企画名')
+    await wrapper.get('input[name="q-removed"]').setValue('破棄する回答')
+    await wrapper.get('input[name="q-changed"]').setValue('配列へ引き継がない')
+    await wrapper.get('input[name="q-checkbox"][value="机"]').setValue(true)
+
+    await wrapper.setProps({
+      form: createForm([
+        createQuestion({ type: 'textarea' }),
+        createQuestion({
+          id: toQuestionId('q-changed'),
+          name: '新しい選択項目',
+          type: 'checkbox',
+          options: ['はい'],
+          isRequired: false
+        }),
+        originalQuestions[3],
+        createQuestion({ id: toQuestionId('q-new'), name: '追加項目', isRequired: false })
+      ])
+    })
+    await flushPromises()
+    expect(wrapper.get<HTMLTextAreaElement>('textarea[name="q-text"]').element.value).toBe('引き継ぐ企画名')
+    expect(wrapper.find('[name="q-removed"]').exists()).toBe(false)
+    expect(wrapper.get<HTMLInputElement>('input[name="q-changed"]').element.checked).toBe(false)
+    expect(wrapper.get<HTMLInputElement>('input[name="q-checkbox"][value="机"]').element.checked).toBe(true)
+    expect(wrapper.get<HTMLInputElement>('input[name="q-new"]').element.value).toBe('')
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([true])
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(saveAnswer).toHaveBeenCalledWith({
+      'q-text': '引き継ぐ企画名',
+      'q-changed': [],
+      'q-checkbox': ['机'],
+      'q-new': ''
+    })
+  })
+
+  it('does not migrate edits to a different answer when its question structure also changes', async () => {
+    const { wrapper } = mountForm({ answer: createAnswer() })
+    await wrapper.get('input[type="text"]').setValue('別の回答へ引き継がない')
+    await wrapper.setProps({
+      form: createForm([createQuestion(), createQuestion({ id: toQuestionId('q-new'), isRequired: false })]),
+      answer: createAnswer({ id: toAnswerId('answer-2'), details: { 'q-text': ['別の回答'] } })
+    })
+    await flushPromises()
+    expect(wrapper.get<HTMLInputElement>('input[name="q-text"]').element.value).toBe('別の回答')
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([false])
+  })
+
+  it('does not transfer edits from a locally saved answer before its server props arrive', async () => {
+    const { wrapper, saveAnswer } = mountForm()
+    saveAnswer.mockResolvedValueOnce(createAnswer({ details: { 'q-text': ['送信値'] } }))
+    await wrapper.get('input[name="q-text"]').setValue('送信値')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await wrapper.get('input[name="q-text"]').setValue('以前の回答の編集')
+    await wrapper.setProps({
+      form: createForm([createQuestion(), createQuestion({ id: toQuestionId('q-new'), isRequired: false })]),
+      answer: createAnswer({ id: toAnswerId('answer-2'), details: { 'q-text': ['別の回答'] } })
+    })
+    await flushPromises()
+    expect(wrapper.get<HTMLInputElement>('input[name="q-text"]').element.value).toBe('別の回答')
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([false])
+  })
+
+  it('focuses the first invalid question in display order across value groups', async () => {
+    const { wrapper } = mountForm(
+      {
+        form: createForm([
+          createQuestion({ id: toQuestionId('q-checkbox'), name: '備品', type: 'checkbox', options: ['机'] }),
+          createQuestion()
+        ])
+      },
+      document.body
+    )
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.get('input[name="q-checkbox"]').element)
+  })
+
   it('resets unsaved values and validation errors when a different answer is selected', async () => {
     const { wrapper } = mountForm({ answer: createAnswer() })
 
@@ -644,6 +754,52 @@ describe('WorkspaceFormAnswerForm', () => {
     expect(disabledAfterRefresh).toBe(true)
     expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(false)
     expect(saveAnswer).toHaveBeenCalledTimes(1)
+  })
+
+  it('accepts normalized saved fields while retaining only changes made after submission', async () => {
+    const questions = [createQuestion(), createQuestion({ id: toQuestionId('q-other'), name: '別項目' })]
+    const { wrapper, saveAnswer } = mountForm({
+      form: createForm(questions),
+      answer: createAnswer({ details: { 'q-text': ['以前の企画名'], 'q-other': ['以前の値'] } })
+    })
+    const pendingSave = Promise.withResolvers<FormAnswer | null>()
+    saveAnswer.mockReturnValueOnce(pendingSave.promise)
+    await wrapper.get('input[name="q-text"]').setValue('送信値')
+    await wrapper.get('input[name="q-other"]').setValue('正規化前')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await wrapper.get('input[name="q-text"]').setValue('送信後の編集')
+    pendingSave.resolve(createAnswer({ details: { 'q-text': ['送信値'], 'q-other': ['正規化された値'] } }))
+    await flushPromises()
+    expect(wrapper.get<HTMLInputElement>('input[name="q-text"]').element.value).toBe('送信後の編集')
+    expect(wrapper.get<HTMLInputElement>('input[name="q-other"]').element.value).toBe('正規化された値')
+    await wrapper.get('input[name="q-text"]').setValue('送信値')
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([false])
+  })
+
+  it('applies structural changes after a pending save settles without losing subsequent edits', async () => {
+    const { wrapper, saveAnswer } = mountForm({ answer: createAnswer() })
+    const pendingSave = Promise.withResolvers<FormAnswer | null>()
+    saveAnswer.mockReturnValueOnce(pendingSave.promise)
+    await wrapper.get('input[name="q-text"]').setValue('送信値')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await wrapper.get('input[name="q-text"]').setValue('送信後の編集')
+    await wrapper.setProps({
+      form: createForm([createQuestion(), createQuestion({ id: toQuestionId('q-new'), isRequired: false })])
+    })
+    expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(true)
+    expect(wrapper.find('input[name="q-new"]').exists()).toBe(false)
+    await wrapper.get('form').trigger('submit')
+    expect(saveAnswer).toHaveBeenCalledTimes(1)
+    pendingSave.resolve(createAnswer({ details: { 'q-text': ['送信値'] } }))
+    await flushPromises()
+    expect(wrapper.get<HTMLInputElement>('input[name="q-text"]').element.value).toBe('送信後の編集')
+    expect(wrapper.find('input[name="q-new"]').exists()).toBe(true)
+    expect(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(false)
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([true])
+    await wrapper.get('input[name="q-text"]').setValue('送信値')
+    expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([false])
   })
 
   it('ignores a late save result after switching to another answer', async () => {
