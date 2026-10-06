@@ -1,4 +1,4 @@
-import { computed, ref, type MaybeRefOrGetter, toValue, watch } from 'vue'
+import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import * as v from 'valibot'
 import { $api, buildApiUrl, createJsonHeaders, postMultipart } from '@/lib/api/client'
@@ -11,7 +11,6 @@ import {
   type UploadId
 } from '@/lib/api/schema'
 import { extractValidationMessage as extractApiValidationMessage, parseValidationError } from '@/lib/api/validation'
-import type { FormQuestion } from '@/features/forms/api'
 import { useSessionStore } from '@/features/session/store'
 
 export interface FormAnswer {
@@ -32,7 +31,6 @@ export interface FormAnswerUpload {
 }
 
 export type FormAnswerDraft = Record<string, string | string[]>
-export type AnswerableQuestionRef = Pick<FormQuestion, 'id' | 'type'>
 export type FormAnswers = ReturnType<typeof parseFormAnswers>
 
 interface FormAnswersResponse {
@@ -398,107 +396,8 @@ export function useFormAnswerUploadMutation(formId: MaybeRefOrGetter<string>) {
   })
 }
 
-export function useFormAnswerDraft(formId: MaybeRefOrGetter<string>, questions: MaybeRefOrGetter<FormQuestion[]>) {
-  const answerQuery = useFormAnswerQuery(formId)
-  const draft = useFormAnswerEditorDraft(
-    computed(() => answerQuery.data.value?.answer),
-    questions
-  )
-
-  return {
-    answerQuery,
-    draft
-  }
-}
-
-export function useFormAnswerEditorDraft(
-  answer: MaybeRefOrGetter<FormAnswer | null | undefined>,
-  questions: MaybeRefOrGetter<FormQuestion[]>
-) {
-  const draft = ref<FormAnswerDraft>({})
-
-  watch(
-    [() => toValue(answer), () => toValue(questions)],
-    ([currentAnswer, currentQuestions]) => {
-      draft.value = buildFormAnswerDraft(currentAnswer, currentQuestions)
-    },
-    { immediate: true }
-  )
-
-  return draft
-}
-
-function buildFormAnswerDraft(answer: FormAnswer | null | undefined, questions: FormQuestion[]): FormAnswerDraft {
-  const draft: FormAnswerDraft = {}
-  if (questions.length === 0) {
-    draft['legacy-body'] = answer?.body ?? ''
-    return draft
-  }
-
-  for (const question of questions) {
-    if (question.type === 'heading' || question.type === 'upload') {
-      continue
-    }
-    const values = answer?.details[question.id] ?? []
-    if (question.type === 'checkbox') {
-      draft[question.id] = [...values]
-      continue
-    }
-    draft[question.id] = values[0] ?? ''
-  }
-  return draft
-}
-
-export function isFormAnswerDraftDirty(
-  draft: FormAnswerDraft,
-  answer: FormAnswer | null | undefined,
-  questions: FormQuestion[]
-): boolean {
-  return !formAnswerDraftsEqual(draft, buildFormAnswerDraft(answer, questions))
-}
-
-function formAnswerDraftsEqual(a: FormAnswerDraft, b: FormAnswerDraft): boolean {
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  if (aKeys.length !== bKeys.length) {
-    return false
-  }
-  return aKeys.every((key) => {
-    const aValue = a[key]
-    const bValue = b[key]
-    if (Array.isArray(aValue) || Array.isArray(bValue)) {
-      return (
-        Array.isArray(aValue) &&
-        Array.isArray(bValue) &&
-        aValue.length === bValue.length &&
-        aValue.every((item, index) => item === bValue[index])
-      )
-    }
-    return aValue === bValue
-  })
-}
-
 export function extractValidationMessage(error: unknown) {
   return extractApiValidationMessage(error, '回答の保存に失敗しました。')
-}
-
-export function answerValue(draft: FormAnswerDraft, question: AnswerableQuestionRef) {
-  const value = draft[question.id]
-  if (question.type === 'checkbox') {
-    return Array.isArray(value) ? value : []
-  }
-  return typeof value === 'string' ? value : ''
-}
-
-export function createAnswerableQuestionRef(
-  questionId: QuestionId,
-  type: AnswerableQuestionRef['type']
-): AnswerableQuestionRef {
-  return { id: questionId, type }
-}
-
-export function setAnswerValue(draft: FormAnswerDraft, question: AnswerableQuestionRef, value: string | string[]) {
-  draft[question.id] = value
 }
 
 export function questionUploads(answer: FormAnswer | null | undefined, questionId: string) {
@@ -548,10 +447,6 @@ export function buildFormAnswerUploadDownloadUrlByAnswer(formId: string, answerI
   return buildApiUrl(
     `/forms/${encodeURIComponent(formId)}/answers/${encodeURIComponent(answerId)}/uploads/${encodeURIComponent(questionId)}/file`
   )
-}
-
-export function updateDraftValue(draft: FormAnswerDraft, questionId: string, value: string | string[]) {
-  draft[questionId] = value
 }
 
 function draftToDetailsPayload(draft: FormAnswerDraft) {

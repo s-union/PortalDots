@@ -9,7 +9,8 @@ definePage({
 
 import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
+import AnswerFormEditor from '@/features/forms/components/AnswerFormEditor.vue'
+import SchemaAnswerFields from '@/components/forms/SchemaAnswerFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -23,19 +24,17 @@ import {
   useUpdateCircleMutation
 } from '@/features/circles/queries'
 import {
-  answerValue,
   buildFormAnswerUploadDownloadUrl,
   extractValidationMessage as extractAnswerValidationMessage,
-  isFormAnswerDraftDirty,
-  setAnswerValue,
-  useFormAnswerEditorDraft,
   useFormAnswerUploadMutation
 } from '@/features/forms/answers'
+import type { FormAnswerDraft } from '@/features/forms/answers'
+import type { AnswerFormSaveResult } from '@/features/forms/composables/useAnswerForm'
+import type { CircleDetail } from '@/features/circles/api'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { extractValidationMessage } from '@/lib/api/validation'
 import { buttonVariants } from '@/lib/ui/variants'
 import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
-import FormError from '@/components/ui/FormError.vue'
 import FormField from '@/components/ui/FormField.vue'
 
 const router = useRouter()
@@ -58,10 +57,7 @@ const { getFieldError, validateAll, markTouched } = useFormValidation({
 })
 
 const questions = computed(() => detailQuery.data.value?.questions ?? [])
-const draft = useFormAnswerEditorDraft(
-  computed(() => detailQuery.data.value?.answer ?? null),
-  questions
-)
+const answerDirty = ref(false)
 const uploadMutation = useFormAnswerUploadMutation(computed(() => detailQuery.data.value?.formId ?? ''))
 const formDescription = computed(() => detailQuery.data.value?.formDescription.trim() ?? '')
 const requiresMemberStep = computed(() => {
@@ -86,84 +82,78 @@ const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
 const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
 
+const formBaseline = ref({ ...form })
+const basicFields = ['name', 'nameYomi', 'groupName', 'groupNameYomi', 'participationTypeId', 'notes'] as const
+let baselineCircleId = ''
+
 const isDirty = computed(() => {
   const detail = detailQuery.data.value
   if (!detail) {
     return false
   }
   const basicInfoChanged =
-    form.name !== detail.name ||
-    form.nameYomi !== detail.nameYomi ||
-    form.groupName !== detail.groupName ||
-    form.groupNameYomi !== detail.groupNameYomi ||
-    form.participationTypeId !== detail.participationTypeId ||
-    form.notes !== detail.notes
-  return (
-    basicInfoChanged ||
-    isFormAnswerDraftDirty(draft.value, detail.answer ?? null, questions.value) ||
-    hasUnuploadedFiles.value
-  )
+    form.name !== formBaseline.value.name ||
+    form.nameYomi !== formBaseline.value.nameYomi ||
+    form.groupName !== formBaseline.value.groupName ||
+    form.groupNameYomi !== formBaseline.value.groupNameYomi ||
+    form.participationTypeId !== formBaseline.value.participationTypeId ||
+    form.notes !== formBaseline.value.notes
+  return basicInfoChanged || answerDirty.value || hasUnuploadedFiles.value
 })
 const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
+
+function syncBasicInfo(detail: CircleDetail, submitted?: typeof form) {
+  const changedCircle = detail.id !== baselineCircleId
+  for (const key of basicFields) {
+    const previous = submitted?.[key] ?? formBaseline.value[key]
+    if (changedCircle || form[key] === previous) form[key] = detail[key]
+    formBaseline.value[key] = detail[key]
+  }
+  baselineCircleId = detail.id
+}
 
 watch(
   () => detailQuery.data.value,
   (detail) => {
-    if (!detail) {
-      return
-    }
-    form.name = detail.name
-    form.nameYomi = detail.nameYomi
-    form.groupName = detail.groupName
-    form.groupNameYomi = detail.groupNameYomi
-    form.participationTypeId = detail.participationTypeId
-    form.notes = detail.notes
+    if (detail) syncBasicInfo(detail)
   },
   { immediate: true }
 )
 
-async function saveCircle() {
+let continueAfterSave = false
+function beforeSave(event: SubmitEvent) {
+  continueAfterSave = event.submitter?.getAttribute('value') === 'continue'
+  return validateAll()
+}
+
+async function saveCircle(draft: FormAnswerDraft): Promise<AnswerFormSaveResult | null> {
   const detail = detailQuery.data.value
-  if (!detail) {
-    return false
-  }
-
-  // Validate all fields before saving
-  if (!validateAll()) {
-    return false
-  }
-
+  if (!detail || !canEdit.value) return null
+  const submitted = { ...form }
   successMessage.value = ''
   errorMessage.value = ''
 
   try {
-    await updateMutation.mutateAsync({
-      name: form.name,
-      nameYomi: form.nameYomi,
-      groupName: form.groupName,
-      groupNameYomi: form.groupNameYomi,
-      notes: form.notes,
-      details: draft.value
+    const saved = await updateMutation.mutateAsync({
+      name: submitted.name,
+      nameYomi: submitted.nameYomi,
+      groupName: submitted.groupName,
+      groupNameYomi: submitted.groupNameYomi,
+      notes: submitted.notes,
+      details: draft
     })
-    await detailQuery.refetch()
+    if (detailQuery.data.value?.id !== detail.id) return null
+    syncBasicInfo(saved, submitted)
     successMessage.value = '企画参加登録の内容を保存しました。'
-    return true
+    return { answer: saved.answer }
   } catch (error) {
     errorMessage.value = extractValidationMessage(error, '企画情報の更新に失敗しました。')
-    return false
+    return null
   }
 }
 
-async function handleSave() {
-  await saveCircle()
-}
-
-async function handleSaveAndContinue() {
-  const saved = await saveCircle()
-  if (!saved) {
-    return
-  }
-  await router.push(nextStepPath.value)
+async function handleSaved() {
+  if (continueAfterSave && !isDirty.value) await router.push(nextStepPath.value)
 }
 
 async function handleDelete() {
@@ -244,7 +234,19 @@ function downloadHref(questionId: string) {
 
     <div v-if="detailQuery.isPending.value" class="text-base text-muted">読み込み中...</div>
 
-    <template v-else-if="detailQuery.data.value">
+    <AnswerFormEditor
+      v-else-if="detailQuery.data.value"
+      :key="`${detailQuery.data.value.id}/${detailQuery.data.value.formId}`"
+      v-model:dirty="answerDirty"
+      :questions="questions"
+      :answer="detailQuery.data.value.answer"
+      :disabled="!canEdit || deleteMutation.isPending.value"
+      :before-submit="beforeSave"
+      :save-answer="saveCircle"
+      class="space-y-6"
+      @saved="handleSaved"
+      v-slot="{ schema, form: answerForm }"
+    >
       <AlertMessage v-if="detailQuery.data.value.submittedAt === null" tone="info">
         <strong>企画情報の修正や、企画参加登録を提出することができるのは、企画責任者のみです。</strong>
       </AlertMessage>
@@ -273,7 +275,7 @@ function downloadHref(questionId: string) {
               <input :value="detailQuery.data.value.leaderDisplayName" disabled name="leaderDisplayName" type="text" />
             </FormField>
 
-            <FormField label="企画名" label-class="font-semibold" :error="getFieldError('name') && canEdit" required>
+            <FormField label="企画名" label-class="font-semibold" :error="canEdit && getFieldError('name')" required>
               <input
                 v-model="form.name"
                 :disabled="!canEdit"
@@ -288,7 +290,7 @@ function downloadHref(questionId: string) {
             <FormField
               label="企画名（よみ）"
               label-class="font-semibold"
-              :error="getFieldError('nameYomi') && canEdit"
+              :error="canEdit && getFieldError('nameYomi')"
               required
             >
               <input
@@ -307,7 +309,7 @@ function downloadHref(questionId: string) {
             <FormField
               label="企画を出店する団体の名称"
               label-class="font-semibold"
-              :error="getFieldError('groupName') && canEdit && detailQuery.data.value.canChangeGroupName"
+              :error="canEdit && detailQuery.data.value.canChangeGroupName && getFieldError('groupName')"
               required
             >
               <input
@@ -327,7 +329,7 @@ function downloadHref(questionId: string) {
             <FormField
               label="企画を出店する団体の名称（よみ）"
               label-class="font-semibold"
-              :error="getFieldError('groupNameYomi') && canEdit && detailQuery.data.value.canChangeGroupName"
+              :error="canEdit && detailQuery.data.value.canChangeGroupName && getFieldError('groupNameYomi')"
               required
             >
               <input
@@ -360,45 +362,18 @@ function downloadHref(questionId: string) {
       <SettingsSection title="参加登録フォーム">
         <div v-if="questions.length === 0" class="px-6 py-5 text-base text-muted">追加の設問はありません。</div>
 
-        <div class="grid gap-0">
-          <template v-for="question in questions" :key="question.id">
-            <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
-              <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
-              <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
-                {{ question.description }}
-              </p>
-            </div>
-
-            <div v-else class="border-b border-border px-6 py-5">
-              <div class="grid gap-3">
-                <div>
-                  <p class="text-base font-semibold text-body">
-                    {{ question.name }}
-                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger">必須</span>
-                  </p>
-                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
-                    {{ question.description }}
-                  </p>
-                </div>
-
-                <AnswerQuestionFields
-                  :answer="detailQuery.data.value.answer"
-                  :model-value="answerValue(draft, question)"
-                  @update:model-value="setAnswerValue(draft, question, $event)"
-                  :question="question"
-                  :disabled="!canEdit"
-                  :selected-file="selectedFiles[question.id]"
-                  :upload-button-label="'ファイルを追加'"
-                  :upload-pending="uploadMutation.isPending.value"
-                  :upload-error-message="uploadErrorMessages[question.id]"
-                  :download-href="(currentQuestion) => downloadHref(currentQuestion.id)"
-                  @upload="handleUploadFile"
-                  @file-change="handleFileChange"
-                />
-              </div>
-            </div>
-          </template>
-        </div>
+        <SchemaAnswerFields
+          :schema="schema"
+          :form="answerForm"
+          :answer="detailQuery.data.value.answer"
+          :disabled="!canEdit"
+          :selected-files="selectedFiles"
+          :upload-pending="uploadMutation.isPending.value"
+          :upload-error-messages="uploadErrorMessages"
+          :download-href="downloadHref"
+          @upload="handleUploadFile"
+          @file-change="handleFileChange"
+        />
 
         <template #footer>
           <div class="space-y-4">
@@ -413,7 +388,7 @@ function downloadHref(questionId: string) {
               <button
                 v-if="canEdit"
                 :class="buttonVariants({ variant: 'danger', size: 'lg', weight: 'bold' })"
-                :disabled="deleteMutation.isPending.value"
+                :disabled="deleteMutation.isPending.value || answerForm.isSubmitting"
                 type="button"
                 @click="handleDelete"
               >
@@ -430,18 +405,20 @@ function downloadHref(questionId: string) {
                 <button
                   v-if="canEdit"
                   class="rounded border border-border bg-surface px-4 py-3 text-base font-semibold text-body transition hover:bg-surface-light"
-                  :disabled="updateMutation.isPending.value"
-                  type="button"
-                  @click="handleSave"
+                  :disabled="answerForm.isSubmitting || deleteMutation.isPending.value"
+                  type="submit"
+                  name="action"
+                  value="save"
                 >
-                  {{ updateMutation.isPending.value ? '保存中...' : '保存する' }}
+                  {{ answerForm.isSubmitting ? '保存中...' : '保存する' }}
                 </button>
                 <button
                   v-if="canEdit"
                   :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
-                  :disabled="updateMutation.isPending.value"
-                  type="button"
-                  @click="handleSaveAndContinue"
+                  :disabled="answerForm.isSubmitting || deleteMutation.isPending.value"
+                  type="submit"
+                  name="action"
+                  value="continue"
                 >
                   {{ requiresMemberStep ? '保存して次へ' : '確認画面へ' }}
                 </button>
@@ -450,7 +427,7 @@ function downloadHref(questionId: string) {
           </div>
         </template>
       </SettingsSection>
-    </template>
+    </AnswerFormEditor>
 
     <div v-else class="rounded border border-border px-6 py-6 text-base text-muted">
       企画情報を取得できませんでした。

@@ -5,23 +5,18 @@ definePage({
   meta: staffPageMeta('formAnswers.edit')
 })
 
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, ref, shallowRef, watch } from 'vue'
+import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { formatDateTime, formatDateTimeUpdated } from '@/lib/format/datetime'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
-import AnswerQuestionFields from '@/components/forms/AnswerQuestionFields.vue'
-import {
-  answerValue,
-  buildFormAnswerUploadDownloadUrlByAnswer,
-  isFormAnswerDraftDirty,
-  setAnswerValue,
-  updateDraftValue,
-  useFormAnswerEditorDraft
-} from '@/features/forms/answers'
+import AnswerFormEditor from '@/features/forms/components/AnswerFormEditor.vue'
+import SchemaAnswerFields from '@/components/forms/SchemaAnswerFields.vue'
+import { buildFormAnswerUploadDownloadUrlByAnswer, type FormAnswerDraft } from '@/features/forms/answers'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
+import type { AnswerFormSaveResult } from '@/features/forms/composables/useAnswerForm'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   buildDeleteStaffFormAnswerConfirmMessage,
@@ -36,8 +31,6 @@ import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import FormField from '@/components/ui/FormField.vue'
-import { textareaValue } from '@/lib/dom'
 
 const route = useRoute('/staff/forms/[formId]/answers/[answerId]/edit')
 const router = useRouter()
@@ -48,21 +41,20 @@ const answerQuery = useStaffFormAnswerDetailQuery(formId, answerId, enabled)
 const updateAnswerMutation = useUpdateStaffFormAnswerMutation(formId, answerId)
 const deleteAnswerMutation = useDeleteStaffFormAnswerMutation(formId)
 const uploadMutation = useUploadStaffFormAnswerFileMutation(formId, answerId)
-const draft = useFormAnswerEditorDraft(
-  computed(() => answerQuery.data.value?.answer),
-  computed(() => answerQuery.data.value?.form.questions ?? [])
-)
+const answerDirty = shallowRef(false)
 const errorMessage = ref('')
 const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
+watch([formId, answerId], () => {
+  selectedFiles.value = {}
+  uploadErrorMessages.value = {}
+  errorMessage.value = ''
+})
 const staffFormTabs = computed(() => buildStaffFormTabs(formId.value, 'answers'))
 const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
-const isDirty = computed(
-  () =>
-    isFormAnswerDraftDirty(draft.value, answerQuery.data.value?.answer, answerQuery.data.value?.form.questions ?? []) ||
-    hasUnuploadedFiles.value
-)
-const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
+const isDirty = computed(() => answerDirty.value || hasUnuploadedFiles.value)
+const { clear: clearUnsavedChangesGuard, confirmBeforeSwitching } = useUnsavedChangesGuard(isDirty)
+onBeforeRouteUpdate((to, from) => to.path === from.path || confirmBeforeSwitching())
 const notificationMessage = computed(() => {
   const form = answerQuery.data.value?.form
   if (!form) {
@@ -74,21 +66,21 @@ const notificationMessage = computed(() => {
   return 'このフォームでは、スタッフが回答を保存しても企画メンバーへの通知メールは送信されません。'
 })
 
-async function handleSaveAnswer() {
-  if (!answerQuery.data.value) {
-    return
+async function handleSaveAnswer(draft: FormAnswerDraft): Promise<AnswerFormSaveResult | null> {
+  const detail = answerQuery.data.value
+  if (!detail) {
+    return null
   }
 
   errorMessage.value = ''
-  const body =
-    typeof draft.value['legacy-body'] === 'string' ? draft.value['legacy-body'] : answerQuery.data.value.answer.body
+  const body = typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : detail.answer.body
 
   try {
-    await updateAnswerMutation.mutateAsync(
-      staffAnswerDraftToPayload(answerQuery.data.value.circle.id, body, draft.value)
-    )
+    const answer = await updateAnswerMutation.mutateAsync(staffAnswerDraftToPayload(detail.circle.id, body, draft))
+    return { answer }
   } catch (error) {
     errorMessage.value = extractStaffFormAnswerValidationMessage(error)
+    return null
   }
 }
 
@@ -169,92 +161,62 @@ function handleFileChange(questionId: string, file: File | null) {
         {{ notificationMessage }}
       </section>
 
-      <SurfaceCard>
-        <SurfaceHeader>
-          <template #title>回答を編集</template>
-        </SurfaceHeader>
+      <AnswerFormEditor
+        :key="`${formId}/${answerId}`"
+        v-model:dirty="answerDirty"
+        :questions="answerQuery.data.value.form.questions"
+        :answer="answerQuery.data.value.answer"
+        :disabled="deleteAnswerMutation.isPending.value || !enabled"
+        :save-answer="handleSaveAnswer"
+        legacy-body
+        v-slot="{ schema, form: answerForm }"
+      >
+        <SurfaceCard>
+          <SurfaceHeader>
+            <template #title>回答を編集</template>
+          </SurfaceHeader>
 
-        <div class="grid gap-0">
-          <template v-if="answerQuery.data.value.form.questions.length === 0">
-            <div class="border-b border-border px-6 py-5">
-              <FormField label="回答">
-                <textarea
-                  :value="typeof draft['legacy-body'] === 'string' ? draft['legacy-body'] : ''"
-                  class="min-h-40"
-                  name="answer-body"
-                  @input="updateDraftValue(draft, 'legacy-body', textareaValue($event))"
-                />
-              </FormField>
+          <SchemaAnswerFields
+            :schema="schema"
+            :form="answerForm"
+            :answer="answerQuery.data.value.answer"
+            :disabled="deleteAnswerMutation.isPending.value"
+            :selected-files="selectedFiles"
+            upload-button-label="添付を更新"
+            :upload-pending="uploadMutation.isPending.value"
+            :upload-error-messages="uploadErrorMessages"
+            download-label="ダウンロード"
+            :download-href="(questionId) => buildFormAnswerUploadDownloadUrlByAnswer(formId, answerId, questionId)"
+            @upload="handleUploadFile"
+            @file-change="handleFileChange"
+          />
+
+          <div class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-5">
+            <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
+            <div class="ml-auto flex flex-wrap gap-3">
+              <BaseButton
+                variant="dangerOutline"
+                size="lg"
+                weight="semibold"
+                :disabled="deleteAnswerMutation.isPending.value || answerForm.isSubmitting"
+                type="button"
+                @click="handleDeleteAnswer"
+              >
+                削除
+              </BaseButton>
+              <BaseButton
+                variant="primary"
+                size="lg"
+                weight="bold"
+                :disabled="deleteAnswerMutation.isPending.value || answerForm.isSubmitting"
+                type="submit"
+              >
+                {{ answerForm.isSubmitting ? '保存中...' : '変更を保存' }}
+              </BaseButton>
             </div>
-          </template>
-
-          <template v-for="question in answerQuery.data.value.form.questions" :key="question.id">
-            <div v-if="question.type === 'heading'" class="border-b border-border px-6 py-5">
-              <h3 class="text-lg font-semibold text-body">{{ question.name }}</h3>
-              <p v-if="question.description" class="mt-3 whitespace-pre-wrap text-base leading-7 text-muted">
-                {{ question.description }}
-              </p>
-            </div>
-
-            <div v-else class="border-b border-border px-6 py-5">
-              <div class="grid gap-3">
-                <div>
-                  <p class="text-base font-semibold text-body">
-                    {{ question.name }}
-                    <span v-if="question.isRequired" class="ml-2 text-xs font-semibold text-danger"> 必須 </span>
-                  </p>
-                  <p v-if="question.description" class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted">
-                    {{ question.description }}
-                  </p>
-                </div>
-
-                <AnswerQuestionFields
-                  :answer="answerQuery.data.value.answer"
-                  :model-value="answerValue(draft, question)"
-                  @update:model-value="setAnswerValue(draft, question, $event)"
-                  :question="question"
-                  :selected-file="selectedFiles[question.id]"
-                  :upload-button-label="'添付を更新'"
-                  :upload-pending="uploadMutation.isPending.value"
-                  :upload-error-message="uploadErrorMessages[question.id]"
-                  :download-label="'ダウンロード'"
-                  :download-href="
-                    (currentQuestion) => buildFormAnswerUploadDownloadUrlByAnswer(formId, answerId, currentQuestion.id)
-                  "
-                  @upload="handleUploadFile"
-                  @file-change="handleFileChange"
-                />
-              </div>
-            </div>
-          </template>
-        </div>
-
-        <div class="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-5">
-          <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
-          <div class="ml-auto flex flex-wrap gap-3">
-            <BaseButton
-              variant="dangerOutline"
-              size="lg"
-              weight="semibold"
-              :disabled="deleteAnswerMutation.isPending.value"
-              type="button"
-              @click="handleDeleteAnswer"
-            >
-              削除
-            </BaseButton>
-            <BaseButton
-              variant="primary"
-              size="lg"
-              weight="bold"
-              :disabled="updateAnswerMutation.isPending.value"
-              type="button"
-              @click="handleSaveAnswer"
-            >
-              {{ updateAnswerMutation.isPending.value ? '保存中...' : '変更を保存' }}
-            </BaseButton>
           </div>
-        </div>
-      </SurfaceCard>
+        </SurfaceCard>
+      </AnswerFormEditor>
 
       <SurfaceCard>
         <SurfaceHeader>

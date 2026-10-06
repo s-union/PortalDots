@@ -1,6 +1,4 @@
 import * as v from 'valibot'
-import type { FormQuestion } from '@/features/forms/api'
-import { buildAnswerFormSchema } from '@/features/forms/answer-form-schema'
 import { categoryIdSchema, participationTypeIdSchema } from '@/lib/api/schema'
 
 /**
@@ -305,13 +303,3 @@ export const staffPlaceFormSchema = v.object({
 })
 
 export type StaffPlaceFormData = v.InferOutput<typeof staffPlaceFormSchema>
-
-/**
- * Build a dynamic Valibot schema for FormAnswerDraft based on the loaded questions.
- * heading/upload type questions are excluded from validation.
- */
-export function buildFormAnswerSchema(questions: FormQuestion[]) {
-  // Passthrough: allow 'legacy-body' and upload keys not in the schema
-  const schema = buildAnswerFormSchema(questions)
-  return v.looseObject({ ...schema.entries.text.entries, ...schema.entries.choices.entries })
-}

@@ -9,22 +9,24 @@ import {
 } from '@/features/forms/answer-form-schema'
 import type { FormQuestion } from '@/features/forms/api'
 import type { FormAnswer, FormAnswerDraft } from '@/features/forms/answers'
-import type { AnswerFormSnapshot } from '@/features/forms/composables/useAnswerForm'
+import type { AnswerFormSnapshot, AnswerFormSaveResult } from '@/features/forms/composables/useAnswerForm'
 
 const {
   questions,
   answer,
   disabled,
   saveAnswer,
+  beforeSubmit,
   legacyBody = false
 } = defineProps<{
   questions: FormQuestion[]
   answer: FormAnswer | null
   disabled: boolean
-  saveAnswer: (draft: FormAnswerDraft) => Promise<FormAnswer | null>
+  saveAnswer: (draft: FormAnswerDraft) => Promise<AnswerFormSaveResult | null>
+  beforeSubmit?: (event: SubmitEvent) => boolean
   legacyBody?: boolean
 }>()
-const emit = defineEmits<{ 'update:dirty': [dirty: boolean] }>()
+const emit = defineEmits<{ 'update:dirty': [dirty: boolean]; saved: [] }>()
 defineSlots<{ default(props: { schema: AnswerFormSchema; form: FormStore<AnswerFormSchema> }): unknown }>()
 
 const schema = computed(() => buildAnswerFormSchema(questions, { legacyBody }))
@@ -56,9 +58,11 @@ watch([schema, submitting, () => answer?.id], ([nextSchema, pending, answerId], 
     :answer="answer"
     :disabled="disabled"
     :save-answer="saveAnswer"
+    :before-submit="beforeSubmit"
     :initial-state="initialState"
     @update:dirty="emit('update:dirty', $event)"
     @update:submitting="submitting = $event"
+    @saved="emit('saved')"
     v-slot="state"
   >
     <slot :schema="state.schema" :form="state.form" />

@@ -12,13 +12,20 @@ interface UseAnswerFormOptions {
   schema: MaybeRefOrGetter<AnswerFormSchema>
   answer: MaybeRefOrGetter<FormAnswer | null>
   disabled: MaybeRefOrGetter<boolean>
-  saveAnswer: (draft: FormAnswerDraft) => Promise<FormAnswer | null>
+  saveAnswer: (draft: FormAnswerDraft) => Promise<AnswerFormSaveResult | null>
+  beforeSubmit?: (event: SubmitEvent) => boolean
+  onSaved?: () => void
   initialState?: AnswerFormSnapshot
 }
 
 export interface AnswerFormSnapshot {
   answer: FormAnswer | null
   dirtyDraft: FormAnswerDraft
+}
+
+// A successful aggregate save may not create an answer when there are no questions.
+export interface AnswerFormSaveResult {
+  answer: FormAnswer | null
 }
 
 function equalValue(a: string | string[], b: string | string[] | undefined): boolean {
@@ -114,22 +121,26 @@ export function useAnswerForm(options: UseAnswerFormOptions) {
     const submittedAnswerId = toValue(options.answer)?.id
     const submittedRevision = answerRevision
     const submittedDraft = answerFormInputToDraft(schema(), input)
-    const savedAnswer = await options.saveAnswer(submittedDraft)
+    const result = await options.saveAnswer(submittedDraft)
+    if (!result || disposed || submittedRevision !== answerRevision) return
+    const savedAnswer = result.answer
     const currentAnswerId = toValue(options.answer)?.id
     const isCurrentAnswer =
       currentAnswerId === submittedAnswerId || (!submittedAnswerId && currentAnswerId === savedAnswer?.id)
-    if (!savedAnswer || disposed || submittedRevision !== answerRevision || !isCurrentAnswer) return
+    if (!isCurrentAnswer) return
 
     const preserved = currentDraft()
     for (const [id, value] of Object.entries(preserved)) {
       if (equalValue(value, submittedDraft[id])) delete preserved[id]
     }
     resetAnswer(savedAnswer, preserved)
+    options.onSaved?.()
   })
 
   async function submitEvent(event: SubmitEvent) {
     event.preventDefault()
     if (toValue(options.disabled) || form.isSubmitting) return
+    if (options.beforeSubmit && !options.beforeSubmit(event)) return
     await submit()
     if (disposed || form.isSubmitting) return
     // The grouped storage order must not override the visible question order.

@@ -3,7 +3,6 @@ import * as v from 'valibot'
 import type { FormQuestion } from '@/features/forms/api'
 import type { FormAnswer } from '@/features/forms/answers'
 import { toAnswerId, toQuestionId } from '@/lib/api/schema'
-import { buildFormAnswerSchema } from '@/lib/form-validation/schemas'
 import {
   answerFormInputToDraft,
   buildAnswerFormInput,
@@ -170,13 +169,6 @@ describe('buildAnswerFormSchema', () => {
     })
     expect(v.safeParse(legacySchema, { text: { 'legacy-body': [] }, choices: {} }).success).toBe(false)
     expect(Object.keys(headingSchema.entries.text.entries)).toEqual([])
-  })
-
-  it('keeps additional answer keys for existing consumers of the compatibility schema', () => {
-    const draft = { 'question-1': '回答', 'legacy-body': '本文', upload: '' }
-
-    expect(v.parse(buildFormAnswerSchema([createQuestion()]), draft)).toEqual(draft)
-    expect(v.parse(buildFormAnswerSchema([]), draft)).toEqual(draft)
   })
 })
 

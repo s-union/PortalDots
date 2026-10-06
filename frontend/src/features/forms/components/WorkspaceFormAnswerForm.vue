@@ -35,6 +35,11 @@ const emit = defineEmits<{
   fileChange: [questionId: string, file: File | null]
   'update:dirty': [dirty: boolean]
 }>()
+
+async function saveDraft(draft: FormAnswerDraft) {
+  const savedAnswer = await saveAnswer(draft)
+  return savedAnswer ? { answer: savedAnswer } : null
+}
 </script>
 
 <template>
@@ -42,7 +47,7 @@ const emit = defineEmits<{
     :questions="form.questions"
     :answer="answer"
     :disabled="disabled"
-    :save-answer="saveAnswer"
+    :save-answer="saveDraft"
     legacy-body
     class="space-y-6"
     @update:dirty="emit('update:dirty', $event)"

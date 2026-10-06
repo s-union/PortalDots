@@ -21,7 +21,6 @@ export {
   staffPageFormSchema,
   staffTagFormSchema,
   staffPlaceFormSchema,
-  buildFormAnswerSchema,
   type ProfileUpdateFormData,
   type PasswordChangeFormData,
   type ContactFormData,

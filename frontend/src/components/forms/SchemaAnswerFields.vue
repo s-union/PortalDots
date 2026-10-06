@@ -6,24 +6,41 @@ import TextAnswerControl from './TextAnswerControl.vue'
 import UploadAnswerControl from './UploadAnswerControl.vue'
 import FormError from '@/components/ui/FormError.vue'
 import type { FormAnswer } from '@/features/forms/answers'
-import { getAnswerFormElements, type AnswerFormSchema } from '@/features/forms/answer-form-schema'
+import {
+  getAnswerFormElements,
+  type AnswerFormSchema,
+  type UploadAnswerFormElement
+} from '@/features/forms/answer-form-schema'
 
-const { schema, form, answer, disabled, selectedFiles, uploadPending, uploadErrorMessages, downloadHref } =
-  defineProps<{
-    schema: AnswerFormSchema
-    form: FormStore<AnswerFormSchema>
-    answer: FormAnswer | null
-    disabled: boolean
-    selectedFiles: Record<string, File | null>
-    uploadPending: boolean
-    uploadErrorMessages: Record<string, string>
-    downloadHref: (questionId: string) => string
-  }>()
+const {
+  schema,
+  form,
+  answer,
+  disabled,
+  selectedFiles,
+  uploadPending,
+  uploadErrorMessages,
+  downloadHref,
+  uploadButtonLabel = 'ファイルを追加',
+  downloadLabel
+} = defineProps<{
+  schema: AnswerFormSchema
+  form: FormStore<AnswerFormSchema>
+  answer: FormAnswer | null
+  disabled: boolean
+  selectedFiles: Record<string, File | null>
+  uploadPending: boolean
+  uploadErrorMessages: Record<string, string>
+  downloadHref: (questionId: string) => string
+  uploadButtonLabel?: string
+  downloadLabel?: string
+}>()
 
 const emit = defineEmits<{
   upload: [questionId: string]
   fileChange: [questionId: string, file: File | null]
 }>()
+defineSlots<{ upload?(props: { element: UploadAnswerFormElement }): unknown }>()
 
 const elements = computed(() => getAnswerFormElements(schema))
 </script>
@@ -53,20 +70,21 @@ const elements = computed(() => getAnswerFormElements(schema))
           </p>
         </div>
 
-        <UploadAnswerControl
-          v-if="element.control === 'upload'"
-          :element="element"
-          :answer="answer"
-          :disabled="disabled"
-          :selected-file="selectedFiles[element.id]"
-          upload-button-label="ファイルを追加"
-          :upload-pending="uploadPending"
-          :upload-error-message="uploadErrorMessages[element.id]"
-          :download-label="answer ? 'ダウンロード' : '表示'"
-          :download-href="downloadHref"
-          @upload="emit('upload', $event)"
-          @file-change="(questionId, file) => emit('fileChange', questionId, file)"
-        />
+        <slot v-if="element.control === 'upload'" name="upload" :element="element">
+          <UploadAnswerControl
+            :element="element"
+            :answer="answer"
+            :disabled="disabled"
+            :selected-file="selectedFiles[element.id]"
+            :upload-button-label="uploadButtonLabel"
+            :upload-pending="uploadPending"
+            :upload-error-message="uploadErrorMessages[element.id]"
+            :download-label="downloadLabel ?? (answer ? 'ダウンロード' : '表示')"
+            :download-href="downloadHref"
+            @upload="emit('upload', $event)"
+            @file-change="(questionId, file) => emit('fileChange', questionId, file)"
+          />
+        </slot>
 
         <Field v-else-if="element.control === 'checkbox'" :of="form" :path="['choices', element.id]" v-slot="field">
           <CheckboxAnswerControl
