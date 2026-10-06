@@ -25,7 +25,9 @@ The API contract remains flat. `answerFormInputToDraft` performs the conversion 
 - `AnswerFormEditor.vue` adapts answer data and API drafts to the shared form lifecycle.
 - `SchemaFormEditor.vue` manages schema changes and carries edits between sessions.
 - `SchemaFormSession.vue` gives each schema structure its own Formisch lifecycle and exposes the store through a typed slot.
-- `useSchemaForm.ts` synchronizes grouped input, handles submission, and restores validation focus in display order.
+- `useServerSyncedForm.ts` owns server refresh reconciliation, submitted-snapshot acceptance, request ordering, scope invalidation, and validation focus for flat and grouped input.
+- `useSchemaForm.ts` preserves the grouped editor's import and type names. It delegates to the shared synchronization lifecycle.
+- `useQuestionEditForm.ts` adapts flat question input and saved API values to the same lifecycle, enables autosave, and builds the question preview.
 - `SchemaAnswerFields.vue` renders ordered metadata and binds string and checkbox fields to their respective groups.
 - `TextAnswerControl.vue`, `CheckboxAnswerControl.vue`, and `UploadAnswerControl.vue` render the controls. Uploads remain separate API operations.
 - `WorkspaceFormAnswerForm.vue` supplies the participant-specific header, layout, and actions.
@@ -37,6 +39,22 @@ The API contract remains flat. `answerFormInputToDraft` performs the conversion 
 For the same answer, a refresh updates each field's baseline and keeps input only where that field is dirty. Checkbox arrays are treated as complete values. Errors and interaction state are retained for preserved fields.
 
 A successful save compares the current values with the submitted snapshot. Fields unchanged since submission receive the saved values, including server normalization. Later edits are retained against the saved baseline. A result arriving after an answer switch or session disposal does not reset the current editor.
+
+The snapshot is captured before schema transformations. Comparing against raw input lets an unchanged whitespace-padded name accept its normalized saved value. A refresh during validation retries the requested submission with fresh clean fields and the original native submitter, including save-and-continue actions.
+
+The shared lifecycle uses one tagged state instead of independent saving, queued, failed, and disposed flags. The transition function is the only writer. `queued` retains a pending validation or save, or waits for a structural pause to end. A replaced source context invalidates old requests, including an A-to-B-to-A source switch; no revision counter is needed.
+
+| Current state           | Event                         | Next state and behavior                                                 |
+| ----------------------- | ----------------------------- | ----------------------------------------------------------------------- |
+| `idle` / `failed`       | Explicit submission           | `validating`                                                            |
+| `validating`            | Refresh interrupts validation | `queued`, retaining the original submission                             |
+| `validating` / `saving` | Another autosave request      | `queued`, replacing the queued request with the latest one              |
+| `validating` / `queued` | Valid input                   | `saving`, retaining any queued request                                  |
+| Active / `queued`       | Submission settles            | `idle`; drain a current queued request, or retain `queued` while paused |
+| Active / `queued`       | Save fails                    | `failed`; discard the queued request and require an explicit retry      |
+| Any                     | Scope disposal                | Terminal `disposed`; ignore late responses and queued requests          |
+
+`validating` is distinct from `saving` because a field reset interrupts validation but does not end an API request. Manual-submit forms ignore repeated submit events while pending; autosave forms queue the latest request. Those policies share the same reconciliation and stale-response checks.
 
 Only changes to question IDs or value kinds require a new session. Presentation and validation changes update the existing schema. When rebuilding, removed questions are omitted and edits are restored only if their question ID and value kind still match. The snapshot also carries the latest saved baseline, even when refreshed props have not arrived yet.
 
@@ -56,7 +74,7 @@ The staff question editor uses a separate Formisch store for each persisted ques
 
 Each question permits one pending save. Further blur or submit events queue the latest input; failures preserve input and require an explicit retry. A refresh that interrupts pending validation retries that requested save. Structural operations wait for question saves; saves requested during creation, deletion, or reordering resume with the refreshed priority. Reordering retains the component and its errors by question ID. Changing form ID creates a new editor scope after the unsaved-input confirmation, and disposed scopes ignore late responses.
 
-A field array would add another ordering authority while the API still persists each question and its order separately. The question editor therefore keeps the server question list and uses the same field-level preservation policy as the answer editor in a bounded, separately typed composable. Formisch supplies validation, dirty state, and submission state; synchronization and request ordering remain application policy. This migration fixes a reproduced input-loss bug. It does not add backend version checks for concurrent edits by multiple staff members.
+A field array would add another ordering authority while the API still persists each question and its order separately. The question editor therefore keeps the server question list and a typed question adapter over the shared synchronization composable. Formisch supplies validation, dirty state, and submission state; synchronization and request ordering remain application policy. This migration fixes a reproduced input-loss bug. It does not add backend version checks for concurrent edits by multiple staff members.
 
 ## Adoption and limits
 
@@ -79,9 +97,22 @@ Circle creation now uses the same `{ basic, text, choices }` store. Its manual b
 
 The registration email screen is a separate fixed-form pilot. It calls `useForm` directly, binds its single field with `Field`, and uses Formisch's submitting state to block duplicate requests. It needs neither schema migration nor server-refresh reconciliation. Required-field validation and focus, successful submission, and preserving input for a retry are covered without the shared editor.
 
-Use Formisch directly for fixed forms that do not need server synchronization or changing question sets. Keep the grouped editor for the dynamic-answer and mixed circle screens, where the shared synchronization policy is needed. This supports adoption on these screens; the other fixed forms remain unchanged. The grouped lifecycle supports two-level groups of strings, string arrays, and optional strings. Numeric or more deeply nested inputs require a separate decision.
+Use Formisch directly for fixed forms that do not need server synchronization or changing question sets. Keep the grouped editor for the dynamic-answer and mixed circle screens, where the shared synchronization policy is needed. This supports adoption on these screens; the other fixed forms remain unchanged. The shared lifecycle supports flat fields or two-level groups of strings, string arrays, optional strings, and booleans. Numeric limits use raw strings with schema transformations. Raw numeric or more deeply nested inputs require a separate decision.
+
+The synchronization unification is measured against `8c1f00fe`. Line counts include imports, types, comments, and blank lines, and exclude tests and this documentation:
+
+| Production composables   | Before | After |
+| ------------------------ | -----: | ----: |
+| `useSchemaForm.ts`       |    172 |     7 |
+| `useQuestionEditForm.ts` |    121 |    44 |
+| `useServerSyncedForm.ts` |      0 |   296 |
+| Total                    |    293 |   347 |
+
+There is now one per-field acceptance implementation and one transition function. Neither the facade nor the shared implementation needs type assertions; the previous grouped implementation already had no unsafe assertions and used one `as const` to preserve a path tuple. The 180-line target is unmet, so this change does not justify expanding Formisch to every form. Keep adoption limited to the current answer, question, and circle flows, plus the existing registration email pilot. Do not count the two thin adapters alone as a code-size reduction.
 
 Dynamic question IDs cannot be enumerated by TypeScript. Static group names and field value kinds are checked. `answer-form-schema.test-d.ts` and `circle-detail-form.test-d.ts` check the field and control contracts as part of the frontend typecheck, including rejection of unknown basic field names and incompatible input types.
+
+`useServerSyncedForm.test-d.ts` also checks that the shared lifecycle returns each caller's precise schema store, preserving literal static paths and value kinds. `useServerSyncedForm.test.ts` runs the same contract suite against flat and grouped layouts: raw submitted snapshots, interrupted validation and native submitters, source changes, failed queued saves, disposal, and optional-string draft restoration. Existing component and page tests continue to cover the rendered controls and adapters.
 
 The renderer and answer synchronization policy remain application code. Formisch provides typed field bindings and field-level validation, dirty, reset, and submission state; it does not eliminate server-to-input synchronization. Its value here is that the application policy is implemented once across four screens, with field-level preservation that the old flat draft did not provide. Keep that boundary rather than adding screen-specific behavior to the editor.
 

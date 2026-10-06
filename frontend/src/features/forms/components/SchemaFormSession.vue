@@ -35,7 +35,7 @@ const { form, getSnapshot, submitEvent } = useSchemaForm({
   sourceKey: () => sourceKey,
   disabled: () => disabled,
   focusOrder: () => focusOrder,
-  saveInput: (input, event, schema) => saveInput(input, event, schema),
+  saveInput: (input, event, schema) => (event ? saveInput(input, event, schema) : Promise.resolve(null)),
   validateOn,
   onSaved: () => emit('saved'),
   initialState
