@@ -33,7 +33,8 @@ function retryInitialLoad() {
 }
 
 watch(
-  [historyEnd, () => mailsQuery.data.value.length],
+  // Re-observe after each fetch settles; the initial callback reloads if the end is still visible.
+  [historyEnd, () => mailsQuery.data.value.length, () => mailsQuery.isFetching.value],
   ([element], _previous, onCleanup) => {
     if (!canObserve || !element) return
     const observer = new IntersectionObserver(
