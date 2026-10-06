@@ -600,7 +600,10 @@ describe('WorkspaceFormAnswerForm', () => {
       createQuestion({ id: toQuestionId('q-changed'), name: '種別変更予定' }),
       createQuestion({ id: toQuestionId('q-checkbox'), name: '備品', type: 'checkbox', options: ['机', '椅子'] })
     ]
-    const { wrapper, saveAnswer } = mountForm({ form: createForm(originalQuestions), answer: createAnswer() })
+    const { wrapper, saveAnswer } = mountForm({
+      form: createForm(originalQuestions),
+      answer: createAnswer({ details: { 'q-new': ['既存の追加項目'] } })
+    })
     await wrapper.get('input[name="q-text"]').setValue('引き継ぐ企画名')
     await wrapper.get('input[name="q-removed"]').setValue('破棄する回答')
     await wrapper.get('input[name="q-changed"]').setValue('配列へ引き継がない')
@@ -625,7 +628,7 @@ describe('WorkspaceFormAnswerForm', () => {
     expect(wrapper.find('[name="q-removed"]').exists()).toBe(false)
     expect(wrapper.get<HTMLInputElement>('input[name="q-changed"]').element.checked).toBe(false)
     expect(wrapper.get<HTMLInputElement>('input[name="q-checkbox"][value="机"]').element.checked).toBe(true)
-    expect(wrapper.get<HTMLInputElement>('input[name="q-new"]').element.value).toBe('')
+    expect(wrapper.get<HTMLInputElement>('input[name="q-new"]').element.value).toBe('既存の追加項目')
     expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([true])
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -633,7 +636,7 @@ describe('WorkspaceFormAnswerForm', () => {
       'q-text': '引き継ぐ企画名',
       'q-changed': [],
       'q-checkbox': ['机'],
-      'q-new': ''
+      'q-new': '既存の追加項目'
     })
   })
 

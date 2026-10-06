@@ -16,7 +16,7 @@ import AnswerFormEditor from '@/features/forms/components/AnswerFormEditor.vue'
 import SchemaAnswerFields from '@/components/forms/SchemaAnswerFields.vue'
 import { buildFormAnswerUploadDownloadUrlByAnswer, type FormAnswerDraft } from '@/features/forms/answers'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
-import type { AnswerFormSaveResult } from '@/features/forms/composables/useAnswerForm'
+import type { AnswerFormSaveResult } from '@/features/forms/answers'
 import { useAuthorizedStaffContext } from '@/features/staff/hooks/useAuthorizedStaffContext'
 import {
   buildDeleteStaffFormAnswerConfirmMessage,

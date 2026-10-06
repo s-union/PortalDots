@@ -9,6 +9,7 @@ import type { FormAnswer } from '@/features/forms/answers'
 import {
   getAnswerFormElements,
   type AnswerFormSchema,
+  type AnswerFieldsSchema,
   type UploadAnswerFormElement
 } from '@/features/forms/answer-form-schema'
 
@@ -25,7 +26,7 @@ const {
   downloadLabel
 } = defineProps<{
   schema: AnswerFormSchema
-  form: FormStore<AnswerFormSchema>
+  form: FormStore<AnswerFieldsSchema>
   answer: FormAnswer | null
   disabled: boolean
   selectedFiles: Record<string, File | null>

@@ -19,7 +19,7 @@ import CircleRegistrationSteps from '@/features/circles/components/CircleRegistr
 import { useCreateCircleMutation, useParticipationTypeRegistrationFormQuery } from '@/features/circles/queries'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
 import type { FormAnswerDraft } from '@/features/forms/answers'
-import type { AnswerFormSaveResult } from '@/features/forms/composables/useAnswerForm'
+import type { AnswerFormSaveResult } from '@/features/forms/answers'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage } from '@/lib/api/validation'

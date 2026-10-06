@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed } from 'vue'
 import type { FormStore } from '@formisch/vue'
-import AnswerFormSession from './AnswerFormSession.vue'
+import SchemaFormEditor from './SchemaFormEditor.vue'
 import {
   answerFormStructureKey,
+  answerFormFieldPaths,
+  answerFormInputToDraft,
+  buildAnswerFormInput,
   buildAnswerFormSchema,
-  type AnswerFormSchema
+  type AnswerFormSchema,
+  type AnswerFormInput
 } from '@/features/forms/answer-form-schema'
 import type { FormQuestion } from '@/features/forms/api'
-import type { FormAnswer, FormAnswerDraft } from '@/features/forms/answers'
-import type { AnswerFormSnapshot, AnswerFormSaveResult } from '@/features/forms/composables/useAnswerForm'
+import type { FormAnswer, FormAnswerDraft, AnswerFormSaveResult } from '@/features/forms/answers'
 
 const {
   questions,
@@ -28,43 +31,30 @@ const {
 }>()
 const emit = defineEmits<{ 'update:dirty': [dirty: boolean]; saved: [] }>()
 defineSlots<{ default(props: { schema: AnswerFormSchema; form: FormStore<AnswerFormSchema> }): unknown }>()
-
 const schema = computed(() => buildAnswerFormSchema(questions, { legacyBody }))
-const sessionSchema = shallowRef(schema.value)
-const initialState = shallowRef<AnswerFormSnapshot>()
-const submitting = shallowRef(false)
-const session = useTemplateRef('session')
-const sessionKey = computed(() => answerFormStructureKey(sessionSchema.value))
+const input = computed(() => buildAnswerFormInput(schema.value, answer))
 
-watch([schema, submitting, () => answer?.id], ([nextSchema, pending, answerId], previous) => {
-  if (answerFormStructureKey(nextSchema) !== sessionKey.value) {
-    // Keep the submitting store mounted until its request settles, then migrate edits.
-    if (pending) return
-    const snapshot = session.value?.getSnapshot()
-    const changedAnswer =
-      (!!previous?.[2] && previous[2] !== answerId) ||
-      (!!answerId && !!snapshot?.answer && snapshot.answer.id !== answerId)
-    initialState.value = changedAnswer ? undefined : snapshot
-  }
-  sessionSchema.value = nextSchema
-})
+async function saveInput(input: AnswerFormInput, _event: SubmitEvent, schema: AnswerFormSchema) {
+  const result = await saveAnswer(answerFormInputToDraft(schema, input))
+  return result ? { input: buildAnswerFormInput(schema, result.answer), sourceKey: result.answer?.id ?? null } : null
+}
 </script>
 
 <template>
-  <AnswerFormSession
-    ref="session"
-    :key="sessionKey"
-    :schema="sessionSchema"
-    :answer="answer"
+  <SchemaFormEditor
+    :schema="schema"
+    :input="input"
+    :source="answer"
+    :source-key="answer?.id ?? null"
+    :structure-key="answerFormStructureKey(schema)"
     :disabled="disabled"
-    :save-answer="saveAnswer"
+    :save-input="saveInput"
     :before-submit="beforeSubmit"
-    :initial-state="initialState"
+    :focus-order="answerFormFieldPaths(schema)"
     @update:dirty="emit('update:dirty', $event)"
-    @update:submitting="submitting = $event"
     @saved="emit('saved')"
-    v-slot="state"
+    v-slot="{ schema: activeSchema, form }"
   >
-    <slot :schema="state.schema" :form="state.form" />
-  </AnswerFormSession>
+    <slot :schema="activeSchema" :form="form" />
+  </SchemaFormEditor>
 </template>

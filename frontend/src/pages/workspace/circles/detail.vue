@@ -7,9 +7,10 @@ definePage({
   }
 })
 
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import AnswerFormEditor from '@/features/forms/components/AnswerFormEditor.vue'
+import CircleDetailForm from '@/features/circles/components/CircleDetailForm.vue'
+import CircleBasicInfoFields from '@/features/circles/components/CircleBasicInfoFields.vue'
 import SchemaAnswerFields from '@/components/forms/SchemaAnswerFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -28,36 +29,20 @@ import {
   extractValidationMessage as extractAnswerValidationMessage,
   useFormAnswerUploadMutation
 } from '@/features/forms/answers'
-import type { FormAnswerDraft } from '@/features/forms/answers'
-import type { AnswerFormSaveResult } from '@/features/forms/composables/useAnswerForm'
+import { answerFormInputToDraft, type AnswerFormSchema } from '@/features/forms/answer-form-schema'
+import type { CircleDetailFormOutput } from '@/features/circles/circle-detail-form'
 import type { CircleDetail } from '@/features/circles/api'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { extractValidationMessage } from '@/lib/api/validation'
 import { buttonVariants } from '@/lib/ui/variants'
-import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
-import FormField from '@/components/ui/FormField.vue'
 
 const router = useRouter()
 const detailQuery = useCurrentCircleDetailQuery()
 const updateMutation = useUpdateCircleMutation()
 const deleteMutation = useDeleteCircleMutation()
 
-const form = reactive({
-  name: '',
-  nameYomi: '',
-  groupName: '',
-  groupNameYomi: '',
-  participationTypeId: '',
-  notes: ''
-})
-
-const { getFieldError, validateAll, markTouched } = useFormValidation({
-  schema: circleRegistrationFormSchema,
-  form: computed(() => form)
-})
-
 const questions = computed(() => detailQuery.data.value?.questions ?? [])
-const answerDirty = ref(false)
+const formDirty = ref(false)
 const uploadMutation = useFormAnswerUploadMutation(computed(() => detailQuery.data.value?.formId ?? ''))
 const formDescription = computed(() => detailQuery.data.value?.formDescription.trim() ?? '')
 const requiresMemberStep = computed(() => {
@@ -82,77 +67,34 @@ const uploadErrorMessages = ref<Record<string, string>>({})
 const selectedFiles = ref<Record<string, File | null>>({})
 const hasUnuploadedFiles = computed(() => Object.values(selectedFiles.value).some((file) => file !== null))
 
-const formBaseline = ref({ ...form })
-const basicFields = ['name', 'nameYomi', 'groupName', 'groupNameYomi', 'participationTypeId', 'notes'] as const
-let baselineCircleId = ''
-
-const isDirty = computed(() => {
-  const detail = detailQuery.data.value
-  if (!detail) {
-    return false
-  }
-  const basicInfoChanged =
-    form.name !== formBaseline.value.name ||
-    form.nameYomi !== formBaseline.value.nameYomi ||
-    form.groupName !== formBaseline.value.groupName ||
-    form.groupNameYomi !== formBaseline.value.groupNameYomi ||
-    form.participationTypeId !== formBaseline.value.participationTypeId ||
-    form.notes !== formBaseline.value.notes
-  return basicInfoChanged || answerDirty.value || hasUnuploadedFiles.value
-})
+const isDirty = computed(() => formDirty.value || hasUnuploadedFiles.value)
 const { clear: clearUnsavedChangesGuard } = useUnsavedChangesGuard(isDirty)
 
-function syncBasicInfo(detail: CircleDetail, submitted?: typeof form) {
-  const changedCircle = detail.id !== baselineCircleId
-  for (const key of basicFields) {
-    const previous = submitted?.[key] ?? formBaseline.value[key]
-    if (changedCircle || form[key] === previous) form[key] = detail[key]
-    formBaseline.value[key] = detail[key]
-  }
-  baselineCircleId = detail.id
-}
-
-watch(
-  () => detailQuery.data.value,
-  (detail) => {
-    if (detail) syncBasicInfo(detail)
-  },
-  { immediate: true }
-)
-
-let continueAfterSave = false
-function beforeSave(event: SubmitEvent) {
-  continueAfterSave = event.submitter?.getAttribute('value') === 'continue'
-  return validateAll()
-}
-
-async function saveCircle(draft: FormAnswerDraft): Promise<AnswerFormSaveResult | null> {
+async function saveCircle(input: CircleDetailFormOutput, answers: AnswerFormSchema): Promise<CircleDetail | null> {
   const detail = detailQuery.data.value
   if (!detail || !canEdit.value) return null
-  const submitted = { ...form }
   successMessage.value = ''
   errorMessage.value = ''
 
   try {
     const saved = await updateMutation.mutateAsync({
-      name: submitted.name,
-      nameYomi: submitted.nameYomi,
-      groupName: submitted.groupName,
-      groupNameYomi: submitted.groupNameYomi,
-      notes: submitted.notes,
-      details: draft
+      name: input.basic.name,
+      nameYomi: input.basic.nameYomi,
+      groupName: input.basic.groupName,
+      groupNameYomi: input.basic.groupNameYomi,
+      notes: input.basic.notes ?? '',
+      details: answerFormInputToDraft(answers, input)
     })
-    if (detailQuery.data.value?.id !== detail.id) return null
-    syncBasicInfo(saved, submitted)
+    if (detailQuery.data.value?.id !== detail.id || detailQuery.data.value.formId !== detail.formId) return null
     successMessage.value = '企画参加登録の内容を保存しました。'
-    return { answer: saved.answer }
+    return saved
   } catch (error) {
     errorMessage.value = extractValidationMessage(error, '企画情報の更新に失敗しました。')
     return null
   }
 }
 
-async function handleSaved() {
+async function handleSaved(continueAfterSave: boolean) {
   if (continueAfterSave && !isDirty.value) await router.push(nextStepPath.value)
 }
 
@@ -234,15 +176,13 @@ function downloadHref(questionId: string) {
 
     <div v-if="detailQuery.isPending.value" class="text-base text-muted">読み込み中...</div>
 
-    <AnswerFormEditor
+    <CircleDetailForm
       v-else-if="detailQuery.data.value"
       :key="`${detailQuery.data.value.id}/${detailQuery.data.value.formId}`"
-      v-model:dirty="answerDirty"
-      :questions="questions"
-      :answer="detailQuery.data.value.answer"
+      v-model:dirty="formDirty"
+      :detail="detailQuery.data.value"
       :disabled="!canEdit || deleteMutation.isPending.value"
-      :before-submit="beforeSave"
-      :save-answer="saveCircle"
+      :save-circle="saveCircle"
       class="space-y-6"
       @saved="handleSaved"
       v-slot="{ schema, form: answerForm }"
@@ -270,92 +210,7 @@ function downloadHref(questionId: string) {
 
       <SettingsSection title="企画情報">
         <SettingsRow>
-          <div class="grid gap-4">
-            <FormField label="企画責任者" label-class="font-semibold">
-              <input :value="detailQuery.data.value.leaderDisplayName" disabled name="leaderDisplayName" type="text" />
-            </FormField>
-
-            <FormField label="企画名" label-class="font-semibold" :error="canEdit && getFieldError('name')" required>
-              <input
-                v-model="form.name"
-                :disabled="!canEdit"
-                name="name"
-                type="text"
-                :class="{ 'border-danger': getFieldError('name') && canEdit }"
-                @blur="markTouched('name')"
-                @input="markTouched('name')"
-              />
-            </FormField>
-
-            <FormField
-              label="企画名（よみ）"
-              label-class="font-semibold"
-              :error="canEdit && getFieldError('nameYomi')"
-              required
-            >
-              <input
-                v-model="form.nameYomi"
-                :disabled="!canEdit"
-                name="nameYomi"
-                required
-                type="text"
-                placeholder="ひらがなで入力"
-                :class="{ 'border-danger': getFieldError('nameYomi') && canEdit }"
-                @blur="markTouched('nameYomi')"
-                @input="markTouched('nameYomi')"
-              />
-            </FormField>
-
-            <FormField
-              label="企画を出店する団体の名称"
-              label-class="font-semibold"
-              :error="canEdit && detailQuery.data.value.canChangeGroupName && getFieldError('groupName')"
-              required
-            >
-              <input
-                v-model="form.groupName"
-                :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
-                name="groupName"
-                type="text"
-                placeholder="例: ○○サークル"
-                :class="{
-                  'border-danger': getFieldError('groupName') && canEdit && detailQuery.data.value.canChangeGroupName
-                }"
-                @blur="markTouched('groupName')"
-                @input="markTouched('groupName')"
-              />
-            </FormField>
-
-            <FormField
-              label="企画を出店する団体の名称（よみ）"
-              label-class="font-semibold"
-              :error="canEdit && detailQuery.data.value.canChangeGroupName && getFieldError('groupNameYomi')"
-              required
-            >
-              <input
-                v-model="form.groupNameYomi"
-                :disabled="!canEdit || !detailQuery.data.value.canChangeGroupName"
-                name="groupNameYomi"
-                required
-                type="text"
-                placeholder="ひらがなで入力"
-                :class="{
-                  'border-danger':
-                    getFieldError('groupNameYomi') && canEdit && detailQuery.data.value.canChangeGroupName
-                }"
-                @blur="markTouched('groupNameYomi')"
-                @input="markTouched('groupNameYomi')"
-              />
-            </FormField>
-
-            <p v-if="!detailQuery.data.value.canChangeGroupName" class="text-base text-muted">
-              団体名は既存企画から引き継がれているため、この画面では変更できません。
-            </p>
-
-            <FormField label="備考" label-class="font-semibold">
-              <textarea v-model="form.notes" :disabled="!canEdit" name="notes" rows="3" />
-            </FormField>
-          </div>
+          <CircleBasicInfoFields :form="answerForm" :detail="detailQuery.data.value" :disabled="!canEdit" />
         </SettingsRow>
       </SettingsSection>
 
@@ -427,7 +282,7 @@ function downloadHref(questionId: string) {
           </div>
         </template>
       </SettingsSection>
-    </AnswerFormEditor>
+    </CircleDetailForm>
 
     <div v-else class="rounded border border-border px-6 py-6 text-base text-muted">
       企画情報を取得できませんでした。

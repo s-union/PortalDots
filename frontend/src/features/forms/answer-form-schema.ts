@@ -157,6 +157,15 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
 
 export type AnswerFormSchema = ReturnType<typeof buildAnswerFormSchema>
 export type AnswerFormInput = v.InferInput<AnswerFormSchema>
+export type AnswerFieldsSchema = v.GenericSchema<AnswerFormInput>
+
+export function answerFormFieldPaths(schema: AnswerFormSchema): (readonly [string, string])[] {
+  return getAnswerFormElements(schema).flatMap((element) =>
+    element.control === 'heading' || element.control === 'upload'
+      ? []
+      : [[element.control === 'checkbox' ? 'choices' : 'text', element.id] as const]
+  )
+}
 
 export function getAnswerFormElements(schema: AnswerFormSchema): AnswerFormElement[] {
   return v.getMetadata(schema).elements

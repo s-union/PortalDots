@@ -31,6 +31,10 @@ export interface FormAnswerUpload {
 }
 
 export type FormAnswerDraft = Record<string, string | string[]>
+// A successful aggregate save may not create an answer when there are no questions.
+export interface AnswerFormSaveResult {
+  answer: FormAnswer | null
+}
 export type FormAnswers = ReturnType<typeof parseFormAnswers>
 
 interface FormAnswersResponse {
