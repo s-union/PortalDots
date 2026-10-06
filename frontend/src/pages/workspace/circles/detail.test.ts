@@ -246,6 +246,33 @@ describe('CircleDetailPage', () => {
     expect(router.currentRoute.value.path).toBe('/workspace')
   })
 
+  it('saves editable fields without validating a participation type that cannot be changed here', async () => {
+    const detail = { ...circleDetailFixture, participationTypeId: '' }
+    const payloads: unknown[] = []
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(detail)),
+      http.put('/v1/circles/current/detail', async ({ request }) => {
+        payloads.push(await request.json())
+        return HttpResponse.json({ ...detail, name: '更新した企画名' })
+      })
+    )
+    const { wrapper } = await mountDetail()
+    await wrapper.get('input[name="name"]').setValue('更新した企画名')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(payloads).toEqual([
+      {
+        name: '更新した企画名',
+        nameYomi: detail.nameYomi,
+        groupName: detail.groupName,
+        groupNameYomi: detail.groupNameYomi,
+        notes: detail.notes,
+        details: {}
+      }
+    ])
+    expect(wrapper.text()).toContain('企画参加登録の内容を保存しました。')
+  })
+
   it('shows error when save fails', async () => {
     server.use(
       http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),
