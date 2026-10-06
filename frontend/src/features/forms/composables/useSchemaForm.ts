@@ -9,7 +9,8 @@ import {
   setInput,
   useForm,
   type DeepPartial,
-  type FormStore
+  type FormStore,
+  type ValidationMode
 } from '@formisch/vue'
 import { onScopeDispose, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import type * as v from 'valibot'
@@ -45,7 +46,7 @@ interface UseSchemaFormOptions<TSchema extends GroupedFormSchema> {
     event: SubmitEvent,
     schema: TSchema
   ) => Promise<SchemaFormSaveResult<TSchema> | null>
-  beforeSubmit?: (event: SubmitEvent) => boolean
+  validateOn?: ValidationMode
   onSaved?: () => void
   initialState?: SchemaFormSnapshot<TSchema>
 }
@@ -82,7 +83,7 @@ export function useSchemaForm<TSchema extends GroupedFormSchema>(options: UseSch
       return toValue(options.schema)
     },
     initialInput: baselineInput,
-    validate: 'blur',
+    validate: options.validateOn ?? 'blur',
     revalidate: 'input'
   })
   // A typed view of the shared field groups; callers retain their complete schema type.
@@ -154,7 +155,6 @@ export function useSchemaForm<TSchema extends GroupedFormSchema>(options: UseSch
   async function submitEvent(event: SubmitEvent) {
     event.preventDefault()
     if (toValue(options.disabled) || form.isSubmitting) return
-    if (options.beforeSubmit && !options.beforeSubmit(event)) return
     await submit(event)
     if (disposed || form.isSubmitting) return
     for (const path of toValue(options.focusOrder)) {

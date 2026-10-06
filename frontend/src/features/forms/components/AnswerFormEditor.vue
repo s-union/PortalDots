@@ -19,14 +19,12 @@ const {
   answer,
   disabled,
   saveAnswer,
-  beforeSubmit,
   legacyBody = false
 } = defineProps<{
   questions: FormQuestion[]
   answer: FormAnswer | null
   disabled: boolean
   saveAnswer: (draft: FormAnswerDraft) => Promise<AnswerFormSaveResult | null>
-  beforeSubmit?: (event: SubmitEvent) => boolean
   legacyBody?: boolean
 }>()
 const emit = defineEmits<{ 'update:dirty': [dirty: boolean]; saved: [] }>()
@@ -49,7 +47,6 @@ async function saveInput(input: AnswerFormInput, _event: SubmitEvent, schema: An
     :structure-key="answerFormStructureKey(schema)"
     :disabled="disabled"
     :save-input="saveInput"
-    :before-submit="beforeSubmit"
     :focus-order="answerFormFieldPaths(schema)"
     @update:dirty="emit('update:dirty', $event)"
     @saved="emit('saved')"

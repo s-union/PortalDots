@@ -1,4 +1,4 @@
-# Schema-based answer editor
+# Schema-based form editor
 
 API questions are compiled into a Valibot schema and ordered UI metadata. Formisch owns input, validation, dirty state, and submission state. The renderer selects PortalDots controls from the metadata; Formisch does not generate those controls itself.
 
@@ -13,6 +13,8 @@ API questions are compiled into a Valibot schema and ordered UI metadata. Formis
 | Question structure change | Remount and discard current edits                        | Remount with the latest baseline and compatible dirty values          |
 | Answer validation         | Different rules and coverage across pages                | The same compiled schema on all four dynamic-answer screens           |
 | Circle detail             | Separate basic-info and answer validation stores         | One schema and Formisch store for basic information and answers       |
+| Circle creation           | Manual basic baseline and a pre-validation bridge        | One store for validation, dirty state, and submission of both parts   |
+| Registration email        | Reactive input and a custom validation composable        | Direct `useForm` and `Field`, without the grouped editor              |
 
 The API contract remains flat. `answerFormInputToDraft` performs the conversion at the submission boundary and preserves question order for the legacy body summary. Numeric answers remain strings; their schema validates integer bounds.
 
@@ -26,7 +28,8 @@ The API contract remains flat. `answerFormInputToDraft` performs the conversion 
 - `SchemaAnswerFields.vue` renders ordered metadata and binds string and checkbox fields to their respective groups.
 - `TextAnswerControl.vue`, `CheckboxAnswerControl.vue`, and `UploadAnswerControl.vue` render the controls. Uploads remain separate API operations.
 - `WorkspaceFormAnswerForm.vue` supplies the participant-specific header, layout, and actions.
-- `circle-detail-form.ts` combines the existing circle registration schema with the answer schema. `CircleDetailForm.vue` adapts circle data to the shared lifecycle; `CircleBasicInfoFields.vue` binds its fixed fields.
+- `circle-detail-form.ts` validates editable basic information and combines it with the answer schema. Participation type is excluded because the detail screen cannot edit it.
+- `circle-registration-form.ts` combines all creation fields, including participation type, with the answer schema. `CircleDetailForm.vue` and `CircleRegistrationForm.vue` adapt the two flows to the shared lifecycle; `CircleBasicInfoFields.vue` binds their common fixed fields.
 
 ## Synchronization rules
 
@@ -38,9 +41,9 @@ Only changes to question IDs or value kinds require a new session. Presentation 
 
 Structural changes arriving during submission are applied after the request settles. This retains the submitting store, prevents a second submission, and avoids applying a late result to a replacement store.
 
-An editor's key identifies the answer scope. Switching a staff answer, circle, or participation type creates a fresh editor even if the new form reuses question IDs. Changing a participation type keeps the page's basic information and discards only the old answers after confirmation.
+An editor's source key identifies the answer or circle. Switching that source discards the old input even if the new form reuses question IDs. Circle creation keeps one source scope: changing participation type clears the old answer groups after confirmation and then rebuilds the schema, retaining basic edits. Inherited group names override editable names and become defaults when the new participation type requires them.
 
-The answer adapter's save callback returns `{ answer }` on success, including `{ answer: null }` for registration forms without questions. Returning `null` indicates failure. `beforeSubmit` lets the circle creation screen validate its page-owned basic information before answer validation. Circle detail validates both parts together and advances only when the accepted saved baseline leaves no later edits or pending files.
+The answer adapter's save callback returns `{ answer }` on success, including `{ answer: null }` for forms without questions. Returning `null` indicates failure. Circle creation and detail validate basic information and answers in one pass. There is no pre-validation callback between independent stores. Circle detail advances only when the accepted saved baseline leaves no later edits or pending files.
 
 The shared lifecycle watches the source object's identity, separately from compiled input. Adapters must replace the source when server data changes. Recompiling a schema must not restore stale server props over a newer saved baseline. When a structure changes, the current source supplies new fields; compatible saved baselines and dirty values are carried across for existing fields.
 
@@ -59,9 +62,13 @@ Circle detail is also a fixed-schema pilot. Its basic information and dynamic an
 | Server synchronization | Page-specific basic sync plus shared answer sync      | Shared field reset policy for all three groups                       |
 | Types                  | Fixed names only in page state; separate answer store | Literal basic field paths and string/array answer paths in one store |
 
-Compared with commit `2e238680`, this pilot reduces the circle detail page from 436 to 291 lines. Including the shared lifecycle and typed adapters, production code grows by 103 lines; tests, stories, and documentation are excluded. The benefit is a single state and synchronization policy for basic information and answers. The pilot does not demonstrate a net code-size reduction.
+The first mixed-form pilot, committed as `f81e017e`, reduced the circle detail page from 436 to 291 lines compared with `2e238680`. Including its shared lifecycle and typed adapters, production code grew by 103 lines; tests, stories, and documentation are excluded. These are measurements of that commit. The benefit is a single state and synchronization policy for basic information and answers, rather than a demonstrated net code-size reduction.
 
-This pilot supports using Formisch for mixed circle detail forms. Other fixed-schema forms, including circle creation's basic information, still use `useFormValidation`. The shared lifecycle currently supports two-level groups of strings, string arrays, and optional strings; it is not an application-wide form abstraction. Expanding to numeric or more deeply nested inputs requires a separate decision.
+Circle creation now uses the same `{ basic, text, choices }` store. Its manual baseline, field comparisons, and `useFormValidation` have been removed. URL-selected participation types and inherited names are initial values; user selection changes and edits trigger the existing exit guard. Type changes still confirm only when discarding answers, including reused question IDs. Validation remains immediate on input in this screen.
+
+The registration email screen is a separate fixed-form pilot. It calls `useForm` directly, binds its single field with `Field`, and uses Formisch's submitting state to block duplicate requests. It needs neither schema migration nor server-refresh reconciliation. Required-field validation and focus, successful submission, and preserving input for a retry are covered without the shared editor.
+
+Use Formisch directly for fixed forms that do not need server synchronization or changing question sets. Keep the grouped editor for the dynamic-answer and mixed circle screens, where the shared synchronization policy is needed. This supports adoption on these screens; the other fixed forms remain unchanged. The grouped lifecycle supports two-level groups of strings, string arrays, and optional strings. Numeric or more deeply nested inputs require a separate decision.
 
 Dynamic question IDs cannot be enumerated by TypeScript. Static group names and field value kinds are checked. `answer-form-schema.test-d.ts` and `circle-detail-form.test-d.ts` check the field and control contracts as part of the frontend typecheck, including rejection of unknown basic field names and incompatible input types.
 
@@ -74,9 +81,9 @@ mise run frontend:check
 cd frontend && nr test --project=unit
 ```
 
-Regression coverage includes clean-field refreshes, edits made during a save, server-normalized values, schema migration, late responses, validation focus across both value groups, participation-type switches, mixed-form validation, and successful saves without an answer. Storybook interaction tests exercise staff editing, registration creation, and save-and-continue in Chromium with mocked API responses.
+Regression coverage includes clean-field refreshes, edits made during a save, server-normalized values, schema migration, late responses, validation focus across both value groups, participation-type switches, URL defaults, inherited names, mixed-form validation, duplicate submissions, and successful saves without an answer. Storybook interaction tests exercise staff editing, circle creation, registration email submission, and save-and-continue in Chromium with mocked API responses.
 
-The frontend checks and all 711 unit tests pass. Browser interactions pass, including simultaneous basic and answer validation, focus order, and a combined circle detail save. The targeted Storybook checks have two existing accessibility failures:
+Frontend checks and all 716 unit tests pass. Chromium interactions pass for simultaneous basic and answer validation, focus order, combined circle saves, and direct registration email submission. Targeted Storybook checks still have two accessibility failures that were reproduced before this follow-up:
 
 - The registration-denied warning has a color contrast ratio of 4.18 instead of 4.5. It was reproduced from commit `3da94d87` after waiting for the warning to render.
 - The circle detail leader notice has a color contrast ratio of 4.28 instead of 4.5. It was reproduced from commit `2e238680` with the same mixed-form fixture and a successful save that stays on the detail page.

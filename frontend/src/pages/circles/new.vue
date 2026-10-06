@@ -5,9 +5,11 @@ definePage({
   }
 })
 
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { Field, isDirty, reset, setInput, type FormStore } from '@formisch/vue'
 import { useRoute, useRouter } from 'vue-router'
-import AnswerFormEditor from '@/features/forms/components/AnswerFormEditor.vue'
+import CircleRegistrationForm from '@/features/circles/components/CircleRegistrationForm.vue'
+import CircleBasicInfoFields from '@/features/circles/components/CircleBasicInfoFields.vue'
 import SchemaAnswerFields from '@/components/forms/SchemaAnswerFields.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
@@ -18,12 +20,15 @@ import PageLayout from '@/components/layouts/PageLayout.vue'
 import CircleRegistrationSteps from '@/features/circles/components/CircleRegistrationSteps.vue'
 import { useCreateCircleMutation, useParticipationTypeRegistrationFormQuery } from '@/features/circles/queries'
 import { useParticipationTypesQuery } from '@/features/participation-types/api'
-import type { FormAnswerDraft } from '@/features/forms/answers'
-import type { AnswerFormSaveResult } from '@/features/forms/answers'
+import type { CircleDetail } from '@/features/circles/api'
+import type {
+  CircleRegistrationFormOutput,
+  CircleRegistrationFormSchema
+} from '@/features/circles/circle-registration-form'
+import { answerFormInputToDraft, type AnswerFormSchema } from '@/features/forms/answer-form-schema'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useSessionStore } from '@/features/session/store'
 import { extractValidationMessage } from '@/lib/api/validation'
-import { useFormValidation, circleRegistrationFormSchema } from '@/lib/form-validation'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
 import FormField from '@/components/ui/FormField.vue'
@@ -36,31 +41,10 @@ const createMutation = useCreateCircleMutation()
 const canCreateCircleRegistration = computed(() => sessionStore.user?.canCreateCircleRegistration !== false)
 const participationTypesQuery = useParticipationTypesQuery(canCreateCircleRegistration)
 
-const form = reactive({
-  name: '',
-  nameYomi: '',
-  groupName: '',
-  groupNameYomi: '',
-  participationTypeId: '',
-  notes: ''
-})
-
-// Snapshot of the values the server auto-fills (URL participation type, group
-// name for existing leaders). Only user edits beyond this snapshot count as
-// unsaved input.
-const formBaseline = ref({
-  name: '',
-  nameYomi: '',
-  groupName: '',
-  groupNameYomi: '',
-  participationTypeId: '',
-  notes: ''
-})
-
-const { getFieldError, validateAll, markTouched } = useFormValidation({
-  schema: circleRegistrationFormSchema,
-  form: computed(() => form)
-})
+// Query context and URL defaults; editable values and baselines belong to Formisch.
+const participationTypeId = ref('')
+const defaultParticipationTypeId = ref('')
+const formDirty = ref(false)
 
 const errorMessage = ref('')
 const requestedParticipationTypeId = computed(() => {
@@ -72,49 +56,44 @@ const requestedParticipationTypeId = computed(() => {
   return routeString(route.query.participationTypeId)
 })
 const selectedParticipationType = computed(
-  () => participationTypesQuery.data.value?.find((item) => item.id === form.participationTypeId) ?? null
+  () => participationTypesQuery.data.value?.find((item) => item.id === participationTypeId.value) ?? null
 )
-const registrationFormQuery = useParticipationTypeRegistrationFormQuery(computed(() => form.participationTypeId))
+const registrationFormQuery = useParticipationTypeRegistrationFormQuery(participationTypeId)
 const leaderDisplayName = computed(() => sessionStore.user?.displayName ?? '')
 const registrationFormDescription = computed(() => registrationFormQuery.data.value?.formDescription.trim() ?? '')
-const questions = computed(() => registrationFormQuery.data.value?.questions ?? [])
-const answerDirty = ref(false)
-
-const isDirty = computed(() => {
-  const basicInfoChanged =
-    form.name !== formBaseline.value.name ||
-    form.nameYomi !== formBaseline.value.nameYomi ||
-    form.groupName !== formBaseline.value.groupName ||
-    form.groupNameYomi !== formBaseline.value.groupNameYomi ||
-    form.participationTypeId !== formBaseline.value.participationTypeId ||
-    form.notes !== formBaseline.value.notes
-  return basicInfoChanged || answerDirty.value
-})
-const { clear: clearUnsavedChangesGuard, confirmBeforeSwitching } = useUnsavedChangesGuard(isDirty)
-const answerDraftDirty = () => answerDirty.value
+const { clear: clearUnsavedChangesGuard, confirmBeforeSwitching } = useUnsavedChangesGuard(formDirty)
 
 // Changing the participation type swaps the question set and rebuilds the
 // draft, discarding any answers typed under the current set. Only that draft
 // is at risk (basic info is kept), so the switch confirms on the draft alone.
-function handleParticipationTypeChange(event: Event) {
+function handleParticipationTypeChange(event: Event, form: FormStore<CircleRegistrationFormSchema>) {
   if (!(event.target instanceof HTMLSelectElement)) return
   const nextId = event.target.value
-  if (createMutation.isPending.value) {
-    event.target.value = form.participationTypeId
+  if (form.isSubmitting) {
+    event.target.value = participationTypeId.value
     return
   }
-  if (nextId === form.participationTypeId) {
+  if (nextId === participationTypeId.value) {
     return
   }
-  if (!confirmBeforeSwitching(answerDraftDirty)) {
-    event.target.value = form.participationTypeId
+  if (!confirmBeforeSwitching(() => isDirty(form, { path: ['text'] }) || isDirty(form, { path: ['choices'] }))) {
+    event.target.value = participationTypeId.value
     return
   }
-  form.participationTypeId = nextId
-  markTouched('participationTypeId')
+  // Clear the old answers before the schema remount, including reused question IDs.
+  reset(form, { path: ['text'] })
+  reset(form, { path: ['choices'] })
+  setInput(form, { path: ['basic', 'participationTypeId'], input: nextId })
+  participationTypeId.value = nextId
 }
 
 const canChangeGroupName = computed(() => registrationFormQuery.data.value?.canChangeGroupName ?? true)
+const basicInfoDetail = computed(() => ({
+  leaderDisplayName: leaderDisplayName.value,
+  canChangeGroupName: canChangeGroupName.value,
+  groupName: registrationFormQuery.data.value?.groupName ?? '',
+  groupNameYomi: registrationFormQuery.data.value?.groupNameYomi ?? ''
+}))
 const requiresMemberStep = computed(() => {
   if (selectedParticipationType.value) {
     return selectedParticipationType.value.usersCountMax > 1
@@ -131,7 +110,7 @@ const requiresMemberStep = computed(() => {
 watch(
   [requestedParticipationTypeId, () => participationTypesQuery.data.value],
   ([requestedId, participationTypes]) => {
-    if (form.participationTypeId !== '' || !requestedId) {
+    if (participationTypeId.value !== '' || !requestedId) {
       return
     }
 
@@ -139,51 +118,33 @@ watch(
       return
     }
 
-    form.participationTypeId = requestedId
-    formBaseline.value.participationTypeId = requestedId
+    participationTypeId.value = requestedId
+    defaultParticipationTypeId.value = requestedId
   },
   { immediate: true }
 )
 
-watch(
-  () => registrationFormQuery.data.value,
-  (registration) => {
-    if (!registration) {
-      return
-    }
-    if (!form.groupName || !canChangeGroupName.value) {
-      form.groupName = registration.groupName
-      formBaseline.value.groupName = registration.groupName
-    }
-    if (!form.groupNameYomi || !canChangeGroupName.value) {
-      form.groupNameYomi = registration.groupNameYomi
-      formBaseline.value.groupNameYomi = registration.groupNameYomi
-    }
-  },
-  { immediate: true }
-)
-
-async function handleSubmit(draft: FormAnswerDraft): Promise<AnswerFormSaveResult | null> {
+async function handleSubmit(
+  input: CircleRegistrationFormOutput,
+  answers: AnswerFormSchema
+): Promise<CircleDetail | null> {
   if (!canCreateCircleRegistration.value) {
     errorMessage.value = 'このアカウントでは新しい企画を登録できません。'
     return null
   }
 
   errorMessage.value = ''
+  const nextStepPath = requiresMemberStep.value ? '/workspace/circles/members' : '/workspace/circles/confirm'
 
   try {
     const created = await createMutation.mutateAsync({
-      name: form.name,
-      nameYomi: form.nameYomi,
-      groupName: form.groupName,
-      groupNameYomi: form.groupNameYomi,
-      participationTypeId: form.participationTypeId,
-      notes: form.notes,
-      details: draft
+      ...input.basic,
+      notes: input.basic.notes ?? '',
+      details: answerFormInputToDraft(answers, input)
     })
     clearUnsavedChangesGuard()
-    await router.push(requiresMemberStep.value ? '/workspace/circles/members' : '/workspace/circles/confirm')
-    return { answer: created.answer }
+    await router.push(nextStepPath)
+    return created
   } catch (error) {
     errorMessage.value = extractValidationMessage(error, '企画の作成に失敗しました。入力内容をご確認ください。')
     return null
@@ -193,18 +154,18 @@ async function handleSubmit(draft: FormAnswerDraft): Promise<AnswerFormSaveResul
 
 <template>
   <PageLayout spacious>
-    <AnswerFormEditor
-      :key="form.participationTypeId"
-      v-model:dirty="answerDirty"
-      :questions="questions"
-      :answer="null"
+    <CircleRegistrationForm
+      v-model:dirty="formDirty"
+      :participation-type-id="participationTypeId"
+      :default-participation-type-id="defaultParticipationTypeId"
+      :registration="registrationFormQuery.data.value ?? null"
       :disabled="
-        !canCreateCircleRegistration || registrationFormQuery.isPending.value || !registrationFormQuery.data.value
+        !canCreateCircleRegistration ||
+        (participationTypeId !== '' && (registrationFormQuery.isPending.value || !registrationFormQuery.data.value))
       "
-      :before-submit="validateAll"
-      :save-answer="handleSubmit"
+      :save-circle="handleSubmit"
       class="space-y-6"
-      v-slot="{ schema, form: answerForm }"
+      v-slot="{ schema, form: circleForm }"
     >
       <SurfaceCard>
         <SurfaceCardBand borderless>
@@ -242,26 +203,32 @@ async function handleSubmit(draft: FormAnswerDraft): Promise<AnswerFormSaveResul
               <input :value="leaderDisplayName" name="leaderDisplayName" readonly type="text" />
             </FormField>
 
-            <FormField
-              label="参加種別"
-              label-class="font-semibold"
-              :error="getFieldError('participationTypeId')"
-              required
-            >
-              <select
-                :value="form.participationTypeId"
-                name="participationTypeId"
-                :disabled="createMutation.isPending.value"
-                :class="{ 'border-danger': getFieldError('participationTypeId') }"
-                @blur="markTouched('participationTypeId')"
-                @change="handleParticipationTypeChange"
+            <Field :of="circleForm" :path="['basic', 'participationTypeId']" v-slot="field">
+              <FormField
+                label="参加種別"
+                label-class="font-semibold"
+                id="circle-participationTypeId"
+                :error="field.errors?.[0]"
+                required
               >
-                <option value="">選択してください</option>
-                <option v-for="pt in participationTypesQuery.data.value ?? []" :key="pt.id" :value="pt.id">
-                  {{ pt.name }} ({{ pt.usersCountMin }}〜{{ pt.usersCountMax }}人)
-                </option>
-              </select>
-            </FormField>
+                <select
+                  v-bind="field.props"
+                  :value="field.input"
+                  id="circle-participationTypeId"
+                  name="participationTypeId"
+                  :disabled="circleForm.isSubmitting"
+                  :class="{ 'border-danger': field.errors }"
+                  :aria-invalid="!!field.errors"
+                  :aria-describedby="field.errors ? 'circle-participationTypeId-error' : undefined"
+                  @change="handleParticipationTypeChange($event, circleForm)"
+                >
+                  <option value="">選択してください</option>
+                  <option v-for="pt in participationTypesQuery.data.value ?? []" :key="pt.id" :value="pt.id">
+                    {{ pt.name }} ({{ pt.usersCountMin }}〜{{ pt.usersCountMax }}人)
+                  </option>
+                </select>
+              </FormField>
+            </Field>
 
             <div
               v-if="selectedParticipationType"
@@ -271,82 +238,21 @@ async function handleSubmit(draft: FormAnswerDraft): Promise<AnswerFormSaveResul
               <p class="mt-1 text-muted">{{ selectedParticipationType.description }}</p>
             </div>
 
-            <FormField label="企画名" label-class="font-semibold" :error="getFieldError('name')" required>
-              <input
-                v-model="form.name"
-                name="name"
-                type="text"
-                placeholder="例: ○○サークル展示"
-                :class="{ 'border-danger': getFieldError('name') }"
-                @blur="markTouched('name')"
-                @input="markTouched('name')"
-              />
-            </FormField>
-
-            <FormField label="企画名（よみ）" label-class="font-semibold" :error="getFieldError('nameYomi')" required>
-              <input
-                v-model="form.nameYomi"
-                name="nameYomi"
-                required
-                type="text"
-                placeholder="ひらがなで入力"
-                :class="{ 'border-danger': getFieldError('nameYomi') }"
-                @blur="markTouched('nameYomi')"
-                @input="markTouched('nameYomi')"
-              />
-            </FormField>
-
-            <FormField
-              label="企画を出店する団体の名称"
-              label-class="font-semibold"
-              :error="getFieldError('groupName')"
-              required
+            <CircleBasicInfoFields
+              :form="circleForm"
+              :detail="basicInfoDetail"
+              :disabled="false"
+              :show-leader="false"
+              name-placeholder="例: ○○サークル展示"
+              notes-placeholder="任意のメモ"
             >
-              <input
-                v-model="form.groupName"
-                :disabled="!canChangeGroupName"
-                name="groupName"
-                type="text"
-                placeholder="例: ○○サークル"
-                :class="{ 'border-danger': getFieldError('groupName') && canChangeGroupName }"
-                @blur="markTouched('groupName')"
-                @input="markTouched('groupName')"
-              />
-            </FormField>
-
-            <FormField
-              label="企画を出店する団体の名称（よみ）"
-              label-class="font-semibold"
-              :error="canChangeGroupName && getFieldError('groupNameYomi')"
-              required
-            >
-              <input
-                v-model="form.groupNameYomi"
-                :disabled="!canChangeGroupName"
-                name="groupNameYomi"
-                required
-                type="text"
-                placeholder="ひらがなで入力"
-                :class="{ 'border-danger': getFieldError('groupNameYomi') && canChangeGroupName }"
-                @blur="markTouched('groupNameYomi')"
-                @input="markTouched('groupNameYomi')"
-              />
-            </FormField>
-
-            <p v-if="!canChangeGroupName" class="text-base text-muted">
-              既に登録済みの企画があるため、団体名は既存企画から引き継がれます。
-            </p>
-
-            <FormField label="備考" label-class="font-semibold">
-              <textarea v-model="form.notes" name="notes" rows="3" placeholder="任意のメモ" />
-            </FormField>
+              <template #group-name-help> 既に登録済みの企画があるため、団体名は既存企画から引き継がれます。 </template>
+            </CircleBasicInfoFields>
           </div>
         </SettingsRow>
 
         <SettingsRow>
-          <div v-if="form.participationTypeId === ''" class="text-base text-muted">
-            先に参加種別を選択してください。
-          </div>
+          <div v-if="participationTypeId === ''" class="text-base text-muted">先に参加種別を選択してください。</div>
 
           <div v-else-if="registrationFormQuery.isPending.value" class="text-base text-muted">
             フォームを読み込み中...
@@ -355,9 +261,9 @@ async function handleSubmit(draft: FormAnswerDraft): Promise<AnswerFormSaveResul
           <SchemaAnswerFields
             v-else-if="registrationFormQuery.data.value"
             :schema="schema"
-            :form="answerForm"
+            :form="circleForm"
             :answer="null"
-            :disabled="createMutation.isPending.value"
+            :disabled="circleForm.isSubmitting"
             :selected-files="{}"
             :upload-pending="false"
             :upload-error-messages="{}"
@@ -382,19 +288,19 @@ async function handleSubmit(draft: FormAnswerDraft): Promise<AnswerFormSaveResul
                 size="wide"
                 weight="bold"
                 :disabled="
-                  answerForm.isSubmitting ||
-                  form.participationTypeId === '' ||
+                  circleForm.isSubmitting ||
+                  participationTypeId === '' ||
                   registrationFormQuery.isPending.value ||
                   !registrationFormQuery.data.value
                 "
                 type="submit"
               >
-                {{ answerForm.isSubmitting ? '保存中...' : requiresMemberStep ? '保存して次へ' : '確認画面へ' }}
+                {{ circleForm.isSubmitting ? '保存中...' : requiresMemberStep ? '保存して次へ' : '確認画面へ' }}
               </BaseButton>
             </ActionsFooter>
           </div>
         </template>
       </SettingsSection>
-    </AnswerFormEditor>
+    </CircleRegistrationForm>
   </PageLayout>
 </template>

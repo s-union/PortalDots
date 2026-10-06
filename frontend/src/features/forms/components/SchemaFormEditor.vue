@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TSchema extends GroupedFormSchema">
 import { shallowRef, useTemplateRef, watch } from 'vue'
-import type { FormStore } from '@formisch/vue'
+import type { FormStore, ValidationMode } from '@formisch/vue'
 import type * as v from 'valibot'
 import SchemaFormSession from './SchemaFormSession.vue'
 import type {
@@ -11,7 +11,7 @@ import type {
   SchemaFormInput
 } from '@/features/forms/composables/useSchemaForm'
 
-const { schema, input, source, sourceKey, structureKey, disabled, focusOrder, saveInput, beforeSubmit } = defineProps<{
+const { schema, input, source, sourceKey, structureKey, disabled, focusOrder, saveInput, validateOn } = defineProps<{
   schema: TSchema
   input: SchemaFormInput<TSchema>
   source: unknown
@@ -24,7 +24,7 @@ const { schema, input, source, sourceKey, structureKey, disabled, focusOrder, sa
     event: SubmitEvent,
     schema: TSchema
   ) => Promise<SchemaFormSaveResult<TSchema> | null>
-  beforeSubmit?: (event: SubmitEvent) => boolean
+  validateOn?: ValidationMode
 }>()
 const emit = defineEmits<{ 'update:dirty': [dirty: boolean]; saved: [] }>()
 defineSlots<{ default(props: { schema: TSchema; form: FormStore<TSchema> }): unknown }>()
@@ -62,7 +62,7 @@ watch(
     :disabled="disabled"
     :focus-order="focusOrder"
     :save-input="saveInput"
-    :before-submit="beforeSubmit"
+    :validate-on="validateOn"
     :initial-state="initialState"
     @update:dirty="emit('update:dirty', $event)"
     @update:submitting="submitting = $event"

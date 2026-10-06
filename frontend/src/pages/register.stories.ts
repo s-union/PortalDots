@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import RegisterPage from './register.vue'
 import { mockPublicConfig } from '@/mocks/data'
+import { expect, userEvent, within } from 'storybook/test'
 
 const meta = {
   title: 'Pages/Auth/Register',
@@ -31,7 +32,19 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const input = await canvas.findByRole('textbox', { name: /大学メール/ })
+    const submit = canvas.getByRole('button', { name: '認証URLを送信' })
+    await userEvent.click(submit)
+    await expect(canvas.getByText('大学メールアドレスを入力してください')).toBeVisible()
+    await expect(input).toHaveFocus()
+    await userEvent.type(input, '24z9999')
+    await userEvent.click(submit)
+    await expect(await canvas.findByText('確認メールを送信しました。')).toBeVisible()
+  }
+}
 
 export const WithSubmitError: Story = {
   parameters: {

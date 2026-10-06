@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TSchema extends GroupedFormSchema">
 import { watch } from 'vue'
-import type { FormStore } from '@formisch/vue'
+import type { FormStore, ValidationMode } from '@formisch/vue'
 import type * as v from 'valibot'
 import {
   useSchemaForm,
@@ -11,7 +11,7 @@ import {
   type SchemaFormInput
 } from '@/features/forms/composables/useSchemaForm'
 
-const { schema, input, source, sourceKey, disabled, focusOrder, saveInput, beforeSubmit, initialState } = defineProps<{
+const { schema, input, source, sourceKey, disabled, focusOrder, saveInput, validateOn, initialState } = defineProps<{
   schema: TSchema
   input: SchemaFormInput<TSchema>
   source: unknown
@@ -23,7 +23,7 @@ const { schema, input, source, sourceKey, disabled, focusOrder, saveInput, befor
     event: SubmitEvent,
     schema: TSchema
   ) => Promise<SchemaFormSaveResult<TSchema> | null>
-  beforeSubmit?: (event: SubmitEvent) => boolean
+  validateOn?: ValidationMode
   initialState: SchemaFormSnapshot<TSchema> | undefined
 }>()
 const emit = defineEmits<{ 'update:dirty': [dirty: boolean]; 'update:submitting': [submitting: boolean]; saved: [] }>()
@@ -36,7 +36,7 @@ const { form, getSnapshot, submitEvent } = useSchemaForm({
   disabled: () => disabled,
   focusOrder: () => focusOrder,
   saveInput: (input, event, schema) => saveInput(input, event, schema),
-  beforeSubmit: (event) => beforeSubmit?.(event) ?? true,
+  validateOn,
   onSaved: () => emit('saved'),
   initialState
 })

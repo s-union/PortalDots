@@ -169,7 +169,7 @@ describe('CircleCreatePage', () => {
     return pinia
   }
 
-  async function mountRegistration() {
+  async function mountRegistration(path = '/circles/new') {
     const pinia = setupSession()
     const router = createRouter({
       history: createMemoryHistory(),
@@ -180,9 +180,12 @@ describe('CircleCreatePage', () => {
         { path: '/workspace/circles/confirm', component: { template: '<div>confirm</div>' } }
       ]
     })
-    await router.push('/circles/new')
+    await router.push(path)
     await router.isReady()
-    const wrapper = mount({ template: '<RouterView />' }, { global: { plugins: [pinia, router, createQueryPlugin()] } })
+    const wrapper = mount(
+      { template: '<RouterView />' },
+      { attachTo: document.body, global: { plugins: [pinia, router, createQueryPlugin()] } }
+    )
     await flushPromises()
     return { wrapper, router }
   }
@@ -724,11 +727,18 @@ describe('CircleCreatePage', () => {
     await wrapper.get('select[name="participationTypeId"]').setValue('pt-exhibit')
     await flushPromises()
     await fillBasicInfo(wrapper)
+    await wrapper.get('input[name="name"]').setValue('')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
+    expect(wrapper.text()).toContain('企画名を入力してください')
     expect(wrapper.text()).toContain('出店内容を入力してください')
     expect(wrapper.text()).toContain('備品を選択してください')
     expect(payloads).toEqual([])
+    expect(document.activeElement).toBe(wrapper.get('input[name="name"]').element)
+    await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.get('input[name="question-text"]').element)
     await wrapper.get('input[name="question-text"]').setValue('展示企画')
     await wrapper.get('input[type="checkbox"][value="机"]').setValue(true)
     await wrapper.get('form').trigger('submit')
@@ -750,6 +760,56 @@ describe('CircleCreatePage', () => {
     await flushPromises()
     expect(payloads).toEqual([expected, expected])
     expect(router.currentRoute.value.path).toBe('/workspace/circles/members')
+  })
+
+  it('treats the URL selection and inherited names as defaults without warning on exit', async () => {
+    setupDefaultHandlers()
+    server.use(
+      http.get('/v1/participation-types/pt-exhibit/registration-form', () =>
+        HttpResponse.json({
+          ...registrationFormFixture,
+          canChangeGroupName: false,
+          groupName: '既存団体',
+          groupNameYomi: 'きぞんだんたい'
+        })
+      )
+    )
+    const { wrapper, router } = await mountRegistration('/circles/new?participation_type=pt-exhibit')
+    expect(wrapper.get<HTMLSelectElement>('select[name="participationTypeId"]').element.value).toBe('pt-exhibit')
+    expect(wrapper.get<HTMLInputElement>('input[name="groupName"]').element.value).toBe('既存団体')
+    expect(wrapper.get<HTMLInputElement>('input[name="groupNameYomi"]').element.value).toBe('きぞんだんたい')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await router.push('/')
+    expect(router.currentRoute.value.path).toBe('/')
+    expect(confirm).not.toHaveBeenCalled()
+  })
+
+  it('replaces edited group names with inherited names when changing type and keeps other edits dirty', async () => {
+    setupDefaultHandlers()
+    server.use(
+      http.get('/v1/participation-types/pt-food/registration-form', () =>
+        HttpResponse.json({
+          ...registrationFormFixture,
+          participationTypeId: 'pt-food',
+          canChangeGroupName: false,
+          groupName: '既存団体',
+          groupNameYomi: 'きぞんだんたい'
+        })
+      )
+    )
+    const { wrapper, router } = await mountRegistration('/circles/new?participation_type=pt-exhibit')
+    await fillBasicInfo(wrapper)
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await wrapper.get('select[name="participationTypeId"]').setValue('pt-food')
+    await flushPromises()
+    expect(confirm).not.toHaveBeenCalled()
+    expect(wrapper.get<HTMLInputElement>('input[name="name"]').element.value).toBe('テスト企画')
+    expect(wrapper.get<HTMLInputElement>('input[name="groupName"]').element.value).toBe('既存団体')
+    expect(wrapper.get<HTMLInputElement>('input[name="groupNameYomi"]').element.value).toBe('きぞんだんたい')
+    expect(wrapper.get<HTMLInputElement>('input[name="groupName"]').element.disabled).toBe(true)
+    await router.push('/')
+    expect(confirm).toHaveBeenCalledOnce()
+    expect(router.currentRoute.value.path).toBe('/circles/new')
   })
 
   it('discards answers with identical question IDs across participation types while retaining basic information', async () => {

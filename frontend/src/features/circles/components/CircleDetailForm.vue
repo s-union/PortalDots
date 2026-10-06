@@ -28,9 +28,7 @@ const answers = computed(() => buildAnswerFormSchema(detail.questions))
 const schema = computed(() => buildCircleDetailFormSchema(answers.value))
 const input = computed(() => buildCircleDetailFormInput(detail, answers.value))
 const focusOrder = computed(() => [
-  ...(['name', 'nameYomi', 'groupName', 'groupNameYomi', 'participationTypeId', 'notes'] as const).map(
-    (key) => ['basic', key] as const
-  ),
+  ...(['name', 'nameYomi', 'groupName', 'groupNameYomi', 'notes'] as const).map((key) => ['basic', key] as const),
   ...answerFormFieldPaths(answers.value)
 ])
 let continueAfterSave = false
