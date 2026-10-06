@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, type Component } from 'vue'
-import type { StaffFormQuestion } from '@/features/staff/forms/api'
+import { computed, watch, type Component } from 'vue'
+import { Field, setInput } from '@formisch/vue'
+import type { StaffFormQuestion, UpdateStaffFormQuestionPayload } from '@/features/staff/forms/api'
 import { getQuestionTypeMeta } from '@/features/staff/forms/editor/useQuestionTypeMeta'
-import { inputValue, textareaValue } from '@/lib/dom'
-import { normalizeOptions } from '@/lib/parseOptions'
+import { useQuestionEditForm } from '@/features/staff/forms/editor/useQuestionEditForm'
+import type { StringQuestionField } from '@/features/staff/forms/editor/question-edit-schema'
+import FormError from '@/components/ui/FormError.vue'
+import { buttonVariants } from '@/lib/ui/variants'
 import PreviewHeading from './previews/PreviewHeading.vue'
 import PreviewText from './previews/PreviewText.vue'
 import PreviewNumber from './previews/PreviewNumber.vue'
@@ -15,15 +18,19 @@ import PreviewCheckbox from './previews/PreviewCheckbox.vue'
 import PreviewUpload from './previews/PreviewUpload.vue'
 
 const {
-  question: _question,
-  edit,
+  question,
+  saveQuestion,
+  paused = false,
+  structureDisabled = false,
   isOpen,
   draggable = false,
   isDragging = false,
   isDropTarget = false
 } = defineProps<{
   question: StaffFormQuestion
-  edit: StaffFormQuestion
+  saveQuestion?: (payload: UpdateStaffFormQuestionPayload) => Promise<StaffFormQuestion>
+  paused?: boolean
+  structureDisabled?: boolean
   isOpen: boolean
   draggable?: boolean
   isDragging?: boolean
@@ -32,61 +39,40 @@ const {
 
 const emit = defineEmits<{
   toggle: []
-  save: []
   delete: []
   dragStart: [event: DragEvent]
   dragEnd: []
   dragOver: [event: DragEvent]
   drop: [event: DragEvent]
-  'update:edit': [value: StaffFormQuestion]
+  'update:dirty': [value: boolean]
+  'update:pending': [value: boolean]
 }>()
 
-function buildEditValue(patch: Partial<StaffFormQuestion>) {
-  return {
-    ...edit,
-    ...(showOptions.value ? { options: normalizeOptions(optionsDraft.value) } : {}),
-    ...patch
-  }
-}
+const { form, edit, requestSave } = useQuestionEditForm({
+  question: () => question,
+  paused: () => paused,
+  save: async (payload) => (saveQuestion ? saveQuestion(payload) : null)
+})
+watch(
+  () => form.isDirty,
+  (dirty) => emit('update:dirty', dirty),
+  { immediate: true, flush: 'sync' }
+)
+watch(
+  () => form.isSubmitting,
+  (pending) => emit('update:pending', pending),
+  { immediate: true, flush: 'sync' }
+)
 
-function update<K extends keyof StaffFormQuestion>(field: K, value: StaffFormQuestion[K]) {
-  emit('update:edit', buildEditValue({ [field]: value }))
-}
-
-const optionsDraft = ref('')
-
-function updateOptions(raw: string) {
-  optionsDraft.value = raw
-}
-
-function updateNumber(field: 'numberMin' | 'numberMax', event: Event) {
+function updateString(field: StringQuestionField, event: Event) {
   const target = event.target
-  if (!(target instanceof HTMLInputElement)) {
-    return
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    setInput(form, { path: [field], input: target.value })
   }
-
-  emit(
-    'update:edit',
-    buildEditValue({
-      [field]: target.value === '' ? null : Number(target.value)
-    })
-  )
-}
-
-async function handleOptionsBlur(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLTextAreaElement)) {
-    return
-  }
-
-  const nextOptions = normalizeOptions(target.value)
-  optionsDraft.value = nextOptions.join('\n')
-  emit('update:edit', buildEditValue({ options: nextOptions }))
-  await nextTick()
-  emit('save')
 }
 
 function handleDeleteClick() {
+  if (structureDisabled) return
   if (window.confirm('設問を削除すると、この設問に対する回答も全て削除されます。本当に削除しますか？')) {
     emit('delete')
   }
@@ -94,12 +80,9 @@ function handleDeleteClick() {
 
 function handleRequiredChange(event: Event) {
   const target = event.target
-  if (!(target instanceof HTMLInputElement)) {
-    return
-  }
-
-  update('isRequired', target.checked)
-  emit('save')
+  if (!(target instanceof HTMLInputElement)) return
+  setInput(form, { path: ['isRequired'], input: target.checked })
+  void requestSave()
 }
 
 function handleDragStart(event: DragEvent) {
@@ -109,56 +92,74 @@ function handleDragStart(event: DragEvent) {
   }
 
   if (event.dataTransfer) {
-    event.dataTransfer.setData('text/plain', edit.id)
-    event.dataTransfer.setDragImage(event.currentTarget as HTMLElement, 24, 12)
+    event.dataTransfer.setData('text/plain', edit.value.id)
+    if (event.currentTarget instanceof HTMLElement) event.dataTransfer.setDragImage(event.currentTarget, 24, 12)
     event.dataTransfer.effectAllowed = 'move'
   }
   emit('dragStart', event)
 }
 
-watch(
-  () => edit.options,
-  (options) => {
-    optionsDraft.value = options.join('\n')
-  },
-  { immediate: true, deep: true }
-)
-
-const typeMeta = computed(() => getQuestionTypeMeta(edit.type))
-const parsedOptions = computed(() => [...new Set(edit.options.filter((item) => item.trim().length > 0))])
-const showRequired = computed(() => edit.type !== 'heading')
-const showOptions = computed(() => ['radio', 'select', 'checkbox'].includes(edit.type))
-const showAllowedTypes = computed(() => edit.type === 'upload')
-const showNumberMin = computed(() => ['text', 'textarea', 'markdown', 'number', 'checkbox'].includes(edit.type))
-const showNumberMax = computed(() => ['text', 'textarea', 'markdown', 'number', 'checkbox'].includes(edit.type))
-const nameLabel = computed(() => (edit.type === 'heading' ? '見出し' : '設問名'))
-const numberMinLabel = computed(() => {
-  if (['text', 'textarea', 'markdown'].includes(edit.type)) {
-    return '最小文字数'
-  }
-  if (edit.type === 'number') {
-    return '最低数'
-  }
-  if (edit.type === 'checkbox') {
-    return '最低選択数'
-  }
-  return null
+const typeMeta = computed(() => getQuestionTypeMeta(edit.value.type))
+const parsedOptions = computed(() => edit.value.options)
+const showRequired = computed(() => edit.value.type !== 'heading')
+const stringFields = computed(() => {
+  const type = question.type
+  const limits = ['text', 'textarea', 'markdown', 'number', 'checkbox'].includes(type)
+  return [
+    {
+      key: 'name',
+      label: type === 'heading' ? '見出し' : '設問名',
+      textarea: false,
+      number: false,
+      show: true,
+      placeholder: '',
+      helper: ''
+    },
+    { key: 'description', label: '説明', textarea: true, number: false, show: true, placeholder: '', helper: '' },
+    {
+      key: 'options',
+      label: '選択肢',
+      textarea: true,
+      number: false,
+      show: ['radio', 'select', 'checkbox'].includes(type),
+      placeholder: '1行に1つ選択肢を入力',
+      helper: '改行区切りで選択肢を入力。'
+    },
+    {
+      key: 'numberMin',
+      label: type === 'number' ? '最低数' : type === 'checkbox' ? '最低選択数' : '最小文字数',
+      textarea: false,
+      number: true,
+      show: limits,
+      placeholder: '',
+      helper: ''
+    },
+    {
+      key: 'numberMax',
+      label: type === 'number' ? '最大数' : type === 'checkbox' ? '最大選択数' : '最大文字数',
+      textarea: false,
+      number: true,
+      show: limits,
+      placeholder: '',
+      helper: ''
+    },
+    {
+      key: 'allowedTypes',
+      label: '許可される拡張子',
+      textarea: false,
+      number: false,
+      show: type === 'upload',
+      placeholder: '例: png|jpg|jpeg|gif',
+      helper: '| 区切りで指定。画像の場合: png|jpg|jpeg|gif'
+    }
+  ] as const
 })
-const numberMaxLabel = computed(() => {
-  if (['text', 'textarea', 'markdown'].includes(edit.type)) {
-    return '最大文字数'
-  }
-  if (edit.type === 'number') {
-    return '最大数'
-  }
-  if (edit.type === 'checkbox') {
-    return '最大選択数'
-  }
-  return null
-})
+function fieldId(key: StringQuestionField) {
+  return `question-${question.id}-${key}`
+}
 
 const previewComponent = computed<Component>(() => {
-  switch (edit.type) {
+  switch (edit.value.type) {
     case 'heading':
       return PreviewHeading
     case 'text':
@@ -184,27 +185,32 @@ const previewComponent = computed<Component>(() => {
 
 const previewProps = computed<Record<string, unknown>>(() => {
   const base = {
-    name: edit.name,
-    description: edit.description
+    name: edit.value.name,
+    description: edit.value.description
   }
-  switch (edit.type) {
+  switch (edit.value.type) {
     case 'heading':
       return base
     case 'text':
-      return { ...base, isRequired: edit.isRequired, type: edit.type }
+      return { ...base, isRequired: edit.value.isRequired, type: edit.value.type }
     case 'number':
-      return { ...base, isRequired: edit.isRequired, numberMin: edit.numberMin, numberMax: edit.numberMax }
+      return {
+        ...base,
+        isRequired: edit.value.isRequired,
+        numberMin: edit.value.numberMin,
+        numberMax: edit.value.numberMax
+      }
     case 'textarea':
     case 'markdown':
-      return { ...base, isRequired: edit.isRequired }
+      return { ...base, isRequired: edit.value.isRequired }
     case 'radio':
     case 'select':
     case 'checkbox':
-      return { ...base, isRequired: edit.isRequired, options: parsedOptions.value }
+      return { ...base, isRequired: edit.value.isRequired, options: parsedOptions.value }
     case 'upload':
-      return { ...base, isRequired: edit.isRequired, allowedTypes: edit.allowedTypes }
+      return { ...base, isRequired: edit.value.isRequired, allowedTypes: edit.value.allowedTypes }
     default:
-      return { ...base, isRequired: edit.isRequired, type: 'text' as const }
+      return { ...base, isRequired: edit.value.isRequired, type: 'text' as const }
   }
 })
 
@@ -228,7 +234,7 @@ const inputClass =
     <div
       :role="isOpen ? undefined : 'button'"
       :tabindex="isOpen ? undefined : 0"
-      :aria-expanded="isOpen"
+      :aria-expanded="isOpen ? undefined : false"
       class="px-6 py-4"
       :class="{ 'cursor-pointer': !isOpen }"
       @click="!isOpen && emit('toggle')"
@@ -259,97 +265,62 @@ const inputClass =
       </div>
     </div>
 
-    <div
+    <form
       v-show="isOpen"
+      novalidate
       class="border-t border-border px-6 py-4"
       style="background: var(--color-surface-light); box-shadow: inset 0 0.2rem 0.8rem -0.6rem var(--color-box-shadow)"
+      @submit.prevent="requestSave"
     >
       <p class="mb-4 border-b border-border pb-2 text-base font-bold text-body">{{ typeMeta.label }}</p>
+      <FormError v-for="error in form.errors" :key="error" :message="error" role="alert" />
 
       <div class="space-y-3">
-        <div v-if="showRequired" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-1 text-base text-body sm:text-right">回答必須か</span>
-          <label class="flex items-center gap-2 text-base text-body">
-            <input type="checkbox" :checked="edit.isRequired" @change="handleRequiredChange" />
-            <span>この設問への回答は必須</span>
-          </label>
-        </div>
-
-        <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-base text-body sm:text-right">{{ nameLabel }}</span>
-          <input
-            :class="inputClass"
-            :value="edit.name"
-            type="text"
-            @input="update('name', inputValue($event))"
-            @blur="emit('save')"
-          />
-        </div>
-
-        <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-base text-body sm:text-right">説明</span>
-          <textarea
-            :class="inputClass + ' min-h-24'"
-            :value="edit.description"
-            @input="update('description', textareaValue($event))"
-            @blur="emit('save')"
-          />
-        </div>
-
-        <div v-if="showOptions" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-base text-body sm:text-right">選択肢</span>
-          <div>
-            <textarea
-              :class="inputClass + ' min-h-24'"
-              :value="optionsDraft"
-              placeholder="1行に1つ選択肢を入力"
-              @input="updateOptions(textareaValue($event))"
-              @blur="handleOptionsBlur"
-            />
-            <p class="mt-1 text-xs text-muted">改行区切りで選択肢を入力。</p>
+        <Field v-if="showRequired" :of="form" :path="['isRequired']" v-slot="field">
+          <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
+            <span class="pt-1 text-base text-body sm:text-right">回答必須か</span>
+            <label class="flex items-center gap-2 text-base text-body">
+              <input v-bind="field.props" type="checkbox" :checked="field.input" @change="handleRequiredChange" />
+              <span>この設問への回答は必須</span>
+            </label>
           </div>
-        </div>
-
-        <div v-if="showNumberMin && numberMinLabel" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-base text-body sm:text-right">{{ numberMinLabel }}</span>
-          <input
-            :class="inputClass"
-            :value="edit.numberMin ?? ''"
-            min="0"
-            type="number"
-            @input="updateNumber('numberMin', $event)"
-            @blur="emit('save')"
-          />
-        </div>
-
-        <div v-if="showNumberMax && numberMaxLabel" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-base text-body sm:text-right">{{ numberMaxLabel }}</span>
-          <input
-            :class="inputClass"
-            :value="edit.numberMax ?? ''"
-            min="0"
-            type="number"
-            @input="updateNumber('numberMax', $event)"
-            @blur="emit('save')"
-          />
-        </div>
-
-        <div v-if="showAllowedTypes" class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-          <span class="pt-2 text-base text-body sm:text-right">
-            許可される拡張子<br /><code class="text-xs">|</code>区切りで指定
-          </span>
-          <div>
-            <input
-              :class="inputClass"
-              :value="edit.allowedTypes"
-              placeholder="例: png|jpg|jpeg|gif"
-              type="text"
-              @input="update('allowedTypes', inputValue($event))"
-              @blur="emit('save')"
-            />
-            <p class="mt-1 text-xs text-muted">画像アップロードを許可したい場合: <code>png|jpg|jpeg|gif</code></p>
-          </div>
-        </div>
+        </Field>
+        <template v-for="item in stringFields" :key="item.key">
+          <Field v-if="item.show" :of="form" :path="[item.key]" v-slot="field">
+            <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
+              <label :for="fieldId(item.key)" class="pt-2 text-base text-body sm:text-right">{{ item.label }}</label>
+              <div>
+                <textarea
+                  v-if="item.textarea"
+                  v-bind="field.props"
+                  :id="fieldId(item.key)"
+                  :class="inputClass + ' min-h-24'"
+                  :value="field.input"
+                  :placeholder="item.placeholder"
+                  :aria-invalid="!!field.errors"
+                  :aria-describedby="field.errors ? `${fieldId(item.key)}-error` : undefined"
+                  @input="updateString(item.key, $event)"
+                  @blur="requestSave"
+                />
+                <input
+                  v-else
+                  v-bind="field.props"
+                  :id="fieldId(item.key)"
+                  :class="inputClass"
+                  :value="field.input"
+                  :type="item.number ? 'number' : 'text'"
+                  :placeholder="item.placeholder"
+                  :aria-invalid="!!field.errors"
+                  :aria-describedby="field.errors ? `${fieldId(item.key)}-error` : undefined"
+                  @input="updateString(item.key, $event)"
+                  @blur="requestSave"
+                />
+                <p v-if="item.helper" class="mt-1 text-xs text-muted">{{ item.helper }}</p>
+                <FormError :id="`${fieldId(item.key)}-error`" :message="field.errors?.[0]" />
+              </div>
+            </div>
+          </Field>
+        </template>
 
         <div class="grid items-center gap-x-4 border-t border-border pt-3 sm:grid-cols-[8rem_1fr]">
           <span></span>
@@ -357,18 +328,26 @@ const inputClass =
             <div class="flex flex-wrap gap-2">
               <slot name="move-actions" />
             </div>
-            <button class="text-base text-danger hover:underline" type="button" @click="handleDeleteClick">
-              この項目を削除
-            </button>
+            <div class="flex items-center gap-4">
+              <button
+                :class="buttonVariants({ variant: 'secondary', size: 'xs' })"
+                type="submit"
+                :disabled="form.isSubmitting"
+              >
+                {{ form.isSubmitting ? '保存中...' : '保存' }}
+              </button>
+              <button
+                class="text-base text-danger hover:underline"
+                type="button"
+                :disabled="structureDisabled"
+                @click="handleDeleteClick"
+              >
+                この項目を削除
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </form>
   </article>
 </template>
-
-<style scoped>
-.empty-option {
-  padding-top: 0.25rem;
-}
-</style>

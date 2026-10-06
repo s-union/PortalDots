@@ -4,17 +4,18 @@ API questions are compiled into a Valibot schema and ordered UI metadata. Formis
 
 ## Before and after
 
-| Concern                   | Previous implementation                                  | Current implementation                                                |
-| ------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
-| Input                     | `Record<string, string \| string[]>`                     | `{ text: Record<string, string>, choices: Record<string, string[]> }` |
-| Field bindings            | A union-valued control and runtime narrowing             | Separate string and checkbox controls with typed Formisch paths       |
-| Background refresh        | Preserve all input if any field is dirty                 | Preserve dirty fields and accept server changes to clean fields       |
-| Successful save           | Preserve all input if anything changed during submission | Preserve only fields that differ from the submitted snapshot          |
-| Question structure change | Remount and discard current edits                        | Remount with the latest baseline and compatible dirty values          |
-| Answer validation         | Different rules and coverage across pages                | The same compiled schema on all four dynamic-answer screens           |
-| Circle detail             | Separate basic-info and answer validation stores         | One schema and Formisch store for basic information and answers       |
-| Circle creation           | Manual basic baseline and a pre-validation bridge        | One store for validation, dirty state, and submission of both parts   |
-| Registration email        | Reactive input and a custom validation composable        | Direct `useForm` and `Field`, without the grouped editor              |
+| Concern                   | Previous implementation                                  | Current implementation                                                     |
+| ------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Input                     | `Record<string, string \| string[]>`                     | `{ text: Record<string, string>, choices: Record<string, string[]> }`      |
+| Field bindings            | A union-valued control and runtime narrowing             | Separate string and checkbox controls with typed Formisch paths            |
+| Background refresh        | Preserve all input if any field is dirty                 | Preserve dirty fields and accept server changes to clean fields            |
+| Successful save           | Preserve all input if anything changed during submission | Preserve only fields that differ from the submitted snapshot               |
+| Question structure change | Remount and discard current edits                        | Remount with the latest baseline and compatible dirty values               |
+| Answer validation         | Different rules and coverage across pages                | The same compiled schema on all four dynamic-answer screens                |
+| Circle detail             | Separate basic-info and answer validation stores         | One schema and Formisch store for basic information and answers            |
+| Circle creation           | Manual basic baseline and a pre-validation bridge        | One store for validation, dirty state, and submission of both parts        |
+| Registration email        | Reactive input and a custom validation composable        | Direct `useForm` and `Field`, without the grouped editor                   |
+| Question authoring        | Replace every editable question after each refresh       | One Formisch store per question ID, retaining dirty fields and raw options |
 
 The API contract remains flat. `answerFormInputToDraft` performs the conversion at the submission boundary and preserves question order for the legacy body summary. Numeric answers remain strings; their schema validates integer bounds.
 
@@ -46,6 +47,16 @@ An editor's source key identifies the answer or circle. Switching that source di
 The answer adapter's save callback returns `{ answer }` on success, including `{ answer: null }` for forms without questions. Returning `null` indicates failure. Circle creation and detail validate basic information and answers in one pass. There is no pre-validation callback between independent stores. Circle detail advances only when the accepted saved baseline leaves no later edits or pending files.
 
 The shared lifecycle watches the source object's identity, separately from compiled input. Adapters must replace the source when server data changes. Recompiling a schema must not restore stale server props over a newer saved baseline. When a structure changes, the current source supplies new fields; compatible saved baselines and dirty values are carried across for existing fields.
+
+## Question authoring
+
+The staff question editor uses a separate Formisch store for each persisted question ID. `question-edit-schema.ts` validates literal text and boolean fields, transforms raw numeric limits to nullable signed 32-bit integers, and normalizes option text only at submission. It mirrors the backend's required-name, required-option, and numeric-bound rules. `FormQuestionPreviewItem.vue` binds the controls with `Field`; the page owns queries, ordering, and API mutations.
+
+`useQuestionEditForm.ts` accepts refreshed values for clean fields while retaining dirty input and its errors. Raw option text enters the store on input, so a refresh cannot erase an unblurred textarea. A successful save compares against the raw submitted snapshot: unchanged fields accept server normalization, while later edits remain dirty against the saved baseline. Cross-field validation is recomputed after a refresh, without moving focus.
+
+Each question permits one pending save. Further blur or submit events queue the latest input; failures preserve input and require an explicit retry. A refresh that interrupts pending validation retries that requested save. Structural operations wait for question saves; saves requested during creation, deletion, or reordering resume with the refreshed priority. Reordering retains the component and its errors by question ID. Changing form ID creates a new editor scope after the unsaved-input confirmation, and disposed scopes ignore late responses.
+
+A field array would add another ordering authority while the API still persists each question and its order separately. The question editor therefore keeps the server question list and uses the same field-level preservation policy as the answer editor in a bounded, separately typed composable. Formisch supplies validation, dirty state, and submission state; synchronization and request ordering remain application policy. This migration fixes a reproduced input-loss bug. It does not add backend version checks for concurrent edits by multiple staff members.
 
 ## Adoption and limits
 
@@ -81,9 +92,9 @@ mise run frontend:check
 cd frontend && nr test --project=unit
 ```
 
-Regression coverage includes clean-field refreshes, edits made during a save, server-normalized values, schema migration, late responses, validation focus across both value groups, participation-type switches, URL defaults, inherited names, mixed-form validation, duplicate submissions, and successful saves without an answer. Storybook interaction tests exercise staff editing, circle creation, registration email submission, and save-and-continue in Chromium with mocked API responses.
+Regression coverage includes clean-field refreshes, edits made during a save, server-normalized values, schema migration, late responses, validation focus across both value groups, participation-type switches, URL defaults, inherited names, mixed-form validation, duplicate submissions, and successful saves without an answer. Storybook interaction tests exercise staff editing, circle creation, registration email submission, question autosave races and validation, and save-and-continue in Chromium with mocked API responses.
 
-Frontend checks and all 716 unit tests pass. Chromium interactions pass for simultaneous basic and answer validation, focus order, combined circle saves, and direct registration email submission. Targeted Storybook checks still have two accessibility failures that were reproduced before this follow-up:
+Frontend checks and unit tests pass. Chromium interactions pass for simultaneous basic and answer validation, focus order, combined circle saves, and direct registration email submission. Targeted Storybook checks still have two accessibility failures that were reproduced before this follow-up:
 
 - The registration-denied warning has a color contrast ratio of 4.18 instead of 4.5. It was reproduced from commit `3da94d87` after waiting for the warning to render.
 - The circle detail leader notice has a color contrast ratio of 4.28 instead of 4.5. It was reproduced from commit `2e238680` with the same mixed-form fixture and a successful save that stays on the detail page.

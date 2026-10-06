@@ -1,6 +1,6 @@
 import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3-vite'
 import { ref } from 'vue'
-// Import { within, userEvent, expect } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import FormQuestionPreviewItem from './FormQuestionPreviewItem.vue'
 import type { StaffFormQuestion } from '@/features/staff/forms/api'
 import { toQuestionId } from '@/lib/api/schema'
@@ -39,7 +39,6 @@ const baseQuestion: StaffFormQuestion = {
 export const TextClosed: Story = {
   args: {
     question: baseQuestion,
-    edit: baseQuestion,
     isOpen: false
   }
 }
@@ -47,7 +46,6 @@ export const TextClosed: Story = {
 export const TextOpen: Story = {
   args: {
     question: baseQuestion,
-    edit: baseQuestion,
     isOpen: true
   }
 }
@@ -60,7 +58,6 @@ export const Textarea: Story = {
       name: '活動内容',
       description: '具体的な活動内容を記述してください。'
     },
-    edit: { ...baseQuestion, type: 'textarea', name: '活動内容', description: '具体的な活動内容を記述してください。' },
     isOpen: false
   }
 }
@@ -68,13 +65,6 @@ export const Textarea: Story = {
 export const Markdown: Story = {
   args: {
     question: {
-      ...baseQuestion,
-      id: toQuestionId('q-markdown'),
-      type: 'markdown',
-      name: '企画紹介文',
-      description: '## 見どころ\n\n- 体験できます\n- 写真撮影できます'
-    },
-    edit: {
       ...baseQuestion,
       id: toQuestionId('q-markdown'),
       type: 'markdown',
@@ -95,14 +85,6 @@ export const NumberSelect: Story = {
       numberMin: 1,
       numberMax: 8
     },
-    edit: {
-      ...baseQuestion,
-      id: toQuestionId('q-number'),
-      name: '参加人数',
-      type: 'number',
-      numberMin: 1,
-      numberMax: 8
-    },
     isOpen: false
   }
 }
@@ -116,13 +98,6 @@ export const Radio: Story = {
       type: 'radio',
       options: ['室内', '屋外', 'ハイブリッド']
     },
-    edit: {
-      ...baseQuestion,
-      id: toQuestionId('q-radio'),
-      name: '参加形態',
-      type: 'radio',
-      options: ['室内', '屋外', 'ハイブリッド']
-    },
     isOpen: false
   }
 }
@@ -130,14 +105,6 @@ export const Radio: Story = {
 export const Checkbox: Story = {
   args: {
     question: {
-      ...baseQuestion,
-      id: toQuestionId('q-checkbox'),
-      name: '必要な設備',
-      type: 'checkbox',
-      isRequired: false,
-      options: ['電源', '机', '椅子', 'Wi-Fi']
-    },
-    edit: {
       ...baseQuestion,
       id: toQuestionId('q-checkbox'),
       name: '必要な設備',
@@ -159,14 +126,6 @@ export const Heading: Story = {
       isRequired: false,
       description: ''
     },
-    edit: {
-      ...baseQuestion,
-      id: toQuestionId('q-h'),
-      name: '基本情報',
-      type: 'heading',
-      isRequired: false,
-      description: ''
-    },
     isOpen: false
   }
 }
@@ -174,14 +133,6 @@ export const Heading: Story = {
 export const Upload: Story = {
   args: {
     question: {
-      ...baseQuestion,
-      id: toQuestionId('q-upload'),
-      name: '活動写真',
-      type: 'upload',
-      isRequired: false,
-      allowedTypes: 'png|jpg|jpeg'
-    },
-    edit: {
       ...baseQuestion,
       id: toQuestionId('q-upload'),
       name: '活動写真',
@@ -205,7 +156,6 @@ export const ToggleOpenClose: StoryObj<VueRenderer> = {
       <div style="max-width: 700px;">
         <FormQuestionPreviewItem
           :question="q"
-          :edit="q"
           :is-open="isOpen"
           @toggle="isOpen = !isOpen"
         />
@@ -214,5 +164,45 @@ export const ToggleOpenClose: StoryObj<VueRenderer> = {
   }),
   play: async () => {
     // Interaction test は今回のプロジェクトでは使用しないため無効化
+  }
+}
+
+export const IntegerLimits: Story = {
+  args: {
+    question: { ...baseQuestion, type: 'number', numberMin: 1, numberMax: 8 },
+    isOpen: true,
+    saveQuestion: fn(async (payload) => ({ ...baseQuestion, ...payload, type: 'number' as const }))
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const min = await canvas.findByRole('spinbutton', { name: '最低数' })
+    await userEvent.clear(min)
+    await userEvent.type(min, '1.5')
+    await userEvent.click(canvas.getByRole('button', { name: /^保存$/ }))
+    await expect(canvas.getByText('整数で入力してください')).toBeVisible()
+    await expect(min).toHaveFocus()
+    await expect(args.saveQuestion).not.toHaveBeenCalled()
+    await userEvent.clear(min)
+    await userEvent.type(min, '9')
+    await userEvent.click(canvas.getByRole('button', { name: /^保存$/ }))
+    await expect(canvas.getByText('最大値は最小値以上にしてください')).toBeVisible()
+    await expect(canvas.getByRole('spinbutton', { name: '最大数' })).toHaveFocus()
+    await expect(args.saveQuestion).not.toHaveBeenCalled()
+    await userEvent.clear(min)
+    await userEvent.type(min, '2')
+    await userEvent.click(canvas.getByRole('button', { name: /^保存$/ }))
+    await waitFor(() => expect(args.saveQuestion).toHaveBeenCalledTimes(1))
+    await expect(args.saveQuestion).toHaveBeenCalledWith({
+      id: 'q-1',
+      name: '企画名',
+      description: '企画の正式名称を入力してください。',
+      type: 'number',
+      isRequired: true,
+      numberMin: 2,
+      numberMax: 8,
+      allowedTypes: '',
+      options: [],
+      priority: 1
+    })
   }
 }
