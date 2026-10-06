@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
@@ -7,6 +7,9 @@ import { useSessionStore } from '@/features/session/store'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/server'
 import StaffFormEditorPage from './editor.vue'
+import { parseStaffFormQuestion } from '@/features/staff/forms/api'
+
+enableAutoUnmount(afterEach)
 
 function createQueryPlugin() {
   return [
@@ -24,6 +27,107 @@ function createQueryPlugin() {
 describe('StaffFormEditorPage', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it('preserves another question draft when a pending save refreshes the form', async () => {
+    const makeQuestion = (id: string, name: string, priority: number) =>
+      parseStaffFormQuestion({
+        id,
+        name,
+        description: '',
+        type: 'text',
+        isRequired: false,
+        numberMin: null,
+        numberMax: null,
+        allowedTypes: '',
+        options: [],
+        priority,
+        createdAt: '2026-03-05T10:00:00Z',
+        updatedAt: '2026-03-05T10:00:00Z'
+      })
+    const secondQuestion = makeQuestion('question-b', '設問 B', 2)
+    let questions = [makeQuestion('question-a', '設問 A', 1), secondQuestion]
+    const pending = Promise.withResolvers<Response>()
+    const started = Promise.withResolvers<void>()
+    const payloads: unknown[] = []
+    let reads = 0
+    server.use(
+      http.get('/v1/staff/forms/form-circle-b-1', () => {
+        reads++
+        return HttpResponse.json({
+          id: 'form-circle-b-1',
+          circle: { id: 'circle-b', name: '企画' },
+          name: 'フォーム',
+          description: '',
+          openAt: '2026-03-02T00:00:00Z',
+          closeAt: '2026-03-22T23:59:59Z',
+          maxAnswers: 2,
+          answerableTags: [],
+          confirmationMessage: '',
+          isPublic: true,
+          isOpen: true,
+          createdAt: '2026-03-01T12:00:00Z',
+          updatedAt: '2026-03-01T12:00:00Z',
+          isParticipationForm: false,
+          questions,
+          answer: null
+        })
+      }),
+      http.put('/v1/staff/forms/form-circle-b-1/questions/question-a', async ({ request }) => {
+        payloads.push(await request.json())
+        started.resolve()
+        return pending.promise
+      })
+    )
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    useSessionStore().hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: null,
+      featureFlags: [],
+      roles: ['admin'],
+      user: { id: 'staff-user', displayName: 'Staff User' }
+    })
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/staff/forms/:formId/editor', component: StaffFormEditorPage }]
+    })
+    await router.push('/staff/forms/form-circle-b-1/editor')
+    await router.isReady()
+    const wrapper = mount(StaffFormEditorPage, { global: { plugins: [pinia, router, createQueryPlugin()] } })
+    await flushPromises()
+    const cards = wrapper.findAll('article')
+    const first = cards[0]
+    const second = cards[1]
+    if (!first || !second) throw new Error('Both questions must be rendered')
+    await first.get('[role="button"]').trigger('click')
+    const firstName = first.findAll('input[type="text"]').at(-1)
+    if (!firstName) throw new Error('Question name input must be rendered')
+    await firstName.setValue('設問 A を保存')
+    await firstName.trigger('blur')
+    await started.promise
+    await second.get('[role="button"]').trigger('click')
+    const secondName = second.findAll('input[type="text"]').at(-1)
+    if (!secondName) throw new Error('Question name input must be rendered')
+    await secondName.setValue('設問 B の未保存入力')
+    questions = [makeQuestion('question-a', '設問 A を保存', 1), secondQuestion]
+    pending.resolve(HttpResponse.json(questions[0]))
+    await vi.waitFor(() => expect(reads).toBeGreaterThan(1))
+    await flushPromises()
+    expect(secondName.element.value).toBe('設問 B の未保存入力')
+    expect(payloads).toEqual([
+      {
+        name: '設問 A を保存',
+        description: '',
+        type: 'text',
+        isRequired: false,
+        numberMin: null,
+        numberMax: null,
+        allowedTypes: '',
+        options: [],
+        priority: 1
+      }
+    ])
   })
 
   it('renders the legacy-like editor layout and edits staff form questions', async () => {
