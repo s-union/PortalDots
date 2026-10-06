@@ -1,7 +1,7 @@
 import {
   focus,
   getDirtyInput,
-  getErrors,
+  getDeepErrorEntries,
   getInput,
   handleSubmit,
   isDirty,
@@ -12,18 +12,24 @@ import {
   validate,
   type DeepPartial,
   type FormStore,
-  type PartialValues,
   type ValidationMode
 } from '@formisch/vue'
 import { onScopeDispose, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import type * as v from 'valibot'
 import { unwrapValidationError } from '@/lib/api/validation'
+import {
+  fields,
+  read,
+  write,
+  equal,
+  compatible,
+  type SyncedFormSchema,
+  type SyncedFieldPath
+} from './server-synced-form-fields'
+import { createSubmissionState, type SubmissionRequest } from './server-synced-form-state'
 
-type Value = string | string[] | boolean | undefined
-export type SyncedInput = Record<string, Value | Record<string, Value>>
-export type SyncedFormSchema = v.GenericSchema<SyncedInput, Record<string, unknown>>
+export type { SyncedInput, SyncedFormSchema, SyncedFieldPath } from './server-synced-form-fields'
 export type SchemaFormInput<T extends SyncedFormSchema> = v.InferInput<T> & DeepPartial<v.InferInput<T>>
-export type SyncedFieldPath = readonly [string] | readonly [string, string]
 export interface SchemaFormSnapshot<T extends SyncedFormSchema> {
   input: SchemaFormInput<T>
   dirtyInput: DeepPartial<v.InferInput<T>> | undefined
@@ -47,64 +53,13 @@ interface Options<T extends SyncedFormSchema> {
   disabled?: MaybeRefOrGetter<boolean>
   paused?: MaybeRefOrGetter<boolean>
   mode?: 'submit' | 'autosave'
-  focusOrder?: MaybeRefOrGetter<readonly SyncedFieldPath[]>
+  focusOrder?: MaybeRefOrGetter<readonly SyncedFieldPath<NoInfer<T>>[]>
   validateOn?: ValidationMode
   onSaved?: () => void
   errorMessage?: (error: unknown) => string
   initialState?: SchemaFormSnapshot<T>
 }
-type Address = { path: readonly [string] } | { path: readonly [string, string] }
-type Field = Address & { initialInput: Value }
-function fields(input: SyncedInput): Field[] {
-  return Object.entries(input).flatMap(([key, value]): Field[] =>
-    typeof value === 'object' && !Array.isArray(value)
-      ? Object.entries(value).map(([name, initialInput]) => ({ path: [key, name], initialInput }))
-      : [{ path: [key], initialInput: value }]
-  )
-}
-function write(input: SyncedInput, path: SyncedFieldPath, value: Value) {
-  if (path.length === 1) {
-    input[path[0]] = value
-    return
-  }
-  const group = input[path[0]]
-  if (typeof group === 'object' && !Array.isArray(group)) group[path[1]] = value
-}
-function read(input: unknown, path: SyncedFieldPath): unknown {
-  let value = input
-  for (const key of path)
-    value = value && typeof value === 'object' && key in value ? Reflect.get(value, key) : undefined
-  return value
-}
-function equal(a: unknown, b: unknown): boolean {
-  return Array.isArray(a)
-    ? Array.isArray(b) && a.length === b.length && a.every((item, i) => item === b[i])
-    : Object.is(a, b)
-}
-function compatible(initial: Value, previous: unknown): previous is Exclude<Value, undefined> {
-  return Array.isArray(initial)
-    ? Array.isArray(previous) && previous.every((item) => typeof item === 'string')
-    : typeof initial === 'boolean'
-      ? typeof previous === 'boolean'
-      : typeof previous === 'string'
-}
-
 type Context<T extends SyncedFormSchema> = Omit<SchemaFormSnapshot<T>, 'dirtyInput'>
-type Request<T extends SyncedFormSchema> = { context: Context<T>; key: string | null; event?: SubmitEvent }
-type Active<T extends SyncedFormSchema> = {
-  status: 'validating' | 'saving'
-  request: Request<T>
-  input: PartialValues<v.InferInput<T>>
-  schema: T
-}
-type State<T extends SyncedFormSchema> =
-  | { status: 'idle' | 'failed' | 'disposed' }
-  | Active<T>
-  | { status: 'queued'; active?: Active<T>; request: Request<T> }
-type Action<T extends SyncedFormSchema> =
-  | { type: 'start'; active: Active<T> }
-  | { type: 'queue'; request: Request<T> }
-  | { type: 'saving' | 'idle' | 'failed' | 'dispose' }
 
 export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options<T>) {
   let context: Context<T> = {
@@ -132,46 +87,10 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
     if (compatible(field.initialInput, previous))
       setInput<SyncedFormSchema, SyncedFieldPath>(fieldStore, { ...field, input: previous })
   }
-  let state: State<T> = { status: 'idle' }
-  function currentState() {
-    return state
-  }
-  function active() {
-    return state.status === 'queued'
-      ? state.active
-      : state.status === 'validating' || state.status === 'saving'
-        ? state
-        : undefined
-  }
-  // Current             Action          Next
-  // idle/failed          start           validating
-  // validating/saving    queue           queued (retains its active phase)
-  // validating/queued    saving          saving/queued
-  // active/queued        idle            idle (caller drains the latest queued request)
-  // active/queued        failed          failed (no automatic retry)
-  // any                  dispose         disposed (terminal)
-  function transition(action: Action<T>) {
-    if (state.status === 'disposed') return
-    switch (action.type) {
-      case 'start':
-        state = action.active
-        break
-      case 'queue':
-        state = { status: 'queued', active: active(), request: action.request }
-        break
-      case 'saving': {
-        const current = active()
-        if (!current) return
-        const next: Active<T> = { ...current, status: 'saving' }
-        state = state.status === 'queued' ? { ...state, active: next } : next
-        break
-      }
-      case 'dispose':
-        state = { status: 'disposed' }
-        break
-      default:
-        state = { status: action.type }
-    }
+  const submission = createSubmissionState<T>()
+  const { transition } = submission
+  function isCurrent(request: SubmissionRequest) {
+    return submission.current.status !== 'disposed' && request.context === context
   }
   onScopeDispose(() => transition({ type: 'dispose' }))
 
@@ -192,14 +111,15 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
         keepEdited: keepInput
       })
     }
-    if (form.isSubmitted && form.isDirty && state.status !== 'failed') void validate(form, { shouldFocus: false })
+    if (form.isSubmitted && form.isDirty && submission.current.status !== 'failed')
+      void validate(form, { shouldFocus: false })
   }
   watch([options.source, () => toValue(options.sourceKey)], ([source, key]) => {
     const input = toValue(options.input)
     if (context.sourceKey !== null && context.sourceKey !== key) {
       // Replacing the context invalidates old saves, even if the same key is selected again.
       context = { input, sourceKey: key, source }
-      if (!active()) {
+      if (!submission.active) {
         reset(form, { initialInput: input })
         transition({ type: 'idle' })
         return
@@ -207,7 +127,8 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
       accept(input, key, undefined, true)
     } else {
       context.source = source
-      const current = active()
+      const current = submission.active
+      const state = submission.current
       // Field resets interrupt validation; repeat the requested save with fresh clean values.
       if (current?.status === 'validating')
         transition({ type: 'queue', request: state.status === 'queued' ? state.request : current.request })
@@ -215,12 +136,12 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
     }
   })
   const submit = handleSubmit(form, async (input) => {
-    const current = active()
-    if (!current || current.request.context !== context) return
+    const current = submission.active
+    if (!current || !isCurrent(current.request)) return
     transition({ type: 'saving' })
     try {
       const result = await options.saveInput(input, current.request.event, current.schema)
-      if (state.status === 'disposed' || current.request.context !== context) return
+      if (!isCurrent(current.request)) return
       if (!result) {
         transition({ type: 'failed' })
         return
@@ -230,7 +151,7 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
       accept(result.input, result.sourceKey, current.input)
       options.onSaved?.()
     } catch (error) {
-      if (state.status === 'disposed' || current.request.context !== context) return
+      if (!isCurrent(current.request)) return
       transition({ type: 'failed' })
       setErrors(form, {
         errors: [options.errorMessage?.(error) ?? (error instanceof Error ? error.message : '保存に失敗しました。')]
@@ -250,35 +171,40 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
   })
   async function submitEvent(event?: SubmitEvent) {
     event?.preventDefault()
-    if (toValue(options.disabled) || state.status === 'disposed') return
-    const request = { context, event, key: toValue(options.sourceKey) }
-    if (active() || toValue(options.paused)) {
+    if (toValue(options.disabled) || submission.current.status === 'disposed') return
+    let request: SubmissionRequest | undefined = { context, event, key: toValue(options.sourceKey) }
+    if (submission.active || toValue(options.paused)) {
       if (options.mode === 'autosave') transition({ type: 'queue', request })
       return
     }
-    if (options.mode === 'autosave' && !form.isDirty) {
-      if (state.status === 'queued') transition({ type: 'idle' })
-      return
+    while (request && isCurrent(request)) {
+      if (options.mode === 'autosave' && !form.isDirty) {
+        if (submission.current.status === 'queued') transition({ type: 'idle' })
+        return
+      }
+      request = { ...request, key: toValue(options.sourceKey) }
+      transition({
+        type: 'start',
+        active: { status: 'validating', request, input: getInput(form), schema: toValue(options.schema) }
+      })
+      setErrors(form, { errors: null })
+      await submit()
+      const finished = submission.current
+      if (finished.status === 'disposed' || finished.status === 'failed') return
+      request = finished.status === 'queued' ? finished.request : undefined
+      transition({ type: 'idle' })
+      if (request && isCurrent(request) && toValue(options.paused)) {
+        transition({ type: 'queue', request })
+        break
+      }
+      if (request && toValue(options.disabled)) return
     }
-    transition({
-      type: 'start',
-      active: { status: 'validating', request, input: getInput(form), schema: toValue(options.schema) }
-    })
-    setErrors(form, { errors: null })
-    await submit()
-    const finished = currentState()
-    if (finished.status === 'disposed' || finished.status === 'failed') return
-    const next = finished.status === 'queued' ? finished.request : undefined
-    transition({ type: 'idle' })
-    if (next && next.context === context && !toValue(options.paused)) {
-      await submitEvent(next.event)
-      return
-    }
-    if (next && next.context === context) transition({ type: 'queue', request: next })
-    for (const path of toValue(options.focusOrder) ?? []) {
-      const address = path.length === 1 ? { path } : { path }
-      if (getErrors<SyncedFormSchema, SyncedFieldPath>(fieldStore, address)) {
-        focus<SyncedFormSchema, SyncedFieldPath>(fieldStore, address)
+    const focusOrder = toValue(options.focusOrder)
+    if (!focusOrder?.length) return
+    const invalidPaths = new Set(getDeepErrorEntries(form).map((error) => JSON.stringify(error.path)))
+    for (const path of focusOrder) {
+      if (invalidPaths.has(JSON.stringify(path))) {
+        focus<SyncedFormSchema, SyncedFieldPath>(fieldStore, { path })
         break
       }
     }
@@ -286,6 +212,7 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
   watch(
     () => toValue(options.paused),
     (paused) => {
+      const state = submission.current
       if (!paused && state.status === 'queued' && !state.active) void submitEvent(state.request.event)
     }
   )

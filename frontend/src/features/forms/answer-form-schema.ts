@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 import type { FormQuestion } from '@/features/forms/api'
 import type { FormAnswer, FormAnswerDraft } from '@/features/forms/answers'
+import type { SyncedFieldPath } from './composables/server-synced-form-fields'
 
 interface AnswerFormElementBase {
   id: string
@@ -159,7 +160,7 @@ export type AnswerFormSchema = ReturnType<typeof buildAnswerFormSchema>
 export type AnswerFormInput = v.InferInput<AnswerFormSchema>
 export type AnswerFieldsSchema = v.GenericSchema<AnswerFormInput>
 
-export function answerFormFieldPaths(schema: AnswerFormSchema): (readonly [string, string])[] {
+export function answerFormFieldPaths(schema: AnswerFormSchema): SyncedFieldPath<AnswerFormSchema>[] {
   return getAnswerFormElements(schema).flatMap((element) =>
     element.control === 'heading' || element.control === 'upload'
       ? []

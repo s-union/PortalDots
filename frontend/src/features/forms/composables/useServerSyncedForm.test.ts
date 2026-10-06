@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
-import { effectScope, nextTick, ref, shallowRef } from 'vue'
-import { getInput, setInput } from '@formisch/vue'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, effectScope, h, nextTick, ref, shallowRef } from 'vue'
+import { getInput, setInput, useField, type FieldStore } from '@formisch/vue'
 import * as v from 'valibot'
 import {
   useServerSyncedForm,
@@ -34,6 +34,7 @@ const layouts: Layout[] = [
   }
 ]
 const scopes: ReturnType<typeof effectScope>[] = []
+enableAutoUnmount(afterEach)
 afterEach(() => {
   for (const scope of scopes.splice(0)) scope.stop()
 })
@@ -86,6 +87,52 @@ function setup(
 }
 
 describe.each(layouts)('useServerSyncedForm ($name)', (layout) => {
+  it('focuses an invalid optional field in display order even when it was absent from initial input', async () => {
+    const entries = v.object({
+      name: v.pipe(v.string(), v.minLength(2)),
+      description: v.optional(v.pipe(v.string(), v.minLength(2)))
+    })
+    const schema: SyncedFormSchema = layout.name === 'flat' ? entries : v.object({ text: entries })
+    const descriptionAddress: Layout['field'] =
+      layout.name === 'flat' ? { path: ['description'] } : { path: ['text', 'description'] }
+    const save = vi.fn(async () => ({ input: layout.input('valid', 'valid'), sourceKey: 'a' }))
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          const { form, submitEvent } = useServerSyncedForm({
+            schema,
+            input: layout.name === 'flat' ? { name: 'valid' } : { text: { name: 'valid' } },
+            source: () => null,
+            sourceKey: 'a',
+            focusOrder: [descriptionAddress.path, layout.field.path],
+            saveInput: save
+          })
+          const name = useField<SyncedFormSchema, SyncedFieldPath>(form, layout.field)
+          const description = useField<SyncedFormSchema, SyncedFieldPath>(form, descriptionAddress)
+          function control(field: FieldStore<SyncedFormSchema, SyncedFieldPath>, id: string) {
+            return h('input', {
+              ...field.props,
+              id,
+              value: field.input,
+              onInput: (event: Event) => {
+                if (event.target instanceof HTMLInputElement) field.input = event.target.value
+              }
+            })
+          }
+          return () =>
+            h('form', { onSubmit: submitEvent }, [control(name, 'name'), control(description, 'description')])
+        }
+      }),
+      { attachTo: document.body }
+    )
+    await wrapper.get('#name').setValue('a')
+    await wrapper.get('#description').setValue('b')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.get('#description').element)
+    expect(save).not.toHaveBeenCalled()
+  })
+
   it('accepts normalization using the raw submitted snapshot and preserves later edits', async () => {
     const session = setup(layout)
     const pending = Promise.withResolvers<SchemaFormSaveResult<SyncedFormSchema>>()
@@ -191,6 +238,75 @@ describe.each(layouts)('useServerSyncedForm ($name)', (layout) => {
     expect(session.form.isDirty).toBe(false)
     expect(session.form.errors).toBeNull()
     expect(session.save).toHaveBeenCalledTimes(2)
+  })
+
+  it('drains successive autosaves serially with each latest requested submitter', async () => {
+    const session = setup(layout, { mode: 'autosave' })
+    const first = Promise.withResolvers<SchemaFormSaveResult<SyncedFormSchema>>()
+    const second = Promise.withResolvers<SchemaFormSaveResult<SyncedFormSchema>>()
+    const third = Promise.withResolvers<SchemaFormSaveResult<SyncedFormSchema>>()
+    session.save
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+      .mockReturnValueOnce(third.promise)
+    const button = document.createElement('button')
+    button.value = 'continue'
+    const event = new SubmitEvent('submit', { submitter: button })
+    session.edit('first')
+    const saving = session.submitEvent()
+    await flushPromises()
+    session.edit('second')
+    await session.submitEvent()
+    first.resolve({ input: layout.input('first'), sourceKey: 'a' })
+    await flushPromises()
+    expect(session.save.mock.calls.map(([input]) => input)).toEqual([layout.input('first'), layout.input('second')])
+    session.edit('discarded intermediate edit')
+    await session.submitEvent()
+    session.edit('latest')
+    await session.submitEvent(event)
+    expect(session.save).toHaveBeenCalledTimes(2)
+    second.resolve({ input: layout.input('second'), sourceKey: 'a' })
+    await flushPromises()
+    expect(session.name()).toBe('latest')
+    expect(session.form.isSubmitting).toBe(true)
+    expect(session.save.mock.calls[2]).toEqual([layout.input('latest'), event, layout.schema])
+    third.resolve({ input: layout.input('latest'), sourceKey: 'a' })
+    await saving
+    expect(session.name()).toBe('latest')
+    expect(session.form.isDirty).toBe(false)
+    expect(session.form.isSubmitting).toBe(false)
+    expect(session.save).toHaveBeenCalledTimes(3)
+    expect(session.saved).toHaveBeenCalledTimes(3)
+  })
+
+  it('retains a queued autosave through a pause that starts during the active save', async () => {
+    const session = setup(layout, { mode: 'autosave' })
+    const pending = Promise.withResolvers<SchemaFormSaveResult<SyncedFormSchema>>()
+    session.save.mockReturnValueOnce(pending.promise)
+    session.edit('first')
+    const saving = session.submitEvent()
+    await flushPromises()
+    session.edit('queued draft')
+    await session.submitEvent()
+    session.paused.value = true
+    pending.resolve({ input: layout.input('first'), sourceKey: 'a' })
+    await saving
+    expect(session.name()).toBe('queued draft')
+    expect(session.save).toHaveBeenCalledTimes(1)
+    expect(session.form.isSubmitting).toBe(false)
+    session.edit('latest draft')
+    session.source.value = { key: 'a', input: layout.input('first', 'refreshed while paused') }
+    await nextTick()
+    session.save.mockResolvedValue({ input: layout.input('latest draft', 'refreshed while paused'), sourceKey: 'a' })
+    session.paused.value = false
+    await flushPromises()
+    expect(session.save.mock.calls.map(([input]) => input)).toEqual([
+      layout.input('first'),
+      layout.input('latest draft', 'refreshed while paused')
+    ])
+    expect(session.name()).toBe('latest draft')
+    expect(session.form.isDirty).toBe(false)
+    expect(session.form.isSubmitting).toBe(false)
   })
 
   it('ignores late results and queued autosaves after disposal', async () => {

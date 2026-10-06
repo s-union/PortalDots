@@ -18,7 +18,7 @@ const { schema, input, source, sourceKey, structureKey, disabled, focusOrder, sa
   sourceKey: string | null
   structureKey: string
   disabled: boolean
-  focusOrder: readonly GroupedFieldPath[]
+  focusOrder: readonly GroupedFieldPath<NoInfer<TSchema>>[]
   saveInput: (
     input: v.InferOutput<TSchema>,
     event: SubmitEvent,
