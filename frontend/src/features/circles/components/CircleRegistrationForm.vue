@@ -28,7 +28,9 @@ const { registration, participationTypeId, defaultParticipationTypeId, disabled,
 const emit = defineEmits<{ 'update:dirty': [dirty: boolean] }>()
 defineSlots<{ default(props: { schema: AnswerFormSchema; form: FormStore<CircleRegistrationFormSchema> }): unknown }>()
 const answers = computed(() => buildAnswerFormSchema(registration?.questions ?? []))
-const schema = computed(() => buildCircleRegistrationFormSchema(answers.value))
+const schema = computed(() =>
+  buildCircleRegistrationFormSchema(answers.value, registration?.canChangeGroupName ?? true)
+)
 const input = computed(() => buildCircleRegistrationFormInput(registration, answers.value, defaultParticipationTypeId))
 const focusOrder = computed(() => [
   ...(['participationTypeId', 'name', 'nameYomi', 'groupName', 'groupNameYomi', 'notes'] as const).map(

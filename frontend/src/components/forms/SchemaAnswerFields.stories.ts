@@ -4,6 +4,7 @@ import { buildAnswerFormSchema, buildAnswerFormInput } from '@/features/forms/an
 import SchemaAnswerFields from './SchemaAnswerFields.vue'
 import type { FormQuestion } from '@/features/forms/api'
 import { toQuestionId } from '@/lib/api/schema'
+import { expect, userEvent, within } from 'storybook/test'
 
 const meta = {
   title: 'UI/Forms/SchemaAnswerFields',
@@ -117,5 +118,33 @@ export const NumberSelect: Story = { render: () => renderQuestion(numberQuestion
 export const Select: Story = { render: () => renderQuestion(selectQuestion) }
 export const Radio: Story = { render: () => renderQuestion(radioQuestion) }
 export const Checkbox: Story = { render: () => renderQuestion(checkboxQuestion) }
+export const RemovedCheckboxSelection: Story = {
+  render: () => ({
+    components: { SchemaAnswerFields },
+    setup() {
+      const schema = buildAnswerFormSchema([checkboxQuestion])
+      const initialInput = buildAnswerFormInput(schema, null)
+      initialInput.choices[checkboxQuestion.id] = ['旧機材']
+      const form = useForm({ schema, initialInput, validate: 'blur', revalidate: 'input' })
+      return { schema, form }
+    },
+    template: `
+      <SchemaAnswerFields
+        :schema="schema" :form="form" :answer="null" :disabled="false"
+        :selected-files="{}" :upload-pending="false" :upload-error-messages="{}"
+        :download-href="() => ''"
+      />
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const removed = await canvas.findByRole('checkbox', { name: '旧機材（現在は選べません）' })
+    removed.focus()
+    await expect(removed).toHaveFocus()
+    await userEvent.keyboard(' ')
+    await expect(canvas.getByRole('checkbox', { name: '机（4人用）' })).toHaveFocus()
+    await expect(canvas.queryByRole('checkbox', { name: '旧機材（現在は選べません）' })).not.toBeInTheDocument()
+  }
+}
 export const FileUpload: Story = { render: () => renderQuestion(uploadQuestion) }
 export const Disabled: Story = { render: () => renderQuestion(textQuestion, true) }

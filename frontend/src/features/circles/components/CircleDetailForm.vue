@@ -25,7 +25,7 @@ const { detail, disabled, saveCircle } = defineProps<{
 const emit = defineEmits<{ 'update:dirty': [dirty: boolean]; saved: [continueAfterSave: boolean] }>()
 defineSlots<{ default(props: { schema: AnswerFormSchema; form: FormStore<CircleDetailFormSchema> }): unknown }>()
 const answers = computed(() => buildAnswerFormSchema(detail.questions))
-const schema = computed(() => buildCircleDetailFormSchema(answers.value))
+const schema = computed(() => buildCircleDetailFormSchema(answers.value, detail.canChangeGroupName))
 const input = computed(() => buildCircleDetailFormInput(detail, answers.value))
 const focusOrder = computed(() => [
   ...(['name', 'nameYomi', 'groupName', 'groupNameYomi', 'notes'] as const).map((key) => ['basic', key] as const),

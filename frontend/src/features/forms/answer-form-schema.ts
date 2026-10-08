@@ -75,7 +75,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
           v.string(),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
-            const value = dataset.value
+            const value = dataset.value.trim()
             if (value === '' && !element.required) return
             if (value === '') {
               addIssue({ message: `${element.label}を入力してください` })
@@ -101,9 +101,19 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
         break
       case 'checkbox':
         elements.push({ ...element, control: 'checkbox', options: [...question.options] })
-        choiceEntries[element.id] = element.required
-          ? v.pipe(v.array(v.string()), v.minLength(1, `${element.label}を選択してください`))
-          : v.array(v.string())
+        choiceEntries[element.id] = v.pipe(
+          v.array(v.string()),
+          v.rawCheck(({ dataset, addIssue }) => {
+            if (!dataset.typed) return
+            const values = dataset.value.map((value) => value.trim()).filter((value) => value !== '')
+            if (element.required && values.length === 0) {
+              addIssue({ message: `${element.label}を選択してください` })
+            }
+            if (question.options.length && values.some((value) => !question.options.includes(value))) {
+              addIssue({ message: '選択肢が変更されています。現在の選択肢から選び直してください' })
+            }
+          })
+        )
         break
       case 'text':
       case 'textarea':
@@ -113,7 +123,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
           v.string(),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
-            const value = dataset.value
+            const value = dataset.value.trim()
             if (value === '' && !element.required) return
             if (value === '') {
               addIssue({ message: `${element.label}を入力してください` })
@@ -132,9 +142,20 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
       case 'select':
       case 'radio':
         elements.push({ ...element, control: question.type, options: [...question.options] })
-        textEntries[element.id] = element.required
-          ? v.pipe(v.string(), v.minLength(1, `${element.label}を入力してください`))
-          : v.string()
+        textEntries[element.id] = v.pipe(
+          v.string(),
+          v.rawCheck(({ dataset, addIssue }) => {
+            if (!dataset.typed) return
+            const value = dataset.value.trim()
+            if (value === '') {
+              if (element.required) addIssue({ message: `${element.label}を入力してください` })
+              return
+            }
+            if (question.options.length && !question.options.includes(value)) {
+              addIssue({ message: '選択肢が変更されています。現在の選択肢から選び直してください' })
+            }
+          })
+        )
         break
       default:
         throw new Error(`Unsupported question type: ${String(question.type satisfies never)}`)

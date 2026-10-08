@@ -56,20 +56,26 @@ const elements = computed(() => getAnswerFormElements(schema))
         </p>
       </template>
 
-      <div v-else class="grid gap-3">
-        <div>
-          <label :for="element.id" class="text-base font-semibold text-body">
-            {{ element.label }}
-            <span v-if="element.required" class="ml-2 text-xs font-semibold text-danger">必須</span>
-          </label>
-          <p
-            v-if="element.description"
-            :id="`${element.id}-description`"
-            class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted"
-          >
-            {{ element.description }}
-          </p>
-        </div>
+      <component
+        v-else
+        :is="element.control === 'radio' || element.control === 'checkbox' ? 'fieldset' : 'div'"
+        class="grid min-w-0 gap-3"
+      >
+        <component
+          :is="element.control === 'radio' || element.control === 'checkbox' ? 'legend' : 'label'"
+          :for="element.control === 'radio' || element.control === 'checkbox' ? undefined : element.id"
+          class="text-base font-semibold text-body"
+        >
+          {{ element.label }}
+          <span v-if="element.required" class="ml-2 text-xs font-semibold text-danger">必須</span>
+        </component>
+        <p
+          v-if="element.description"
+          :id="`${element.id}-description`"
+          class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted"
+        >
+          {{ element.description }}
+        </p>
 
         <slot v-if="element.control === 'upload'" name="upload" :element="element">
           <UploadAnswerControl
@@ -100,7 +106,7 @@ const elements = computed(() => getAnswerFormElements(schema))
                 .join(' ') || undefined
             "
           />
-          <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" role="alert" />
+          <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" />
         </Field>
 
         <Field v-else :of="form" :path="['text', element.id]" v-slot="field">
@@ -116,9 +122,9 @@ const elements = computed(() => getAnswerFormElements(schema))
                 .join(' ') || undefined
             "
           />
-          <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" role="alert" />
+          <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" />
         </Field>
-      </div>
+      </component>
     </div>
   </div>
 </template>

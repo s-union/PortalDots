@@ -6,8 +6,11 @@ import { buildAnswerFormInput, type AnswerFormSchema } from '@/features/forms/an
 export const circleBasicInfoSchema = v.omit(circleRegistrationFormSchema, ['participationTypeId'])
 export type CircleBasicInfoFormSchema = v.GenericSchema<{ basic: v.InferInput<typeof circleBasicInfoSchema> }>
 
-export function buildCircleDetailFormSchema(answers: AnswerFormSchema) {
-  return v.pipe(v.object({ basic: circleBasicInfoSchema, ...answers.entries }), v.metadata({ answers }))
+export function buildCircleDetailFormSchema(answers: AnswerFormSchema, canChangeGroupName = true) {
+  const basic = canChangeGroupName
+    ? circleBasicInfoSchema
+    : v.object({ ...circleBasicInfoSchema.entries, groupName: v.string(), groupNameYomi: v.string() })
+  return v.pipe(v.object({ basic, ...answers.entries }), v.metadata({ answers }))
 }
 export type CircleDetailFormSchema = ReturnType<typeof buildCircleDetailFormSchema>
 export type CircleDetailFormOutput = v.InferOutput<CircleDetailFormSchema>
