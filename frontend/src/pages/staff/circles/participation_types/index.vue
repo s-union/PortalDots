@@ -5,7 +5,9 @@ definePage({
   meta: staffPageMeta('circles.participationTypes')
 })
 
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+import { reset } from '@formisch/vue'
+import { useSubmitForm } from '@/features/forms/composables/useSubmitForm'
 import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
@@ -15,18 +17,17 @@ import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
-import { formatDateTimeLocalValue, parseDateTimeLocalValue } from '@/lib/format/datetime'
 import {
   extractStaffParticipationTypeValidationMessage,
   useCreateStaffParticipationTypeMutation,
-  useStaffParticipationTypeForm,
+  staffParticipationTypeInput,
   useStaffParticipationTypesQuery
 } from '@/features/staff/participation-types/api'
 import { useSessionStore } from '@/features/session/store'
-import { useFormValidation, staffParticipationTypeFormSchema } from '@/lib/form-validation'
+import { staffParticipationTypeFormSchema } from '@/lib/form-validation'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import FormError from '@/components/ui/FormError.vue'
-import FormField from '@/components/ui/FormField.vue'
+import FormischField from '@/components/forms/FormischField.vue'
+import DateTimeInput from '@/components/forms/DateTimeInput.vue'
 import CheckboxField from '@/components/ui/CheckboxField.vue'
 
 const sessionStore = useSessionStore()
@@ -36,52 +37,22 @@ const participationTypesQuery = useStaffParticipationTypesQuery(
 )
 const tagsQuery = useStaffTagsQuery(computed(() => staffStatusQuery.data.value?.authorized === true))
 const createMutation = useCreateStaffParticipationTypeMutation()
-const form = useStaffParticipationTypeForm()
-const errorMessage = ref('')
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 
-const { getFieldError, validateAll, markTouched } = useFormValidation({
+const {
+  form,
+  errorMessage,
+  submitEvent: handleCreate
+} = useSubmitForm({
   schema: staffParticipationTypeFormSchema,
-  form
+  initialInput: staffParticipationTypeInput(),
+  errorMessage: extractStaffParticipationTypeValidationMessage,
+  submit: async (input) => {
+    await createMutation.mutateAsync(input)
+    reset(form, { initialInput: staffParticipationTypeInput() })
+  }
 })
-
-function handleOpenAtInput(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) {
-    return
-  }
-  form.value.openAt = parseDateTimeLocalValue(target.value)
-  markTouched('openAt')
-}
-
-function handleCloseAtInput(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) {
-    return
-  }
-  form.value.closeAt = parseDateTimeLocalValue(target.value)
-  markTouched('closeAt')
-}
-
-async function handleCreate() {
-  errorMessage.value = ''
-
-  if (!validateAll()) {
-    return
-  }
-
-  try {
-    await createMutation.mutateAsync({
-      ...form.value,
-      openAt: parseDateTimeLocalValue(form.value.openAt),
-      closeAt: parseDateTimeLocalValue(form.value.closeAt)
-    })
-    form.value = useStaffParticipationTypeForm().value
-  } catch (error) {
-    errorMessage.value = extractStaffParticipationTypeValidationMessage(error)
-  }
-}
 </script>
 
 <template>
@@ -116,93 +87,87 @@ async function handleCreate() {
       </div>
     </SurfaceCard>
 
-    <form class="rounded border border-border bg-surface p-6 shadow-lv1" @submit.prevent="handleCreate">
+    <form
+      class="rounded border border-border bg-surface p-6 shadow-lv1"
+      novalidate
+      :aria-busy="form.isSubmitting"
+      @submit="handleCreate"
+    >
       <h2 class="text-lg font-semibold text-body">参加種別を新規作成</h2>
       <div class="mt-4 grid gap-4">
-        <FormField label="参加種別名" :error="getFieldError('name')">
-          <input
-            v-model="form.name"
-            name="name"
-            type="text"
-            :class="{ 'border-danger': getFieldError('name') }"
-            @blur="markTouched('name')"
-            @input="markTouched('name')"
+        <FormischField v-slot="{ field, control }" :of="form" :path="['name']" label="参加種別名">
+          <input v-bind="control" v-model="field.input" name="name" type="text" />
+        </FormischField>
+        <FormischField v-slot="{ field, control }" :of="form" :path="['description']" label="説明">
+          <textarea v-bind="control" v-model="field.input" class="min-h-24" name="description" />
+        </FormischField>
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormischField v-slot="{ field, control }" :of="form" :path="['usersCountMin']" label="最低人数">
+            <input v-bind="control" v-model.number="field.input" min="1" name="usersCountMin" type="number" />
+          </FormischField>
+          <FormischField v-slot="{ field, control }" :of="form" :path="['usersCountMax']" label="最大人数">
+            <input v-bind="control" v-model.number="field.input" min="1" name="usersCountMax" type="number" />
+          </FormischField>
+        </div>
+        <FormischField v-slot="{ field, control }" :of="form" :path="['tags']" label="付与タグ">
+          <StaffTagPicker
+            :control="control"
+            :model-value="field.input ?? []"
+            @update:model-value="field.input = $event"
+            :available-tags="availableTags"
+            :tag-colors="tagColors"
+            name="tags"
           />
-        </FormField>
-        <FormField label="説明">
-          <textarea v-model="form.description" class="min-h-24" name="description" />
-        </FormField>
+        </FormischField>
         <div class="grid gap-4 md:grid-cols-2">
-          <FormField label="最低人数" :error="getFieldError('usersCountMin')">
-            <input
-              v-model.number="form.usersCountMin"
-              min="1"
-              name="usersCountMin"
-              type="number"
-              :class="{ 'border-danger': getFieldError('usersCountMin') }"
-              @blur="markTouched('usersCountMin')"
-              @input="markTouched('usersCountMin')"
-            />
-          </FormField>
-          <FormField label="最大人数" :error="getFieldError('usersCountMax')">
-            <input
-              v-model.number="form.usersCountMax"
-              min="1"
-              name="usersCountMax"
-              type="number"
-              :class="{ 'border-danger': getFieldError('usersCountMax') }"
-              @blur="markTouched('usersCountMax')"
-              @input="markTouched('usersCountMax')"
-            />
-          </FormField>
+          <FormischField v-slot="{ field, control }" :of="form" :path="['openAt']" label="受付開始日時">
+            <DateTimeInput :control="control" v-model="field.input" />
+          </FormischField>
+          <FormischField v-slot="{ field, control }" :of="form" :path="['closeAt']" label="受付終了日時">
+            <DateTimeInput :control="control" v-model="field.input" />
+          </FormischField>
         </div>
-        <FormField label="付与タグ">
-          <StaffTagPicker v-model="form.tags" :available-tags="availableTags" :tag-colors="tagColors" name="tags" />
-        </FormField>
-        <div class="grid gap-4 md:grid-cols-2">
-          <FormField label="受付開始日時" :error="getFieldError('openAt')">
-            <input
-              :value="formatDateTimeLocalValue(form.openAt)"
-              name="openAt"
-              type="datetime-local"
-              :class="{ 'border-danger': getFieldError('openAt') }"
-              @input="handleOpenAtInput"
-              @blur="markTouched('openAt')"
-            />
-          </FormField>
-          <FormField label="受付終了日時" :error="getFieldError('closeAt')">
-            <input
-              :value="formatDateTimeLocalValue(form.closeAt)"
-              name="closeAt"
-              type="datetime-local"
-              :class="{ 'border-danger': getFieldError('closeAt') }"
-              @input="handleCloseAtInput"
-              @blur="markTouched('closeAt')"
-            />
-          </FormField>
-        </div>
-        <FormField label="参加登録前に表示する内容">
-          <MarkdownEditorField v-model="form.formDescription" min-height-class="min-h-24" name="formDescription" />
-        </FormField>
-        <FormField label="提出後メッセージ">
+        <FormischField
+          v-slot="{ field, control }"
+          :of="form"
+          :path="['formDescription']"
+          label="参加登録前に表示する内容"
+        >
           <MarkdownEditorField
-            v-model="form.formConfirmationMessage"
+            :control="control"
+            :model-value="field.input ?? ''"
+            @update:model-value="field.input = $event"
+            min-height-class="min-h-24"
+            name="formDescription"
+          />
+        </FormischField>
+        <FormischField
+          v-slot="{ field, control }"
+          :of="form"
+          :path="['formConfirmationMessage']"
+          label="提出後メッセージ"
+        >
+          <MarkdownEditorField
+            :control="control"
+            :model-value="field.input ?? ''"
+            @update:model-value="field.input = $event"
             min-height-class="min-h-24"
             name="formConfirmationMessage"
           />
-        </FormField>
-        <CheckboxField v-model="form.isPublic" label="参加登録画面を公開する" name="isPublic" />
+        </FormischField>
+        <FormischField v-slot="{ field, control }" :of="form" :path="['isPublic']" label="公開設定" as="fieldset"
+          ><CheckboxField
+            :control="control"
+            :model-value="field.input ?? false"
+            @update:model-value="field.input = $event"
+            label="参加登録画面を公開する"
+            name="isPublic"
+        /></FormischField>
         <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
       </div>
       <div class="mt-5">
-        <BaseButton
-          variant="primary"
-          size="wide"
-          weight="bold"
-          type="submit"
-          :disabled="createMutation.isPending.value"
-        >
-          {{ createMutation.isPending.value ? '作成中...' : '保存' }}
+        <BaseButton variant="primary" size="wide" weight="bold" type="submit" :disabled="form.isSubmitting">
+          {{ form.isSubmitting ? '作成中...' : '保存' }}
         </BaseButton>
       </div>
     </form>

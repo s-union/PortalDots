@@ -1,4 +1,4 @@
-import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
+import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import * as v from 'valibot'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
@@ -334,19 +334,19 @@ export function useDeleteStaffParticipationTypeMutation(typeId: MaybeRefOrGetter
   })
 }
 
-export function useStaffParticipationTypeForm() {
-  return ref<MutateStaffParticipationTypePayload>({
-    name: '',
-    description: '',
-    usersCountMin: 1,
-    usersCountMax: 1,
-    tags: [],
-    formDescription: '',
-    formConfirmationMessage: '',
-    openAt: '',
-    closeAt: '',
-    isPublic: true
-  })
+export function staffParticipationTypeInput(value?: StaffParticipationType): MutateStaffParticipationTypePayload {
+  return {
+    name: value?.name ?? '',
+    description: value?.description ?? '',
+    usersCountMin: value?.usersCountMin ?? 1,
+    usersCountMax: value?.usersCountMax ?? 1,
+    tags: [...(value?.tags ?? [])],
+    formDescription: value?.form.description ?? '',
+    formConfirmationMessage: value?.form.confirmationMessage ?? '',
+    openAt: value?.form.openAt ?? '',
+    closeAt: value?.form.closeAt ?? '',
+    isPublic: value?.form.isPublic ?? true
+  }
 }
 
 export function parseParticipationTypeTags(value: string) {
