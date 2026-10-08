@@ -3,96 +3,85 @@ import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
-import { cn } from '@/lib/ui/cn'
-import { buttonVariants } from '@/lib/ui/variants'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormischField from '@/components/forms/FormischField.vue'
 import { useUserSettingsPasswordTab } from '@/features/session/composables/useUserSettingsPasswordTab'
-import FormError from '@/components/ui/FormError.vue'
-import FormField from '@/components/ui/FormField.vue'
 
-const {
-  errorMessage,
-  fieldErrors,
-  forgotPasswordHref,
-  getFieldError,
-  markTouched,
-  passwordForm,
-  savePassword,
-  successMessage,
-  tabs,
-  updatePasswordMutation
-} = useUserSettingsPasswordTab()
+const { form, errorMessage, successMessage, savePassword, tabs, updatePasswordMutation } = useUserSettingsPasswordTab()
 </script>
 
 <template>
   <TabbedSettingsPage :tabs="tabs">
-    <SettingsSection title="パスワード変更" :title-outside="true">
-      <SettingsRow>
-        <div class="grid gap-4">
-          <div class="grid gap-2">
-            <FormField label="現在のパスワード">
-              <input
-                v-model="passwordForm.currentPassword"
-                name="currentPassword"
-                type="password"
-                :class="{ 'border-danger': getFieldError('currentPassword') }"
-                @blur="markTouched('currentPassword')"
-                @input="markTouched('currentPassword')"
-              />
-            </FormField>
-            <FormError v-if="getFieldError('currentPassword')" :message="getFieldError('currentPassword')" />
-            <p class="text-base leading-6 text-muted">
-              <a :href="forgotPasswordHref" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
-            </p>
-          </div>
-          <div class="grid gap-2">
-            <FormField label="新しいパスワード">
-              <input
-                v-model="passwordForm.newPassword"
-                name="newPassword"
-                placeholder="8文字以上（英字・数字を含む）"
-                type="password"
-                :class="{ 'border-danger': getFieldError('newPassword') }"
-                @blur="markTouched('newPassword')"
-                @input="markTouched('newPassword')"
-              />
-            </FormField>
-            <FormError v-if="getFieldError('newPassword')" :message="getFieldError('newPassword')" />
-          </div>
-          <div class="grid gap-2">
-            <FormField label="新しいパスワード(確認)">
-              <input
-                v-model="passwordForm.confirmPassword"
-                name="confirmPassword"
-                type="password"
-                :class="{ 'border-danger': getFieldError('confirmPassword') }"
-                @blur="markTouched('confirmPassword')"
-                @input="markTouched('confirmPassword')"
-              />
-            </FormField>
-            <FormError v-if="getFieldError('confirmPassword')" :message="getFieldError('confirmPassword')" />
-          </div>
-        </div>
-      </SettingsRow>
-      <template #footer>
-        <div class="space-y-4">
-          <AlertMessage v-if="successMessage" tone="success">
-            {{ successMessage }}
-          </AlertMessage>
-          <AlertMessage v-if="errorMessage" tone="danger">
-            {{ errorMessage }}
-          </AlertMessage>
-          <div class="flex justify-center pt-2">
-            <button
-              :class="cn(buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }), 'min-w-40')"
-              :disabled="updatePasswordMutation.isPending.value"
-              type="button"
-              @click="savePassword"
+    <form novalidate :aria-busy="form.isSubmitting" @submit="savePassword">
+      <SettingsSection title="パスワード変更" :title-outside="true">
+        <SettingsRow>
+          <div class="grid gap-4">
+            <FormischField
+              v-slot="{ field, control }"
+              :of="form"
+              :path="['currentPassword']"
+              label="現在のパスワード"
+              required
             >
-              {{ updatePasswordMutation.isPending.value ? '保存中...' : '保存' }}
-            </button>
+              <input
+                v-bind="control"
+                v-model="field.input"
+                type="password"
+                autocomplete="current-password"
+                :disabled="updatePasswordMutation.isPending.value"
+                required
+              />
+            </FormischField>
+            <p class="text-base leading-6 text-muted">
+              <a href="/password/reset" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
+            </p>
+            <FormischField
+              v-slot="{ field, control }"
+              :of="form"
+              :path="['newPassword']"
+              label="新しいパスワード"
+              required
+            >
+              <input
+                v-bind="control"
+                v-model="field.input"
+                type="password"
+                autocomplete="new-password"
+                placeholder="8文字以上（英字・数字を含む）"
+                :disabled="updatePasswordMutation.isPending.value"
+                required
+              />
+            </FormischField>
+            <FormischField
+              v-slot="{ field, control }"
+              :of="form"
+              :path="['confirmPassword']"
+              label="新しいパスワード(確認)"
+              required
+            >
+              <input
+                v-bind="control"
+                v-model="field.input"
+                type="password"
+                autocomplete="new-password"
+                :disabled="updatePasswordMutation.isPending.value"
+                required
+              />
+            </FormischField>
           </div>
-        </div>
-      </template>
-    </SettingsSection>
+        </SettingsRow>
+        <template #footer>
+          <div class="space-y-4">
+            <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
+            <AlertMessage v-if="errorMessage" tone="danger">{{ errorMessage }}</AlertMessage>
+            <div class="flex justify-center pt-2">
+              <BaseButton variant="primary" size="wide" weight="bold" :disabled="form.isSubmitting" type="submit">
+                {{ form.isSubmitting ? '保存中...' : '保存' }}
+              </BaseButton>
+            </div>
+          </div>
+        </template>
+      </SettingsSection>
+    </form>
   </TabbedSettingsPage>
 </template>

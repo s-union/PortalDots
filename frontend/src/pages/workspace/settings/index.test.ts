@@ -116,7 +116,8 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
-    const nameLabel = wrapper.findAll('p').find((paragraph) => paragraph.text() === '名前')
+    const nameLabel = wrapper.findAll('label').find((label) => label.text() === '名前')
+    expect(nameLabel?.attributes('for')).toBe(wrapper.get('input[name="name"]').attributes('id'))
     expect(nameLabel?.classes()).toContain('mb-0')
     expect(nameLabel?.classes()).not.toContain('md:min-h-[2.85rem]')
     expect(wrapper.get('[data-testid="settings-name-row"]').classes()).toContain('md:items-center')
@@ -129,7 +130,7 @@ describe('UserSettingsPage', () => {
     await wrapper.get('input[name="contactEmail"]').setValue('updated@example.com')
     await wrapper.get('input[name="phoneNumber"]').setValue('090-9999-9999')
     await wrapper.get('input[name="currentPassword"]').setValue('password')
-    await wrapper.find('button[type="button"]').trigger('click')
+    await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     await vi.waitFor(() => {
@@ -183,7 +184,7 @@ describe('UserSettingsPage', () => {
     await wrapper.get('input[name="currentPassword"]').setValue('password')
     await wrapper.get('input[name="newPassword"]').setValue('newpass123')
     await wrapper.get('input[name="confirmPassword"]').setValue('newpass123')
-    await wrapper.find('button[type="button"]').trigger('click')
+    await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(wrapper.text()).toContain('パスワードを更新しました。')
