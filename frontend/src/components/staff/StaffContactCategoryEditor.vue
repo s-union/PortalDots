@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import StaffMasterEditorShell from '@/components/staff/StaffMasterEditorShell.vue'
-import FormField from '@/components/ui/FormField.vue'
+import FormischField from '@/components/forms/FormischField.vue'
 import {
   buildDeleteStaffContactCategoryConfirmMessage,
   type StaffContactCategory,
@@ -9,7 +9,15 @@ import {
   useDeleteStaffContactCategoryMutation,
   useUpdateStaffContactCategoryMutation
 } from '@/features/staff/masters/contactCategories'
+import * as v from 'valibot'
+import { requiredTextSchema } from '@/lib/form-validation'
+
 import { useStaffMasterEditor } from '@/features/staff/masters/useStaffMasterEditor'
+
+const schema = v.object({
+  name: requiredTextSchema('カテゴリ名'),
+  email: v.pipe(v.string(), v.trim(), v.nonEmpty('メールアドレスを入力してください'))
+})
 
 const { category } = defineProps<{
   category: StaffContactCategory | null
@@ -23,21 +31,13 @@ const emit = defineEmits<{
 const createMutation = useCreateStaffContactCategoryMutation()
 const updateMutation = useUpdateStaffContactCategoryMutation()
 const deleteMutation = useDeleteStaffContactCategoryMutation()
-const name = ref('')
-const email = ref('')
-
-const { errorMessage, successMessage, handleSave, handleDelete, isSaving, isDeleting } = useStaffMasterEditor({
+const { form, errorMessage, successMessage, handleSave, handleDelete, isSaving, isDeleting } = useStaffMasterEditor({
   entity: computed(() => category),
-  createMutation,
-  updateMutation,
+  schema: schema,
+  input: (entity) => ({ name: entity?.name ?? '', email: entity?.email ?? '' }),
+  create: (input) => createMutation.mutateAsync(input),
+  update: (entity, input) => updateMutation.mutateAsync({ ...entity, ...input }),
   deleteMutation,
-  resetFields: () => {
-    name.value = category?.name ?? ''
-    email.value = category?.email ?? ''
-  },
-  validate: () => true,
-  buildCreatePayload: () => ({ name: name.value, email: email.value }),
-  buildUpdatePayload: () => ({ ...category!, name: name.value, email: email.value }),
   deleteConfirmMessage: (c: StaffContactCategory) => buildDeleteStaffContactCategoryConfirmMessage(c),
   successCreateMessage: 'お問い合わせ受付設定を作成しました。',
   successUpdateMessage: 'お問い合わせ受付設定を更新しました。',
@@ -63,13 +63,25 @@ const { errorMessage, successMessage, handleSave, handleDelete, isSaving, isDele
     @delete="handleDelete"
   >
     <div class="grid gap-4">
-      <FormField label="カテゴリ名" label-class="font-medium">
-        <input v-model="name" name="name" type="text" />
-      </FormField>
+      <FormischField
+        v-slot="{ field, control }"
+        :of="form"
+        :path="['name']"
+        label="カテゴリ名"
+        label-class="font-medium"
+      >
+        <input v-bind="control" v-model="field.input" name="name" type="text" />
+      </FormischField>
 
-      <FormField label="送信先メールアドレス" label-class="font-medium">
-        <input v-model="email" name="email" type="email" />
-      </FormField>
+      <FormischField
+        v-slot="{ field, control }"
+        :of="form"
+        :path="['email']"
+        label="送信先メールアドレス"
+        label-class="font-medium"
+      >
+        <input v-bind="control" v-model="field.input" name="email" type="email" />
+      </FormischField>
     </div>
   </StaffMasterEditorShell>
 </template>
