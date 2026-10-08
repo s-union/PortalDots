@@ -1,6 +1,6 @@
 import type * as v from 'valibot'
 
-type Value = string | string[] | boolean | undefined
+type Value = string | string[] | boolean | number | undefined
 export type SyncedInput = Record<string, Value | Record<string, Value>>
 export type SyncedFormSchema = v.GenericSchema<SyncedInput, Record<string, unknown>>
 type FieldPath<Name extends string, Input> =
@@ -42,5 +42,7 @@ export function compatible(initial: Value, previous: unknown): previous is Exclu
     ? Array.isArray(previous) && previous.every((item) => typeof item === 'string')
     : typeof initial === 'boolean'
       ? typeof previous === 'boolean'
-      : typeof previous === 'string'
+      : typeof initial === 'number'
+        ? typeof previous === 'number'
+        : typeof previous === 'string'
 }

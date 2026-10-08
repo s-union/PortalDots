@@ -119,6 +119,8 @@ function removeFile() {
   if (disabled) return
   model.value = null
 }
+
+defineExpose({ focus: () => fileInput.value?.focus() })
 </script>
 
 <template>

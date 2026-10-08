@@ -122,7 +122,7 @@ export type PasswordChangeFormData = v.InferOutput<typeof passwordChangeFormSche
 export const contactFormSchema = v.object({
   categoryId: v.pipe(categoryIdSchema, v.minLength(1, 'お問い合わせ項目を選択してください')),
   ccSubleader: v.boolean(),
-  body: v.pipe(v.string(), v.minLength(1, 'お問い合わせ内容を入力してください'))
+  body: v.pipe(v.string(), v.trim(), v.minLength(1, 'お問い合わせ内容を入力してください'))
 })
 
 export type ContactFormData = v.InferOutput<typeof contactFormSchema>
@@ -203,7 +203,12 @@ export type CircleRegistrationFormData = v.InferOutput<typeof circleRegistration
 export const staffFormSchema = v.pipe(
   v.object({
     name: requiredTextSchema('フォーム名'),
-    maxAnswers: v.pipe(v.number(), v.integer(), v.minValue(1, '1以上の値を入力してください')),
+    maxAnswers: v.pipe(v.number('数値を入力してください'), v.integer(), v.minValue(1, '1以上の値を入力してください')),
+    description: v.optional(v.string(), ''),
+    answerableTags: v.optional(v.array(v.string()), []),
+    confirmationMessage: v.optional(v.string(), ''),
+    staffNotificationUserIds: v.optional(v.array(v.string()), []),
+    isPublic: v.optional(v.boolean(), false),
     openAt: v.pipe(v.string(), v.minLength(1, '受付開始日時を入力してください')),
     closeAt: v.pipe(v.string(), v.minLength(1, '受付終了日時を入力してください'))
   }),
@@ -225,8 +230,21 @@ export type StaffFormData = v.InferOutput<typeof staffFormSchema>
 export const staffParticipationTypeFormSchema = v.pipe(
   v.object({
     name: requiredTextSchema('参加種別名'),
-    usersCountMin: v.pipe(v.number(), v.integer(), v.minValue(1, '1以上の値を入力してください')),
-    usersCountMax: v.pipe(v.number(), v.integer(), v.minValue(1, '1以上の値を入力してください')),
+    usersCountMin: v.pipe(
+      v.number('数値を入力してください'),
+      v.integer(),
+      v.minValue(1, '1以上の値を入力してください')
+    ),
+    usersCountMax: v.pipe(
+      v.number('数値を入力してください'),
+      v.integer(),
+      v.minValue(1, '1以上の値を入力してください')
+    ),
+    description: v.optional(v.string(), ''),
+    tags: v.optional(v.array(v.string()), []),
+    formDescription: v.optional(v.string(), ''),
+    formConfirmationMessage: v.optional(v.string(), ''),
+    isPublic: v.optional(v.boolean(), true),
     openAt: v.pipe(v.string(), v.minLength(1, '受付開始日時を入力してください')),
     closeAt: v.pipe(v.string(), v.minLength(1, '受付終了日時を入力してください'))
   }),
@@ -256,8 +274,23 @@ export type StaffParticipationTypeFormData = v.InferOutput<typeof staffParticipa
 export const staffParticipationTypeEditFormSchema = v.pipe(
   v.object({
     name: requiredTextSchema('参加種別名'),
-    usersCountMin: v.pipe(v.number(), v.integer(), v.minValue(1, '1以上の値を入力してください')),
-    usersCountMax: v.pipe(v.number(), v.integer(), v.minValue(1, '1以上の値を入力してください'))
+    usersCountMin: v.pipe(
+      v.number('数値を入力してください'),
+      v.integer(),
+      v.minValue(1, '1以上の値を入力してください')
+    ),
+    usersCountMax: v.pipe(
+      v.number('数値を入力してください'),
+      v.integer(),
+      v.minValue(1, '1以上の値を入力してください')
+    ),
+    description: v.optional(v.string(), ''),
+    tags: v.optional(v.array(v.string()), []),
+    formDescription: v.optional(v.string(), ''),
+    formConfirmationMessage: v.optional(v.string(), ''),
+    openAt: v.optional(v.string(), ''),
+    closeAt: v.optional(v.string(), ''),
+    isPublic: v.optional(v.boolean(), true)
   }),
   v.forward(
     v.partialCheck(
@@ -276,7 +309,17 @@ export type StaffParticipationTypeEditFormData = v.InferOutput<typeof staffParti
  */
 export const staffPageFormSchema = v.object({
   title: requiredTextSchema('タイトル'),
-  body: requiredTextSchema('本文')
+  body: requiredTextSchema('本文'),
+  notes: v.optional(v.string(), ''),
+  isPinned: v.optional(v.boolean(), false),
+  isPublic: v.optional(v.boolean(), true),
+  viewableTags: v.optional(v.array(v.string()), []),
+  documentIds: v.optional(v.array(v.string()), []),
+  sendEmails: v.optional(v.boolean(), false),
+  publishedAt: v.pipe(
+    v.optional(v.string(), ''),
+    v.transform((value) => value || null)
+  )
 })
 
 export type StaffPageFormData = v.InferOutput<typeof staffPageFormSchema>
@@ -297,9 +340,10 @@ export type StaffTagFormData = v.InferOutput<typeof staffTagFormSchema>
 export const staffPlaceFormSchema = v.object({
   name: requiredTextSchema('場所名'),
   type: v.pipe(
-    v.number(),
+    v.number('タイプを選択してください'),
     v.check((val) => [1, 2, 3].includes(val), 'タイプを選択してください')
-  )
+  ),
+  notes: v.optional(v.string(), '')
 })
 
 export type StaffPlaceFormData = v.InferOutput<typeof staffPlaceFormSchema>

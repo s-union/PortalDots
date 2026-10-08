@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { FieldControl } from '@/components/forms/field-control'
 import { computed, ref, watch } from 'vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { toUserId } from '@/lib/api/schema'
@@ -17,7 +18,8 @@ const {
   id,
   ariaInvalid,
   ariaDescribedBy,
-  initialSearchQuery = ''
+  initialSearchQuery = '',
+  control
 } = defineProps<{
   modelValue: string[]
   disabled?: boolean
@@ -25,6 +27,7 @@ const {
   placeholder?: string
   emptyMessage?: string
   id?: string
+  control?: FieldControl
   ariaInvalid?: boolean
   ariaDescribedBy?: string
   initialSearchQuery?: string
@@ -152,10 +155,11 @@ function handleKeydown(event: KeyboardEvent) {
 
     <div class="grid gap-2">
       <input
-        :id="id"
+        v-bind="control"
+        :id="id ?? control?.id"
         v-model="searchQuery"
-        :aria-describedby="ariaDescribedBy"
-        :aria-invalid="ariaInvalid"
+        :aria-describedby="ariaDescribedBy ?? control?.['aria-describedby']"
+        :aria-invalid="control?.['aria-invalid'] ?? ariaInvalid"
         :disabled="disabled"
         :name="name"
         :placeholder="placeholder"

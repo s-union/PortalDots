@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { FieldControl } from '@/components/forms/field-control'
 import { computed, ref } from 'vue'
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { cn } from '@/lib/ui/cn'
@@ -15,7 +16,8 @@ const {
   allowCustom = true,
   id,
   ariaInvalid,
-  ariaDescribedBy
+  ariaDescribedBy,
+  control
 } = defineProps<{
   modelValue: string[]
   availableTags: string[]
@@ -26,6 +28,7 @@ const {
   emptyMessage?: string
   allowCustom?: boolean
   id?: string
+  control?: FieldControl
   ariaInvalid?: boolean
   ariaDescribedBy?: string
 }>()
@@ -156,10 +159,11 @@ function handleKeydown(event: KeyboardEvent) {
 
     <label class="grid gap-2 text-base text-body">
       <input
-        :id="id"
+        v-bind="control"
+        :id="id ?? control?.id"
         v-model="searchQuery"
-        :aria-describedby="ariaDescribedBy"
-        :aria-invalid="ariaInvalid"
+        :aria-describedby="ariaDescribedBy ?? control?.['aria-describedby']"
+        :aria-invalid="control?.['aria-invalid'] ?? ariaInvalid"
         :disabled="disabled"
         :name="name"
         :placeholder="placeholder"

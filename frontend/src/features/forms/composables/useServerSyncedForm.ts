@@ -14,9 +14,9 @@ import {
   type FormStore,
   type ValidationMode
 } from '@formisch/vue'
-import { onScopeDispose, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import { nextTick, onScopeDispose, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import type * as v from 'valibot'
-import { unwrapValidationError } from '@/lib/api/validation'
+import { focusSubmitErrors, setSubmitErrors } from './form-errors'
 import {
   fields,
   read,
@@ -100,9 +100,9 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
     for (const field of fields(input)) {
       const keepInput =
         !replace &&
-        (submitted
-          ? !equal(getInput<SyncedFormSchema, SyncedFieldPath>(fieldStore, field), read(submitted, field.path))
-          : isDirty<SyncedFormSchema, SyncedFieldPath>(fieldStore, field))
+        isDirty<SyncedFormSchema, SyncedFieldPath>(fieldStore, field) &&
+        (!submitted ||
+          !equal(getInput<SyncedFormSchema, SyncedFieldPath>(fieldStore, field), read(submitted, field.path)))
       reset<SyncedFormSchema, SyncedFieldPath>(fieldStore, {
         ...field,
         keepInput,
@@ -153,20 +153,12 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
     } catch (error) {
       if (!isCurrent(current.request)) return
       transition({ type: 'failed' })
-      setErrors(form, {
-        errors: [options.errorMessage?.(error) ?? (error instanceof Error ? error.message : '保存に失敗しました。')]
-      })
-      const validation = unwrapValidationError(error)
-      for (const field of fields(context.input)) {
-        const messages = validation?.errors[field.path.join('.')]
-        const first = messages?.[0]
-        if (
-          messages &&
-          first &&
-          equal(getInput<SyncedFormSchema, SyncedFieldPath>(fieldStore, field), read(current.input, field.path))
-        )
-          setErrors<SyncedFormSchema, SyncedFieldPath>(fieldStore, { ...field, errors: [first, ...messages.slice(1)] })
-      }
+      setSubmitErrors(
+        fieldStore,
+        error,
+        options.errorMessage?.(error) ?? (error instanceof Error ? error.message : '保存に失敗しました。'),
+        current.input
+      )
     }
   })
   async function submitEvent(event?: SubmitEvent) {
@@ -190,7 +182,12 @@ export function useServerSyncedForm<T extends SyncedFormSchema>(options: Options
       setErrors(form, { errors: null })
       await submit()
       const finished = submission.current
-      if (finished.status === 'disposed' || finished.status === 'failed') return
+      if (finished.status === 'disposed') return
+      if (finished.status === 'failed') {
+        await nextTick()
+        if (form.errors) focusSubmitErrors(fieldStore, toValue(options.focusOrder))
+        return
+      }
       request = finished.status === 'queued' ? finished.request : undefined
       transition({ type: 'idle' })
       if (request && isCurrent(request) && toValue(options.paused)) {
