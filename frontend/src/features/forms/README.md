@@ -1,23 +1,25 @@
-# Schema-based form editor
+# Form lifecycle and schema-based editor
 
 API questions are compiled into a Valibot schema and ordered UI metadata. Formisch owns input, validation, dirty state, and submission state. The renderer selects PortalDots controls from the metadata; Formisch does not generate those controls itself.
 
 ## Before and after
 
-| Concern                   | Previous implementation                                  | Current implementation                                                     |
-| ------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Input                     | `Record<string, string \| string[]>`                     | `{ text: Record<string, string>, choices: Record<string, string[]> }`      |
-| Field bindings            | A union-valued control and runtime narrowing             | Separate string and checkbox controls with typed Formisch paths            |
-| Background refresh        | Preserve all input if any field is dirty                 | Preserve dirty fields and accept server changes to clean fields            |
-| Successful save           | Preserve all input if anything changed during submission | Preserve only fields that differ from the submitted snapshot               |
-| Question structure change | Remount and discard current edits                        | Remount with the latest baseline and compatible dirty values               |
-| Answer validation         | Different rules and coverage across pages                | The same compiled schema on all four dynamic-answer screens                |
-| Circle detail             | Separate basic-info and answer validation stores         | One schema and Formisch store for basic information and answers            |
-| Circle creation           | Manual basic baseline and a pre-validation bridge        | One store for validation, dirty state, and submission of both parts        |
-| Registration email        | Reactive input and a custom validation composable        | Direct `useForm` and `Field`, without the grouped editor                   |
-| Question authoring        | Replace every editable question after each refresh       | One Formisch store per question ID, retaining dirty fields and raw options |
+| Concern                   | Previous implementation                                            | Current implementation                                                     |
+| ------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Input                     | `Record<string, string \| string[]>`                               | `{ text: Record<string, string>, choices: Record<string, string[]> }`      |
+| Field bindings            | A union-valued control and runtime narrowing                       | Separate string and checkbox controls with typed Formisch paths            |
+| Background refresh        | Preserve all input if any field is dirty                           | Preserve dirty fields and accept server changes to clean fields            |
+| Successful save           | Preserve all input if anything changed during submission           | Preserve only fields that differ from the submitted snapshot               |
+| Question structure change | Remount and discard current edits                                  | Remount with the latest baseline and compatible dirty values               |
+| Answer validation         | Different rules and coverage across pages                          | The same compiled schema on all four dynamic-answer screens                |
+| Circle detail             | Separate basic-info and answer validation stores                   | One schema and Formisch store for basic information and answers            |
+| Circle creation           | Manual basic baseline and a pre-validation bridge                  | One store for validation, dirty state, and submission of both parts        |
+| Fixed forms               | Separate touched, debounce, validation and submission coordination | Schema-typed Formisch stores and shared native-control bindings            |
+| Question authoring        | Replace every editable question after each refresh                 | One Formisch store per question ID, retaining dirty fields and raw options |
 
 The API contract remains flat. `answerFormInputToDraft` performs the conversion at the submission boundary and preserves question order for the legacy body summary. Numeric answers remain strings; their schema validates integer bounds.
+
+Text and numeric validation examines trimmed input, matching the server's required-field and character-count rules while preserving raw drafts. Select, radio, and checkbox validation rejects values removed from a nonempty option list. Definition refreshes retain those selections visibly so users can correct them; checkbox users can remove obsolete selections. Radio and checkbox groups use fieldsets and legends, and each input references its description and error. Inherited, locked circle group names bypass editable-name validation, matching the backend's permission-dependent validation.
 
 ## Responsibilities
 
@@ -25,6 +27,9 @@ The API contract remains flat. `answerFormInputToDraft` performs the conversion 
 - `AnswerFormEditor.vue` adapts answer data and API drafts to the shared form lifecycle.
 - `SchemaFormEditor.vue` manages schema changes and carries edits between sessions.
 - `SchemaFormSession.vue` gives each schema structure its own Formisch lifecycle and exposes the store through a typed slot.
+- `useSubmitForm.ts` coordinates fixed-form submission, duplicate guards, success messages and API errors using Formisch state.
+- `FormischField.vue` binds schema-typed fields to native registration, associated labels, errors and descriptions without a second validation store. `DateTimeInput.vue` adapts the existing timestamp conversion.
+- `form-errors.ts` attaches field errors only when current raw input still matches the submitted snapshot, and focuses registered controls in display order.
 - `useServerSyncedForm.ts` owns server refresh reconciliation, submitted-snapshot acceptance, request ordering, scope invalidation, and validation focus for flat and grouped input.
 - `server-synced-form-fields.ts` owns schema-derived leaf paths, flat/grouped field enumeration, raw value comparison, and compatible snapshot values.
 - `server-synced-form-state.ts` owns the submission state and transitions. State and request metadata are readonly; callers change the state through `transition`.
@@ -104,7 +109,46 @@ Circle creation now uses the same `{ basic, text, choices }` store. Its manual b
 
 The registration email screen is a separate fixed-form pilot. It calls `useForm` directly, binds its single field with `Field`, and uses Formisch's submitting state to block duplicate requests. It needs neither schema migration nor server-refresh reconciliation. Required-field validation and focus, successful submission, and preserving input for a retry are covered without the shared editor.
 
-Use Formisch directly for fixed forms that do not need server synchronization or changing question sets. Keep the grouped editor for the dynamic-answer and mixed circle screens, where the shared synchronization policy is needed. This supports adoption on these screens; the other fixed forms remain unchanged. The shared lifecycle supports flat fields or two-level groups of strings, string arrays, optional strings, and booleans. Numeric limits use raw strings with schema transformations. Raw numeric or more deeply nested inputs require a separate decision.
+Fixed forms use `useSubmitForm` when they only submit, or `useServerSyncedForm` when background refreshes must preserve edits. Profile, staff settings, participation types, notices and master editors reuse the existing synchronization lifecycle. Contact, password changes, new staff forms, new participation types, new notices and account completion use the smaller submit-only helper. Registration email remains a direct single-field Formisch caller. The dynamic-answer and mixed circle screens continue to use the grouped editor.
+
+All eleven former production callers of `useFormValidation` have migrated; its implementation and tests have been removed. The contact-category editor also replaces its always-valid custom callback with schema-bound fields. Its email schema trims and requires a value; email syntax remains server-validated because the server uses Go's `mail.ParseAddress`, whose accepted addresses differ from Valibot's email rule. No new dependency or API contract is required.
+
+`FormischField` supplies native `ref` and interaction handlers, plus application-written labels and ARIA. Custom markdown, checkbox, tag and user controls register their native inputs. A serialized `data-field-path` identifies an already-focused control even when its visible name differs from its schema path. Disabled and unmounted invalid controls are skipped. Static field names and input/output types are checked by the schema, including number fields and string arrays; typecheck regressions reject misspelled paths and incompatible values. Uploads remain separate operations and participate in the existing unsaved-input guard.
+
+The synchronization lifecycle supports flat fields or two-level groups of strings, string arrays, optional strings, booleans and numbers. Dynamic numeric answers and question limits still use raw strings with schema transformations. On refresh, dirty fields retain input while clean fields accept the server baseline. After a save, only fields that are still dirty and differ from the raw submitted snapshot retain input. This additional dirty check prevents a clean field updated by a refresh during saving from being mistaken for a later user edit. Source changes and disposed sessions ignore late save results; master editors also clear selection-specific messages and ignore late delete results from another selection.
+
+### Current usefulness assessment
+
+Formisch is useful in this application: one schema-typed field-state model now replaces the old touched/debounce validation implementation, and the existing synchronization policy serves the fixed editors as well as the dynamic editors. The benefit is supported by actual component behavior and removal of duplicate state management, rather than the library name alone.
+
+`form-lifecycle-contract.test.ts` mounts thirteen actual forms with native DOM controls and MSW requests. Twenty-six cases cover initial error visibility, invalid-request blocking and focus, duplicate submission, field-specific 422 errors with associated ARIA, corrected retry and reset/navigation. Within that contract file, five additional cases cover clean-field refreshes and edits during saving in three staff editors, profile refresh and password clearing, and a blank numeric draft plus typed numeric/tag-array submission. Shared flat/grouped lifecycle tests cover request ordering, source changes, interrupted validation and disposal. Master tests cover dirty text with clean colour refresh, clearing messages on selection changes, and ignoring a late deletion failure. Browser interactions cover native controls and markdown server-error focus and correction.
+
+Production size is measured after the repository formatter, against `aa5424ba79f6bd73b8a4ae5f03e865e2c34e28f5`. The count includes every changed/new `.ts` and `.vue` production file, including extracted helpers, imports, comments and blank lines. Tests (including `.test-d.ts`), stories, declarations and documentation are excluded. UTF-8 byte counts provide a second measure that is less sensitive to line wrapping.
+
+| Measure                                      |  Before | Current |     Difference |
+| -------------------------------------------- | ------: | ------: | -------------: |
+| Changed/new production files, combined lines |   6,309 |   5,950 |   −359 (−5.7%) |
+| Same production files, UTF-8 bytes           | 219,714 | 213,396 | −6,318 (−2.9%) |
+
+The new shared field, control type, date adapter, submit helper and error helper contribute 185 lines and are included above. The old validation implementation contributed 226 lines and is removed. The totals include the accompanying accessibility, schema and synchronization fixes; they do not isolate a library-only size effect. Adding shared code did not merely move page lines out of the count.
+
+Formisch supplies input, validation, dirty, touched, reset and submission state. Duplicate guards and ARIA bindings remain application code using that state. Valibot owns validation rules and normalization, and PortalDots owns refresh reconciliation, request ordering, permissions, attachments and navigation. The tested behavior could also be implemented manually, as the contact control below demonstrates. This assessment does not establish runtime performance, reduced future maintenance effort, or superiority over other form libraries.
+
+### Contact-only control comparison (historical)
+
+A temporary nine-case comparison mounted the contact page from `aa5424ba`, a minimally repaired version of that page, and the current page with the same API mocks and current shared validation schema. Keeping that schema constant separates the contact state changes from the new validation rules. The comparison observed:
+
+| Scenario                                | Before Formisch | Manual repair       | Current contact form |
+| --------------------------------------- | --------------- | ------------------- | -------------------- |
+| API calls from two simultaneous submits | 2               | 1                   | 1                    |
+| Required errors 400 ms after success    | Present         | Absent              | Absent               |
+| Focus on the first invalid field        | Unchanged       | Moved to that field | Moved to that field  |
+
+Formisch supplies the validation-to-submission state used by the application-written duplicate guard, resets interaction state together with values, and focuses invalid registered fields. The manual repair added 16 lines: a submission flag with `finally`, clearing touched state and errors before resetting values, and element references for invalid-field focus. It passed the same three scenarios, demonstrating that Formisch is not necessary for those fixes. That control did not implement the current form's field-specific 422 handling or ARIA markup, and the comparison does not establish equivalent behavior beyond the tested scenarios. The temporary comparison fixtures were removed; `contact.test.ts` retains regression coverage for the current behavior.
+
+In that initial contact-only iteration, production code grew from 198 to 253 lines across the page, component and composable while the old validation approach still existed elsewhere. That limited comparison justified lifecycle correctness, but did not establish net code reduction. The subsequent migration and current whole-change measurement above replace that earlier adoption limit; the 253-line figure is historical, not the current contact size.
+
+### Historical synchronization measurements
 
 The synchronization unification at `bacb0de9` and the subsequent responsibility split are measured against `8c1f00fe`. Line counts include imports, types, comments, and blank lines, and exclude tests and this documentation. Extracted production helpers remain included in the total:
 
@@ -117,13 +161,13 @@ The synchronization unification at `bacb0de9` and the subsequent responsibility 
 | `server-synced-form-state.ts`  |                  0 |                    0 |          77 |
 | Total                          |                293 |                  347 |         398 |
 
-There is now one per-field acceptance implementation and one transition function. Neither the facade nor the shared implementation needs type assertions; the previous grouped implementation already had no unsafe assertions and used one `as const` to preserve a path tuple. The 180-line target is unmet, so this change does not justify expanding Formisch to every form. Keep adoption limited to the current answer, question, and circle flows, plus the existing registration email pilot. Do not count the two thin adapters alone as a code-size reduction.
+That iteration produced one per-field acceptance implementation and one transition function, but did not meet its 180-line target or demonstrate a total size reduction. Neither the facade nor the shared implementation needed type assertions. These are historical measurements; the current migration reuses that existing lifecycle only where refresh reconciliation is needed and includes all new helpers in its totals.
 
 The split makes state ownership and path operations independently readable, and replaces recursive draining with an explicit loop. It does not reduce total production code. The registration email screen remains a direct Formisch user. Circle creation includes participation-type changes and dynamic answers, so it continues to use the shared editor rather than a simple fixed-form wrapper.
 
 Dynamic question IDs cannot be enumerated by TypeScript. Static group names and field value kinds are checked. `answer-form-schema.test-d.ts` and `circle-detail-form.test-d.ts` check the field and control contracts as part of the frontend typecheck, including rejection of unknown basic field names and incompatible input types.
 
-`SyncedFieldPath<TSchema>` derives literal leaf paths from raw schema input. `focusOrder` uses that type throughout the generic editor and session components; `NoInfer` prevents an invalid focus path from widening the schema. Runtime question IDs remain dynamic strings. The internal value union includes booleans because question authoring has an `isRequired` field; the public store still checks each field against its own schema type.
+`SyncedFieldPath<TSchema>` derives literal leaf paths from raw schema input. `focusOrder` uses that type throughout the generic editor and session components; `NoInfer` prevents an invalid focus path from widening the schema. Runtime question IDs remain dynamic strings. The internal value union includes booleans and numbers for fixed settings and question authoring; the public store still checks each field against its own schema type.
 
 `useServerSyncedForm.test-d.ts` checks that the shared lifecycle returns each caller's precise schema store, and rejects misspelled focus groups and fixed field names. `useServerSyncedForm.test.ts` runs the same contract suite against flat and grouped layouts: raw submitted snapshots, interrupted validation and native submitters, source changes, failed queued saves, consecutive queued saves, pauses during saving, disposal, optional-string draft restoration, and display-order focus for optional fields absent from initial input. Existing component and page tests continue to cover the rendered controls and adapters.
 
@@ -138,9 +182,9 @@ cd frontend && nr test --project=unit
 
 Regression coverage includes clean-field refreshes, edits made during a save, server-normalized values, schema migration, late responses, validation focus across both value groups, participation-type switches, URL defaults, inherited names, mixed-form validation, duplicate submissions, and successful saves without an answer. Storybook interaction tests exercise staff editing, circle creation, registration email submission, question autosave races and validation, and save-and-continue in Chromium with mocked API responses.
 
-Frontend checks and unit tests pass. Chromium interactions pass for simultaneous basic and answer validation, focus order, combined circle saves, and direct registration email submission. Targeted Storybook checks still have two accessibility failures that were reproduced before this follow-up:
+The current fixed-form follow-up passes typecheck, lint without diagnostics, formatter check, and all 797 unit tests across 140 files. Fourteen targeted Storybook files pass 34 Chromium cases with accessibility checks enabled, including the added notice-body server-error interaction. Previous browser coverage also exercised simultaneous basic and answer validation, focus order, combined circle saves, and direct registration email submission. Separate earlier Storybook runs found two accessibility failures reproduced before this follow-up:
 
 - The registration-denied warning has a color contrast ratio of 4.18 instead of 4.5. It was reproduced from commit `3da94d87` after waiting for the warning to render.
 - The circle detail leader notice has a color contrast ratio of 4.28 instead of 4.5. It was reproduced from commit `2e238680` with the same mixed-form fixture and a successful save that stays on the detail page.
 
-Accessibility checks remain enabled; real-API integration tests are separate from these mocked browser checks.
+Those two historical contrast cases were not part of the fourteen-file fixed-form browser run above. Accessibility checks remain enabled; real-API integration tests are separate from these mocked browser checks.
