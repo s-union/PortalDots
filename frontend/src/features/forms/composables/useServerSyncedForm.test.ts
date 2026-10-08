@@ -87,6 +87,52 @@ function setup(
 }
 
 describe.each(layouts)('useServerSyncedForm ($name)', (layout) => {
+  it('focuses server errors in display order after submission controls become enabled', async () => {
+    const descriptionAddress: Layout['field'] =
+      layout.name === 'flat' ? { path: ['description'] } : { path: ['text', 'description'] }
+    const error = new Error('Validation failed', {
+      cause: {
+        message: 'Invalid',
+        errors: {
+          [layout.field.path.join('.')]: ['Name error'],
+          [descriptionAddress.path.join('.')]: ['Description error']
+        }
+      }
+    })
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          const { form, submitEvent } = useServerSyncedForm({
+            schema: layout.schema,
+            input: layout.input('name', 'description'),
+            source: () => null,
+            sourceKey: 'a',
+            focusOrder: [descriptionAddress.path, layout.field.path],
+            saveInput: async () => {
+              throw error
+            }
+          })
+          const name = useField<SyncedFormSchema, SyncedFieldPath>(form, layout.field)
+          const description = useField<SyncedFormSchema, SyncedFieldPath>(form, descriptionAddress)
+          return () =>
+            h('form', { onSubmit: submitEvent }, [
+              h('input', { ...name.props, id: 'name', disabled: form.isSubmitting, value: name.input }),
+              h('input', {
+                ...description.props,
+                id: 'description',
+                disabled: form.isSubmitting,
+                value: description.input
+              })
+            ])
+        }
+      }),
+      { attachTo: document.body }
+    )
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.get('#description').element)
+  })
+
   it('focuses an invalid optional field in display order even when it was absent from initial input', async () => {
     const entries = v.object({
       name: v.pipe(v.string(), v.minLength(2)),

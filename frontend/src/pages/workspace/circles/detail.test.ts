@@ -121,6 +121,30 @@ describe('CircleDetailPage', () => {
     return { wrapper, router }
   }
 
+  it.each([false, true])('validates group readings only when they can be edited (%s)', async (canChangeGroupName) => {
+    const detail = { ...circleDetailFixture, canChangeGroupName, groupNameYomi: 'OLD GROUP' }
+    const payloads: unknown[] = []
+    server.use(
+      http.get('/v1/circles/current/detail', () => HttpResponse.json(detail)),
+      http.put('/v1/circles/current/detail', async ({ request }) => {
+        payloads.push(await request.json())
+        return HttpResponse.json({ ...detail, name: '更新した企画' })
+      })
+    )
+    const { wrapper } = await mountDetail(document.body)
+    await wrapper.get('input[name="name"]').setValue('更新した企画')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    if (canChangeGroupName) {
+      expect(payloads).toEqual([])
+      expect(wrapper.get('#circle-groupNameYomi-error').text()).toBe('ひらがなで入力してください')
+      expect(document.activeElement).toBe(wrapper.get('input[name="groupNameYomi"]').element)
+    } else {
+      expect(payloads).toEqual([expect.objectContaining({ groupNameYomi: 'OLD GROUP' })])
+      expect(wrapper.find('#circle-groupNameYomi-error').exists()).toBe(false)
+    }
+  })
+
   it('renders circle detail data', async () => {
     server.use(
       http.get('/v1/circles/current/detail', () => HttpResponse.json(circleDetailFixture)),

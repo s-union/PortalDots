@@ -762,6 +762,35 @@ describe('CircleCreatePage', () => {
     expect(router.currentRoute.value.path).toBe('/workspace/circles/members')
   })
 
+  it('creates a circle with inherited group names that do not meet editable-field validation', async () => {
+    setupDefaultHandlers()
+    const inherited = {
+      ...registrationFormFixture,
+      canChangeGroupName: false,
+      groupName: '旧団体',
+      groupNameYomi: 'OLD GROUP'
+    }
+    const payloads: unknown[] = []
+    server.use(
+      http.get('/v1/participation-types/pt-exhibit/registration-form', () => HttpResponse.json(inherited)),
+      http.post('/v1/circles', async ({ request }) => {
+        payloads.push(await request.json())
+        return HttpResponse.json(
+          { ...inherited, id: 'new-circle', name: 'テスト企画', nameYomi: 'てすときかく' },
+          { status: 201 }
+        )
+      })
+    )
+    const { wrapper, router } = await mountRegistration('/circles/new?participation_type=pt-exhibit')
+    await wrapper.get('input[name="name"]').setValue('テスト企画')
+    await wrapper.get('input[name="nameYomi"]').setValue('てすときかく')
+    expect(wrapper.get<HTMLInputElement>('input[name="groupNameYomi"]').element.disabled).toBe(true)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(payloads).toEqual([expect.objectContaining({ groupName: '旧団体', groupNameYomi: 'OLD GROUP' })])
+    expect(router.currentRoute.value.path).toBe('/workspace/circles/members')
+  })
+
   it('treats the URL selection and inherited names as defaults without warning on exit', async () => {
     setupDefaultHandlers()
     server.use(

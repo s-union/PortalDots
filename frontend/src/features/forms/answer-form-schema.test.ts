@@ -108,15 +108,46 @@ describe('buildAnswerFormSchema', () => {
     expect(v.safeParse(optionalSchema, choiceInput([])).success).toBe(true)
   })
 
-  it.each(['select', 'radio'] as const)(
-    'preserves required validation without restricting %s values to options',
-    (type) => {
-      const schema = buildAnswerFormSchema([createQuestion({ type, options: ['現在の選択肢'] })])
+  it.each(['select', 'radio'] as const)('rejects removed %s options while retaining required validation', (type) => {
+    const schema = buildAnswerFormSchema([createQuestion({ type, options: ['現在の選択肢'] })])
 
-      expect(v.safeParse(schema, textInput('')).issues?.[0].message).toBe('設問を入力してください')
-      expect(v.safeParse(schema, textInput('以前の選択肢')).success).toBe(true)
+    expect(v.safeParse(schema, textInput('')).issues?.[0].message).toBe('設問を入力してください')
+    expect(v.safeParse(schema, textInput('以前の選択肢')).issues?.[0].message).toBe(
+      '選択肢が変更されています。現在の選択肢から選び直してください'
+    )
+    expect(v.safeParse(schema, textInput('現在の選択肢')).success).toBe(true)
+    const optionalSchema = buildAnswerFormSchema([
+      createQuestion({ type, options: ['現在の選択肢'], isRequired: false })
+    ])
+    expect(v.safeParse(optionalSchema, textInput('')).success).toBe(true)
+    expect(v.safeParse(optionalSchema, textInput('以前の選択肢')).success).toBe(false)
+  })
+
+  it.each(['text', 'textarea', 'markdown', 'number', 'select', 'radio'] as const)(
+    'validates trimmed %s answers without rewriting the draft',
+    (type) => {
+      const question = createQuestion({ type, options: ['回答'], numberMin: type === 'number' ? 0 : null })
+      const schema = buildAnswerFormSchema([question])
+      const optionalSchema = buildAnswerFormSchema([{ ...question, isRequired: false }])
+      expect(v.safeParse(schema, textInput(' \n　 ')).success).toBe(false)
+      expect(v.safeParse(optionalSchema, textInput(' \n　 ')).success).toBe(true)
+      const value = type === 'number' ? ' 0 ' : ' 回答 '
+      expect(v.parse(schema, textInput(value))).toEqual(textInput(value))
     }
   )
+
+  it('counts text bounds after trimming like the server', () => {
+    const schema = buildAnswerFormSchema([createQuestion({ numberMin: 2, numberMax: 3 })])
+    expect(v.safeParse(schema, textInput(' あ ')).issues?.[0].message).toBe('2文字以上で入力してください')
+    expect(v.parse(schema, textInput(' 😀あ '))).toEqual(textInput(' 😀あ '))
+  })
+
+  it('rejects removed checkbox options and whitespace-only required selections', () => {
+    const schema = buildAnswerFormSchema([createQuestion({ type: 'checkbox', options: ['机', '椅子'] })])
+    expect(v.safeParse(schema, choiceInput(['机', '旧備品'])).success).toBe(false)
+    expect(v.safeParse(schema, choiceInput(['　', ' '])).issues?.[0].message).toBe('設問を選択してください')
+    expect(v.parse(schema, choiceInput([' 机 ']))).toEqual(choiceInput([' 机 ']))
+  })
 
   it('preserves presentation order while excluding headings and uploads from answer validation', () => {
     const schema = buildAnswerFormSchema([

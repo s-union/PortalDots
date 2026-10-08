@@ -78,6 +78,69 @@ function mountForm(
 }
 
 describe('WorkspaceFormAnswerForm', () => {
+  it.each(['select', 'radio', 'checkbox'] as const)(
+    'preserves a removed %s selection visibly and requires a correction after a refresh',
+    async (type) => {
+      const question = createQuestion({ id: toQuestionId('q-choice'), name: '備品', type, options: ['机', '椅子'] })
+      const { wrapper, saveAnswer } = mountForm({ form: createForm([question]) }, document.body)
+      if (type === 'select') await wrapper.get('select').setValue('机')
+      else await wrapper.get('input[value="机"]').setValue(true)
+      await wrapper.setProps({ form: createForm([{ ...question, options: ['椅子', '照明'] }]) })
+      await flushPromises()
+      expect(wrapper.text()).toContain('机（現在は選べません）')
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      expect(saveAnswer).not.toHaveBeenCalled()
+      expect(wrapper.text()).toContain('現在の選択肢から選び直してください')
+      if (type === 'select') {
+        expect(wrapper.get<HTMLSelectElement>('select').element.value).toBe('机')
+        await wrapper.get('select').setValue('椅子')
+      } else {
+        if (type === 'checkbox') {
+          wrapper.get<HTMLInputElement>('input[value="机"]').element.focus()
+          await wrapper.get('input[value="机"]').setValue(false)
+          expect(document.activeElement).toBe(wrapper.get('input[value="椅子"]').element)
+        }
+        await wrapper.get('input[value="椅子"]').setValue(true)
+      }
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      expect(saveAnswer).toHaveBeenCalledWith({ 'q-choice': type === 'checkbox' ? ['椅子'] : '椅子' })
+      expect(wrapper.text()).not.toContain('現在の選択肢から選び直してください')
+    }
+  )
+
+  it.each(['radio', 'checkbox'] as const)(
+    'labels the %s group and connects each focused input to its error',
+    async (type) => {
+      const { wrapper } = mountForm(
+        {
+          form: createForm([
+            createQuestion({
+              id: toQuestionId('q-choice'),
+              name: '備品',
+              description: '必要な備品を選択',
+              type,
+              options: ['机', '椅子']
+            })
+          ])
+        },
+        document.body
+      )
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      const group = wrapper.get('fieldset')
+      expect(group.get('legend').text()).toContain('備品')
+      expect(wrapper.find('label[for="q-choice"]').exists()).toBe(false)
+      for (const input of group.findAll('input')) {
+        expect(input.attributes('aria-invalid')).toBe('true')
+        expect(input.attributes('aria-describedby')).toBe('q-choice-description q-choice-error')
+      }
+      expect(wrapper.get('#q-choice-error').attributes('role')).toBeUndefined()
+      expect(document.activeElement).toBe(group.get('input').element)
+    }
+  )
+
   it('renders every question kind in definition order and submits only answer fields', async () => {
     const questions = [
       createQuestion({
