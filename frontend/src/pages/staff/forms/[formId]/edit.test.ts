@@ -153,12 +153,12 @@ describe('StaffFormEditPage', () => {
     await requiredTagButton.trigger('click')
     await wrapper.get('textarea[name="confirmationMessage"]').setValue('送信が完了しました。')
     const saveFormButton = wrapper
-      .findAll('button[type="button"]')
+      .findAll('button[type="submit"]')
       .find((button) => button.text().includes('変更を保存'))
     if (!saveFormButton) {
       throw new Error('save form button not found')
     }
-    await saveFormButton.trigger('click')
+    await wrapper.get('form').trigger('submit')
     await flushPromises()
 
     expect(updatedRequestBody).toMatchObject({
