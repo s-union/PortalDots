@@ -17,11 +17,17 @@ export interface LayoutRow {
   label?: string
   caption?: string
   testId?: string
+  /** Stack multiple controls in a single captioned settings row. */
+  stacked?: boolean
+  /** Compact label-to-control spacing used by existing text settings rows. */
+  compact?: boolean
 }
 
 /** A collapsible or plain group of layout items, rendered as `<details>` when `collapsible`. */
 export interface LayoutSection {
   section: string
+  /** Bordered disclosure used by the staff form create page. */
+  panel?: boolean
   description?: string
   collapsible?: boolean
   items: readonly LayoutItem[]
@@ -57,12 +63,13 @@ export interface LayoutField {
 export interface LayoutDisplay {
   display: string
   label: string
+  disabled?: boolean
 }
 
 /** A field key (dotted path for nested groups, e.g. `'basic.name'`), or a composite layout item. */
 export type LayoutItem = string | LayoutField | LayoutRow | LayoutSection | LayoutSlot | LayoutHeading | LayoutDisplay
 
-export type FormLayoutVariant = 'stack' | 'settings' | 'list'
+export type FormLayoutVariant = 'stack' | 'settings' | 'list' | 'editor'
 
 /** Attaches form-level layout metadata to an object schema: `v.pipe(v.object({...}), formLayout([...]))`. */
 export function formLayout<TInput = never>(

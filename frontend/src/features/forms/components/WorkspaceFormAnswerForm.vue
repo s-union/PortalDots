@@ -59,6 +59,7 @@ async function saveDraft(draft: FormAnswerDraft) {
       </div>
 
       <SchemaAnswerFields
+        wrap-controls
         :schema="schema"
         :form="answerForm"
         :answer="answer"

@@ -55,6 +55,6 @@ const { form, errorMessage, successMessage, handleSave, handleDelete, isSaving, 
     @save="handleSave"
     @delete="handleDelete"
   >
-    <SchemaFormFields :of="form" :schema="staffTagFormSchema" />
+    <SchemaFormFields required-label="" :of="form" :schema="staffTagFormSchema" />
   </StaffMasterEditorShell>
 </template>

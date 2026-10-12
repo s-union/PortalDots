@@ -160,23 +160,31 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
   <template v-for="(item, index) in items" :key="layoutItemKey(item, index)">
     <!-- Plain field key, wrapped in a settings-variant caption row when applicable. -->
     <SettingsRow v-if="isPlainField(item) && variant === 'settings'" :data-testid="plainFieldTestId(item)">
-      <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
+      <div
+        class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-x-6 md:gap-y-2"
+        :class="fieldInfo(plainFieldKey(item)).caption ? 'md:items-start' : 'md:items-center'"
+      >
         <div class="space-y-1">
           <label
             v-if="!fieldInfo(plainFieldKey(item)).isFieldset"
             :for="fieldInfo(plainFieldKey(item)).id"
-            class="text-base font-semibold text-body"
+            class="block text-base font-semibold text-body"
           >
             {{ fieldInfo(plainFieldKey(item)).label }}
-            <span v-if="fieldInfo(plainFieldKey(item)).required" class="text-danger">{{ requiredLabel ?? '*' }}</span>
+            <span v-if="fieldInfo(plainFieldKey(item)).required && (requiredLabel ?? '*')" class="text-danger">{{
+              requiredLabel ?? '*'
+            }}</span>
           </label>
           <p v-else :id="fieldInfo(plainFieldKey(item)).labelId" class="text-base font-semibold text-body">
             {{ fieldInfo(plainFieldKey(item)).label }}
-            <span v-if="fieldInfo(plainFieldKey(item)).required" class="text-danger">{{ requiredLabel ?? '*' }}</span>
+            <span v-if="fieldInfo(plainFieldKey(item)).required && (requiredLabel ?? '*')" class="text-danger">{{
+              requiredLabel ?? '*'
+            }}</span>
           </p>
           <p v-if="fieldInfo(plainFieldKey(item)).caption" class="text-xs text-muted-2">
             {{ fieldInfo(plainFieldKey(item)).caption }}
           </p>
+          <slot :name="`caption:${plainFieldKey(item)}`" />
         </div>
         <!--
           A single wrapping element: SchemaFormField renders `before`/FormischField/`after` as
@@ -232,6 +240,35 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
         </template>
       </SchemaFormField>
     </div>
+    <div
+      v-else-if="isPlainField(item) && variant === 'editor'"
+      class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]"
+    >
+      <label
+        v-if="!fieldInfo(plainFieldKey(item)).isFieldset"
+        :for="fieldInfo(plainFieldKey(item)).id"
+        class="pt-2 text-base text-body sm:text-right"
+        ><slot :name="`label:${plainFieldKey(item)}`">{{ fieldInfo(plainFieldKey(item)).label }}</slot></label
+      >
+      <span v-else :id="fieldInfo(plainFieldKey(item)).labelId" class="pt-1 text-base text-body sm:text-right">{{
+        fieldInfo(plainFieldKey(item)).label
+      }}</span>
+      <SchemaFormField
+        :of="of"
+        :schema="schema"
+        :field-key="plainFieldKey(item)"
+        :disabled="disabled"
+        :override="override(plainFieldKey(item))"
+        hide-label
+        :label-id="fieldInfo(plainFieldKey(item)).labelId"
+        @blur="emit('fieldBlur', plainFieldKey(item))"
+        @change="emit('fieldChange', plainFieldKey(item))"
+      >
+        <template v-if="hasSlot(`after:${plainFieldKey(item)}`)" #after
+          ><slot :name="`after:${plainFieldKey(item)}`"
+        /></template>
+      </SchemaFormField>
+    </div>
     <SchemaFormField
       v-else-if="isPlainField(item)"
       :of="of"
@@ -255,13 +292,20 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
     </SchemaFormField>
 
     <!-- Fields (and read-only display items) placed side by side. -->
-    <SettingsRow v-else-if="'row' in item && variant === 'settings'" :data-testid="item.testId">
-      <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
+    <SettingsRow
+      v-else-if="'row' in item && variant === 'settings'"
+      v-show="item.row.some((entry) => typeof entry !== 'string' || !override(entry)?.hidden)"
+      :data-testid="item.testId"
+    >
+      <div
+        class="grid md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6"
+        :class="item.compact ? 'gap-3 md:items-start' : 'gap-4'"
+      >
         <div v-if="item.label || item.caption" class="space-y-1">
           <p v-if="item.label" class="text-base font-semibold text-body">{{ item.label }}</p>
           <p v-if="item.caption" class="text-xs text-muted-2">{{ item.caption }}</p>
         </div>
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="grid gap-4" :class="{ 'md:grid-cols-2': !item.stacked }">
           <template v-for="entry in item.row" :key="rowItemKey(entry)">
             <SchemaFormField
               v-if="typeof entry === 'string'"
@@ -284,6 +328,7 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
               <label :for="`display-${entry.display}`" class="font-semibold">{{ displayLabel(entry) }}</label>
               <input
                 :id="`display-${entry.display}`"
+                :disabled="entry.disabled"
                 :value="displayValues?.[entry.display] ?? ''"
                 :aria-label="displayLabel(entry)"
                 :name="entry.display"
@@ -318,6 +363,7 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
           <label :for="`display-${entry.display}`" class="font-semibold">{{ displayLabel(entry) }}</label>
           <input
             :id="`display-${entry.display}`"
+            :disabled="entry.disabled"
             :value="displayValues?.[entry.display] ?? ''"
             :aria-label="displayLabel(entry)"
             :name="entry.display"
@@ -329,26 +375,33 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
     </div>
 
     <!-- A collapsible or plain group, recursing into its own items. -->
-    <details v-else-if="'section' in item && item.collapsible" class="grid gap-3">
-      <summary class="cursor-pointer text-lg font-semibold text-body">{{ item.section }}</summary>
-      <p v-if="item.description" class="text-sm text-muted">{{ item.description }}</p>
-      <SchemaFormFields
-        :of="of"
-        :schema="schema"
-        :disabled="disabled"
-        :variant="variant"
-        :required-label="requiredLabel"
-        :overrides="overrides"
-        :display-values="displayValues"
-        :display-labels="displayLabels"
-        :layout="item.items"
-        @field-blur="emit('fieldBlur', $event)"
-        @field-change="emit('fieldChange', $event)"
-      >
-        <template v-for="(_, slotName) in slots" #[slotName]="slotProps">
-          <slot :name="slotName" v-bind="slotProps ?? {}" />
-        </template>
-      </SchemaFormFields>
+    <details
+      v-else-if="'section' in item && item.collapsible"
+      :class="item.panel ? 'rounded border border-border bg-surface-light' : 'grid gap-3'"
+    >
+      <summary class="cursor-pointer font-semibold text-body" :class="item.panel ? 'px-4 py-3 text-base' : 'text-lg'">
+        {{ item.section }}
+      </summary>
+      <div :class="item.panel ? 'border-t border-border px-4 py-4' : 'contents'">
+        <p v-if="item.description" class="text-sm text-muted">{{ item.description }}</p>
+        <SchemaFormFields
+          :of="of"
+          :schema="schema"
+          :disabled="disabled"
+          :variant="variant"
+          :required-label="requiredLabel"
+          :overrides="overrides"
+          :display-values="displayValues"
+          :display-labels="displayLabels"
+          :layout="item.items"
+          @field-blur="emit('fieldBlur', $event)"
+          @field-change="emit('fieldChange', $event)"
+        >
+          <template v-for="(_, slotName) in slots" #[slotName]="slotProps">
+            <slot :name="slotName" v-bind="slotProps ?? {}" />
+          </template>
+        </SchemaFormFields>
+      </div>
     </details>
     <div v-else-if="'section' in item" class="grid gap-3">
       <h2 class="text-lg font-semibold text-body">{{ item.section }}</h2>
@@ -383,7 +436,7 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
     <!-- A read-only display row backed by `displayValues`/`displayLabels`, not the schema/form store. -->
     <SettingsRow v-else-if="'display' in item && variant === 'settings'">
       <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6">
-        <label :for="`display-${item.display}`" class="font-semibold">{{ displayLabel(item) }}</label>
+        <label :for="`display-${item.display}`" class="text-base font-semibold">{{ displayLabel(item) }}</label>
         <input
           :id="`display-${item.display}`"
           :value="displayValues?.[item.display] ?? ''"
@@ -398,6 +451,7 @@ const listItemClass = 'border-b border-border px-6 py-5 last:border-b-0'
       <label :for="`display-${item.display}`" class="font-semibold">{{ displayLabel(item) }}</label>
       <input
         :id="`display-${item.display}`"
+        :disabled="item.disabled"
         :value="displayValues?.[item.display] ?? ''"
         :aria-label="displayLabel(item)"
         :name="item.display"

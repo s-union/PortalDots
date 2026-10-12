@@ -217,18 +217,20 @@ function downloadHref(questionId: string) {
       <SettingsSection title="参加登録フォーム">
         <div v-if="questions.length === 0" class="px-6 py-5 text-base text-muted">追加の設問はありません。</div>
 
-        <SchemaAnswerFields
-          :schema="schema"
-          :form="answerForm"
-          :answer="detailQuery.data.value.answer"
-          :disabled="!canEdit"
-          :selected-files="selectedFiles"
-          :upload-pending="uploadMutation.isPending.value"
-          :upload-error-messages="uploadErrorMessages"
-          :download-href="downloadHref"
-          @upload="handleUploadFile"
-          @file-change="handleFileChange"
-        />
+        <div class="grid gap-0 [&>div:last-child]:border-b">
+          <SchemaAnswerFields
+            :schema="schema"
+            :form="answerForm"
+            :answer="detailQuery.data.value.answer"
+            :disabled="!canEdit"
+            :selected-files="selectedFiles"
+            :upload-pending="uploadMutation.isPending.value"
+            :upload-error-messages="uploadErrorMessages"
+            :download-href="downloadHref"
+            @upload="handleUploadFile"
+            @file-change="handleFileChange"
+          />
+        </div>
 
         <template #footer>
           <div class="space-y-4">

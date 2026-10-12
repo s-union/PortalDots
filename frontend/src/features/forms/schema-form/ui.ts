@@ -12,6 +12,12 @@ export interface FieldOption {
 }
 
 interface FieldUiCommon {
+  /** Label structure and required marker presentation, independent of native validation. */
+  as?: 'label' | 'div' | 'fieldset'
+  requiredLabel?: string
+  labelVariant?: 'answer'
+  helperAs?: 'span' | 'p'
+  helperClass?: string
   /** Extra class applied to the rendered `<label>`/`<legend>`. */
   labelClass?: string
   /** Extra class applied to the rendered control element. */

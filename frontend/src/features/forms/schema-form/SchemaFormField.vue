@@ -66,7 +66,7 @@ function withEmittedEvents(control: FieldControl): FieldControl {
 </script>
 
 <template>
-  <template v-if="!override?.hidden">
+  <div v-if="!override?.hidden" class="grid gap-2">
     <slot name="before" />
     <FormischField
       v-slot="{ field, control }"
@@ -75,11 +75,16 @@ function withEmittedEvents(control: FieldControl): FieldControl {
       :id="ui.id ?? fieldKey"
       :label="override?.label ?? ui.label"
       :helper="override?.helper ?? ui.helper"
+      :helper-as="ui.helperAs"
+      :helper-class="ui.helperClass"
+      :wrap-control="override?.wrapControl"
+      hide-untouched-errors
       :required="required"
-      :required-label="requiredLabel"
+      :required-label="ui.requiredLabel ?? requiredLabel"
       :label-class="ui.labelClass"
-      :as="isFieldsetControl(ui.control) ? 'fieldset' : 'div'"
-      :hide-label="hideLabel"
+      :label-variant="ui.labelVariant"
+      :as="ui.as ?? (isFieldsetControl(ui.control) ? 'fieldset' : 'div')"
+      :hide-label="hideLabel || override?.hideLabel"
       :aria-labelledby="labelId"
       :disabled="effectiveDisabled"
     >
@@ -97,5 +102,5 @@ function withEmittedEvents(control: FieldControl): FieldControl {
       </slot>
     </FormischField>
     <slot name="after" />
-  </template>
+  </div>
 </template>

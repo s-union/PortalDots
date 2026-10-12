@@ -191,6 +191,7 @@ export const contactFormSchema = v.object({
       control: 'checkbox',
       variant: 'card',
       label: '返信内容の共有先',
+      labelClass: 'mb-2',
       checkboxLabel: '副責任者にもメールで共有する（CC）',
       description: 'チェックを外すと送信者のみに確認メールが送信されます。'
     })
@@ -217,20 +218,43 @@ export const userRegistrationFormSchema = v.pipe(
         label: '名前',
         autocomplete: 'name',
         placeholder: '姓 名',
+        as: 'label',
+        requiredLabel: '',
         labelClass: 'font-semibold'
       })
     ),
     nameYomi: v.pipe(
       nameYomiSchema,
-      fieldUi({ control: 'text', label: '名前(よみ)', placeholder: 'せい めい', labelClass: 'font-semibold' })
+      fieldUi({
+        control: 'text',
+        label: '名前(よみ)',
+        placeholder: 'せい めい',
+        as: 'label',
+        requiredLabel: '',
+        labelClass: 'font-semibold'
+      })
     ),
     contactEmail: v.pipe(
       optionalEmailSchema,
-      fieldUi({ control: 'email', label: '連絡先メールアドレス', autocomplete: 'email', labelClass: 'font-semibold' })
+      fieldUi({
+        control: 'email',
+        label: '連絡先メールアドレス',
+        autocomplete: 'email',
+        as: 'label',
+        requiredLabel: '',
+        labelClass: 'font-semibold'
+      })
     ),
     phoneNumber: v.pipe(
       phoneNumberSchema,
-      fieldUi({ control: 'tel', label: '連絡先電話番号', autocomplete: 'tel', labelClass: 'font-semibold' })
+      fieldUi({
+        control: 'tel',
+        label: '連絡先電話番号',
+        autocomplete: 'tel',
+        as: 'label',
+        requiredLabel: '',
+        labelClass: 'font-semibold'
+      })
     ),
     password: v.pipe(
       passwordSchema,
@@ -239,6 +263,8 @@ export const userRegistrationFormSchema = v.pipe(
         label: 'パスワード',
         autocomplete: 'new-password',
         placeholder: '8文字以上（英字・数字を含む）',
+        as: 'label',
+        requiredLabel: '',
         labelClass: 'font-semibold'
       })
     ),
@@ -249,6 +275,8 @@ export const userRegistrationFormSchema = v.pipe(
         label: 'パスワード(確認)',
         autocomplete: 'new-password',
         required: true,
+        as: 'label',
+        requiredLabel: '',
         labelClass: 'font-semibold'
       })
     )
@@ -267,8 +295,8 @@ export const userRegistrationFormSchema = v.pipe(
   formLayout([
     {
       row: [
-        { display: 'studentId', label: '学籍番号' },
-        { display: 'univemail', label: '大学メールアドレス' }
+        { display: 'studentId', label: '学籍番号', disabled: true },
+        { display: 'univemail', label: '大学メールアドレス', disabled: true }
       ]
     },
     { row: ['name', 'nameYomi'] },
@@ -290,7 +318,10 @@ export const registrationStartFormSchema = v.object({
       label: '大学メールアドレス',
       autocomplete: 'email',
       id: 'register-email',
-      labelClass: 'font-semibold'
+      helperAs: 'p',
+      as: 'label',
+      requiredLabel: '',
+      labelClass: 'font-semibold leading-7'
     })
   )
 })
@@ -337,6 +368,7 @@ export const circleRegistrationFormSchema = v.object({
     fieldUi({
       control: 'text',
       label: '企画名（よみ）',
+      as: 'label',
       labelClass: 'font-semibold',
       placeholder: 'ひらがなで入力',
       id: 'circle-nameYomi',
@@ -359,6 +391,7 @@ export const circleRegistrationFormSchema = v.object({
     fieldUi({
       control: 'text',
       label: '企画を出店する団体の名称（よみ）',
+      as: 'label',
       labelClass: 'font-semibold',
       placeholder: 'ひらがなで入力',
       id: 'circle-groupNameYomi',
@@ -458,6 +491,7 @@ export const staffFormSchema = v.pipe(
       fieldUi({
         control: 'checkbox',
         label: '公開設定',
+        labelClass: 'mb-2',
         checkboxLabel: '公開する',
         helper:
           'フォームの内容を公開した場合でも、上記の受付期間内ではない場合、ユーザーはフォームに回答したり、回答内容を編集したりできません。',
@@ -490,8 +524,8 @@ export const staffFormSchema = v.pipe(
     'isPublic',
     'answerableTags',
     'staffNotificationUserIds',
-    { section: 'フォームの説明', collapsible: true, items: ['description'] },
-    { section: '回答後に表示する内容', collapsible: true, items: ['confirmationMessage'] }
+    { section: 'フォームの説明', collapsible: true, panel: true, items: ['description'] },
+    { section: '回答後に表示する内容', collapsible: true, panel: true, items: ['confirmationMessage'] }
   ])
 )
 

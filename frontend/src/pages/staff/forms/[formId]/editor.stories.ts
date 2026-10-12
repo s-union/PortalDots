@@ -143,7 +143,7 @@ export const AutosavePreservesDraft: Story = {
     await waitFor(() => expect(canvas.getByRole('button', { name: /^≡\s*一行入力$/ })).toBeEnabled())
     await expect(options).toHaveValue('  選択 A  \n選択 A\n\n選択 B\n')
     await expect(canvas.getByText('未保存の変更があります')).toBeVisible()
-    await userEvent.click(second.getByRole('button', { name: /^保存$/ }))
+    await userEvent.tab()
     await waitFor(() => expect(options).toHaveValue('選択 A\n選択 B'))
     await expect(submittedPayloads).toEqual([
       {
@@ -172,7 +172,7 @@ export const AutosavePreservesDraft: Story = {
     await expect(canvas.queryByText('未保存の変更があります')).not.toBeInTheDocument()
 
     await userEvent.clear(second.getByRole('textbox', { name: '設問名' }))
-    await userEvent.click(second.getByRole('button', { name: /^保存$/ }))
+    await userEvent.tab()
     await expect(second.getByText('設問名を入力してください')).toBeVisible()
     await expect(second.getByRole('textbox', { name: '設問名' })).toHaveFocus()
     await expect(submittedPayloads).toHaveLength(2)

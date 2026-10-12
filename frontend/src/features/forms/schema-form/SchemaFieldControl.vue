@@ -114,15 +114,21 @@ async function handleCheckboxGroupChange(event: Event) {
   >
     <div
       v-if="ui.prefix || override?.prefix || ui.suffix || override?.suffix"
-      class="grid grid-flow-col items-center gap-2"
-      style="grid-template-columns: auto minmax(0, 1fr) auto"
+      class="grid gap-2 sm:items-center"
+      :class="
+        ui.prefix || override?.prefix
+          ? ui.suffix || override?.suffix
+            ? 'sm:grid-cols-[auto_minmax(0,1fr)_auto]'
+            : 'sm:grid-cols-[auto_minmax(0,1fr)]'
+          : 'sm:grid-cols-[minmax(0,1fr)_auto]'
+      "
     >
       <span v-if="ui.prefix || override?.prefix" class="text-base text-muted">{{ override?.prefix ?? ui.prefix }}</span>
       <input
         v-bind="control"
         v-model="text"
         :autocomplete="ui.autocomplete"
-        :class="ui.inputClass"
+        :class="override?.inputClass ?? ui.inputClass"
         :disabled="disabled"
         :name="name"
         :placeholder="override?.placeholder ?? ui.placeholder"
@@ -137,7 +143,7 @@ async function handleCheckboxGroupChange(event: Event) {
       v-bind="control"
       v-model="text"
       :autocomplete="ui.autocomplete"
-      :class="ui.inputClass"
+      :class="override?.inputClass ?? ui.inputClass"
       :disabled="disabled"
       :name="name"
       :placeholder="override?.placeholder ?? ui.placeholder"
@@ -150,7 +156,7 @@ async function handleCheckboxGroupChange(event: Event) {
   <input
     v-else-if="ui.control === 'number' && ui.stringValue"
     v-bind="control"
-    :class="ui.inputClass"
+    :class="override?.inputClass ?? ui.inputClass"
     :disabled="disabled"
     :max="ui.max"
     :min="ui.min"
@@ -167,7 +173,7 @@ async function handleCheckboxGroupChange(event: Event) {
     v-else-if="ui.control === 'number'"
     v-bind="control"
     v-model.number="numberInput"
-    :class="ui.inputClass"
+    :class="override?.inputClass ?? ui.inputClass"
     :disabled="disabled"
     :max="ui.max"
     :min="ui.min"
@@ -183,7 +189,7 @@ async function handleCheckboxGroupChange(event: Event) {
     v-else-if="ui.control === 'textarea'"
     v-bind="control"
     v-model="text"
-    :class="ui.inputClass"
+    :class="override?.inputClass ?? ui.inputClass"
     :disabled="disabled"
     :name="name"
     :placeholder="override?.placeholder ?? ui.placeholder"
@@ -222,11 +228,11 @@ async function handleCheckboxGroupChange(event: Event) {
   </select>
 
   <div v-else-if="ui.control === 'radio'" class="grid gap-2">
-    <label v-if="unavailableValue" class="flex items-center gap-2 text-base text-body">
+    <label v-if="unavailableValue" class="flex items-center gap-3 text-base text-body">
       <input v-bind="control" v-model="text" :name="name" :value="unavailableValue" disabled type="radio" />
       {{ unavailableValue }}（現在は選べません）
     </label>
-    <label v-for="option in options()" :key="option.value" class="flex items-center gap-2 text-base text-body">
+    <label v-for="option in options()" :key="option.value" class="flex items-center gap-3 text-base text-body">
       <input
         v-bind="control"
         v-model="text"
@@ -243,6 +249,7 @@ async function handleCheckboxGroupChange(event: Event) {
   <CheckboxField
     v-if="ui.control === 'checkbox' && (ui.variant ?? 'default') === 'default'"
     :control="control"
+    :class="override?.inputClass ?? ui.inputClass"
     :disabled="disabled"
     :label="ui.checkboxLabel ?? ui.label"
     :model-value="(field.input as boolean | undefined) ?? false"
@@ -277,16 +284,16 @@ async function handleCheckboxGroupChange(event: Event) {
     <InfoBox v-else-if="options().length === 0 && (override?.emptyMessage ?? ui.emptyMessage)" class="text-muted">
       {{ override?.emptyMessage ?? ui.emptyMessage }}
     </InfoBox>
-    <div v-else ref="checkboxGroupRef" class="grid gap-2">
+    <div v-else ref="checkboxGroupRef" class="grid gap-2" :class="override?.inputClass ?? ui.inputClass">
       <label
         v-for="option in checkboxGroupOptions"
         :key="option.value"
-        class="flex items-start gap-3 text-base text-body"
+        class="flex gap-3 text-base text-body"
+        :class="option.description ? 'items-start' : 'items-center'"
       >
         <input
           v-bind="control"
           v-model="checkboxGroup"
-          class="mt-1"
           :disabled="disabled || option.disabled"
           :name="name"
           :value="option.value"
@@ -305,6 +312,10 @@ async function handleCheckboxGroupChange(event: Event) {
   <DateTimeInput
     v-else-if="ui.control === 'datetime'"
     :control="control"
+    :class="override?.inputClass ?? ui.inputClass"
+    :disabled="disabled"
+    :name="name"
+    :required="required"
     :model-value="field.input as string | undefined"
     @update:model-value="field.input = $event"
   />

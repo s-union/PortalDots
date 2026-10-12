@@ -32,9 +32,9 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
   const numberMinLabel = type === 'number' ? '最低数' : type === 'checkbox' ? '最低選択数' : '最小文字数'
   const numberMaxLabel = type === 'number' ? '最大数' : type === 'checkbox' ? '最大選択数' : '最大文字数'
 
-  const layout: LayoutItem[] = ['name']
+  const layout: LayoutItem[] = []
   if (type !== 'heading') layout.push('isRequired')
-  layout.push('description')
+  layout.push('name', 'description')
   if (hasOptions) layout.push('options')
   if (limits) layout.push('numberMin', 'numberMax')
   if (type === 'upload') layout.push('allowedTypes')
@@ -48,7 +48,9 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
         fieldUi({
           control: 'text',
           label: type === 'heading' ? '見出し' : '設問名',
-          id: fieldId(questionId, 'name')
+          id: fieldId(questionId, 'name'),
+          inputClass:
+            'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary'
         })
       ),
       isRequired: v.pipe(
@@ -57,6 +59,7 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
           control: 'checkbox',
           label: '回答必須か',
           checkboxLabel: 'この設問への回答は必須',
+          inputClass: 'gap-x-2',
           id: fieldId(questionId, 'isRequired')
         })
       ),
@@ -66,7 +69,8 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
         fieldUi({
           control: 'textarea',
           label: '説明',
-          inputClass: 'min-h-24',
+          inputClass:
+            'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary min-h-24',
           id: fieldId(questionId, 'description')
         })
       ),
@@ -76,7 +80,9 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
           control: 'number',
           label: numberMinLabel,
           stringValue: true,
-          id: fieldId(questionId, 'numberMin')
+          id: fieldId(questionId, 'numberMin'),
+          inputClass:
+            'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary'
         })
       ),
       numberMax: v.pipe(
@@ -85,7 +91,9 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
           control: 'number',
           label: numberMaxLabel,
           stringValue: true,
-          id: fieldId(questionId, 'numberMax')
+          id: fieldId(questionId, 'numberMax'),
+          inputClass:
+            'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary'
         })
       ),
       allowedTypes: v.pipe(
@@ -96,8 +104,9 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
           control: 'text',
           label: '許可される拡張子',
           placeholder: '例: png|jpg|jpeg|gif',
-          helper: '| 区切りで指定。画像の場合: png|jpg|jpeg|gif',
-          id: fieldId(questionId, 'allowedTypes')
+          id: fieldId(questionId, 'allowedTypes'),
+          inputClass:
+            'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary'
         })
       ),
       options: v.pipe(
@@ -107,9 +116,11 @@ export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' |
         fieldUi({
           control: 'textarea',
           label: '選択肢',
-          inputClass: 'min-h-24',
+          inputClass:
+            'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary min-h-24',
           placeholder: '1行に1つ選択肢を入力',
           helper: '改行区切りで選択肢を入力。',
+          helperClass: 'mt-1',
           id: fieldId(questionId, 'options')
         })
       )

@@ -260,6 +260,7 @@ async function handleSubmit(
           </div>
 
           <SchemaAnswerFields
+            wrap-controls
             v-else-if="registrationFormQuery.data.value"
             :schema="schema"
             :form="circleForm"

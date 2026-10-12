@@ -18,6 +18,7 @@ const { form, errorMessage, successMessage, savePassword, tabs, updatePasswordMu
         <SettingsRow>
           <div class="grid gap-4">
             <SchemaFormFields
+              required-label=""
               :of="form"
               :schema="passwordChangeFormSchema"
               :disabled="updatePasswordMutation.isPending.value"
@@ -35,7 +36,14 @@ const { form, errorMessage, successMessage, savePassword, tabs, updatePasswordMu
             <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
             <AlertMessage v-if="errorMessage" tone="danger">{{ errorMessage }}</AlertMessage>
             <div class="flex justify-center pt-2">
-              <BaseButton variant="primary" size="wide" weight="bold" :disabled="form.isSubmitting" type="submit">
+              <BaseButton
+                variant="primary"
+                size="lg"
+                class="min-w-40"
+                weight="bold"
+                :disabled="form.isSubmitting"
+                type="submit"
+              >
                 {{ form.isSubmitting ? '保存中...' : '保存' }}
               </BaseButton>
             </div>

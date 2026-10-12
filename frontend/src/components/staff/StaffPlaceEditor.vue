@@ -56,7 +56,7 @@ const { form, errorMessage, successMessage, handleSave, handleDelete, isSaving, 
     @delete="handleDelete"
   >
     <div class="grid gap-4">
-      <SchemaFormFields :of="form" :schema="staffPlaceFormSchema" />
+      <SchemaFormFields required-label="" :of="form" :schema="staffPlaceFormSchema" />
     </div>
   </StaffMasterEditorShell>
 </template>

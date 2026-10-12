@@ -53,7 +53,7 @@ const overrides = computed<FieldOverrides<typeof schema.entries>>(() => ({
 }))
 
 const layoutItems = computed<readonly LayoutItem[]>(() => [
-  ...(showLeader ? [{ display: 'leaderDisplayName', label: '企画責任者' }] : []),
+  ...(showLeader ? [{ display: 'leaderDisplayName', label: '企画責任者', disabled: true }] : []),
   'basic.name',
   'basic.nameYomi',
   'basic.groupName',

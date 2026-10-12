@@ -17,24 +17,35 @@ const {
   path,
   label,
   helper,
+  helperAs,
+  helperClass,
+  wrapControl,
   required,
   requiredLabel,
   labelClass,
+  labelVariant,
   as = 'div',
   id = useId(),
   hideLabel,
   ariaLabelledby,
-  disabled
+  disabled,
+  hideUntouchedErrors
 } = defineProps<{
   of: FormStore<TSchema>
   path: ValidPath<v.InferInput<NoInfer<TSchema>>, TPath>
   label: string
   helper?: string
+  helperAs?: 'span' | 'p'
+  helperClass?: string
+  wrapControl?: boolean
+  /** Preserve touched-field feedback until submission, which exposes all validation errors. */
+  hideUntouchedErrors?: boolean
   required?: boolean
   requiredLabel?: string
   labelClass?: string
+  labelVariant?: 'answer'
   id?: string
-  as?: 'div' | 'fieldset'
+  as?: 'label' | 'div' | 'fieldset'
   /** See `FormField`'s `hideLabel`. */
   hideLabel?: boolean
   /** See `FormField`'s `ariaLabelledby`. */
@@ -51,7 +62,9 @@ const field = useField(
   () => of,
   () => ({ path })
 )
-const presentsError = computed(() => !disabled && !!field.errors)
+const presentsError = computed(
+  () => !disabled && !!field.errors && (!hideUntouchedErrors || field.isTouched || field.isEdited || of.isSubmitted)
+)
 const control = computed(() => ({
   ...field.props,
   name: path.join('.'),
@@ -73,9 +86,13 @@ defineSlots<{
     :as="as"
     :label="label"
     :helper="helper"
+    :helper-as="helperAs"
+    :helper-class="helperClass"
+    :wrap-control="wrapControl"
     :required="required"
     :required-label="requiredLabel"
     :label-class="labelClass"
+    :label-variant="labelVariant"
     :error="presentsError ? field.errors?.[0] : undefined"
     :hide-label="hideLabel"
     :aria-labelledby="ariaLabelledby"

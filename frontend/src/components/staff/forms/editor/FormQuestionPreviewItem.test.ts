@@ -162,7 +162,7 @@ describe('FormQuestionPreviewItem', () => {
     await name.setValue('最後の編集')
     await name.trigger('blur')
     expect(save).toHaveBeenCalledTimes(1)
-    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('form').attributes('aria-busy')).toBe('true')
     first.resolve(question({ name: '最初の編集' }))
     await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(2))
     expect(save.mock.calls).toEqual([
@@ -173,7 +173,7 @@ describe('FormQuestionPreviewItem', () => {
     await flushPromises()
     expect(name.element.value).toBe('最後の編集')
     expect(wrapper.emitted('update:dirty')?.at(-1)).toEqual([false])
-    expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.get('form').attributes('aria-busy')).toBe('false')
   })
 
   it('retains raw options after failure and retries the latest input on explicit submission', async () => {

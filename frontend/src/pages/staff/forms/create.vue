@@ -27,6 +27,11 @@ const tagsQuery = useStaffTagsQuery(true)
 
 // answerableTags' picker data comes from a query.
 const overrides = computed<FieldOverrides<typeof staffFormSchema.entries>>(() => ({
+  confirmationMessage: {
+    label:
+      'フォームに回答した方に向けて表示するメッセージを設定できます。この内容は、回答したユーザーに自動で送信されるメールにも表示されます。',
+    helper: ''
+  },
   answerableTags: {
     availableTags: (tagsQuery.data.value ?? []).map((tag) => tag.name),
     tagColors: staffTagColorMap(tagsQuery.data.value ?? [])

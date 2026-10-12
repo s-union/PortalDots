@@ -6,7 +6,6 @@ import { getQuestionTypeMeta } from '@/features/staff/forms/editor/useQuestionTy
 import { useQuestionEditForm } from '@/features/staff/forms/editor/useQuestionEditForm'
 import { buildQuestionEditSchema } from '@/features/staff/forms/editor/question-edit-schema'
 import FormError from '@/components/ui/FormError.vue'
-import { buttonVariants } from '@/lib/ui/variants'
 import PreviewHeading from './previews/PreviewHeading.vue'
 import PreviewText from './previews/PreviewText.vue'
 import PreviewNumber from './previews/PreviewNumber.vue'
@@ -199,6 +198,7 @@ const previewProps = computed<Record<string, unknown>>(() => {
     <form
       v-show="isOpen"
       novalidate
+      :aria-busy="form.isSubmitting"
       class="border-t border-border px-6 py-4"
       style="background: var(--color-surface-light); box-shadow: inset 0 0.2rem 0.8rem -0.6rem var(--color-box-shadow)"
       @submit.prevent="requestSave"
@@ -217,9 +217,15 @@ const previewProps = computed<Record<string, unknown>>(() => {
         <SchemaFormFields
           :of="form"
           :schema="schema"
+          variant="editor"
           @field-blur="(key) => key !== 'isRequired' && requestSave()"
           @field-change="(key) => key === 'isRequired' && requestSave()"
-        />
+        >
+          <template #label:allowedTypes>許可される拡張子<br /><code class="text-xs">|</code>区切りで指定</template>
+          <template #after:allowedTypes>
+            <p class="-mt-1 text-xs text-muted">画像アップロードを許可したい場合: <code>png|jpg|jpeg|gif</code></p>
+          </template>
+        </SchemaFormFields>
 
         <div class="grid items-center gap-x-4 border-t border-border pt-3 sm:grid-cols-[8rem_1fr]">
           <span></span>
@@ -228,13 +234,6 @@ const previewProps = computed<Record<string, unknown>>(() => {
               <slot name="move-actions" />
             </div>
             <div class="flex items-center gap-4">
-              <button
-                :class="buttonVariants({ variant: 'secondary', size: 'xs' })"
-                type="submit"
-                :disabled="form.isSubmitting"
-              >
-                {{ form.isSubmitting ? '保存中...' : '保存' }}
-              </button>
               <button
                 class="text-base text-danger hover:underline"
                 type="button"

@@ -51,7 +51,13 @@ const overrides = computed<FieldOverrides<typeof contactFormSchema.entries>>(() 
         で変更できます。
       </p>
 
-      <SchemaFormFields :of="form" :schema="contactFormSchema" :disabled="inputDisabled" :overrides="overrides" />
+      <SchemaFormFields
+        required-label=""
+        :of="form"
+        :schema="contactFormSchema"
+        :disabled="inputDisabled"
+        :overrides="overrides"
+      />
 
       <div class="grid gap-2">
         <FormField label="添付ファイル（任意）" as="div" id="contact-file">

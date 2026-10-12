@@ -56,7 +56,10 @@ export interface FieldOverride {
   /** Native `readonly`, where the control supports it (text-like, number, textarea). */
   readonly?: boolean
   label?: string
+  hideLabel?: boolean
+  wrapControl?: boolean
   helper?: string
+  inputClass?: string
   placeholder?: string
   /** Runtime-computed suffix, e.g. a domain name loaded from a query (`@example.ac.jp`). */
   suffix?: string

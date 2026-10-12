@@ -36,6 +36,7 @@ const createMutation = useCreateStaffParticipationTypeMutation()
 
 // `tags`'s picker data (available tags and their colors) comes from a query.
 const overrides = computed<FieldOverrides<typeof staffParticipationTypeFormSchema.entries>>(() => ({
+  isPublic: { hideLabel: true },
   tags: {
     availableTags: (tagsQuery.data.value ?? []).map((tag) => tag.name),
     tagColors: staffTagColorMap(tagsQuery.data.value ?? [])
@@ -97,7 +98,12 @@ const {
     >
       <h2 class="text-lg font-semibold text-body">参加種別を新規作成</h2>
       <div class="mt-4 grid gap-4">
-        <SchemaFormFields :of="form" :schema="staffParticipationTypeFormSchema" :overrides="overrides" />
+        <SchemaFormFields
+          required-label=""
+          :of="form"
+          :schema="staffParticipationTypeFormSchema"
+          :overrides="overrides"
+        />
         <AlertMessage v-if="errorMessage">{{ errorMessage }}</AlertMessage>
       </div>
       <div class="mt-5">

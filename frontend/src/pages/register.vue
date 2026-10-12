@@ -29,7 +29,11 @@ const univemailDomainPart = computed(() => publicConfigQuery.data.value?.portalU
 // `univemailLocalPart`'s label/suffix are placeholder text in the schema; override both here with
 // the deployment's actual university email name and domain.
 const overrides = computed<FieldOverrides<typeof registrationStartFormSchema.entries>>(() => ({
-  univemailLocalPart: { label: univemailLabel.value, suffix: `@${univemailDomainPart.value}` }
+  univemailLocalPart: {
+    label: univemailLabel.value,
+    suffix: `@${univemailDomainPart.value}`,
+    helper: `${studentIdLabel.value} は入力したメールアドレスの @ より前の部分として扱われます。`
+  }
 }))
 
 const form = useForm({
@@ -77,13 +81,7 @@ function handleSubmitEvent(event: SubmitEvent) {
         </p>
         <ErrorState v-if="errorMessage" :message="errorMessage" />
 
-        <SchemaFormFields :of="form" :schema="registrationStartFormSchema" :overrides="overrides">
-          <template #after:univemailLocalPart>
-            <p class="text-xs text-muted">
-              {{ studentIdLabel }} は入力したメールアドレスの @ より前の部分として扱われます。
-            </p>
-          </template>
-        </SchemaFormFields>
+        <SchemaFormFields :of="form" :schema="registrationStartFormSchema" :overrides="overrides" />
 
         <div class="pt-2 text-center">
           <button

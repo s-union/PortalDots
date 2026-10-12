@@ -85,6 +85,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
           }),
           bounded
             ? fieldUi({
+                labelVariant: 'answer',
                 control: 'select',
                 label,
                 helper,
@@ -95,6 +96,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
                 options: toOptions(Array.from({ length: max - min + 1 }, (_, index) => String(min + index)))
               })
             : fieldUi({
+                labelVariant: 'answer',
                 control: 'number',
                 label,
                 helper,
@@ -126,6 +128,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
             }
           }),
           fieldUi({
+            labelVariant: 'answer',
             control: 'checkboxGroup',
             label,
             helper,
@@ -159,7 +162,16 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
               addIssue({ message: `${max}文字以下で入力してください` })
             }
           }),
-          fieldUi({ control: question.type, label, helper, id, name: id, required })
+          fieldUi({
+            control: question.type,
+            labelVariant: 'answer',
+            label,
+            helper,
+            id,
+            name: id,
+            required,
+            inputClass: question.type === 'text' ? undefined : 'min-h-32'
+          })
         )
         layout.push(`text.${id}`)
         break
@@ -179,6 +191,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
             }
           }),
           fieldUi({
+            labelVariant: 'answer',
             control: question.type,
             label,
             helper,
@@ -208,6 +221,7 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
         // draft/input structure used throughout this module).
         name: 'answer-body',
         required: false,
+        inputClass: 'min-h-40',
         placeholder: '回答内容を入力してください'
       })
     )

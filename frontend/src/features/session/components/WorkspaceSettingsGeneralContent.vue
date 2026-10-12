@@ -42,6 +42,7 @@ const displayLabels = computed(() => {
     <form novalidate :aria-busy="form.isSubmitting" @submit="saveProfile">
       <SettingsSection title="一般設定" :title-outside="true">
         <SchemaFormFields
+          required-label=""
           :of="form"
           :schema="profileUpdateFormSchema"
           variant="settings"
@@ -49,7 +50,7 @@ const displayLabels = computed(() => {
           :display-values="{ studentId, univemail }"
           :display-labels="displayLabels"
         >
-          <template #after:currentPassword>
+          <template #caption:currentPassword>
             <p class="text-base leading-6 text-muted">
               <a href="/password/reset" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
             </p>
@@ -60,7 +61,14 @@ const displayLabels = computed(() => {
             <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
             <AlertMessage v-if="errorMessage" tone="danger">{{ errorMessage }}</AlertMessage>
             <div class="flex justify-center pt-2">
-              <BaseButton variant="primary" size="wide" weight="bold" :disabled="form.isSubmitting" type="submit">
+              <BaseButton
+                variant="primary"
+                size="lg"
+                class="min-w-40"
+                weight="bold"
+                :disabled="form.isSubmitting"
+                type="submit"
+              >
                 {{ form.isSubmitting ? '保存中...' : '保存' }}
               </BaseButton>
             </div>

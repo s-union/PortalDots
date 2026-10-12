@@ -29,7 +29,35 @@ import { staffParticipationTypeEditFormSchema } from '@/lib/form-validation'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
-import { SchemaFormFields, type FieldOverrides } from '@/features/forms/schema-form'
+import { SchemaFormFields, type FieldOverrides, type LayoutItem } from '@/features/forms/schema-form'
+
+const settingsLayout: readonly LayoutItem[] = [
+  {
+    row: ['name'],
+    stacked: true,
+    compact: true,
+    label: '参加種別名',
+    caption: '一般ユーザーに表示する名称です。模擬店や展示など、参加区分を分かりやすく入力します。'
+  },
+  {
+    row: ['description'],
+    stacked: true,
+    compact: true,
+    label: '説明',
+    caption: '参加登録画面の案内として一般ユーザーに表示します。'
+  },
+  {
+    row: ['usersCountMin', 'usersCountMax'],
+    label: '必要人数',
+    caption: '企画責任者を含む参加登録可能人数の下限と上限です。個人参加のみなら 1 を指定します。'
+  },
+  {
+    row: ['tags'],
+    stacked: true,
+    label: '付与タグ',
+    caption: 'この設定を保存した後に作成される企画へ、自動で追加するタグを改行またはカンマ区切りで入力します。'
+  }
+]
 
 const route = useRoute('/staff/circles/participation_types/[typeId]/edit')
 const router = useRouter()
@@ -45,6 +73,7 @@ const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 // `tags`'s picker data (available tags and their colors) comes from a query.
 const overrides = computed<FieldOverrides<typeof staffParticipationTypeEditFormSchema.entries>>(() => ({
   tags: {
+    helper: '',
     availableTags: availableTags.value,
     tagColors: tagColors.value
   }
@@ -133,11 +162,17 @@ async function handleDelete() {
         </SurfaceHeader>
 
         <SchemaFormFields
+          required-label=""
           :of="form"
           :schema="staffParticipationTypeEditFormSchema"
           variant="settings"
           :overrides="overrides"
-        />
+          :layout="settingsLayout"
+        >
+          <template #after:tags>
+            <p class="mt-1 text-xs text-muted-2">候補から追加しつつ、必要なら未登録タグもそのまま追加できます。</p>
+          </template>
+        </SchemaFormFields>
 
         <template #footer>
           <div class="space-y-4">

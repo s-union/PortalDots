@@ -85,7 +85,7 @@ describe('RegisterPage', () => {
     const input = wrapper.get('input[name="univemailLocalPart"]')
     expect(requests).toBe(0)
     expect(input.attributes('aria-invalid')).toBe('true')
-    expect(input.attributes('aria-describedby')).toBe('register-email-error')
+    expect(input.attributes('aria-describedby')).toBe('register-email-helper register-email-error')
     expect(wrapper.get('#register-email-error').text()).toBe('大学メールアドレスを入力してください')
     expect(document.activeElement).toBe(input.element)
   })
