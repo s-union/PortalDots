@@ -1,6 +1,6 @@
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { createJsonHeaders, $api } from '@/lib/api/client'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { apiClient, createJsonHeaders, expectApiData, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffMailSchema } from '@/lib/api/schema'
 import { parseTagString } from '@/lib/tags'
 import { extractValidationMessage, parseValidationError } from '@/lib/api/validation'
@@ -23,18 +23,16 @@ interface CreateStaffMailPayload {
   recipients: string[]
 }
 
-export async function fetchStaffMails() {
-  return $api.queryData(
-    'get',
-    '/staff/mails',
-    {
-      headers: createJsonHeaders()
-    },
-    parseStaffMails,
-    {
-      errorMessage: 'Failed to fetch staff mails'
-    }
-  )
+export async function fetchStaffMails(cursor = '', signal?: AbortSignal) {
+  const result = await apiClient.GET('/staff/mails', {
+    headers: createJsonHeaders(),
+    params: { query: { limit: 50, cursor: cursor || undefined } },
+    signal
+  })
+  return {
+    items: parseStaffMails(expectApiData(result, 'Failed to fetch staff mails')),
+    nextCursor: result.response.headers.get('X-Next-Cursor') || undefined
+  }
 }
 
 export async function createStaffMail(payload: CreateStaffMailPayload, csrfToken: string) {
@@ -56,22 +54,18 @@ export async function createStaffMail(payload: CreateStaffMailPayload, csrfToken
 }
 
 export function useStaffMailsQuery(enabled: MaybeRefOrGetter<boolean>) {
-  return $api.useQueryData(
-    'get',
-    '/staff/mails',
-    {
-      headers: createJsonHeaders()
-    },
-    parseStaffMails,
-    {
-      queryKey: ['staff', 'mails'],
-      enabled: computed(() => toValue(enabled)),
-      retry: false
-    },
-    {
-      errorMessage: 'Failed to fetch staff mails'
-    }
-  )
+  const query = useInfiniteQuery({
+    queryKey: ['staff', 'mails', 'history'],
+    initialPageParam: '',
+    queryFn: ({ pageParam, signal }) => fetchStaffMails(pageParam, signal),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled: computed(() => toValue(enabled)),
+    retry: false
+  })
+  return {
+    ...query,
+    data: computed(() => query.data.value?.pages.flatMap((page) => page.items) ?? [])
+  }
 }
 
 export function useCreateStaffMailMutation() {

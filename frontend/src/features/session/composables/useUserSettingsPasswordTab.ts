@@ -1,57 +1,21 @@
-import { computed, reactive, ref } from 'vue'
+import { reset } from '@formisch/vue'
 import { extractPasswordValidationMessage, useUpdatePasswordMutation } from '@/features/session/password'
-import { useFormValidation, passwordChangeFormSchema } from '@/lib/form-validation'
+import { passwordChangeFormSchema } from '@/lib/form-validation'
+import { useSubmitForm } from '@/features/forms/composables/useSubmitForm'
 import { useUserSettingsTabs } from './useUserSettingsTabs'
 
 export function useUserSettingsPasswordTab() {
   const { tabs } = useUserSettingsTabs('password')
   const updatePasswordMutation = useUpdatePasswordMutation()
-  const passwordForm = reactive({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  })
-  const errorMessage = ref('')
-  const successMessage = ref('')
-  const forgotPasswordHref = computed(() => '/password/reset')
-
-  const { fieldErrors, getFieldError, markTouched, validateAll } = useFormValidation({
+  const { form, errorMessage, successMessage, submitEvent } = useSubmitForm({
     schema: passwordChangeFormSchema,
-    form: computed(() => passwordForm)
+    initialInput: { currentPassword: '', newPassword: '', confirmPassword: '' },
+    errorMessage: extractPasswordValidationMessage,
+    submit: async (input) => {
+      await updatePasswordMutation.mutateAsync(input)
+      reset(form)
+      return 'パスワードを更新しました。'
+    }
   })
-
-  async function savePassword() {
-    errorMessage.value = ''
-    successMessage.value = ''
-
-    if (!validateAll()) {
-      return
-    }
-
-    try {
-      await updatePasswordMutation.mutateAsync({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
-      })
-      passwordForm.currentPassword = ''
-      passwordForm.newPassword = ''
-      passwordForm.confirmPassword = ''
-      successMessage.value = 'パスワードを更新しました。'
-    } catch (error) {
-      errorMessage.value = extractPasswordValidationMessage(error)
-    }
-  }
-
-  return {
-    errorMessage,
-    fieldErrors,
-    forgotPasswordHref,
-    getFieldError,
-    markTouched,
-    passwordForm,
-    savePassword,
-    successMessage,
-    tabs,
-    updatePasswordMutation
-  }
+  return { form, errorMessage, successMessage, savePassword: submitEvent, tabs, updatePasswordMutation }
 }

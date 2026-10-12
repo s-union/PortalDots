@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, ref, useTemplateRef } from 'vue'
+import type { FieldControl } from '@/components/forms/field-control'
+import { computed, defineAsyncComponent, nextTick, ref, useTemplateRef, watch } from 'vue'
 const PageMarkdownContent = defineAsyncComponent(() => import('@/features/pages/components/PageMarkdownContent.vue'))
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { cn } from '@/lib/ui/cn'
@@ -15,7 +16,10 @@ const {
   placeholder = '',
   id,
   ariaInvalid,
-  ariaDescribedBy
+  ariaDescribedBy,
+  registerInput,
+  control,
+  fieldPath
 } = defineProps<{
   disabled?: boolean
   guideHref?: string
@@ -23,12 +27,22 @@ const {
   name: string
   placeholder?: string
   id?: string
+  control?: FieldControl
+  fieldPath?: string
   ariaInvalid?: boolean
   ariaDescribedBy?: string
+  registerInput?: (input: HTMLTextAreaElement) => void
 }>()
 
 const previewVisible = ref(false)
 const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea')
+
+watch([textareaRef, () => registerInput, () => control?.ref], ([textarea, register, bind]) => {
+  if (textarea) {
+    register?.(textarea)
+    bind?.(textarea)
+  }
+})
 
 const charCount = computed(() => model.value.length)
 
@@ -165,12 +179,14 @@ const toolbarActions: ToolbarAction[] = [
     <!-- Editor -->
     <div class="relative">
       <textarea
-        :id="id"
+        v-bind="control"
+        :id="id ?? control?.id"
+        :data-field-path="control?.['data-field-path'] ?? fieldPath"
         ref="textarea"
         v-model="model"
-        :aria-describedby="ariaDescribedBy"
+        :aria-describedby="ariaDescribedBy ?? control?.['aria-describedby']"
         :aria-label="name"
-        :aria-invalid="ariaInvalid"
+        :aria-invalid="control?.['aria-invalid'] ?? ariaInvalid"
         :class="
           cn(
             formControlVariants(),

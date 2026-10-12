@@ -34,6 +34,14 @@ func (r *SQLCRepository) HasActiveSchedule(ctx context.Context, pageID string) (
 	return r.queries.HasActiveScheduledPageMail(ctx, pageID)
 }
 
+func (r *SQLCRepository) ListActivePageIDs(ctx context.Context, pageIDs []string) ([]string, error) {
+	if len(pageIDs) == 0 {
+		return []string{}, nil
+	}
+
+	return r.queries.ListActiveScheduledPageMailPageIDs(ctx, pageIDs)
+}
+
 func (r *SQLCRepository) ClaimDue(ctx context.Context, limit int) ([]Schedule, error) {
 	rows, err := r.queries.ClaimDueScheduledPageMails(ctx, int32(limit))
 	if err != nil {

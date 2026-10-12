@@ -124,4 +124,25 @@ describe('StaffUserPicker', () => {
 
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
   })
+
+  it('does not add a staff recipient while the IME is composing', async () => {
+    const wrapper = mountPicker([])
+    const input = wrapper.get('input[name="staffNotificationUserIds"]')
+
+    await input.trigger('keydown', { key: 'Enter', isComposing: true })
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('still adds the first suggestion with a normal Enter key', async () => {
+    const wrapper = mountPicker([])
+    await flushPromises()
+    const input = wrapper.get('input[name="staffNotificationUserIds"]')
+
+    await input.setValue('鈴木')
+    await flushPromises()
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([['staff-user-1']])
+  })
 })

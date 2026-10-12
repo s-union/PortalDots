@@ -1,4 +1,4 @@
-import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
+import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { buildApiUrl, createJsonHeaders, $api } from '@/lib/api/client'
 import { parseWithSchema, parseArrayWithSchema, staffPageDetailSchema, staffPageSummarySchema } from '@/lib/api/schema'
@@ -361,18 +361,18 @@ export function useDeleteStaffPageByIdMutation() {
   })
 }
 
-export function useStaffPageForm() {
-  return ref<MutateStaffPagePayload>({
-    title: '',
-    body: '',
-    notes: '',
-    isPinned: false,
-    isPublic: true,
-    viewableTags: [],
-    documentIds: [],
-    sendEmails: false,
-    publishedAt: null
-  })
+export function staffPageInput(page?: StaffPageDetail) {
+  return {
+    title: page?.title ?? '',
+    body: page?.body ?? '',
+    notes: page?.notes ?? '',
+    isPinned: page?.isPinned ?? false,
+    isPublic: page?.isPublic ?? true,
+    viewableTags: [...(page?.viewableTags ?? [])],
+    documentIds: [...(page?.documentIds ?? [])],
+    sendEmails: page?.mailScheduled ?? false,
+    publishedAt: page?.publishedAt ?? ''
+  }
 }
 
 export function extractStaffPageValidationMessage(error: unknown) {
@@ -392,11 +392,6 @@ export function extractStaffPageValidationMessage(error: unknown) {
   }
 
   return hasPublishedAtError ? '' : 'お知らせの保存に失敗しました。'
-}
-
-/** Returns the server-side validation message for the publish time field, or an empty string. */
-export function extractStaffPagePublishedAtError(error: unknown) {
-  return unwrapValidationError(error)?.errors.publishedAt?.[0] ?? ''
 }
 
 export function buildStaffPagesExportUrl() {

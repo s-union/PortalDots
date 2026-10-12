@@ -119,6 +119,8 @@ function removeFile() {
   if (disabled) return
   model.value = null
 }
+
+defineExpose({ focus: () => fileInput.value?.focus() })
 </script>
 
 <template>
@@ -131,6 +133,7 @@ function removeFile() {
       :aria-label="ariaLabel"
       class="sr-only"
       :disabled="disabled"
+      :id="baseId"
       :name="name"
       type="file"
       @change="handleChange"

@@ -3,6 +3,7 @@ import { http, HttpResponse } from '@/mocks/openapi'
 import StaffFormAnswerEditPage from './edit.vue'
 import { mockSessionBootstrapStaff } from '@/mocks/data'
 import { staffFormStoryQuestions } from '../../../story-fixtures'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 const editFixture = {
   form: {
@@ -68,6 +69,9 @@ const editFixture = {
   ]
 }
 
+let currentAnswer = editFixture.answer
+let savedPayload: unknown
+
 const meta = {
   title: 'Pages/Staff/Forms/Edit Answer',
   component: StaffFormAnswerEditPage,
@@ -81,17 +85,22 @@ const meta = {
       handlers: [
         http.get('/v1/session/bootstrap', () => HttpResponse.json(mockSessionBootstrapStaff)),
         http.get('/v1/staff/status', () => HttpResponse.json({ allowed: true, authorized: true })),
-        http.get('/v1/staff/forms/{formID}/answers/{answerID}/edit', () => HttpResponse.json(editFixture)),
-        http.put('/v1/staff/forms/{formID}/answers/{answerID}', () =>
-          HttpResponse.json({
-            id: 'answer-1',
-            body: '更新後本文',
-            createdAt: '2026-03-06T11:20:00Z',
-            updatedAt: '2026-03-08T10:00:00Z',
-            details: {},
-            uploads: []
-          })
+        http.get('/v1/staff/forms/{formID}/answers/{answerID}/edit', () =>
+          HttpResponse.json({ ...editFixture, answer: currentAnswer })
         ),
+        http.put('/v1/staff/forms/{formID}/answers/{answerID}', async ({ request }) => {
+          savedPayload = await request.json()
+          currentAnswer = {
+            ...editFixture.answer,
+            details: {
+              ...editFixture.answer.details,
+              'question-responsible': ['更新した責任者'],
+              'question-equipment': ['長机', '電源', '椅子'],
+              'question-power': ['3']
+            }
+          }
+          return HttpResponse.json(currentAnswer)
+        }),
         http.post('/v1/staff/forms/{formID}/answers/{answerID}/uploads', () =>
           HttpResponse.json({
             id: 'upload-new',
@@ -111,7 +120,37 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
+export const Default: Story = {
+  beforeEach: () => {
+    currentAnswer = editFixture.answer
+    savedPayload = undefined
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const responsible = await canvas.findByRole('textbox', { name: /^当日責任者/ })
+    const save = canvas.getByRole('button', { name: '変更を保存' })
+    await userEvent.clear(responsible)
+    await userEvent.click(save)
+    await expect(canvas.getByText('当日責任者を入力してください')).toBeVisible()
+    await expect(savedPayload).toBeUndefined()
+    await userEvent.type(responsible, '更新した責任者')
+    await userEvent.click(canvas.getByRole('checkbox', { name: '椅子' }))
+    await userEvent.selectOptions(canvas.getByRole('combobox', { name: /^希望電源口数/ }), '3')
+    await userEvent.click(save)
+    await waitFor(() =>
+      expect(savedPayload).toMatchObject({
+        circleId: 'circle-1',
+        details: {
+          'question-responsible': '更新した責任者',
+          'question-equipment': ['長机', '電源', '椅子'],
+          'question-power': '3'
+        }
+      })
+    )
+    await waitFor(() => expect(save).toBeEnabled())
+    await expect(responsible).toHaveValue('更新した責任者')
+  }
+}
 
 export const NoQuestions: Story = {
   parameters: {

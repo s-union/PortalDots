@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 )
@@ -178,6 +179,9 @@ func (r *SQLCRepository) Create(params CreateParams) (User, error) {
 			return User{}, ownerErr
 		}
 	}
+	if err := ensureContactEmailAvailable(ctx, queries, params.ID, params.ContactEmail); err != nil {
+		return User{}, err
+	}
 
 	row, err := queries.CreateUser(ctx, dbgen.CreateUserParams{
 		Column1:             params.ID,
@@ -194,6 +198,9 @@ func (r *SQLCRepository) Create(params CreateParams) (User, error) {
 		IsUnivemailVerified: params.IsUnivemailVerified,
 	})
 	if err != nil {
+		if isContactEmailUniqueViolation(err) {
+			return User{}, ErrContactEmailConflict
+		}
 		return User{}, err
 	}
 
@@ -245,7 +252,18 @@ func (r *SQLCRepository) UpdateDisplayName(userID, displayName string) (User, er
 }
 
 func (r *SQLCRepository) UpdateProfile(userID, lastName, lastNameReading, firstName, firstNameReading, contactEmail, phoneNumber string) (User, error) {
-	_, err := r.queries.UpdateUserProfile(context.Background(), dbgen.UpdateUserProfileParams{
+	ctx := context.Background()
+	if _, err := r.queries.GetUserByID(ctx, userID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrNotFound
+		}
+		return User{}, err
+	}
+	if err := ensureContactEmailAvailable(ctx, r.queries, userID, contactEmail); err != nil {
+		return User{}, err
+	}
+
+	_, err := r.queries.UpdateUserProfile(ctx, dbgen.UpdateUserProfileParams{
 		ID:               userID,
 		LastName:         lastName,
 		LastNameReading:  lastNameReading,
@@ -257,6 +275,9 @@ func (r *SQLCRepository) UpdateProfile(userID, lastName, lastNameReading, firstN
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return User{}, ErrNotFound
+		}
+		if isContactEmailUniqueViolation(err) {
+			return User{}, ErrContactEmailConflict
 		}
 		return User{}, err
 	}
@@ -346,6 +367,9 @@ func (r *SQLCRepository) UpdateFull(userID, displayName string, loginIDs []strin
 			return User{}, ownerErr
 		}
 	}
+	if err := ensureContactEmailAvailable(ctx, queries, userID, contactEmail); err != nil {
+		return User{}, err
+	}
 
 	if _, err := queries.UpdateUserProfile(ctx, dbgen.UpdateUserProfileParams{
 		ID:               userID,
@@ -358,6 +382,9 @@ func (r *SQLCRepository) UpdateFull(userID, displayName string, loginIDs []strin
 	}); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return User{}, ErrNotFound
+		}
+		if isContactEmailUniqueViolation(err) {
+			return User{}, ErrContactEmailConflict
 		}
 		return User{}, err
 	}
@@ -389,6 +416,31 @@ func (r *SQLCRepository) UpdateFull(userID, displayName string, loginIDs []strin
 	}
 
 	return r.Find(userID)
+}
+
+func ensureContactEmailAvailable(ctx context.Context, queries *dbgen.Queries, userID, contactEmail string) error {
+	if contactEmail == "" {
+		return nil
+	}
+
+	owner, err := queries.GetUserByContactEmail(ctx, contactEmail)
+	if err == nil {
+		if owner.ID != userID {
+			return ErrContactEmailConflict
+		}
+		return nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	return err
+}
+
+func isContactEmailUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) &&
+		pgErr.Code == "23505" &&
+		pgErr.ConstraintName == "users_contact_email_lower_unique_idx"
 }
 
 func (r *SQLCRepository) UpdateRoles(userID string, roles []string) (User, error) {

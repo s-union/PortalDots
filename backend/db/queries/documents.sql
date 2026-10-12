@@ -1,9 +1,18 @@
 -- name: ListPublicDocuments :many
-SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
 FROM documents
 WHERE is_public = true
   AND (cardinality(viewable_tags) = 0 OR viewable_tags && $1::text[])
 ORDER BY updated_at DESC, id DESC;
+
+-- name: ListPublicDocumentsByIDs :many
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
+FROM documents
+WHERE id = ANY($1::uuid[])
+  AND is_public = true
+  AND (cardinality(viewable_tags) = 0 OR viewable_tags && $2::text[]);
 
 -- name: GetPublicDocumentByID :one
 SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
@@ -14,9 +23,16 @@ WHERE id = $1
 LIMIT 1;
 
 -- name: ListStaffDocuments :many
-SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
 FROM documents
 ORDER BY updated_at DESC, id DESC;
+
+-- name: ListStaffDocumentsByIDs :many
+SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type,
+       octet_length(content)::bigint AS size_bytes, created_at, updated_at
+FROM documents
+WHERE id = ANY($1::uuid[]);
 
 -- name: GetStaffDocumentByID :one
 SELECT id, name, description, notes, is_public, viewable_tags, is_important, filename, mime_type, content, created_at, updated_at

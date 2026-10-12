@@ -1,7 +1,7 @@
 import { computed, onBeforeUnmount, ref, watch, watchEffect, type MaybeRefOrGetter, toValue } from 'vue'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useSessionStore } from '@/features/session/store'
-import { type StaffFormQuestion } from '@/features/staff/forms/api'
+import { type UpdateStaffFormQuestionPayload } from '@/features/staff/forms/api'
 import type { QuestionId } from '@/lib/api/schema'
 import {
   extractStaffFormValidationMessage,
@@ -15,6 +15,9 @@ import {
 import type { AllowedQuestionType } from '@/features/staff/forms/editor/useQuestionTypeMeta'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { buildStaffFormTabs } from '@/lib/ui/tabStrip'
+import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
+import { onBeforeRouteUpdate } from 'vue-router'
+import { extractValidationMessage } from '@/lib/api/validation'
 
 export function useStaffFormEditorPage(
   formIdValue: MaybeRefOrGetter<string>,
@@ -35,13 +38,14 @@ export function useStaffFormEditorPage(
   const reorderQuestionMutation = useReorderStaffFormQuestionsMutation(formId)
 
   const editorErrorMessage = ref('')
-  const questionEdits = ref<Record<QuestionId, StaffFormQuestion>>({})
+  const questionState = ref<Record<string, { dirty: boolean; pending: boolean }>>({})
   const openQuestionId = ref<QuestionId | null>(null)
   const draggingQuestionId = ref<QuestionId | null>(null)
   const dropTargetQuestionId = ref<QuestionId | null>(null)
   const savedMessageVisible = ref(false)
 
   let savedMessageTimer: number | undefined = undefined
+  let disposed = false
 
   const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
   const isPublic = computed(() => formQuery.data.value?.isPublic ?? false)
@@ -57,23 +61,35 @@ export function useStaffFormEditorPage(
       updateQuestionMutation.isPending.value ||
       updateFormMutation.isPending.value ||
       deleteQuestionMutation.isPending.value ||
+      reorderQuestionMutation.isPending.value ||
+      Object.values(questionState.value).some((state) => state.pending)
+  )
+  const editableQuestions = computed(() => formQuery.data.value?.questions ?? [])
+  const isChangingStructure = computed(
+    () =>
+      createQuestionMutation.isPending.value ||
+      deleteQuestionMutation.isPending.value ||
       reorderQuestionMutation.isPending.value
   )
-
-  const editableQuestions = computed(() =>
-    (formQuery.data.value?.questions ?? [])
-      .map((question) => ({
-        question,
-        edit: questionEdits.value[question.id]
-      }))
-      .filter((value): value is { question: StaffFormQuestion; edit: StaffFormQuestion } => value.edit !== undefined)
+  const hasUnsavedChanges = computed(() =>
+    editableQuestions.value.some((question) => questionState.value[question.id]?.dirty)
   )
+  const { confirmBeforeSwitching } = useUnsavedChangesGuard(hasUnsavedChanges)
+  onBeforeRouteUpdate(
+    (to, from) =>
+      ('formId' in to.params && 'formId' in from.params && to.params.formId === from.params.formId) ||
+      confirmBeforeSwitching()
+  )
+
+  function updateQuestionState(id: QuestionId, field: 'dirty' | 'pending', value: boolean) {
+    questionState.value[id] = { ...(questionState.value[id] ?? { dirty: false, pending: false }), [field]: value }
+  }
 
   const statusToneClass = computed(() => {
     if (editorErrorMessage.value) {
       return 'text-danger'
     }
-    if (savedMessageVisible.value) {
+    if (savedMessageVisible.value && !hasUnsavedChanges.value) {
       return 'text-success'
     }
     return 'text-muted'
@@ -85,6 +101,9 @@ export function useStaffFormEditorPage(
     }
     if (isSaving.value) {
       return '保存中...'
+    }
+    if (hasUnsavedChanges.value) {
+      return '未保存の変更があります'
     }
     if (savedMessageVisible.value) {
       return '保存しました'
@@ -99,9 +118,8 @@ export function useStaffFormEditorPage(
         return
       }
 
-      questionEdits.value = Object.fromEntries(
-        value.questions.map((question) => [question.id, { ...question, options: [...question.options] }])
-      )
+      const ids = new Set<string>(value.questions.map((question) => question.id))
+      questionState.value = Object.fromEntries(Object.entries(questionState.value).filter(([id]) => ids.has(id)))
     },
     { immediate: true }
   )
@@ -116,6 +134,7 @@ export function useStaffFormEditorPage(
   })
 
   onBeforeUnmount(() => {
+    disposed = true
     if (savedMessageTimer !== undefined) {
       window.clearTimeout(savedMessageTimer)
     }
@@ -127,6 +146,7 @@ export function useStaffFormEditorPage(
   }
 
   function markSaved() {
+    if (disposed) return
     savedMessageVisible.value = true
     if (savedMessageTimer !== undefined) {
       window.clearTimeout(savedMessageTimer)
@@ -215,6 +235,7 @@ export function useStaffFormEditorPage(
   }
 
   async function addQuestion(type: AllowedQuestionType) {
+    if (isSaving.value) return
     editorErrorMessage.value = ''
 
     try {
@@ -226,34 +247,21 @@ export function useStaffFormEditorPage(
     }
   }
 
-  async function saveQuestion(questionId: QuestionId) {
+  async function saveQuestion(payload: UpdateStaffFormQuestionPayload) {
     editorErrorMessage.value = ''
 
     try {
-      const question = questionEdits.value[questionId]
-      if (!question) {
-        return
-      }
-
-      await updateQuestionMutation.mutateAsync({
-        id: question.id,
-        name: question.name,
-        description: question.description,
-        type: question.type,
-        isRequired: question.isRequired,
-        numberMin: question.numberMin,
-        numberMax: question.numberMax,
-        allowedTypes: question.allowedTypes,
-        options: question.options,
-        priority: question.priority
-      })
+      const question = await updateQuestionMutation.mutateAsync(payload)
       markSaved()
+      return question
     } catch (error) {
-      editorErrorMessage.value = extractStaffFormValidationMessage(error)
+      editorErrorMessage.value = extractValidationMessage(error, '設問の保存に失敗しました。')
+      throw error
     }
   }
 
   async function deleteQuestion(questionId: string) {
+    if (isSaving.value) return
     editorErrorMessage.value = ''
 
     try {
@@ -268,6 +276,7 @@ export function useStaffFormEditorPage(
   }
 
   async function moveQuestion(questionId: QuestionId, direction: -1 | 1) {
+    if (isSaving.value) return
     const orderedIds = (formQuery.data.value?.questions ?? []).map((question) => question.id)
     const currentIndex = orderedIds.indexOf(questionId)
     const nextIndex = currentIndex + direction
@@ -300,6 +309,10 @@ export function useStaffFormEditorPage(
   }
 
   async function dropQuestion(questionId: QuestionId) {
+    if (isSaving.value) {
+      clearDragState()
+      return
+    }
     if (!draggingQuestionId.value) {
       return
     }
@@ -319,10 +332,6 @@ export function useStaffFormEditorPage(
     }
   }
 
-  function updateQuestionEdit(questionId: QuestionId, value: StaffFormQuestion) {
-    questionEdits.value[questionId] = value
-  }
-
   return {
     addQuestion,
     clearDragState,
@@ -338,6 +347,7 @@ export function useStaffFormEditorPage(
     isParticipationForm,
     isPublic,
     isSaving,
+    isChangingStructure,
     moveQuestion,
     navigateToSettings: options.navigateToSettings,
     openQuestionId,
@@ -352,6 +362,6 @@ export function useStaffFormEditorPage(
     statusToneClass,
     toggleQuestion,
     updateFormMutation,
-    updateQuestionEdit
+    updateQuestionState
   }
 }

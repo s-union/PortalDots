@@ -5,7 +5,8 @@ definePage({
   meta: staffPageMeta('pages.edit')
 })
 
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
+import { useServerSyncedForm } from '@/features/forms/composables/useServerSyncedForm'
 import { useRoute, useRouter } from 'vue-router'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -17,19 +18,18 @@ import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
 import {
-  extractStaffPagePublishedAtError,
   extractStaffPageValidationMessage,
   resolveStaffPagePublishStatus,
   staffPagePublishStatusLabels,
   staffPagePublishStatusTones,
   useDeleteStaffPageMutation,
   useStaffPageDetailQuery,
-  useStaffPageForm,
+  staffPageInput,
   useUpdateStaffPageMutation
 } from '@/features/staff/pages/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
-import { useFormValidation, staffPageFormSchema } from '@/lib/form-validation'
+import { staffPageFormSchema } from '@/lib/form-validation'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
@@ -44,23 +44,12 @@ const tagsQuery = useStaffTagsQuery(enabled)
 const documentsQuery = useStaffDocumentsQuery(enabled)
 const updatePageMutation = useUpdateStaffPageMutation(pageId)
 const deletePageMutation = useDeleteStaffPageMutation(pageId)
-const form = useStaffPageForm()
-const errorMessage = ref('')
+const actionError = ref('')
 const successMessage = ref('')
-const publishedAtError = ref('')
-
-const { fieldErrors, validateAll, markTouched } = useFormValidation({
-  schema: staffPageFormSchema,
-  form: computed(() => ({ title: form.value.title, body: form.value.body }))
-})
 
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
-
-const editorFieldErrors = computed(() =>
-  publishedAtError.value ? { ...fieldErrors.value, publishedAt: publishedAtError.value } : fieldErrors.value
-)
 
 const publishStatusBadge = computed(() => {
   const page = pageQuery.data.value
@@ -76,63 +65,26 @@ const publishStatusBadge = computed(() => {
   }
 })
 
-watch(
-  () => pageQuery.data.value,
-  (page) => {
-    if (!page) {
-      return
-    }
-
-    form.value = {
-      title: page.title,
-      body: page.body,
-      notes: page.notes,
-      isPinned: page.isPinned,
-      isPublic: page.isPublic,
-      viewableTags: [...page.viewableTags],
-      documentIds: [...page.documentIds],
-      sendEmails: page.mailScheduled,
-      publishedAt: page.publishedAt
-    }
+const { form, submitEvent } = useServerSyncedForm({
+  schema: staffPageFormSchema,
+  input: () => staffPageInput(pageQuery.data.value),
+  source: () => pageQuery.data.value,
+  sourceKey: pageId,
+  disabled: () => !pageQuery.data.value || deletePageMutation.isPending.value,
+  errorMessage: extractStaffPageValidationMessage,
+  saveInput: async (input) => {
+    const saved = await updatePageMutation.mutateAsync(input)
+    return { input: staffPageInput(saved), sourceKey: saved.id }
   },
-  { immediate: true }
-)
-
-async function handleSavePage() {
-  errorMessage.value = ''
-  successMessage.value = ''
-  publishedAtError.value = ''
-
-  if (!validateAll()) {
-    await focusFirstInvalidField()
-    return
-  }
-
-  try {
-    const updatedPage = await updatePageMutation.mutateAsync({
-      title: form.value.title,
-      body: form.value.body,
-      notes: form.value.notes,
-      isPinned: form.value.isPinned,
-      isPublic: form.value.isPublic,
-      viewableTags: form.value.viewableTags,
-      documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails,
-      publishedAt: form.value.publishedAt
-    })
-    form.value.sendEmails = updatedPage.mailScheduled
+  onSaved: () => {
     successMessage.value = 'お知らせを更新しました。'
-  } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error)
-    publishedAtError.value = extractStaffPagePublishedAtError(error)
-    await focusFirstInvalidField()
   }
-}
-
-async function focusFirstInvalidField() {
-  await nextTick()
-  const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]')
-  invalid?.focus()
+})
+const errorMessage = computed(() => actionError.value || form.errors?.[0] || '')
+async function handleSavePage(event: SubmitEvent) {
+  actionError.value = ''
+  successMessage.value = ''
+  await submitEvent(event)
 }
 
 async function handleDeletePage() {
@@ -140,14 +92,14 @@ async function handleDeletePage() {
     return
   }
 
-  errorMessage.value = ''
+  actionError.value = ''
   successMessage.value = ''
 
   try {
     await deletePageMutation.mutateAsync()
     await router.push('/staff/pages')
   } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error)
+    actionError.value = extractStaffPageValidationMessage(error)
   }
 }
 </script>
@@ -156,7 +108,13 @@ async function handleDeletePage() {
   <PageLayout>
     <LoadingState v-if="pageQuery.isPending.value" />
 
-    <form v-else-if="pageQuery.data.value" class="space-y-6" @submit.prevent="handleSavePage">
+    <form
+      v-else-if="pageQuery.data.value"
+      class="space-y-6"
+      novalidate
+      :aria-busy="form.isSubmitting"
+      @submit="handleSavePage"
+    >
       <SurfaceCard>
         <SurfaceCardBand>
           <h1 class="text-2xl font-semibold text-body">お知らせを編集</h1>
@@ -174,7 +132,7 @@ async function handleDeletePage() {
         </SurfaceCardBand>
         <div class="px-6 py-6">
           <StaffPageEditorForm
-            v-model="form"
+            :form="form"
             :available-tags="availableTags"
             :tag-colors="tagColors"
             :available-documents="availableDocuments"
@@ -182,9 +140,6 @@ async function handleDeletePage() {
             :error-message="errorMessage"
             :success-message="successMessage"
             submit-label="保存"
-            :submitting="updatePageMutation.isPending.value"
-            :field-errors="editorFieldErrors"
-            :on-blur-field="markTouched"
           />
         </div>
 

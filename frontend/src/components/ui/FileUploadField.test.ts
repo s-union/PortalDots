@@ -137,6 +137,12 @@ describe('FileUploadField', () => {
     expect(withoutExtensions.get('input[type="file"]').attributes('accept')).toBeUndefined()
   })
 
+  it('connects an explicit id to the native file input', () => {
+    const wrapper = mountHost('id="attachment"')
+
+    expect(wrapper.get('input[type="file"]').attributes('id')).toBe('attachment')
+  })
+
   it('disables the input', () => {
     const wrapper = mountHost('disabled')
     expect(wrapper.get('input[type="file"]').attributes('disabled')).toBeDefined()

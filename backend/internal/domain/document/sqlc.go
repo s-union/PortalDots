@@ -51,6 +51,27 @@ func (r *SQLCRepository) ListPublic(circleTags []string) []Document {
 	return documents
 }
 
+func (r *SQLCRepository) ListPublicByIDs(documentIDs []string, circleTags []string) []Document {
+	if len(documentIDs) == 0 {
+		return []Document{}
+	}
+
+	rows, err := r.queries.ListPublicDocumentsByIDs(context.Background(), dbgen.ListPublicDocumentsByIDsParams{
+		Column1: documentIDs,
+		Column2: circleTags,
+	})
+	if err != nil {
+		return nil
+	}
+
+	documents := make([]Document, 0, len(rows))
+	for _, row := range rows {
+		documents = append(documents, mapPublicDocumentMetadata(row))
+	}
+
+	return documents
+}
+
 func (r *SQLCRepository) FindPublic(documentID string, circleTags []string) (Document, bool) {
 	row, err := r.queries.GetPublicDocumentByID(context.Background(), dbgen.GetPublicDocumentByIDParams{
 		ID:      documentID,
@@ -72,6 +93,24 @@ func (r *SQLCRepository) ListForStaff() []Document {
 	documents := make([]Document, 0, len(rows))
 	for _, row := range rows {
 		documents = append(documents, mapStaffDocument(row))
+	}
+
+	return documents
+}
+
+func (r *SQLCRepository) ListForStaffByIDs(documentIDs []string) []Document {
+	if len(documentIDs) == 0 {
+		return []Document{}
+	}
+
+	rows, err := r.queries.ListStaffDocumentsByIDs(context.Background(), documentIDs)
+	if err != nil {
+		return nil
+	}
+
+	documents := make([]Document, 0, len(rows))
+	for _, row := range rows {
+		documents = append(documents, mapStaffDocumentMetadata(row))
 	}
 
 	return documents
@@ -204,10 +243,27 @@ func mapPublicDocument(row dbgen.ListPublicDocumentsRow) Document {
 		Filename:     row.Filename,
 		Extension:    normalizeDocumentExtension(row.Filename),
 		MimeType:     row.MimeType,
-		SizeBytes:    int64(len(row.Content)),
+		SizeBytes:    row.SizeBytes,
 		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
 		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
-		Content:      append([]byte(nil), row.Content...),
+	}
+}
+
+func mapPublicDocumentMetadata(row dbgen.ListPublicDocumentsByIDsRow) Document {
+	return Document{
+		ID:           row.ID,
+		Name:         row.Name,
+		Description:  row.Description,
+		Notes:        row.Notes,
+		IsPublic:     row.IsPublic,
+		ViewableTags: append([]string{}, row.ViewableTags...),
+		IsImportant:  row.IsImportant,
+		Filename:     row.Filename,
+		Extension:    normalizeDocumentExtension(row.Filename),
+		MimeType:     row.MimeType,
+		SizeBytes:    row.SizeBytes,
+		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
 	}
 }
 
@@ -223,10 +279,27 @@ func mapStaffDocument(row dbgen.ListStaffDocumentsRow) Document {
 		Filename:     row.Filename,
 		Extension:    normalizeDocumentExtension(row.Filename),
 		MimeType:     row.MimeType,
-		SizeBytes:    int64(len(row.Content)),
+		SizeBytes:    row.SizeBytes,
 		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
 		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
-		Content:      append([]byte(nil), row.Content...),
+	}
+}
+
+func mapStaffDocumentMetadata(row dbgen.ListStaffDocumentsByIDsRow) Document {
+	return Document{
+		ID:           row.ID,
+		Name:         row.Name,
+		Description:  row.Description,
+		Notes:        row.Notes,
+		IsPublic:     row.IsPublic,
+		ViewableTags: append([]string{}, row.ViewableTags...),
+		IsImportant:  row.IsImportant,
+		Filename:     row.Filename,
+		Extension:    normalizeDocumentExtension(row.Filename),
+		MimeType:     row.MimeType,
+		SizeBytes:    row.SizeBytes,
+		CreatedAt:    formatDocumentTimestamp(row.CreatedAt),
+		UpdatedAt:    formatDocumentTimestamp(row.UpdatedAt),
 	}
 }
 

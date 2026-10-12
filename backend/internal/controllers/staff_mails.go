@@ -1,12 +1,15 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/labstack/echo/v5"
+	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
 )
 
@@ -33,13 +36,27 @@ func (h *staffAdminHandlers) listStaffMails(c *echo.Context) error {
 		return statusError(c, status)
 	}
 
-	entries, err := h.mailHistory.List(c.Request().Context())
+	limit := 50
+	if raw := c.QueryParam("limit"); raw != "" {
+		value, err := strconv.Atoi(raw)
+		if err != nil || value < 1 || value > 100 {
+			return validationError(c, map[string][]string{"limit": {"取得件数は1〜100件で指定してください"}})
+		}
+		limit = value
+	}
+	page, err := h.mailHistory.ListPage(c.Request().Context(), limit, c.QueryParam("cursor"))
+	if errors.Is(err, mailhistory.ErrInvalidCursor) {
+		return validationError(c, map[string][]string{"cursor": {"履歴の取得位置が正しくありません"}})
+	}
 	if err != nil {
 		return internalError(c)
 	}
 
-	response := make([]staffMailResponse, 0, len(entries))
-	for _, entry := range entries {
+	if page.NextCursor != "" {
+		c.Response().Header().Set("X-Next-Cursor", page.NextCursor)
+	}
+	response := make([]staffMailResponse, 0, len(page.Entries))
+	for _, entry := range page.Entries {
 		response = append(response, staffMailResponse{
 			JobId:      entry.JobID,
 			Template:   entry.Template,
