@@ -127,7 +127,7 @@ export const Default: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const responsible = await canvas.findByRole('textbox', { name: '当日責任者' })
+    const responsible = await canvas.findByRole('textbox', { name: /^当日責任者/ })
     const save = canvas.getByRole('button', { name: '変更を保存' })
     await userEvent.clear(responsible)
     await userEvent.click(save)
@@ -135,7 +135,7 @@ export const Default: Story = {
     await expect(savedPayload).toBeUndefined()
     await userEvent.type(responsible, '更新した責任者')
     await userEvent.click(canvas.getByRole('checkbox', { name: '椅子' }))
-    await userEvent.selectOptions(canvas.getByRole('combobox', { name: '希望電源口数' }), '3')
+    await userEvent.selectOptions(canvas.getByRole('combobox', { name: /^希望電源口数/ }), '3')
     await userEvent.click(save)
     await waitFor(() =>
       expect(savedPayload).toMatchObject({

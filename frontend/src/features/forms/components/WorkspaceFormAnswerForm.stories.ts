@@ -78,8 +78,8 @@ export const TypedFields: Story = {
     await expect(args.saveAnswer).not.toHaveBeenCalled()
 
     await userEvent.click(checkbox)
-    await userEvent.type(canvas.getByRole('textbox', { name: '企画名' }), '展示企画')
-    const count = canvas.getByRole('spinbutton', { name: '人数' })
+    await userEvent.type(canvas.getByRole('textbox', { name: /^企画名/ }), '展示企画')
+    const count = canvas.getByRole('spinbutton', { name: /^人数/ })
     await userEvent.type(count, '1.5')
     await userEvent.click(submit)
     await expect(canvas.getByText('整数を入力してください')).toBeVisible()

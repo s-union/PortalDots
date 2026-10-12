@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StaffMasterEditorShell from '@/components/staff/StaffMasterEditorShell.vue'
-import FormischField from '@/components/forms/FormischField.vue'
+import { SchemaFormFields } from '@/features/forms/schema-form'
 import { buildDeleteStaffTagConfirmMessage } from '@/features/staff/masters/messages'
 import {
   type StaffTag,
@@ -11,7 +11,6 @@ import {
 } from '@/features/staff/masters/tags'
 import { staffTagFormSchema } from '@/lib/form-validation'
 import { useStaffMasterEditor } from '@/features/staff/masters/useStaffMasterEditor'
-import { tagColors, type TagColor, tagColorClass } from '@/lib/tagColor'
 
 const { tag } = defineProps<{
   tag: StaffTag | null
@@ -21,17 +20,6 @@ const emit = defineEmits<{
   saved: []
   deleted: []
 }>()
-
-const colorLabels: Record<TagColor, string> = {
-  gray: 'グレー',
-  red: '赤',
-  orange: 'オレンジ',
-  green: '緑',
-  blue: '青',
-  purple: '紫'
-}
-
-const colorOptions = tagColors.map((value) => ({ value, label: colorLabels[value] }))
 
 const createMutation = useCreateStaffTagMutation()
 const updateMutation = useUpdateStaffTagMutation()
@@ -67,41 +55,6 @@ const { form, errorMessage, successMessage, handleSave, handleDelete, isSaving, 
     @save="handleSave"
     @delete="handleDelete"
   >
-    <FormischField v-slot="{ field, control }" :of="form" :path="['name']" label="タグ名" label-class="font-medium">
-      <input v-bind="control" v-model="field.input" name="name" type="text" />
-    </FormischField>
-
-    <FormischField
-      v-slot="{ field, control }"
-      :of="form"
-      :path="['color']"
-      as="fieldset"
-      label="タグの色"
-      label-class="font-medium"
-      helper="タグ一覧や絞り込みでタグを色分けして表示します。"
-    >
-      <div class="flex flex-wrap gap-2">
-        <label
-          v-for="option in colorOptions"
-          :key="option.value"
-          :class="[
-            'inline-flex cursor-pointer items-center rounded-full border px-3 py-1.5 text-sm font-medium transition focus-within:ring-2 focus-within:ring-primary',
-            tagColorClass(option.value),
-            field.input === option.value ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''
-          ]"
-        >
-          <input
-            v-bind="control"
-            v-model="field.input"
-            :value="option.value"
-            :id="`${control.id}-${option.value}`"
-            name="color"
-            type="radio"
-            class="sr-only"
-          />
-          {{ option.label }}
-        </label>
-      </div>
-    </FormischField>
+    <SchemaFormFields :of="form" :schema="staffTagFormSchema" />
   </StaffMasterEditorShell>
 </template>

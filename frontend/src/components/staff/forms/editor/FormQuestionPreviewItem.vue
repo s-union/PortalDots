@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, watch, type Component } from 'vue'
-import { Field, setInput } from '@formisch/vue'
+import { SchemaFormFields } from '@/features/forms/schema-form'
 import type { StaffFormQuestion, UpdateStaffFormQuestionPayload } from '@/features/staff/forms/api'
 import { getQuestionTypeMeta } from '@/features/staff/forms/editor/useQuestionTypeMeta'
 import { useQuestionEditForm } from '@/features/staff/forms/editor/useQuestionEditForm'
-import type { StringQuestionField } from '@/features/staff/forms/editor/question-edit-schema'
+import { buildQuestionEditSchema } from '@/features/staff/forms/editor/question-edit-schema'
 import FormError from '@/components/ui/FormError.vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import PreviewHeading from './previews/PreviewHeading.vue'
@@ -64,25 +64,11 @@ watch(
   { immediate: true, flush: 'sync' }
 )
 
-function updateString(field: StringQuestionField, event: Event) {
-  const target = event.target
-  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-    setInput(form, { path: [field], input: target.value })
-  }
-}
-
 function handleDeleteClick() {
   if (structureDisabled) return
   if (window.confirm('設問を削除すると、この設問に対する回答も全て削除されます。本当に削除しますか？')) {
     emit('delete')
   }
-}
-
-function handleRequiredChange(event: Event) {
-  const target = event.target
-  if (!(target instanceof HTMLInputElement)) return
-  setInput(form, { path: ['isRequired'], input: target.checked })
-  void requestSave()
 }
 
 function handleDragStart(event: DragEvent) {
@@ -101,62 +87,10 @@ function handleDragStart(event: DragEvent) {
 
 const typeMeta = computed(() => getQuestionTypeMeta(edit.value.type))
 const parsedOptions = computed(() => edit.value.options)
-const showRequired = computed(() => edit.value.type !== 'heading')
-const stringFields = computed(() => {
-  const type = question.type
-  const limits = ['text', 'textarea', 'markdown', 'number', 'checkbox'].includes(type)
-  return [
-    {
-      key: 'name',
-      label: type === 'heading' ? '見出し' : '設問名',
-      textarea: false,
-      number: false,
-      show: true,
-      placeholder: '',
-      helper: ''
-    },
-    { key: 'description', label: '説明', textarea: true, number: false, show: true, placeholder: '', helper: '' },
-    {
-      key: 'options',
-      label: '選択肢',
-      textarea: true,
-      number: false,
-      show: ['radio', 'select', 'checkbox'].includes(type),
-      placeholder: '1行に1つ選択肢を入力',
-      helper: '改行区切りで選択肢を入力。'
-    },
-    {
-      key: 'numberMin',
-      label: type === 'number' ? '最低数' : type === 'checkbox' ? '最低選択数' : '最小文字数',
-      textarea: false,
-      number: true,
-      show: limits,
-      placeholder: '',
-      helper: ''
-    },
-    {
-      key: 'numberMax',
-      label: type === 'number' ? '最大数' : type === 'checkbox' ? '最大選択数' : '最大文字数',
-      textarea: false,
-      number: true,
-      show: limits,
-      placeholder: '',
-      helper: ''
-    },
-    {
-      key: 'allowedTypes',
-      label: '許可される拡張子',
-      textarea: false,
-      number: false,
-      show: type === 'upload',
-      placeholder: '例: png|jpg|jpeg|gif',
-      helper: '| 区切りで指定。画像の場合: png|jpg|jpeg|gif'
-    }
-  ] as const
-})
-function fieldId(key: StringQuestionField) {
-  return `question-${question.id}-${key}`
-}
+// Type-dependent fields/labels/helpers/placeholders and which fields apply to this question's
+// type come from the schema itself (`fieldUi`/`formLayout`); this component only supplies the
+// preview, drag & drop and delete-confirmation chrome around it.
+const schema = computed(() => buildQuestionEditSchema(question))
 
 const previewComponent = computed<Component>(() => {
   switch (edit.value.type) {
@@ -213,9 +147,6 @@ const previewProps = computed<Record<string, unknown>>(() => {
       return { ...base, isRequired: edit.value.isRequired, type: 'text' as const }
   }
 })
-
-const inputClass =
-  'w-full rounded border border-border bg-form-control px-3 py-2 text-body outline-none transition focus:border-primary focus:focus-ring-primary'
 </script>
 
 <template>
@@ -276,51 +207,19 @@ const inputClass =
       <FormError v-for="error in form.errors" :key="error" :message="error" role="alert" />
 
       <div class="space-y-3">
-        <Field v-if="showRequired" :of="form" :path="['isRequired']" v-slot="field">
-          <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-            <span class="pt-1 text-base text-body sm:text-right">回答必須か</span>
-            <label class="flex items-center gap-2 text-base text-body">
-              <input v-bind="field.props" type="checkbox" :checked="field.input" @change="handleRequiredChange" />
-              <span>この設問への回答は必須</span>
-            </label>
-          </div>
-        </Field>
-        <template v-for="item in stringFields" :key="item.key">
-          <Field v-if="item.show" :of="form" :path="[item.key]" v-slot="field">
-            <div class="grid items-start gap-x-4 sm:grid-cols-[8rem_1fr]">
-              <label :for="fieldId(item.key)" class="pt-2 text-base text-body sm:text-right">{{ item.label }}</label>
-              <div>
-                <textarea
-                  v-if="item.textarea"
-                  v-bind="field.props"
-                  :id="fieldId(item.key)"
-                  :class="inputClass + ' min-h-24'"
-                  :value="field.input"
-                  :placeholder="item.placeholder"
-                  :aria-invalid="!!field.errors"
-                  :aria-describedby="field.errors ? `${fieldId(item.key)}-error` : undefined"
-                  @input="updateString(item.key, $event)"
-                  @blur="requestSave"
-                />
-                <input
-                  v-else
-                  v-bind="field.props"
-                  :id="fieldId(item.key)"
-                  :class="inputClass"
-                  :value="field.input"
-                  :type="item.number ? 'number' : 'text'"
-                  :placeholder="item.placeholder"
-                  :aria-invalid="!!field.errors"
-                  :aria-describedby="field.errors ? `${fieldId(item.key)}-error` : undefined"
-                  @input="updateString(item.key, $event)"
-                  @blur="requestSave"
-                />
-                <p v-if="item.helper" class="mt-1 text-xs text-muted">{{ item.helper }}</p>
-                <FormError :id="`${fieldId(item.key)}-error`" :message="field.errors?.[0]" />
-              </div>
-            </div>
-          </Field>
-        </template>
+        <!--
+          Text-like fields autosave on blur; the `isRequired` checkbox autosaves immediately on
+          change instead (there is no "commit on blur" moment for a checkbox click). `@vue/test-utils`'s
+          `setValue()` fires both `input` and `change` (for `v-model.lazy` support) on every kind of
+          control, so `@field-change` must stay scoped to `isRequired` to avoid an extra premature
+          save on every text-field edit.
+        -->
+        <SchemaFormFields
+          :of="form"
+          :schema="schema"
+          @field-blur="(key) => key !== 'isRequired' && requestSave()"
+          @field-change="(key) => key === 'isRequired' && requestSave()"
+        />
 
         <div class="grid items-center gap-x-4 border-t border-border pt-3 sm:grid-cols-[8rem_1fr]">
           <span></span>

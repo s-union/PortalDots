@@ -21,22 +21,58 @@ The API contract remains flat. `answerFormInputToDraft` performs the conversion 
 
 Text and numeric validation examines trimmed input, matching the server's required-field and character-count rules while preserving raw drafts. Select, radio, and checkbox validation rejects values removed from a nonempty option list. Definition refreshes retain those selections visibly so users can correct them; checkbox users can remove obsolete selections. Radio and checkbox groups use fieldsets and legends, and each input references its description and error. Inherited, locked circle group names bypass editable-name validation, matching the backend's permission-dependent validation.
 
+## Schema-generated form UI
+
+`src/features/forms/schema-form/` renders pages' controls directly from a Valibot schema instead of each page hand-writing its own field markup. `fieldUi()` (`ui.ts`) attaches per-field UI metadata — control kind, label, helper, placeholder, options, and similar static properties — to a field's own schema via `v.pipe(innerSchema, ..., fieldUi({ control: 'text', label: '名前', ... }))`. `formLayout()` (`layout.ts`) attaches the ordered arrangement of those fields to the enclosing object schema. `SchemaFormFields.vue` reads both and renders each item through `SchemaFormField.vue` (one field: `FormischField` plus label/required wiring) and `SchemaFieldControl.vue` (the actual `<input>`/`<select>`/picker for that field's `control` kind).
+
+Reusable, cross-form validation primitives in `src/lib/form-validation/schemas.ts` (e.g. `fullNameSchema`, `nameYomiSchema`, `phoneNumberSchema`, `passwordSchema`) stay UI-free: they express only the validation rule, with no `fieldUi()` attached. Each concrete form schema wraps the shared primitive with its own `fieldUi()` at the point of use (`v.pipe(fullNameSchema, fieldUi({ control: 'text', label: '名前', ... }))`), so the same rule can carry a different label, control kind, or placeholder per form without duplicating the validation itself.
+
+A layout (`LayoutItem[]`) is an ordered list of:
+
+- a plain field key (`string`, or `{ field, testId }` to keep an existing `data-testid` hook),
+- `{ row: [...], label?, caption?, testId? }` — fields placed side by side; a `row` entry can also be a `{ display, label }` read-only item (see below),
+- `{ section, description?, collapsible?, items }` — a (optionally `<details>`-collapsible) group that recurses into its own `items`,
+- `{ slot }` — renders the named slot `slot:<name>`, for non-field content interleaved with fields (e.g. an upload control),
+- `{ heading, description? }` — a static heading not tied to any field, and
+- `{ display, label }` — a read-only row whose value comes from `SchemaFormFields`' `displayValues` prop (and whose label can be overridden at runtime via `displayLabels`), for server-supplied values shown alongside editable fields.
+
+`resolveLayout()` falls back to one row per schema entry, in object-entry order, when the schema carries no `formLayout()` metadata.
+
+`isRequiredField()` (`required.ts`) is the single source of requiredness: it derives whether a field is required from its own schema's validations (a string/array requiring at least one character/item, a present number, a boolean that must be `true`), and that same boolean drives both the label's required marker and the control's native `required`/`aria-required`. An explicit `fieldUi({ required: ... })` overrides the derivation in either direction, for the rare case the schema shape can't express it.
+
+`FieldOverride` (`types.ts`) carries runtime-only values a schema can't express at definition time: `hidden`, `disabled`, `readonly`, `label`/`helper`/`placeholder`/`suffix`/`prefix` overrides, `options` loaded from a query, tag/user-picker data, and loading/empty messages. Everything else — control kind, static label text, helper text, and the validation itself — lives in the schema's `fieldUi()` metadata, not in a per-render override.
+
+`before:<key>`/`after:<key>` slots wrap a specific field with extra content without replacing its control. `SchemaFormFields` also defines a `field:<key>` slot that replaces a field's control entirely; it still exists in `SchemaFormFields.vue`/`SchemaFormField.vue` as an escape hatch, but no migrated page currently uses it — `overrides` and `layout` cover every current per-field need, and pages must not hand-write per-field markup when they do.
+
+The `'settings'` layout variant renders each row's label and caption itself in a left column, and passes `hide-label` (plus `aria-labelledby` for fieldset controls) down to `SchemaFormField`/`FormischField`/`FormField` so there is exactly one accessible label per field — the left-column text — instead of that text and the field's own label both rendering.
+
+Dynamic answers and the question editor reuse the same renderer instead of per-control-kind components: `SchemaAnswerFields.vue` wraps `SchemaFormFields` with `variant="list"` and a `slot:upload:<id>` layout item for `UploadAnswerControl.vue` (kept separate because uploads remain separate API operations); `FormQuestionPreviewItem.vue` passes the staff question-edit schema straight to `SchemaFormFields` with no variant override.
+
+### Intentional visible changes
+
+Deriving requiredness and labels from the schema changed some pages' rendered output, intentionally:
+
+- A schema-derived required marker now appears on fields whose schema already enforced a required rule (e.g. `v.minLength(1, ...)`) but whose hand-written markup previously showed no marker.
+- `'settings'`-variant rows no longer duplicate the caption title and the field's own label; the left column's label is now the field's single accessible label (see above).
+- The staff form create page's `isPublic` checkbox now renders inside a `<fieldset>`/`<legend>`, because `'checkbox'` is one of `isFieldsetControl()`'s fieldset-rendering control kinds.
+- Accessible names of migrated answer controls now include the required marker as part of the rendered label text; a separate `aria-label` duplicating that name has been removed.
+
 ## Responsibilities
 
+- `schema-form/` (`fieldUi()`/`ui.ts`, `formLayout()`/`layout.ts`, `isRequiredField()`/`required.ts`, `SchemaFormFields.vue`, `SchemaFormField.vue`, `SchemaFieldControl.vue`) attaches UI and layout metadata to Valibot schemas and renders every fixed-form, dynamic-answer, and question-editor control from it; see "Schema-generated form UI" above.
 - `answer-form-schema.ts` compiles validation and display metadata, initializes input, and converts it to the API draft.
 - `AnswerFormEditor.vue` adapts answer data and API drafts to the shared form lifecycle.
 - `SchemaFormEditor.vue` manages schema changes and carries edits between sessions.
 - `SchemaFormSession.vue` gives each schema structure its own Formisch lifecycle and exposes the store through a typed slot.
 - `useSubmitForm.ts` coordinates fixed-form submission, duplicate guards, success messages and API errors using Formisch state.
-- `FormischField.vue` binds schema-typed fields to native registration, associated labels, errors and descriptions without a second validation store. `DateTimeInput.vue` adapts the existing timestamp conversion.
+- `FormischField.vue` binds schema-typed fields to native registration, associated labels, errors and descriptions without a second validation store. It also supports `hide-label` (with an `aria-labelledby` fallback for fieldset controls), for layouts — like the `'settings'` variant above — that render their own external label, and suppresses error presentation (no `border-danger`, `aria-invalid`, or described-by error) while a field is `disabled`, matching hand-written pages that hid errors on fields that couldn't be edited. `DateTimeInput.vue` adapts the existing timestamp conversion.
 - `form-errors.ts` attaches field errors only when current raw input still matches the submitted snapshot, and focuses registered controls in display order.
 - `useServerSyncedForm.ts` owns server refresh reconciliation, submitted-snapshot acceptance, request ordering, scope invalidation, and validation focus for flat and grouped input.
 - `server-synced-form-fields.ts` owns schema-derived leaf paths, flat/grouped field enumeration, raw value comparison, and compatible snapshot values.
 - `server-synced-form-state.ts` owns the submission state and transitions. State and request metadata are readonly; callers change the state through `transition`.
 - `useSchemaForm.ts` preserves the grouped editor's import and type names. It delegates to the shared synchronization lifecycle.
 - `useQuestionEditForm.ts` adapts flat question input and saved API values to the same lifecycle, enables autosave, and builds the question preview.
-- `SchemaAnswerFields.vue` renders ordered metadata and binds string and checkbox fields to their respective groups.
-- `TextAnswerControl.vue`, `CheckboxAnswerControl.vue`, and `UploadAnswerControl.vue` render the controls. Uploads remain separate API operations.
+- `SchemaAnswerFields.vue` wraps `SchemaFormFields` (`variant: 'list'`) to render ordered metadata, forwarding a `slot:upload:<id>` layout item to `UploadAnswerControl.vue`. Uploads remain separate API operations; every other answer control renders through `SchemaFieldControl.vue`. `TextAnswerControl.vue`, `CheckboxAnswerControl.vue`, and their `AnswerControls.test.ts` have been removed; `SchemaFormFields.test.ts` covers that rendering through `SchemaFieldControl.vue` instead.
 - `WorkspaceFormAnswerForm.vue` supplies the participant-specific header, layout, and actions.
 - `circle-detail-form.ts` validates editable basic information and combines it with the answer schema. Participation type is excluded because the detail screen cannot edit it.
 - `circle-registration-form.ts` combines all creation fields, including participation type, with the answer schema. `CircleDetailForm.vue` and `CircleRegistrationForm.vue` adapt the two flows to the shared lifecycle; `CircleBasicInfoFields.vue` binds their common fixed fields.
@@ -188,3 +224,5 @@ The current fixed-form follow-up passes typecheck, lint without diagnostics, for
 - The circle detail leader notice has a color contrast ratio of 4.28 instead of 4.5. It was reproduced from commit `2e238680` with the same mixed-form fixture and a successful save that stays on the detail page.
 
 Those two historical contrast cases were not part of the fourteen-file fixed-form browser run above. Accessibility checks remain enabled; real-API integration tests are separate from these mocked browser checks.
+
+The schema-generated-UI migration above passes typecheck, lint without diagnostics, formatter check, and all 832 unit tests across 143 files. A targeted Storybook run over the seventeen story files touched by this migration exercises 53 Chromium cases with accessibility checks enabled; 51 pass. The 2 failures are the same already-documented contrast cases: the registration-denied warning in `circles/new`'s "Cannot Create" story (4.18 instead of 4.5) and the circle detail leader notice in the "Validate Basic Information And Answers" story (4.28 instead of 4.5).

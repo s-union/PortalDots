@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { Field, type FormStore } from '@formisch/vue'
 import { computed } from 'vue'
-import CheckboxAnswerControl from './CheckboxAnswerControl.vue'
-import TextAnswerControl from './TextAnswerControl.vue'
+import type { FormStore } from '@formisch/vue'
+import { SchemaFormFields } from '@/features/forms/schema-form'
 import UploadAnswerControl from './UploadAnswerControl.vue'
-import FormError from '@/components/ui/FormError.vue'
 import type { FormAnswer } from '@/features/forms/answers'
 import {
-  getAnswerFormElements,
+  getUploadAnswerElements,
   type AnswerFormSchema,
   type AnswerFieldsSchema,
-  type UploadAnswerFormElement
+  type UploadAnswerElement
 } from '@/features/forms/answer-form-schema'
 
 const {
@@ -26,6 +24,9 @@ const {
   downloadLabel
 } = defineProps<{
   schema: AnswerFormSchema
+  // Loosely typed (not `FormStore<AnswerFormSchema>`): combined forms like circle registration pass
+  // a wider store whose schema also has a `basic` group. Its `text`/`choices` groups still match
+  // structurally, which is all Formisch's path-based `useField` needs at runtime.
   form: FormStore<AnswerFieldsSchema>
   answer: FormAnswer | null
   disabled: boolean
@@ -41,43 +42,30 @@ const emit = defineEmits<{
   upload: [questionId: string]
   fileChange: [questionId: string, file: File | null]
 }>()
-defineSlots<{ upload?(props: { element: UploadAnswerFormElement }): unknown }>()
+defineSlots<{ upload?(props: { element: UploadAnswerElement }): unknown }>()
 
-const elements = computed(() => getAnswerFormElements(schema))
+const uploads = computed(() => getUploadAnswerElements(schema))
+// See the `form` prop's comment: structurally compatible at runtime, but typed loosely to accept
+// wider combined-schema stores, so `SchemaFormFields` needs the exact `AnswerFormSchema` store type.
+const answerForm = computed(() => form as unknown as FormStore<AnswerFormSchema>)
 </script>
 
 <template>
-  <div class="grid gap-0">
-    <div v-for="element in elements" :key="element.id" class="border-b border-border px-6 py-5 last:border-b-0">
-      <template v-if="element.control === 'heading'">
-        <h2 class="text-lg font-semibold text-body">{{ element.label }}</h2>
-        <p v-if="element.description" class="mt-3 whitespace-pre-wrap text-base leading-7 text-muted">
-          {{ element.description }}
-        </p>
-      </template>
-
-      <component
-        v-else
-        :is="element.control === 'radio' || element.control === 'checkbox' ? 'fieldset' : 'div'"
-        class="grid min-w-0 gap-3"
-      >
-        <component
-          :is="element.control === 'radio' || element.control === 'checkbox' ? 'legend' : 'label'"
-          :for="element.control === 'radio' || element.control === 'checkbox' ? undefined : element.id"
-          class="text-base font-semibold text-body"
-        >
+  <!--
+    'list' borders each top-level field/heading/upload like the original hand-written loop did;
+    `requiredLabel="必須"` keeps that loop's required marker instead of the default `FormField` '*'.
+  -->
+  <SchemaFormFields :of="answerForm" :schema="schema" :disabled="disabled" variant="list" required-label="必須">
+    <template v-for="element in uploads" :key="element.id" #[`slot:upload:${element.id}`]>
+      <div class="grid min-w-0 gap-3">
+        <label class="text-base font-semibold text-body">
           {{ element.label }}
           <span v-if="element.required" class="ml-2 text-xs font-semibold text-danger">必須</span>
-        </component>
-        <p
-          v-if="element.description"
-          :id="`${element.id}-description`"
-          class="mt-2 whitespace-pre-wrap text-base leading-7 text-muted"
-        >
+        </label>
+        <p v-if="element.description" class="whitespace-pre-wrap text-base leading-7 text-muted">
           {{ element.description }}
         </p>
-
-        <slot v-if="element.control === 'upload'" name="upload" :element="element">
+        <slot name="upload" :element="element">
           <UploadAnswerControl
             :element="element"
             :answer="answer"
@@ -92,39 +80,7 @@ const elements = computed(() => getAnswerFormElements(schema))
             @file-change="(questionId, file) => emit('fileChange', questionId, file)"
           />
         </slot>
-
-        <Field v-else-if="element.control === 'checkbox'" :of="form" :path="['choices', element.id]" v-slot="field">
-          <CheckboxAnswerControl
-            v-model="field.input"
-            :element="element"
-            :disabled="disabled"
-            :field-props="field.props"
-            :aria-invalid="!!field.errors"
-            :aria-described-by="
-              [element.description && `${element.id}-description`, field.errors && `${element.id}-error`]
-                .filter(Boolean)
-                .join(' ') || undefined
-            "
-          />
-          <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" />
-        </Field>
-
-        <Field v-else :of="form" :path="['text', element.id]" v-slot="field">
-          <TextAnswerControl
-            v-model="field.input"
-            :element="element"
-            :disabled="disabled"
-            :field-props="field.props"
-            :aria-invalid="!!field.errors"
-            :aria-described-by="
-              [element.description && `${element.id}-description`, field.errors && `${element.id}-error`]
-                .filter(Boolean)
-                .join(' ') || undefined
-            "
-          />
-          <FormError v-if="field.errors" :id="`${element.id}-error`" :message="field.errors[0]" />
-        </Field>
-      </component>
-    </div>
-  </div>
+      </div>
+    </template>
+  </SchemaFormFields>
 </template>

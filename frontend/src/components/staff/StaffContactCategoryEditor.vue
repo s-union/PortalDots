@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StaffMasterEditorShell from '@/components/staff/StaffMasterEditorShell.vue'
-import FormischField from '@/components/forms/FormischField.vue'
+import { SchemaFormFields } from '@/features/forms/schema-form'
 import {
   buildDeleteStaffContactCategoryConfirmMessage,
   type StaffContactCategory,
@@ -9,15 +9,8 @@ import {
   useDeleteStaffContactCategoryMutation,
   useUpdateStaffContactCategoryMutation
 } from '@/features/staff/masters/contactCategories'
-import * as v from 'valibot'
-import { requiredTextSchema } from '@/lib/form-validation'
-
+import { staffContactCategoryFormSchema } from '@/lib/form-validation'
 import { useStaffMasterEditor } from '@/features/staff/masters/useStaffMasterEditor'
-
-const schema = v.object({
-  name: requiredTextSchema('カテゴリ名'),
-  email: v.pipe(v.string(), v.trim(), v.nonEmpty('メールアドレスを入力してください'))
-})
 
 const { category } = defineProps<{
   category: StaffContactCategory | null
@@ -33,7 +26,7 @@ const updateMutation = useUpdateStaffContactCategoryMutation()
 const deleteMutation = useDeleteStaffContactCategoryMutation()
 const { form, errorMessage, successMessage, handleSave, handleDelete, isSaving, isDeleting } = useStaffMasterEditor({
   entity: computed(() => category),
-  schema: schema,
+  schema: staffContactCategoryFormSchema,
   input: (entity) => ({ name: entity?.name ?? '', email: entity?.email ?? '' }),
   create: (input) => createMutation.mutateAsync(input),
   update: (entity, input) => updateMutation.mutateAsync({ ...entity, ...input }),
@@ -63,25 +56,7 @@ const { form, errorMessage, successMessage, handleSave, handleDelete, isSaving, 
     @delete="handleDelete"
   >
     <div class="grid gap-4">
-      <FormischField
-        v-slot="{ field, control }"
-        :of="form"
-        :path="['name']"
-        label="カテゴリ名"
-        label-class="font-medium"
-      >
-        <input v-bind="control" v-model="field.input" name="name" type="text" />
-      </FormischField>
-
-      <FormischField
-        v-slot="{ field, control }"
-        :of="form"
-        :path="['email']"
-        label="送信先メールアドレス"
-        label-class="font-medium"
-      >
-        <input v-bind="control" v-model="field.input" name="email" type="email" />
-      </FormischField>
+      <SchemaFormFields :of="form" :schema="staffContactCategoryFormSchema" />
     </div>
   </StaffMasterEditorShell>
 </template>

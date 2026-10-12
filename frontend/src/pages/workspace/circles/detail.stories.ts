@@ -136,7 +136,7 @@ export const ValidateBasicInformationAndAnswers: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const name = await canvas.findByRole('textbox', { name: /^企画名 \*/ })
-    const description = canvas.getByRole('textbox', { name: '出店内容' })
+    const description = canvas.getByRole('textbox', { name: /^出店内容/ })
     const save = canvas.getByRole('button', { name: '保存する' })
     await userEvent.clear(name)
     await userEvent.click(save)

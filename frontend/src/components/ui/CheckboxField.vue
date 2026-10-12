@@ -2,9 +2,10 @@
 import type { FieldControl } from '@/components/forms/field-control'
 const model = defineModel<boolean>()
 
-const { label, disabled, name, id, ariaInvalid, ariaDescribedBy, control } = defineProps<{
+const { label, disabled, required, name, id, ariaInvalid, ariaDescribedBy, control } = defineProps<{
   label: string
   disabled?: boolean
+  required?: boolean
   name?: string
   id?: string
   control?: FieldControl
@@ -23,6 +24,7 @@ const { label, disabled, name, id, ariaInvalid, ariaDescribedBy, control } = def
       :aria-invalid="control?.['aria-invalid'] ?? ariaInvalid"
       :disabled="disabled"
       :name="name"
+      :required="required"
       type="checkbox"
     />
     {{ label }}

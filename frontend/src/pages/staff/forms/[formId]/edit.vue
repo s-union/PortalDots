@@ -9,15 +9,12 @@ import { computed, ref } from 'vue'
 import { useServerSyncedForm } from '@/features/forms/composables/useServerSyncedForm'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDateTime } from '@/lib/format/datetime'
-import StaffTagPicker from '@/components/staff/StaffTagPicker.vue'
-import StaffUserPicker from '@/components/staff/StaffUserPicker.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import MarkdownEditorField from '@/components/ui/MarkdownEditorField.vue'
-import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
 import SurfaceHeader from '@/components/ui/SurfaceHeader.vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
+import { SchemaFormFields, type FieldOverrides, type LayoutItem } from '@/features/forms/schema-form'
 import { buildCopyStaffFormConfirmMessage, buildDeleteStaffFormConfirmMessage } from '@/features/staff/forms/messages'
 import {
   extractStaffFormValidationMessage,
@@ -36,9 +33,21 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
-import FormischField from '@/components/forms/FormischField.vue'
-import DateTimeInput from '@/components/forms/DateTimeInput.vue'
-import CheckboxField from '@/components/ui/CheckboxField.vue'
+
+// The 'settings' variant shows every field as its own captioned row; unlike the 'stack' variant
+// used by the create page, description/confirmationMessage are not nested inside collapsible
+// sections here (matching this page's pre-existing layout), so this overrides the schema's default
+// (collapsible-section) layout for this page only via `SchemaFormFields`' public `layout` prop.
+const settingsLayout: readonly LayoutItem[] = [
+  'name',
+  'maxAnswers',
+  { row: ['openAt', 'closeAt'], label: '受付期間', caption: '受付開始日時と受付終了日時を指定します。' },
+  'isPublic',
+  'answerableTags',
+  'staffNotificationUserIds',
+  'description',
+  'confirmationMessage'
+]
 
 const route = useRoute('/staff/forms/[formId]/edit')
 const router = useRouter()
@@ -56,8 +65,15 @@ const deleteFormMutation = useDeleteStaffFormMutation()
 const actionError = ref('')
 const staffFormTabs = computed(() => (formId.value.length > 0 ? buildStaffFormTabs(formId.value, 'edit') : []))
 const isParticipationForm = computed(() => formQuery.data.value?.isParticipationForm ?? false)
-const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
-const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
+// answerableTags' picker data comes from a query; staffNotificationUserIds is hidden entirely for
+// participation forms (whose recipients are managed on the participation type screen instead).
+const overrides = computed<FieldOverrides<typeof staffFormSchema.entries>>(() => ({
+  answerableTags: {
+    availableTags: (tagsQuery.data.value ?? []).map((tag) => tag.name),
+    tagColors: staffTagColorMap(tagsQuery.data.value ?? [])
+  },
+  staffNotificationUserIds: { hidden: isParticipationForm.value }
+}))
 
 const { form, submitEvent: handleSaveForm } = useServerSyncedForm({
   schema: staffFormSchema,
@@ -182,162 +198,14 @@ async function handleDeleteForm() {
           </template>
         </SurfaceHeader>
 
-        <SettingsRow>
-          <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
-            <div class="space-y-1">
-              <p class="text-base font-semibold text-body">フォーム名</p>
-              <p class="text-xs text-muted-2">一覧と回答画面で表示する名称です。必須項目です。</p>
-            </div>
-            <FormischField v-slot="{ field, control }" :of="form" :path="['name']" label="フォーム名">
-              <input
-                v-bind="control"
-                v-model="field.input"
-                :disabled="isParticipationForm"
-                class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-                name="name"
-                type="text"
-              />
-            </FormischField>
-          </div>
-        </SettingsRow>
-
-        <SettingsRow>
-          <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6">
-            <div class="space-y-1">
-              <p class="text-base font-semibold text-body">フォームの説明</p>
-              <p class="text-xs text-muted-2">フォームの説明を入力します。</p>
-            </div>
-            <FormischField v-slot="{ field, control }" :of="form" :path="['description']" label="説明">
-              <MarkdownEditorField
-                :control="control"
-                :model-value="field.input ?? ''"
-                @update:model-value="field.input = $event"
-                :disabled="isParticipationForm"
-                min-height-class="min-h-32"
-                name="description"
-              />
-            </FormischField>
-          </div>
-        </SettingsRow>
-
-        <SettingsRow>
-          <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-            <div class="space-y-1">
-              <p class="text-base font-semibold text-body">受付期間</p>
-              <p class="text-xs text-muted-2">受付開始日時と受付終了日時を指定します。</p>
-            </div>
-            <div class="grid gap-4 md:grid-cols-2">
-              <FormischField v-slot="{ field, control }" :of="form" :path="['openAt']" label="開始日時">
-                <DateTimeInput :control="control" v-model="field.input" :disabled="isParticipationForm" />
-              </FormischField>
-
-              <FormischField v-slot="{ field, control }" :of="form" :path="['closeAt']" label="締切日時">
-                <DateTimeInput :control="control" v-model="field.input" :disabled="isParticipationForm" />
-              </FormischField>
-            </div>
-          </div>
-        </SettingsRow>
-
-        <SettingsRow>
-          <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-            <div class="space-y-1">
-              <p class="text-base font-semibold text-body">公開設定</p>
-              <p class="text-xs text-muted-2">受付期間外では、公開中でもユーザーは回答や編集を行えません。</p>
-            </div>
-            <div class="flex flex-wrap gap-4">
-              <FormischField v-slot="{ field, control }" :of="form" :path="['isPublic']" label="公開設定" as="fieldset"
-                ><CheckboxField
-                  :control="control"
-                  :model-value="field.input ?? false"
-                  @update:model-value="field.input = $event"
-                  label="公開する"
-                  :disabled="isParticipationForm"
-                  name="isPublic"
-              /></FormischField>
-            </div>
-          </div>
-        </SettingsRow>
-
-        <SettingsRow>
-          <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-            <div class="space-y-1">
-              <p class="text-base font-semibold text-body">回答条件</p>
-              <p class="text-xs text-muted-2">回答数上限と回答可能タグを設定します。</p>
-            </div>
-            <div class="grid gap-4">
-              <FormischField v-slot="{ field, control }" :of="form" :path="['maxAnswers']" label="最大回答数">
-                <input
-                  v-bind="control"
-                  v-model.number="field.input"
-                  :disabled="isParticipationForm"
-                  class="rounded border border-border bg-form-control px-4 py-3 text-body outline-none transition focus:border-primary focus:focus-ring-primary"
-                  min="1"
-                  name="maxAnswers"
-                  type="number"
-                />
-              </FormischField>
-              <FormischField v-slot="{ field, control }" :of="form" :path="['answerableTags']" label="回答可能タグ">
-                <StaffTagPicker
-                  :control="control"
-                  :model-value="field.input ?? []"
-                  @update:model-value="field.input = $event"
-                  :available-tags="availableTags"
-                  :tag-colors="tagColors"
-                  :disabled="isParticipationForm"
-                  name="answerableTags"
-                />
-              </FormischField>
-            </div>
-          </div>
-        </SettingsRow>
-
-        <SettingsRow v-if="!isParticipationForm">
-          <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-            <div class="space-y-1">
-              <p class="text-base font-semibold text-body">スタッフ用控えの送信先</p>
-              <p class="text-xs text-muted-2">
-                回答があったときに「スタッフ用控え」のメールを送信するスタッフを選択します。未指定の場合、フォーム作成者が送信先になります。
-              </p>
-            </div>
-            <FormischField
-              v-slot="{ field, control }"
-              :of="form"
-              :path="['staffNotificationUserIds']"
-              label="スタッフ用控えの送信先"
-            >
-              <StaffUserPicker
-                :control="control"
-                :model-value="field.input ?? []"
-                @update:model-value="field.input = $event"
-                name="staffNotificationUserIds"
-              />
-            </FormischField>
-          </div>
-        </SettingsRow>
-
-        <SettingsRow>
-          <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:gap-6">
-            <div class="space-y-1">
-              <p class="text-base font-semibold text-body">回答完了メッセージ</p>
-              <p class="text-xs text-muted-2">提出後に表示する補足文言です。未設定なら既定メッセージを使います。</p>
-            </div>
-            <FormischField
-              v-slot="{ field, control }"
-              :of="form"
-              :path="['confirmationMessage']"
-              label="回答完了メッセージ"
-            >
-              <MarkdownEditorField
-                :control="control"
-                :model-value="field.input ?? ''"
-                @update:model-value="field.input = $event"
-                :disabled="isParticipationForm"
-                min-height-class="min-h-24"
-                name="confirmationMessage"
-              />
-            </FormischField>
-          </div>
-        </SettingsRow>
+        <SchemaFormFields
+          :of="form"
+          :schema="staffFormSchema"
+          variant="settings"
+          :disabled="isParticipationForm"
+          :overrides="overrides"
+          :layout="settingsLayout"
+        />
 
         <template #footer>
           <div class="space-y-4">

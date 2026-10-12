@@ -134,7 +134,11 @@ describe('WorkspaceFormAnswerForm', () => {
       expect(wrapper.find('label[for="q-choice"]').exists()).toBe(false)
       for (const input of group.findAll('input')) {
         expect(input.attributes('aria-invalid')).toBe('true')
-        expect(input.attributes('aria-describedby')).toBe('q-choice-description q-choice-error')
+        // `q-choice-helper`, not `-description`: the question's description now renders through
+        // the shared `FormischField`/`FormField` helper slot (see schema-form's README deviation
+        // notes), which is semantically equivalent — still one `aria-describedby`'d paragraph
+        // holding the question's description text, just under the generic helper id.
+        expect(input.attributes('aria-describedby')).toBe('q-choice-helper q-choice-error')
       }
       expect(wrapper.get('#q-choice-error').attributes('role')).toBeUndefined()
       expect(document.activeElement).toBe(group.get('input').element)
@@ -208,12 +212,12 @@ describe('WorkspaceFormAnswerForm', () => {
     expect(wrapper.text()).toContain('企画の概要を記入してください')
     expect(wrapper.text().match(/必須/g)).toHaveLength(8)
 
-    const boundedNumber = wrapper.get('select[aria-label="貸出台数"]')
+    const boundedNumber = wrapper.get('select[name="q-number-select"]')
     expect(boundedNumber.findAll('option').map((option) => option.text())).toEqual(['選択してください', '1', '2', '3'])
-    const wideNumber = wrapper.get('input[type="number"][aria-label="想定来場者数"]')
+    const wideNumber = wrapper.get('input[type="number"][name="q-number-input"]')
     expect(wideNumber.attributes('min')).toBe('1')
     expect(wideNumber.attributes('max')).toBe('500')
-    const select = wrapper.get('select[aria-label="開催場所"]')
+    const select = wrapper.get('select[name="q-select"]')
     expect(select.findAll('option').map((option) => option.text())).toEqual(['選択してください', '会議室', '屋外'])
     expect(
       wrapper
@@ -230,8 +234,8 @@ describe('WorkspaceFormAnswerForm', () => {
     expect(wrapper.get('input[type="file"]').attributes('accept')).toBe('.pdf,.png')
     expect(wrapper.find('button[title="太字"]').exists()).toBe(true)
 
-    await wrapper.get('input[type="text"][aria-label="企画名"]').setValue('展示企画')
-    await wrapper.get('textarea[aria-label="企画説明"]').setValue('一行目\n二行目')
+    await wrapper.get('input[type="text"][name="q-text"]').setValue('展示企画')
+    await wrapper.get('textarea[name="q-textarea"]').setValue('一行目\n二行目')
     await wrapper.get('textarea[name="q-markdown"]').setValue('**注意**してください')
     await boundedNumber.setValue('2')
     await wideNumber.setValue('250')
@@ -269,7 +273,7 @@ describe('WorkspaceFormAnswerForm', () => {
     })
     expect(
       original.wrapper
-        .get('select[aria-label="旧設問"]')
+        .get('select[name="q-choice"]')
         .findAll('option')
         .map((option) => option.text())
     ).toEqual(['選択してください', 'A', 'B'])

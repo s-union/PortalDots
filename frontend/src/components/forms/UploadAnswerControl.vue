@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { buttonVariants } from '@/lib/ui/variants'
 import { formatDateTime } from '@/lib/format/datetime'
 import { questionUploads, type FormAnswer } from '@/features/forms/answers'
-import type { UploadAnswerFormElement } from '@/features/forms/answer-form-schema'
+import type { UploadAnswerElement } from '@/features/forms/answer-form-schema'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import FileUploadField from '@/components/ui/FileUploadField.vue'
 
@@ -19,7 +19,7 @@ const {
   downloadHref
 } = defineProps<{
   answer: FormAnswer | null | undefined
-  element: UploadAnswerFormElement
+  element: UploadAnswerElement
   disabled?: boolean
   selectedFile?: File | null
   uploadButtonLabel?: string

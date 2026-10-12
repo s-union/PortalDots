@@ -5,12 +5,14 @@ definePage({
   }
 })
 
-import { computed, ref, watch } from 'vue'
-import { Field, isDirty, reset, setInput, type FormStore } from '@formisch/vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import * as v from 'valibot'
+import { getInput, isDirty, reset, setInput, type FormStore } from '@formisch/vue'
 import { useRoute, useRouter } from 'vue-router'
 import CircleRegistrationForm from '@/features/circles/components/CircleRegistrationForm.vue'
 import CircleBasicInfoFields from '@/features/circles/components/CircleBasicInfoFields.vue'
 import SchemaAnswerFields from '@/components/forms/SchemaAnswerFields.vue'
+import { SchemaFormFields, type FieldOverrides } from '@/features/forms/schema-form'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
@@ -28,6 +30,7 @@ import type {
 import { answerFormInputToDraft, type AnswerFormSchema } from '@/features/forms/answer-form-schema'
 import { useUnsavedChangesGuard } from '@/features/forms/composables/useUnsavedChangesGuard'
 import { useSessionStore } from '@/features/session/store'
+import { circleRegistrationFormSchema } from '@/lib/form-validation'
 import { extractValidationMessage } from '@/lib/api/validation'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
@@ -63,27 +66,43 @@ const leaderDisplayName = computed(() => sessionStore.user?.displayName ?? '')
 const registrationFormDescription = computed(() => registrationFormQuery.data.value?.formDescription.trim() ?? '')
 const { clear: clearUnsavedChangesGuard, confirmBeforeSwitching } = useUnsavedChangesGuard(formDirty)
 
+// A lightweight schema for the `basic.participationTypeId` field alone (options come from the
+// participation types query, via `overrides`). `circleForm` below is structurally compatible at
+// runtime (mirrors `SchemaAnswerFields.vue`'s `form`-widening pattern): it has a richer `basic`
+// group plus the answers groups this schema doesn't know about.
+const participationTypeSchema = v.object({ basic: v.pick(circleRegistrationFormSchema, ['participationTypeId']) })
+function widenToParticipationTypeForm(form: FormStore<CircleRegistrationFormSchema>) {
+  return form as unknown as FormStore<typeof participationTypeSchema>
+}
+const participationTypeOverrides = computed<FieldOverrides<typeof participationTypeSchema.entries>>(() => ({
+  'basic.participationTypeId': {
+    options: (participationTypesQuery.data.value ?? []).map((pt) => ({
+      value: pt.id,
+      label: `${pt.name} (${pt.usersCountMin}〜${pt.usersCountMax}人)`
+    }))
+  }
+}))
+
 // Changing the participation type swaps the question set and rebuilds the
 // draft, discarding any answers typed under the current set. Only that draft
 // is at risk (basic info is kept), so the switch confirms on the draft alone.
-function handleParticipationTypeChange(event: Event, form: FormStore<CircleRegistrationFormSchema>) {
-  if (!(event.target instanceof HTMLSelectElement)) return
-  const nextId = event.target.value
-  if (form.isSubmitting) {
-    event.target.value = participationTypeId.value
-    return
-  }
+async function handleParticipationTypeChange(form: FormStore<CircleRegistrationFormSchema>) {
+  const nextId = getInput(form, { path: ['basic', 'participationTypeId'] }) ?? ''
   if (nextId === participationTypeId.value) {
     return
   }
   if (!confirmBeforeSwitching(() => isDirty(form, { path: ['text'] }) || isDirty(form, { path: ['choices'] }))) {
-    event.target.value = participationTypeId.value
+    // The select already updated its field input (it drives the field via v-model). Vue's own
+    // <select> v-model directive ignores a same-tick model update while it's still applying the
+    // user's native selection (see @vue/runtime-dom's vModelSelect `_assigning` flag), so the
+    // revert below only sticks once that tick has passed.
+    await nextTick()
+    setInput(form, { path: ['basic', 'participationTypeId'], input: participationTypeId.value })
     return
   }
   // Clear the old answers before the schema remount, including reused question IDs.
   reset(form, { path: ['text'] })
   reset(form, { path: ['choices'] })
-  setInput(form, { path: ['basic', 'participationTypeId'], input: nextId })
   participationTypeId.value = nextId
 }
 
@@ -203,32 +222,14 @@ async function handleSubmit(
               <input :value="leaderDisplayName" name="leaderDisplayName" readonly type="text" />
             </FormField>
 
-            <Field :of="circleForm" :path="['basic', 'participationTypeId']" v-slot="field">
-              <FormField
-                label="参加種別"
-                label-class="font-semibold"
-                id="circle-participationTypeId"
-                :error="field.errors?.[0]"
-                required
-              >
-                <select
-                  v-bind="field.props"
-                  :value="field.input"
-                  id="circle-participationTypeId"
-                  name="participationTypeId"
-                  :disabled="circleForm.isSubmitting"
-                  :class="{ 'border-danger': field.errors }"
-                  :aria-invalid="!!field.errors"
-                  :aria-describedby="field.errors ? 'circle-participationTypeId-error' : undefined"
-                  @change="handleParticipationTypeChange($event, circleForm)"
-                >
-                  <option value="">選択してください</option>
-                  <option v-for="pt in participationTypesQuery.data.value ?? []" :key="pt.id" :value="pt.id">
-                    {{ pt.name }} ({{ pt.usersCountMin }}〜{{ pt.usersCountMax }}人)
-                  </option>
-                </select>
-              </FormField>
-            </Field>
+            <SchemaFormFields
+              :of="widenToParticipationTypeForm(circleForm)"
+              :schema="participationTypeSchema"
+              :disabled="circleForm.isSubmitting"
+              :overrides="participationTypeOverrides"
+              :layout="['basic.participationTypeId']"
+              @field-change="handleParticipationTypeChange(circleForm)"
+            />
 
             <div
               v-if="selectedParticipationType"

@@ -3,11 +3,13 @@ import * as v from 'valibot'
 import type { FormQuestion } from '@/features/forms/api'
 import type { FormAnswer } from '@/features/forms/answers'
 import { toAnswerId, toQuestionId } from '@/lib/api/schema'
+import { getFormLayout, getFieldUi } from './schema-form'
 import {
+  answerFormFieldPaths,
   answerFormInputToDraft,
   buildAnswerFormInput,
   buildAnswerFormSchema,
-  getAnswerFormElements
+  getUploadAnswerElements
 } from './answer-form-schema'
 
 function textInput(value: string) {
@@ -48,6 +50,14 @@ function createAnswer(overrides: Partial<FormAnswer> = {}): FormAnswer {
   }
 }
 
+function textFieldUi(schema: ReturnType<typeof buildAnswerFormSchema>, id = 'question-1') {
+  return getFieldUi(schema.entries.text.entries[id])
+}
+
+function choiceFieldUi(schema: ReturnType<typeof buildAnswerFormSchema>, id = 'question-1') {
+  return getFieldUi(schema.entries.choices.entries[id])
+}
+
 describe('buildAnswerFormSchema', () => {
   it.each([
     { min: -2, max: 197, control: 'select' },
@@ -58,15 +68,16 @@ describe('buildAnswerFormSchema', () => {
     { min: 3, max: 2, control: 'number' }
   ])('resolves numeric bounds $min–$max to a $control control', ({ min, max, control }) => {
     const schema = buildAnswerFormSchema([createQuestion({ type: 'number', numberMin: min, numberMax: max })])
-    const element = getAnswerFormElements(schema)[0]
+    const ui = textFieldUi(schema)
 
-    expect(element.control).toBe(control)
-    if (element.control === 'select') {
-      expect(element.options[0]).toBe(String(min))
-      expect(element.options.at(-1)).toBe(String(max))
-      expect(element.options).toHaveLength((max ?? 0) - (min ?? 0) + 1)
-    } else {
-      expect(element).toMatchObject({ min, max })
+    expect(ui.control).toBe(control)
+    if (ui.control === 'select') {
+      expect(ui.options?.[0]?.value).toBe(String(min))
+      expect(ui.options?.at(-1)?.value).toBe(String(max))
+      expect(ui.options).toHaveLength((max ?? 0) - (min ?? 0) + 1)
+    } else if (ui.control === 'number') {
+      expect(ui.min).toBe(min ?? undefined)
+      expect(ui.max).toBe(max ?? undefined)
     }
   })
 
@@ -101,7 +112,7 @@ describe('buildAnswerFormSchema', () => {
     const requiredSchema = buildAnswerFormSchema([question])
     const optionalSchema = buildAnswerFormSchema([{ ...question, isRequired: false }])
 
-    expect(getAnswerFormElements(requiredSchema)[0]).toMatchObject({ control: 'checkbox', required: true })
+    expect(choiceFieldUi(requiredSchema)).toMatchObject({ control: 'checkboxGroup', required: true })
     expect(v.parse(requiredSchema, choiceInput(['机']))).toEqual(choiceInput(['机']))
     expect(v.safeParse(requiredSchema, choiceInput([])).issues?.[0].message).toBe('設問を選択してください')
     expect(v.safeParse(requiredSchema, { text: {}, choices: { 'question-1': '机' } }).success).toBe(false)
@@ -149,30 +160,36 @@ describe('buildAnswerFormSchema', () => {
     expect(v.parse(schema, choiceInput([' 机 ']))).toEqual(choiceInput([' 机 ']))
   })
 
-  it('preserves presentation order while excluding headings and uploads from answer validation', () => {
+  it('keeps presentation order while excluding headings and uploads from answer validation', () => {
     const schema = buildAnswerFormSchema([
       createQuestion({ id: toQuestionId('heading'), type: 'heading', priority: 5 }),
       createQuestion({ id: toQuestionId('text'), priority: 2 }),
       createQuestion({ id: toQuestionId('upload'), type: 'upload', allowedTypes: ' .PDF, JPG|.png\n WEBP\r\tgif ' })
     ])
 
-    expect(getAnswerFormElements(schema).map((element) => element.id)).toEqual(['heading', 'text', 'upload'])
+    expect(getFormLayout(schema)).toEqual([
+      { heading: '設問', description: '設問の説明' },
+      'text.text',
+      { slot: 'upload:upload' }
+    ])
+    expect(answerFormFieldPaths(schema)).toEqual([['text', 'text']])
     expect(Object.keys(schema.entries.text.entries)).toEqual(['text'])
     expect(Object.keys(schema.entries.choices.entries)).toEqual([])
     expect(v.parse(schema, { text: { text: '回答', heading: '対象外', upload: '対象外' }, choices: {} })).toEqual({
       text: { text: '回答' },
       choices: {}
     })
-    expect(getAnswerFormElements(schema)[2]).toEqual({
-      id: 'upload',
-      control: 'upload',
-      label: '設問',
-      description: '設問の説明',
-      required: true,
-      extensions: ['pdf', 'jpg', 'png', 'webp', 'gif'],
-      maxSizeBytes: 5 * 1024 * 1024
-    })
-    expect(getAnswerFormElements(buildAnswerFormSchema([createQuestion({ type: 'upload' })]))[0]).toMatchObject({
+    expect(getUploadAnswerElements(schema)).toEqual([
+      {
+        id: 'upload',
+        label: '設問',
+        description: '設問の説明',
+        required: true,
+        extensions: ['pdf', 'jpg', 'png', 'webp', 'gif'],
+        maxSizeBytes: 5 * 1024 * 1024
+      }
+    ])
+    expect(getUploadAnswerElements(buildAnswerFormSchema([createQuestion({ type: 'upload' })]))[0]).toMatchObject({
       extensions: undefined
     })
   })
@@ -182,18 +199,18 @@ describe('buildAnswerFormSchema', () => {
     const legacySchema = buildAnswerFormSchema([], { legacyBody: true })
     const headingSchema = buildAnswerFormSchema([createQuestion({ type: 'heading' })], { legacyBody: true })
 
-    expect(getAnswerFormElements(emptySchema)).toEqual([])
+    expect(answerFormFieldPaths(emptySchema)).toEqual([])
     expect(v.parse(emptySchema, { text: {}, choices: {} })).toEqual({ text: {}, choices: {} })
-    expect(getAnswerFormElements(legacySchema)).toEqual([
-      {
-        id: 'legacy-body',
-        control: 'textarea',
-        label: '回答',
-        description: '',
-        required: false,
-        placeholder: '回答内容を入力してください'
-      }
-    ])
+    expect(answerFormFieldPaths(legacySchema)).toEqual([['text', 'legacy-body']])
+    expect(textFieldUi(legacySchema, 'legacy-body')).toMatchObject({
+      control: 'textarea',
+      label: '回答',
+      required: false,
+      placeholder: '回答内容を入力してください',
+      // Rendered name stays `answer-body` (not the field key) for e2e selectors and the
+      // staff/workspace answer pages that target `textarea[name="answer-body"]`.
+      name: 'answer-body'
+    })
     expect(v.parse(legacySchema, { text: { 'legacy-body': '' }, choices: {} })).toEqual({
       text: { 'legacy-body': '' },
       choices: {}

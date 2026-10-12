@@ -77,7 +77,7 @@ export const Default: Story = {
     const type = await canvas.findByRole('combobox', { name: /参加種別/ })
     await waitFor(() => expect(canvas.getByRole('option', { name: /一般参加/ })).toBeVisible())
     await userEvent.selectOptions(type, mockParticipationType.id)
-    const description = await canvas.findByRole('textbox', { name: '出店内容' })
+    const description = await canvas.findByRole('textbox', { name: /^出店内容/ })
     const name = canvas.getByRole('textbox', { name: /^企画名 \*/ })
     await userEvent.type(canvas.getByRole('textbox', { name: /企画名（よみ）/ }), 'てんじきかく')
     await userEvent.type(canvas.getByRole('textbox', { name: /^企画を出店する団体の名称 \*/ }), '展示団体')

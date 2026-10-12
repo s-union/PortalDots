@@ -116,14 +116,20 @@ describe('UserSettingsPage', () => {
     })
     await flushPromises()
 
-    const nameLabel = wrapper.findAll('label').find((label) => label.text() === '名前')
+    const nameLabel = wrapper.findAll('label').find((label) => label.text().startsWith('名前'))
     expect(nameLabel?.attributes('for')).toBe(wrapper.get('input[name="name"]').attributes('id'))
-    expect(nameLabel?.classes()).toContain('mb-0')
-    expect(nameLabel?.classes()).not.toContain('md:min-h-[2.85rem]')
-    expect(wrapper.get('[data-testid="settings-name-row"]').classes()).toContain('md:items-center')
-    expect(wrapper.get('input[name="name"]').classes()).toContain('md:col-start-2')
-    expect(wrapper.get('[data-testid="settings-auth-row"]').classes()).toContain('md:items-center')
-    expect(wrapper.get('input[name="currentPassword"]').classes()).toContain('md:col-start-2')
+    expect(nameLabel?.classes()).toContain('font-semibold')
+    // `testId`s on `profileUpdateFormSchema`'s layout keep this page's pre-existing test hooks.
+    expect(wrapper.get('[data-testid="settings-name-row"]').find('input[name="name"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="settings-auth-row"]').find('input[name="currentPassword"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="settings-auth-row"]').find('a[href="/password/reset"]').exists()).toBe(true)
+
+    const studentIdLabel = wrapper.findAll('label').find((label) => label.text() === '学生番号')
+    expect(studentIdLabel?.attributes('for')).toBe(wrapper.get('input[name="studentId"]').attributes('id'))
+    expect(wrapper.get<HTMLInputElement>('input[name="studentId"]').element.readOnly).toBe(true)
+    const univemailLabel = wrapper.findAll('label').find((label) => label.text() === '学生用メールアドレス')
+    expect(univemailLabel?.attributes('for')).toBe(wrapper.get('input[name="univemail"]').attributes('id'))
+    expect(wrapper.get<HTMLInputElement>('input[name="univemail"]').element.readOnly).toBe(true)
 
     await wrapper.get('input[name="name"]').setValue('Updated User')
     await wrapper.get('input[name="nameYomi"]').setValue('あっぷでーと ゆーざー')
@@ -138,6 +144,50 @@ describe('UserSettingsPage', () => {
       expect(sessionStore.user?.displayName).toBe('Updated Demo User')
       expect(sessionStore.user?.contactEmail).toBe('updated@example.com')
     })
+  })
+
+  it('disables the profile fields while the user belongs to a circle', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const sessionStore = useSessionStore()
+    sessionStore.hydrate({
+      csrfToken: 'csrf-token',
+      currentCircle: { id: 'circle-a', name: 'デモ企画A' },
+      featureFlags: [],
+      roles: ['participant'],
+      user: {
+        id: 'demo-user',
+        displayName: 'Demo User',
+        canDeleteAccount: false
+      }
+    })
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/workspace', component: { template: '<div>workspace</div>' } },
+        { path: '/workspace/settings', component: UserSettingsPage },
+        { path: '/workspace/settings/appearance', component: UserSettingsAppearancePage },
+        { path: '/workspace/settings/password', component: UserSettingsPasswordPage },
+        { path: '/workspace/settings/delete', component: UserSettingsDeletePage }
+      ]
+    })
+    await router.push('/workspace/settings')
+    await router.isReady()
+
+    const wrapper = mount(UserSettingsPage, {
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.get<HTMLInputElement>('input[name="name"]').element.disabled).toBe(true)
+    expect(wrapper.get<HTMLInputElement>('input[name="nameYomi"]').element.disabled).toBe(true)
+    expect(wrapper.get<HTMLInputElement>('input[name="contactEmail"]').element.disabled).toBe(true)
+    expect(wrapper.get<HTMLInputElement>('input[name="phoneNumber"]').element.disabled).toBe(true)
+    expect(wrapper.get<HTMLInputElement>('input[name="currentPassword"]').element.disabled).toBe(false)
+    expect(wrapper.text()).toContain('企画に所属しているため修正できません。')
   })
 
   it('updates the password', async () => {

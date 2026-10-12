@@ -9,14 +9,14 @@ definePage({
 })
 
 import { computed, ref } from 'vue'
-import { Field, handleSubmit, useForm } from '@formisch/vue'
+import { handleSubmit, useForm } from '@formisch/vue'
 import AuthPageLayout from '@/components/layouts/AuthPageLayout.vue'
 import { extractFirstErrorMessage, useStartRegistrationMutation } from '@/features/auth/api'
 import { usePublicConfigQuery } from '@/features/public-home/api'
+import { SchemaFormFields, type FieldOverrides } from '@/features/forms/schema-form'
 import { registrationStartFormSchema } from '@/lib/form-validation'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import FormError from '@/components/ui/FormError.vue'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const registerMutation = useStartRegistrationMutation()
@@ -25,6 +25,12 @@ const appName = computed(() => publicConfigQuery.data.value?.appName ?? 'PortalD
 const studentIdLabel = computed(() => publicConfigQuery.data.value?.portalStudentIdName ?? '学籍番号')
 const univemailLabel = computed(() => publicConfigQuery.data.value?.portalUnivemailName ?? '大学メールアドレス')
 const univemailDomainPart = computed(() => publicConfigQuery.data.value?.portalUnivemailDomainPart ?? 'example.ac.jp')
+
+// `univemailLocalPart`'s label/suffix are placeholder text in the schema; override both here with
+// the deployment's actual university email name and domain.
+const overrides = computed<FieldOverrides<typeof registrationStartFormSchema.entries>>(() => ({
+  univemailLocalPart: { label: univemailLabel.value, suffix: `@${univemailDomainPart.value}` }
+}))
 
 const form = useForm({
   schema: registrationStartFormSchema,
@@ -71,31 +77,13 @@ function handleSubmitEvent(event: SubmitEvent) {
         </p>
         <ErrorState v-if="errorMessage" :message="errorMessage" />
 
-        <Field :of="form" :path="['univemailLocalPart']" v-slot="field">
-          <div class="grid gap-2">
-            <label class="grid gap-2">
-              <span class="font-semibold">{{ univemailLabel }}</span>
-              <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                <input
-                  v-bind="field.props"
-                  v-model="field.input"
-                  autocomplete="email"
-                  name="univemailLocalPart"
-                  required
-                  type="text"
-                  :class="{ 'border-danger': field.errors }"
-                  :aria-invalid="!!field.errors"
-                  :aria-describedby="field.errors ? 'register-email-error' : undefined"
-                />
-                <span class="text-base text-muted">@{{ univemailDomainPart }}</span>
-              </div>
-            </label>
+        <SchemaFormFields :of="form" :schema="registrationStartFormSchema" :overrides="overrides">
+          <template #after:univemailLocalPart>
             <p class="text-xs text-muted">
               {{ studentIdLabel }} は入力したメールアドレスの @ より前の部分として扱われます。
             </p>
-            <FormError v-if="field.errors" id="register-email-error" :message="field.errors[0]" />
-          </div>
-        </Field>
+          </template>
+        </SchemaFormFields>
 
         <div class="pt-2 text-center">
           <button

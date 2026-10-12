@@ -20,6 +20,7 @@ export {
   staffPageFormSchema,
   staffTagFormSchema,
   staffPlaceFormSchema,
+  staffContactCategoryFormSchema,
   type ProfileUpdateFormData,
   type PasswordChangeFormData,
   type ContactFormData,
@@ -32,5 +33,6 @@ export {
   type StaffParticipationTypeEditFormData,
   type StaffPageFormData,
   type StaffTagFormData,
-  type StaffPlaceFormData
+  type StaffPlaceFormData,
+  type StaffContactCategoryFormData
 } from './schemas'

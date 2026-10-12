@@ -1,12 +1,13 @@
 import * as v from 'valibot'
 import { circleRegistrationFormSchema } from '@/lib/form-validation'
 import { buildAnswerFormInput, type AnswerFormSchema } from '@/features/forms/answer-form-schema'
+import { lockedGroupNameEntries } from './circle-detail-form'
 import type { CircleDetail } from './api'
 
 export function buildCircleRegistrationFormSchema(answers: AnswerFormSchema, canChangeGroupName = true) {
   const basic = canChangeGroupName
     ? circleRegistrationFormSchema
-    : v.object({ ...circleRegistrationFormSchema.entries, groupName: v.string(), groupNameYomi: v.string() })
+    : v.object({ ...circleRegistrationFormSchema.entries, ...lockedGroupNameEntries() })
   return v.pipe(v.object({ basic, ...answers.entries }), v.metadata({ answers }))
 }
 export type CircleRegistrationFormSchema = ReturnType<typeof buildCircleRegistrationFormSchema>

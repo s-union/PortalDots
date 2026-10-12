@@ -46,6 +46,17 @@ function makeRouter() {
   return router
 }
 
+// The question's `name`/`id` stays stable across a refetch, but its label text (and
+// `aria-describedby`'d helper text) should reflect the latest question name — these tests check
+// that by resolving the input through its associated `<label>` text, not a (removed) aria-label.
+function inputForLabel(wrapper: ReturnType<typeof mount>, labelText: string) {
+  const label = wrapper.findAll('label').find((candidate) => candidate.text().includes(labelText))
+  if (!label) throw new Error(`Expected a <label> containing "${labelText}"`)
+  const id = label.attributes('for')
+  if (!id) throw new Error(`Expected <label> for "${labelText}" to have a "for" attribute`)
+  return wrapper.get<HTMLInputElement>(`#${id}`)
+}
+
 const fullFormFixture = {
   id: 'form-circle-a-1',
   name: '搬入確認フォーム',
@@ -651,20 +662,18 @@ describe('FormDetailPage', () => {
 
     try {
       await vi.waitFor(() => {
-        expect(wrapper.get<HTMLInputElement>('input[aria-label="搬入責任者"]').element.value).toBe('保存済みの回答')
+        expect(inputForLabel(wrapper, '搬入責任者').element.value).toBe('保存済みの回答')
       })
-      await wrapper.get('input[aria-label="搬入責任者"]').setValue('未保存の編集')
+      await inputForLabel(wrapper, '搬入責任者').setValue('未保存の編集')
 
       questionName = '当日の搬入担当者'
       await queryClient.refetchQueries({ queryKey: ['forms', 'detail', fullFormFixture.id] })
       await vi.waitFor(() => {
-        expect(wrapper.find('input[aria-label="当日の搬入担当者"]').exists()).toBe(true)
+        expect(wrapper.findAll('label').some((label) => label.text().includes('当日の搬入担当者'))).toBe(true)
       })
-      expect
-        .soft(wrapper.get<HTMLInputElement>('input[aria-label="当日の搬入担当者"]').element.value)
-        .toBe('未保存の編集')
+      expect.soft(inputForLabel(wrapper, '当日の搬入担当者').element.value).toBe('未保存の編集')
 
-      await wrapper.get('input[aria-label="当日の搬入担当者"]').setValue('送信中の編集')
+      await inputForLabel(wrapper, '当日の搬入担当者').setValue('送信中の編集')
       await wrapper.get('form').trigger('submit')
       await vi.waitFor(() => {
         expect(saveRequests).toHaveBeenCalledTimes(1)
@@ -674,11 +683,9 @@ describe('FormDetailPage', () => {
       questionName = '搬入当日の責任者氏名'
       await queryClient.refetchQueries({ queryKey: ['forms', 'detail', fullFormFixture.id] })
       await vi.waitFor(() => {
-        expect(wrapper.find('input[aria-label="搬入当日の責任者氏名"]').exists()).toBe(true)
+        expect(wrapper.findAll('label').some((label) => label.text().includes('搬入当日の責任者氏名'))).toBe(true)
       })
-      expect
-        .soft(wrapper.get<HTMLInputElement>('input[aria-label="搬入当日の責任者氏名"]').element.value)
-        .toBe('送信中の編集')
+      expect.soft(inputForLabel(wrapper, '搬入当日の責任者氏名').element.value).toBe('送信中の編集')
       expect.soft(wrapper.get<HTMLButtonElement>('button[type="submit"]').element.disabled).toBe(true)
       expect(saveRequests).toHaveBeenCalledTimes(1)
 

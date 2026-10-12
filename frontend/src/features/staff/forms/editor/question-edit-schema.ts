@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 import type { StaffFormQuestion } from '@/features/staff/forms/api'
 import { normalizeOptions } from '@/lib/parseOptions'
+import { fieldUi, formLayout, type LayoutItem } from '@/features/forms/schema-form'
 
 const limitSchema = v.pipe(
   v.string(),
@@ -15,30 +16,102 @@ const limitSchema = v.pipe(
   )
 )
 
-export function buildQuestionEditSchema(type: StaffFormQuestion['type']) {
+/**
+ * `question-${questionId}-${key}` DOM ids are a deviation from the default (field-key-derived)
+ * `fieldUi.id`: the same schema shape is reused for every question card in a list, so each needs
+ * its own ids to stay unique and to keep matching the pre-existing test/selector convention.
+ */
+function fieldId(questionId: string, key: string): string {
+  return `question-${questionId}-${key}`
+}
+
+export function buildQuestionEditSchema(question: Pick<StaffFormQuestion, 'id' | 'type'>) {
+  const { id: questionId, type } = question
+  const limits = ['text', 'textarea', 'markdown', 'number', 'checkbox'].includes(type)
+  const hasOptions = ['radio', 'select', 'checkbox'].includes(type)
+  const numberMinLabel = type === 'number' ? '最低数' : type === 'checkbox' ? '最低選択数' : '最小文字数'
+  const numberMaxLabel = type === 'number' ? '最大数' : type === 'checkbox' ? '最大選択数' : '最大文字数'
+
+  const layout: LayoutItem[] = ['name']
+  if (type !== 'heading') layout.push('isRequired')
+  layout.push('description')
+  if (hasOptions) layout.push('options')
+  if (limits) layout.push('numberMin', 'numberMax')
+  if (type === 'upload') layout.push('allowedTypes')
+
   return v.pipe(
     v.object({
       name: v.pipe(
         v.string(),
         v.trim(),
-        v.check((value) => type === 'heading' || value !== '', '設問名を入力してください')
+        v.check((value) => type === 'heading' || value !== '', '設問名を入力してください'),
+        fieldUi({
+          control: 'text',
+          label: type === 'heading' ? '見出し' : '設問名',
+          id: fieldId(questionId, 'name')
+        })
       ),
-      description: v.pipe(v.string(), v.trim()),
-      isRequired: v.boolean(),
-      numberMin: limitSchema,
-      numberMax: limitSchema,
+      isRequired: v.pipe(
+        v.boolean(),
+        fieldUi({
+          control: 'checkbox',
+          label: '回答必須か',
+          checkboxLabel: 'この設問への回答は必須',
+          id: fieldId(questionId, 'isRequired')
+        })
+      ),
+      description: v.pipe(
+        v.string(),
+        v.trim(),
+        fieldUi({
+          control: 'textarea',
+          label: '説明',
+          inputClass: 'min-h-24',
+          id: fieldId(questionId, 'description')
+        })
+      ),
+      numberMin: v.pipe(
+        limitSchema,
+        fieldUi({
+          control: 'number',
+          label: numberMinLabel,
+          stringValue: true,
+          id: fieldId(questionId, 'numberMin')
+        })
+      ),
+      numberMax: v.pipe(
+        limitSchema,
+        fieldUi({
+          control: 'number',
+          label: numberMaxLabel,
+          stringValue: true,
+          id: fieldId(questionId, 'numberMax')
+        })
+      ),
       allowedTypes: v.pipe(
         v.string(),
         v.trim(),
-        v.transform((value) => (type === 'upload' ? value : ''))
+        v.transform((value) => (type === 'upload' ? value : '')),
+        fieldUi({
+          control: 'text',
+          label: '許可される拡張子',
+          placeholder: '例: png|jpg|jpeg|gif',
+          helper: '| 区切りで指定。画像の場合: png|jpg|jpeg|gif',
+          id: fieldId(questionId, 'allowedTypes')
+        })
       ),
       options: v.pipe(
         v.string(),
         v.transform(normalizeOptions),
-        v.check(
-          (value) => !['radio', 'select', 'checkbox'].includes(type) || value.length > 0,
-          '選択肢を 1 つ以上指定してください'
-        )
+        v.check((value) => !hasOptions || value.length > 0, '選択肢を 1 つ以上指定してください'),
+        fieldUi({
+          control: 'textarea',
+          label: '選択肢',
+          inputClass: 'min-h-24',
+          placeholder: '1行に1つ選択肢を入力',
+          helper: '改行区切りで選択肢を入力。',
+          id: fieldId(questionId, 'options')
+        })
       )
     }),
     v.forward(
@@ -49,23 +122,13 @@ export function buildQuestionEditSchema(type: StaffFormQuestion['type']) {
         '最大値は最小値以上にしてください'
       ),
       ['numberMax']
-    )
+    ),
+    formLayout(layout)
   )
 }
 
 export type QuestionEditSchema = ReturnType<typeof buildQuestionEditSchema>
 export type QuestionEditInput = v.InferInput<QuestionEditSchema>
-export type StringQuestionField = Exclude<keyof QuestionEditInput, 'isRequired'>
-
-export const questionEditFields = [
-  'name',
-  'description',
-  'isRequired',
-  'numberMin',
-  'numberMax',
-  'allowedTypes',
-  'options'
-] as const satisfies readonly (keyof QuestionEditInput)[]
 
 export function buildQuestionEditInput(question: StaffFormQuestion): QuestionEditInput {
   return {

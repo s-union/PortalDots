@@ -4,7 +4,8 @@ import AlertMessage from '@/components/ui/AlertMessage.vue'
 import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import FormischField from '@/components/forms/FormischField.vue'
+import { SchemaFormFields } from '@/features/forms/schema-form'
+import { passwordChangeFormSchema } from '@/lib/form-validation'
 import { useUserSettingsPasswordTab } from '@/features/session/composables/useUserSettingsPasswordTab'
 
 const { form, errorMessage, successMessage, savePassword, tabs, updatePasswordMutation } = useUserSettingsPasswordTab()
@@ -16,58 +17,17 @@ const { form, errorMessage, successMessage, savePassword, tabs, updatePasswordMu
       <SettingsSection title="パスワード変更" :title-outside="true">
         <SettingsRow>
           <div class="grid gap-4">
-            <FormischField
-              v-slot="{ field, control }"
+            <SchemaFormFields
               :of="form"
-              :path="['currentPassword']"
-              label="現在のパスワード"
-              required
+              :schema="passwordChangeFormSchema"
+              :disabled="updatePasswordMutation.isPending.value"
             >
-              <input
-                v-bind="control"
-                v-model="field.input"
-                type="password"
-                autocomplete="current-password"
-                :disabled="updatePasswordMutation.isPending.value"
-                required
-              />
-            </FormischField>
-            <p class="text-base leading-6 text-muted">
-              <a href="/password/reset" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
-            </p>
-            <FormischField
-              v-slot="{ field, control }"
-              :of="form"
-              :path="['newPassword']"
-              label="新しいパスワード"
-              required
-            >
-              <input
-                v-bind="control"
-                v-model="field.input"
-                type="password"
-                autocomplete="new-password"
-                placeholder="8文字以上（英字・数字を含む）"
-                :disabled="updatePasswordMutation.isPending.value"
-                required
-              />
-            </FormischField>
-            <FormischField
-              v-slot="{ field, control }"
-              :of="form"
-              :path="['confirmPassword']"
-              label="新しいパスワード(確認)"
-              required
-            >
-              <input
-                v-bind="control"
-                v-model="field.input"
-                type="password"
-                autocomplete="new-password"
-                :disabled="updatePasswordMutation.isPending.value"
-                required
-              />
-            </FormischField>
+              <template #after:currentPassword>
+                <p class="text-base leading-6 text-muted">
+                  <a href="/password/reset" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
+                </p>
+              </template>
+            </SchemaFormFields>
           </div>
         </SettingsRow>
         <template #footer>

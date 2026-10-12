@@ -17,13 +17,12 @@ import {
   useVerifyRegistrationMutation
 } from '@/features/auth/api'
 import { userRegistrationFormSchema } from '@/lib/form-validation'
+import { SchemaFormFields } from '@/features/forms/schema-form'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
-import FormischField from '@/components/forms/FormischField.vue'
 import { useSubmitForm } from '@/features/forms/composables/useSubmitForm'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 import ActionsFooter from '@/components/ui/ActionsFooter.vue'
-import FormField from '@/components/ui/FormField.vue'
 import { routeParamString, routeString } from '@/lib/routeQuery'
 
 const router = useRouter()
@@ -110,126 +109,11 @@ onMounted(() => {
           </p>
           <ErrorState v-if="submitErrorMessage" :message="submitErrorMessage" />
           <form class="space-y-5" novalidate :aria-busy="form.isSubmitting" @submit="handleSubmit">
-            <div class="grid gap-4 md:grid-cols-2">
-              <FormField label="学籍番号" label-class="font-semibold">
-                <input :value="verification.studentId" disabled name="studentId" type="text" />
-              </FormField>
-              <FormField label="大学メールアドレス" label-class="font-semibold">
-                <input :value="verification.univemail" disabled name="univemail" type="email" />
-              </FormField>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="grid gap-2">
-                <FormischField
-                  v-slot="{ field, control }"
-                  :of="form"
-                  :path="['name']"
-                  label="名前"
-                  label-class="font-semibold"
-                >
-                  <input
-                    v-bind="control"
-                    v-model="field.input"
-                    autocomplete="name"
-                    name="name"
-                    placeholder="姓 名"
-                    required
-                    type="text"
-                  />
-                </FormischField>
-              </div>
-              <div class="grid gap-2">
-                <FormischField
-                  v-slot="{ field, control }"
-                  :of="form"
-                  :path="['nameYomi']"
-                  label="名前(よみ)"
-                  label-class="font-semibold"
-                >
-                  <input
-                    v-bind="control"
-                    v-model="field.input"
-                    name="nameYomi"
-                    placeholder="せい めい"
-                    required
-                    type="text"
-                  />
-                </FormischField>
-              </div>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="grid gap-2">
-                <FormischField
-                  v-slot="{ field, control }"
-                  :of="form"
-                  :path="['contactEmail']"
-                  label="連絡先メールアドレス"
-                  label-class="font-semibold"
-                >
-                  <input v-bind="control" v-model="field.input" autocomplete="email" name="contactEmail" type="email" />
-                </FormischField>
-              </div>
-              <div class="grid gap-2">
-                <FormischField
-                  v-slot="{ field, control }"
-                  :of="form"
-                  :path="['phoneNumber']"
-                  label="連絡先電話番号"
-                  label-class="font-semibold"
-                >
-                  <input
-                    v-bind="control"
-                    v-model="field.input"
-                    autocomplete="tel"
-                    name="phoneNumber"
-                    required
-                    type="tel"
-                  />
-                </FormischField>
-              </div>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="grid gap-2">
-                <FormischField
-                  v-slot="{ field, control }"
-                  :of="form"
-                  :path="['password']"
-                  label="パスワード"
-                  label-class="font-semibold"
-                >
-                  <input
-                    v-bind="control"
-                    v-model="field.input"
-                    autocomplete="new-password"
-                    name="password"
-                    placeholder="8文字以上（英字・数字を含む）"
-                    required
-                    type="password"
-                  />
-                </FormischField>
-              </div>
-              <div class="grid gap-2">
-                <FormischField
-                  v-slot="{ field, control }"
-                  :of="form"
-                  :path="['passwordConfirmation']"
-                  label="パスワード(確認)"
-                  label-class="font-semibold"
-                >
-                  <input
-                    v-bind="control"
-                    v-model="field.input"
-                    autocomplete="new-password"
-                    name="passwordConfirmation"
-                    required
-                    type="password"
-                  />
-                </FormischField>
-              </div>
-            </div>
+            <SchemaFormFields
+              :of="form"
+              :schema="userRegistrationFormSchema"
+              :display-values="{ studentId: verification.studentId, univemail: verification.univemail }"
+            />
 
             <ActionsFooter align="end">
               <button

@@ -2,50 +2,41 @@ import * as v from 'valibot'
 import type { FormQuestion } from '@/features/forms/api'
 import type { FormAnswer, FormAnswerDraft } from '@/features/forms/answers'
 import type { SyncedFieldPath } from './composables/server-synced-form-fields'
+import { fieldUi, formLayout, resolveLayout, type FieldOption, type LayoutItem } from './schema-form'
 
-interface AnswerFormElementBase {
+/** A question's upload control. Uploads are separate API operations, not Formisch fields — they
+ * render through `SchemaAnswerFields.vue`'s `slot:upload:<id>` layout item instead of a schema entry. */
+export interface UploadAnswerElement {
   id: string
   label: string
   description: string
   required: boolean
-  placeholder?: string
+  extensions: string[] | undefined
+  maxSizeBytes: number
 }
-
-export type AnswerFormElement = AnswerFormElementBase &
-  (
-    | { control: 'text' | 'textarea' | 'markdown' }
-    | { control: 'number'; min: number | null; max: number | null }
-    | { control: 'select' | 'radio'; options: string[] }
-    | { control: 'checkbox'; options: string[] }
-    | { control: 'upload'; extensions: string[] | undefined; maxSizeBytes: number }
-    | { control: 'heading' }
-  )
-
-export type TextAnswerFormElement = Exclude<AnswerFormElement, { control: 'heading' | 'upload' | 'checkbox' }>
-export type CheckboxAnswerFormElement = Extract<AnswerFormElement, { control: 'checkbox' }>
-export type UploadAnswerFormElement = Extract<AnswerFormElement, { control: 'upload' }>
 
 const MAX_NUMBER_SELECT_OPTIONS = 200
 // Mirrors backend/internal/controllers/form_answer_context.go's maxAnswerUploadBytes.
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
+function toOptions(values: readonly string[]): readonly FieldOption[] {
+  return values.map((value) => ({ value, label: value }))
+}
+
 export function buildAnswerFormSchema(questions: FormQuestion[], options: { legacyBody?: boolean } = {}) {
   const textEntries: Record<string, v.GenericSchema<string>> = {}
   const choiceEntries: Record<string, v.GenericSchema<string[]>> = {}
-  const elements: AnswerFormElement[] = []
+  const layout: LayoutItem[] = []
+  const uploads: UploadAnswerElement[] = []
 
   for (const question of questions) {
-    const element = {
-      id: question.id,
-      label: question.name,
-      description: question.description,
-      required: question.isRequired
-    }
+    const { id, name: label, description, isRequired: required } = question
     const { numberMin: min, numberMax: max } = question
+    const helper = description || undefined
 
     switch (question.type) {
       case 'heading':
-        elements.push({ ...element, control: 'heading' })
+        layout.push({ heading: label, description })
         break
       case 'upload': {
         // Mirrors backend/internal/domain/formquestion/validation.go's NormalizeAllowedTypes.
@@ -53,32 +44,27 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
           .split(/[,|\n\r \t]+/)
           .map((part) => part.trim().toLowerCase().replace(/^\./, ''))
           .filter((part) => part !== '')
-        elements.push({
-          ...element,
-          control: 'upload',
+        uploads.push({
+          id,
+          label,
+          description,
+          required,
           extensions: extensions.length > 0 ? extensions : undefined,
           maxSizeBytes: MAX_UPLOAD_BYTES
         })
+        layout.push({ slot: `upload:${id}` })
         break
       }
-      case 'number':
-        elements.push(
-          min !== null && max !== null && min <= max && max - min + 1 <= MAX_NUMBER_SELECT_OPTIONS
-            ? {
-                ...element,
-                control: 'select',
-                options: Array.from({ length: max - min + 1 }, (_, index) => String(min + index))
-              }
-            : { ...element, control: 'number', min, max }
-        )
-        textEntries[element.id] = v.pipe(
+      case 'number': {
+        const bounded = min !== null && max !== null && min <= max && max - min + 1 <= MAX_NUMBER_SELECT_OPTIONS
+        textEntries[id] = v.pipe(
           v.string(),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
             const value = dataset.value.trim()
-            if (value === '' && !element.required) return
+            if (value === '' && !required) return
             if (value === '') {
-              addIssue({ message: `${element.label}を入力してください` })
+              addIssue({ message: `${label}を入力してください` })
               return
             }
             const number = Number(value)
@@ -96,37 +82,73 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
             if (max !== null && number > max) {
               addIssue({ message: `${max}以下の値を入力してください` })
             }
-          })
+          }),
+          bounded
+            ? fieldUi({
+                control: 'select',
+                label,
+                helper,
+                id,
+                name: id,
+                required,
+                keepUnavailableValue: true,
+                options: toOptions(Array.from({ length: max - min + 1 }, (_, index) => String(min + index)))
+              })
+            : fieldUi({
+                control: 'number',
+                label,
+                helper,
+                id,
+                name: id,
+                required,
+                min: min ?? undefined,
+                max: max ?? undefined,
+                // Numeric answers are stored and re-validated as strings (see the rawCheck above);
+                // native `v-model.number` coercion would turn a partial "1.5" into a JS number,
+                // which fails the `v.string()` base check before the custom message ever runs.
+                stringValue: true
+              })
         )
+        layout.push(`text.${id}`)
         break
+      }
       case 'checkbox':
-        elements.push({ ...element, control: 'checkbox', options: [...question.options] })
-        choiceEntries[element.id] = v.pipe(
+        choiceEntries[id] = v.pipe(
           v.array(v.string()),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
             const values = dataset.value.map((value) => value.trim()).filter((value) => value !== '')
-            if (element.required && values.length === 0) {
-              addIssue({ message: `${element.label}を選択してください` })
+            if (required && values.length === 0) {
+              addIssue({ message: `${label}を選択してください` })
             }
             if (question.options.length && values.some((value) => !question.options.includes(value))) {
               addIssue({ message: '選択肢が変更されています。現在の選択肢から選び直してください' })
             }
+          }),
+          fieldUi({
+            control: 'checkboxGroup',
+            label,
+            helper,
+            id,
+            name: id,
+            required,
+            keepUnavailableValue: true,
+            options: toOptions(question.options)
           })
         )
+        layout.push(`choices.${id}`)
         break
       case 'text':
       case 'textarea':
       case 'markdown':
-        elements.push({ ...element, control: question.type })
-        textEntries[element.id] = v.pipe(
+        textEntries[id] = v.pipe(
           v.string(),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
             const value = dataset.value.trim()
-            if (value === '' && !element.required) return
+            if (value === '' && !required) return
             if (value === '') {
-              addIssue({ message: `${element.label}を入力してください` })
+              addIssue({ message: `${label}を入力してください` })
               return
             }
             const length = Array.from(value).length
@@ -136,26 +158,38 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
             if (max !== null && length > max) {
               addIssue({ message: `${max}文字以下で入力してください` })
             }
-          })
+          }),
+          fieldUi({ control: question.type, label, helper, id, name: id, required })
         )
+        layout.push(`text.${id}`)
         break
       case 'select':
       case 'radio':
-        elements.push({ ...element, control: question.type, options: [...question.options] })
-        textEntries[element.id] = v.pipe(
+        textEntries[id] = v.pipe(
           v.string(),
           v.rawCheck(({ dataset, addIssue }) => {
             if (!dataset.typed) return
             const value = dataset.value.trim()
             if (value === '') {
-              if (element.required) addIssue({ message: `${element.label}を入力してください` })
+              if (required) addIssue({ message: `${label}を入力してください` })
               return
             }
             if (question.options.length && !question.options.includes(value)) {
               addIssue({ message: '選択肢が変更されています。現在の選択肢から選び直してください' })
             }
+          }),
+          fieldUi({
+            control: question.type,
+            label,
+            helper,
+            id,
+            name: id,
+            required,
+            keepUnavailableValue: true,
+            options: toOptions(question.options)
           })
         )
+        layout.push(`text.${id}`)
         break
       default:
         throw new Error(`Unsupported question type: ${String(question.type satisfies never)}`)
@@ -163,49 +197,65 @@ export function buildAnswerFormSchema(questions: FormQuestion[], options: { lega
   }
 
   if (options.legacyBody && questions.length === 0) {
-    textEntries['legacy-body'] = v.string()
-    elements.push({
-      id: 'legacy-body',
-      control: 'textarea',
-      label: '回答',
-      description: '',
-      required: false,
-      placeholder: '回答内容を入力してください'
-    })
+    textEntries['legacy-body'] = v.pipe(
+      v.string(),
+      fieldUi({
+        control: 'textarea',
+        label: '回答',
+        id: 'legacy-body',
+        // Rendered name differs from the field key (e2e tests and the staff/workspace answer
+        // pages target `textarea[name="answer-body"]`; the key stays 'legacy-body' to match the
+        // draft/input structure used throughout this module).
+        name: 'answer-body',
+        required: false,
+        placeholder: '回答内容を入力してください'
+      })
+    )
+    layout.push('text.legacy-body')
   }
 
-  return v.pipe(v.object({ text: v.object(textEntries), choices: v.object(choiceEntries) }), v.metadata({ elements }))
+  return v.pipe(
+    v.object({ text: v.object(textEntries), choices: v.object(choiceEntries) }),
+    formLayout(layout),
+    // Called directly (not through `fieldUi()`/`formLayout()`) so `v.pipe(...)`'s own context
+    // infers `TInput`; see `fieldUi()` in `./schema-form/ui.ts` for why an explicit `TInput` here
+    // (e.g. hardcoding `never`) would collapse this schema's `InferOutput` instead.
+    v.metadata({ uploads })
+  )
 }
 
 export type AnswerFormSchema = ReturnType<typeof buildAnswerFormSchema>
 export type AnswerFormInput = v.InferInput<AnswerFormSchema>
 export type AnswerFieldsSchema = v.GenericSchema<AnswerFormInput>
 
-export function answerFormFieldPaths(schema: AnswerFormSchema): SyncedFieldPath<AnswerFormSchema>[] {
-  return getAnswerFormElements(schema).flatMap((element) =>
-    element.control === 'heading' || element.control === 'upload'
-      ? []
-      : [[element.control === 'checkbox' ? 'choices' : 'text', element.id] as const]
-  )
+/** The answer's upload questions, in question order. */
+export function getUploadAnswerElements(schema: AnswerFormSchema): UploadAnswerElement[] {
+  return (v.getMetadata(schema).uploads as UploadAnswerElement[] | undefined) ?? []
 }
 
-export function getAnswerFormElements(schema: AnswerFormSchema): AnswerFormElement[] {
-  return v.getMetadata(schema).elements
+/** The schema's `text.<id>`/`choices.<id>` field paths, in question order (excludes headings/uploads). */
+export function answerFormFieldPaths(schema: AnswerFormSchema): SyncedFieldPath<AnswerFormSchema>[] {
+  return resolveLayout(schema).flatMap((item) => {
+    if (typeof item !== 'string') return []
+    const [group, id] = item.split('.', 2)
+    return (group === 'text' || group === 'choices') && id !== undefined
+      ? [[group, id] as SyncedFieldPath<AnswerFormSchema>]
+      : []
+  })
 }
 
 export function buildAnswerFormInput(schema: AnswerFormSchema, answer: FormAnswer | null): AnswerFormInput {
   const input: AnswerFormInput = { text: {}, choices: {} }
-  for (const element of getAnswerFormElements(schema)) {
-    if (element.control === 'heading' || element.control === 'upload') continue
-    if (element.id === 'legacy-body') {
-      input.text[element.id] = answer?.body ?? ''
+  for (const [group, id] of answerFormFieldPaths(schema)) {
+    if (id === 'legacy-body') {
+      input.text[id] = answer?.body ?? ''
       continue
     }
-    const values = answer?.details[element.id] ?? []
-    if (element.control === 'checkbox') {
-      input.choices[element.id] = [...values]
+    const values = answer?.details[id] ?? []
+    if (group === 'choices') {
+      input.choices[id] = [...values]
     } else {
-      input.text[element.id] = values[0] ?? ''
+      input.text[id] = values[0] ?? ''
     }
   }
   return input
@@ -217,10 +267,8 @@ export function answerFormInputToDraft(
 ): FormAnswerDraft {
   const draft: FormAnswerDraft = {}
   // Preserve question order for the legacy body summary as well as the details payload.
-  for (const element of getAnswerFormElements(schema)) {
-    if (element.control === 'heading' || element.control === 'upload') continue
-    draft[element.id] =
-      element.control === 'checkbox' ? [...(input.choices[element.id] ?? [])] : (input.text[element.id] ?? '')
+  for (const [group, id] of answerFormFieldPaths(schema)) {
+    draft[id] = group === 'choices' ? [...(input.choices[id] ?? [])] : (input.text[id] ?? '')
   }
   return draft
 }

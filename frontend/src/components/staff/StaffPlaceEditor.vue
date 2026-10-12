@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StaffMasterEditorShell from '@/components/staff/StaffMasterEditorShell.vue'
-import FormischField from '@/components/forms/FormischField.vue'
+import { SchemaFormFields } from '@/features/forms/schema-form'
 import {
   buildDeleteStaffPlaceConfirmMessage,
   type StaffPlace,
@@ -56,27 +56,7 @@ const { form, errorMessage, successMessage, handleSave, handleDelete, isSaving, 
     @delete="handleDelete"
   >
     <div class="grid gap-4">
-      <FormischField v-slot="{ field, control }" :of="form" :path="['name']" label="場所名" label-class="font-medium">
-        <input v-bind="control" v-model="field.input" name="name" type="text" />
-      </FormischField>
-
-      <FormischField v-slot="{ field, control }" :of="form" :path="['type']" label="タイプ" label-class="font-medium">
-        <select v-bind="control" v-model.number="field.input" name="type">
-          <option :value="1">屋内</option>
-          <option :value="2">屋外</option>
-          <option :value="3">特殊場所</option>
-        </select>
-      </FormischField>
-
-      <FormischField
-        v-slot="{ field, control }"
-        :of="form"
-        :path="['notes']"
-        label="スタッフ用メモ"
-        label-class="font-medium"
-      >
-        <textarea v-bind="control" v-model="field.input" class="min-h-24" name="notes" />
-      </FormischField>
+      <SchemaFormFields :of="form" :schema="staffPlaceFormSchema" />
     </div>
   </StaffMasterEditorShell>
 </template>

@@ -12,7 +12,7 @@ export function useQuestionEditForm(options: {
   save: (payload: UpdateStaffFormQuestionPayload) => Promise<StaffFormQuestion | null>
 }) {
   const { form, submitEvent } = useServerSyncedForm({
-    schema: () => buildQuestionEditSchema(options.question().type),
+    schema: () => buildQuestionEditSchema(options.question()),
     input: () => buildQuestionEditInput(options.question()),
     source: options.question,
     sourceKey: () => options.question().id,
