@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import { getInput, useForm, validate, type FormStore } from '@formisch/vue'
+import { getInput, handleSubmit, useForm, validate, type FormStore } from '@formisch/vue'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import * as v from 'valibot'
 import SchemaFormFields from './SchemaFormFields.vue'
@@ -275,7 +275,7 @@ describe('SchemaFormFields', () => {
 
   it('shows validation errors accessibly after validation', async () => {
     const { wrapper, form } = mountForm()
-    await validate(form)
+    await handleSubmit(form, () => {})()
     const name = wrapper.get('input[name="name"]')
     expect(name.attributes('aria-invalid')).toBe('true')
     const describedBy = name.attributes('aria-describedby')
@@ -294,7 +294,7 @@ describe('SchemaFormFields', () => {
     expect(formDisabled.find('#name-error').exists()).toBe(false)
 
     const { wrapper: fieldDisabled, form: fieldDisabledForm } = mountForm({ overrides: { name: { disabled: true } } })
-    await validate(fieldDisabledForm)
+    await handleSubmit(fieldDisabledForm, () => {})()
     const nameField = fieldDisabled.get('input[name="name"]')
     expect(nameField.attributes('aria-invalid')).toBe('false')
     expect(nameField.attributes('aria-describedby')).not.toContain('-error')
@@ -433,6 +433,29 @@ describe('SchemaFormFields', () => {
     const { wrapper } = mountForm({ requiredLabel: '必須' })
     expect(wrapper.get('label[for="name"]').text()).toContain('必須')
     expect(wrapper.get('label[for="name"]').text()).not.toContain('*')
+  })
+
+  it('keeps native and schema validation when the visual required marker is hidden', async () => {
+    const { wrapper, form } = mountForm({ requiredLabel: '' })
+    expect(wrapper.get('label[for="name"]').text()).toBe('名前')
+    expect(wrapper.get('input[name="name"]').attributes('required')).toBeDefined()
+    await handleSubmit(form, () => {})()
+    expect(wrapper.get('#name-error').text()).toBe('名前を入力してください')
+  })
+
+  it('disables date-time inputs with the other controls', () => {
+    const { wrapper } = mountForm({ disabled: true })
+    expect(wrapper.get('input[name="openAt"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('presents errors only for touched fields until the form is submitted', async () => {
+    const { wrapper, form } = mountForm()
+    await wrapper.get('input[name="name"]').trigger('focus')
+    await validate(form)
+    expect(wrapper.get('#name-error').text()).toBe('名前を入力してください')
+    expect(wrapper.get('select[name="plan"]').attributes('aria-invalid')).toBe('false')
+    await handleSubmit(form, () => {})()
+    expect(wrapper.get('select[name="plan"]').attributes('aria-invalid')).toBe('true')
   })
 
   it('emits fieldBlur/fieldChange for a registered control', async () => {
