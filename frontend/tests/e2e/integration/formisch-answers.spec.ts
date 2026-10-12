@@ -93,7 +93,11 @@ async function openAnswerForm(page: Page, maxAnswers = 1, questions = defaultQue
   await setCurrentCircleFromApi(page, CIRCLE_B)
   await page.goto(`/workspace/forms/${formId}`)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(name)
-  await expect(page.getByLabel('企画の説明', { exact: true })).toBeVisible()
+  const firstQuestion = questions[0]
+  const firstQuestionRequired = firstQuestion.isRequired ?? true
+  await expect(
+    page.getByLabel(`${firstQuestion.name}${firstQuestionRequired ? ' 必須' : ''}`, { exact: true })
+  ).toBeVisible()
   return { formId, questionIds, questionIdsByName }
 }
 
@@ -110,8 +114,8 @@ function submitButton(page: Page) {
 }
 
 async function fillValidAnswer(page: Page, text: string) {
-  await page.getByLabel('企画の説明', { exact: true }).fill(text)
-  await page.getByLabel('参加人数', { exact: true }).fill('12')
+  await page.getByLabel('企画の説明 必須', { exact: true }).fill(text)
+  await page.getByLabel('参加人数 必須', { exact: true }).fill('12')
   await page.getByRole('checkbox', { name: '机', exact: true }).check()
 }
 
@@ -167,7 +171,7 @@ test('required and numeric validation prevents saves and clears errors as the us
   await fillValidAnswer(page, '必須項目を入力した回答')
   await expect(page.getByText('企画の説明を入力してください', { exact: true })).toHaveCount(0)
   await expect(page.getByText('必要な備品を選択してください', { exact: true })).toHaveCount(0)
-  const number = page.getByLabel('参加人数', { exact: true })
+  const number = page.getByLabel('参加人数 必須', { exact: true })
   for (const [value, message] of [
     ['0', '1以上の値を入力してください'],
     ['501', '500以下の値を入力してください'],
@@ -214,7 +218,7 @@ test('uploading a file preserves unsaved text while the answer is refetched', as
   const { formId, questionIds } = await openAnswerForm(page)
   await fillValidAnswer(page, '保存済みの回答')
   await saveAnswer(page, formId)
-  const text = page.getByLabel('企画の説明', { exact: true })
+  const text = page.getByLabel('企画の説明 必須', { exact: true })
   await text.fill('アップロード前に入力した未保存の回答')
   const filename = `draft-${randomUUID()}.txt`
   await uploadAttachment(page, filename)
@@ -237,7 +241,7 @@ test('an upload during a delayed save keeps submission disabled and preserves la
   const { formId, questionIds } = await openAnswerForm(page)
   await fillValidAnswer(page, '最初の保存済み回答')
   await saveAnswer(page, formId)
-  const text = page.getByLabel('企画の説明', { exact: true })
+  const text = page.getByLabel('企画の説明 必須', { exact: true })
   await text.fill('送信を開始した時点の回答')
 
   const savedOnServer = Promise.withResolvers<void>()
@@ -290,9 +294,9 @@ test('switching answers preserves dirty input when dismissed and loads the selec
   const { formId } = await openAnswerForm(page, 2)
   await fillValidAnswer(page, '一つ目の保存済み回答')
   await saveAnswer(page, formId)
-  const text = page.getByLabel('企画の説明', { exact: true })
+  const text = page.getByLabel('企画の説明 必須', { exact: true })
   await expect(text).toHaveValue('一つ目の保存済み回答')
-  await expect(page.getByLabel('参加人数', { exact: true })).toHaveValue('12')
+  await expect(page.getByLabel('参加人数 必須', { exact: true })).toHaveValue('12')
   await expect(page.getByRole('checkbox', { name: '机', exact: true })).toBeChecked()
   const firstAnswerUrl = page.url()
   const firstAnswerId = new URL(firstAnswerUrl).searchParams.get('answer')
@@ -367,8 +371,8 @@ test('a failed save preserves input and allows a retry that persists to the real
   await submitButton(page).click()
   expect((await failedResponsePromise).status()).toBe(503)
   await expect(page.getByRole('alert')).toHaveText('回答の保存に失敗しました。')
-  await expect(page.getByLabel('企画の説明', { exact: true })).toHaveValue(draft)
-  await expect(page.getByLabel('参加人数', { exact: true })).toHaveValue('12')
+  await expect(page.getByLabel('企画の説明 必須', { exact: true })).toHaveValue(draft)
+  await expect(page.getByLabel('参加人数 必須', { exact: true })).toHaveValue('12')
   await expect(page.getByRole('checkbox', { name: '机', exact: true })).toBeChecked()
   await expect(submitButton(page)).toBeEnabled()
   expect(failedRequests).toBe(1)
@@ -379,8 +383,8 @@ test('a failed save preserves input and allows a retry that persists to the real
   })
   await expect(page.getByText('回答の保存に失敗しました。', { exact: true })).toHaveCount(0)
   await page.reload()
-  await expect(page.getByLabel('企画の説明', { exact: true })).toHaveValue(draft)
-  await expect(page.getByLabel('参加人数', { exact: true })).toHaveValue('12')
+  await expect(page.getByLabel('企画の説明 必須', { exact: true })).toHaveValue(draft)
+  await expect(page.getByLabel('参加人数 必須', { exact: true })).toHaveValue('12')
   await expect(page.getByRole('checkbox', { name: '机', exact: true })).toBeChecked()
 })
 
@@ -398,21 +402,21 @@ test('schema-generated controls preserve question order and all answer types thr
     { type: 'number', name: '参加人数', numberMin: 2, numberMax: 4 }
   ]
   const { formId, questionIds } = await openAnswerForm(page, 1, questions)
-  const orderedLabels = page.locator('form h2, form label[for]')
+  const orderedLabels = page.locator('form h2, form label[for], form legend')
   await expect(orderedLabels).toHaveText(questions.map((question) => new RegExp(question.name)))
   await expect(page.getByRole('heading', { name: '追加の申請情報', level: 2 })).toBeVisible()
   await expect(page.getByText('以下の項目を順番に入力してください。', { exact: true })).toBeVisible()
-  const number = page.getByRole('combobox', { name: '参加人数', exact: true })
+  const number = page.getByRole('combobox', { name: '参加人数 必須', exact: true })
   await expect(number.locator('option')).toHaveText(['選択してください', '2', '3', '4'])
 
-  await page.getByLabel('企画の説明', { exact: true }).fill('スキーマから生成した回答')
-  await page.getByLabel('詳しい説明', { exact: true }).fill('一行目\n二行目')
+  await page.getByLabel('企画の説明 必須', { exact: true }).fill('スキーマから生成した回答')
+  await page.getByLabel('詳しい説明 必須', { exact: true }).fill('一行目\n二行目')
   const markdown = page.locator(`textarea[name="${questionIds.markdown}"]`)
   await markdown.fill('**強調した説明**')
   await page.getByRole('button', { name: 'プレビュー', exact: true }).click()
   await expect(page.locator('strong').filter({ hasText: '強調した説明' })).toBeVisible()
   await page.getByRole('button', { name: '閉じる', exact: true }).click()
-  await page.getByRole('combobox', { name: '展示方法', exact: true }).selectOption('映像展示')
+  await page.getByRole('combobox', { name: '展示方法 必須', exact: true }).selectOption('映像展示')
   await page.getByRole('radio', { name: '屋外', exact: true }).check()
   await page.getByRole('checkbox', { name: '机', exact: true }).check()
   await page.getByRole('checkbox', { name: '電源', exact: true }).check()
@@ -433,10 +437,10 @@ test('schema-generated controls preserve question order and all answer types thr
   })
   await page.reload()
   await expect(orderedLabels).toHaveText(questions.map((question) => new RegExp(question.name)))
-  await expect(page.getByLabel('企画の説明', { exact: true })).toHaveValue('スキーマから生成した回答')
-  await expect(page.getByLabel('詳しい説明', { exact: true })).toHaveValue('一行目\n二行目')
+  await expect(page.getByLabel('企画の説明 必須', { exact: true })).toHaveValue('スキーマから生成した回答')
+  await expect(page.getByLabel('詳しい説明 必須', { exact: true })).toHaveValue('一行目\n二行目')
   await expect(markdown).toHaveValue('**強調した説明**')
-  await expect(page.getByRole('combobox', { name: '展示方法', exact: true })).toHaveValue('映像展示')
+  await expect(page.getByRole('combobox', { name: '展示方法 必須', exact: true })).toHaveValue('映像展示')
   await expect(page.getByRole('radio', { name: '屋外', exact: true })).toBeChecked()
   await expect(page.getByRole('radio', { name: '屋内', exact: true })).not.toBeChecked()
   await expect(page.getByRole('checkbox', { name: '机', exact: true })).toBeChecked()
@@ -452,8 +456,8 @@ test('a long form supports keyboard navigation, offscreen validation focus, and 
     name: index === 0 ? '企画の説明' : `長いフォームの設問 ${index + 1}`
   }))
   const { formId, questionIdsByName } = await openAnswerForm(page, 1, questions)
-  const firstInput = page.getByLabel(questions[0].name, { exact: true })
-  const lastInput = page.getByLabel(questions[questions.length - 1].name, { exact: true })
+  const firstInput = page.getByLabel(`${questions[0].name} 必須`, { exact: true })
+  const lastInput = page.getByLabel(`${questions[questions.length - 1].name} 必須`, { exact: true })
   const saves: Request[] = []
   page.on('request', (request) => {
     if (isAnswerSave(request, formId)) saves.push(request)
@@ -463,7 +467,7 @@ test('a long form supports keyboard navigation, offscreen validation focus, and 
     await firstInput.click()
     await expect(lastInput).not.toBeInViewport()
     for (const [index, question] of questions.slice(0, -1).entries()) {
-      await expect(page.getByLabel(question.name, { exact: true })).toBeFocused()
+      await expect(page.getByLabel(`${question.name} 必須`, { exact: true })).toBeFocused()
       await page.keyboard.insertText(`回答 ${index + 1}`)
       await page.keyboard.press('Tab')
     }
@@ -498,7 +502,7 @@ test('a long form supports keyboard navigation, offscreen validation focus, and 
 
     await page.reload()
     for (const [index, question] of questions.entries()) {
-      await expect(page.getByLabel(question.name, { exact: true })).toHaveValue(`回答 ${index + 1}`)
+      await expect(page.getByLabel(`${question.name} 必須`, { exact: true })).toHaveValue(`回答 ${index + 1}`)
     }
   })
 })
@@ -567,7 +571,7 @@ test('a long form keeps tall controls reachable when scrolling and renders every
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
   await page.emulateMedia({ media: 'print' })
-  const printedLabels = await page.locator('form label[for]').evaluateAll((labels) =>
+  const printedLabels = await page.locator('form label[for], form legend').evaluateAll((labels) =>
     labels.flatMap((label) => {
       const range = document.createRange()
       range.selectNodeContents(label)

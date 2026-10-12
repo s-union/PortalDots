@@ -23,7 +23,7 @@ it('checks override keys (including dotted nested paths) against the schema', ()
   }
   expectTypeOf(overrides).toMatchTypeOf<FieldOverrides<typeof schema.entries>>()
 
-  SchemaFormFields({ of: form, schema, overrides })
+  void ({ of: form, schema, overrides } satisfies Parameters<typeof SchemaFormFields<typeof schema.entries>>[0])
 
   type Overrides = FieldOverrides<typeof schema.entries>
   // @ts-expect-error A misspelled top-level key must not type-check.
