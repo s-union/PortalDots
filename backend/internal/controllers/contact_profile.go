@@ -18,6 +18,7 @@ import (
 	"github.com/s-union/PortalDots/backend/internal/domain/auth"
 	"github.com/s-union/PortalDots/backend/internal/domain/contact"
 	"github.com/s-union/PortalDots/backend/internal/domain/contactcategory"
+	"github.com/s-union/PortalDots/backend/internal/domain/mailhistory"
 	"github.com/s-union/PortalDots/backend/internal/domain/session"
 	"github.com/s-union/PortalDots/backend/internal/domain/useradmin"
 	"github.com/s-union/PortalDots/backend/internal/shared/emailqueue"
@@ -95,7 +96,7 @@ func (h *authHandlers) listContactHistory(c *echo.Context) error {
 		response = append(response, mapContactResponse(item))
 	}
 
-	entries, err := h.mailHistory.List(c.Request().Context())
+	entries, err := h.mailHistory.ListContactHistory(c.Request().Context(), currentSession.User.ID, selectedCircle.ID)
 	if err != nil {
 		return internalError(c)
 	}
@@ -139,28 +140,11 @@ func mapContactResponse(item contact.Contact) submitContactResponse {
 }
 
 func contactHistoryHeader(body string) string {
-	if idx := strings.Index(body, "\n\n"); idx >= 0 {
-		return body[:idx]
-	}
-	return body
+	return mailhistory.ContactHistoryHeader(body)
 }
 
 func contactHistoryMatches(body, circleID, userID string) bool {
-	header := contactHistoryHeader(body)
-	var matchedCircle, matchedUser bool
-	for _, line := range strings.Split(header, "\n") {
-		switch {
-		case line == "from_user_id: "+userID:
-			matchedUser = true
-		case strings.HasPrefix(line, "from: ") && strings.HasSuffix(line, "("+userID+")"):
-			matchedUser = true
-		case line == "circle_id: "+circleID:
-			matchedCircle = true
-		case strings.HasPrefix(line, "circle: ") && strings.HasSuffix(line, "("+circleID+")"):
-			matchedCircle = true
-		}
-	}
-	return matchedCircle && matchedUser
+	return mailhistory.ContactHistoryMatches(body, circleID, userID)
 }
 
 func extractContactMetadata(body string) (string, string) {

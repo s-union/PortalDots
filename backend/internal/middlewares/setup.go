@@ -60,6 +60,7 @@ func Setup(e *echo.Echo, cfg SetupConfig) {
 			AllowOrigins:     cfg.AllowedOrigins,
 			AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodHead, http.MethodOptions},
 			AllowHeaders:     []string{echo.HeaderContentType, "X-CSRF-Token"},
+			ExposeHeaders:    []string{"X-Next-Cursor"},
 			AllowCredentials: true,
 		}))
 	}

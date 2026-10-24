@@ -9,10 +9,7 @@ import { onBeforeUnmount, provide, shallowRef } from 'vue'
 import App from '../src/app/App.vue'
 import { defaultHandlers } from '../src/mocks/handlers'
 import { useSessionStore, type SessionBootstrap } from '../src/features/session/store'
-import { initializeFontAwesome } from '../src/lib/icons/fontawesome'
 import '../src/styles/app.css'
-
-initializeFontAwesome()
 
 function isStorybookInternalRequest(request: Request) {
   const url = new URL(request.url)
@@ -276,7 +273,7 @@ const preview: Preview = {
         template: `
           <div v-if="isReady" :key="storyKey">
             <App v-if="renderWithAppShell" />
-            <component :is="StoryComponent" v-bind="storyProps" v-else />
+            <StoryComponent v-bind="storyProps" v-else />
           </div>
         `
       }

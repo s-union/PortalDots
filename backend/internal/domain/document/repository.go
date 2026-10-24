@@ -30,8 +30,10 @@ type Document struct {
 
 type Repository interface {
 	ListPublic(circleTags []string) []Document
+	ListPublicByIDs(documentIDs []string, circleTags []string) []Document
 	FindPublic(documentID string, circleTags []string) (Document, bool)
 	ListForStaff() []Document
+	ListForStaffByIDs(documentIDs []string) []Document
 	FindForStaff(documentID string) (Document, bool)
 	Create(name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
 	Update(documentID, name, description, notes string, isPublic bool, isImportant bool, viewableTags []string, filename, mimeType string, content []byte) (Document, bool)
@@ -82,10 +84,31 @@ func (r *StaticRepository) ListPublic(circleTags []string) []Document {
 	documents := make([]Document, 0, len(r.documents))
 	for _, document := range r.documents {
 		if document.IsPublic && documentVisibleForTags(document, circleTags) {
-			documents = append(documents, cloneDocument(document))
+			documents = append(documents, cloneDocumentMetadata(document))
 		}
 	}
 	sortDocumentsByUpdatedAt(documents)
+	return documents
+}
+
+func (r *StaticRepository) ListPublicByIDs(documentIDs []string, circleTags []string) []Document {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	requested := make(map[string]struct{}, len(documentIDs))
+	for _, documentID := range documentIDs {
+		requested[documentID] = struct{}{}
+	}
+
+	documents := make([]Document, 0, len(requested))
+	for _, document := range r.documents {
+		if _, ok := requested[document.ID]; !ok {
+			continue
+		}
+		if document.IsPublic && documentVisibleForTags(document, circleTags) {
+			documents = append(documents, cloneDocumentMetadata(document))
+		}
+	}
 	return documents
 }
 
@@ -107,9 +130,27 @@ func (r *StaticRepository) ListForStaff() []Document {
 
 	documents := make([]Document, 0, len(r.documents))
 	for _, document := range r.documents {
-		documents = append(documents, cloneDocument(document))
+		documents = append(documents, cloneDocumentMetadata(document))
 	}
 	sortDocumentsByUpdatedAt(documents)
+	return documents
+}
+
+func (r *StaticRepository) ListForStaffByIDs(documentIDs []string) []Document {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	requested := make(map[string]struct{}, len(documentIDs))
+	for _, documentID := range documentIDs {
+		requested[documentID] = struct{}{}
+	}
+
+	documents := make([]Document, 0, len(requested))
+	for _, document := range r.documents {
+		if _, ok := requested[document.ID]; ok {
+			documents = append(documents, cloneDocumentMetadata(document))
+		}
+	}
 	return documents
 }
 
@@ -220,6 +261,12 @@ func (r *StaticRepository) Delete(documentID string) bool {
 func cloneDocument(document Document) Document {
 	document.ViewableTags = append([]string{}, document.ViewableTags...)
 	document.Content = append([]byte(nil), document.Content...)
+	return document
+}
+
+func cloneDocumentMetadata(document Document) Document {
+	document.ViewableTags = append([]string{}, document.ViewableTags...)
+	document.Content = nil
 	return document
 }
 

@@ -142,7 +142,10 @@ watch(
 )
 
 function handleNativeClose() {
-  open.value = false
+  // A queued close event from the previous opening must not close a new dialog.
+  if (!dialogEl.value?.open) {
+    open.value = false
+  }
 }
 
 function handleBackdropClick(event: MouseEvent) {
@@ -178,7 +181,7 @@ onBeforeUnmount(() => {
     <dialog
       ref="dialogEl"
       tabindex="-1"
-      class="m-auto flex max-h-[min(70vh,70dvh)] w-[min(90vw,32rem)] flex-col rounded-lg border-0 bg-surface p-0 text-body shadow-lv4"
+      class="m-auto max-h-[min(70vh,70dvh)] w-[min(90vw,32rem)] flex-col rounded-lg border-0 bg-surface p-0 text-body shadow-lv4 open:flex"
       :aria-labelledby="ariaLabelledby"
       :aria-label="ariaLabel"
       :aria-describedby="ariaDescribedby"

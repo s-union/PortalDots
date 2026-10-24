@@ -168,3 +168,44 @@ func TestStaticRepositoryUpdateRejectsCaseInsensitiveDuplicateLoginID(t *testing
 		t.Fatalf("expected ErrConflict, got %v", err)
 	}
 }
+
+func TestStaticRepositoryContactEmailConflicts(t *testing.T) {
+	t.Parallel()
+
+	repo := NewStaticRepository(config.AuthUser{
+		ID:          "auth-user",
+		LoginIDs:    []string{"staff"},
+		DisplayName: "Staff User",
+		Roles:       []string{"staff"},
+		Permissions: []string{"forms.read"},
+	}, nil)
+	for _, params := range []CreateParams{
+		{ID: "user-a", DisplayName: "User A", LoginIDs: []string{"S001"}, ContactEmail: "a@example.com"},
+		{ID: "user-b", DisplayName: "User B", LoginIDs: []string{"S002"}, ContactEmail: "b@example.com"},
+		{ID: "user-empty", DisplayName: "User Empty", LoginIDs: []string{"S003"}},
+	} {
+		if _, err := repo.Create(params); err != nil {
+			t.Fatalf("create %s: %v", params.ID, err)
+		}
+	}
+
+	_, err := repo.UpdateFull("user-b", "User B", []string{"S002"}, "", "", "", "", "A@EXAMPLE.COM", "")
+	if !errors.Is(err, ErrContactEmailConflict) || !errors.Is(err, ErrConflict) {
+		t.Fatalf("expected contact email conflict wrapping ErrConflict, got %v", err)
+	}
+
+	updated, err := repo.UpdateFull("user-b", "User B", []string{"S002"}, "", "", "", "", "B@EXAMPLE.COM", "")
+	if err != nil {
+		t.Fatalf("expected own email update to succeed, got %v", err)
+	}
+	if updated.ContactEmail != "B@EXAMPLE.COM" {
+		t.Fatalf("expected own email update to be preserved, got %q", updated.ContactEmail)
+	}
+
+	if _, err := repo.UpdateProfile("user-b", "", "", "", "", "", ""); err != nil {
+		t.Fatalf("expected empty contact email update to succeed, got %v", err)
+	}
+	if _, err := repo.Create(CreateParams{ID: "user-empty-2", DisplayName: "User Empty 2", LoginIDs: []string{"S004"}}); err != nil {
+		t.Fatalf("expected multiple empty contact emails to remain allowed, got %v", err)
+	}
+}

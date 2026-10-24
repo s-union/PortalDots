@@ -9,9 +9,9 @@ import {
   hiraganaSchema,
   requiredTextSchema,
   userRegistrationFormSchema,
-  circleRegistrationFormSchema,
-  buildFormAnswerSchema
+  circleRegistrationFormSchema
 } from './schemas'
+import { buildAnswerFormSchema } from '@/features/forms/answer-form-schema'
 
 describe('passwordSchema', () => {
   it('accepts valid password with 8+ chars, letters and numbers', () => {
@@ -45,9 +45,9 @@ describe('passwordSchema', () => {
   })
 })
 
-describe('buildFormAnswerSchema', () => {
+describe('buildAnswerFormSchema', () => {
   it('validates markdown required and max length rules', () => {
-    const schema = buildFormAnswerSchema([
+    const schema = buildAnswerFormSchema([
       {
         id: 'question-markdown',
         name: 'Markdown設問',
@@ -64,15 +64,15 @@ describe('buildFormAnswerSchema', () => {
       }
     ])
 
-    expect(v.safeParse(schema, { 'question-markdown': '**OK' }).success).toBe(true)
+    expect(v.safeParse(schema, { text: { 'question-markdown': '**OK' }, choices: {} }).success).toBe(true)
 
-    const emptyResult = v.safeParse(schema, { 'question-markdown': '' })
+    const emptyResult = v.safeParse(schema, { text: { 'question-markdown': '' }, choices: {} })
     expect(emptyResult.success).toBe(false)
     if (!emptyResult.success) {
       expect(emptyResult.issues[0].message).toContain('Markdown設問を入力してください')
     }
 
-    const longResult = v.safeParse(schema, { 'question-markdown': '123456' })
+    const longResult = v.safeParse(schema, { text: { 'question-markdown': '123456' }, choices: {} })
     expect(longResult.success).toBe(false)
     if (!longResult.success) {
       expect(longResult.issues[0].message).toContain('5文字以下')
