@@ -59,7 +59,7 @@
     "msw": "2.14.6",
     "msw-storybook-addon": "2.0.7",
     "openapi-msw": "2.0.0",
-    "storybook": "10.5.0",
+    "storybook": "10.6.2",
     "tailwindcss": "4.3.0",
     "typescript": "npm:typescript-native-bridge@6.0.3-bridge.16.tsgo.7.0.2",
     "vite": "8.2.4",
