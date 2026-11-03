@@ -26,3 +26,17 @@ export function parseStaffFormTags(value: string) {
 export function formatStaffFormTags(tags: string[]) {
   return formatTags(tags)
 }
+
+export function staffFormSettingsInput(form?: CreateStaffFormPayload): CreateStaffFormPayload {
+  return {
+    name: form?.name ?? '',
+    description: form?.description ?? '',
+    openAt: form?.openAt ?? '',
+    closeAt: form?.closeAt ?? '',
+    maxAnswers: form?.maxAnswers ?? 1,
+    answerableTags: [...(form?.answerableTags ?? [])],
+    confirmationMessage: form?.confirmationMessage ?? '',
+    staffNotificationUserIds: [...(form?.staffNotificationUserIds ?? [])],
+    isPublic: form?.isPublic ?? false
+  }
+}

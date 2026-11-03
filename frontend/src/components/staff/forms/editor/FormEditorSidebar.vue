@@ -2,6 +2,7 @@
 import FaIcon from '@/components/ui/FaIcon.vue'
 import { allowedQuestionTypes } from '@/features/staff/forms/api'
 import { QUESTION_TYPE_META, type AllowedQuestionType } from '@/features/staff/forms/editor/useQuestionTypeMeta'
+defineProps<{ disabled?: boolean }>()
 
 const emit = defineEmits<{
   addQuestion: [type: AllowedQuestionType]
@@ -20,6 +21,7 @@ const emit = defineEmits<{
         :key="type"
         class="relative flex w-full items-center gap-3 border-0 bg-transparent px-4 py-3 text-left text-base text-body transition-colors hover:bg-surface-light"
         type="button"
+        :disabled="disabled"
         @click="emit('addQuestion', type)"
       >
         <FaIcon

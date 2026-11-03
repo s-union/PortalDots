@@ -1,3 +1,4 @@
-// Storybookのpreview設定はStorybook 10.3以降、@storybook/addon-vitestが自動的に適用するため、
-// ここではカスタムコードが不要です
-export {}
+import { configure } from 'storybook/test'
+
+// Story decorators and navigation load routes and API data asynchronously.
+configure({ asyncUtilTimeout: 5000 })

@@ -1,16 +1,10 @@
-<script setup lang="ts">
-import { computed } from 'vue'
+<script lang="ts">
 import rehypeSanitize, { defaultSchema, type Options as SanitizeSchema } from 'rehype-sanitize'
 import rehypeStringify from 'rehype-stringify'
 import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
-
-const { source, headingScale = 'embedded' } = defineProps<{
-  source: string
-  headingScale?: 'embedded' | 'page'
-}>()
 
 const sanitizeSchema = {
   ...defaultSchema,
@@ -29,22 +23,31 @@ const sanitizeSchema = {
   }
 } satisfies SanitizeSchema
 
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkGfm)
+  .use(remarkRehype)
+  .use(rehypeSanitize, sanitizeSchema)
+  .use(rehypeStringify)
+  .freeze()
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const { source, headingScale = 'embedded' } = defineProps<{
+  source: string
+  headingScale?: 'embedded' | 'page'
+}>()
+
 const renderedHtml = computed(() => {
   if (source.trim() === '') {
     return ''
   }
 
-  const html = String(
-    unified()
-      .use(remarkParse)
-      .use(remarkGfm)
-      .use(remarkRehype)
-      .use(rehypeSanitize, sanitizeSchema)
-      .use(rehypeStringify)
-      .processSync(source)
-  )
+  const html = String(processor.processSync(source))
 
-  // Task list checkbox に aria-label を追加
+  // Give generated task-list checkboxes an accessible name.
   return html.replace(/<input type="checkbox"([^>]*)>/g, '<input type="checkbox" aria-label="タスク"$1>')
 })
 </script>

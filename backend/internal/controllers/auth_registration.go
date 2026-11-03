@@ -273,6 +273,11 @@ func (h *authHandlers) completeRegistration(c *echo.Context) error {
 		IsEmailVerified:     contactEmailMatchesUnivemail,
 		IsUnivemailVerified: true,
 	})
+	if errors.Is(err, useradmin.ErrContactEmailConflict) {
+		return validationError(c, map[string][]string{
+			"contactEmail": {"入力されたメールアドレスはすでに登録されています"},
+		})
+	}
 	if errors.Is(err, useradmin.ErrConflict) {
 		return validationError(c, map[string][]string{
 			"univemail": {"入力内容がすでに登録されています"},

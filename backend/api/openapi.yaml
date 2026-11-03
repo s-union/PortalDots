@@ -5008,9 +5008,27 @@ paths:
     get:
       operationId: getStaffMails
       summary: Return queued mail history in staff mode
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - in: query
+          name: cursor
+          description: Opaque continuation cursor from the previous X-Next-Cursor header.
+          schema:
+            type: string
       responses:
         "200":
           description: Staff mail history
+          headers:
+            X-Next-Cursor:
+              description: Continuation cursor; absent when there are no more entries.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -5041,6 +5059,8 @@ paths:
           description: Unauthenticated
         "403":
           description: Staff verification or mail queue capability is required
+        "422":
+          description: Invalid limit or cursor
     post:
       operationId: postStaffMails
       summary: Queue a mail in staff mode

@@ -1,98 +1,80 @@
-import { type ComputedRef, type Ref, computed, ref, watch } from 'vue'
+import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import type * as v from 'valibot'
 import { extractValidationMessage } from '@/lib/api/validation'
+import {
+  useServerSyncedForm,
+  type SyncedFormSchema,
+  type SchemaFormInput
+} from '@/features/forms/composables/useServerSyncedForm'
 
-export interface StaffMasterEditorConfig<TEntity extends { id: string }> {
-  entity: ComputedRef<TEntity | null> | Ref<TEntity | null>
-  createMutation: {
-    mutateAsync(variables: unknown): Promise<unknown>
-    isPending: { value: boolean }
-  }
-  updateMutation: {
-    mutateAsync(variables: unknown): Promise<unknown>
-    isPending: { value: boolean }
-  }
-  deleteMutation: {
-    mutateAsync(id: string): Promise<unknown>
-    isPending: { value: boolean }
-  }
-  resetFields: () => void
-  validate: () => boolean
-  buildCreatePayload: () => unknown
-  buildUpdatePayload: () => TEntity
-  deleteConfirmMessage: string | ((entity: TEntity) => string)
+export function useStaffMasterEditor<T extends SyncedFormSchema, TEntity extends { id: string }>(config: {
+  entity: MaybeRefOrGetter<TEntity | null>
+  schema: T
+  input: (entity: TEntity | null) => SchemaFormInput<T>
+  create: (input: v.InferOutput<T>) => Promise<TEntity>
+  update: (entity: TEntity, input: v.InferOutput<T>) => Promise<TEntity>
+  deleteMutation: { mutateAsync(id: string): Promise<unknown>; isPending: { value: boolean } }
+  deleteConfirmMessage: (entity: TEntity) => string
   successCreateMessage: string
   successUpdateMessage: string
   errorFallbackMessage: string
   onSaved: () => void
   onDeleted: () => void
-}
-
-export function useStaffMasterEditor<TEntity extends { id: string }>(config: StaffMasterEditorConfig<TEntity>) {
-  const errorMessage = ref('')
+}) {
   const successMessage = ref('')
-
-  watch(
-    () => config.entity.value,
-    () => {
-      config.resetFields()
-      errorMessage.value = ''
-      successMessage.value = ''
-    },
-    { immediate: true }
-  )
-
-  async function handleSave() {
-    errorMessage.value = ''
-    successMessage.value = ''
-
-    if (!config.validate()) {
-      return
-    }
-
-    try {
-      if (config.entity.value) {
-        await config.updateMutation.mutateAsync(config.buildUpdatePayload())
-        successMessage.value = config.successUpdateMessage
-      } else {
-        await config.createMutation.mutateAsync(config.buildCreatePayload())
-        config.resetFields()
-        successMessage.value = config.successCreateMessage
-      }
-      config.onSaved()
-    } catch (error) {
-      errorMessage.value = extractValidationMessage(error, config.errorFallbackMessage)
-    }
+  const deleteError = ref('')
+  const sourceKey = () => {
+    const entity = toValue(config.entity)
+    return entity ? `entity:${entity.id}` : 'new'
   }
-
-  async function handleDelete() {
-    const entity = config.entity.value
-    if (!entity) {
-      return
-    }
-
-    const message =
-      typeof config.deleteConfirmMessage === 'function'
-        ? config.deleteConfirmMessage(entity)
-        : config.deleteConfirmMessage
-
-    if (typeof window !== 'undefined' && !window.confirm(message)) {
-      return
-    }
-
-    errorMessage.value = ''
+  watch(sourceKey, () => {
     successMessage.value = ''
-
+    deleteError.value = ''
+  })
+  const { form, submitEvent } = useServerSyncedForm({
+    schema: config.schema,
+    input: () => config.input(toValue(config.entity)),
+    source: () => toValue(config.entity),
+    sourceKey,
+    disabled: () => config.deleteMutation.isPending.value,
+    errorMessage: (error) => extractValidationMessage(error, config.errorFallbackMessage),
+    saveInput: async (input) => {
+      const entity = toValue(config.entity)
+      const saved = entity ? await config.update(entity, input) : await config.create(input)
+      return { input: config.input(entity ? saved : null), sourceKey: entity ? `entity:${entity.id}` : 'new' }
+    },
+    onSaved: () => {
+      successMessage.value = toValue(config.entity) ? config.successUpdateMessage : config.successCreateMessage
+      config.onSaved()
+    }
+  })
+  async function handleSave() {
+    deleteError.value = ''
+    successMessage.value = ''
+    await submitEvent()
+  }
+  async function handleDelete() {
+    const entity = toValue(config.entity)
+    if (!entity || form.isSubmitting || config.deleteMutation.isPending.value) return
+    if (!window.confirm(config.deleteConfirmMessage(entity))) return
+    deleteError.value = ''
+    successMessage.value = ''
     try {
       await config.deleteMutation.mutateAsync(entity.id)
+      if (toValue(config.entity)?.id !== entity.id) return
       config.onDeleted()
     } catch (error) {
-      errorMessage.value = extractValidationMessage(error, config.errorFallbackMessage)
+      if (toValue(config.entity)?.id !== entity.id) return
+      deleteError.value = extractValidationMessage(error, config.errorFallbackMessage)
     }
   }
-
-  const isSaving = computed(() => config.createMutation.isPending.value || config.updateMutation.isPending.value)
-
-  const isDeleting = computed(() => config.deleteMutation.isPending.value)
-
-  return { errorMessage, successMessage, handleSave, handleDelete, isSaving, isDeleting }
+  return {
+    form,
+    successMessage,
+    handleSave,
+    handleDelete,
+    errorMessage: computed(() => deleteError.value || form.errors?.[0] || ''),
+    isSaving: computed(() => form.isSubmitting),
+    isDeleting: computed(() => config.deleteMutation.isPending.value)
+  }
 }

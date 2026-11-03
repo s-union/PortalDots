@@ -16,19 +16,19 @@
 }
 
 @theme {
-  /* Primary Color — default: HSL(214, 91%, 45%) */
-  --color-primary: hsla(214, 91%, 45%, 1);
+  /* Semantic text colors keep a >= 4.5:1 contrast on their tinted backgrounds. */
+  --color-primary: hsla(214, 91%, 42%, 1);
   --color-primary-hover: rgb(8, 75, 175);
   --color-primary-light: hsla(214, 91%, 45%, 0.1);
   --color-primary-inverse-hover: hsla(214, 91%, 45%, 0.15);
 
   /* Danger */
-  --color-danger: rgb(200, 50, 52);
+  --color-danger: rgb(185, 45, 47);
   --color-danger-hover: rgb(160, 40, 42);
   --color-danger-light: rgba(200, 50, 52, 0.1);
 
   /* Success */
-  --color-success: rgb(18, 125, 60);
+  --color-success: rgb(16, 115, 55);
   --color-success-hover: rgb(14, 96, 46);
   --color-success-light: rgba(27, 162, 78, 0.1);
 

@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useSessionStore } from '@/features/session/store'
 
-export function useStaffMasterMutation<TData>(
-  mutationFn: (data: TData, csrfToken: string) => Promise<unknown>,
+export function useStaffMasterMutation<TData, TResult>(
+  mutationFn: (data: TData, csrfToken: string) => Promise<TResult>,
   queryKey: string[]
 ) {
   const queryClient = useQueryClient()

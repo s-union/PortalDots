@@ -5,7 +5,8 @@ definePage({
   meta: staffPageMeta('pages.edit')
 })
 
-import { computed, nextTick, ref } from 'vue'
+import { computed } from 'vue'
+import { useSubmitForm } from '@/features/forms/composables/useSubmitForm'
 import { useRouter } from 'vue-router'
 import PageLayout from '@/components/layouts/PageLayout.vue'
 import SurfaceCard from '@/components/ui/SurfaceCard.vue'
@@ -13,14 +14,13 @@ import { useStaffDocumentsQuery } from '@/features/staff/documents/api'
 import { useStaffTagsQuery, staffTagColorMap } from '@/features/staff/masters/tags'
 import StaffPageEditorForm from '@/features/staff/pages/components/StaffPageEditorForm.vue'
 import {
-  extractStaffPagePublishedAtError,
   extractStaffPageValidationMessage,
   useCreateStaffPageMutation,
-  useStaffPageForm
+  staffPageInput
 } from '@/features/staff/pages/api'
 import { useStaffStatusQuery } from '@/features/staff/status/api'
 import { useSessionStore } from '@/features/session/store'
-import { useFormValidation, staffPageFormSchema } from '@/lib/form-validation'
+import { staffPageFormSchema } from '@/lib/form-validation'
 import SurfaceCardBand from '@/components/ui/SurfaceCardBand.vue'
 
 const router = useRouter()
@@ -30,78 +30,42 @@ const enabled = computed(() => staffStatusQuery.data.value?.authorized === true)
 const tagsQuery = useStaffTagsQuery(enabled)
 const documentsQuery = useStaffDocumentsQuery(enabled)
 const createPageMutation = useCreateStaffPageMutation()
-const form = useStaffPageForm()
-const errorMessage = ref('')
-const publishedAtError = ref('')
 
 const availableTags = computed(() => (tagsQuery.data.value ?? []).map((tag) => tag.name))
 const tagColors = computed(() => staffTagColorMap(tagsQuery.data.value ?? []))
 const availableDocuments = computed(() => documentsQuery.data.value ?? [])
 
-const { fieldErrors, validateAll, markTouched } = useFormValidation({
+const {
+  form,
+  errorMessage,
+  submitEvent: handleCreatePage
+} = useSubmitForm({
   schema: staffPageFormSchema,
-  form: computed(() => ({ title: form.value.title, body: form.value.body }))
-})
-
-const editorFieldErrors = computed(() =>
-  publishedAtError.value ? { ...fieldErrors.value, publishedAt: publishedAtError.value } : fieldErrors.value
-)
-
-async function handleCreatePage() {
-  errorMessage.value = ''
-  publishedAtError.value = ''
-
-  if (!validateAll()) {
-    await focusFirstInvalidField()
-    return
-  }
-
-  try {
-    const created = await createPageMutation.mutateAsync({
-      title: form.value.title,
-      body: form.value.body,
-      notes: form.value.notes,
-      isPinned: form.value.isPinned,
-      isPublic: form.value.isPublic,
-      viewableTags: form.value.viewableTags,
-      documentIds: form.value.documentIds,
-      sendEmails: form.value.sendEmails,
-      publishedAt: form.value.publishedAt
-    })
+  initialInput: staffPageInput(),
+  errorMessage: extractStaffPageValidationMessage,
+  submit: async (input) => {
+    const created = await createPageMutation.mutateAsync(input)
     await router.replace(`/staff/pages/${encodeURIComponent(created.id)}`)
-  } catch (error) {
-    errorMessage.value = extractStaffPageValidationMessage(error)
-    publishedAtError.value = extractStaffPagePublishedAtError(error)
-    await focusFirstInvalidField()
   }
-}
-
-async function focusFirstInvalidField() {
-  await nextTick()
-  const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]')
-  invalid?.focus()
-}
+})
 </script>
 
 <template>
   <PageLayout>
-    <form class="space-y-6" @submit.prevent="handleCreatePage">
+    <form class="space-y-6" novalidate :aria-busy="form.isSubmitting" @submit="handleCreatePage">
       <SurfaceCard>
         <SurfaceCardBand>
           <h1 class="text-2xl font-semibold text-body">お知らせを新規作成</h1>
         </SurfaceCardBand>
         <div class="px-6 py-6">
           <StaffPageEditorForm
-            v-model="form"
+            :form="form"
             :available-tags="availableTags"
             :tag-colors="tagColors"
             :available-documents="availableDocuments"
             :documents-loading="documentsQuery.isPending.value"
             :error-message="errorMessage"
             submit-label="作成"
-            :submitting="createPageMutation.isPending.value"
-            :field-errors="editorFieldErrors"
-            :on-blur-field="markTouched"
           />
         </div>
       </SurfaceCard>

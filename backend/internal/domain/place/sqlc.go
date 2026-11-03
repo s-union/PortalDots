@@ -2,7 +2,9 @@ package place
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	dbgen "github.com/s-union/PortalDots/backend/internal/platform/postgres/db"
 	"github.com/s-union/PortalDots/backend/internal/platform/postgres/pgutil"
 )
@@ -64,6 +66,9 @@ func (r *SQLCRepository) Update(ctx context.Context, id, name string, placeType 
 		Notes: notes,
 	})
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Place{}, ErrNotFound
+		}
 		return Place{}, err
 	}
 

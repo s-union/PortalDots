@@ -29,11 +29,16 @@ func (h *staffFormHandlers) listStaffFormAnswers(c *echo.Context) error {
 	}
 
 	answerValues := h.answers.ListByForm(c.Request().Context(), formValue.ID)
+	answerIDs := make([]string, 0, len(answerValues))
+	for _, currentAnswer := range answerValues {
+		answerIDs = append(answerIDs, currentAnswer.ID)
+	}
+	uploadsByAnswer := h.answers.ListUploadsByAnswers(c.Request().Context(), answerIDs)
 	answerCircles := map[string]struct{}{}
 	answerResponse := make([]staffManagedFormAnswerSummaryResponse, 0, len(answerValues))
 	for _, currentAnswer := range answerValues {
 		answerCircles[currentAnswer.CircleID] = struct{}{}
-		item := mapStaffManagedFormAnswerSummary(currentAnswer, circleMap[currentAnswer.CircleID], h.answers.ListUploadsByAnswer(c.Request().Context(), currentAnswer.ID))
+		item := mapStaffManagedFormAnswerSummary(currentAnswer, circleMap[currentAnswer.CircleID], uploadsByAnswer[currentAnswer.ID])
 		if !matchesStaffFormAnswerSearch(item, c.QueryParam("query")) || !matchesStaffListFilters(staffFormAnswerFilterResolver(item), filterQueries, filterMode) {
 			continue
 		}

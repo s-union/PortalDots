@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
-import { mount } from '@vue/test-utils'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import MarkdownEditorField from './MarkdownEditorField.vue'
+
+enableAutoUnmount(afterEach)
 
 describe('MarkdownEditorField', () => {
   it('applies toolbar formatting to the textarea value', async () => {
@@ -48,5 +50,27 @@ describe('MarkdownEditorField', () => {
       { timeout: 5000 }
     )
     expect(wrapper.get('a').attributes('href')).toBe('/staff/markdown-guide')
+  })
+
+  it('restores focus and selection after formatting selected text', async () => {
+    const Host = defineComponent({
+      components: { MarkdownEditorField },
+      setup() {
+        const value = ref('書式対象です')
+        return { value }
+      },
+      template: '<MarkdownEditorField v-model="value" name="body" />'
+    })
+    const wrapper = mount(Host, { attachTo: document.body })
+    const textarea = wrapper.get<HTMLTextAreaElement>('textarea').element
+    textarea.focus()
+    textarea.setSelectionRange(2, 4)
+
+    await wrapper.get('button[title="太字"]').trigger('click')
+
+    expect(textarea.value).toBe('書式**対象**です')
+    expect(document.activeElement).toBe(textarea)
+    expect(textarea.selectionStart).toBe(4)
+    expect(textarea.selectionEnd).toBe(6)
   })
 })

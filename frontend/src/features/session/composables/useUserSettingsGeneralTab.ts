@@ -1,78 +1,50 @@
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { extractProfileValidationMessage, useUpdateProfileMutation } from '@/features/session/profile'
-import { useFormValidation, profileUpdateFormSchema } from '@/lib/form-validation'
+import { profileUpdateFormSchema } from '@/lib/form-validation'
+import { useServerSyncedForm } from '@/features/forms/composables/useServerSyncedForm'
 import { useUserSettingsTabs } from './useUserSettingsTabs'
 
 export function useUserSettingsGeneralTab() {
   const { sessionStore, tabs } = useUserSettingsTabs('general')
   const updateProfileMutation = useUpdateProfileMutation()
-  const form = reactive({
-    name: '',
-    nameYomi: '',
-    contactEmail: '',
-    phoneNumber: '',
-    currentPassword: ''
-  })
-  const errorMessage = ref('')
   const successMessage = ref('')
-  const studentId = computed(() => sessionStore.user?.studentId ?? '')
-  const univemail = computed(() => sessionStore.user?.univemail ?? '')
-  const forgotPasswordHref = computed(() => '/password/reset')
-
-  const { fieldErrors, getFieldError, markTouched, validateAll } = useFormValidation({
-    schema: profileUpdateFormSchema,
-    form: computed(() => form)
+  const initialInput = computed(() => {
+    const user = sessionStore.user
+    return {
+      name: [user?.lastName ?? '', user?.firstName ?? ''].filter(Boolean).join(' '),
+      nameYomi: [user?.lastNameReading ?? '', user?.firstNameReading ?? ''].filter(Boolean).join(' '),
+      contactEmail: user?.contactEmail ?? '',
+      phoneNumber: user?.phoneNumber ?? '',
+      currentPassword: ''
+    }
   })
-
-  watch(
-    () => sessionStore.user,
-    (value) => {
-      form.name = [value?.lastName ?? '', value?.firstName ?? ''].filter((part) => part !== '').join(' ')
-      form.nameYomi = [value?.lastNameReading ?? '', value?.firstNameReading ?? '']
-        .filter((part) => part !== '')
-        .join(' ')
-      form.contactEmail = value?.contactEmail ?? ''
-      form.phoneNumber = value?.phoneNumber ?? ''
+  const { form, submitEvent } = useServerSyncedForm({
+    schema: profileUpdateFormSchema,
+    input: initialInput,
+    source: () => sessionStore.user,
+    sourceKey: () => sessionStore.user?.id ?? null,
+    errorMessage: extractProfileValidationMessage,
+    saveInput: async (input) => {
+      await updateProfileMutation.mutateAsync({ ...input, displayName: input.name })
+      return { input: initialInput.value, sourceKey: sessionStore.user?.id ?? null }
     },
-    { immediate: true }
-  )
-
-  async function saveProfile() {
-    errorMessage.value = ''
-    successMessage.value = ''
-
-    if (!validateAll()) {
-      return
-    }
-
-    try {
-      await updateProfileMutation.mutateAsync({
-        displayName: form.name,
-        name: form.name,
-        nameYomi: form.nameYomi,
-        contactEmail: form.contactEmail,
-        phoneNumber: form.phoneNumber,
-        currentPassword: form.currentPassword
-      })
-      form.currentPassword = ''
+    onSaved: () => {
       successMessage.value = 'プロフィールを更新しました。'
-    } catch (error) {
-      errorMessage.value = extractProfileValidationMessage(error)
     }
+  })
+  async function saveProfile(event?: Event) {
+    event?.preventDefault()
+    successMessage.value = ''
+    await submitEvent()
   }
-
   return {
-    errorMessage,
-    fieldErrors,
-    forgotPasswordHref,
     form,
-    getFieldError,
-    markTouched,
     saveProfile,
-    studentId,
     successMessage,
     tabs,
-    univemail,
-    updateProfileMutation
+    updateProfileMutation,
+    errorMessage: computed(() => form.errors?.[0] ?? ''),
+    studentId: computed(() => sessionStore.user?.studentId ?? ''),
+    univemail: computed(() => sessionStore.user?.univemail ?? '')
   }
 }

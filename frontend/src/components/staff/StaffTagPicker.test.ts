@@ -58,4 +58,34 @@ describe('StaffTagPicker', () => {
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([['スポーツ系']])
   })
+
+  it('does not add a tag while the IME is composing', async () => {
+    const wrapper = mount(StaffTagPicker, {
+      props: {
+        modelValue: [],
+        availableTags: ['文化系']
+      }
+    })
+    const input = wrapper.get('input')
+
+    await input.setValue('文化系')
+    await input.trigger('keydown', { key: 'Enter', isComposing: true })
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('still adds an exact tag with a normal Enter key', async () => {
+    const wrapper = mount(StaffTagPicker, {
+      props: {
+        modelValue: [],
+        availableTags: ['文化系']
+      }
+    })
+    const input = wrapper.get('input')
+
+    await input.setValue('文化系')
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([['文化系']])
+  })
 })

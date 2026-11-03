@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
+import type { FormAnswerDraft } from '@/features/forms/answers'
 
 const formApiMocks = vi.hoisted(() => ({
   useFormDetailQuery: vi.fn()
@@ -13,7 +14,6 @@ const answersMocks = vi.hoisted(() => ({
   extractValidationMessage: vi.fn(() => '回答の保存に失敗しました。'),
   useCreateFormAnswerMutation: vi.fn(),
   useFormAnswerByIdQuery: vi.fn(),
-  useFormAnswerEditorDraft: vi.fn(),
   useFormAnswerMutation: vi.fn(),
   useFormAnswerQuery: vi.fn(),
   useFormAnswerUploadMutation: vi.fn(),
@@ -31,7 +31,6 @@ vi.mock('@/features/forms/answers', () => ({
   extractValidationMessage: answersMocks.extractValidationMessage,
   useCreateFormAnswerMutation: answersMocks.useCreateFormAnswerMutation,
   useFormAnswerByIdQuery: answersMocks.useFormAnswerByIdQuery,
-  useFormAnswerEditorDraft: answersMocks.useFormAnswerEditorDraft,
   useFormAnswerMutation: answersMocks.useFormAnswerMutation,
   useFormAnswerQuery: answersMocks.useFormAnswerQuery,
   useFormAnswerUploadMutation: answersMocks.useFormAnswerUploadMutation,
@@ -66,19 +65,26 @@ function buildForm(overrides: Record<string, unknown> = {}) {
 }
 
 describe('useWorkspaceFormDetailPage', () => {
-  const draft = ref<Record<string, string | string[]>>({ 'q-text': '初期値' })
+  const draft: FormAnswerDraft = { 'q-text': '入力した回答' }
+  const savedAnswer = {
+    id: 'answer-saved',
+    body: '',
+    updatedAt: '2026-03-02T00:00:00Z',
+    details: { 'q-text': ['入力した回答'] },
+    uploads: []
+  }
   const formQuery = {
     data: ref(buildForm()),
     isPending: ref(false)
   }
   const answersQuery = {
-    data: ref<{ answers: { id: string }[] }>({ answers: [] })
+    data: ref<{ answers: { id: string }[] } | undefined>({ answers: [] })
   }
   const legacyAnswerQuery = {
     data: ref<{ answer: Record<string, unknown> | null }>({ answer: null })
   }
   const selectedAnswerQuery = {
-    data: ref<{ answer: Record<string, unknown> | null }>({ answer: null }),
+    data: ref<{ answer: Record<string, unknown> | null } | undefined>({ answer: null }),
     refetch: vi.fn().mockResolvedValue(undefined)
   }
   const createAnswerMutation = {
@@ -101,7 +107,6 @@ describe('useWorkspaceFormDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    draft.value = { 'q-text': '初期値' }
     formQuery.data.value = buildForm()
     answersQuery.data.value = { answers: [] }
     legacyAnswerQuery.data.value = { answer: null }
@@ -113,15 +118,14 @@ describe('useWorkspaceFormDetailPage', () => {
         id: 'answer-created'
       }
     })
-    legacyAnswerMutation.mutateAsync.mockResolvedValue(undefined)
-    updateAnswerMutation.mutateAsync.mockResolvedValue(undefined)
+    legacyAnswerMutation.mutateAsync.mockResolvedValue({ answer: savedAnswer })
+    updateAnswerMutation.mutateAsync.mockResolvedValue({ answer: savedAnswer })
     uploadMutation.mutateAsync.mockResolvedValue(undefined)
 
     formApiMocks.useFormDetailQuery.mockReturnValue(formQuery)
     answersMocks.useFormAnswersQuery.mockReturnValue(answersQuery)
     answersMocks.useFormAnswerQuery.mockReturnValue(legacyAnswerQuery)
     answersMocks.useFormAnswerByIdQuery.mockReturnValue(selectedAnswerQuery)
-    answersMocks.useFormAnswerEditorDraft.mockReturnValue(draft)
     answersMocks.useCreateFormAnswerMutation.mockReturnValue(createAnswerMutation)
     answersMocks.useFormAnswerMutation.mockReturnValue(legacyAnswerMutation)
     answersMocks.useUpdateFormAnswerMutation.mockReturnValue(updateAnswerMutation)
@@ -145,6 +149,79 @@ describe('useWorkspaceFormDetailPage', () => {
     await nextTick()
 
     expect(onSelectAnswer).toHaveBeenCalledWith('answer-1')
+  })
+
+  it('preserves the selected answer while the answer list is loading and after it arrives', async () => {
+    const onSelectAnswer = vi.fn()
+    const onClearSelectedAnswer = vi.fn()
+    answersQuery.data.value = undefined
+
+    useWorkspaceFormDetailPage({
+      formId: 'form-1',
+      selectedAnswerId: 'answer-1',
+      onSelectAnswer,
+      onClearSelectedAnswer
+    })
+
+    await nextTick()
+    expect(onSelectAnswer).not.toHaveBeenCalled()
+    expect(onClearSelectedAnswer).not.toHaveBeenCalled()
+
+    answersQuery.data.value = {
+      answers: [{ id: 'answer-2' }, { id: 'answer-1' }]
+    }
+    await nextTick()
+
+    expect(onSelectAnswer).not.toHaveBeenCalled()
+    expect(onClearSelectedAnswer).not.toHaveBeenCalled()
+  })
+
+  it('uses the matching legacy answer until the selected answer response arrives', () => {
+    const legacyAnswer = { ...savedAnswer, id: 'answer-1', body: 'Legacy cached answer' }
+    legacyAnswerQuery.data.value = { answer: legacyAnswer }
+    selectedAnswerQuery.data.value = undefined
+
+    const page = useWorkspaceFormDetailPage({
+      formId: 'form-1',
+      selectedAnswerId: 'answer-1',
+      onSelectAnswer: vi.fn(),
+      onClearSelectedAnswer: vi.fn()
+    })
+
+    expect(page.selectedAnswer.value).toEqual(legacyAnswer)
+
+    const fetchedAnswer = { ...legacyAnswer, body: 'Selected answer response' }
+    selectedAnswerQuery.data.value = { answer: fetchedAnswer }
+
+    expect(page.selectedAnswer.value).toEqual(fetchedAnswer)
+  })
+
+  it('does not use a legacy answer belonging to a different selected answer ID', () => {
+    legacyAnswerQuery.data.value = { answer: { ...savedAnswer, id: 'answer-2' } }
+    selectedAnswerQuery.data.value = undefined
+
+    const page = useWorkspaceFormDetailPage({
+      formId: 'form-1',
+      selectedAnswerId: 'answer-1',
+      onSelectAnswer: vi.fn(),
+      onClearSelectedAnswer: vi.fn()
+    })
+
+    expect(page.selectedAnswer.value).toBeNull()
+  })
+
+  it('preserves an explicit null selected answer even when a matching legacy answer exists', () => {
+    legacyAnswerQuery.data.value = { answer: { ...savedAnswer, id: 'answer-1' } }
+    selectedAnswerQuery.data.value = { answer: null }
+
+    const page = useWorkspaceFormDetailPage({
+      formId: 'form-1',
+      selectedAnswerId: 'answer-1',
+      onSelectAnswer: vi.fn(),
+      onClearSelectedAnswer: vi.fn()
+    })
+
+    expect(page.selectedAnswer.value).toBeNull()
   })
 
   it('clears the selection when all answers disappear', async () => {
@@ -172,8 +249,9 @@ describe('useWorkspaceFormDetailPage', () => {
       onClearSelectedAnswer: vi.fn()
     })
 
-    await page.saveAnswer()
+    const result = await page.saveAnswer(draft)
 
+    expect(result).toBeNull()
     expect(page.errorMessage.value).toBe(page.circleNotApprovedMessage)
     expect(legacyAnswerMutation.mutateAsync).not.toHaveBeenCalled()
     expect(updateAnswerMutation.mutateAsync).not.toHaveBeenCalled()
@@ -187,11 +265,41 @@ describe('useWorkspaceFormDetailPage', () => {
       onClearSelectedAnswer: vi.fn()
     })
 
-    await page.saveAnswer()
+    const result = await page.saveAnswer(draft)
 
-    expect(updateAnswerMutation.mutateAsync).toHaveBeenCalledWith(draft.value)
+    expect(updateAnswerMutation.mutateAsync).toHaveBeenCalledWith(draft)
     expect(legacyAnswerMutation.mutateAsync).not.toHaveBeenCalled()
     expect(page.errorMessage.value).toBe('')
+    expect(result).toEqual(savedAnswer)
+  })
+
+  it('saves the caller-supplied draft through the legacy mutation without a selected answer', async () => {
+    const page = useWorkspaceFormDetailPage({
+      formId: 'form-1',
+      selectedAnswerId: '',
+      onSelectAnswer: vi.fn(),
+      onClearSelectedAnswer: vi.fn()
+    })
+
+    const result = await page.saveAnswer(draft)
+
+    expect(legacyAnswerMutation.mutateAsync).toHaveBeenCalledWith(draft)
+    expect(updateAnswerMutation.mutateAsync).not.toHaveBeenCalled()
+    expect(result).toEqual(savedAnswer)
+  })
+
+  it('blocks saving outside the acceptance period', async () => {
+    formQuery.data.value = buildForm({ isOpen: false })
+    const page = useWorkspaceFormDetailPage({
+      formId: 'form-1',
+      selectedAnswerId: '',
+      onSelectAnswer: vi.fn(),
+      onClearSelectedAnswer: vi.fn()
+    })
+
+    expect(await page.saveAnswer(draft)).toBeNull()
+    expect(legacyAnswerMutation.mutateAsync).not.toHaveBeenCalled()
+    expect(updateAnswerMutation.mutateAsync).not.toHaveBeenCalled()
   })
 
   it('creates a new answer, selects it, and refetches the selected answer payload', async () => {
@@ -321,11 +429,12 @@ describe('useWorkspaceFormDetailPage', () => {
     })
     const file = new File(['demo'], 'sample.txt', { type: 'text/plain' })
 
-    await page.saveAnswer()
+    const result = await page.saveAnswer(draft)
     page.handleFileChange('q-upload', file)
     await page.uploadFile('q-upload')
 
     expect(page.errorMessage.value).toBe('サーバーがエラーを返しました。')
     expect(page.uploadErrorMessages.value['q-upload']).toBe('サーバーがエラーを返しました。')
+    expect(result).toBeNull()
   })
 })

@@ -2,213 +2,79 @@
 import { computed } from 'vue'
 import TabbedSettingsPage from '@/components/layouts/TabbedSettingsPage.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
-import SettingsRow from '@/components/ui/SettingsRow.vue'
 import SettingsSection from '@/components/ui/SettingsSection.vue'
-import { cn } from '@/lib/ui/cn'
-import { buttonVariants } from '@/lib/ui/variants'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import { SchemaFormFields, type FieldOverrides } from '@/features/forms/schema-form'
 import { usePublicConfigQuery } from '@/features/public-home/api'
 import { useUserSettingsGeneralTab } from '@/features/session/composables/useUserSettingsGeneralTab'
 import { useSessionStore } from '@/features/session/store'
-import FormError from '@/components/ui/FormError.vue'
+import { profileUpdateFormSchema } from '@/lib/form-validation'
 
 const publicConfigQuery = usePublicConfigQuery()
 const sessionStore = useSessionStore()
 const isInCircle = computed(() => sessionStore.currentCircle !== null)
-const {
-  errorMessage,
-  forgotPasswordHref,
-  form,
-  getFieldError,
-  markTouched,
-  saveProfile,
-  studentId,
-  successMessage,
-  tabs,
-  univemail,
-  updateProfileMutation
-} = useUserSettingsGeneralTab()
+const { form, saveProfile, errorMessage, successMessage, studentId, univemail, tabs } = useUserSettingsGeneralTab()
+
+// Profile fields are locked while the user belongs to a circle: their info must stay consistent
+// with the circle's own registration data.
+const overrides = computed<FieldOverrides<typeof profileUpdateFormSchema.entries>>(() => {
+  if (!isInCircle.value) return {}
+  const lockedByCircle = { disabled: true, helper: '企画に所属しているため修正できません。' }
+  return { name: lockedByCircle, nameYomi: lockedByCircle, contactEmail: lockedByCircle, phoneNumber: lockedByCircle }
+})
+
+// studentId/univemail's display labels come from the deployment's public config, falling back to
+// the schema's own static labels until the query loads.
+const displayLabels = computed(() => {
+  const labels: Record<string, string> = {}
+  if (publicConfigQuery.data.value?.portalStudentIdName) {
+    labels.studentId = publicConfigQuery.data.value.portalStudentIdName
+  }
+  if (publicConfigQuery.data.value?.portalUnivemailName) {
+    labels.univemail = publicConfigQuery.data.value.portalUnivemailName
+  }
+  return labels
+})
 </script>
 
 <template>
   <TabbedSettingsPage :tabs="tabs">
-    <SettingsSection title="一般設定" :title-outside="true">
-      <SettingsRow>
-        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2">
-          <p class="mb-0 text-base font-semibold text-body">
-            {{ publicConfigQuery.data.value?.portalStudentIdName ?? '学生番号' }}
-          </p>
-          <div class="grid gap-2 md:contents">
-            <input
-              :value="studentId"
-              aria-label="学生番号"
-              class="md:col-start-2"
-              name="studentId"
-              readonly
-              type="text"
-            />
-          </div>
-        </div>
-      </SettingsRow>
-      <SettingsRow>
-        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2">
-          <p class="mb-0 text-base font-semibold text-body">
-            {{ publicConfigQuery.data.value?.portalUnivemailName ?? '学生用メールアドレス' }}
-          </p>
-          <div class="grid gap-2 md:contents">
-            <input
-              :value="univemail"
-              :aria-label="publicConfigQuery.data.value?.portalUnivemailName ?? '学生用メールアドレス'"
-              class="md:col-start-2"
-              name="univemail"
-              readonly
-              type="text"
-            />
-          </div>
-        </div>
-      </SettingsRow>
-      <SettingsRow>
-        <div
-          class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2"
-          data-testid="settings-name-row"
+    <form novalidate :aria-busy="form.isSubmitting" @submit="saveProfile">
+      <SettingsSection title="一般設定" :title-outside="true">
+        <SchemaFormFields
+          required-label=""
+          :of="form"
+          :schema="profileUpdateFormSchema"
+          variant="settings"
+          :overrides="overrides"
+          :display-values="{ studentId, univemail }"
+          :display-labels="displayLabels"
         >
-          <p class="mb-0 text-base font-semibold text-body">名前</p>
-          <div class="grid gap-2 md:contents">
-            <input
-              v-model="form.name"
-              aria-label="名前"
-              class="md:col-start-2"
-              :disabled="isInCircle"
-              name="name"
-              placeholder="姓 名"
-              type="text"
-              :class="{ 'border-danger': getFieldError('name') }"
-              @blur="markTouched('name')"
-              @input="markTouched('name')"
-            />
-            <p v-if="isInCircle" class="text-xs text-muted md:col-start-2">企画に所属しているため修正できません。</p>
-            <FormError v-if="getFieldError('name')" class="md:col-start-2" :message="getFieldError('name')" />
-          </div>
-        </div>
-      </SettingsRow>
-      <SettingsRow>
-        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2">
-          <p class="mb-0 text-base font-semibold text-body">名前(よみ)</p>
-          <div class="grid gap-2 md:contents">
-            <input
-              v-model="form.nameYomi"
-              aria-label="名前(よみ)"
-              class="md:col-start-2"
-              :disabled="isInCircle"
-              name="nameYomi"
-              placeholder="せい めい"
-              type="text"
-              :class="{ 'border-danger': getFieldError('nameYomi') }"
-              @blur="markTouched('nameYomi')"
-              @input="markTouched('nameYomi')"
-            />
-            <p v-if="isInCircle" class="text-xs text-muted md:col-start-2">企画に所属しているため修正できません。</p>
-            <FormError v-if="getFieldError('nameYomi')" class="md:col-start-2" :message="getFieldError('nameYomi')" />
-          </div>
-        </div>
-      </SettingsRow>
-      <SettingsRow>
-        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2">
-          <p class="mb-0 text-base font-semibold text-body">連絡先メールアドレス</p>
-          <div class="grid gap-2 md:contents">
-            <input
-              v-model="form.contactEmail"
-              aria-label="連絡先メールアドレス"
-              class="md:col-start-2"
-              :disabled="isInCircle"
-              name="contactEmail"
-              type="email"
-              :class="{ 'border-danger': getFieldError('contactEmail') }"
-              @blur="markTouched('contactEmail')"
-              @input="markTouched('contactEmail')"
-            />
-            <p v-if="isInCircle" class="text-xs text-muted md:col-start-2">企画に所属しているため修正できません。</p>
-            <FormError
-              v-if="getFieldError('contactEmail')"
-              class="md:col-start-2"
-              :message="getFieldError('contactEmail')"
-            />
-          </div>
-        </div>
-      </SettingsRow>
-      <SettingsRow>
-        <div class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2">
-          <p class="mb-0 text-base font-semibold text-body">連絡先電話番号</p>
-          <div class="grid gap-2 md:contents">
-            <input
-              v-model="form.phoneNumber"
-              aria-label="連絡先電話番号"
-              class="md:col-start-2"
-              :disabled="isInCircle"
-              name="phoneNumber"
-              type="tel"
-              :class="{ 'border-danger': getFieldError('phoneNumber') }"
-              @blur="markTouched('phoneNumber')"
-              @input="markTouched('phoneNumber')"
-            />
-            <p v-if="isInCircle" class="text-xs text-muted md:col-start-2">企画に所属しているため修正できません。</p>
-            <FormError
-              v-if="getFieldError('phoneNumber')"
-              class="md:col-start-2"
-              :message="getFieldError('phoneNumber')"
-            />
-          </div>
-        </div>
-      </SettingsRow>
-      <SettingsRow>
-        <div
-          class="grid gap-3 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center md:gap-x-6 md:gap-y-2"
-          data-testid="settings-auth-row"
-        >
-          <div class="space-y-1">
-            <p class="text-base font-semibold text-body">認証情報</p>
+          <template #caption:currentPassword>
             <p class="text-base leading-6 text-muted">
-              <a :href="forgotPasswordHref" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
+              <a href="/password/reset" class="text-primary underline">パスワードをお忘れの場合はこちら</a>
             </p>
+          </template>
+        </SchemaFormFields>
+        <template #footer>
+          <div class="space-y-4">
+            <AlertMessage v-if="successMessage" tone="success">{{ successMessage }}</AlertMessage>
+            <AlertMessage v-if="errorMessage" tone="danger">{{ errorMessage }}</AlertMessage>
+            <div class="flex justify-center pt-2">
+              <BaseButton
+                variant="primary"
+                size="lg"
+                class="min-w-40"
+                weight="bold"
+                :disabled="form.isSubmitting"
+                type="submit"
+              >
+                {{ form.isSubmitting ? '保存中...' : '保存' }}
+              </BaseButton>
+            </div>
           </div>
-          <div class="grid gap-2 md:contents">
-            <input
-              v-model="form.currentPassword"
-              aria-label="現在のパスワード"
-              class="md:col-start-2"
-              name="currentPassword"
-              type="password"
-              :class="{ 'border-danger': getFieldError('currentPassword') }"
-              @blur="markTouched('currentPassword')"
-              @input="markTouched('currentPassword')"
-            />
-            <FormError
-              v-if="getFieldError('currentPassword')"
-              class="md:col-start-2"
-              :message="getFieldError('currentPassword')"
-            />
-          </div>
-        </div>
-      </SettingsRow>
-      <template #footer>
-        <div class="space-y-4">
-          <AlertMessage v-if="successMessage" tone="success">
-            {{ successMessage }}
-          </AlertMessage>
-          <AlertMessage v-if="errorMessage" tone="danger">
-            {{ errorMessage }}
-          </AlertMessage>
-          <div class="flex justify-center pt-2">
-            <button
-              :class="cn(buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' }), 'min-w-40')"
-              :disabled="updateProfileMutation.isPending.value"
-              type="button"
-              @click="saveProfile"
-            >
-              {{ updateProfileMutation.isPending.value ? '保存中...' : '保存' }}
-            </button>
-          </div>
-        </div>
-      </template>
-    </SettingsSection>
+        </template>
+      </SettingsSection>
+    </form>
   </TabbedSettingsPage>
 </template>

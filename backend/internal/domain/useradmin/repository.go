@@ -2,6 +2,7 @@ package useradmin
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 
 var ErrNotFound = errors.New("user not found")
 var ErrConflict = errors.New("user conflict")
+var ErrContactEmailConflict = fmt.Errorf("%w: contact email conflict", ErrConflict)
 
 type User struct {
 	ID                  string
@@ -276,8 +278,8 @@ func (r *StaticRepository) Create(params CreateParams) (User, error) {
 		if hasLoginIDConflict(current.LoginIDs, params.LoginIDs) {
 			return User{}, ErrConflict
 		}
-		if strings.EqualFold(strings.TrimSpace(current.ContactEmail), strings.TrimSpace(params.ContactEmail)) {
-			return User{}, ErrConflict
+		if contactEmailConflict("", params.ContactEmail, []User{current}) {
+			return User{}, ErrContactEmailConflict
 		}
 	}
 
@@ -367,6 +369,9 @@ func (r *StaticRepository) UpdateFull(userID, displayName string, loginIDs []str
 					return User{}, ErrConflict
 				}
 			}
+			if contactEmailConflict(userID, contactEmail, r.users) {
+				return User{}, ErrContactEmailConflict
+			}
 			r.users[index].DisplayName = displayName
 			r.users[index].LoginIDs = slices.Clone(loginIDs)
 			r.users[index].LastName = lastName
@@ -423,6 +428,9 @@ func (r *StaticRepository) UpdateProfile(userID, lastName, lastNameReading, firs
 		if r.users[index].ID != userID {
 			continue
 		}
+		if contactEmailConflict(userID, contactEmail, r.users) {
+			return User{}, ErrContactEmailConflict
+		}
 		r.users[index].LastName = lastName
 		r.users[index].LastNameReading = lastNameReading
 		r.users[index].FirstName = firstName
@@ -434,6 +442,24 @@ func (r *StaticRepository) UpdateProfile(userID, lastName, lastNameReading, firs
 	}
 
 	return User{}, ErrNotFound
+}
+
+func contactEmailConflict(userID, contactEmail string, users []User) bool {
+	requested := strings.TrimSpace(contactEmail)
+	if requested == "" {
+		return false
+	}
+
+	for _, user := range users {
+		if user.ID == userID {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(user.ContactEmail), requested) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *StaticRepository) UpdateVerified(userID string, verified bool) (User, error) {

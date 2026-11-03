@@ -32,6 +32,8 @@ type Repository interface {
 	// Pending and dispatching rows are active; failed, sent and skipped rows are
 	// not active because they will not be delivered without an explicit retry.
 	HasActiveSchedule(ctx context.Context, pageID string) (bool, error)
+	// ListActivePageIDs returns the page IDs with an unsent mail intent.
+	ListActivePageIDs(ctx context.Context, pageIDs []string) ([]string, error)
 	// ClaimDue marks up to limit due mails as being dispatched and returns them.
 	ClaimDue(ctx context.Context, limit int) ([]Schedule, error)
 	// Release returns a claimed mail to the pending state without counting an attempt.
@@ -112,6 +114,24 @@ func (r *MemoryRepository) HasActiveSchedule(_ context.Context, pageID string) (
 	}
 
 	return entry.status == "pending" || entry.status == "dispatching", nil
+}
+
+func (r *MemoryRepository) ListActivePageIDs(_ context.Context, pageIDs []string) ([]string, error) {
+	if len(pageIDs) == 0 {
+		return []string{}, nil
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	active := make([]string, 0, len(pageIDs))
+	for _, pageID := range pageIDs {
+		entry, ok := r.entries[pageID]
+		if ok && (entry.status == "pending" || entry.status == "dispatching") {
+			active = append(active, pageID)
+		}
+	}
+	return active, nil
 }
 
 // ClaimDue returns every currently due pending entry. The in-memory repository

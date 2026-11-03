@@ -211,6 +211,34 @@ func (r *SQLCRepository) ListUploadsByAnswer(ctx context.Context, answerID strin
 	return uploads
 }
 
+func (r *SQLCRepository) ListUploadsByAnswers(ctx context.Context, answerIDs []string) map[string][]Upload {
+	uploadsByAnswer := make(map[string][]Upload, len(answerIDs))
+	if len(answerIDs) == 0 {
+		return uploadsByAnswer
+	}
+
+	rows, err := r.queries.ListAnswerUploadsByAnswerIDs(ctx, answerIDs)
+	if err != nil {
+		return nil
+	}
+
+	for _, row := range rows {
+		uploadsByAnswer[row.AnswerID] = append(uploadsByAnswer[row.AnswerID], Upload{
+			ID:         row.ID,
+			AnswerID:   row.AnswerID,
+			FormID:     row.FormID,
+			CircleID:   row.CircleID,
+			QuestionID: derefString(row.QuestionID),
+			Filename:   row.Filename,
+			MimeType:   row.MimeType,
+			SizeBytes:  row.SizeBytes,
+			CreatedAt:  pgutil.FormatTimestamptz(row.CreatedAt),
+		})
+	}
+
+	return uploadsByAnswer
+}
+
 func (r *SQLCRepository) FindUpload(ctx context.Context, formID, circleID, uploadID string) (Upload, bool) {
 	row, err := r.queries.GetAnswerUploadFileByID(ctx, uploadID)
 	if err != nil {
@@ -337,6 +365,30 @@ func (r *SQLCRepository) listDetails(ctx context.Context, answerID string) (map[
 	return details, nil
 }
 
+func (r *SQLCRepository) listDetailsByAnswerIDs(ctx context.Context, answerIDs []string) (map[string]map[string][]string, error) {
+	detailsByAnswer := make(map[string]map[string][]string, len(answerIDs))
+	if len(answerIDs) == 0 {
+		return detailsByAnswer, nil
+	}
+
+	rows, err := r.queries.ListAnswerDetailsByAnswerIDs(ctx, answerIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, answerID := range answerIDs {
+		detailsByAnswer[answerID] = map[string][]string{}
+	}
+	for _, row := range rows {
+		detailsByAnswer[row.AnswerID][row.QuestionID] = append(
+			detailsByAnswer[row.AnswerID][row.QuestionID],
+			row.Value,
+		)
+	}
+
+	return detailsByAnswer, nil
+}
+
 func persistAnswerDetails(
 	ctx context.Context,
 	queries *dbgen.Queries,
@@ -368,12 +420,30 @@ func persistAnswerDetails(
 }
 
 func (r *SQLCRepository) loadAnswerRows(ctx context.Context, rows []dbgen.Answer) []Answer {
+	if len(rows) == 0 {
+		return []Answer{}
+	}
+
+	answerIDs := make([]string, 0, len(rows))
+	for _, row := range rows {
+		answerIDs = append(answerIDs, row.ID)
+	}
+	detailsByAnswer, err := r.listDetailsByAnswerIDs(ctx, answerIDs)
+	if err != nil {
+		return nil
+	}
+
 	answers := make([]Answer, 0, len(rows))
 	for _, row := range rows {
-		a, ok := r.loadAnswer(ctx, row.ID, row.FormID, row.CircleID, row.Body, row.CreatedAt, row.UpdatedAt)
-		if ok {
-			answers = append(answers, a)
-		}
+		answers = append(answers, Answer{
+			ID:        row.ID,
+			FormID:    row.FormID,
+			CircleID:  row.CircleID,
+			Body:      row.Body,
+			CreatedAt: pgutil.FormatTimestamptz(row.CreatedAt),
+			UpdatedAt: pgutil.FormatTimestamptz(row.UpdatedAt),
+			Details:   detailsByAnswer[row.ID],
+		})
 	}
 
 	return answers

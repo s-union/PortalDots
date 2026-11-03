@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { File as NodeFile } from 'node:buffer'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -8,6 +8,9 @@ import { useSessionStore } from '@/features/session/store'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/server'
 import ContactPage from './contact.vue'
+
+enableAutoUnmount(afterEach)
+afterEach(() => vi.restoreAllMocks())
 
 function createQueryPlugin() {
   return [
@@ -51,11 +54,15 @@ async function mountContactPage() {
   await router.push('/workspace/contact')
   await router.isReady()
 
-  const wrapper = mount(ContactPage, {
-    global: {
-      plugins: [pinia, router, createQueryPlugin()]
+  const wrapper = mount(
+    { template: '<RouterView />' },
+    {
+      attachTo: document.body,
+      global: {
+        plugins: [pinia, router, createQueryPlugin()]
+      }
     }
-  })
+  )
   await flushPromises()
 
   return { wrapper, router }
@@ -67,6 +74,152 @@ async function fillContactForm(wrapper: ReturnType<typeof mount>) {
 }
 
 describe('ContactPage', () => {
+  const successfulSubmission = {
+    id: 'mail-job-1',
+    categoryId: 'contact-other',
+    categoryName: 'その他',
+    subject: 'その他',
+    status: 'queued',
+    createdAt: '2026-03-13T10:00:00Z'
+  }
+
+  it('waits for interaction and focuses the first invalid field without sending', async () => {
+    const send = vi.fn(() => HttpResponse.json(successfulSubmission, { status: 201 }))
+    server.use(
+      http.get('/v1/contact-categories', () => HttpResponse.json([{ id: 'contact-other', name: 'その他' }])),
+      http.post('/v1/contact', send)
+    )
+    const { wrapper } = await mountContactPage()
+    expect(wrapper.text()).not.toContain('お問い合わせ内容を入力してください')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    const category = wrapper.get('select[name="categoryId"]')
+    expect(category.attributes('aria-invalid')).toBe('true')
+    expect(category.attributes('aria-describedby')).toBe('contact-category-error')
+    expect(document.activeElement).toBe(category.element)
+    expect(send).not.toHaveBeenCalled()
+    await category.setValue('contact-other')
+    await wrapper.get('textarea[name="body"]').setValue(' \n　 ')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.get('textarea').element)
+    expect(wrapper.get('#contact-body-error').text()).toBe('お問い合わせ内容を入力してください')
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('prevents repeated submissions through validation and saving, then resets without stale errors', async () => {
+    const pending = Promise.withResolvers<Response>()
+    const payloads: FormData[] = []
+    server.use(
+      http.get('/v1/contact-categories', () => HttpResponse.json([{ id: 'contact-other', name: 'その他' }])),
+      http.post('/v1/contact', async ({ request }) => {
+        payloads.push(await request.formData())
+        return pending.promise
+      })
+    )
+    const { wrapper, router } = await mountContactPage()
+    await fillContactForm(wrapper)
+    await wrapper.get('textarea').setValue('  お問い合わせ内容  ')
+    const form = wrapper.get('form')
+    await Promise.all([form.trigger('submit'), form.trigger('submit')])
+    await vi.waitFor(() => expect(payloads).toHaveLength(1))
+    expect(form.attributes('aria-busy')).toBe('true')
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.disabled).toBe(true)
+    await form.trigger('submit')
+    await flushPromises()
+    expect(payloads).toHaveLength(1)
+    expect(payloads[0]?.get('body')).toBe('お問い合わせ内容')
+    pending.resolve(HttpResponse.json(successfulSubmission, { status: 201 }))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('に問い合わせを送信しました。'))
+    await new Promise((resolve) => setTimeout(resolve, 350))
+    expect(wrapper.get<HTMLTextAreaElement>('textarea').element.value).toBe('')
+    expect(wrapper.find('#contact-body-error').exists()).toBe(false)
+    expect(wrapper.find('#contact-category-error').exists()).toBe(false)
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await router.push('/workspace')
+    expect(confirm).not.toHaveBeenCalled()
+    expect(router.currentRoute.value.path).toBe('/workspace')
+  })
+
+  it('shows a server field error accessibly, retains input, and allows a corrected retry', async () => {
+    let requests = 0
+    server.use(
+      http.get('/v1/contact-categories', () => HttpResponse.json([{ id: 'contact-other', name: 'その他' }])),
+      http.post('/v1/contact', () =>
+        ++requests === 1
+          ? HttpResponse.json(
+              { message: 'Validation failed', errors: { body: ['この内容は送信できません'] } },
+              { status: 422 }
+            )
+          : HttpResponse.json(successfulSubmission, { status: 201 })
+      )
+    )
+    const { wrapper, router } = await mountContactPage()
+    await fillContactForm(wrapper)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    const body = wrapper.get<HTMLTextAreaElement>('textarea')
+    expect(body.element.value).toBe('9時前の搬入可否を確認したいです。')
+    expect(body.attributes('aria-describedby')).toBe('contact-body-error')
+    expect(wrapper.get('#contact-body-error').text()).toBe('この内容は送信できません')
+    expect(document.activeElement).toBe(body.element)
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await router.push('/workspace')
+    expect(confirm).toHaveBeenCalledOnce()
+    expect(router.currentRoute.value.path).toBe('/workspace/contact')
+    await body.setValue('修正したお問い合わせ')
+    await flushPromises()
+    expect(wrapper.find('#contact-body-error').exists()).toBe(false)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(requests).toBe(2)
+    expect(wrapper.text()).toContain('に問い合わせを送信しました。')
+  })
+
+  it.each([false, true])(
+    'focuses mixed server errors in display order and retries after removing the file (%s)',
+    async (hasBodyError) => {
+      let requests = 0
+      server.use(
+        http.get('/v1/contact-categories', () => HttpResponse.json([{ id: 'contact-other', name: 'その他' }])),
+        http.post('/v1/contact', () =>
+          ++requests === 1
+            ? HttpResponse.json(
+                {
+                  message: 'Validation failed',
+                  errors: {
+                    file: ['添付内容を確認してください'],
+                    ...(hasBodyError ? { body: ['本文も確認してください'] } : {})
+                  }
+                },
+                { status: 422 }
+              )
+            : HttpResponse.json(successfulSubmission, { status: 201 })
+        )
+      )
+      const { wrapper } = await mountContactPage()
+      await fillContactForm(wrapper)
+      const input = wrapper.get('input[name="file"]')
+      Object.defineProperty(input.element, 'files', {
+        configurable: true,
+        value: [new NodeFile(['%PDF'], 'proposal.pdf', { type: 'application/pdf' })]
+      })
+      await input.trigger('change')
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      expect(document.activeElement).toBe(hasBodyError ? wrapper.get('textarea').element : input.element)
+      expect(input.attributes('aria-describedby')).toContain('contact-file-error')
+      expect(wrapper.get('#contact-file-error').text()).toBe('添付内容を確認してください')
+      const remove = wrapper.findAll('button').find((button) => button.text() === '選択を解除')
+      if (!remove) throw new Error('Expected attachment removal button')
+      await remove.trigger('click')
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      expect(requests).toBe(2)
+      expect(wrapper.text()).toContain('に問い合わせを送信しました。')
+    }
+  )
+
   it('lists categories and submits a contact message', async () => {
     let submittedBody: FormData | undefined
     server.use(

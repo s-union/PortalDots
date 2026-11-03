@@ -19,5 +19,5 @@ function handleNavigateToSettings() {
 </script>
 
 <template>
-  <StaffFormEditorContent :form-id="formId" @navigate-to-settings="handleNavigateToSettings" />
+  <StaffFormEditorContent :key="formId" :form-id="formId" @navigate-to-settings="handleNavigateToSettings" />
 </template>

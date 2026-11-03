@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { useSessionStore } from '@/features/session/store'
@@ -8,6 +8,8 @@ import { toTagId } from '@/lib/api/schema'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/server'
 import StaffTagEditor from './StaffTagEditor.vue'
+
+enableAutoUnmount(afterEach)
 
 function createQueryPlugin() {
   return [
@@ -40,6 +42,76 @@ function mountEditor(tag: StaffTag | null = null) {
 }
 
 describe('StaffTagEditor', () => {
+  it('preserves dirty text and refreshes clean colour when the list replaces the selected record', async () => {
+    const tag = {
+      id: toTagId('tag-1'),
+      name: 'First',
+      color: 'blue' as const,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+    const wrapper = mountEditor(tag)
+    await wrapper.get('[name="name"]').setValue('unfinished draft')
+    await wrapper.setProps({ tag: { ...tag, name: 'Server name', color: 'green' } })
+    expect(wrapper.get<HTMLInputElement>('[name="name"]').element.value).toBe('unfinished draft')
+    expect(wrapper.get<HTMLInputElement>('[name="color"][value="green"]').element.checked).toBe(true)
+  })
+
+  it('clears success and delete errors when selecting a different record', async () => {
+    const tag = {
+      id: toTagId('tag-1'),
+      name: 'First',
+      color: 'blue' as const,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+    const next = { ...tag, id: toTagId('tag-2'), name: 'Second' }
+    server.use(
+      http.put('/v1/staff/tags/tag-1', () => HttpResponse.json(tag)),
+      http.delete('/v1/staff/tags/tag-2', () => HttpResponse.json({ message: 'Delete failed' }, { status: 500 }))
+    )
+    const wrapper = mountEditor(tag)
+    await wrapper.get('form').trigger('submit')
+    await expect.poll(() => wrapper.text()).toContain('タグを更新しました。')
+    await wrapper.setProps({ tag: next })
+    expect(wrapper.text()).not.toContain('タグを更新しました。')
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await wrapper.get('button[type="button"]').trigger('click')
+    await expect.poll(() => wrapper.text()).toContain('タグの保存に失敗しました。')
+    await wrapper.setProps({ tag: null })
+    expect(wrapper.text()).not.toContain('タグの保存に失敗しました。')
+    expect(wrapper.get<HTMLInputElement>('[name="name"]').element.value).toBe('')
+  })
+
+  it('ignores a late failed delete after selection changes', async () => {
+    const tag = {
+      id: toTagId('tag-1'),
+      name: 'First',
+      color: 'blue' as const,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+    const pending = Promise.withResolvers<Response>()
+    let requests = 0
+    server.use(
+      http.delete('/v1/staff/tags/tag-1', () => {
+        requests++
+        return pending.promise
+      })
+    )
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const wrapper = mountEditor(tag)
+    await wrapper.get('button[type="button"]').trigger('click')
+    await expect.poll(() => requests).toBe(1)
+    await wrapper.setProps({ tag: { ...tag, id: toTagId('tag-2'), name: 'Second' } })
+    pending.resolve(HttpResponse.json({ message: 'Delete failed' }, { status: 500 }))
+    await flushPromises()
+    await expect.poll(() => wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.text()).not.toContain('タグの保存に失敗しました。')
+    expect(wrapper.emitted('deleted')).toBeUndefined()
+    expect(wrapper.get<HTMLInputElement>('[name="name"]').element.value).toBe('Second')
+  })
+
   it('defaults to gray and sends the selected colour when creating a tag', async () => {
     let createBody: unknown
     server.use(

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { http, HttpResponse } from '@/mocks/openapi'
 import StaffPageCreatePage from './create.vue'
 import { mockSessionBootstrapStaff, mockDocument } from '@/mocks/data'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 const meta = {
   title: 'Pages/Staff/Notices/Create New',
@@ -57,3 +58,34 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
+
+export const ServerFieldError: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.post('/v1/staff/pages', () =>
+          HttpResponse.json(
+            { message: 'Validation failed', errors: { body: ['本文を確認してください'] } },
+            { status: 422 }
+          )
+        ),
+        ...meta.parameters.msw.handlers
+      ]
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const title = await canvas.findByLabelText(/タイトル/)
+    const body = canvas.getByLabelText(/本文/)
+    await userEvent.type(title, 'お知らせのタイトル')
+    await userEvent.type(body, 'お知らせの本文')
+    await userEvent.click(canvas.getByRole('button', { name: '作成' }))
+    await waitFor(async () => {
+      await expect(body).toHaveAttribute('aria-invalid', 'true')
+      await expect(body).toHaveFocus()
+      await expect(canvas.getAllByText('本文を確認してください').length).toBeGreaterThan(0)
+    })
+    await userEvent.type(body, 'を修正')
+    await waitFor(() => expect(body).toHaveAttribute('aria-invalid', 'false'))
+  }
+}

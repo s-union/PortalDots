@@ -152,7 +152,7 @@ async function handleDeleteDocument() {
                 現在のファイル:
                 <a
                   :href="buildStaffDocumentDownloadUrl(documentQuery.data.value.id)"
-                  class="text-primary"
+                  class="text-primary underline"
                   target="_blank"
                   rel="noreferrer"
                 >

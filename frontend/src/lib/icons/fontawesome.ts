@@ -1,5 +1,4 @@
-import { config, library } from '@fortawesome/fontawesome-svg-core'
-import '@fortawesome/fontawesome-svg-core/styles.css'
+import type { IconDefinition, IconPrefix } from '@fortawesome/fontawesome-svg-core'
 import {
   faAngleDoubleLeft,
   faAngleDoubleRight,
@@ -64,76 +63,77 @@ import {
   faFileArchive
 } from '@fortawesome/free-regular-svg-icons'
 
-let isInitialized = false
+export const iconDefinitions: readonly IconDefinition[] = [
+  faAddressBook,
+  faAngleDoubleLeft,
+  faAngleDoubleRight,
+  faArrowDown,
+  faArrowUp,
+  faAt,
+  faBell,
+  faBold,
+  faBullhorn,
+  faCheck,
+  faCheckCircle,
+  faChevronLeft,
+  faChevronRight,
+  faCircle,
+  faCog,
+  faCopy,
+  faEdit,
+  faEnvelope,
+  faExclamationCircle,
+  faExternalLinkAlt,
+  faEye,
+  faFileAlt,
+  faRegularEye,
+  faFileArchive,
+  faFileCsv,
+  faFileExport,
+  faFilter,
+  faHeading,
+  faHome,
+  faInfoCircle,
+  faItalic,
+  faKey,
+  faLink,
+  faList,
+  faListOl,
+  faListUl,
+  faLock,
+  faPencilAlt,
+  faPlus,
+  faQuestionCircle,
+  faQuoteRight,
+  faRegularEdit,
+  faSearch,
+  faShieldAlt,
+  faSort,
+  faSortDown,
+  faSortUp,
+  faSpinner,
+  faStar,
+  faStrikethrough,
+  faStore,
+  faSync,
+  faTable,
+  faTags,
+  faThumbtack,
+  faTimes,
+  faTrash,
+  faUser,
+  faUserEdit
+]
 
-export function initializeFontAwesome() {
-  if (isInitialized) {
-    return
+const definitionsByName = new Map<string, IconDefinition>()
+
+for (const definition of iconDefinitions) {
+  definitionsByName.set(`${definition.prefix}:${definition.iconName}`, definition)
+  for (const alias of definition.icon[2]) {
+    definitionsByName.set(`${definition.prefix}:${alias}`, definition)
   }
+}
 
-  config.autoAddCss = false
-
-  library.add(
-    faAddressBook,
-    faAngleDoubleLeft,
-    faAngleDoubleRight,
-    faArrowDown,
-    faArrowUp,
-    faAt,
-    faBell,
-    faBold,
-    faBullhorn,
-    faCheck,
-    faCheckCircle,
-    faChevronLeft,
-    faChevronRight,
-    faCircle,
-    faCog,
-    faCopy,
-    faEdit,
-    faEnvelope,
-    faExclamationCircle,
-    faExternalLinkAlt,
-    faEye,
-    faFileAlt,
-    faRegularEye,
-    faFileArchive,
-    faFileCsv,
-    faFileExport,
-    faFilter,
-    faHeading,
-    faHome,
-    faInfoCircle,
-    faItalic,
-    faKey,
-    faLink,
-    faList,
-    faListOl,
-    faListUl,
-    faLock,
-    faPencilAlt,
-    faPlus,
-    faQuestionCircle,
-    faQuoteRight,
-    faRegularEdit,
-    faSearch,
-    faShieldAlt,
-    faSort,
-    faSortDown,
-    faSortUp,
-    faSpinner,
-    faStar,
-    faStrikethrough,
-    faStore,
-    faSync,
-    faTable,
-    faTags,
-    faThumbtack,
-    faTimes,
-    faTrash,
-    faUser,
-    faUserEdit
-  )
-
-  isInitialized = true
+export function findIconDefinition(prefix: IconPrefix, iconName: string): IconDefinition | undefined {
+  return definitionsByName.get(`${prefix}:${iconName}`)
 }

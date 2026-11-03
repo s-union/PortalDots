@@ -32,12 +32,12 @@ SET name = $2,
     options = $9,
     priority = $10,
     updated_at = now()
-WHERE id = $1
+WHERE id = $1 AND form_id = $11
 RETURNING id, form_id, name, description, type, is_required, number_min, number_max, allowed_types, options, priority, created_at, updated_at;
 
 -- name: DeleteFormQuestion :execrows
 DELETE FROM form_questions
-WHERE id = $1;
+WHERE id = $1 AND form_id = $2;
 
 -- name: CountFormQuestionsByFormID :one
 SELECT COUNT(*)::bigint

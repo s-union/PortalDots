@@ -79,7 +79,7 @@ describe('EmailVerifyActionPage', () => {
     expect(router.currentRoute.value.fullPath).toBe('/email/verify')
   })
 
-  it('shows real-time validation error for name on input', async () => {
+  it('validates the name on blur and revalidates corrections on input', async () => {
     const { wrapper, router } = await mountAtVerifyAction()
 
     const nameInput = wrapper.get('input[name="name"]')
@@ -87,10 +87,14 @@ describe('EmailVerifyActionPage', () => {
     await nameInput.trigger('input')
     await flushPromises()
 
-    // Wait for debounce
-    await new Promise((resolve) => setTimeout(resolve, 350))
+    expect(wrapper.text()).not.toContain('姓と名の間に半角スペースを入れてください（例: 山田 太郎）')
+    await wrapper.get('input[name="name"]').trigger('blur')
+    await flushPromises()
 
     expect(wrapper.text()).toContain('姓と名の間に半角スペースを入れてください（例: 山田 太郎）')
+    await wrapper.get('input[name="name"]').setValue('山田 太郎')
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('姓と名の間に半角スペースを入れてください（例: 山田 太郎）')
     expect(router.currentRoute.value.path).toBe('/email/verify/univemail/pending-123')
   })
 
@@ -101,9 +105,6 @@ describe('EmailVerifyActionPage', () => {
     await nameInput.setValue('山田太郎')
     await nameInput.trigger('blur')
     await flushPromises()
-
-    // Wait for debounce
-    await new Promise((resolve) => setTimeout(resolve, 350))
 
     expect(wrapper.text()).toContain('姓と名の間に半角スペースを入れてください（例: 山田 太郎）')
     expect(router.currentRoute.value.path).toBe('/email/verify/univemail/pending-123')
@@ -117,9 +118,6 @@ describe('EmailVerifyActionPage', () => {
     await passwordInput.trigger('blur')
     await flushPromises()
 
-    // Wait for debounce
-    await new Promise((resolve) => setTimeout(resolve, 350))
-
     expect(wrapper.text()).toContain('パスワードには数字を含めてください')
     expect(router.currentRoute.value.path).toBe('/email/verify/univemail/pending-123')
   })
@@ -131,9 +129,6 @@ describe('EmailVerifyActionPage', () => {
     await passwordInput.setValue('abc1')
     await passwordInput.trigger('blur')
     await flushPromises()
-
-    // Wait for debounce
-    await new Promise((resolve) => setTimeout(resolve, 350))
 
     expect(wrapper.text()).toContain('パスワードは8文字以上で入力してください')
     expect(router.currentRoute.value.path).toBe('/email/verify/univemail/pending-123')
@@ -150,9 +145,6 @@ describe('EmailVerifyActionPage', () => {
     await wrapper.get('input[name="passwordConfirmation"]').setValue('password123')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-
-    // Wait for validation
-    await new Promise((resolve) => setTimeout(resolve, 350))
 
     // Should show validation error and stay on the same page
     expect(wrapper.text()).toContain('姓と名の間に半角スペースを入れてください（例: 山田 太郎）')

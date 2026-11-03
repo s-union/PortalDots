@@ -41,7 +41,7 @@ const emit = defineEmits<{
       <div class="text-base text-muted">{{ description }}</div>
     </header>
 
-    <form class="space-y-6" @submit.prevent="emit('save')">
+    <form novalidate :aria-busy="isSaving" class="space-y-6" @submit.prevent="emit('save')">
       <SettingsSection :title="sectionTitle">
         <SettingsRow>
           <slot />
@@ -55,7 +55,7 @@ const emit = defineEmits<{
               <button
                 v-if="hasEntity"
                 :class="buttonVariants({ variant: 'dangerOutline', size: 'lg', weight: 'bold' })"
-                :disabled="isDeleting"
+                :disabled="isDeleting || isSaving"
                 type="button"
                 @click="emit('delete')"
               >
@@ -64,7 +64,7 @@ const emit = defineEmits<{
               <div class="ml-auto">
                 <button
                   :class="buttonVariants({ variant: 'primary', size: 'lg', weight: 'bold' })"
-                  :disabled="isSaving"
+                  :disabled="isSaving || isDeleting"
                   type="submit"
                 >
                   {{ isSaving ? '保存中...' : hasEntity ? saveLabel : createLabel }}

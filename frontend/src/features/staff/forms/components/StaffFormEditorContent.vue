@@ -30,6 +30,7 @@ const {
   isParticipationForm,
   isPublic,
   isSaving,
+  isChangingStructure,
   moveQuestion,
   navigateToSettings,
   openQuestionId,
@@ -43,7 +44,7 @@ const {
   statusToneClass,
   toggleQuestion,
   updateFormMutation,
-  updateQuestionEdit
+  updateQuestionState
 } = useStaffFormEditorPage(() => formId, {
   navigateToSettings: () => emit('navigateToSettings')
 })
@@ -120,27 +121,30 @@ const {
 
                 <div v-else>
                   <FormQuestionPreviewItem
-                    v-for="{ question, edit } in editableQuestions"
+                    v-for="question in editableQuestions"
                     :key="question.id"
                     :question="question"
-                    :edit="edit"
+                    :save-question="saveQuestion"
+                    :paused="isChangingStructure"
+                    :structure-disabled="isSaving"
                     :is-open="openQuestionId === question.id"
                     :draggable="!isSaving"
                     :is-dragging="draggingQuestionId === question.id"
                     :is-drop-target="dropTargetQuestionId === question.id"
                     @toggle="toggleQuestion(question.id)"
-                    @save="saveQuestion(question.id)"
                     @delete="deleteQuestion(question.id)"
                     @drag-start="startQuestionDrag(question.id)"
                     @drag-end="clearDragState()"
                     @drag-over="dragOverQuestion(question.id)"
                     @drop="dropQuestion(question.id)"
-                    @update:edit="(value) => updateQuestionEdit(question.id, value)"
+                    @update:dirty="updateQuestionState(question.id, 'dirty', $event)"
+                    @update:pending="updateQuestionState(question.id, 'pending', $event)"
                   >
                     <template #move-actions>
                       <button
                         :class="buttonVariants({ variant: 'secondary', size: 'xs' })"
                         type="button"
+                        :disabled="isSaving"
                         @click="moveQuestion(question.id, -1)"
                       >
                         ↑ 上へ
@@ -148,6 +152,7 @@ const {
                       <button
                         :class="buttonVariants({ variant: 'secondary', size: 'xs' })"
                         type="button"
+                        :disabled="isSaving"
                         @click="moveQuestion(question.id, 1)"
                       >
                         ↓ 下へ
@@ -161,7 +166,7 @@ const {
 
           <div class="border-t border-border lg:border-l lg:border-t-0">
             <div class="lg:sticky lg:top-16 lg:h-[calc(100vh-9rem)]">
-              <FormEditorSidebar class="h-full" @add-question="addQuestion" />
+              <FormEditorSidebar class="h-full" :disabled="isSaving" @add-question="addQuestion" />
             </div>
           </div>
         </div>

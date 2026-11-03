@@ -129,12 +129,15 @@ func (h *publicHomeHandlers) getPublicConfig(c *echo.Context) error {
 func (h *publicHomeHandlers) listPublicPages(c *echo.Context) error {
 	setCacheControlPublic(c, 60)
 	query := c.QueryParam("query")
-	pages := h.pages.ListGuest(c.Request().Context(), query)
 	pagination := readPagesPagination(c)
-	total := len(pages)
-	totalUnfiltered := total
+	var (
+		pages           []page.Page
+		total           int
+		totalUnfiltered int
+	)
 	if h.pages.SupportsPagination(c.Request().Context()) {
 		total = h.pages.CountGuest(c.Request().Context(), query)
+		totalUnfiltered = total
 		if query != "" {
 			totalUnfiltered = h.pages.CountGuest(c.Request().Context(), "")
 		}
@@ -142,8 +145,13 @@ func (h *publicHomeHandlers) listPublicPages(c *echo.Context) error {
 		pagination.Page = page
 		pagination.PageSize = pageSize
 		pages = h.pages.ListGuestPaginated(c.Request().Context(), query, pageSize, (page-1)*pageSize)
-	} else if query != "" {
-		totalUnfiltered = len(h.pages.ListGuest(c.Request().Context(), ""))
+	} else {
+		pages = h.pages.ListGuest(c.Request().Context(), query)
+		total = len(pages)
+		totalUnfiltered = total
+		if query != "" {
+			totalUnfiltered = len(h.pages.ListGuest(c.Request().Context(), ""))
+		}
 	}
 
 	response := make([]pageSummaryResponse, 0, len(pages))

@@ -1,4 +1,3 @@
-export { useFormValidation, type UseFormValidationOptions, type UseFormValidationReturn } from './useFormValidation'
 export {
   passwordSchema,
   fullNameSchema,
@@ -21,7 +20,7 @@ export {
   staffPageFormSchema,
   staffTagFormSchema,
   staffPlaceFormSchema,
-  buildFormAnswerSchema,
+  staffContactCategoryFormSchema,
   type ProfileUpdateFormData,
   type PasswordChangeFormData,
   type ContactFormData,
@@ -34,5 +33,6 @@ export {
   type StaffParticipationTypeEditFormData,
   type StaffPageFormData,
   type StaffTagFormData,
-  type StaffPlaceFormData
+  type StaffPlaceFormData,
+  type StaffContactCategoryFormData
 } from './schemas'
